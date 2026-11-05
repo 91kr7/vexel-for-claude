@@ -20,6 +20,8 @@ Components and where the client uses them today:
 - `CircleStopIcon` → "Interrompi"
 - `PowerIcon` → "Termina", in the session toolbar
 - `LogInIcon` → "Riprendi qui"
+- `LoaderCircleIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon` → the StateBadge states `working`, `needs_input`, `idle`, `ended`
+- `TerminalIcon` → the "Esterna" mark of an external entry
 
 ## Rules and invariants
 

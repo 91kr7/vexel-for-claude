@@ -18,3 +18,4 @@
 | LiveSessionStore | frontend service | `src/web/sessions/live-session-store.ts` | Session list in the page, loaded once and kept current by events | `specs/live-session-store.md` |
 | SessionList | UI component | `src/web/sessions/SessionList.tsx` | Panel with one entry per session; a click opens it | `specs/session-list.md` |
 | NeedsInputCounter | UI component | `src/web/sessions/NeedsInputCounter.tsx` | Sidebar counter of the sessions in "Richiede input" | `specs/needs-input-counter.md` |
+| StateBadge | UI component | `src/web/sessions/StateBadge.tsx` | Icon, colour and Italian name of a session state | `specs/state-badge.md` |

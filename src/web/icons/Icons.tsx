@@ -76,3 +76,50 @@ export function SquareTerminalIcon() {
     </LucideIcon>
   );
 }
+
+export function CircleAlertIcon() {
+  return (
+    <LucideIcon>
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" x2="12" y1="8" y2="12" />
+      <line x1="12" x2="12.01" y1="16" y2="16" />
+    </LucideIcon>
+  );
+}
+
+export function LoaderCircleIcon() {
+  return (
+    <LucideIcon>
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </LucideIcon>
+  );
+}
+
+export function CirclePauseIcon() {
+  return (
+    <LucideIcon>
+      <circle cx="12" cy="12" r="10" />
+      <line x1="10" x2="10" y1="15" y2="9" />
+      <line x1="14" x2="14" y1="15" y2="9" />
+    </LucideIcon>
+  );
+}
+
+export function CircleOffIcon() {
+  return (
+    <LucideIcon>
+      <path d="m2 2 20 20" />
+      <path d="M8.35 2.69A10 10 0 0 1 21.3 15.65" />
+      <path d="M19.08 19.08A10 10 0 1 1 4.92 4.92" />
+    </LucideIcon>
+  );
+}
+
+export function TerminalIcon() {
+  return (
+    <LucideIcon>
+      <path d="M12 19h8" />
+      <path d="m4 17 6-6-6-6" />
+    </LucideIcon>
+  );
+}
