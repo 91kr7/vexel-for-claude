@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-// Path data copied from lucide-static 1.69.0 (ISC, see LICENSE in this folder).
+// Path data copied from lucide-static 1.69.0, or from the mock boards where they draw the icon (ISC, see LICENSE in this folder).
 function LucideIcon({ children }: { children: ReactNode }) {
   return (
     <svg
@@ -32,7 +32,7 @@ export function PlusIcon() {
 export function HistoryIcon() {
   return (
     <LucideIcon>
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
       <path d="M3 3v5h5" />
       <path d="M12 7v5l4 2" />
     </LucideIcon>

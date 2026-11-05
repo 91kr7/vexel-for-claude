@@ -14,8 +14,8 @@ Shows:
 - one inline SVG with the class `icon`, sized by `--icon-size` (20 px; 16 px inside a `.chip`), drawn in the current text colour.
 
 Components and where the client uses them today:
-- `PlusIcon` → "Nuova sessione"
-- `HistoryIcon` → "Riprendi sessione"
+- `PlusIcon` → "Nuova sessione", in the EmptyState and in the rail
+- `HistoryIcon` → "Riprendi sessione" in the EmptyState, "Riprendi" in the rail
 - `SquareTerminalIcon` → the EmptyState
 - `CircleStopIcon` → "Interrompi"
 - `PowerIcon` → "Termina", in the session header
@@ -23,7 +23,8 @@ Components and where the client uses them today:
 - `LoaderCircleIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon` → the StateBadge states `working`, `needs_input`, `idle`, `ended`
 - `LoaderCircleIcon`, rotating → the ProgressIndicator
 - `CircleXIcon` → the ErrorMessage
-- `TerminalIcon` → the "Esterna" mark of an external entry
+- `CircleAlertIcon` → the needs-input chip of the list panel
+- `TerminalIcon` → the "Esterna" mark of an external entry, "Sessioni" in the rail
 - `LockIcon` → the "Sola lettura" notice of the external view
 - `WrenchIcon` → a tool call in the external view
 - `ChevronRightIcon`, `ChevronDownIcon` → "Espandi" and "Comprimi" of a tool item in the external view
@@ -33,7 +34,7 @@ Components and where the client uses them today:
 
 - Each icon is decorative: `aria-hidden="true"` and not focusable. It never changes the accessible name of the button that holds it.
 - The SVG is inline, so an icon makes no network request.
-- Only the icons the client uses are in the set. A new icon is copied from the same Lucide version, cited in `THIRD-PARTY-NOTICES.md`.
+- Only the icons the client uses are in the set. A new icon is copied from the same Lucide version, cited in `THIRD-PARTY-NOTICES.md`. When a board of `.sdd/mockups/vexel-material3/` draws the icon, its path data comes from the board.
 - The Lucide licence file sits next to the components.
 
 ## Requirements served

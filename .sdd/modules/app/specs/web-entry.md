@@ -10,7 +10,7 @@ type: UI entry point
 
 ## Contract
 
-- the page has `lang="it"` and the title "Sessioni Claude".
+- the page has `lang="it"` and the title "Vexel for Claude".
 - the page declares `color-scheme: light dark`. Scrollbars and native controls follow the system theme.
 - the script renders AppLayout in `#root`, with the global styles.
 - the global styles take every value from ThemeTokens. The UI text uses Roboto Flex, `--font-mono` text uses Roboto Mono.
@@ -51,3 +51,4 @@ type: UI entry point
 - `plan-claude_sessions_client-ui_redesign/REQ-5`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-1`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-5`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-12`

@@ -3,8 +3,9 @@ import { EmptyState } from './EmptyState';
 import { ConversationView } from './external/ConversationView';
 import { FolderChooser } from './folders/FolderChooser';
 import { ResumeDialog } from './history/ResumeDialog';
-import { HistoryIcon, PlusIcon } from './icons/Icons';
-import { NeedsInputCounter } from './sessions/NeedsInputCounter';
+import { NavigationRail } from './NavigationRail';
+import { NeedsInputSnackbar, useNeedsInputSnackbar } from './NeedsInputSnackbar';
+import { countNeedsInput, NeedsInputCounter } from './sessions/NeedsInputCounter';
 import { SessionList } from './sessions/SessionList';
 import { SessionView } from './sessions/SessionView';
 import { type SessionSummary, useLiveSessions } from './sessions/live-session-store';
@@ -14,8 +15,10 @@ export function AppLayout() {
   const [openIsExternal, setOpenIsExternal] = useState(false);
   const [choosingFolder, setChoosingFolder] = useState(false);
   const [resuming, setResuming] = useState(false);
-  const sidebarRef = useRef<HTMLElement>(null);
+  const listPanelRef = useRef<HTMLElement>(null);
+  const newSessionRef = useRef<HTMLButtonElement>(null);
   const { sessions, status } = useLiveSessions();
+  const snackbarSession = useNeedsInputSnackbar(sessions, status, openSessionId);
   const lastOpenSummary = useRef<SessionSummary | undefined>(undefined);
   const listedSummary = sessions.find((session) => session.id === openSessionId);
   if (listedSummary) lastOpenSummary.current = listedSummary;
@@ -29,39 +32,42 @@ export function AppLayout() {
     setOpenIsExternal(sessions.find((session) => session.id === sessionId)?.external === true);
   };
 
-  const focusSidebar = () => {
-    const sidebar = sidebarRef.current;
-    const target = sidebar?.querySelector<HTMLElement>('[aria-current="true"]') ?? sidebar?.querySelector<HTMLElement>('button:not(:disabled)');
+  const focusList = () => {
+    const list = listPanelRef.current?.querySelector('.session-list');
+    const target =
+      list?.querySelector<HTMLElement>('[aria-current="true"]') ?? list?.querySelector<HTMLElement>('button:not(:disabled)') ?? newSessionRef.current;
     target?.focus({ focusVisible: true });
   };
 
   return (
     <div className="app">
-      <aside className="sidebar" ref={sidebarRef}>
-        <div className="sidebar-top">
-          <div className="sidebar-title">
-            <h1>Sessioni Claude</h1>
-            <NeedsInputCounter sessions={sessions} />
-          </div>
-          <button type="button" className="button-primary" onClick={() => setChoosingFolder(true)}>
-            <PlusIcon />
-            Nuova sessione
-          </button>
-          <button type="button" onClick={() => setResuming(true)}>
-            <HistoryIcon />
-            Riprendi sessione
-          </button>
+      <NavigationRail
+        needsInputCount={countNeedsInput(sessions)}
+        onNewSession={() => setChoosingFolder(true)}
+        onShowSessions={focusList}
+        onResume={() => setResuming(true)}
+        newSessionRef={newSessionRef}
+      />
+      <section className="list-panel" aria-label="Elenco sessioni" ref={listPanelRef}>
+        <div className="list-panel-brand">
+          <span className="brand list-panel-brand-name">Vexel</span>
+          <span className="label-l list-panel-brand-suffix">for Claude</span>
+        </div>
+        <div className="list-panel-title">
+          <h1 className="headline-s">Sessioni</h1>
+          <NeedsInputCounter sessions={sessions} />
         </div>
         <SessionList sessions={sessions} status={status} openSessionId={openSessionId} onOpen={openFromList} />
-      </aside>
+      </section>
       <main className="session-area">
         {openSessionId && openIsExternal ? (
           <ConversationView key={openSessionId} sessionId={openSessionId} session={openSummary} onResumed={openHosted} />
         ) : openSessionId ? (
-          <SessionView key={openSessionId} sessionId={openSessionId} session={openSummary} onLeaveTerminal={focusSidebar} />
+          <SessionView key={openSessionId} sessionId={openSessionId} session={openSummary} onLeaveTerminal={focusList} />
         ) : (
           <EmptyState onNewSession={() => setChoosingFolder(true)} onResumeSession={() => setResuming(true)} />
         )}
+        {snackbarSession && <NeedsInputSnackbar session={snackbarSession} onOpen={openFromList} />}
       </main>
       {choosingFolder && (
         <FolderChooser

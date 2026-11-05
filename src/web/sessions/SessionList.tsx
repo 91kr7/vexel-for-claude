@@ -30,7 +30,7 @@ function formatActivity(iso: string): string {
 
 export function SessionList({ sessions, openSessionId, onOpen, status = 'ready' }: SessionListProps) {
   return (
-    <nav className="session-list" aria-label="Elenco sessioni">
+    <div className="session-list">
       {status === 'error' && <ErrorMessage className="session-list-alert">Connessione al server persa. Ricarica la pagina.</ErrorMessage>}
       {status === 'loading' ? (
         <ProgressIndicator className="session-list-empty" />
@@ -69,6 +69,6 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready' 
           ))}
         </ul>
       )}
-    </nav>
+    </div>
   );
 }

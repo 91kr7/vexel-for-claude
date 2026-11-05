@@ -17,5 +17,5 @@ The client ships these files from other projects. They are copied into the repos
 ## Lucide (icons)
 
 - Files → the SVG path data in `src/web/icons/Icons.tsx`.
-- Source → Lucide, https://lucide.dev. Taken from the npm package `lucide-static` 1.69.0.
+- Source → Lucide, https://lucide.dev. Taken from the npm package `lucide-static` 1.69.0. Icons drawn in the mock boards `.sdd/mockups/vexel-material3/` take their path data from the board.
 - Licence → ISC. Icons derived from Feather are also under the MIT licence. Full text of both in `src/web/icons/LICENSE`.

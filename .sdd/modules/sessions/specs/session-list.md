@@ -11,7 +11,7 @@ type: UI component
 ## Contract
 
 Description:
-- a vertical panel (`nav`, label "Elenco sessioni") with one button per session. It scrolls when the entries do not fit.
+- a vertical panel with one button per session. It scrolls when the entries do not fit. It is not a landmark: the list panel of AppLayout carries the label "Elenco sessioni".
 
 Props:
 - `sessions` → the list from LiveSessionStore.

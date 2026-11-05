@@ -22,3 +22,7 @@
 | 2026-11-05 | dev | divergence colours-type font tokens | decided | `--font-ui`/`--font-mono` in `tokens.css` instead of `styles.css`; same result, follows existing idiom |
 | 2026-11-05 | test | G5 colours-type round 1 | sent back | Red: `src/web/fonts/inter*` still tracked, breaks ThirdPartyNotices/BundledFont; INT-3 "replace Inter" asks their removal, so the earlier "keep" decision is reversed |
 | 2026-11-05 | test | G5 colours-type round 2 | pass | 70 e2e + 60 unit green, re-run by gatekeeper |
+| 2026-11-05 | dev | G4 page-frame | pass | Build green re-run; diff limited to INT-1..7 files, specs, indexes |
+| 2026-11-05 | dev | divergence page-frame snackbar position | decided | Floats bottom-right of main until hosted-session INT-6 places it in the hint row; no pty resize |
+| 2026-11-05 | dev | divergence page-frame list landmark | decided | List root no longer `nav`: board labels the panel `section` "Elenco sessioni"; avoids duplicate landmark |
+| 2026-11-05 | dev | divergence page-frame counter at zero | decided | REQ-11 (newer) hides the chip at zero; the empty status element stays |
