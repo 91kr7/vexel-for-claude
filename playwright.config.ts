@@ -4,12 +4,17 @@ import { E2E_CLAUDE_DIR } from './e2e/claude-dir';
 
 const port = 3100;
 const baseURL = `http://127.0.0.1:${port}`;
+// These specs share the server's fixture Claude Code folder, so they must never run at the same time.
+const claudeDirSpecs = /(resume-session|external-sessions)\.spec\.ts$/;
 
 export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
   use: { baseURL },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: claudeDirSpecs },
+    { name: 'chromium-claude-dir', use: { ...devices['Desktop Chrome'] }, testMatch: claudeDirSpecs, workers: 1 },
+  ],
   webServer: {
     // Not `npm start`: its fixed PORT would override the e2e port.
     command: 'npm run --silent build && NODE_ENV=production npx tsx src/server/main.ts',

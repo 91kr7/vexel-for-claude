@@ -101,4 +101,18 @@ describe('SessionList', () => {
     const sessions = Array.from({ length: 10 }, (_, i) => session(`s${i}`, i % 3 === 0 ? 'needs_input' : 'working', now));
     expect(entries(renderList(sessions))).toHaveLength(10);
   });
+
+  // plan-claude_sessions_client/REQ-29, REQ-30: an external entry is marked "Esterna", with a tooltip on the missing state
+  it('marks an external entry with the class external and the "Esterna" marker with its tooltip', () => {
+    const html = renderList([session('hosted', 'idle', earlier), { ...session('outside', 'working', now, 'Rifattorizza'), external: true }]);
+    const [outside, hosted] = entries(html);
+    expect(outside?.text).toContain('/home/dev/progetti/outside');
+    expect(outside?.text).toContain('Esterna');
+    expect(outside?.text).toContain('Rifattorizza');
+    expect(outside?.text).toContain('In lavorazione');
+    expect(outside?.attributes).toMatch(/class="[^"]*\bexternal\b/);
+    expect(html).toMatch(/<[^>]*title="Sessione in un altro terminale: lo stato «Richiede input» non è disponibile"[^>]*>\s*Esterna\s*</);
+    expect(hosted?.text).not.toContain('Esterna');
+    expect(hosted?.attributes).not.toMatch(/\bexternal\b/);
+  });
 });

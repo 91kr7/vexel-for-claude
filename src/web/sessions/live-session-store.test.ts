@@ -243,4 +243,43 @@ describe('LiveSessionStore', () => {
     previous.receive(event(summary('old', 'working')));
     expect(ids(store)).toEqual(['a:idle', 'b:idle']);
   });
+
+  // plan-claude_sessions_client/REQ-32: an external session that ends leaves the list
+  it('a session-removed event removes the entry with that id; an unknown id changes nothing', async () => {
+    const store = new LiveSessionStore(ORIGIN);
+    await loaded(store, [summary('a'), summary('b'), summary('c')]);
+    const listener = vi.fn();
+    store.subscribe(listener);
+    lastSocket().receive({ type: 'session-removed', id: 'b' });
+    expect(ids(store)).toEqual(['a:idle', 'c:idle']);
+    expect(listener).toHaveBeenCalled();
+    const before = store.getSnapshot();
+    lastSocket().receive({ type: 'session-removed', id: 'unknown' });
+    expect(store.getSnapshot()).toEqual(before);
+  });
+
+  // plan-claude_sessions_client/REQ-32
+  it('applies a session-removed event received while loading after the loaded list', async () => {
+    const store = new LiveSessionStore(ORIGIN);
+    store.start();
+    lastSocket().open();
+    await flush();
+    lastSocket().receive({ type: 'session-removed', id: 'gone' });
+    await flush();
+    loads[0]?.resolve([summary('kept'), summary('gone')]);
+    await flush();
+    expect(ids(store)).toEqual(['kept:idle']);
+  });
+
+  // plan-claude_sessions_client/REQ-29: the external marker of the server is kept, from the load and from the events
+  it('keeps the external: true marker of external entries', async () => {
+    const store = new LiveSessionStore(ORIGIN);
+    await loaded(store, [summary('hosted'), { ...summary('ext-1'), external: true }]);
+    lastSocket().receive(event({ ...summary('ext-2', 'working'), external: true }));
+    expect(store.getSnapshot().map((s) => [s.id, s.external])).toEqual([
+      ['hosted', undefined],
+      ['ext-1', true],
+      ['ext-2', true],
+    ]);
+  });
 });

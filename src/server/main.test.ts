@@ -1,6 +1,6 @@
 // REQ tests of plan-claude_sessions_client against the real server process.
-import { type ChildProcess, spawn } from 'node:child_process';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
+import { mkdir, readFile, readdir, readlink, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -733,5 +733,301 @@ describe('plan-claude_sessions_client/REQ-28 the client does not change the sess
 
     // The fake CLI writes nothing, so any difference comes from the client.
     expect(await snapshotTree(claudeDir)).toEqual(before);
+  });
+});
+
+interface ExternalSummary extends SessionSummary {
+  external?: true;
+}
+
+interface ExternalTerminal {
+  pid: number;
+  sessionId: string;
+  folder: string;
+  update(fields: { status?: string; updatedAt?: number }): Promise<void>;
+  end(): Promise<void>;
+}
+
+const terminals: ChildProcess[] = [];
+const claudeProject = (folder: string) => folder.replace(/[^A-Za-z0-9]/g, '-');
+const assistantEntry = (text: string) => ({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text }] } });
+
+/** Simulates Claude Code in another terminal: a live process, its sessions/<pid>.json and the <pid>.<hash>.key FIFO next to it. */
+async function externalTerminal(
+  sessionId: string,
+  folder: string,
+  fields: { kind?: string; status?: string; updatedAt?: number } = {},
+): Promise<ExternalTerminal> {
+  const process = spawn('sleep', ['120'], { stdio: 'ignore' });
+  terminals.push(process);
+  const pid = process.pid ?? 0;
+  const sessionsDir = path.join(claudeDir, 'sessions');
+  await mkdir(sessionsDir, { recursive: true });
+  execFileSync('mkfifo', [path.join(sessionsDir, `${pid}.9f8e7d6c.key`)]);
+  let data = { pid, sessionId, cwd: folder, kind: 'interactive', status: 'idle', updatedAt: Date.now(), ...fields };
+  const write = () => writeFile(path.join(sessionsDir, `${pid}.json`), JSON.stringify(data));
+  await write();
+  return {
+    pid,
+    sessionId,
+    folder,
+    update: async (changes) => {
+      data = { ...data, ...changes };
+      await write();
+    },
+    end: async () => {
+      process.kill('SIGKILL');
+      await new Promise((resolve) => process.once('exit', resolve));
+    },
+  };
+}
+
+async function waitForList(check: (sessions: ExternalSummary[]) => boolean, label: string, timeoutMs = 8000): Promise<ExternalSummary[]> {
+  const deadline = Date.now() + timeoutMs;
+  let sessions = (await listSessions()) as ExternalSummary[];
+  while (!check(sessions)) {
+    if (Date.now() > deadline) throw new Error(`Timed out waiting for: ${label}`);
+    await delay(100);
+    sessions = (await listSessions()) as ExternalSummary[];
+  }
+  return sessions;
+}
+
+const waitForExternal = async (id: string, check: (session: ExternalSummary) => boolean = () => true) =>
+  (await waitForList((sessions) => sessions.some((s) => s.id === id && check(s)), `external entry ${id}`)).find((s) => s.id === id) as ExternalSummary;
+
+/** The pid of the fake CLI that the server hosts in `folder`. */
+async function hostedCliPid(folder: string): Promise<number> {
+  for (const name of await readdir('/proc')) {
+    if (!/^\d+$/.test(name)) continue;
+    const cmdline = await readFile(`/proc/${name}/cmdline`, 'utf8').catch(() => '');
+    if (!cmdline.includes('fake-claude.mjs')) continue;
+    if ((await readlink(`/proc/${name}/cwd`).catch(() => '')) === folder) return Number(name);
+  }
+  throw new Error(`no hosted CLI in ${folder}`);
+}
+
+function conversation(id: string): WsClient {
+  const client = connectWs(`ws://127.0.0.1:${port}/api/external-sessions/${id}/conversation`, { Origin: base });
+  clients.push(client);
+  return client;
+}
+
+const conversationItems = (client: WsClient) =>
+  client.frames.flatMap((frame) => (JSON.parse(frame) as { type: string; items: unknown[] }).items);
+
+describe('plan-claude_sessions_client external sessions', { timeout: 20_000 }, () => {
+  afterAll(() => {
+    for (const terminal of terminals) terminal.kill('SIGKILL');
+  });
+
+  describe('plan-claude_sessions_client/REQ-29 sessions of other terminals are listed as external', () => {
+    it('a live interactive session of another terminal is listed after the hosted ones, marked external', async () => {
+      const hostedId = await startSession();
+      const folder = await historyFolder('ext-listed');
+      const terminal = await externalTerminal('req29-listed', folder);
+      const sessions = await waitForList((list) => list.some((s) => s.id === 'req29-listed'), 'external entry');
+      expect(sessions.find((s) => s.id === 'req29-listed')?.external).toBe(true);
+      expect(sessions.find((s) => s.id === hostedId)?.external).toBeUndefined();
+      const firstExternal = sessions.findIndex((s) => s.external === true);
+      expect(sessions.slice(firstExternal).every((s) => s.external === true)).toBe(true);
+      await terminal.end();
+    });
+
+    it('a non-interactive session, a session whose process has ended and a session the client hosts are not listed as external', async () => {
+      const folder = await historyFolder('ext-filtered');
+      const hostedFolder = await historyFolder('ext-hosted');
+      await startSession(hostedFolder);
+      const hostedPid = await hostedCliPid(hostedFolder);
+      await writeFile(
+        path.join(claudeDir, 'sessions', `${hostedPid}.json`),
+        JSON.stringify({ pid: hostedPid, sessionId: 'req29-hosted', cwd: hostedFolder, kind: 'interactive', status: 'idle', updatedAt: Date.now() }),
+      );
+      await externalTerminal('req29-print', folder, { kind: 'sdk-cli' });
+      const ended = await externalTerminal('req29-ended', folder);
+      await ended.end();
+      const control = await externalTerminal('req29-control', folder);
+
+      await waitForExternal('req29-control');
+      await delay(2500);
+      const ids = (await listSessions()).map((s) => s.id);
+      expect(ids).not.toContain('req29-hosted');
+      expect(ids).not.toContain('req29-print');
+      expect(ids).not.toContain('req29-ended');
+      await control.end();
+    });
+  });
+
+  describe('plan-claude_sessions_client/REQ-30 folder, label, state and last activity of an external entry', () => {
+    it('shows the folder, the start of the first user message, the state and the time of the last activity', async () => {
+      const folder = await historyFolder('ext-data');
+      const firstMessage = `Aggiorna la pagina del carrello e   ${'aggiungi i test '.repeat(6)}`;
+      await writeHistorySession(claudeDir, claudeProject(folder), 'req30-data', [
+        userEntry('<local-command-caveat>Caveat</local-command-caveat>', folder, { isMeta: true }),
+        userEntry(firstMessage, folder),
+        assistantEntry('Fatto.'),
+        userEntry('Un secondo messaggio', folder),
+      ]);
+      const updatedAt = Date.parse('2026-11-05T08:15:30.000Z');
+      const terminal = await externalTerminal('req30-data', folder, { updatedAt });
+      expect(await waitForExternal('req30-data')).toEqual({
+        id: 'req30-data',
+        folder,
+        label: firstMessage.replace(/\s+/g, ' ').trim().slice(0, 80),
+        state: 'idle',
+        lastActivity: '2026-11-05T08:15:30.000Z',
+        external: true,
+      });
+      await terminal.end();
+    });
+
+    it('the label is the folder name until the first user message, then the start of that message', async () => {
+      const folder = await historyFolder('ext-fresh');
+      const terminal = await externalTerminal('req30-fresh', folder);
+      expect((await waitForExternal('req30-fresh')).label).toBe('ext-fresh');
+      await writeHistorySession(claudeDir, claudeProject(folder), 'req30-fresh', [userEntry('Il primo messaggio', folder)]);
+      await waitForExternal('req30-fresh', (s) => s.label === 'Il primo messaggio');
+      await terminal.end();
+    });
+  });
+
+  describe('plan-claude_sessions_client/REQ-31 state of an external session', () => {
+    it('working while Claude Code reports busy, idle while it reports idle', async () => {
+      const folder = await historyFolder('ext-state');
+      const terminal = await externalTerminal('req31-state', folder, { status: 'idle' });
+      await waitForExternal('req31-state', (s) => s.state === 'idle');
+      await terminal.update({ status: 'busy', updatedAt: Date.now() });
+      await waitForExternal('req31-state', (s) => s.state === 'working');
+      await terminal.update({ status: 'idle', updatedAt: Date.now() });
+      await waitForExternal('req31-state', (s) => s.state === 'idle');
+      await terminal.end();
+    });
+  });
+
+  describe('plan-claude_sessions_client/REQ-32 external sessions come, change and go by themselves', () => {
+    it('a connected page receives the new external entry, its state change and its removal, with no request of its own', async () => {
+      const events = connectWs(`ws://127.0.0.1:${port}/api/sessions/events`, { Origin: base });
+      clients.push(events);
+      await new Promise<void>((resolve) => events.socket.once('open', () => resolve()));
+      const folder = await historyFolder('ext-events');
+      const terminal = await externalTerminal('req32-events', folder, { status: 'idle' });
+      const mine = () =>
+        events.frames
+          .map((frame) => JSON.parse(frame) as { type: string; id?: string; session?: ExternalSummary })
+          .filter((frame) => frame.id === 'req32-events' || frame.session?.id === 'req32-events');
+      await waitFor(() => mine().length > 0, 'external entry added');
+      expect(mine()[0]).toEqual({ type: 'session', session: expect.objectContaining({ id: 'req32-events', state: 'idle', external: true }) });
+
+      await terminal.update({ status: 'busy', updatedAt: Date.now() });
+      await waitFor(() => mine().some((f) => f.session?.state === 'working'), 'external entry working');
+
+      await terminal.end();
+      await waitFor(() => mine().some((f) => f.type === 'session-removed'), 'external entry removed', 8000);
+      expect(mine().at(-1)).toEqual({ type: 'session-removed', id: 'req32-events' });
+      expect((await listSessions()).map((s) => s.id)).not.toContain('req32-events');
+    });
+  });
+
+  describe('plan-claude_sessions_client/REQ-33 the conversation of an external session, read-only as text', () => {
+    it('gives the user messages, the replies, the tool calls and the cut tool results of the transcript', async () => {
+      const folder = await historyFolder('ext-conversation');
+      await writeHistorySession(claudeDir, claudeProject(folder), 'req33-talk', [
+        userEntry('Elenca i file', folder),
+        { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'Li elenco.' }, { type: 'tool_use', id: 't1', name: 'Bash', input: { command: 'ls -la' } }] } },
+        userEntry([{ type: 'tool_result', tool_use_id: 't1', content: 'a\nb\nc\nd\ne\nf\ng' }], folder),
+        assistantEntry('Sono sette file.'),
+      ]);
+      const terminal = await externalTerminal('req33-talk', folder);
+      await waitForExternal('req33-talk');
+      const client = conversation('req33-talk');
+      await waitFor(() => client.frames.length > 0, 'first frame');
+      expect(JSON.parse(client.frames[0] ?? '')).toEqual({
+        type: 'items',
+        items: [
+          { kind: 'user', text: 'Elenca i file' },
+          { kind: 'assistant', text: 'Li elenco.' },
+          { kind: 'tool_call', name: 'Bash', summary: 'ls -la' },
+          { kind: 'tool_result', text: 'a\nb\nc\nd\ne', truncated: true },
+          { kind: 'assistant', text: 'Sono sette file.' },
+        ],
+      });
+      await terminal.end();
+    });
+
+    it('refuses an id that is not an external session, and a page of another origin', async () => {
+      const hostedId = await startSession();
+      for (const id of ['req33-unknown', hostedId]) {
+        const client = conversation(id);
+        expect(await client.closed).toBe(4404);
+        expect(client.frames).toEqual([]);
+      }
+      expect(await foreignWebSocketStatus('/api/external-sessions/req33-talk/conversation')).toBe(403);
+    });
+  });
+
+  describe('plan-claude_sessions_client/REQ-34 the conversation updates live', () => {
+    it('the lines Claude Code appends to the transcript reach the open conversation', async () => {
+      const folder = await historyFolder('ext-live');
+      const file = await writeHistorySession(claudeDir, claudeProject(folder), 'req34-live', [userEntry('Avvia i test', folder)]);
+      const terminal = await externalTerminal('req34-live', folder, { status: 'busy' });
+      await waitForExternal('req34-live');
+      const client = conversation('req34-live');
+      await waitFor(() => client.frames.length > 0, 'first frame');
+      await writeFile(
+        file,
+        [
+          JSON.stringify(userEntry('Avvia i test', folder)),
+          JSON.stringify({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'tool_use', id: 't2', name: 'Bash', input: { command: 'npm test' } }] } }),
+          JSON.stringify(assistantEntry('Tutti i test passano.')),
+        ].join('\n') + '\n',
+      );
+      await waitFor(() => conversationItems(client).length >= 3, 'new items', 5000);
+      expect(conversationItems(client)).toEqual([
+        { kind: 'user', text: 'Avvia i test' },
+        { kind: 'tool_call', name: 'Bash', summary: 'npm test' },
+        { kind: 'assistant', text: 'Tutti i test passano.' },
+      ]);
+      await terminal.end();
+    });
+  });
+
+  describe('plan-claude_sessions_client/REQ-35 resume an external session in the client', () => {
+    it('the external session resumes in its folder with --resume and its id', async () => {
+      const folder = await historyFolder('ext-resume');
+      await writeHistorySession(claudeDir, claudeProject(folder), 'req35-take', [userEntry('Riprendimi', folder)]);
+      const terminal = await externalTerminal('req35-take', folder);
+      await waitForExternal('req35-take');
+      const { id, client } = await resumeAndAttach('req35-take');
+      expect(client.text()).toContain(`CWD:${folder}`);
+      expect(settingsArgs(client)?.slice(-2)).toEqual(['--resume', 'req35-take']);
+      expect(((await summaryOf(id)) as ExternalSummary | undefined)?.external).toBeUndefined();
+      input(client, '/exit\r');
+      await client.closed;
+      await terminal.end();
+    });
+  });
+
+  describe('plan-claude_sessions_client/REQ-36 the client writes nothing to an external session', () => {
+    it('listing, following and resuming an external session leave its session file and transcript unchanged', async () => {
+      const folder = await historyFolder('ext-untouched');
+      await writeHistorySession(claudeDir, claudeProject(folder), 'req36-intact', [userEntry('Non toccare', folder), assistantEntry('Va bene.')]);
+      const terminal = await externalTerminal('req36-intact', folder, { status: 'busy' });
+      const before = await snapshotTree(claudeDir);
+
+      await waitForExternal('req36-intact');
+      const events = connectWs(`ws://127.0.0.1:${port}/api/sessions/events`, { Origin: base });
+      clients.push(events);
+      const client = conversation('req36-intact');
+      await waitFor(() => client.frames.length > 0, 'first frame');
+      client.send({ type: 'input', data: 'scrivi\r' });
+      await delay(2500);
+      const { client: resumed } = await resumeAndAttach('req36-intact');
+      input(resumed, '/exit\r');
+      await resumed.closed;
+      await listSessions();
+
+      expect(await snapshotTree(claudeDir)).toEqual(before);
+      await terminal.end();
+    });
   });
 });

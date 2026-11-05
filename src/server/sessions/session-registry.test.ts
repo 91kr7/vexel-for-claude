@@ -206,6 +206,18 @@ describe('SessionRegistry resume, pid and list', () => {
     await waitFor(() => b.exited, 'process exit');
     expect(registry.list()).toEqual([a, b, c]);
   });
+
+  // plan-claude_sessions_client/REQ-29
+  it('hostedPids gives the pid of every session whose process has not ended', async () => {
+    const registry = new SessionRegistry({ command: FAKE_CLI });
+    expect(registry.hostedPids()).toEqual([]);
+    const a = startFake(registry);
+    const b = startFake(registry);
+    await attachReady(a);
+    a.write('/exit\r');
+    await waitFor(() => a.exited, 'process exit');
+    expect(registry.hostedPids()).toEqual([b.pid]);
+  });
 });
 
 describe('SessionRegistry.onSessionStart', () => {

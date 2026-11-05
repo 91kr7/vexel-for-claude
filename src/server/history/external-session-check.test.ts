@@ -100,3 +100,51 @@ describe('ExternalSessionCheck.runningSessionIds', () => {
     expect(await snapshotTree(claudeDir)).toEqual(before);
   });
 });
+
+describe('ExternalSessionCheck.runningSessions', () => {
+  const sessions = async (hostedPids: number[] = []) => (await check.runningSessions(hostedPids)).sort((a, b) => a.pid - b.pid);
+
+  // plan-claude_sessions_client/REQ-29
+  it('gives the data of each live, not hosted <pid>.json, with the pid of the file name', async () => {
+    await writeSessionFile(
+      '801.json',
+      JSON.stringify({ pid: 9999, sessionId: 'full', cwd: '/work/a', kind: 'interactive', status: 'busy', updatedAt: 1762333200000, extra: 'x' }),
+    );
+    await writeSessionFile('802.json', JSON.stringify({ sessionId: 'bare' }));
+    await writeSessionFile('803.json', JSON.stringify({ sessionId: 'hosted', kind: 'interactive' }));
+    await writeSessionFile('804.json', JSON.stringify({ sessionId: 'dead', kind: 'interactive' }));
+    for (const pid of [801, 802, 803]) await alive(pid);
+    expect(await sessions([803])).toEqual([
+      { pid: 801, sessionId: 'full', cwd: '/work/a', kind: 'interactive', status: 'busy', updatedAt: 1762333200000 },
+      { pid: 802, sessionId: 'bare' },
+    ]);
+  });
+
+  it('leaves out cwd, kind and status that are not strings, and updatedAt that is not a number', async () => {
+    await writeSessionFile('811.json', JSON.stringify({ sessionId: 'odd', cwd: 1, kind: null, status: true, updatedAt: '2026-11-05' }));
+    await alive(811);
+    expect(await sessions()).toEqual([{ pid: 811, sessionId: 'odd' }]);
+  });
+
+  it('ignores invalid files, and is empty without a sessions folder', async () => {
+    await writeSessionFile('821.json', '{broken');
+    await writeSessionFile('822.json', JSON.stringify({ sessionId: 42 }));
+    await alive(821);
+    await alive(822);
+    expect(await sessions()).toEqual([]);
+    check = new ExternalSessionCheck({ claudeDir: await tempDir('ai-client-claude-empty-'), procDir });
+    expect(await sessions()).toEqual([]);
+  });
+
+  // plan-claude_sessions_client/REQ-36
+  it('never opens a <pid>.<hash>.key file and writes nothing under claudeDir', async () => {
+    execFileSync('mkfifo', [path.join(sessionsDir(), '831.0123abcd.key')]);
+    await writeSessionFile('831.json', JSON.stringify({ sessionId: 'visible', kind: 'interactive' }));
+    await alive(831);
+    const before = await snapshotTree(claudeDir);
+    const result = check.runningSessions([]);
+    expect(await settles(result)).toBe('settled');
+    expect(await result).toEqual([{ pid: 831, sessionId: 'visible', kind: 'interactive' }]);
+    expect(await snapshotTree(claudeDir)).toEqual(before);
+  });
+});
