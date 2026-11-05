@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import { WarningDialog } from '../dialogs/WarningDialog';
+import { ErrorMessage } from '../feedback/ErrorMessage';
+import { Spinner } from '../feedback/ProgressIndicator';
+import { PowerIcon } from '../icons/Icons';
 import type { SessionState } from './live-session-store';
 
 interface StopSessionButtonProps {
@@ -8,34 +12,46 @@ interface StopSessionButtonProps {
 
 export function StopSessionButton({ sessionId, state }: StopSessionButtonProps) {
   const [confirming, setConfirming] = useState(false);
+  const [stopping, setStopping] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   if (state === 'ended') return null;
 
-  const stop = () => {
+  const stop = async () => {
     setConfirming(false);
-    void fetch(`/api/sessions/${encodeURIComponent(sessionId)}/stop`, { method: 'POST' }).catch(() => {});
+    setFailed(false);
+    setStopping(true);
+    // On success the button stays busy until the state becomes "ended".
+    try {
+      const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/stop`, { method: 'POST' });
+      if (!response.ok) throw new Error(String(response.status));
+    } catch {
+      setStopping(false);
+      setFailed(true);
+    }
   };
 
   return (
     <>
-      <button type="button" onClick={() => (state === 'working' ? setConfirming(true) : stop())}>
+      <button
+        type="button"
+        className="button-danger"
+        disabled={stopping}
+        aria-busy={stopping || undefined}
+        onClick={() => (state === 'working' ? setConfirming(true) : void stop())}
+      >
+        {stopping ? <Spinner /> : <PowerIcon />}
         Termina
       </button>
+      {failed && <ErrorMessage>Terminazione della sessione non riuscita.</ErrorMessage>}
       {confirming && (
-        <div className="modal-backdrop">
-          <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="stop-session-title">
-            <h2 id="stop-session-title">Terminare la sessione?</h2>
-            <p>La sessione è in lavorazione. Il lavoro in corso si interrompe.</p>
-            <div className="modal-actions">
-              <button type="button" onClick={() => setConfirming(false)} autoFocus>
-                Annulla
-              </button>
-              <button type="button" onClick={stop}>
-                Termina
-              </button>
-            </div>
-          </div>
-        </div>
+        <WarningDialog
+          title="Terminare la sessione?"
+          description="La sessione è in lavorazione. Il lavoro in corso si interrompe."
+          primaryLabel="Termina"
+          onPrimary={() => void stop()}
+          onCancel={() => setConfirming(false)}
+        />
       )}
     </>
   );

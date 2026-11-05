@@ -7,7 +7,8 @@
 | StartSessionRoute | REST endpoint | `src/server/sessions/start-session-route.ts` | `POST /api/sessions`: starts a session in an existing folder | `specs/start-session-route.md` |
 | StopSessionRoute | REST endpoint | `src/server/sessions/stop-session-route.ts` | `POST /api/sessions/:id/stop`: stops the CLI process, SIGTERM then SIGKILL | `specs/stop-session-route.md` |
 | AttachSessionRoute | REST endpoint (WebSocket) | `src/server/sessions/attach-session-route.ts` | `GET /api/sessions/:id/attach`: snapshot, live output, input and resize | `specs/attach-session-route.md` |
-| SessionView | UI component | `src/web/sessions/SessionView.tsx` | xterm.js terminal attached to a session, with "Interrompi" and "Termina" | `specs/session-view.md` |
+| SessionView | UI component | `src/web/sessions/SessionView.tsx` | SessionHeader with "Interrompi", "Termina" and the Ctrl+Shift+L hint above the xterm.js terminal attached to a session | `specs/session-view.md` |
+| SessionHeader | UI component | `src/web/sessions/SessionHeader.tsx` | Bar above the open session: label, state, folder and its actions | `specs/session-header.md` |
 | StopSessionButton | UI component | `src/web/sessions/StopSessionButton.tsx` | "Termina" button of the open session, with confirmation when working | `specs/stop-session-button.md` |
 | HookSettings | configuration | `src/server/sessions/hook-settings.ts`, `src/server/sessions/hook-forwarder.mjs` | Claude Code settings file whose hooks post each event to the server | `specs/hook-settings.md` |
 | SessionStateTracker | backend service | `src/server/sessions/session-state-tracker.ts` | State, label, last activity and Claude Code session id of each session, with change listeners | `specs/session-state-tracker.md` |
@@ -15,6 +16,7 @@
 | SessionListRoute | REST endpoint | `src/server/sessions/session-list-route.ts` | `GET /api/sessions`: the hosted and external sessions with their summary | `specs/session-list-route.md` |
 | SessionEventsRoute | REST endpoint (WebSocket) | `src/server/sessions/session-events-route.ts` | `GET /api/sessions/events`: pushes each session change to the pages | `specs/session-events-route.md` |
 | orderSessions | frontend function | `src/web/sessions/session-order.ts` | List order: needs input first, then latest activity | `specs/session-order.md` |
-| LiveSessionStore | frontend service | `src/web/sessions/live-session-store.ts` | Session list in the page, loaded once and kept current by events | `specs/live-session-store.md` |
+| LiveSessionStore | frontend service | `src/web/sessions/live-session-store.ts` | Session list in the page and its load status, loaded once and kept current by events | `specs/live-session-store.md` |
 | SessionList | UI component | `src/web/sessions/SessionList.tsx` | Panel with one entry per session; a click opens it | `specs/session-list.md` |
-| NeedsInputCounter | UI component | `src/web/sessions/NeedsInputCounter.tsx` | Header counter of the sessions in "Richiede input" | `specs/needs-input-counter.md` |
+| NeedsInputCounter | UI component | `src/web/sessions/NeedsInputCounter.tsx` | Sidebar counter of the sessions in "Richiede input" | `specs/needs-input-counter.md` |
+| StateBadge | UI component | `src/web/sessions/StateBadge.tsx` | Icon, colour and Italian name of a session state | `specs/state-badge.md` |

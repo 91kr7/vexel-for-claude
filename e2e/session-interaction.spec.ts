@@ -29,7 +29,7 @@ const focusTerminal = (page: Page) => page.locator('.xterm-screen').click();
 
 /** Opens the chooser and waits for its initial listing of the home folder. */
 async function openChooser(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Nuova sessione' }).click();
+  await page.getByRole('complementary').getByRole('button', { name: 'Nuova sessione' }).click();
   await expect(pathField(page)).toHaveValue(os.homedir());
 }
 
@@ -130,8 +130,13 @@ test('the terminal follows the size of its container', async ({ page }) => {
   };
   const before = await lastSize();
   await page.setViewportSize({ width: 700, height: 400 });
-  await expect.poll(async () => (await lastSize()).cols).toBeLessThan(before.cols);
-  expect((await lastSize()).rows).toBeLessThan(before.rows);
+  // Both at once: a late first fit of the larger window can arrive after the resize.
+  await expect
+    .poll(async () => {
+      const now = await lastSize();
+      return now.cols < before.cols && now.rows < before.rows;
+    })
+    .toBe(true);
 });
 
 test('the terminal shows the disconnection when the session ends', async ({ page }) => {
@@ -143,7 +148,7 @@ test('the terminal shows the disconnection when the session ends', async ({ page
 
 test('a new session becomes the open one; "Annulla" keeps the open session', async ({ page }) => {
   await startSession(page, projectA);
-  await page.getByRole('button', { name: 'Nuova sessione' }).click();
+  await page.getByRole('complementary').getByRole('button', { name: 'Nuova sessione' }).click();
   await page.getByRole('button', { name: 'Annulla' }).click();
   await expect(chooser(page)).toBeHidden();
   await expect(terminal(page)).toContainText(`CWD:${projectA}`);
@@ -153,7 +158,7 @@ test('a new session becomes the open one; "Annulla" keeps the open session', asy
 });
 
 test('a path typed right after the chooser opens is the folder of the session', async ({ page }) => {
-  await page.getByRole('button', { name: 'Nuova sessione' }).click();
+  await page.getByRole('complementary').getByRole('button', { name: 'Nuova sessione' }).click();
   // A home listing landing inside fill(), between its select-all and its insert, appends the typed path to it.
   await expect(pathField(page)).toHaveValue(os.homedir());
   await pathField(page).fill(projectB);
@@ -174,7 +179,7 @@ test('a home listing that ends after the user typed does not replace the typed p
       await route.continue();
     },
   );
-  await page.getByRole('button', { name: 'Nuova sessione' }).click();
+  await page.getByRole('complementary').getByRole('button', { name: 'Nuova sessione' }).click();
   await expect.poll(() => homeRequested).toBe(true);
   await pathField(page).fill(projectB);
   const homeListed = page.waitForResponse(
@@ -229,6 +234,6 @@ test.describe('folder chooser errors', () => {
     await page.route('**/api/sessions', (route) => route.abort());
     await pathField(page).fill(projectA);
     await page.getByRole('button', { name: 'Avvia sessione' }).click();
-    await expectErrorAndNoSession(page, 'Operazione non riuscita.');
+    await expectErrorAndNoSession(page, 'Avvio della sessione non riuscito.');
   });
 });

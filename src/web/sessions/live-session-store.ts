@@ -11,6 +11,8 @@ export interface SessionSummary {
   external?: true;
 }
 
+export type LoadStatus = 'loading' | 'ready' | 'error';
+
 type SessionEvent = { type: 'session'; session: SessionSummary } | { type: 'session-removed'; id: string };
 
 function isSessionEvent(value: unknown): value is SessionEvent {
@@ -23,6 +25,7 @@ export class LiveSessionStore {
   readonly #origin: string;
   readonly #listeners = new Set<() => void>();
   #sessions: readonly SessionSummary[] = [];
+  #status: LoadStatus = 'loading';
   #stopCurrent: (() => void) | undefined;
 
   constructor(origin: string) {
@@ -34,6 +37,7 @@ export class LiveSessionStore {
     const socket = new WebSocket(`${this.#origin.replace(/^http/, 'ws')}/api/sessions/events`);
     const listeners = new AbortController();
     let pending: SessionEvent[] | undefined = [];
+    this.#setStatus('loading');
 
     socket.addEventListener(
       'message',
@@ -54,18 +58,24 @@ export class LiveSessionStore {
       'open',
       () => {
         void fetch(`${this.#origin}/api/sessions`, { signal: listeners.signal })
-          .then((response) => response.json() as Promise<SessionSummary[]>)
+          .then((response) => (response.ok ? (response.json() as Promise<SessionSummary[]>) : Promise.reject(new Error())))
           .then((sessions) => {
             if (listeners.signal.aborted) return;
             const events = pending ?? [];
             pending = undefined;
             this.#sessions = sessions;
+            if (this.#status === 'loading') this.#status = 'ready';
             this.#apply(events);
           })
-          .catch(() => {});
+          .catch(() => {
+            if (!listeners.signal.aborted) this.#setStatus('error');
+          });
       },
       { signal: listeners.signal },
     );
+    const fail = () => this.#setStatus('error');
+    socket.addEventListener('close', fail, { signal: listeners.signal });
+    socket.addEventListener('error', fail, { signal: listeners.signal });
 
     this.#stopCurrent = () => {
       listeners.abort();
@@ -85,6 +95,14 @@ export class LiveSessionStore {
 
   getSnapshot = (): readonly SessionSummary[] => this.#sessions;
 
+  getStatus = (): LoadStatus => this.#status;
+
+  #setStatus(status: LoadStatus): void {
+    if (this.#status === status) return;
+    this.#status = status;
+    for (const listener of this.#listeners) listener();
+  }
+
   #apply(events: SessionEvent[]): void {
     let next = [...this.#sessions];
     for (const event of events) {
@@ -101,11 +119,13 @@ export class LiveSessionStore {
   }
 }
 
-export function useLiveSessions(): readonly SessionSummary[] {
+export function useLiveSessions(): { sessions: readonly SessionSummary[]; status: LoadStatus } {
   const [store] = useState(() => new LiveSessionStore(window.location.origin));
   useEffect(() => {
     store.start();
     return () => store.stop();
   }, [store]);
-  return useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const sessions = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const status = useSyncExternalStore(store.subscribe, store.getStatus);
+  return { sessions, status };
 }

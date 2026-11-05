@@ -42,7 +42,7 @@ async function postHook(request: APIRequestContext, id: string, event: Record<st
 }
 
 async function startViaUi(page: Page, folder: string): Promise<string> {
-  await page.getByRole('button', { name: 'Nuova sessione' }).click();
+  await page.getByRole('complementary').getByRole('button', { name: 'Nuova sessione' }).click();
   await expect(pathField(page)).toHaveValue(os.homedir());
   await pathField(page).fill(folder);
   const started = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/sessions' && r.request().method() === 'POST');

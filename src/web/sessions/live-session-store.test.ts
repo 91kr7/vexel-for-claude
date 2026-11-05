@@ -54,16 +54,27 @@ class FakeWebSocket {
     this.#emit('message', new MessageEvent('message', { data }));
   }
 
-  #emit(type: 'open' | 'message', event: Event): void {
+  serverClose(code = 1006): void {
+    this.readyState = 3;
+    this.#emit('close', Object.assign(new Event('close'), { code, wasClean: code === 1000 }));
+  }
+
+  fail(): void {
+    this.#emit('error', new Event('error'));
+    this.serverClose();
+  }
+
+  #emit(type: 'open' | 'message' | 'close' | 'error', event: Event): void {
     for (const listener of [...(this.#listeners.get(type) ?? [])]) listener(event);
-    if (type === 'open') this.onopen?.(event);
-    else this.onmessage?.(event);
+    this[`on${type}`]?.(event);
   }
 }
 
 interface PendingLoad {
   url: string;
   resolve(sessions: SessionSummary[]): void;
+  answer(status: number): void;
+  fail(): void;
 }
 
 let loads: PendingLoad[];
@@ -103,12 +114,14 @@ beforeEach(() => {
     'fetch',
     vi.fn(
       (input: string | URL | Request) =>
-        new Promise<Response>((resolve) => {
+        new Promise<Response>((resolve, reject) => {
           const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
           loads.push({
             url,
             resolve: (sessions) =>
               resolve(new Response(JSON.stringify(sessions), { status: 200, headers: { 'content-type': 'application/json' } })),
+            answer: (status) => resolve(new Response(JSON.stringify({ error: 'internal' }), { status, headers: { 'content-type': 'application/json' } })),
+            fail: () => reject(new TypeError('Failed to fetch')),
           });
         }),
     ),
@@ -281,5 +294,122 @@ describe('LiveSessionStore', () => {
       ['ext-1', true],
       ['ext-2', true],
     ]);
+  });
+
+  describe('load status', () => {
+    // plan-claude_sessions_client-ui_redesign/REQ-29, LiveSessionStore: loading from start() until the first list
+    it('is loading from start until the first list arrives, then ready', async () => {
+      const store = new LiveSessionStore(ORIGIN);
+      store.start();
+      expect(store.getStatus()).toBe('loading');
+      lastSocket().open();
+      await flush();
+      expect(store.getStatus()).toBe('loading');
+      loads[0]?.resolve([summary('a')]);
+      await flush();
+      expect(store.getStatus()).toBe('ready');
+    });
+
+    // plan-claude_sessions_client-ui_redesign/REQ-29, LiveSessionStore: an empty first list is a loaded list
+    it('is ready after an empty first list', async () => {
+      const store = new LiveSessionStore(ORIGIN);
+      await loaded(store, []);
+      expect(store.getStatus()).toBe('ready');
+    });
+
+    // plan-claude_sessions_client-ui_redesign/REQ-30, LiveSessionStore: a network error on the list request
+    it('is error when the list request fails, and the list stays as it was', async () => {
+      const store = new LiveSessionStore(ORIGIN);
+      store.start();
+      lastSocket().open();
+      await flush();
+      loads[0]?.fail();
+      await flush();
+      expect(store.getStatus()).toBe('error');
+      expect(store.getSnapshot()).toEqual([]);
+    });
+
+    // plan-claude_sessions_client-ui_redesign/REQ-30, LiveSessionStore: a non-2xx answer to the list request
+    it.each([404, 500, 503])('is error when the list request answers %i, and the list stays as it was', async (status) => {
+      const store = new LiveSessionStore(ORIGIN);
+      store.start();
+      lastSocket().open();
+      await flush();
+      loads[0]?.answer(status);
+      await flush();
+      expect(store.getStatus()).toBe('error');
+      expect(store.getSnapshot()).toEqual([]);
+    });
+
+    // plan-claude_sessions_client-ui_redesign/REQ-30, LiveSessionStore: the events socket closes while the store runs
+    it('turns to error when the events socket closes, and keeps the entries already received', async () => {
+      const store = new LiveSessionStore(ORIGIN);
+      await loaded(store, [summary('a')]);
+      lastSocket().serverClose(1006);
+      expect(store.getStatus()).toBe('error');
+      expect(ids(store)).toEqual(['a:idle']);
+    });
+
+    // plan-claude_sessions_client-ui_redesign/REQ-30, LiveSessionStore: the events socket fails while the store runs
+    it('turns to error when the events socket fails', async () => {
+      const store = new LiveSessionStore(ORIGIN);
+      await loaded(store, [summary('a')]);
+      lastSocket().fail();
+      expect(store.getStatus()).toBe('error');
+    });
+
+    // plan-claude_sessions_client-ui_redesign/REQ-30, LiveSessionStore: a socket that never opens is an error too
+    it('turns to error when the events socket closes before the list loads', async () => {
+      const store = new LiveSessionStore(ORIGIN);
+      store.start();
+      lastSocket().serverClose(1006);
+      await flush();
+      expect(store.getStatus()).toBe('error');
+    });
+
+    // LiveSessionStore: the status stays error and the store does not reconnect
+    it('stays error with no new connection after the socket closes', async () => {
+      const store = new LiveSessionStore(ORIGIN);
+      await loaded(store, [summary('a')]);
+      lastSocket().serverClose(1006);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(store.getStatus()).toBe('error');
+      expect(FakeWebSocket.instances).toHaveLength(1);
+      expect(loads).toHaveLength(1);
+    });
+
+    // LiveSessionStore: a socket closed by stop() is not an error
+    it('stop does not change the status, even when the socket then reports its close', async () => {
+      const store = new LiveSessionStore(ORIGIN);
+      await loaded(store, [summary('a')]);
+      const socket = lastSocket();
+      store.stop();
+      socket.serverClose(1005);
+      await flush();
+      expect(store.getStatus()).toBe('ready');
+    });
+
+    // LiveSessionStore: stop() during the load keeps the status loading
+    it('stop during the load keeps the status loading, whatever the pending load does', async () => {
+      const store = new LiveSessionStore(ORIGIN);
+      store.start();
+      lastSocket().open();
+      await flush();
+      store.stop();
+      loads[0]?.fail();
+      await flush();
+      expect(store.getStatus()).toBe('loading');
+    });
+
+    // LiveSessionStore: a status change calls the subscribe listeners
+    it('calls the listeners when the status changes, also with no change of the list', async () => {
+      const store = new LiveSessionStore(ORIGIN);
+      await loaded(store, [summary('a')]);
+      const listener = vi.fn();
+      store.subscribe(listener);
+      lastSocket().serverClose(1006);
+      expect(listener).toHaveBeenCalled();
+      expect(store.getStatus()).toBe('error');
+    });
   });
 });

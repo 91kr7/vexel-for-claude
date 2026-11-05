@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Dialog } from '../dialogs/Dialog';
+import { ErrorMessage } from '../feedback/ErrorMessage';
+import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { RunningElsewhereWarning } from './RunningElsewhereWarning';
 
 interface PastSessionEntry {
@@ -22,11 +25,12 @@ const ERROR_MESSAGES: Record<string, string> = {
   session_not_found: 'La sessione non esiste più.',
   folder_not_found: 'La cartella del progetto non esiste.',
 };
-const GENERIC_ERROR = 'Operazione non riuscita.';
+const LOAD_FAILED = 'Caricamento delle sessioni passate non riuscito.';
+const RESUME_FAILED = 'Ripresa della sessione non riuscita.';
 
 async function errorMessage(response: Response): Promise<string> {
   const body = (await response.json().catch(() => null)) as { error?: string } | null;
-  return ERROR_MESSAGES[body?.error ?? ''] ?? GENERIC_ERROR;
+  return ERROR_MESSAGES[body?.error ?? ''] ?? RESUME_FAILED;
 }
 
 function formatDate(iso: string): string {
@@ -39,6 +43,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [warningFor, setWarningFor] = useState<string | null>(null);
+  const [selected, setSelected] = useState<PastSessionEntry | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -49,7 +54,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
         if (active) setGroups(loaded);
       })
       .catch(() => {
-        if (active) setError(GENERIC_ERROR);
+        if (active) setError(LOAD_FAILED);
       });
     return () => {
       active = false;
@@ -68,7 +73,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
       const { id } = (await response.json()) as { id: string };
       onResumed(id);
     } catch {
-      setError(GENERIC_ERROR);
+      setError(RESUME_FAILED);
     } finally {
       setBusy(false);
     }
@@ -80,11 +85,20 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal resume-dialog" role="dialog" aria-modal="true" aria-labelledby="resume-dialog-title">
-        <h2 id="resume-dialog-title">Riprendi sessione</h2>
+    <>
+      <Dialog
+        title="Riprendi sessione"
+        className="resume-dialog"
+        primaryLabel="Riprendi"
+        onPrimary={() => {
+          if (selected !== null) choose(selected);
+        }}
+        primaryDisabled={selected === null}
+        primaryBusy={busy}
+        onCancel={onCancel}
+      >
         <div className="past-session-groups">
-          {groups === null && error === null && <p>Caricamento…</p>}
+          {groups === null && error === null && <ProgressIndicator />}
           {groups?.length === 0 && <p>Nessuna sessione da riprendere.</p>}
           {groups?.map((group) => (
             <section key={group.folder} className="past-session-group" aria-label={group.folder}>
@@ -92,7 +106,13 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
               <ul>
                 {group.sessions.map((session) => (
                   <li key={session.id}>
-                    <button type="button" className="past-session" disabled={busy} onClick={() => choose(session)}>
+                    <button
+                      type="button"
+                      className="past-session"
+                      aria-pressed={selected?.id === session.id}
+                      disabled={busy}
+                      onClick={() => setSelected(session)}
+                    >
                       <span className="past-session-label">{session.label}</span>
                       <span className="past-session-meta">
                         <time dateTime={session.lastActivity}>{formatDate(session.lastActivity)}</time>
@@ -107,17 +127,8 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
             </section>
           ))}
         </div>
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
-        <div className="modal-actions">
-          <button type="button" onClick={onCancel}>
-            Annulla
-          </button>
-        </div>
-      </div>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+      </Dialog>
       {warningFor !== null && (
         <RunningElsewhereWarning
           onConfirm={() => {
@@ -128,6 +139,6 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
           onCancel={() => setWarningFor(null)}
         />
       )}
-    </div>
+    </>
   );
 }
