@@ -53,4 +53,25 @@ describe('StateBadge', () => {
   it.each(table)('StateIcon for %s is the icon of the table alone', (state, _, Icon) => {
     expect(renderToStaticMarkup(<StateIcon state={state} />)).toBe(renderToStaticMarkup(<Icon />));
   });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29, StateBadge variant chip: classes chip, label-l and state-chip, no state-badge
+  it.each(table)('%s as chip renders one span with the classes "chip", "label-l" and "state-chip", and not "state-badge"', (state) => {
+    const html = renderToStaticMarkup(<StateBadge state={state} variant="chip" />);
+    const root = html.match(/^<span\b([^>]*)>[\s\S]*<\/span>$/);
+    expect(root, html).not.toBeNull();
+    const classes = root?.[1]?.match(/\sclass="([^"]*)"/)?.[1]?.split(/\s+/) ?? [];
+    expect(classes).toEqual(expect.arrayContaining(['chip', 'label-l', 'state-chip']));
+    expect(classes).not.toContain('state-badge');
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29: the chip shows the icon of the table, then the state name, as its only text
+  it.each(table)('%s as chip shows its icon and then the name "%s"', (state, name, Icon) => {
+    const html = renderToStaticMarkup(<StateBadge state={state} variant="chip" />);
+    const inner = html.replace(/^<span\b[^>]*>/, '').replace(/<\/span>$/, '');
+    const icon = renderToStaticMarkup(<Icon />);
+    expect(inner.startsWith(icon), 'the icon comes first').toBe(true);
+    expect(inner.slice(icon.length).trim()).toBe(name);
+    expect(html.match(/<svg\b/g)).toHaveLength(1);
+    expect(html).not.toMatch(/\saria-label=/);
+  });
 });

@@ -304,15 +304,16 @@ test('the rail "Riprendi" and the session toolbar buttons carry decorative icons
   }
 });
 
-// WebEntry: primary and danger buttons take their look from the tokens; others are secondary
-test('empty state "Nuova sessione" looks primary, toolbar "Termina" looks danger, "Riprendi sessione" looks secondary', async ({ page, request }) => {
+// WebEntry: primary buttons take their look from the tokens; others are secondary.
+// StopSessionButton (plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29): "Termina" is the tonal error button.
+test('empty state "Nuova sessione" looks primary, header "Termina" looks danger, "Riprendi sessione" looks secondary', async ({ page, request }) => {
   const look = async (button: Locator) => ({
     bg: await resolved(page, await button.evaluate((el) => getComputedStyle(el).backgroundColor)),
     fg: await resolved(page, await button.evaluate((el) => getComputedStyle(el).color)),
   });
   const mainButton = (name: string) => page.getByRole('main').getByRole('button', { name, exact: true });
   await page.goto('/');
-  const t = await tokens(page, ['--color-primary', '--color-on-primary', '--color-danger', '--color-on-danger']);
+  const t = await tokens(page, ['--color-primary', '--color-on-primary', '--error-container', '--on-error-container']);
   await page.mouse.move(0, 0);
   const primary = await look(mainButton('Nuova sessione'));
   expect(primary).toEqual({ bg: await resolved(page, t['--color-primary']!), fg: await resolved(page, t['--color-on-primary']!) });
@@ -321,7 +322,7 @@ test('empty state "Nuova sessione" looks primary, toolbar "Termina" looks danger
   await openSession(page, request, 'button-looks');
   await page.mouse.move(0, 0);
   const danger = await look(page.getByRole('button', { name: 'Termina', exact: true }));
-  expect(danger).toEqual({ bg: await resolved(page, t['--color-danger']!), fg: await resolved(page, t['--color-on-danger']!) });
+  expect(danger).toEqual({ bg: await resolved(page, t['--error-container']!), fg: await resolved(page, t['--on-error-container']!) });
   expect(secondary.bg).not.toEqual(primary.bg);
   expect(secondary.bg).not.toEqual(danger.bg);
 });

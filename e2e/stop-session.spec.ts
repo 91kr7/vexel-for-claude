@@ -76,7 +76,8 @@ test('the user stops an idle session', async ({ page, request }) => {
   await expect(entry(page, folder)).toContainText('Terminata');
   expect(stops.map((r) => [r.method(), r.postData()])).toEqual([['POST', null]]);
   await expect(page.getByRole('button', { name: 'Termina', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Interrompi' })).toBeVisible();
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-31
+  await expect(page.getByRole('button', { name: 'Interrompi' })).toHaveCount(0);
 });
 
 // plan-claude_sessions_client/REQ-23

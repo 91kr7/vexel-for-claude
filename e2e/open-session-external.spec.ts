@@ -114,9 +114,10 @@ test('the external view shows its header, a read-only notice that stays in view,
   await page.goto('/');
   await listEntry(page, folder).click(SCAN);
 
-  await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('Sistema il carrello del negozio');
+  // SessionHeader: the h2 is the folder name, the line is "<label> · <folder>".
+  await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('negozio');
   await expect(header(page)).toContainText('In attesa');
-  await expect(header(page).getByText(folder, { exact: true })).toBeVisible();
+  await expect(header(page).getByText(`Sistema il carrello del negozio · ${folder}`, { exact: true })).toBeVisible();
   await expect(header(page).getByRole('button', { name: 'Riprendi qui' })).toBeVisible();
   const notice = header(page).getByText('Sola lettura', { exact: true });
   await expect(notice).toBeVisible();
@@ -148,8 +149,8 @@ test('the external view shows its header, a read-only notice that stays in view,
   // The header keeps the last known data after the entry leaves the list.
   process.kill('SIGKILL');
   await expect(listEntry(page, folder)).toHaveCount(0, SCAN);
-  await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('Sistema il carrello del negozio');
-  await expect(header(page).getByText(folder, { exact: true })).toBeVisible();
+  await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('negozio');
+  await expect(header(page).getByText(`Sistema il carrello del negozio · ${folder}`, { exact: true })).toBeVisible();
   await expect(notice).toBeVisible();
 });
 
