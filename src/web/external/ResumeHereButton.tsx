@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { RunningElsewhereWarning } from '../history/RunningElsewhereWarning';
+import { LogInIcon } from '../icons/Icons';
 
 interface ResumeHereButtonProps {
   sessionId: string;
@@ -39,6 +40,7 @@ export function ResumeHereButton({ sessionId, onResumed }: ResumeHereButtonProps
   return (
     <>
       <button type="button" disabled={busy} onClick={() => setWarning(true)}>
+        <LogInIcon />
         Riprendi qui
       </button>
       {error && (

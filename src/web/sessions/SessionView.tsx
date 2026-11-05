@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
+import { CircleStopIcon } from '../icons/Icons';
 import type { SessionState } from './live-session-store';
 import { StopSessionButton } from './StopSessionButton';
 
@@ -79,6 +80,7 @@ export function SessionView({ sessionId, state }: SessionViewProps) {
     <div className="session-view">
       <div className="session-toolbar">
         <button type="button" onClick={interrupt}>
+          <CircleStopIcon />
           Interrompi
         </button>
         <StopSessionButton sessionId={sessionId} state={state} />

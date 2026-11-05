@@ -1,0 +1,91 @@
+:root {
+  --font-ui: 'Inter Variable', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'DejaVu Sans Mono', 'Liberation Mono', monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-md: 0.875rem;
+  --font-size-lg: 1rem;
+  --font-size-xl: 1.125rem;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --line-height: 1.45;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-full: 999px;
+
+  --icon-size: 1rem;
+
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  --terminal-background: #000000;
+
+  --color-bg: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-surface-hover: #eceef2;
+  --color-surface-selected: #e1e7f2;
+  --color-border: #d6dae0;
+  --color-border-strong: #7a828d;
+  --color-text: #1d2025;
+  --color-text-muted: #5a626d;
+  --color-primary: #2457c5;
+  --color-primary-hover: #1d47a3;
+  --color-on-primary: #ffffff;
+  --color-danger: #b8232b;
+  --color-danger-hover: #991d23;
+  --color-on-danger: #ffffff;
+  --color-focus-ring: #2457c5;
+  --color-backdrop: rgb(15 18 24 / 45%);
+  --shadow-modal: 0 12px 32px rgb(15 18 24 / 18%);
+
+  --color-state-needs-input: #8a4f00;
+  --color-state-needs-input-bg: #fff1d1;
+  --color-state-working: #1d5fc4;
+  --color-state-idle: #2a7637;
+  --color-state-ended: #5f6670;
+  --color-external: #6a3db5;
+  --color-error: #b3261e;
+  --color-warning: #8a4f00;
+  --color-success: #2a7637;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #16181c;
+    --color-surface: #1f2227;
+    --color-surface-hover: #2a2e35;
+    --color-surface-selected: #2f3747;
+    --color-border: #353a42;
+    --color-border-strong: #7f8793;
+    --color-text: #e6e8eb;
+    --color-text-muted: #a3aab4;
+    --color-primary: #3466d6;
+    --color-primary-hover: #2a57bd;
+    --color-on-primary: #ffffff;
+    --color-danger: #cc3d44;
+    --color-danger-hover: #a82c32;
+    --color-on-danger: #ffffff;
+    --color-focus-ring: #7ea8ff;
+    --color-backdrop: rgb(0 0 0 / 60%);
+    --shadow-modal: 0 12px 32px rgb(0 0 0 / 45%);
+
+    --color-state-needs-input: #f2b14c;
+    --color-state-needs-input-bg: #3b2e15;
+    --color-state-working: #7cb0ff;
+    --color-state-idle: #6cc47c;
+    --color-state-ended: #9ba2ac;
+    --color-external: #b89df2;
+    --color-error: #ff8f85;
+    --color-warning: #f2b14c;
+    --color-success: #6cc47c;
+  }
+}

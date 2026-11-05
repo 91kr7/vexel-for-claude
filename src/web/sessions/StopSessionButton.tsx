@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PowerIcon } from '../icons/Icons';
 import type { SessionState } from './live-session-store';
 
 interface StopSessionButtonProps {
@@ -18,7 +19,12 @@ export function StopSessionButton({ sessionId, state }: StopSessionButtonProps) 
 
   return (
     <>
-      <button type="button" onClick={() => (state === 'working' ? setConfirming(true) : stop())}>
+      <button
+        type="button"
+        className="button-danger"
+        onClick={() => (state === 'working' ? setConfirming(true) : stop())}
+      >
+        <PowerIcon />
         Termina
       </button>
       {confirming && (

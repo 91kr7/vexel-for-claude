@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ConversationView } from './external/ConversationView';
 import { FolderChooser } from './folders/FolderChooser';
 import { ResumeDialog } from './history/ResumeDialog';
+import { HistoryIcon, PlusIcon } from './icons/Icons';
 import { NeedsInputCounter } from './sessions/NeedsInputCounter';
 import { SessionList } from './sessions/SessionList';
 import { SessionView } from './sessions/SessionView';
@@ -30,9 +31,11 @@ export function AppLayout() {
         <NeedsInputCounter sessions={sessions} />
         <div className="app-header-actions">
           <button type="button" onClick={() => setResuming(true)}>
+            <HistoryIcon />
             Riprendi sessione
           </button>
-          <button type="button" onClick={() => setChoosingFolder(true)}>
+          <button type="button" className="button-primary" onClick={() => setChoosingFolder(true)}>
+            <PlusIcon />
             Nuova sessione
           </button>
         </div>

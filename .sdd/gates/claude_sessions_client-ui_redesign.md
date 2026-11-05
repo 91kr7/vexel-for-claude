@@ -14,3 +14,5 @@
 | 2026-11-05 | plan | question planner | decided | Folder chooser Enter: lists a different typed folder, starts on the listed one; smallest change satisfying REQ-26 |
 | 2026-11-05 | plan | G3 coverage | pass | Resume history select + "Riprendi" accepted: interaction in scope per analysis Summary, REQ-25 |
 | 2026-11-05 | plan | requirements.md constraint reworded | pass | Old-plan tests may change labels/UI steps; no REQ changed |
+| 2026-11-05 | dev | G4 visual-language | pass | Build green on re-run; no external URL in built page |
+| 2026-11-05 | dev | divergence developer | decided | Icons and button variants on 4 existing buttons: needed by REQ-6 scenario; no label or role change. Inter woff2 from @fontsource-variable/inter 5.3.0, OFL |
