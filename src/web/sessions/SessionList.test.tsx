@@ -146,14 +146,21 @@ describe('SessionList', () => {
     }
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-21: a working entry shows the progress bar under the label, the others none
-  it('shows the progress bar under the label of a working entry only', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-21, SessionList spec: a hosted working entry shows the progress bar under the label, the others none
+  it('shows the progress bar under the label of a hosted working entry only', () => {
     const bar = renderToStaticMarkup(<ProgressBar />);
     const [working] = entries(renderList([session('w', 'working', now)]));
     expect(working?.html).toContain(bar);
     expect(working!.html.indexOf(bar)).toBeGreaterThan(working!.html.indexOf('etichetta w'));
     for (const state of ['idle', 'needs_input', 'ended'] as SessionState[]) {
       expect(renderList([session('s', state, now)]), state).not.toContain('progress-bar');
+    }
+  });
+
+  // SessionList spec, gatekeeper decision on the boards: an external entry never shows the progress bar
+  it('shows no progress bar on an external entry, working or not', () => {
+    for (const state of ['working', 'idle', 'needs_input'] as SessionState[]) {
+      expect(renderList([external('mobile-app', state, now)]), state).not.toContain('progress-bar');
     }
   });
 

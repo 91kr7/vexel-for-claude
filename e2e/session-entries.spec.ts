@@ -384,6 +384,7 @@ test('working, external, ended and open entries match their board variants in bo
   await expect(bar).toBeVisible();
   await expect(entry(page, open).locator('.progress-bar')).toHaveCount(0);
   await expect(entry(page, ended).locator('.progress-bar')).toHaveCount(0);
+  await expect(entry(page, outside).locator('.progress-bar'), 'external working entry: no bar').toHaveCount(0);
   const label = await labelOf(request, workingId);
   const [labelBox, barBox] = [await entry(page, working).getByTitle(label, { exact: true }).boundingBox(), await bar.boundingBox()];
   expect(barBox!.y - (labelBox!.y + labelBox!.height), 'bar 6 px under the label').toBeCloseTo(6, 0);

@@ -129,9 +129,15 @@ async function expectPageFits(page: Page, width: number): Promise<void> {
     'rail Riprendi': button(rail(page), 'Riprendi'),
     list: list(page),
   };
-  const chip = panel(page).getByRole('status').locator('.chip');
-  if (await chip.count()) head.chip = chip;
   await expectNoOverlap(head);
+  // Sessions of other spec files can make the chip appear or vanish at any time: check it only while it is shown.
+  const [chip] = await panel(page).getByRole('status').locator('.chip').all();
+  const chipBox = chip ? await chip.boundingBox({ timeout: 1000 }).catch(() => null) : null;
+  if (chipBox) {
+    for (const [name, locator] of Object.entries(head)) {
+      expect(overlaps(chipBox, await box(locator)), `chip overlaps ${name}`).toBe(false);
+    }
+  }
 }
 
 async function computedColour(page: Page, cssValue: string): Promise<string> {
