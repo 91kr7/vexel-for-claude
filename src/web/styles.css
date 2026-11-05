@@ -232,3 +232,63 @@ button {
   justify-content: flex-end;
   gap: 0.5rem;
 }
+
+.app-header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.warning-backdrop {
+  z-index: 110;
+}
+
+.past-session-groups {
+  flex: 1;
+  min-height: 8rem;
+  overflow-y: auto;
+}
+
+.past-session-group h3 {
+  margin: 0.75rem 0 0.25rem;
+  font-size: 0.85rem;
+  color: #999;
+  overflow-wrap: anywhere;
+}
+
+.past-session-group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.past-session {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #383838;
+}
+
+.past-session:hover:not(:disabled) {
+  background: #3a3a3a;
+}
+
+.past-session-label {
+  overflow-wrap: anywhere;
+}
+
+.past-session-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.past-session-running {
+  color: #e5a33a;
+}

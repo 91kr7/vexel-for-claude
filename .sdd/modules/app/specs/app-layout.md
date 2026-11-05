@@ -11,7 +11,7 @@ type: UI page
 ## Contract
 
 Description:
-- a header with the title "Sessioni Claude", the NeedsInputCounter and the button "Nuova sessione".
+- a header with the title "Sessioni Claude", the NeedsInputCounter and the buttons "Riprendi sessione" and "Nuova sessione".
 - below it, the SessionList on the left and the open-session area on the right. Together they fill the rest of the window.
 
 Shows:
@@ -23,13 +23,17 @@ Actions:
 - "Nuova sessione" → opens FolderChooser.
 - FolderChooser starts a session → the chooser closes and the new session becomes the open one.
 - FolderChooser cancelled → the chooser closes; the open session does not change.
+- "Riprendi sessione" → opens ResumeDialog.
+- ResumeDialog resumes a session → the dialog closes and the resumed session becomes the open one.
+- ResumeDialog cancelled → the dialog closes; the open session does not change.
 - click on a SessionList entry → that session becomes the open one. The other sessions keep running.
 
 ## Dependencies
 
 - FolderChooser (module folders)
+- ResumeDialog (module history)
 - SessionView, SessionList, NeedsInputCounter, LiveSessionStore (module sessions)
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-17`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`, `plan-claude_sessions_client/REQ-23`
+- `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-17`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`

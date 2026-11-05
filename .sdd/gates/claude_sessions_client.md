@@ -38,3 +38,5 @@
 | 2026-11-05 | plan | G2 requirements REQ-29..36 | pass | |
 | 2026-11-05 | plan | G3 coverage external-sessions | pass | |
 | 2026-11-05 | plan | suggestion planner | decided | rs/INT-2 matches `sessionId` from `~/.claude/sessions/<digits>.json` instead of cwd; exact warning for REQ-27/REQ-35 |
+| 2026-11-05 | dev | G4 resume-session | pass | Build green on re-run; diff explained by INT-1..INT-10; `package.json` port change is the human's, committed apart |
+| 2026-11-05 | dev | divergence developer | decided | Resumed session gets its Claude id at track time; sessions with no user message not listed; no visible REQ change |

@@ -11,13 +11,15 @@ type: backend service
 ## Contract
 
 - `new SessionStateTracker(options?)` → `options.now` gives the current time. Default: the system clock.
-- `track(session)` → `session` is `{ id, cwd, onExit(listener) }` (a registry Session fits).
+- `track(session)` → `session` is `{ id, cwd, onExit(listener), resumedFrom? }` (a registry Session fits).
   - adds the session: state `idle`, label = last segment of `cwd`, last activity = now.
+  - `resumedFrom` given → Claude Code session id = `resumedFrom.sessionId`. When `resumedFrom.firstUserMessage` gives a non-empty label (label rule below), that is the label and it is final.
   - notifies the new summary.
   - when the session process exits → state `ended`, last activity = now, notified.
 - `applyHookEvent(id, event) → boolean` → `false` when the id is unknown, `true` otherwise (also when the event changes nothing).
 - `applyUserInput(id, data)` → user input typed in the session (see rules).
 - `get(id) → SessionSummary | undefined`.
+- `liveClaudeSessionIds() → Set<string>` → the Claude Code session ids of the tracked sessions that have not ended. A session with no known id adds nothing.
 - `list() → SessionSummary[]` → every tracked session, in start order, ended ones included.
 - `onChange(listener) → unsubscribe` → `listener(summary)` after every change.
 
@@ -48,9 +50,10 @@ any other event or notification_type              → no change at all
 - `idle_prompt` is only a correction. It does not touch last activity. When the session is already idle, it changes nothing and notifies nothing.
 - Label: the first `UserPromptSubmit` with a non-empty `prompt` sets it. Whitespace runs become one space, the ends are trimmed, and the first 80 characters are kept. After that the label never changes.
 - User input → last activity = now, notified. When `data` is exactly `\x1b` (Esc) or `\x03` (Ctrl+C) and the state is `working` or `needs_input`, the state becomes `idle`. Longer input that starts with `\x1b` (an arrow key) is not an interrupt.
+- Claude Code session id: each hook event with a non-empty string `session_id` sets it, the last one wins. This holds for every event, also one that changes no state. It notifies nothing.
 - `ended` is final: later hook events and input change nothing and notify nothing.
 - Sessions stay in the list until the server stops.
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-12`, `plan-claude_sessions_client/REQ-13`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-20`
+- `plan-claude_sessions_client/REQ-12`, `plan-claude_sessions_client/REQ-13`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-20`, `plan-claude_sessions_client/REQ-25`

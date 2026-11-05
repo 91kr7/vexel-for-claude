@@ -13,9 +13,16 @@ export interface SessionViewer {
   end(): void;
 }
 
+export interface ResumeInfo {
+  sessionId: string;
+  firstUserMessage?: string | null;
+}
+
 export class Session {
   readonly id: string;
   readonly cwd: string;
+  readonly pid: number;
+  readonly resumedFrom: ResumeInfo | undefined;
   readonly #pty: pty.IPty;
   readonly #mirror: TerminalMirror;
   readonly #viewers = new Set<SessionViewer>();
@@ -24,9 +31,17 @@ export class Session {
   #killTimer: NodeJS.Timeout | undefined;
   #exited = false;
 
-  constructor(id: string, cwd: string, command: string, args: string[], stopTimeoutMs = DEFAULT_STOP_TIMEOUT_MS) {
+  constructor(
+    id: string,
+    cwd: string,
+    command: string,
+    args: string[],
+    stopTimeoutMs = DEFAULT_STOP_TIMEOUT_MS,
+    resumedFrom?: ResumeInfo,
+  ) {
     this.id = id;
     this.cwd = cwd;
+    this.resumedFrom = resumedFrom;
     this.#stopTimeoutMs = stopTimeoutMs;
     this.#mirror = new TerminalMirror(INITIAL_COLS, INITIAL_ROWS);
     this.#pty = pty.spawn(command, args, {
@@ -36,6 +51,7 @@ export class Session {
       cwd,
       env: { ...process.env, TERM: 'xterm-256color', COLORTERM: 'truecolor', [SESSION_ID_VARIABLE]: id },
     });
+    this.pid = this.#pty.pid;
     this.#pty.onData((data) => {
       this.#mirror.write(data);
       for (const viewer of this.#viewers) viewer.send(data);
@@ -127,8 +143,9 @@ export class SessionRegistry {
     this.#stopTimeoutMs = options.stopTimeoutMs;
   }
 
-  start(cwd: string): Session {
-    const session = new Session(randomUUID(), cwd, this.#command, this.#args, this.#stopTimeoutMs);
+  start(cwd: string, resume?: ResumeInfo): Session {
+    const args = resume ? [...this.#args, '--resume', resume.sessionId] : this.#args;
+    const session = new Session(randomUUID(), cwd, this.#command, args, this.#stopTimeoutMs, resume);
     this.#sessions.set(session.id, session);
     for (const listener of this.#startListeners) listener(session);
     return session;
@@ -141,5 +158,9 @@ export class SessionRegistry {
 
   get(id: string): Session | undefined {
     return this.#sessions.get(id);
+  }
+
+  list(): Session[] {
+    return [...this.#sessions.values()];
   }
 }

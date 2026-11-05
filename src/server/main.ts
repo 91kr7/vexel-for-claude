@@ -4,6 +4,10 @@ import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
 import { registerFolderRoute } from './folders/folder-route.js';
+import { ExternalSessionCheck } from './history/external-session-check.js';
+import { registerPastSessionListRoute } from './history/past-session-list-route.js';
+import { registerResumeSessionRoute } from './history/resume-session-route.js';
+import { SessionHistory } from './history/session-history.js';
 import { registerLocalAccessGuard } from './local-access-guard.js';
 import { registerAttachSessionRoute } from './sessions/attach-session-route.js';
 import { registerHookEventRoute } from './sessions/hook-event-route.js';
@@ -24,6 +28,8 @@ const settingsPath = await writeHookSettings(`http://${HOST}:${port}`);
 const registry = new SessionRegistry({ settingsPath });
 const tracker = new SessionStateTracker();
 registry.onSessionStart((session) => tracker.track(session));
+const history = new SessionHistory();
+const externalCheck = new ExternalSessionCheck();
 
 registerLocalAccessGuard(app);
 await app.register(fastifyWebsocket);
@@ -36,6 +42,8 @@ registerSessionListRoute(app, tracker);
 registerSessionEventsRoute(app, tracker);
 registerHookEventRoute(app, tracker);
 registerFolderRoute(app);
+registerPastSessionListRoute(app, { history, externalCheck, registry, tracker });
+registerResumeSessionRoute(app, { history, registry });
 
 // In dev the page comes from Vite, so dist/web may not exist yet.
 if (existsSync(webRoot)) {

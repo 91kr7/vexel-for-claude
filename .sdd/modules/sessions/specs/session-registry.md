@@ -14,18 +14,22 @@ type: backend service
   - `options.command` → the CLI executable. Default: the environment variable `AI_CLIENT_CLAUDE_CLI`, or `claude` when the variable is not set or empty.
   - `options.settingsPath` → a Claude Code settings file (HookSettings). Default: none.
   - `options.stopTimeoutMs` → how long `Session.stop()` waits before `SIGKILL`. Default: 5000.
-- `start(cwd) → Session` → spawns the CLI in a pty, with `cwd` as working directory.
-  - arguments: `--settings <settingsPath>` when `settingsPath` is set, none otherwise. Never a permission flag.
+- `start(cwd, resume?) → Session` → spawns the CLI in a pty, with `cwd` as working directory.
+  - `resume` → `{ sessionId, firstUserMessage? }`: the past Claude Code session to resume.
+  - arguments: `--settings <settingsPath>` when `settingsPath` is set, then `--resume <sessionId>` when `resume` is given. Nothing else. Never a permission flag.
   - environment: the server environment, plus `TERM=xterm-256color`, `COLORTERM=truecolor` and `AI_CLIENT_SESSION_ID=<session id>`.
   - initial size: 120 columns, 30 rows.
   - the session gets a new unique id (UUID).
   - calls every `onSessionStart` listener with the session before it returns.
 - `onSessionStart(listener) → unsubscribe` → `listener(session)` for each session started later.
 - `get(id) → Session | undefined` → the session with that id, also after its process ended.
+- `list() → Session[]` → every session started, in start order, ended ones included.
 
 `Session`:
 
 - `id`, `cwd` → read only.
+- `pid` → the process id of the CLI.
+- `resumedFrom` → the `resume` given to `start`, or `undefined`.
 - `exited` → `true` once the process ended.
 - `onExit(listener) → unsubscribe` → `listener()` once, when the process ends. A listener added after the end is never called.
 - `write(data)` → sends the data to the pty as typed input. No effect after the process ended.
@@ -53,4 +57,4 @@ type: backend service
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-6`, `plan-claude_sessions_client/REQ-7`, `plan-claude_sessions_client/REQ-10`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-23`
+- `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-6`, `plan-claude_sessions_client/REQ-7`, `plan-claude_sessions_client/REQ-10`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-26`

@@ -17,6 +17,7 @@ type: configuration
 - one shared SessionRegistry that starts the CLI with that settings file.
 - one shared SessionStateTracker. It tracks every session the registry starts.
 - registers StartSessionRoute, StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute and FolderRoute.
+- one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute and ResumeSessionRoute with them, the registry and the tracker.
 - serves the files of `dist/web` when the folder exists.
 
 ## Rules and invariants
@@ -28,7 +29,8 @@ type: configuration
 - LocalAccessGuard
 - SessionRegistry, SessionStateTracker, HookSettings, StartSessionRoute, StopSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute (module sessions)
 - FolderRoute (module folders)
+- SessionHistory, ExternalSessionCheck, PastSessionListRoute, ResumeSessionRoute (module history)
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`, `plan-claude_sessions_client/REQ-23`
+- `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`
