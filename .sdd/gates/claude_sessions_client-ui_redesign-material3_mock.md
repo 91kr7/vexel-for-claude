@@ -42,3 +42,5 @@
 | 2026-11-05 | dev | foreign change package.json | decided | `start` port 4001→4004 changed outside the cycle during the run; not committed, not reverted; for human review |
 | 2026-11-05 | dev | divergence hosted-session hint row | decided | Fixed 48 px row, no wrap (G1, no pty resize); panel min-height 0 instead of 560 px; same at 1440x900 |
 | 2026-11-05 | dev | divergence hosted-session folder path | decided | Absolute path shown; "~/" in the board is sample data (plan decision "paths are shown in full") |
+| 2026-11-05 | test | G5 hosted-session round 1 | sent back | Tester expects 42 px Interrompi; board is a `button`, border-box by UA default, so 40 px total is the board value; test fixed by tester |
+| 2026-11-05 | test | G5 hosted-session round 2 | pass | Re-run by gatekeeper: 53 e2e green; unit 84 green by tester |
