@@ -32,7 +32,7 @@ test.afterAll(async () => {
   await rm(E2E_CLAUDE_DIR, { recursive: true, force: true });
 });
 
-const list = (page: Page) => page.getByRole('navigation', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const listEntry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
 const view = (page: Page) => page.locator('.conversation-view');
 const header = (page: Page) => view(page).locator('.session-header');
@@ -109,7 +109,7 @@ test('the external view shows its header, a read-only notice that stays in view,
     ...chatter(folder, 30),
   ]);
   const process = await runInTerminal('e2e-open-read', folder);
-  await page.setViewportSize({ width: 1600, height: 800 });
+  await page.setViewportSize({ width: 1920, height: 800 });
 
   await page.goto('/');
   await listEntry(page, folder).click(SCAN);

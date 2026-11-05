@@ -39,9 +39,17 @@ describe('SessionList', () => {
   // plan-claude_sessions_client/REQ-11: empty list
   it('shows "Nessuna sessione." and no entry when there is no session', () => {
     const html = renderList([]);
-    expect(html).toMatch(/^<nav/);
     expect(textOf(html)).toContain('Nessuna sessione.');
     expect(entries(html)).toEqual([]);
+  });
+
+  // SessionList "Description": not a landmark, the list panel of AppLayout carries the label "Elenco sessioni"
+  it('is not a landmark and carries no "Elenco sessioni" label', () => {
+    for (const html of [renderList([]), renderList([session('a', 'idle', now)])]) {
+      expect(html).not.toMatch(/^<(?:nav|section|aside|main)\b/);
+      expect(html).not.toMatch(/^<\w+[^>]*\srole="(?:navigation|region|complementary)"/);
+      expect(html).not.toContain('Elenco sessioni');
+    }
   });
 
   // plan-claude_sessions_client/REQ-11, REQ-12: one entry per session with label, folder, state name and last activity

@@ -15,7 +15,7 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
-const list = (page: Page) => page.getByRole('navigation', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const stopButton = (page: Page) => page.getByRole('button', { name: 'Termina', exact: true }).first();

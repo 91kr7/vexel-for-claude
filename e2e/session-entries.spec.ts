@@ -39,13 +39,13 @@ test.afterEach(async ({ request }) => {
   }
 });
 
-const sidebar = (page: Page) => page.getByRole('complementary');
+const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione principale' });
 const mainArea = (page: Page) => page.getByRole('main');
-const list = (page: Page) => page.getByRole('navigation', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const entries = (page: Page) => list(page).getByRole('button');
 const entry = (page: Page, folder: string) => entries(page).filter({ hasText: folder });
 const badge = (target: Locator) => target.locator('.state-badge');
-const counter = (page: Page) => sidebar(page).getByRole('status').filter({ hasText: 'Richiede input:' });
+const counter = (page: Page) => list(page).getByRole('status').filter({ hasText: 'richiede input' });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
 /** Shows in the page only the sessions of this file: other spec files start sessions on the same server at the same time. */
@@ -267,7 +267,7 @@ test('a session that needs input shows its state and stands out more than every 
   expect(cues(asking, background), 'needs input has more emphasis cues than the open entry').toBeGreaterThan(cues(open, background));
   expect(cues(open, background), 'the open entry has more emphasis cues than a plain entry').toBeGreaterThan(cues(other, background));
 
-  await expect(counter(page)).toHaveText('Richiede input: 1');
+  await expect(counter(page)).toHaveText('1 richiede input');
   await expect(counter(page)).toBeInViewport();
   await expect(terminal(page)).toContainText(`CWD:${calm}`);
   await expect(entry(page, calm)).toHaveAttribute('aria-current', 'true');
@@ -382,10 +382,10 @@ test('entries show their parts in the same places, only the open one is highligh
     await expect(entry(page, folder).getByTitle(TOOLTIP)).toHaveCount(0);
   }
 
-  await expect(counter(page)).toBeVisible();
-  const counterBox = await counter(page).boundingBox();
-  const listBox = await list(page).boundingBox();
-  expect(counterBox!.y + counterBox!.height, 'counter above the list').toBeLessThanOrEqual(listBox!.y + 0.5);
+  await expect(counter(page), 'no session needs input: no chip').toHaveCount(0);
+  const titleBox = await list(page).getByRole('heading', { level: 1, name: 'Sessioni', exact: true }).boundingBox();
+  const firstEntryBox = await entries(page).first().boundingBox();
+  expect(titleBox!.y + titleBox!.height, 'panel head above the entries').toBeLessThanOrEqual(firstEntryBox!.y + 0.5);
 });
 
 // plan-claude_sessions_client-ui_redesign/REQ-11; SessionList: a long label or folder is cut with an ellipsis and its tooltip is the full value
@@ -425,56 +425,52 @@ test('a long label and a long folder are cut on one line with an ellipsis and ke
   }
 });
 
-// plan-claude_sessions_client-ui_redesign/REQ-14; NeedsInputCounter: neutral at 0, needs-input look and icon above 0
-test('the counter is neutral at 0, turns to the needs-input look with its icon above 0, and stays visible whatever the main area shows', async ({
+// plan-claude_sessions_client-ui_redesign/REQ-14, plan-claude_sessions_client-ui_redesign-material3_mock/REQ-11; NeedsInputCounter: hidden at 0, amber chip with its icon above 0
+test('the counter is hidden at 0, shows the amber chip with its icon above 0, and stays visible whatever the main area shows', async ({
   page,
   request,
 }) => {
   await showOnlyOwnSessions(page);
+  const loaded = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/sessions' && r.request().method() === 'GET');
   await page.goto('/');
-  await expect(counter(page)).toHaveText('Richiede input: 0');
-  await expect(counter(page)).not.toHaveClass(/\bactive\b/);
-  await expect(counter(page).locator('svg')).toHaveCount(0);
-  expect(await counter(page).evaluate((el) => getComputedStyle(el).color), 'muted text').toBe(await token(page, '--color-text-muted'));
-  expect(await counter(page).evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(await token(page, '--color-state-needs-input-bg'));
-
-  await sidebar(page).getByRole('button', { name: 'Nuova sessione', exact: true }).click();
-  await expect(page.getByRole('form', { name: 'Scegli la cartella del progetto' })).toBeVisible();
-  await expect(counter(page), 'visible with the folder chooser').toBeInViewport();
-  await page.getByRole('button', { name: 'Annulla' }).click();
-  await sidebar(page).getByRole('button', { name: 'Riprendi sessione', exact: true }).click();
-  const resume = page.getByRole('dialog', { name: 'Riprendi sessione' });
-  await expect(resume).toBeVisible();
-  await expect(counter(page), 'visible with the resume dialog').toBeInViewport();
-  await resume.getByRole('button', { name: 'Annulla', exact: true }).click();
+  await loaded;
+  await expect(list(page).getByRole('status').filter({ hasText: 'Caricamento' })).toHaveCount(0);
+  await expect(counter(page)).toHaveCount(0);
+  await expect(list(page).getByRole('status').locator('svg')).toHaveCount(0);
 
   const folder = await newFolder('counter');
   const id = await startViaApi(request, folder);
   await postHook(request, id, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
-  await expect(counter(page)).toHaveText('Richiede input: 1');
-  await expect(counter(page)).toHaveClass(/\bactive\b/);
-  const icon = counter(page).locator('svg.icon');
+  await expect(counter(page)).toHaveText('1 richiede input');
+  const chip = counter(page).locator('.chip');
+  const icon = chip.locator('svg.icon');
   await expect(icon).toBeVisible();
-  const iconBeforeText = await counter(page).evaluate((el) => {
+  const iconBeforeText = await chip.evaluate((el) => {
     const svg = el.querySelector('svg')!.getBoundingClientRect();
-    const text = [...el.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && /Richiede input/.test(n.textContent ?? ''));
+    const text = [...el.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && /richiede input/.test(n.textContent ?? ''));
     const range = document.createRange();
     range.selectNodeContents(text!);
     return svg.right <= range.getBoundingClientRect().left + 0.5;
   });
   expect(iconBeforeText, 'icon before the text').toBe(true);
-  expect(await icon.innerHTML()).toBe(await badge(entry(page, folder)).locator('svg.icon').innerHTML());
-  const style = await counter(page).evaluate((el) => {
+  const style = await chip.evaluate((el) => {
     const s = getComputedStyle(el);
-    return { color: s.color, background: s.backgroundColor, weight: s.fontWeight };
+    return { color: s.color, background: s.backgroundColor };
   });
-  expect(style).toEqual({
-    color: await token(page, '--color-state-needs-input'),
-    background: await token(page, '--color-state-needs-input-bg'),
-    weight: await token(page, '--font-weight-semibold', 'fontWeight'),
-  });
+  expect(style.background).toBe(await token(page, '--attn-container'));
+  expect(style.color).toBe(await token(page, '--on-attn-container'));
+
+  await rail(page).getByRole('button', { name: 'Nuova sessione', exact: true }).click();
+  await expect(page.getByRole('form', { name: 'Scegli la cartella del progetto' })).toBeVisible();
+  await expect(counter(page), 'visible with the folder chooser').toBeInViewport();
+  await page.getByRole('button', { name: 'Annulla' }).click();
+  await rail(page).getByRole('button', { name: 'Riprendi', exact: true }).click();
+  const resume = page.getByRole('dialog', { name: 'Riprendi sessione' });
+  await expect(resume).toBeVisible();
+  await expect(counter(page), 'visible with the resume dialog').toBeInViewport();
+  await resume.getByRole('button', { name: 'Annulla', exact: true }).click();
 
   await openFromList(page, folder);
   await expect(counter(page), 'visible with an open session').toBeInViewport();
-  await expect(counter(page)).toHaveText('Richiede input: 1');
+  await expect(counter(page)).toHaveText('1 richiede input');
 });

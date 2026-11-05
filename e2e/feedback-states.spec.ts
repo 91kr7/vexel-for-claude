@@ -22,9 +22,9 @@ test.afterAll(async () => {
   await rm(projectsRoot, { recursive: true, force: true });
 });
 
-const sidebar = (page: Page) => page.getByRole('complementary');
+const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione principale' });
 const mainArea = (page: Page) => page.getByRole('main');
-const list = (page: Page) => page.getByRole('navigation', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const entry = (page: Page, text: string) => list(page).getByRole('button').filter({ hasText: text });
 const header = (page: Page) => mainArea(page).locator('.session-header');
 const terminal = (page: Page) => page.locator('.xterm-rows');
@@ -187,7 +187,7 @@ async function pressUntilFocused(page: Page, target: Locator, key: 'Tab' | 'Shif
 const terminalHasFocus = (page: Page) => page.evaluate(() => document.activeElement?.classList.contains('xterm-helper-textarea') ?? false);
 
 async function openChooser(page: Page): Promise<void> {
-  await button(sidebar(page), 'Nuova sessione').click();
+  await button(rail(page), 'Nuova sessione').click();
   await expect(chooser(page)).toBeVisible();
   await expect(pathField(page)).toHaveValue(os.homedir());
 }
@@ -399,25 +399,36 @@ test.describe('open session', () => {
     await expect.poll(() => terminalHasFocus(page)).toBe(true);
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-4, AppLayout: with no entry for the open session the focus goes to the first enabled sidebar button
-  test('Ctrl+Shift+L with no list entry for the open session moves the focus to "Nuova sessione"', async ({ page, request }) => {
+  // plan-claude_sessions_client-ui_redesign/REQ-4, AppLayout: with no list entry the focus goes to "Nuova sessione" in the rail
+  test('Ctrl+Shift+L with an empty list moves the focus to "Nuova sessione" in the rail', async ({ page, request }) => {
     const folder = await newFolder('leave-without-entry');
     const id = await startViaApi(request, folder);
+    await page.route(
+      (url) => url.pathname === '/api/sessions',
+      async (route) => {
+        if (route.request().method() !== 'GET') return route.fallback();
+        const response = await route.fetch();
+        await route.fulfill({ response, json: ((await response.json()) as { id: string }[]).filter((s) => s.id === id) });
+      },
+    );
     let events: WebSocketRoute | undefined;
     await page.routeWebSocket(EVENTS, (ws) => {
       events = ws;
-      ws.connectToServer();
+      ws.connectToServer().onMessage((message) => {
+        const frame = JSON.parse(String(message)) as { type?: string; session?: { id?: string } };
+        if (frame.type !== 'session' || frame.session?.id === id) ws.send(message);
+      });
     });
     await page.goto('/');
     await entry(page, folder).click();
     await expect(terminal(page)).toContainText('READY');
     events!.send(JSON.stringify({ type: 'session-removed', id }));
-    await expect(entry(page, folder)).toHaveCount(0);
+    await expect(list(page).getByRole('button')).toHaveCount(0);
     await page.locator('.xterm-screen').click();
 
     await page.keyboard.press('Control+Shift+L');
 
-    await expect(button(sidebar(page), 'Nuova sessione')).toBeFocused();
+    await expect(button(rail(page), 'Nuova sessione')).toBeFocused();
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-5, SessionView: the terminal area shows the focus ring only while it has the focus
@@ -532,7 +543,7 @@ test.describe('folder chooser', () => {
     await newFolder('listing/root/sub');
     await page.goto('/');
     const first = await hold(page, '**/api/folders**', 'GET');
-    await button(sidebar(page), 'Nuova sessione').click();
+    await button(rail(page), 'Nuova sessione').click();
     await expect(loading(chooser(page))).toBeVisible();
     first.release();
     await expect(pathField(page)).toHaveValue(os.homedir());
@@ -557,7 +568,7 @@ test.describe('folder chooser', () => {
     await page.route('**/api/folders**', fail(500));
     await page.goto('/');
 
-    await button(sidebar(page), 'Nuova sessione').click();
+    await button(rail(page), 'Nuova sessione').click();
 
     await expect(chooser(page).getByRole('alert')).toHaveText('Lettura della cartella non riuscita.');
     await expect(chooser(page)).toBeVisible();
@@ -608,7 +619,7 @@ test.describe('resume history', () => {
     const held = await hold(page, '**/api/past-sessions', 'GET');
     await page.goto('/');
 
-    await button(sidebar(page), 'Riprendi sessione').click();
+    await button(rail(page), 'Riprendi').click();
 
     await expect(loading(history(page))).toBeVisible();
     held.release((route) => route.fulfill({ json: [] }));
@@ -621,7 +632,7 @@ test.describe('resume history', () => {
     await page.route('**/api/past-sessions', fail(500));
     await page.goto('/');
 
-    await button(sidebar(page), 'Riprendi sessione').click();
+    await button(rail(page), 'Riprendi').click();
 
     await expect(history(page).getByRole('alert')).toHaveText('Caricamento delle sessioni passate non riuscito.');
     await expect(loading(history(page))).toHaveCount(0);
@@ -631,7 +642,7 @@ test.describe('resume history', () => {
   test('"Riprendi" is busy while the resume runs; a failed resume shows "Ripresa della sessione non riuscita."', async ({ page }) => {
     await page.route('**/api/past-sessions', (route) => route.fulfill({ json: pastSessions }));
     await page.goto('/');
-    await button(sidebar(page), 'Riprendi sessione').click();
+    await button(rail(page), 'Riprendi').click();
     await history(page).getByRole('button').filter({ hasText: 'Prima sessione passata' }).click();
     const held = await hold(page, '**/api/past-sessions/*/resume', 'POST');
 
@@ -717,15 +728,15 @@ for (const scheme of ['light', 'dark'] as const) {
       held.release();
     });
 
-    // plan-claude_sessions_client-ui_redesign/REQ-1, REQ-3, ErrorMessage: error colour with AA contrast, in the sidebar and in a dialog
-    test('an error message is in the error colour with AA contrast, in the sidebar and in a dialog', async ({ page }) => {
+    // plan-claude_sessions_client-ui_redesign/REQ-1, REQ-3, ErrorMessage: error colour with AA contrast, in the list panel and in a dialog
+    test('an error message is in the error colour with AA contrast, in the list panel and in a dialog', async ({ page }) => {
       await page.route('**/api/sessions', (route) => (route.request().method() === 'GET' ? fail(500)(route) : route.fallback()));
       await page.goto('/');
       await expect(list(page).getByRole('alert')).toHaveText(LOST_SERVER);
       await expectLook(page, list(page).getByRole('alert'), '--color-error');
 
       await page.route('**/api/past-sessions', fail(500));
-      await button(sidebar(page), 'Riprendi sessione').click();
+      await button(rail(page), 'Riprendi').click();
       await expect(history(page).getByRole('alert')).toBeVisible();
       await expectLook(page, history(page).getByRole('alert'), '--color-error');
     });
@@ -737,14 +748,14 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/');
       await expect(loading(list(page))).toHaveCount(0);
 
-      await pressUntilFocused(page, button(sidebar(page), 'Nuova sessione'));
+      await pressUntilFocused(page, button(rail(page), 'Nuova sessione'));
       await expectFocusMarked(page, '"Nuova sessione"');
       await page.keyboard.press('Enter');
       await expect(pathField(page)).toBeFocused();
       await expectFocusMarked(page, 'the path field');
       await page.keyboard.press('Escape');
       await expect(chooser(page)).toHaveCount(0);
-      await expect(button(sidebar(page), 'Nuova sessione')).toBeFocused();
+      await expect(button(rail(page), 'Nuova sessione')).toBeFocused();
       await expectFocusMarked(page, '"Nuova sessione" after Esc');
 
       await page.keyboard.press('Enter');
@@ -775,8 +786,8 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.keyboard.press('Enter');
       await expect(header(page)).toContainText('Terminata');
 
-      await pressUntilFocused(page, button(sidebar(page), 'Riprendi sessione'), 'Shift+Tab');
-      await expectFocusMarked(page, '"Riprendi sessione"');
+      await pressUntilFocused(page, button(rail(page), 'Riprendi'), 'Shift+Tab');
+      await expectFocusMarked(page, '"Riprendi"');
       await page.keyboard.press('Enter');
       await expect(history(page)).toContainText('Nessuna sessione da riprendere.');
       await expect.poll(() => history(page).evaluate((el) => el.contains(document.activeElement))).toBe(true);
@@ -784,7 +795,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expectFocusMarked(page, '"Annulla" in the resume history');
       await page.keyboard.press('Escape');
       await expect(history(page)).toHaveCount(0);
-      await expect(button(sidebar(page), 'Riprendi sessione')).toBeFocused();
+      await expect(button(rail(page), 'Riprendi')).toBeFocused();
     });
   });
 }

@@ -30,7 +30,7 @@ const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Sessione 
 const pastEntry = (page: Page, folder: string, label: string) =>
   dialog(page).getByRole('region', { name: folder }).getByRole('button').filter({ hasText: label });
 const resumeButton = (page: Page) => dialog(page).getByRole('button', { name: 'Riprendi', exact: true });
-const listEntry = (page: Page, label: string) => page.getByRole('navigation', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: label });
+const listEntry = (page: Page, label: string) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: label });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const isResumeRequest = (url: string, method: string) => /\/api\/past-sessions\/[^/]+\/resume$/.test(new URL(url).pathname) && method === 'POST';
 
@@ -64,7 +64,7 @@ async function runInTerminal(sessionId: string): Promise<void> {
 }
 
 async function openDialog(page: Page): Promise<void> {
-  await page.getByRole('complementary').getByRole('button', { name: 'Riprendi sessione' }).click();
+  await page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Riprendi', exact: true }).click();
   await expect(dialog(page)).toBeVisible();
   await expect(dialog(page)).not.toContainText('Caricamento…');
 }

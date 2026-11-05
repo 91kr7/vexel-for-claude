@@ -22,7 +22,7 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
-const list = (page: Page) => page.getByRole('navigation', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
@@ -141,7 +141,7 @@ async function contrastFailures(page: Page): Promise<string[]> {
 // plan-claude_sessions_client-ui_redesign/REQ-2
 test('the client is light on a light system and turns dark at once, with no reload, when the system turns dark', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('complementary').getByRole('button', { name: 'Nuova sessione' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Nuova sessione' })).toBeVisible();
   await page.evaluate(() => ((window as unknown as { noReloadMarker: boolean }).noReloadMarker = true));
 
   const lightBg = await resolved(page, await effectiveBackground(page.locator('body')));
@@ -233,7 +233,7 @@ test('with no internet connection the page and a session load their font and ico
     [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/["']/g, '')),
   );
   expect(new Set(loaded), 'Roboto Flex and Roboto Mono are loaded').toEqual(new Set(['Roboto Flex', 'Roboto Mono']));
-  await expect(page.getByRole('button', { name: 'Nuova sessione' }).locator('svg.icon')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Nuova sessione', exact: true }).locator('svg.icon')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Interrompi' }).locator('svg.icon')).toBeVisible();
 });
 
@@ -260,8 +260,8 @@ test('the UI uses the bundled Roboto Flex font and the terminal uses Roboto Mono
     return f && { weight: f.weight, display: f.display };
   });
   expect(face).toEqual({ weight: '400 800', display: 'swap' });
-  for (const name of ['Nuova sessione', 'Riprendi sessione']) {
-    const family = await page.getByRole('button', { name }).evaluate((el) => getComputedStyle(el).fontFamily);
+  for (const name of ['Nuova sessione', 'Riprendi']) {
+    const family = await page.getByRole('button', { name, exact: true }).evaluate((el) => getComputedStyle(el).fontFamily);
     expect(family, name).toMatch(/^["']?Roboto Flex/);
   }
   expect(await page.locator('body').evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Roboto Flex/);
@@ -269,7 +269,7 @@ test('the UI uses the bundled Roboto Flex font and the terminal uses Roboto Mono
 });
 
 // IconSet: each button keeps its accessible name and shows one decorative icon sized by --icon-size in its text colour
-test('the sidebar and session toolbar buttons carry decorative icons', async ({ page, request }) => {
+test('the rail "Riprendi" and the session toolbar buttons carry decorative icons', async ({ page, request }) => {
   await openSession(page, request, 'icons');
   const iconSize = await page.evaluate(() => {
     const probe = document.createElement('div');
@@ -282,8 +282,7 @@ test('the sidebar and session toolbar buttons carry decorative icons', async ({ 
   expect(iconSize).toBe(20);
 
   const buttons = [
-    page.getByRole('button', { name: 'Nuova sessione', exact: true }),
-    page.getByRole('button', { name: 'Riprendi sessione', exact: true }),
+    page.getByRole('button', { name: 'Riprendi', exact: true }),
     page.getByRole('button', { name: 'Interrompi', exact: true }),
     page.getByRole('button', { name: 'Termina', exact: true }),
   ];
@@ -306,20 +305,23 @@ test('the sidebar and session toolbar buttons carry decorative icons', async ({ 
 });
 
 // WebEntry: primary and danger buttons take their look from the tokens; others are secondary
-test('"Nuova sessione" looks primary, toolbar "Termina" looks danger, "Riprendi sessione" looks secondary', async ({ page, request }) => {
-  await openSession(page, request, 'button-looks');
-  const t = await tokens(page, ['--color-primary', '--color-on-primary', '--color-danger', '--color-on-danger']);
+test('empty state "Nuova sessione" looks primary, toolbar "Termina" looks danger, "Riprendi sessione" looks secondary', async ({ page, request }) => {
   const look = async (button: Locator) => ({
     bg: await resolved(page, await button.evaluate((el) => getComputedStyle(el).backgroundColor)),
     fg: await resolved(page, await button.evaluate((el) => getComputedStyle(el).color)),
   });
+  const mainButton = (name: string) => page.getByRole('main').getByRole('button', { name, exact: true });
+  await page.goto('/');
+  const t = await tokens(page, ['--color-primary', '--color-on-primary', '--color-danger', '--color-on-danger']);
   await page.mouse.move(0, 0);
-
-  const primary = await look(page.getByRole('button', { name: 'Nuova sessione' }));
+  const primary = await look(mainButton('Nuova sessione'));
   expect(primary).toEqual({ bg: await resolved(page, t['--color-primary']!), fg: await resolved(page, t['--color-on-primary']!) });
+  const secondary = await look(mainButton('Riprendi sessione'));
+
+  await openSession(page, request, 'button-looks');
+  await page.mouse.move(0, 0);
   const danger = await look(page.getByRole('button', { name: 'Termina', exact: true }));
   expect(danger).toEqual({ bg: await resolved(page, t['--color-danger']!), fg: await resolved(page, t['--color-on-danger']!) });
-  const secondary = await look(page.getByRole('button', { name: 'Riprendi sessione' }));
   expect(secondary.bg).not.toEqual(primary.bg);
   expect(secondary.bg).not.toEqual(danger.bg);
 });
@@ -327,7 +329,7 @@ test('"Nuova sessione" looks primary, toolbar "Termina" looks danger, "Riprendi 
 // WebEntry: the element focused from the keyboard shows a ring in --color-focus-ring
 test('a button focused from the keyboard shows the focus ring colour', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('complementary').getByRole('button', { name: 'Nuova sessione' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Nuova sessione' })).toBeVisible();
   const ring = await resolved(page, (await tokens(page, ['--color-focus-ring']))['--color-focus-ring']!);
 
   let focusedTag = '';

@@ -26,7 +26,7 @@ test.afterAll(async () => {
   await rm(projectsRoot, { recursive: true, force: true });
 });
 
-const sidebarButton = (page: Page, name: string) => page.getByRole('complementary').getByRole('button', { name });
+const railButton = (page: Page, name: string) => page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name, exact: true });
 const chooser = (page: Page) => page.getByRole('dialog', { name: 'Nuova sessione' });
 const pathField = (page: Page) => page.getByRole('textbox', { name: 'Cartella del progetto', exact: true });
 const history = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessione' });
@@ -35,7 +35,7 @@ const confirmation = (page: Page) => page.getByRole('alertdialog', { name: 'Term
 const action = (dialog: Locator, name: string) => dialog.getByRole('button', { name, exact: true });
 const pastEntry = (page: Page, folder: string, label: string) =>
   history(page).getByRole('region', { name: folder }).getByRole('button').filter({ hasText: label });
-const listEntry = (page: Page, folder: string) => page.getByRole('navigation', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: folder });
+const listEntry = (page: Page, folder: string) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: folder });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
 const isStartRequest = (url: string, method: string) => new URL(url).pathname === '/api/sessions' && method === 'POST';
@@ -91,7 +91,7 @@ async function newFolder(name: string): Promise<string> {
 
 /** Opens the chooser and waits for its initial listing of the home folder. */
 async function openChooser(page: Page): Promise<void> {
-  await sidebarButton(page, 'Nuova sessione').click();
+  await railButton(page, 'Nuova sessione').click();
   await expect(chooser(page)).toBeVisible();
   await expect(pathField(page)).toHaveValue(os.homedir());
 }
@@ -119,7 +119,7 @@ async function runInTerminal(sessionId: string): Promise<void> {
 }
 
 async function openHistory(page: Page): Promise<void> {
-  await sidebarButton(page, 'Riprendi sessione').click();
+  await railButton(page, 'Riprendi').click();
   await expect(history(page)).toBeVisible();
   await expect(history(page)).not.toContainText('Caricamento…');
 }
@@ -226,7 +226,7 @@ test.describe('folder chooser', () => {
     await page.keyboard.press('Escape');
 
     await expect(chooser(page)).toBeHidden();
-    await expect(sidebarButton(page, 'Nuova sessione')).toBeFocused();
+    await expect(railButton(page, 'Nuova sessione')).toBeFocused();
     await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
     expect(starts).toEqual([]);
   });
@@ -340,7 +340,7 @@ test.describe('resume history', () => {
     await page.keyboard.press('Escape');
 
     await expect(history(page)).toBeHidden();
-    await expect(sidebarButton(page, 'Riprendi sessione')).toBeFocused();
+    await expect(railButton(page, 'Riprendi')).toBeFocused();
     await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
     expect(resumes).toEqual([]);
   });

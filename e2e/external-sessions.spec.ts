@@ -32,9 +32,9 @@ test.afterAll(async () => {
   await rm(E2E_CLAUDE_DIR, { recursive: true, force: true });
 });
 
-const list = (page: Page) => page.getByRole('navigation', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const listEntry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
-const counter = (page: Page) => page.getByRole('status').filter({ hasText: 'Richiede input:' });
+const counter = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('status').filter({ hasText: 'richiede input' });
 const conversationView = (page: Page) => page.locator('.conversation-view');
 const items = (page: Page) => conversationView(page).getByRole('article');
 const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Sessione in esecuzione in un terminale' });
@@ -148,10 +148,12 @@ test('an external session that waits for a permission answer shows as working an
   await expect(entry).toContainText('In lavorazione', SCAN);
   await expect(entry).not.toContainText('Richiede input');
   await expect(entry).not.toHaveClass(/\bneeds-input\b/);
-  await expect(counter(page)).toBeVisible();
   const needsInputEntries = list(page).locator('.session-entry.needs-input');
   await expect
-    .poll(async () => (await counter(page).textContent()) === `Richiede input: ${await needsInputEntries.count()}`)
+    .poll(async () => {
+      const n = await needsInputEntries.count();
+      return n === 0 ? (await counter(page).count()) === 0 : (await counter(page).textContent())?.trim() === `${n} richiede input`;
+    })
     .toBe(true);
 });
 

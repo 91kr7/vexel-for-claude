@@ -26,3 +26,4 @@
 | 2026-11-05 | dev | divergence page-frame snackbar position | decided | Floats bottom-right of main until hosted-session INT-6 places it in the hint row; no pty resize |
 | 2026-11-05 | dev | divergence page-frame list landmark | decided | List root no longer `nav`: board labels the panel `section` "Elenco sessioni"; avoids duplicate landmark |
 | 2026-11-05 | dev | divergence page-frame counter at zero | decided | REQ-11 (newer) hides the chip at zero; the empty status element stays |
+| 2026-11-05 | test | G5 page-frame round 1 | sent back | Red: `e2e/session-entries.spec.ts:337` external entry 1.16 px taller (old plan REQ-11); code defect, line with the Esterna mark |

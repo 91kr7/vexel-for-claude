@@ -144,7 +144,7 @@ const aliases: [string, string][] = [
   ['--terminal-background', '--term-bg'],
 ];
 
-const list = (page: Page) => page.getByRole('navigation', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const mainArea = (page: Page) => page.getByRole('main');
@@ -358,7 +358,7 @@ for (const scheme of ['light', 'dark'] as const) {
     // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-1, REQ-2 (human acceptance: light-blue accents, grey surfaces)
     test('"Nuova sessione" is light blue and the page surface is neutral grey', async ({ page }) => {
       await page.goto('/');
-      const button = page.getByRole('complementary').getByRole('button', { name: 'Nuova sessione', exact: true });
+      const button = emptyButton(page, 'Nuova sessione');
       await expect(button).toBeVisible();
       await page.mouse.move(0, 0);
       const accent = await resolved(page, await button.evaluate((el) => getComputedStyle(el).backgroundColor));
@@ -491,8 +491,9 @@ test('the UI text is in Roboto Flex and the mono class is in Roboto Mono', async
   await expect(emptyButton(page, 'Nuova sessione')).toBeVisible();
   const family = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontFamily);
   expect(await family(page.locator('body'))).toMatch(/^["']?Roboto Flex["']?,/);
-  for (const name of ['Nuova sessione', 'Riprendi sessione']) {
-    expect(await family(page.getByRole('complementary').getByRole('button', { name, exact: true })), name).toMatch(/^["']?Roboto Flex["']?,/);
+  for (const name of ['Sessioni', 'Riprendi']) {
+    const railButton = page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name, exact: true });
+    expect(await family(railButton), name).toMatch(/^["']?Roboto Flex["']?,/);
   }
   expect(await family(page.getByText('Nessuna sessione aperta.'))).toMatch(/^["']?Roboto Flex["']?,/);
   const mono = await page.evaluate(() => {

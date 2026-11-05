@@ -21,7 +21,7 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
-const list = (page: Page) => page.getByRole('navigation', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
 const mainArea = (page: Page) => page.getByRole('main');
 const header = (page: Page) => mainArea(page).locator('.session-header');
@@ -46,8 +46,19 @@ async function box(locator: Locator): Promise<Box> {
   return b!;
 }
 
+/** The box inside the padding: AppLayout gives the main area its own padding. */
+async function contentBox(locator: Locator): Promise<Box> {
+  const b = await box(locator);
+  const pad = await locator.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return [s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft].map(parseFloat);
+  });
+  const [top, right, bottom, left] = pad as [number, number, number, number];
+  return { x: b.x + left, y: b.y + top, width: b.width - left - right, height: b.height - top - bottom };
+}
+
 async function expectTerminalFillsMainBelowHeader(page: Page): Promise<void> {
-  const main = await box(mainArea(page));
+  const main = await contentBox(mainArea(page));
   const head = await box(header(page));
   const term = await box(terminalBox(page));
   expect(Math.abs(head.y - main.y)).toBeLessThanOrEqual(TOLERANCE);
