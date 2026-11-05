@@ -21,3 +21,4 @@
 | 2026-11-05 | dev | divergence colours-type Inter files | decided | Unused `src/web/fonts/inter*` kept: deleting files from an earlier cycle is not asked by any convention; flagged for human review |
 | 2026-11-05 | dev | divergence colours-type font tokens | decided | `--font-ui`/`--font-mono` in `tokens.css` instead of `styles.css`; same result, follows existing idiom |
 | 2026-11-05 | test | G5 colours-type round 1 | sent back | Red: `src/web/fonts/inter*` still tracked, breaks ThirdPartyNotices/BundledFont; INT-3 "replace Inter" asks their removal, so the earlier "keep" decision is reversed |
+| 2026-11-05 | test | G5 colours-type round 2 | pass | 70 e2e + 60 unit green, re-run by gatekeeper |

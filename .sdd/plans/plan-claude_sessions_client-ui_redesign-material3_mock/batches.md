@@ -8,7 +8,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [colours-type](batches/batch-colours-type.md) | Colours and type | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5 | — | implemented | The user sees light-blue accents, grey surfaces and the Roboto fonts |
+| [colours-type](batches/batch-colours-type.md) | Colours and type | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5 | — | certified | The user sees light-blue accents, grey surfaces and the Roboto fonts |
 | [page-frame](batches/batch-page-frame.md) | Page frame | REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15 | colours-type | todo | The user opens a waiting session from the snackbar |
 | [session-list](batches/batch-session-list.md) | Session list | REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28 | page-frame | todo | The user answers a waiting session from its card |
 | [hosted-session](batches/batch-hosted-session.md) | Hosted session | REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34 | session-list | todo | The user works in a hosted session laid out as the board |
