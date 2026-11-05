@@ -23,3 +23,5 @@
 | 2026-11-05 | dev | G4 session-list | pass | Build green on re-run; diff explained by INT-1..INT-15 |
 | 2026-11-05 | dev | divergence developer | decided | Command hooks instead of http hooks; INT-15 met by existing SessionView key; temp hook folder per server start accepted (small, outside projects) |
 | 2026-11-05 | test | G5 session-list | sent back | 3 red from code: HookEventRoute malformed JSON body; LiveSessionStore stop() vs pending load; non-JSON frame throws |
+| 2026-11-05 | dev | G4 session-list fix | pass | Diff limited to hook-event-route.ts and live-session-store.ts; build green |
+| 2026-11-05 | test | G5 session-list | pass | Fix needed no new tests: orchestrator re-ran 200 unit and 24 e2e, all green |
