@@ -20,7 +20,7 @@ REQ-13 (label) starts in batch `session-list` and closes here, with the label of
 | ID | Type | Where | What | REQ | Depends |
 |----|------|-------|------|-----|---------|
 | INT-1 | create | backend, history area | History reader: lists the session files under `~/.claude/projects`. For each one it gives the session id, the project folder (`cwd` of the entries), the first user message and the time of the last change. It opens files read-only. | REQ-25, REQ-26, REQ-28 | — |
-| INT-2 | create | backend, history area | External-terminal check: a session runs elsewhere when a `claude` process that the client does not host has the session's folder as cwd. It reads `/proc`. | REQ-27 | — |
+| INT-2 | create | backend, history area | External-terminal check: a session runs elsewhere when its `sessionId` is in a `~/.claude/sessions/<digits>.json` file of a live pid (`/proc/<pid>` exists) that the client does not host. It never reads the `<pid>.<hash>.key` files in that folder, because they hold credentials. | REQ-27 | — |
 | INT-3 | modify | state tracker created by `batch-session-list/INT-3` | Keep the Claude Code session id of each hosted session, taken from the `session_id` field of its hook events. | REQ-25 | — |
 | INT-4 | create | backend, history area | Past sessions route: past sessions grouped by folder, the most recent first. Each has label, date and the INT-2 flag. It leaves out sessions the client hosts and that have not ended (INT-3). | REQ-25, REQ-26, REQ-27 | INT-1, INT-2, INT-3 |
 | INT-5 | modify | session registry created by `batch-session-interaction/INT-1` | Start a session with `--resume <id>` in its project folder. The new session has the same data as the other hosted sessions. | REQ-25, REQ-26 | — |

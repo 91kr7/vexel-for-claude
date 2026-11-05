@@ -58,3 +58,18 @@ One list of the sessions hosted by the client, with their state, to reach the se
 | REQ-26 | A session started from the terminal can be resumed from the client. |
 | REQ-27 | Before it resumes a session that still runs in an external terminal, the client warns the user. |
 | REQ-28 | The client does not change the content of the Claude Code session history beyond what Claude Code itself writes. |
+
+## Feature: External sessions
+
+The Claude Code sessions that run in other terminals of the same machine, seen from the client.
+
+| ID | Requirement |
+|----|-------------|
+| REQ-29 | The list also shows the Claude Code sessions that run in other terminals of the same machine, marked as external. |
+| REQ-30 | An external entry shows the project folder, a label, the state and the time of the last activity, and its label is by default the start of the first user message. |
+| REQ-31 | The state of an external session is "working" while Claude Code reports it busy, and "idle" while Claude Code reports it idle. |
+| REQ-32 | External sessions enter the list, change state and leave the list by themselves, without a manual reload. |
+| REQ-33 | A click on an external session shows its conversation read-only, as text. |
+| REQ-34 | The conversation of an open external session updates live while the session runs. |
+| REQ-35 | An external session offers a "Riprendi qui" action that resumes it in the client, with the warning of REQ-27. |
+| REQ-36 | The client writes nothing to an external session. |

@@ -36,3 +36,5 @@
 | 2026-11-05 | plan | question planner | human decision | No hook in user `~/.claude/settings.json`; external sessions show working/idle only |
 | 2026-11-05 | plan | question planner | decided | Ended external session leaves the list; only `kind: interactive` counts; read-only view = messages, replies, tool calls, truncated results |
 | 2026-11-05 | plan | G2 requirements REQ-29..36 | pass | |
+| 2026-11-05 | plan | G3 coverage external-sessions | pass | |
+| 2026-11-05 | plan | suggestion planner | decided | rs/INT-2 matches `sessionId` from `~/.claude/sessions/<digits>.json` instead of cwd; exact warning for REQ-27/REQ-35 |
