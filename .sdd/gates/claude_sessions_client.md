@@ -32,3 +32,7 @@
 | 2026-11-05 | test | G5 stop-session | sent back | Tester: e2e "a failed stop request changes nothing" compares whole body text, fails when other sessions change; chooser typed-path e2e flaky under full e2e run only |
 | 2026-11-05 | analyse | scope external sessions | human decision | Human: show sessions running in other shells in this cycle (list, read-only live view, take over); departure recorded in analysis and plan |
 | 2026-11-05 | analyse | G1 analysis update | pass | External sessions added per human decision; only Requirements, Assumptions, Risks, Scope changed |
+| 2026-11-05 | test | G5 stop-session | pass | Tests fixed to assert on the open session only and to wait for the home listing; 75 unit, 31 e2e green on 2 orchestrator runs |
+| 2026-11-05 | plan | question planner | human decision | No hook in user `~/.claude/settings.json`; external sessions show working/idle only |
+| 2026-11-05 | plan | question planner | decided | Ended external session leaves the list; only `kind: interactive` counts; read-only view = messages, replies, tool calls, truncated results |
+| 2026-11-05 | plan | G2 requirements REQ-29..36 | pass | |

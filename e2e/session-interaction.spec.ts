@@ -154,6 +154,8 @@ test('a new session becomes the open one; "Annulla" keeps the open session', asy
 
 test('a path typed right after the chooser opens is the folder of the session', async ({ page }) => {
   await page.getByRole('button', { name: 'Nuova sessione' }).click();
+  // A home listing landing inside fill(), between its select-all and its insert, appends the typed path to it.
+  await expect(pathField(page)).toHaveValue(os.homedir());
   await pathField(page).fill(projectB);
   await page.getByRole('button', { name: 'Avvia sessione' }).click();
   await expect(chooser(page)).toBeHidden();

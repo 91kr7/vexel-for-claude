@@ -152,17 +152,19 @@ test('the confirmation disappears when the session ends meanwhile', async ({ pag
 // plan-claude_sessions_client/REQ-23, StopSessionButton: a failed request has no visible effect
 test('a failed stop request changes nothing on the page', async ({ page, request }) => {
   const { id, folder } = await openSession(page, request, 'failed-stop');
+  const failed = page.waitForResponse((r) => new URL(r.url()).pathname === `/api/sessions/${id}/stop`);
   await page.route(`**/api/sessions/${id}/stop`, (route) => route.fulfill({ status: 500, body: '' }));
-  const before = await page.locator('body').innerText();
+  const entryBefore = await entry(page, folder).innerText();
 
   await stopButton(page).click();
+  expect((await failed).status()).toBe(500);
   await page.waitForTimeout(800);
 
   await expect(stopButton(page)).toBeVisible();
   await expect(confirmation(page)).toHaveCount(0);
   await expect(page.getByRole('alert')).toHaveCount(0);
-  await expect(entry(page, folder)).toContainText('In attesa');
-  expect(await page.locator('body').innerText()).toBe(before);
+  expect(await entry(page, folder).innerText()).toBe(entryBefore);
+  await expect(terminal(page)).not.toContainText('[Sessione disconnessa]');
 });
 
 // plan-claude_sessions_client/REQ-23, SessionView: a change of state does not reconnect the terminal
