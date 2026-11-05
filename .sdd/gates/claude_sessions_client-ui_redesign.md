@@ -16,3 +16,4 @@
 | 2026-11-05 | plan | requirements.md constraint reworded | pass | Old-plan tests may change labels/UI steps; no REQ changed |
 | 2026-11-05 | dev | G4 visual-language | pass | Build green on re-run; no external URL in built page |
 | 2026-11-05 | dev | divergence developer | decided | Icons and button variants on 4 existing buttons: needed by REQ-6 scenario; no label or role change. Inter woff2 from @fontsource-variable/inter 5.3.0, OFL |
+| 2026-11-05 | test | G5 visual-language | pass | 54 unit, 14 e2e green on re-run; resize e2e session-interaction.spec.ts:124 intermittent, already seen in the previous cycle, watched in the final run |
