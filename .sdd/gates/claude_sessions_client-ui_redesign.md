@@ -20,3 +20,4 @@
 | 2026-11-05 | dev | G4 layout | pass | Build green on re-run; duplicate empty-state buttons need test scoping, allowed by the plan constraint |
 | 2026-11-05 | test | G5 layout | pass | 70 e2e green on re-run; older specs scoped to the sidebar; resize test race fixed (read before first fit) |
 | 2026-11-05 | dev | G4 session-list | pass | Build green on re-run; diff explained by INT-1..INT-6; SessionList unit regex for Esterna to be updated by the tester |
+| 2026-11-05 | test | G5 session-list | pass | 97 unit, 33 e2e green on re-run; Esterna unit check updated and made stricter |

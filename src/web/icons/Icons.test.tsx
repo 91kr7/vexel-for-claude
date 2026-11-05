@@ -1,7 +1,18 @@
 import type { ComponentType } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { CircleStopIcon, HistoryIcon, LogInIcon, PlusIcon, PowerIcon } from './Icons';
+import {
+  CircleAlertIcon,
+  CircleOffIcon,
+  CirclePauseIcon,
+  CircleStopIcon,
+  HistoryIcon,
+  LoaderCircleIcon,
+  LogInIcon,
+  PlusIcon,
+  PowerIcon,
+  TerminalIcon,
+} from './Icons';
 
 const icons: [string, ComponentType][] = [
   ['PlusIcon', PlusIcon],
@@ -9,6 +20,11 @@ const icons: [string, ComponentType][] = [
   ['CircleStopIcon', CircleStopIcon],
   ['PowerIcon', PowerIcon],
   ['LogInIcon', LogInIcon],
+  ['LoaderCircleIcon', LoaderCircleIcon],
+  ['CircleAlertIcon', CircleAlertIcon],
+  ['CirclePauseIcon', CirclePauseIcon],
+  ['CircleOffIcon', CircleOffIcon],
+  ['TerminalIcon', TerminalIcon],
 ];
 
 const svgTag = (html: string) => html.match(/^<svg\b[^>]*>/)?.[0] ?? '';
