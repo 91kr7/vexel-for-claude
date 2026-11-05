@@ -229,8 +229,8 @@ for (const colorScheme of ['light', 'dark'] as const) {
         color: await colour('--on-surface-variant'), 'border-top-left-radius': '20px', 'padding-left': '16px', 'padding-right': '20px',
         'column-gap': '8px', 'font-size': '14px', 'line-height': '20px', 'font-weight': '500',
       });
-      // The board .btn is 40 px high with no box-sizing rule, so the 1 px border of "Interrompi" adds to it.
-      expect.soft(await interrupt.evaluate((el) => el.clientHeight), '"Interrompi" is 40 px high inside its border').toBe(40);
+      // A board <button> is border-box by user-agent default, so the 1 px border stays inside the 40 px of .btn.
+      near(interruptBox.height, 40, '"Interrompi" height');
       expect(await styles(stop, [
         'background-color', 'border-top-width', 'color', 'border-top-left-radius', 'padding-left', 'padding-right', 'column-gap', 'font-size', 'line-height', 'font-weight',
       ])).toEqual({
