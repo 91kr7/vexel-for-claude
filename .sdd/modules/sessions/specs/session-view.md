@@ -15,6 +15,8 @@ Description:
 
 Props:
 - `sessionId` → the session to show.
+  - a new `sessionId` → closes the connection of the previous session. The terminal is empty, then shows the snapshot of the new session, then its live output. It fits the container and sends `resize`.
+  - the terminal never shows output of the previous session after a switch.
 
 Shows:
 - the session snapshot, then its live output, from AttachSessionRoute.
@@ -35,4 +37,4 @@ Actions:
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-2`, `plan-claude_sessions_client/REQ-3`, `plan-claude_sessions_client/REQ-4`, `plan-claude_sessions_client/REQ-5`, `plan-claude_sessions_client/REQ-8`
+- `plan-claude_sessions_client/REQ-2`, `plan-claude_sessions_client/REQ-3`, `plan-claude_sessions_client/REQ-4`, `plan-claude_sessions_client/REQ-5`, `plan-claude_sessions_client/REQ-8`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`, `plan-claude_sessions_client/REQ-21`, `plan-claude_sessions_client/REQ-22`

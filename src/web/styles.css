@@ -39,8 +39,104 @@ button {
   font-size: 1.1rem;
 }
 
+.needs-input-counter {
+  margin: 0;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: #333;
+}
+
+.needs-input-counter.active {
+  color: #1e1e1e;
+  background: #e5a33a;
+  font-weight: 600;
+}
+
+.app-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.session-list {
+  width: 18rem;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid #333;
+}
+
+.session-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.session-list-empty {
+  margin: 1rem;
+  color: #888;
+}
+
+.session-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid #2c2c2c;
+}
+
+.session-entry:hover {
+  background: #2a2a2a;
+}
+
+.session-entry[aria-current='true'] {
+  background: #303030;
+}
+
+.session-entry.needs-input {
+  background: #3a2f1a;
+  border-left-color: #e5a33a;
+}
+
+.session-entry-label {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.session-entry-folder {
+  font-size: 0.8rem;
+  color: #999;
+  overflow-wrap: anywhere;
+}
+
+.session-entry-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.state-needs_input {
+  color: #e5a33a;
+  font-weight: 600;
+}
+
+.state-working {
+  color: #6cb6ff;
+}
+
+.state-ended {
+  color: #777;
+}
+
 .session-area {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;

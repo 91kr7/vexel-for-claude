@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { SessionRegistry } from './session-registry.js';
+import type { SessionStateTracker } from './session-state-tracker.js';
 
 const MAX_TERMINAL_SIZE = 1000;
 
@@ -29,7 +30,11 @@ function isTerminalSize(value: unknown): value is number {
   return Number.isInteger(value) && (value as number) >= 1 && (value as number) <= MAX_TERMINAL_SIZE;
 }
 
-export function registerAttachSessionRoute(app: FastifyInstance, registry: SessionRegistry): void {
+export function registerAttachSessionRoute(
+  app: FastifyInstance,
+  registry: SessionRegistry,
+  tracker?: SessionStateTracker,
+): void {
   app.get<{ Params: { id: string } }>('/api/sessions/:id/attach', { websocket: true }, (socket, request) => {
     const session = registry.get(request.params.id);
     if (!session) {
@@ -43,7 +48,10 @@ export function registerAttachSessionRoute(app: FastifyInstance, registry: Sessi
     socket.on('message', (raw, isBinary) => {
       if (isBinary) return;
       const message = parseClientMessage(raw.toString());
-      if (message?.type === 'input') session.write(message.data);
+      if (message?.type === 'input') {
+        session.write(message.data);
+        tracker?.applyUserInput(session.id, message.data);
+      }
       if (message?.type === 'resize') session.resize(message.cols, message.rows);
     });
     socket.on('close', detach);

@@ -13,7 +13,10 @@ type: configuration
 - listens on `127.0.0.1` only, port from `PORT` (default `3000`).
 - applies LocalAccessGuard to every request.
 - `GET /api/health` → `200`, body `{ status: "ok" }`.
-- registers StartSessionRoute, AttachSessionRoute and FolderRoute, with one shared SessionRegistry.
+- at start, writes the HookSettings file for `http://127.0.0.1:<port>`.
+- one shared SessionRegistry that starts the CLI with that settings file.
+- one shared SessionStateTracker. It tracks every session the registry starts.
+- registers StartSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute and FolderRoute.
 - serves the files of `dist/web` when the folder exists.
 
 ## Rules and invariants
@@ -23,9 +26,9 @@ type: configuration
 ## Dependencies
 
 - LocalAccessGuard
-- SessionRegistry, StartSessionRoute, AttachSessionRoute (module sessions)
+- SessionRegistry, SessionStateTracker, HookSettings, StartSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute (module sessions)
 - FolderRoute (module folders)
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-9`
+- `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`

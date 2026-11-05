@@ -20,3 +20,5 @@
 | 2026-11-05 | test | `test.skip` in e2e | pass | Conditional guard when running as root, not a disabled test |
 | 2026-11-05 | dev | G4 session-interaction fix | pass | Diff limited to the two specs and two sources named in the fix round |
 | 2026-11-05 | test | G5 session-interaction | pass | 97 unit, 17 e2e, green on 3 orchestrator re-runs; one unnamed e2e failure in tester run not reproduced in 300+ repeats, logged as possible flake |
+| 2026-11-05 | dev | G4 session-list | pass | Build green on re-run; diff explained by INT-1..INT-15 |
+| 2026-11-05 | dev | divergence developer | decided | Command hooks instead of http hooks; INT-15 met by existing SessionView key; temp hook folder per server start accepted (small, outside projects) |
