@@ -1,6 +1,6 @@
-// REQ tests of plan-claude_sessions_client, batch session-interaction, against the real server process.
+// REQ tests of plan-claude_sessions_client against the real server process.
 import { type ChildProcess, spawn } from 'node:child_process';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -46,6 +46,39 @@ async function attach(id: string): Promise<WsClient> {
 }
 
 const input = (client: WsClient, data: string) => client.send({ type: 'input', data });
+const settingsArgs = (client: WsClient) => JSON.parse(client.text().match(/ARGS:(\[[^\]]*\])/)?.[1] ?? 'null') as string[] | null;
+
+interface SessionSummary {
+  id: string;
+  folder: string;
+  label: string;
+  state: 'working' | 'needs_input' | 'idle' | 'ended';
+  lastActivity: string;
+}
+
+async function listSessions(): Promise<SessionSummary[]> {
+  const response = await fetch(`${base}/api/sessions`);
+  expect(response.status).toBe(200);
+  return (await response.json()) as SessionSummary[];
+}
+
+async function summaryOf(id: string): Promise<SessionSummary | undefined> {
+  return (await listSessions()).find((session) => session.id === id);
+}
+
+async function waitForState(id: string, state: SessionSummary['state']): Promise<void> {
+  const deadline = Date.now() + 8000;
+  let last: SessionSummary | undefined;
+  while (Date.now() < deadline) {
+    last = await summaryOf(id);
+    if (last?.state === state) return;
+    await delay(50);
+  }
+  throw new Error(`session ${id} is ${last?.state}, expected ${state}`);
+}
+
+const postHookEvent = (id: string, body: string) =>
+  fetch(`${base}/api/sessions/${id}/hook-events`, { method: 'POST', headers: { 'content-type': 'application/json' }, body });
 const receivedInput = (client: WsClient) => [...client.text().matchAll(/IN:([0-9a-f]+)/g)].map((m) => m[1]).join('');
 
 beforeAll(async () => {
@@ -153,10 +186,16 @@ describe('plan-claude_sessions_client/REQ-6 the client never answers on behalf o
 });
 
 describe('plan-claude_sessions_client/REQ-7 project permission rules and settings apply', () => {
-  it('the CLI runs in the project folder with no arguments and the server environment', async () => {
+  it('the CLI runs in the project folder with only a hooks settings file, and the server environment', async () => {
     const client = await attach(await startSession());
     expect(client.text()).toContain(`CWD:${project}`);
-    expect(client.text()).toContain('ARGS:[]');
+    const args = settingsArgs(client);
+    expect(args?.[0]).toBe('--settings');
+    expect(args).toHaveLength(2);
+    const settingsFile = args?.[1] ?? '';
+    expect(path.dirname(path.dirname(settingsFile))).toBe(os.tmpdir());
+    expect(settingsFile).toMatch(/\/ai-client-hooks-[^/]+\/hook-settings\.json$/);
+    expect(Object.keys(JSON.parse(await readFile(settingsFile, 'utf8')) as object)).toEqual(['hooks']);
     expect(client.text()).toContain('MARK:server-env');
   });
 });
@@ -194,7 +233,7 @@ describe('plan-claude_sessions_client/REQ-9 reachable only from the local machin
   });
 
   it('rejects HTTP requests whose Host is not local, the page included', async () => {
-    for (const url of ['/api/health', '/', '/api/folders']) {
+    for (const url of ['/api/health', '/', '/api/folders', '/api/sessions']) {
       const response = await new Promise<{ status: number; body: string }>((resolve, reject) => {
         const socket = net.connect(port, '127.0.0.1', () => {
           socket.write(`GET ${url} HTTP/1.1\r\nHost: 192.168.1.67:${port}\r\nConnection: close\r\n\r\n`);
@@ -221,32 +260,49 @@ describe('plan-claude_sessions_client/REQ-9 reachable only from the local machin
     expect(response.status).toBe(403);
   });
 
+  it('rejects a hook event posted from a page of another origin', async () => {
+    const id = await startSession();
+    const response = await fetch(`${base}/api/sessions/${id}/hook-events`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: 'http://evil.example' },
+      body: JSON.stringify({ hook_event_name: 'PermissionRequest' }),
+    });
+    expect(response.status).toBe(403);
+    expect((await summaryOf(id))?.state).toBe('idle');
+  });
+
+  it('refuses the session events WebSocket from another origin', async () => {
+    expect(await foreignWebSocketStatus('/api/sessions/events')).toBe(403);
+  });
+
   it('refuses a WebSocket attach from another origin', async () => {
     const id = await startSession();
-    const status = await new Promise<number | 'opened'>((resolve) => {
-      const socket = new WebSocket(`ws://127.0.0.1:${port}/api/sessions/${id}/attach`, {
-        headers: { Origin: 'http://evil.example' },
-      });
-      socket.on('open', () => {
-        socket.terminate();
-        resolve('opened');
-      });
-      socket.on('unexpected-response', (request, response) => {
-        resolve(response.statusCode ?? 0);
-        response.destroy();
-        request.destroy();
-      });
-      socket.on('error', () => {});
-    });
-    expect(status).toBe(403);
+    expect(await foreignWebSocketStatus(`/api/sessions/${id}/attach`)).toBe(403);
   });
 });
 
+function foreignWebSocketStatus(route: string): Promise<number | 'opened'> {
+  return new Promise((resolve) => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}${route}`, { headers: { Origin: 'http://evil.example' } });
+    socket.on('open', () => {
+      socket.terminate();
+      resolve('opened');
+    });
+    socket.on('unexpected-response', (request, response) => {
+      resolve(response.statusCode ?? 0);
+      response.destroy();
+      request.destroy();
+    });
+    socket.on('error', () => {});
+  });
+}
+
 describe('plan-claude_sessions_client/REQ-10 resume from the terminal', () => {
-  it('the CLI keeps its standard session handling: no arguments, closing the page does not stop it, /exit ends it', async () => {
+  it('the CLI keeps its standard session handling: only the hooks settings, closing the page does not stop it, /exit ends it', async () => {
     const id = await startSession();
     const first = await attach(id);
-    expect(first.text()).toContain('ARGS:[]');
+    expect(settingsArgs(first)?.[0]).toBe('--settings');
+    expect(settingsArgs(first)).toHaveLength(2);
     first.socket.close();
     await first.closed;
     await delay(300);
@@ -255,5 +311,193 @@ describe('plan-claude_sessions_client/REQ-10 resume from the terminal', () => {
     await waitFor(() => second.text().includes('LINE:hello'), 'session still running');
     input(second, '/exit\r');
     expect(await second.closed).toBe(1000);
+  });
+});
+
+describe('plan-claude_sessions_client/REQ-11 every hosted session is listed', () => {
+  it('the list holds every started session', async () => {
+    const ids = [await startSession(), await startSession()];
+    const listed = (await listSessions()).map((session) => session.id);
+    expect(listed).toEqual(expect.arrayContaining(ids));
+  });
+});
+
+describe('plan-claude_sessions_client/REQ-12 folder, label, state and last activity of each entry', () => {
+  it('a new session shows its folder, the folder name as label, idle and a recent last activity', async () => {
+    const before = Date.now();
+    const id = await startSession();
+    const entry = await summaryOf(id);
+    expect(entry).toMatchObject({ id, folder: project, label: 'project-a', state: 'idle' });
+    expect(entry?.lastActivity).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    expect(Date.parse(entry?.lastActivity ?? '')).toBeGreaterThanOrEqual(before - 1000);
+  });
+
+  it('typing in the session moves the last activity forward', async () => {
+    const id = await startSession();
+    const client = await attach(id);
+    const first = (await summaryOf(id))?.lastActivity ?? '';
+    await delay(50);
+    input(client, 'x');
+    await waitFor(() => client.text().includes('IN:78'), 'key echo');
+    const second = (await summaryOf(id))?.lastActivity ?? '';
+    expect(Date.parse(second)).toBeGreaterThan(Date.parse(first));
+  });
+});
+
+describe('plan-claude_sessions_client/REQ-13 the label is the start of the first message', () => {
+  it('the first message becomes the label, the later ones do not', async () => {
+    const id = await startSession();
+    const client = await attach(id);
+    input(client, 'Prepara le note di rilascio\r');
+    await waitFor(() => client.text().includes('LINE:Prepara le note di rilascio'), 'first message');
+    input(client, 'Secondo messaggio\r');
+    await waitFor(() => client.text().includes('LINE:Secondo messaggio'), 'second message');
+    expect((await summaryOf(id))?.label).toBe('Prepara le note di rilascio');
+  });
+});
+
+describe('plan-claude_sessions_client/REQ-14 state of a session from the CLI hooks', () => {
+  it('working while Claude produces a turn, idle when the turn ends', async () => {
+    const id = await startSession();
+    const client = await attach(id);
+    expect((await summaryOf(id))?.state).toBe('idle');
+    input(client, 'TURN\r');
+    await waitForState(id, 'working');
+    await waitFor(() => client.text().includes('TURN-DONE'), 'end of turn', 5000);
+    await waitForState(id, 'idle');
+  });
+
+  it('needs input on a permission request, working again once answered and on with the tools', async () => {
+    const id = await startSession();
+    const client = await attach(id);
+    input(client, 'PERM\r');
+    await waitForState(id, 'needs_input');
+    input(client, 'y');
+    await waitFor(() => client.text().includes('ANSWER:y'), 'answer');
+    await waitForState(id, 'idle');
+    input(client, 'HOOK PostToolUse tool_name=Bash\r');
+    await waitForState(id, 'working');
+  });
+
+  it('needs input on a question to the user, on a permission prompt and on an elicitation dialog', async () => {
+    const id = await startSession();
+    const client = await attach(id);
+    for (const hook of [
+      'HOOK PreToolUse tool_name=AskUserQuestion',
+      'HOOK Notification notification_type=permission_prompt',
+      'HOOK Notification notification_type=elicitation_dialog',
+    ]) {
+      input(client, 'HOOK Stop\r');
+      await waitForState(id, 'idle');
+      input(client, `${hook}\r`);
+      await waitForState(id, 'needs_input');
+    }
+  });
+
+  it('a turn left working without Stop is corrected to idle by the idle prompt', async () => {
+    const id = await startSession();
+    const client = await attach(id);
+    input(client, 'HOOK PreToolUse tool_name=Bash\r');
+    await waitForState(id, 'working');
+    input(client, 'HOOK Notification notification_type=idle_prompt\r');
+    await waitForState(id, 'idle');
+  });
+
+  it('other notifications leave the state as it is', async () => {
+    const id = await startSession();
+    const client = await attach(id);
+    input(client, 'HOOK PermissionRequest tool_name=Bash\r');
+    await waitForState(id, 'needs_input');
+    input(client, 'HOOK Notification notification_type=auth_success\r');
+    await waitFor(() => client.text().includes('LINE:HOOK Notification'), 'notification line');
+    await delay(500);
+    expect((await summaryOf(id))?.state).toBe('needs_input');
+  });
+
+  for (const [key, data] of [
+    ['Esc', '\x1b'],
+    ['Ctrl+C', '\x03'],
+  ] as const) {
+    it(`${key} interrupts a working turn: idle`, async () => {
+      const id = await startSession();
+      const client = await attach(id);
+      input(client, 'WORK\r');
+      await waitForState(id, 'working');
+      input(client, data);
+      await waitForState(id, 'idle');
+    });
+  }
+
+  it('an arrow key while Claude waits for an answer is not an interrupt', async () => {
+    const id = await startSession();
+    const client = await attach(id);
+    input(client, 'HOOK PermissionRequest tool_name=Bash\r');
+    await waitForState(id, 'needs_input');
+    input(client, '\x1b[B');
+    await waitFor(() => client.text().includes('IN:1b5b42'), 'arrow echo');
+    expect((await summaryOf(id))?.state).toBe('needs_input');
+  });
+
+  it('ended when the session stops, and it stays in the list', async () => {
+    const id = await startSession();
+    const client = await attach(id);
+    input(client, '/exit\r');
+    await client.closed;
+    await waitForState(id, 'ended');
+    await delay(300);
+    expect((await summaryOf(id))?.state).toBe('ended');
+  });
+
+  it('the hook route accepts a hook event, and rejects an unknown session or an invalid event', async () => {
+    const id = await startSession();
+    const accepted = await postHookEvent(id, JSON.stringify({ hook_event_name: 'PermissionRequest', tool_name: 'Bash' }));
+    expect(accepted.status).toBe(204);
+    expect((await summaryOf(id))?.state).toBe('needs_input');
+    const unknown = await postHookEvent('no-such-session', JSON.stringify({ hook_event_name: 'Stop' }));
+    expect(unknown.status).toBe(404);
+    expect(await unknown.json()).toEqual({ error: 'session_not_found' });
+    const invalid = await postHookEvent(id, JSON.stringify({ tool_name: 'Bash' }));
+    expect(invalid.status).toBe(400);
+    expect(await invalid.json()).toEqual({ error: 'invalid_event' });
+  });
+});
+
+describe('plan-claude_sessions_client/REQ-15 the list updates by itself', () => {
+  it('a connected page receives the new session and each state change, with no request of its own', async () => {
+    const events = connectWs(`ws://127.0.0.1:${port}/api/sessions/events`, { Origin: base });
+    clients.push(events);
+    await new Promise<void>((resolve) => events.socket.once('open', () => resolve()));
+    const id = await startSession();
+    const client = await attach(id);
+    input(client, 'TURN\r');
+    const states = () =>
+      events.frames
+        .map((frame) => JSON.parse(frame) as { type: string; session: SessionSummary })
+        .filter((frame) => frame.type === 'session' && frame.session.id === id)
+        .map((frame) => frame.session.state);
+    await waitFor(() => states().at(-1) === 'idle' && states().includes('working'), 'working then idle', 6000);
+    expect(states()[0]).toBe('idle');
+    expect(states().indexOf('working')).toBeGreaterThan(0);
+  });
+});
+
+describe('plan-claude_sessions_client/REQ-20 sessions survive the page', () => {
+  it('a working session keeps running and keeps its state when every page connection closes', async () => {
+    const id = await startSession();
+    const events = connectWs(`ws://127.0.0.1:${port}/api/sessions/events`, { Origin: base });
+    const first = await attach(id);
+    input(first, 'WORK\r');
+    await waitForState(id, 'working');
+    await waitFor(() => first.text().includes('TICK2'), 'turn under way');
+    first.socket.close();
+    events.socket.close();
+    await Promise.all([first.closed, events.closed]);
+    await delay(800);
+    expect((await summaryOf(id))?.state).toBe('working');
+    const second = await attach(id);
+    expect(second.frames[0]).toContain('LINE:WORK');
+    const ticks = () => [...second.text().matchAll(/TICK(\d+)/g)].map((m) => Number(m[1]));
+    const seen = Math.max(...ticks());
+    await waitFor(() => Math.max(...ticks()) > seen, 'turn goes on');
   });
 });

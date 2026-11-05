@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { FAKE_CLI, type WsClient, connectWs, delay, hex, tempDir, waitFor } from '../test-support.js';
 import { registerAttachSessionRoute } from './attach-session-route.js';
 import { type Session, SessionRegistry } from './session-registry.js';
+import { SessionStateTracker } from './session-state-tracker.js';
 
 let app: FastifyInstance;
 let registry: SessionRegistry;
@@ -124,5 +125,63 @@ describe('GET /api/sessions/:id/attach', () => {
     const second = await attach(session);
     second.send({ type: 'input', data: 'again\r' });
     await waitFor(() => second.text().includes('LINE:again'), 'session still answers');
+  });
+});
+
+describe('GET /api/sessions/:id/attach with a state tracker', () => {
+  let trackedApp: FastifyInstance;
+  let tracker: SessionStateTracker;
+  let trackedUrl: string;
+
+  beforeAll(async () => {
+    tracker = new SessionStateTracker();
+    registry.onSessionStart((session) => tracker.track(session));
+    trackedApp = Fastify();
+    await trackedApp.register(fastifyWebsocket);
+    registerAttachSessionRoute(trackedApp, registry, tracker);
+    await trackedApp.listen({ host: '127.0.0.1', port: 0 });
+    const address = trackedApp.server.address();
+    if (address === null || typeof address === 'string') throw new Error('no port');
+    trackedUrl = `ws://127.0.0.1:${address.port}`;
+  });
+
+  afterAll(async () => {
+    await trackedApp.close();
+  });
+
+  async function attachTracked(session: Session): Promise<WsClient> {
+    const client = connectWs(`${trackedUrl}/api/sessions/${session.id}/attach`);
+    clients.push(client);
+    await waitFor(() => client.text().includes('READY'), 'fake CLI banner');
+    return client;
+  }
+
+  for (const [key, data] of [
+    ['Esc', '\x1b'],
+    ['Ctrl+C', '\x03'],
+  ] as const) {
+    // plan-claude_sessions_client/REQ-14: a lone interrupt key sets a working session idle and still reaches the pty
+    it(`${key} alone sets a working session idle and reaches the pty unchanged`, async () => {
+      const session = startSession();
+      const client = await attachTracked(session);
+      tracker.applyHookEvent(session.id, { hook_event_name: 'UserPromptSubmit', prompt: 'x' });
+      expect(tracker.get(session.id)?.state).toBe('working');
+      client.send({ type: 'input', data });
+      await waitFor(() => receivedInput(client) === hex(data), 'input echo');
+      expect(tracker.get(session.id)?.state).toBe('idle');
+    });
+  }
+
+  // plan-claude_sessions_client/REQ-14, REQ-12: other input only sets last activity
+  it('an arrow key keeps the state and updates last activity', async () => {
+    const session = startSession();
+    const client = await attachTracked(session);
+    tracker.applyHookEvent(session.id, { hook_event_name: 'PermissionRequest' });
+    const before = tracker.get(session.id)?.lastActivity ?? '';
+    await delay(20);
+    client.send({ type: 'input', data: '\x1b[A' });
+    await waitFor(() => receivedInput(client) === hex('\x1b[A'), 'input echo');
+    expect(tracker.get(session.id)?.state).toBe('needs_input');
+    expect(Date.parse(tracker.get(session.id)?.lastActivity ?? '')).toBeGreaterThan(Date.parse(before));
   });
 });

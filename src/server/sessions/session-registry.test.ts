@@ -1,3 +1,5 @@
+import { chmod, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   FAKE_CLI,
@@ -128,6 +130,63 @@ describe('SessionRegistry.start', () => {
 
   it('get returns undefined for an unknown id', () => {
     expect(new SessionRegistry({ command: FAKE_CLI }).get('no-such-id')).toBeUndefined();
+  });
+
+  // plan-claude_sessions_client/REQ-14: the CLI starts with the hook settings file and nothing else
+  it('passes only --settings <settingsPath> when settingsPath is set', async () => {
+    const registry = new SessionRegistry({ command: FAKE_CLI, settingsPath: '/tmp/hooks dir/hook-settings.json' });
+    const viewer = await attachReady(startFake(registry));
+    expect(viewer.text).toContain('ARGS:["--settings","/tmp/hooks dir/hook-settings.json"]');
+  });
+
+  // plan-claude_sessions_client/REQ-14: each hook names its session through AI_CLIENT_SESSION_ID
+  it('puts the session id in AI_CLIENT_SESSION_ID', async () => {
+    const binDir = await tempDir('ai-client-bin-');
+    const cli = path.join(binDir, 'session-id-cli');
+    await writeFile(cli, `#!/bin/sh\nFAKE_CLI_MARK="$AI_CLIENT_SESSION_ID" exec node ${FAKE_CLI} "$@"\n`);
+    await chmod(cli, 0o755);
+    const session = startFake(new SessionRegistry({ command: cli }));
+    const viewer = await attachReady(session);
+    expect(viewer.text).toContain(`MARK:${session.id}`);
+  });
+});
+
+describe('SessionRegistry.onSessionStart', () => {
+  // plan-claude_sessions_client/REQ-14: listeners see each started session before start returns
+  it('calls each listener with the session before start returns, until unsubscribed', () => {
+    const registry = new SessionRegistry({ command: FAKE_CLI });
+    const seen: Session[] = [];
+    const unsubscribe = registry.onSessionStart((session) => {
+      seen.push(session);
+      expect(registry.get(session.id)).toBe(session);
+    });
+    const first = startFake(registry);
+    expect(seen).toEqual([first]);
+    unsubscribe();
+    startFake(registry);
+    expect(seen).toEqual([first]);
+  });
+});
+
+describe('Session.onExit', () => {
+  // plan-claude_sessions_client/REQ-14: process exit is reported once
+  it('calls the listener once when the process ends; a listener added after the end is never called', async () => {
+    const session = startFake();
+    let calls = 0;
+    let removedCalls = 0;
+    session.onExit(() => (calls += 1));
+    const unsubscribe = session.onExit(() => (removedCalls += 1));
+    unsubscribe();
+    await attachReady(session);
+    session.write('/exit\r');
+    await waitFor(() => session.exited, 'process exit');
+    await delay(100);
+    expect(calls).toBe(1);
+    expect(removedCalls).toBe(0);
+    let lateCalls = 0;
+    session.onExit(() => (lateCalls += 1));
+    await delay(100);
+    expect(lateCalls).toBe(0);
   });
 });
 

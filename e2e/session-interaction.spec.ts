@@ -79,7 +79,7 @@ test('the user browses to a project folder and starts a session in it', async ({
   await expect(chooser(page)).toBeHidden();
   await expect(page.getByText('Nessuna sessione aperta.')).toBeHidden();
   await expect(terminal(page)).toContainText(`CWD:${projectA}`);
-  await expect(terminal(page)).toContainText('ARGS:[]');
+  await expect(terminal(page)).toContainText(/ARGS:\["--settings","[^"]*\/ai-client-hooks-[^"]*\/hook-settings\.json"\]/);
 });
 
 test('the user sends a message, a slash command and Esc from the keyboard', async ({ page }) => {
