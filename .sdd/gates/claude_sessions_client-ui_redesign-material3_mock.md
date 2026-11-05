@@ -54,3 +54,6 @@
 | 2026-11-05 | dev | G4 dialogs | pass | Build green re-run; `tokens.css` and `SessionView.tsx` outside INTs justified (scrim REQ-51, folder name for INT-3) |
 | 2026-11-05 | dev | divergence dialogs field font | decided | Field value in Roboto Flex as the board renders it (`.m3 input` inherits), not mono |
 | 2026-11-05 | dev | divergence dialogs field border and focus ring | decided | 2 px `--primary` field border and 3 px ring on "Annulla" as drawn on the board |
+| 2026-11-06 | test | G5 dialogs round 1 | pass | Batch scope green (70 e2e), whole unit suite 703 green; full e2e interrupted, closing full run still owed |
+| 2026-11-06 | closing | full e2e before merge | human decision | Full e2e interrupted at ~175/212 with 1 unidentified failure; human chose to merge without re-running it |
+| 2026-11-06 | closing | merge into main | pass | All six batches certified |
