@@ -27,3 +27,4 @@
 | 2026-11-05 | dev | divergence page-frame list landmark | decided | List root no longer `nav`: board labels the panel `section` "Elenco sessioni"; avoids duplicate landmark |
 | 2026-11-05 | dev | divergence page-frame counter at zero | decided | REQ-11 (newer) hides the chip at zero; the empty status element stays |
 | 2026-11-05 | test | G5 page-frame round 1 | sent back | Red: `e2e/session-entries.spec.ts:337` external entry 1.16 px taller (old plan REQ-11); code defect, line with the Esterna mark |
+| 2026-11-05 | test | G5 page-frame round 2 | pass | Re-run by gatekeeper: 54 e2e + 117 unit green; `e2e/layout.spec.ts:334` failed once under parallel load, passed alone and on full re-run (flaky, watch at closing) |
