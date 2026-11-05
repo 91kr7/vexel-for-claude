@@ -16,6 +16,10 @@ reference: none
 
 A local client that replaces many terminal windows with one page. The page lists the user's Claude Code sessions. The user clicks a session to open it and work with it as in the terminal.
 
+## Human decisions
+
+- 2026-11-05 → The human asked to show the sessions that run in other shells too. They chose "yes, in this cycle": external sessions are listed, readable live and can be taken over with "Riprendi qui".
+
 ## Business goal
 
 The user runs many Claude Code sessions in parallel, each in its own shell. With many shells open, the user loses track of which session works, which waits for an answer, and which project each one belongs to. Time goes into searching for windows instead of working. The value of the client is one place to see every session and its state, and to act on the session that needs attention.
@@ -26,6 +30,7 @@ The user runs many Claude Code sessions in parallel, each in its own shell. With
 
 Session list
 - The page must show every session hosted by the client in one list.
+- The list must also show the Claude Code sessions that run in other terminals of the same machine, marked as external.
 - Each list entry must show the project folder, a session label, the current state and the time of the last activity.
 - The label must default to the start of the first user message in the session.
 - The state must be one of: working, needs input, idle, ended.
@@ -43,6 +48,12 @@ Session interaction
 - The client must never answer a permission request on the user's behalf.
 - The user must be able to interrupt the current turn of a session.
 - The user must be able to switch to another session at any time, without losing the state of the first one.
+
+External sessions
+- A click on an external session must show its conversation read-only, as text.
+- The conversation of an external session must update live while the session runs.
+- An external session must offer a "Riprendi qui" action that resumes it in the client, with the warning for a session still running in a terminal.
+- The client must not write anything to an external session.
 
 Session lifecycle
 - The user must be able to start a new session by choosing a project folder.
@@ -65,7 +76,6 @@ Session lifecycle
 - One user, one machine. The request describes a personal tool.
 - The machine runs Linux. This is the user's working environment.
 - Claude Code is already installed and logged in. The client uses the user's existing login and does not manage credentials.
-- Sessions still running in an external terminal are not interactive from the client. Driving another terminal's session needs that terminal's cooperation, and the goal is to stop using terminals.
 - The client warns the user before resuming a session that runs in an external terminal. Two writers on one conversation can corrupt it.
 - When the client itself stops, its sessions end. The user can resume them later from the history.
 - User interface text is in Italian, the language of the request.
@@ -100,6 +110,7 @@ What this means for the request:
 - A wrong state shown in the list (for example "idle" when Claude waits for a permission) breaks the main value of the tool.
 - Interaction from the page that misses terminal features (slash commands, interrupts, long outputs) pushes the user back to the shells.
 - Many sessions together can use a lot of memory on the machine and a lot of the plan quota.
+- The list of external sessions, their state and their conversation come from internal Claude Code files. These files are not documented, so a new Claude Code version can break this feature.
 
 ## Scope
 
@@ -108,9 +119,10 @@ In scope:
 - Full interaction with a session hosted by the client: messages, slash commands, permission answers, interrupt.
 - Start, stop and resume of sessions on the local machine.
 - Interoperability with the terminal through the standard Claude Code resume.
+- External sessions in the list, their read-only live conversation, and "Riprendi qui".
 
 Out of scope:
-- Interaction with sessions that run in an external terminal.
+- Typing into a session that keeps running in another terminal. Only that terminal has its keyboard.
 - Remote access from other machines or from a phone.
 - More than one user, user accounts and authentication.
 - Operating system notifications outside the page.

@@ -30,3 +30,5 @@
 | 2026-11-05 | test | G5 stop-session | sent back | D1: confirmation dialog painted under the xterm terminal (REQ-24); 2 e2e red |
 | 2026-11-05 | dev | G4 stop-session fix | pass | `.modal-backdrop` z-index only; build green; D1 tests green |
 | 2026-11-05 | test | G5 stop-session | sent back | Tester: e2e "a failed stop request changes nothing" compares whole body text, fails when other sessions change; chooser typed-path e2e flaky under full e2e run only |
+| 2026-11-05 | analyse | scope external sessions | human decision | Human: show sessions running in other shells in this cycle (list, read-only live view, take over); departure recorded in analysis and plan |
+| 2026-11-05 | analyse | G1 analysis update | pass | External sessions added per human decision; only Requirements, Assumptions, Risks, Scope changed |
