@@ -9,6 +9,7 @@ export interface SessionSummary {
   state: SessionState;
   lastActivity: string;
   external?: true;
+  waitingTool?: string;
 }
 
 export type LoadStatus = 'loading' | 'ready' | 'error';

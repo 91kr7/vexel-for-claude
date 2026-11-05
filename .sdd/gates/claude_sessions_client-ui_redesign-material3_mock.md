@@ -28,3 +28,8 @@
 | 2026-11-05 | dev | divergence page-frame counter at zero | decided | REQ-11 (newer) hides the chip at zero; the empty status element stays |
 | 2026-11-05 | test | G5 page-frame round 1 | sent back | Red: `e2e/session-entries.spec.ts:337` external entry 1.16 px taller (old plan REQ-11); code defect, line with the Esterna mark |
 | 2026-11-05 | test | G5 page-frame round 2 | pass | Re-run by gatekeeper: 54 e2e + 117 unit green; `e2e/layout.spec.ts:334` failed once under parallel load, passed alone and on full re-run (flaky, watch at closing) |
+| 2026-11-05 | dev | G4 session-list | pass | Build green re-run; diff limited to INT-1..11 files, specs, index |
+| 2026-11-05 | dev | conflict old REQ-11 equal entry layout | decided | Board wins: entries differ in height (card, bar, dashed border); human asked to follow the mock to the letter. For human review |
+| 2026-11-05 | dev | conflict old REQ-12 colour per state | decided | Board wins: only "Lavora" coloured, states told apart by icon + text, needs input bold, ended dimmed. For human review |
+| 2026-11-05 | dev | divergence session-list needs-input card | decided | State badge added (REQ-19/20); whole card clickable to keep "click opens any entry" |
+| 2026-11-05 | dev | divergence session-list external needs input | decided | Amber row with "Esterna", no dashed border: `proposta-voci-elenco.html` wins for that state |

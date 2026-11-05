@@ -12,7 +12,7 @@ type: REST endpoint
 
 - `registerSessionListRoute(app, tracker, external?)` → `external` is the ExternalSessionScanner. Without it, the array has only hosted sessions.
 - `GET /api/sessions` → `200`. Body: array of:
-  - the hosted sessions: `{ id, folder, label, state, lastActivity }` (SessionSummary of SessionStateTracker), in start order;
+  - the hosted sessions: `{ id, folder, label, state, lastActivity, waitingTool? }` (SessionSummary of SessionStateTracker), in start order;
   - then the current external sessions: `{ id, folder, label, state, lastActivity, external: true }` (ExternalSessionScanner `list()`).
 
 ## Rules and invariants

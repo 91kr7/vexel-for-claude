@@ -7,7 +7,7 @@ export interface ExternalSessionSummary {
   id: string;
   folder: string;
   label: string;
-  state: 'working' | 'idle';
+  state: 'working' | 'needs_input' | 'idle';
   lastActivity: string;
   external: true;
 }
@@ -34,6 +34,11 @@ interface Entry {
 
 function sameSummary(a: ExternalSessionSummary, b: ExternalSessionSummary): boolean {
   return a.folder === b.folder && a.label === b.label && a.state === b.state && a.lastActivity === b.lastActivity;
+}
+
+function stateOf(status: string | undefined): ExternalSessionSummary['state'] {
+  if (status === 'busy') return 'working';
+  return status === 'waiting' ? 'needs_input' : 'idle';
 }
 
 function interactiveFiles(files: RunningSessionFile[]): Map<string, RunningSessionFile & { cwd: string }> {
@@ -103,7 +108,7 @@ export class ExternalSessionScanner {
         id,
         folder: file.cwd,
         label,
-        state: file.status === 'busy' ? 'working' : 'idle',
+        state: stateOf(file.status),
         lastActivity: typeof file.updatedAt === 'number' ? new Date(file.updatedAt).toISOString() : firstSeen,
         external: true,
       };

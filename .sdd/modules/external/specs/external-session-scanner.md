@@ -29,7 +29,7 @@ type: backend service
 
 - `id` → the `sessionId` of the session file.
 - `folder` → the `cwd` of the session file.
-- `state` → `status` `"busy"` gives `"working"`. Any other value, or none, gives `"idle"`.
+- `state` → `status` `"busy"` gives `"working"`. `"waiting"` (Claude Code waits for the user) gives `"needs_input"`. Any other value, or none, gives `"idle"`.
 - `lastActivity` → `updatedAt` (milliseconds since the epoch) as ISO-8601. No number → the time of the scan that first found the entry.
 - `label` → the first user message (SessionHistory `get(id)`), whitespace collapsed, cut to 80 characters. No message yet → the last name of `folder`.
 
@@ -56,3 +56,4 @@ two files with the same sessionId → one entry, from the file with the higher u
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-29`, `plan-claude_sessions_client/REQ-30`, `plan-claude_sessions_client/REQ-31`, `plan-claude_sessions_client/REQ-32`, `plan-claude_sessions_client/REQ-36`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-17`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-25`

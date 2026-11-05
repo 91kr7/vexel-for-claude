@@ -1,9 +1,9 @@
 import type { ComponentType } from 'react';
-import { CircleAlertIcon, CircleOffIcon, CirclePauseIcon, LoaderCircleIcon } from '../icons/Icons';
+import { CircleAlertIcon, CircleMinusIcon, CirclePauseIcon, LoaderCircleIcon } from '../icons/Icons';
 import type { SessionState } from './live-session-store';
 
 const STATE_NAMES: Record<SessionState, string> = {
-  working: 'In lavorazione',
+  working: 'Lavora',
   needs_input: 'Richiede input',
   idle: 'In attesa',
   ended: 'Terminata',
@@ -13,7 +13,7 @@ const STATE_ICONS: Record<SessionState, ComponentType> = {
   working: LoaderCircleIcon,
   needs_input: CircleAlertIcon,
   idle: CirclePauseIcon,
-  ended: CircleOffIcon,
+  ended: CircleMinusIcon,
 };
 
 export function StateIcon({ state }: { state: SessionState }) {
@@ -23,7 +23,7 @@ export function StateIcon({ state }: { state: SessionState }) {
 
 export function StateBadge({ state }: { state: SessionState }) {
   return (
-    <span className={`state-badge state-${state}`}>
+    <span className={`state-badge label-m state-${state}`}>
       <StateIcon state={state} />
       {STATE_NAMES[state]}
     </span>

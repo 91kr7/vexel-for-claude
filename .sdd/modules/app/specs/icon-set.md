@@ -20,11 +20,12 @@ Components and where the client uses them today:
 - `CircleStopIcon` → "Interrompi"
 - `PowerIcon` → "Termina", in the session header
 - `LogInIcon` → "Riprendi qui"
-- `LoaderCircleIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon` → the StateBadge states `working`, `needs_input`, `idle`, `ended`
+- `LoaderCircleIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleMinusIcon` → the StateBadge states `working`, `needs_input`, `idle`, `ended`
 - `LoaderCircleIcon`, rotating → the ProgressIndicator
 - `CircleXIcon` → the ErrorMessage
+- `CircleOffIcon` → no user since `CircleMinusIcon` replaced it in the StateBadge
 - `CircleAlertIcon` → the needs-input chip of the list panel
-- `TerminalIcon` → the "Esterna" mark of an external entry, "Sessioni" in the rail
+- `TerminalIcon` → the external Avatar and the "Esterna" tag of the session list, "Sessioni" in the rail
 - `LockIcon` → the "Sola lettura" notice of the external view
 - `WrenchIcon` → a tool call in the external view
 - `ChevronRightIcon`, `ChevronDownIcon` → "Espandi" and "Comprimi" of a tool item in the external view
@@ -44,3 +45,4 @@ Components and where the client uses them today:
 - `plan-claude_sessions_client-ui_redesign/REQ-7`
 - `plan-claude_sessions_client-ui_redesign/REQ-9`
 - `plan-claude_sessions_client-ui_redesign/REQ-30`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-20`
