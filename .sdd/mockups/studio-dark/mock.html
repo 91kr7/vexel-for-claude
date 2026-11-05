@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vexel — Claude Code Session Orchestrator (Studio Redesign)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            serif: ['Instrument Serif', 'Georgia', 'serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      /* Theme 1: Warm Obsidian & Terracotta Spark (Default Dark) */
+      --bg-canvas: #0b0b0e;
+      --bg-surface-1: #121216;
+      --bg-surface-2: #18181f;
+      --bg-surface-3: #21212b;
+      --bg-glass: rgba(24, 24, 31, 0.82);
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-strong: rgba(255, 255, 255, 0.13);
+      --specular-top: rgba(255, 255, 255, 0.08);
+      --text-primary: #f3f2ee;
+      --text-secondary: #a1a0ab;
+      --text-muted: #686773;
+      --accent-primary: #e06d44;
+      --accent-secondary: #f29a76;
+      --accent-glow: rgba(224, 109, 68, 0.16);
+      --accent-border: rgba(224, 109, 68, 0.42);
+      --term-size: 12px;
+    }
+
+    [data-theme="editorial-light"] {
+      /* Theme 2: Editorial Warm Paper & Clay */
+      --bg-canvas: #f4f1ea;
+      --bg-surface-1: #fcfaf5;
+      --bg-surface-2: #efeae0;
+      --bg-surface-3: #e4ded2;
+      --bg-glass: rgba(252, 250, 245, 0.86);
+      --border-subtle: rgba(28, 25, 23, 0.08);
+      --border-strong: rgba(28, 25, 23, 0.15);
+      --specular-top: rgba(255, 255, 255, 0.75);
+      --text-primary: #1c1917;
+      --text-secondary: #57534e;
+      --text-muted: #8a847c;
+      --accent-primary: #c85228;
+      --accent-secondary: #a13d19;
+      --accent-glow: rgba(200, 82, 40, 0.12);
+      --accent-border: rgba(200, 82, 40, 0.35);
+    }
+
+    [data-theme="carbon-indigo"] {
+      /* Theme 3: Carbon & Midnight Indigo */
+      --bg-canvas: #090a10;
+      --bg-surface-1: #0f111a;
+      --bg-surface-2: #161926;
+      --bg-surface-3: #1f2437;
+      --bg-glass: rgba(22, 25, 38, 0.84);
+      --border-subtle: rgba(148, 163, 255, 0.08);
+      --border-strong: rgba(148, 163, 255, 0.16);
+      --specular-top: rgba(199, 210, 254, 0.09);
+      --text-primary: #eef2ff;
+      --text-secondary: #94a3b8;
+      --text-muted: #5b667a;
+      --accent-primary: #6366f1;
+      --accent-secondary: #818cf8;
+      --accent-glow: rgba(99, 102, 241, 0.18);
+      --accent-border: rgba(99, 102, 241, 0.45);
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+      transition: background-color 0.18s ease, color 0.18s ease;
+    }
+
+    .vx-surface-1 {
+      background-color: var(--bg-surface-1);
+      border: 1px solid var(--border-subtle);
+      box-shadow: inset 0 1px 0 0 var(--specular-top);
+    }
+    .vx-surface-2 {
+      background-color: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      box-shadow: inset 0 1px 0 0 var(--specular-top);
+    }
+    .vx-surface-3 {
+      background-color: var(--bg-surface-3);
+      border: 1px solid var(--border-strong);
+    }
+    .vx-glass {
+      background-color: var(--bg-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-strong);
+      box-shadow: inset 0 1px 0 0 var(--specular-top), 0 12px 32px -8px rgba(0, 0, 0, 0.35);
+    }
+    .vx-dot-grid {
+      background-image: radial-gradient(var(--border-strong) 1px, transparent 1px);
+      background-size: 18px 18px;
+    }
+
+    /* Compact 52px Navigation Rail Button (34x34px instead of bloated 88px M3 pill) */
+    .vx-rail-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      position: relative;
+      transition: all 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .vx-rail-btn:hover {
+      background-color: var(--bg-surface-3);
+      color: var(--text-primary);
+    }
+    .vx-rail-btn.active {
+      background-color: var(--accent-glow);
+      color: var(--accent-primary);
+      border: 1px solid var(--accent-border);
+      box-shadow: 0 0 14px -2px var(--accent-glow);
+    }
+    .vx-rail-btn.active::before {
+      content: '';
+      position: absolute;
+      left: -8px;
+      top: 8px;
+      bottom: 8px;
+      width: 2.5px;
+      border-radius: 0 3px 3px 0;
+      background-color: var(--accent-primary);
+    }
+
+    /* Legacy Bloated M3 Mode (For Before/After Visual Comparison) */
+    .legacy-m3-rail {
+      width: 92px !important;
+      padding-top: 16px !important;
+      gap: 16px !important;
+    }
+    .legacy-m3-rail .vx-rail-fab {
+      width: 56px !important;
+      height: 56px !important;
+      border-radius: 16px !important;
+    }
+    .legacy-m3-rail .vx-rail-btn {
+      width: 72px !important;
+      height: 60px !important;
+      border-radius: 28px !important;
+      flex-direction: column !important;
+      gap: 4px !important;
+    }
+    .legacy-m3-rail .vx-rail-btn svg {
+      width: 24px !important;
+      height: 24px !important;
+    }
+    .legacy-m3-rail .vx-rail-btn.active::before {
+      display: none !important;
+    }
+    .legacy-m3-rail .rail-m3-label {
+      display: block !important;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Micro Tooltip on Rail Hover */
+    .vx-tooltip {
+      position: absolute;
+      left: 44px;
+      background: var(--bg-surface-3);
+      color: var(--text-primary);
+      border: 1px solid var(--border-strong);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-4px);
+      transition: all 0.12s ease;
+      z-index: 60;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    }
+    .vx-rail-btn:hover .vx-tooltip {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* Compact Quick-Switcher Session Row (30px height) */
+    .vx-session-row {
+      height: 30px;
+      padding: 0 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background-color 0.12s ease, color 0.12s ease;
+      user-select: none;
+    }
+    .vx-session-row:hover {
+      background-color: var(--bg-surface-2);
+      color: var(--text-primary);
+    }
+    .vx-session-row.active {
+      background-color: var(--accent-glow);
+      color: var(--text-primary);
+      font-weight: 600;
+      border-left: 2px solid var(--accent-primary);
+      padding-left: 6px;
+    }
+
+    .term-output {
+      font-size: var(--term-size);
+    }
+
+    .kbd-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background-color: var(--bg-surface-3);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+
+    .accent-pill {
+      background-color: var(--accent-glow);
+      color: var(--accent-primary);
+      border: 1px solid var(--accent-border);
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-strong);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-orange-500/30">
+
+  <!-- =====================================================================
+       SHOWCASE PRESENTER BAR (Allows switching Sidebar Modes & Themes)
+       ===================================================================== -->
+  <div class="bg-[var(--bg-surface-2)] border-b border-[var(--border-subtle)] px-3 sm:px-5 py-1.5 text-xs">
+    <div class="max-w-[1560px] mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="px-1.5 py-0.5 rounded font-mono text-[10px] accent-pill font-semibold">STRICT SCOPE</span>
+        <span class="text-[var(--text-secondary)] text-[11px]">
+          Solo le feature reali di <strong>Vexel (Claude Code Session Orchestrator)</strong>: <code class="font-mono text-[var(--text-primary)]">Session</code>, <code class="font-mono text-[var(--text-primary)]">Sessions</code>, Tool Calls (<code class="font-mono">Bash/Read/Edit/Grep</code>), Permessi, <code class="font-mono">New Session</code> &amp; <code class="font-mono">Settings</code>.
+        </span>
+      </div>
+
+      <!-- Interactive Controls for the Redesign Evaluation -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center rounded-lg vx-surface-1 p-0.5 text-[11px] font-mono">
+          <button onclick="setSidebarMode('compact-full')" id="sb-compact-full" class="px-2 py-0.5 rounded accent-pill transition-all">
+            52px Rail + Quick List
+          </button>
+          <button onclick="setSidebarMode('rail-only')" id="sb-rail-only" class="px-2 py-0.5 rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all">
+            52px Rail Only
+          </button>
+          <button onclick="setSidebarMode('legacy-m3')" id="sb-legacy-m3" class="px-2 py-0.5 rounded text-rose-400 hover:text-rose-300 transition-all" title="Simula i vecchi bottoni giganti Material 3">
+            Old Bloated M3 Rail
+          </button>
+        </div>
+
+        <button onclick="setActiveScreen('compare')" id="top-compare-btn" class="px-2 py-0.5 rounded-md vx-surface-1 hover:vx-surface-3 text-[11px] font-mono text-amber-400 border border-amber-500/30">
+          Before / After Sidebar Audit
+        </button>
+
+        <!-- Theme Dots -->
+        <div class="flex items-center gap-1 vx-surface-1 p-1 rounded-lg">
+          <button onclick="setTheme('obsidian')" class="w-4 h-4 rounded bg-[#18181f] border border-[#e06d44] flex items-center justify-center" title="Warm Obsidian & Terracotta">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#e06d44]"></span>
+          </button>
+          <button onclick="setTheme('editorial-light')" class="w-4 h-4 rounded bg-[#f4f1ea] border border-stone-400 flex items-center justify-center" title="Editorial Paper & Clay">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#c85228]"></span>
+          </button>
+          <button onclick="setTheme('carbon-indigo')" class="w-4 h-4 rounded bg-[#0f111a] border border-indigo-400 flex items-center justify-center" title="Carbon Indigo">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#6366f1]"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MAIN VEXEL APPLICATION SHELL
+       ===================================================================== -->
+  <main class="flex-1 max-w-[1560px] w-full mx-auto p-2 sm:p-4 flex flex-col">
+    <div class="flex-1 rounded-xl vx-surface-1 overflow-hidden flex flex-col shadow-2xl border border-[var(--border-strong)] min-h-[740px]">
+
+      <!-- =================================================================
+           1. TOP APP BAR (COMPACT 48PX)
+           ================================================================= -->
+      <header class="h-12 px-3.5 bg-[var(--bg-surface-2)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-3 select-none shrink-0">
+        
+        <!-- Left: Sidebar Toggle + Vexel Brand Identity -->
+        <div class="flex items-center gap-2.5">
+          <button onclick="toggleQuickList()" class="w-7 h-7 rounded-md hover:bg-[var(--bg-surface-3)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors" title="Toggle Quick Session List (⌘B)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h10M4 18h16"/></svg>
+          </button>
+
+          <div class="flex items-center gap-2 cursor-pointer" onclick="setActiveScreen('session')">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center font-mono font-bold text-xs text-white shadow-inner"
+                 style="background: linear-gradient(135deg, var(--accent-primary), #9a3412);">
+              VX
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span class="font-semibold tracking-tight text-sm">Vexel</span>
+              <span class="text-[10px] font-mono text-[var(--text-muted)] hidden sm:inline">Claude Code Orchestrator</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center: Active Session Context Pill (Name + Directory + Model + Status) -->
+        <div onclick="setActiveScreen('session')" class="hidden md:flex items-center gap-2.5 px-3 py-1 rounded-lg vx-surface-1 hover:border-[var(--border-strong)] cursor-pointer transition-all">
+          <span id="topbar-status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="topbar-session-name" class="text-xs font-semibold text-[var(--text-primary)]">payments-webhook-retry</span>
+          <span class="text-[var(--text-muted)]">•</span>
+          <span id="topbar-session-dir" class="text-[11px] font-mono text-[var(--text-secondary)]">~/work/payments-api</span>
+          <span id="topbar-session-model" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-surface-3)] text-[var(--text-secondary)]">claude-sonnet-4-6</span>
+          <span id="topbar-status-text" class="text-[10px] font-mono text-amber-400">Waiting Approval</span>
+        </div>
+
+        <!-- Right: Strictly the 3 Real Quick Action Icon Buttons (+, /, Settings) -->
+        <div class="flex items-center gap-1.5">
+          <button onclick="openNewSessionModal()" class="h-8 px-2.5 rounded-lg text-xs font-medium text-white flex items-center gap-1.5 shadow-sm transition-transform active:scale-95"
+                  style="background: var(--accent-primary);" title="New Claude Code Session">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4"/></svg>
+            <span class="hidden sm:inline">New Session</span>
+          </button>
+
+          <button onclick="focusSessionSearch()" class="w-8 h-8 rounded-lg vx-surface-1 hover:vx-surface-3 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors" title="Search Sessions (/)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </button>
+
+          <button onclick="openSettingsModal()" class="w-8 h-8 rounded-lg vx-surface-1 hover:vx-surface-3 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors" title="Settings">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- =================================================================
+           2. BODY: 52PX RAIL + COMPACT QUICK-SWITCHER + MAIN VIEWPORT
+           ================================================================= -->
+      <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- PRIMARY 52PX NAVIGATION RAIL (Strictly the 2 Real Views: Session & Sessions) -->
+        <aside id="primary-rail" class="w-[52px] bg-[var(--bg-surface-1)] border-r border-[var(--border-subtle)] flex flex-col items-center py-2.5 justify-between shrink-0 z-20 transition-all duration-200">
+          <div class="flex flex-col items-center gap-1.5 w-full">
+            
+            <!-- Compact + New Session Button (34x34px instead of giant M3 56px FAB) -->
+            <button onclick="openNewSessionModal()" class="vx-rail-fab w-[34px] h-[34px] rounded-lg mb-1 flex items-center justify-center text-white shadow-sm transition-transform active:scale-95"
+                    style="background: linear-gradient(135deg, var(--accent-primary), #b8431b);"
+                    title="New Claude Code Session">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4"/></svg>
+            </button>
+
+            <div class="w-5 h-[1px] bg-[var(--border-subtle)] my-0.5"></div>
+
+            <!-- Destination 1: Active Session (Terminal Stream) -->
+            <button id="rail-btn-session" onclick="setActiveScreen('session')" class="vx-rail-btn active">
+              <svg class="w-[17px] h-[17px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span class="rail-m3-label hidden">Session</span>
+              <span class="vx-tooltip">Active Session <span class="ml-1 opacity-60 font-mono">⌘1</span></span>
+            </button>
+
+            <!-- Destination 2: Sessions (Orchestrator List) -->
+            <button id="rail-btn-sessions" onclick="setActiveScreen('sessions')" class="vx-rail-btn">
+              <svg class="w-[17px] h-[17px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+              <span class="rail-m3-label hidden">Sessions</span>
+              <span class="vx-tooltip">All Sessions (5) <span class="ml-1 opacity-60 font-mono">⌘2</span></span>
+            </button>
+          </div>
+
+          <!-- Bottom Rail: Settings Trigger & Server Connection Dot -->
+          <div class="flex flex-col items-center gap-2">
+            <button onclick="openSettingsModal()" class="vx-rail-btn">
+              <svg class="w-[17px] h-[17px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span class="rail-m3-label hidden">Settings</span>
+              <span class="vx-tooltip">Settings <span class="ml-1 opacity-60 font-mono">⌘,</span></span>
+            </button>
+            <div class="w-2 h-2 rounded-full bg-emerald-400 mb-1" title="Connected to Vexel Daemon (ws://localhost:8080)"></div>
+          </div>
+        </aside>
+
+        <!-- COMPACT 220PX SESSIONS QUICK-SWITCHER SIDEBAR (30px rows, 1-click session switching) -->
+        <aside id="quick-session-list" class="w-[224px] bg-[var(--bg-surface-1)] border-r border-[var(--border-subtle)] flex flex-col justify-between shrink-0 select-none transition-all duration-200">
+          <div class="p-2.5 space-y-2.5 overflow-y-auto">
+            
+            <div class="px-1.5 flex items-center justify-between">
+              <span class="text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)]">Orchestrated Sessions</span>
+              <button onclick="setActiveScreen('sessions')" class="text-[10px] font-mono text-[var(--accent-primary)] hover:underline">View all →</button>
+            </div>
+
+            <!-- Dynamic Compact 30px Session Rows -->
+            <div id="sidebar-sessions-container" class="space-y-0.5"></div>
+          </div>
+
+          <!-- Daemon Status Footer -->
+          <div class="p-2.5 border-t border-[var(--border-subtle)] bg-[var(--bg-surface-2)]/40 flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
+            <span class="flex items-center gap-1.5 truncate">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span id="footer-host-label" class="truncate">localhost:8080</span>
+            </span>
+            <span id="sidebar-running-count" class="text-[var(--text-secondary)]">2 active</span>
+          </div>
+        </aside>
+
+        <!-- ===============================================================
+             3. MAIN CONTENT STAGE (Session | Sessions | Sidebar Audit)
+             =============================================================== -->
+        <div class="flex-1 flex flex-col overflow-hidden vx-dot-grid relative">
+
+          <!-- =============================================================
+               SCREEN 1: ACTIVE SESSION VIEW (`Session`)
+               ============================================================= -->
+          <section id="screen-session" class="flex-1 flex flex-col overflow-hidden bg-[var(--bg-canvas)]/75">
+            
+            <!-- Session Info Subbar -->
+            <div class="h-10 px-4 bg-[var(--bg-surface-1)] border-b border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-2 shrink-0">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span id="subbar-title" class="text-xs font-semibold truncate">payments-webhook-retry</span>
+                <span class="text-[var(--text-muted)]">/</span>
+                <span id="subbar-dir" class="font-mono text-[11px] text-[var(--text-secondary)] truncate">~/work/payments-api</span>
+                <span id="subbar-model" class="font-mono text-[10px] px-1.5 py-0.5 rounded vx-surface-2 text-[var(--text-secondary)]">claude-sonnet-4-6</span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span id="subbar-status-badge" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                  Waiting Approval
+                </span>
+
+                <button id="subbar-stop-btn" onclick="interruptCurrentSession()" class="px-2.5 py-1 rounded-md text-[11px] font-mono bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 transition-colors">
+                  ■ Stop / Interrupt
+                </button>
+              </div>
+            </div>
+
+            <!-- Claude Code Output Stream -->
+            <div id="session-stream" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 max-w-4xl w-full mx-auto">
+              <!-- Populated dynamically by selectSession() -->
+            </div>
+
+            <!-- Permission Prompt Banner (Shown when session awaits tool confirmation) -->
+            <div id="permission-banner" class="mx-4 sm:mx-6 mb-2 rounded-xl vx-surface-2 border border-amber-500/40 p-3.5 shadow-lg">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
+                      Permission Required
+                    </span>
+                    <span class="text-xs font-medium text-[var(--text-primary)]">
+                      Claude Code wants to execute a shell command in <code id="perm-dir" class="font-mono text-[11px] text-[var(--text-secondary)]">~/work/payments-api</code>
+                    </span>
+                  </div>
+                  <div id="perm-cmd" class="font-mono text-xs px-2.5 py-1.5 rounded bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-amber-300">
+                    Bash: rm -rf dist &amp;&amp; npm run build &amp;&amp; npm test -- --grep "webhook signature"
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                  <button onclick="resolvePermission(false)" class="px-3 py-1.5 rounded-lg text-xs font-mono vx-surface-3 hover:bg-rose-500/20 hover:text-rose-300 transition-colors">
+                    Deny (Esc)
+                  </button>
+                  <button onclick="resolvePermission(true)" class="px-3.5 py-1.5 rounded-lg text-xs font-mono font-semibold text-white shadow transition-transform active:scale-95"
+                          style="background: var(--accent-primary);">
+                    Approve &amp; Run ↵
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Prompt Composer -->
+            <div class="p-3 sm:p-4 border-t border-[var(--border-subtle)] bg-[var(--bg-surface-1)]/90">
+              <div class="max-w-4xl mx-auto flex items-end gap-2 rounded-xl vx-surface-2 p-2 focus-within:border-[var(--accent-border)] transition-all">
+                <span class="font-mono text-sm text-[var(--accent-primary)] pl-2 pb-1.5 select-none">❯</span>
+                <textarea id="prompt-input" rows="1"
+                          onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendPromptToSession();}"
+                          placeholder="Send a prompt or follow-up instruction to Claude Code..."
+                          class="flex-1 bg-transparent text-xs sm:text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none resize-none py-1.5"></textarea>
+                <button onclick="sendPromptToSession()" class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-white shrink-0 transition-transform active:scale-95"
+                        style="background: var(--accent-primary);">
+                  Send ↵
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- =============================================================
+               SCREEN 2: SESSIONS ORCHESTRATOR VIEW (`Sessions`)
+               ============================================================= -->
+          <section id="screen-sessions" class="hidden flex-1 flex flex-col overflow-hidden p-4 sm:p-6">
+            <div class="max-w-5xl w-full mx-auto flex-1 flex flex-col space-y-4 overflow-hidden">
+              
+              <!-- Orchestrator Header -->
+              <div class="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <span class="text-[10px] font-mono uppercase tracking-widest text-[var(--accent-primary)]">Claude Code Orchestrator</span>
+                  <h1 class="font-serif text-2xl sm:text-3xl tracking-tight text-[var(--text-primary)]">
+                    Managed Sessions
+                  </h1>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <!-- Empty State Toggle for UI Preview -->
+                  <button onclick="toggleEmptyStatePreview()" id="empty-state-toggle-btn" class="px-2.5 py-1.5 rounded-lg vx-surface-2 hover:vx-surface-3 text-[11px] font-mono text-[var(--text-secondary)]">
+                    Preview Empty State
+                  </button>
+                  <button onclick="openNewSessionModal()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-white flex items-center gap-1.5"
+                          style="background: var(--accent-primary);">
+                    <span>+ New Session</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Search & Status Filter Bar -->
+              <div class="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl vx-surface-1">
+                <div class="flex items-center gap-2 flex-1 min-w-[220px] px-2">
+                  <svg class="w-4 h-4 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  <input id="sessions-search-input" type="text" oninput="renderSessionsList()"
+                         placeholder="Filter sessions by name or directory path..."
+                         class="w-full bg-transparent text-xs sm:text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none" />
+                  <span class="kbd-badge">/</span>
+                </div>
+
+                <!-- Status Filter Pills -->
+                <div class="flex items-center gap-1 p-0.5 rounded-lg vx-surface-2 text-xs font-mono">
+                  <button onclick="setStatusFilter('all')" id="flt-all" class="px-2.5 py-1 rounded-md accent-pill">All</button>
+                  <button onclick="setStatusFilter('running')" id="flt-running" class="px-2.5 py-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Running</button>
+                  <button onclick="setStatusFilter('waiting')" id="flt-waiting" class="px-2.5 py-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Waiting</button>
+                  <button onclick="setStatusFilter('idle')" id="flt-idle" class="px-2.5 py-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Completed / Idle</button>
+                  <button onclick="setStatusFilter('error')" id="flt-error" class="px-2.5 py-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Error</button>
+                </div>
+              </div>
+
+              <!-- Sessions List Container -->
+              <div id="orchestrator-list-container" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+
+              <!-- Empty State Container (Hidden by default) -->
+              <div id="orchestrator-empty-state" class="hidden flex-1 rounded-xl vx-surface-1 p-10 flex flex-col items-center justify-center text-center">
+                <div class="w-12 h-12 rounded-xl vx-surface-2 flex items-center justify-center text-[var(--accent-primary)] mb-3">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+                <h3 class="font-serif text-2xl text-[var(--text-primary)]">No Active Claude Code Sessions</h3>
+                <p class="text-xs text-[var(--text-secondary)] max-w-md mt-1 mb-4">
+                  Spawn a new Claude Code instance in any local repository directory to orchestrate tool calls, edits, and test runs.
+                </p>
+                <button onclick="openNewSessionModal()" class="px-4 py-2 rounded-lg text-xs font-medium text-white shadow"
+                        style="background: var(--accent-primary);">
+                  + Start First Session
+                </button>
+              </div>
+
+            </div>
+          </section>
+
+          <!-- =============================================================
+               SCREEN 3: BEFORE / AFTER SIDEBAR AUDIT (Explains the UI Fix)
+               ============================================================= -->
+          <section id="screen-compare" class="hidden flex-1 p-4 sm:p-6 overflow-y-auto">
+            <div class="max-w-5xl mx-auto space-y-5">
+              <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+                <div>
+                  <span class="text-[10px] font-mono uppercase tracking-widest text-[var(--accent-primary)]">UI Redesign Audit</span>
+                  <h2 class="font-serif text-2xl sm:text-3xl text-[var(--text-primary)]">
+                    Come abbiamo risolto la Sidebar Material 3 sproporzionata
+                  </h2>
+                </div>
+                <button onclick="setActiveScreen('session')" class="px-3 py-1.5 rounded-lg vx-surface-2 text-xs font-mono">
+                  ← Torna alla Sessione
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- BEFORE: Bloated M3 Rail -->
+                <div class="rounded-xl vx-surface-1 p-4 space-y-3 border border-rose-500/30">
+                  <div class="flex items-center justify-between">
+                    <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-rose-500/15 text-rose-400">PRIMA • Material 3 Standard</span>
+                    <span class="font-mono text-xs text-rose-400">88px Rail / Bottoni 64×56px</span>
+                  </div>
+                  <div class="h-64 rounded-lg bg-[#1d1b20] border border-white/10 flex overflow-hidden">
+                    <div class="w-[92px] bg-[#211f26] border-r border-white/10 flex flex-col items-center py-4 gap-4 shrink-0">
+                      <div class="w-14 h-14 rounded-2xl bg-[#d0bcff] text-[#381e72] flex items-center justify-center text-xl font-bold">+</div>
+                      <div class="flex flex-col items-center gap-1">
+                        <div class="w-16 h-8 rounded-full bg-[#4f378b] text-[#eaddff] flex items-center justify-center text-xs">>_</div>
+                        <span class="text-[11px] text-[#e6e0e9]">Session</span>
+                      </div>
+                      <div class="flex flex-col items-center gap-1 opacity-70">
+                        <div class="w-16 h-8 rounded-full flex items-center justify-center text-[#cac4d0] text-xs">☰</div>
+                        <span class="text-[11px] text-[#cac4d0]">Sessions</span>
+                      </div>
+                    </div>
+                    <div class="flex-1 p-4 flex items-center justify-center text-xs text-[#cac4d0]/70 text-center">
+                      Solo 2 bottoni enormi nella NavigationRail M3 standard e colori viola anonimi.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- AFTER: Compact Vexel Studio Rail -->
+                <div class="rounded-xl vx-surface-1 p-4 space-y-3 border border-emerald-500/30">
+                  <div class="flex items-center justify-between">
+                    <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/15 text-emerald-400">DOPO • Vexel Studio Rail + Quick List</span>
+                    <span class="font-mono text-xs text-emerald-400">52px Rail / Bottoni 34×34px</span>
+                  </div>
+                  <div class="h-64 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-strong)] flex overflow-hidden">
+                    <div class="w-[52px] bg-[var(--bg-surface-1)] border-r border-[var(--border-subtle)] flex flex-col items-center py-2.5 gap-1.5 shrink-0">
+                      <div class="w-[34px] h-[34px] rounded-lg flex items-center justify-center text-white text-sm font-bold" style="background: var(--accent-primary);">+</div>
+                      <div class="vx-rail-btn active"><span class="font-mono text-xs">&gt;_</span></div>
+                      <div class="vx-rail-btn"><span class="font-mono text-xs">☰</span></div>
+                    </div>
+                    <div class="w-[210px] bg-[var(--bg-surface-1)] border-r border-[var(--border-subtle)] p-2.5 space-y-1">
+                      <div class="text-[10px] font-mono uppercase text-[var(--text-muted)] px-1">Quick Switcher (30px)</div>
+                      <div class="vx-session-row active"><span>payments-webhook</span><span class="w-2 h-2 rounded-full bg-amber-400"></span></div>
+                      <div class="vx-session-row"><span>auth-jwt-refresh</span><span class="w-2 h-2 rounded-full bg-emerald-400"></span></div>
+                      <div class="vx-session-row"><span> billing-invoice-pdf</span><span class="w-2 h-2 rounded-full bg-zinc-500"></span></div>
+                    </div>
+                    <div class="flex-1 p-3 flex items-center justify-center text-xs text-[var(--text-secondary)] text-center">
+                      Stesse identiche feature (`Session` e `Sessions`), ma con proporzioni da tool desktop professionale.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- =====================================================================
+       MODAL 1: NEW SESSION DIALOG (`+ New Session`)
+       ===================================================================== -->
+  <div id="modal-new-session" class="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-xl vx-surface-2 border border-[var(--border-strong)] shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-[var(--accent-primary)]"></span>
+          <h3 class="text-sm font-semibold">New Claude Code Session</h3>
+        </div>
+        <button onclick="closeNewSessionModal()" class="text-xs font-mono text-[var(--text-muted)] hover:text-[var(--text-primary)]">[Esc]</button>
+      </div>
+
+      <div class="p-4 space-y-3.5 text-xs">
+        <div>
+          <label class="block font-mono text-[11px] text-[var(--text-secondary)] mb-1">Session Name</label>
+          <input id="new-sess-name" type="text" placeholder="e.g. refactor-redis-cache"
+                 class="w-full px-3 py-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-border)]" />
+        </div>
+
+        <div>
+          <label class="block font-mono text-[11px] text-[var(--text-secondary)] mb-1">Working Directory Path</label>
+          <input id="new-sess-dir" type="text" value="~/work/vexel-core"
+                 class="w-full px-3 py-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] font-mono text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-border)]" />
+        </div>
+
+        <div>
+          <label class="block font-mono text-[11px] text-[var(--text-secondary)] mb-1">Claude Model</label>
+          <select id="new-sess-model" class="w-full px-3 py-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] font-mono text-[var(--text-primary)] focus:outline-none">
+            <option value="claude-sonnet-4-6">claude-sonnet-4-6 (Default)</option>
+            <option value="claude-opus-4-6">claude-opus-4-6</option>
+            <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-mono text-[11px] text-[var(--text-secondary)] mb-1">Initial Prompt (Optional)</label>
+          <textarea id="new-sess-prompt" rows="3" placeholder="Investigate failing tests in src/..."
+                    class="w-full px-3 py-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-border)] resize-none"></textarea>
+        </div>
+      </div>
+
+      <div class="px-4 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-surface-1)] flex items-center justify-end gap-2">
+        <button onclick="closeNewSessionModal()" class="px-3 py-1.5 rounded-lg text-xs vx-surface-2 hover:vx-surface-3">
+          Cancel
+        </button>
+        <button onclick="createNewSession()" class="px-4 py-1.5 rounded-lg text-xs font-medium text-white shadow"
+                style="background: var(--accent-primary);">
+          Start Session
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODAL 2: SETTINGS DIALOG (`Settings`)
+       ===================================================================== -->
+  <div id="modal-settings" class="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-xl vx-surface-2 border border-[var(--border-strong)] shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
+        <span class="text-sm font-semibold">Vexel Settings</span>
+        <button onclick="closeSettingsModal()" class="text-xs font-mono text-[var(--text-muted)] hover:text-[var(--text-primary)]">[Esc]</button>
+      </div>
+
+      <div class="p-4 space-y-4 text-xs">
+        <div>
+          <label class="block font-mono text-[11px] text-[var(--text-secondary)] mb-1">Orchestrator Server / Host URL</label>
+          <input id="settings-host-url" type="text" value="http://localhost:8080"
+                 class="w-full px-3 py-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] font-mono text-[var(--text-primary)] focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block font-mono text-[11px] text-[var(--text-secondary)] mb-1">Default Claude Model</label>
+          <select id="settings-default-model" class="w-full px-3 py-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] font-mono text-[var(--text-primary)]">
+            <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+            <option value="claude-opus-4-6">claude-opus-4-6</option>
+            <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-mono text-[11px] text-[var(--text-secondary)] mb-1.5">Studio Theme</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="setTheme('obsidian')" class="p-2 rounded-lg vx-surface-1 hover:border-[var(--accent-border)] text-left">
+              <div class="w-full h-3 rounded bg-[#121216] border border-[#e06d44] mb-1"></div>
+              <div class="font-medium text-[11px]">Obsidian</div>
+            </button>
+            <button onclick="setTheme('editorial-light')" class="p-2 rounded-lg vx-surface-1 hover:border-[var(--accent-border)] text-left">
+              <div class="w-full h-3 rounded bg-[#f4f1ea] border border-stone-400 mb-1"></div>
+              <div class="font-medium text-[11px]">Paper Light</div>
+            </button>
+            <button onclick="setTheme('carbon-indigo')" class="p-2 rounded-lg vx-surface-1 hover:border-[var(--accent-border)] text-left">
+              <div class="w-full h-3 rounded bg-[#0f111a] border border-indigo-400 mb-1"></div>
+              <div class="font-medium text-[11px]">Indigo</div>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-mono text-[11px] text-[var(--text-secondary)] mb-1">Terminal Font Size</label>
+          <div class="flex items-center gap-2">
+            <button onclick="setTermFontSize('11px')" class="px-2.5 py-1 rounded vx-surface-1 font-mono">11px (Compact)</button>
+            <button onclick="setTermFontSize('12px')" class="px-2.5 py-1 rounded accent-pill font-mono">12px (Default)</button>
+            <button onclick="setTermFontSize('13.5px')" class="px-2.5 py-1 rounded vx-surface-1 font-mono">13.5px (Large)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-4 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-surface-1)] flex justify-end gap-2">
+        <button onclick="saveSettings()" class="px-4 py-1.5 rounded-lg text-xs font-medium text-white"
+                style="background: var(--accent-primary);">
+          Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-pill" class="fixed bottom-5 right-5 z-50 px-3.5 py-2 rounded-lg vx-glass text-xs font-mono text-[var(--text-primary)] opacity-0 pointer-events-none transition-all duration-200 translate-y-2">
+    Ready
+  </div>
+
+  <script>
+    // =========================================================================
+    // STRICT CLAUDE CODE ORCHESTRATOR STATE (No extra unimplemented features)
+    // =========================================================================
+    const sessionsData = [
+      {
+        id: 'sess-1',
+        name: 'payments-webhook-retry',
+        dir: '~/work/payments-api',
+        model: 'claude-sonnet-4-6',
+        status: 'waiting', // running | waiting | idle | error
+        updatedAt: 'Just now',
+        lastPreview: 'Waiting permission: Bash(rm -rf dist && npm run build...)',
+        pendingPermission: {
+          cmd: 'Bash: rm -rf dist && npm run build && npm test -- --grep "webhook signature"'
+        },
+        messages: [
+          {
+            role: 'user',
+            time: '23:41:10',
+            text: 'Fix the Stripe webhook signature retry bug when the payload contains raw UTF-8 characters, then run the unit test suite.'
+          },
+          {
+            role: 'assistant',
+            time: '23:41:14',
+            text: 'I will inspect the webhook verification middleware and update the buffer encoding before running the tests.',
+            tools: [
+              {
+                type: 'Grep',
+                target: 'constructEvent in src/webhooks/',
+                status: 'completed',
+                output: 'src/webhooks/stripeHandler.ts:42: const event = stripe.webhooks.constructEvent(req.body, sig, secret);'
+              },
+              {
+                type: 'Read',
+                target: 'src/webhooks/stripeHandler.ts (lines 1-65)',
+                status: 'completed',
+                output: '38 | export async function handleStripeWebhook(req: Request, res: Response) {\n39 |   const sig = req.headers["stripe-signature"];\n40 |   // Bug: req.body was parsed as JSON string instead of raw Buffer'
+              },
+              {
+                type: 'Edit',
+                target: 'src/webhooks/stripeHandler.ts',
+                status: 'completed',
+                output: '- const payload = JSON.stringify(req.body);\n+ const payload = req.rawBody || Buffer.from(req.body, "utf8");'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'sess-2',
+        name: 'auth-jwt-refresh-race',
+        dir: '~/work/identity-service',
+        model: 'claude-sonnet-4-6',
+        status: 'running',
+        updatedAt: '1m ago',
+        lastPreview: 'Bash: cargo test --package auth_core -- --nocapture',
+        pendingPermission: null,
+        messages: [
+          {
+            role: 'user',
+            time: '23:39:02',
+            text: 'Check why concurrent refresh token requests trigger a race condition in Redis.'
+          },
+          {
+            role: 'assistant',
+            time: '23:39:08',
+            text: 'Adding a distributed Redis Lua lock around token rotation and verifying with `cargo test`.',
+            tools: [
+              {
+                type: 'Read',
+                target: 'src/token_store.rs',
+                status: 'completed',
+                output: 'pub async fn rotate_refresh_token(&self, token_id: &str) -> Result<TokenPair, AuthError>'
+              },
+              {
+                type: 'Bash',
+                target: 'cargo test --package auth_core -- --nocapture',
+                status: 'running',
+                output: 'Compiling auth_core v0.4.2\nRunning unittests src/lib.rs...\ntest token_store::tests::concurrent_rotation ... ok'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'sess-3',
+        name: 'vexel-sidebar-compact',
+        dir: '~/work/vexel-ui',
+        model: 'claude-opus-4-6',
+        status: 'idle',
+        updatedAt: '18m ago',
+        lastPreview: 'Completed: Replaced 88px M3 NavigationRail with 52px Studio Rail.',
+        pendingPermission: null,
+        messages: [
+          {
+            role: 'user',
+            time: '23:20:11',
+            text: 'Shrink the sidebar navigation rail from 88px M3 buttons to a 52px studio rail.'
+          },
+          {
+            role: 'assistant',
+            time: '23:20:45',
+            text: 'Updated the NavigationRail component to 52px width with 34x34px buttons and 30px quick-switcher rows.',
+            tools: [
+              {
+                type: 'Edit',
+                target: 'src/ui/SidebarRail.kt',
+                status: 'completed',
+                output: '- modifier = Modifier.width(88.dp)\n+ modifier = Modifier.width(52.dp)'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'sess-4',
+        name: 'db-migration-flyway-v14',
+        dir: '~/work/ledger-core',
+        model: 'claude-haiku-4-5',
+        status: 'error',
+        updatedAt: '1h ago',
+        lastPreview: 'Error: Bash exited with code 1 (Connection refused :5432)',
+        pendingPermission: null,
+        messages: [
+          {
+            role: 'user',
+            time: '22:40:00',
+            text: 'Run the local Flyway migration check against postgres.'
+          },
+          {
+            role: 'assistant',
+            time: '22:40:05',
+            text: 'Attempting to run Flyway validate via Gradle.',
+            tools: [
+              {
+                type: 'Bash',
+                target: './gradlew flywayValidate',
+                status: 'error',
+                output: 'ERROR: Unable to obtain connection from database (jdbc:postgresql://localhost:5432/ledger): Connection refused.'
+              }
+            ]
+          }
+        ]
+      }
+    ];
+
+    let currentSessionId = 'sess-1';
+    let currentStatusFilter = 'all';
+    let showEmptyStatePreview = false;
+
+    function statusMeta(status) {
+      switch (status) {
+        case 'running':
+          return { label: 'Running', dot: 'bg-emerald-400 animate-pulse', badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' };
+        case 'waiting':
+          return { label: 'Waiting Approval', dot: 'bg-amber-400 animate-pulse', badge: 'bg-amber-500/15 text-amber-400 border-amber-500/30' };
+        case 'error':
+          return { label: 'Error', dot: 'bg-rose-500', badge: 'bg-rose-500/15 text-rose-400 border-rose-500/30' };
+        default:
+          return { label: 'Idle / Completed', dot: 'bg-zinc-400', badge: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30' };
+      }
+    }
+
+    // Render Compact Quick-Switcher List in Left Sidebar
+    function renderSidebarQuickList() {
+      const container = document.getElementById('sidebar-sessions-container');
+      container.innerHTML = '';
+
+      sessionsData.forEach(sess => {
+        const meta = statusMeta(sess.status);
+        const row = document.createElement('div');
+        row.className = 'vx-session-row ' + (sess.id === currentSessionId ? 'active' : '');
+        row.onclick = () => {
+          selectSession(sess.id);
+          setActiveScreen('session');
+        };
+        row.innerHTML = `
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-2 h-2 rounded-full shrink-0 ${meta.dot}"></span>
+            <span class="truncate">${sess.name}</span>
+          </div>
+          <span class="text-[10px] font-mono text-[var(--text-muted)] ml-1 shrink-0">${sess.dir.split('/').pop()}</span>
+        `;
+        container.appendChild(row);
+      });
+
+      const activeCount = sessionsData.filter(s => s.status === 'running' || s.status === 'waiting').length;
+      document.getElementById('sidebar-running-count').textContent = activeCount + ' active';
+    }
+
+    // Select & Render Active Session View
+    function selectSession(sessionId) {
+      currentSessionId = sessionId;
+      const sess = sessionsData.find(s => s.id === sessionId) || sessionsData[0];
+      const meta = statusMeta(sess.status);
+
+      // Update Top App Bar Context Pill
+      document.getElementById('topbar-session-name').textContent = sess.name;
+      document.getElementById('topbar-session-dir').textContent = sess.dir;
+      document.getElementById('topbar-session-model').textContent = sess.model;
+      document.getElementById('topbar-status-text').textContent = meta.label;
+      document.getElementById('topbar-status-dot').className = 'w-2 h-2 rounded-full ' + meta.dot;
+
+      // Update Session Info Subbar
+      document.getElementById('subbar-title').textContent = sess.name;
+      document.getElementById('subbar-dir').textContent = sess.dir;
+      document.getElementById('subbar-model').textContent = sess.model;
+      const badgeEl = document.getElementById('subbar-status-badge');
+      badgeEl.className = `inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono border ${meta.badge}`;
+      badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${meta.dot}"></span>${meta.label}`;
+
+      // Show/Hide Permission Banner
+      const permBanner = document.getElementById('permission-banner');
+      if (sess.pendingPermission) {
+        permBanner.classList.remove('hidden');
+        document.getElementById('perm-dir').textContent = sess.dir;
+        document.getElementById('perm-cmd').textContent = sess.pendingPermission.cmd;
+      } else {
+        permBanner.classList.add('hidden');
+      }
+
+      // Render Messages & Tool Call Blocks
+      const stream = document.getElementById('session-stream');
+      stream.innerHTML = '';
+
+      sess.messages.forEach((msg, mIdx) => {
+        if (msg.role === 'user') {
+          const userEl = document.createElement('div');
+          userEl.className = 'flex items-start gap-3';
+          userEl.innerHTML = `
+            <div class="w-6 h-6 rounded-md bg-[var(--bg-surface-3)] border border-[var(--border-strong)] flex items-center justify-center text-[11px] font-mono font-semibold shrink-0 mt-0.5">U</div>
+            <div class="flex-1 space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold">You</span>
+                <span class="text-[10px] font-mono text-[var(--text-muted)]">${msg.time}</span>
+              </div>
+              <div class="text-xs sm:text-sm leading-relaxed text-[var(--text-primary)] vx-surface-2 rounded-lg p-3">${msg.text}</div>
+            </div>
+          `;
+          stream.appendChild(userEl);
+        } else {
+          const asstEl = document.createElement('div');
+          asstEl.className = 'flex items-start gap-3';
+          let toolsHtml = '';
+          if (msg.tools && msg.tools.length) {
+            toolsHtml = msg.tools.map((t, tIdx) => {
+              const bodyId = `tool-${sess.id}-${mIdx}-${tIdx}`;
+              const statusColor = t.status === 'error' ? 'text-rose-400' : (t.status === 'running' ? 'text-amber-400' : 'text-emerald-400');
+              return `
+                <div class="rounded-lg vx-surface-1 overflow-hidden border border-[var(--border-subtle)]">
+                  <button onclick="document.getElementById('${bodyId}').classList.toggle('hidden')" class="w-full px-3 py-1.5 flex items-center justify-between text-left hover:bg-[var(--bg-surface-2)] transition-colors">
+                    <div class="flex items-center gap-2 font-mono text-[11px] min-w-0">
+                      <span class="px-1.5 py-0.2 rounded bg-[var(--bg-surface-3)] text-[var(--accent-primary)] font-semibold">${t.type}</span>
+                      <span class="truncate text-[var(--text-primary)]">${t.target}</span>
+                    </div>
+                    <span class="font-mono text-[10px] ${statusColor} shrink-0 ml-2">${t.status} ▾</span>
+                  </button>
+                  <pre id="${bodyId}" class="term-output px-3 py-2 border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] font-mono text-[var(--text-secondary)] overflow-x-auto leading-relaxed">${t.output}</pre>
+                </div>
+              `;
+            }).join('');
+          }
+
+          asstEl.innerHTML = `
+            <div class="w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-mono font-bold text-white shrink-0 mt-0.5" style="background: var(--accent-primary);">✦</div>
+            <div class="flex-1 space-y-2.5 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold">Claude Code</span>
+                <span class="text-[10px] font-mono text-[var(--text-muted)]">${sess.model} • ${msg.time}</span>
+              </div>
+              <div class="text-xs sm:text-sm leading-relaxed text-[var(--text-primary)]">${msg.text}</div>
+              <div class="space-y-2">${toolsHtml}</div>
+            </div>
+          `;
+          stream.appendChild(asstEl);
+        }
+      });
+
+      renderSidebarQuickList();
+      renderSessionsList();
+    }
+
+    // Approve or Deny Tool Permission Banner
+    function resolvePermission(approved) {
+      const sess = sessionsData.find(s => s.id === currentSessionId);
+      if (!sess || !sess.pendingPermission) return;
+
+      const cmdText = sess.pendingPermission.cmd;
+      sess.pendingPermission = null;
+      sess.status = approved ? 'running' : 'idle';
+      sess.updatedAt = 'Just now';
+      sess.lastPreview = approved ? 'Approved & running: ' + cmdText : 'Permission denied by user';
+
+      sess.messages.push({
+        role: 'assistant',
+        time: 'Now',
+        text: approved
+          ? 'Permission granted. Executing build and webhook unit test suite...'
+          : 'Command execution skipped per user denial.',
+        tools: approved ? [
+          {
+            type: 'Bash',
+            target: 'rm -rf dist && npm run build && npm test -- --grep "webhook signature"',
+            status: 'completed',
+            output: '✓ Built dist/ in 1.4s\n✓ 4 passing (webhook UTF-8 signature verification)'
+          }
+        ] : []
+      });
+
+      selectSession(currentSessionId);
+      triggerToast(approved ? 'Permission approved — command executed' : 'Permission denied');
+    }
+
+    // Send Prompt to Active Session
+    function sendPromptToSession() {
+      const input = document.getElementById('prompt-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const sess = sessionsData.find(s => s.id === currentSessionId);
+      sess.status = 'running';
+      sess.updatedAt = 'Just now';
+      sess.lastPreview = 'User: ' + text;
+
+      sess.messages.push({
+        role: 'user',
+        time: 'Now',
+        text: text
+      });
+
+      sess.messages.push({
+        role: 'assistant',
+        time: 'Now',
+        text: `Working on: "${text}" in ${sess.dir}...`,
+        tools: [
+          {
+            type: 'Read',
+            target: sess.dir + '/package.json',
+            status: 'completed',
+            output: '{ "name": "' + sess.name + '", "scripts": { "test": "vitest run" } }'
+          }
+        ]
+      });
+
+      input.value = '';
+      selectSession(currentSessionId);
+      const stream = document.getElementById('session-stream');
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    function interruptCurrentSession() {
+      const sess = sessionsData.find(s => s.id === currentSessionId);
+      if (!sess) return;
+      sess.status = 'idle';
+      sess.pendingPermission = null;
+      sess.lastPreview = 'Interrupted by operator (SIGINT)';
+      selectSession(currentSessionId);
+      triggerToast('Sent SIGINT interrupt to session: ' + sess.name);
+    }
+
+    // Render Screen 2: Sessions Orchestrator List
+    function renderSessionsList() {
+      const container = document.getElementById('orchestrator-list-container');
+      const emptyEl = document.getElementById('orchestrator-empty-state');
+      const query = (document.getElementById('sessions-search-input')?.value || '').toLowerCase();
+
+      if (showEmptyStatePreview) {
+        container.classList.add('hidden');
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+      container.classList.remove('hidden');
+      emptyEl.classList.add('hidden');
+
+      const filtered = sessionsData.filter(s => {
+        const matchesStatus = currentStatusFilter === 'all' || s.status === currentStatusFilter;
+        const matchesQuery = s.name.toLowerCase().includes(query) || s.dir.toLowerCase().includes(query);
+        return matchesStatus && matchesQuery;
+      });
+
+      container.innerHTML = '';
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="p-8 rounded-xl vx-surface-1 text-center text-xs font-mono text-[var(--text-muted)]">No sessions match the current filter.</div>`;
+        return;
+      }
+
+      filtered.forEach(sess => {
+        const meta = statusMeta(sess.status);
+        const card = document.createElement('div');
+        card.className = 'p-3.5 rounded-xl vx-surface-1 hover:border-[var(--border-strong)] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+        card.innerHTML = `
+          <div class="space-y-1 min-w-0 cursor-pointer flex-1" onclick="selectSession('${sess.id}'); setActiveScreen('session')">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="w-2 h-2 rounded-full ${meta.dot}"></span>
+              <span class="text-sm font-semibold text-[var(--text-primary)]">${sess.name}</span>
+              <span class="font-mono text-[11px] text-[var(--text-secondary)] px-2 py-0.5 rounded vx-surface-2">${sess.dir}</span>
+              <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-surface-3)] text-[var(--text-muted)]">${sess.model}</span>
+              <span class="font-mono text-[10px] px-2 py-0.5 rounded border ${meta.badge}">${meta.label}</span>
+            </div>
+            <div class="text-xs font-mono text-[var(--text-secondary)] truncate">
+              ${sess.lastPreview}
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-[11px] font-mono text-[var(--text-muted)] mr-1">${sess.updatedAt}</span>
+            <button onclick="selectSession('${sess.id}'); setActiveScreen('session')" class="px-2.5 py-1 rounded-lg text-xs font-mono vx-surface-2 hover:vx-surface-3 text-[var(--text-primary)]">
+              Open
+            </button>
+            <button onclick="deleteSession('${sess.id}')" class="px-2 py-1 rounded-lg text-xs font-mono vx-surface-2 hover:bg-rose-500/20 hover:text-rose-300 text-[var(--text-muted)]" title="Delete Session">
+              ✕
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function setStatusFilter(filter) {
+      currentStatusFilter = filter;
+      ['all', 'running', 'waiting', 'idle', 'error'].forEach(f => {
+        const btn = document.getElementById('flt-' + f);
+        if (f === filter) {
+          btn.classList.add('accent-pill');
+          btn.classList.remove('text-[var(--text-secondary)]');
+        } else {
+          btn.classList.remove('accent-pill');
+          btn.classList.add('text-[var(--text-secondary)]');
+        }
+      });
+      renderSessionsList();
+    }
+
+    function toggleEmptyStatePreview() {
+      showEmptyStatePreview = !showEmptyStatePreview;
+      document.getElementById('empty-state-toggle-btn').textContent = showEmptyStatePreview ? 'Show Sessions List' : 'Preview Empty State';
+      renderSessionsList();
+    }
+
+    function deleteSession(id) {
+      if (sessionsData.length <= 1) {
+        triggerToast('Cannot delete the last active session in demo');
+        return;
+      }
+      const idx = sessionsData.findIndex(s => s.id === id);
+      if (idx !== -1) {
+        const removed = sessionsData.splice(idx, 1)[0];
+        if (currentSessionId === id) {
+          currentSessionId = sessionsData[0].id;
+        }
+        selectSession(currentSessionId);
+        triggerToast('Deleted session: ' + removed.name);
+      }
+    }
+
+    // Navigation between the 2 Real Screens (+ Compare view)
+    function setActiveScreen(screen) {
+      ['session', 'sessions', 'compare'].forEach(s => {
+        document.getElementById('screen-' + s).classList.toggle('hidden', s !== screen);
+      });
+      document.getElementById('rail-btn-session').classList.toggle('active', screen === 'session');
+      document.getElementById('rail-btn-sessions').classList.toggle('active', screen === 'sessions');
+      if (screen === 'sessions') renderSessionsList();
+    }
+
+    function focusSessionSearch() {
+      setActiveScreen('sessions');
+      setTimeout(() => document.getElementById('sessions-search-input').focus(), 50);
+    }
+
+    // Sidebar Mode Switcher (Compact Full vs 52px Rail Only vs Old Bloated M3)
+    function setSidebarMode(mode) {
+      const rail = document.getElementById('primary-rail');
+      const quickList = document.getElementById('quick-session-list');
+      ['compact-full', 'rail-only', 'legacy-m3'].forEach(m => {
+        const btn = document.getElementById('sb-' + m);
+        if (btn) btn.classList.toggle('accent-pill', m === mode);
+      });
+
+      rail.classList.remove('legacy-m3-rail');
+      if (mode === 'compact-full') {
+        quickList.classList.remove('hidden');
+        triggerToast('52px Studio Rail + 30px Quick Session Switcher');
+      } else if (mode === 'rail-only') {
+        quickList.classList.add('hidden');
+        triggerToast('Ultra-Compact 52px Icon Rail Only');
+      } else if (mode === 'legacy-m3') {
+        quickList.classList.add('hidden');
+        rail.classList.add('legacy-m3-rail');
+        triggerToast('Previewing Old Bloated M3 NavigationRail (92px)');
+      }
+    }
+
+    function toggleQuickList() {
+      document.getElementById('quick-session-list').classList.toggle('hidden');
+    }
+
+    // Modals: New Session & Settings
+    function openNewSessionModal() {
+      const m = document.getElementById('modal-new-session');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      document.getElementById('new-sess-name').focus();
+    }
+    function closeNewSessionModal() {
+      const m = document.getElementById('modal-new-session');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function createNewSession() {
+      const nameInput = document.getElementById('new-sess-name').value.trim() || ('session-' + (sessionsData.length + 1));
+      const dirInput = document.getElementById('new-sess-dir').value.trim() || '~/work/project';
+      const modelInput = document.getElementById('new-sess-model').value;
+      const promptInput = document.getElementById('new-sess-prompt').value.trim() || 'Initialize Claude Code session and inspect repository structure.';
+
+      const newSess = {
+        id: 'sess-' + Date.now(),
+        name: nameInput,
+        dir: dirInput,
+        model: modelInput,
+        status: 'running',
+        updatedAt: 'Just now',
+        lastPreview: 'Running initial prompt...',
+        pendingPermission: null,
+        messages: [
+          { role: 'user', time: 'Now', text: promptInput },
+          {
+            role: 'assistant',
+            time: 'Now',
+            text: `Spawned Claude Code (${modelInput}) in \`${dirInput}\`. Scanning workspace...`,
+            tools: [
+              { type: 'Bash', target: 'ls -la ' + dirInput, status: 'completed', output: 'total 48\ndrwxr-xr-x  12 dev  staff   384 Nov  5 23:49 .\n-rw-r--r--   1 dev  staff  1420 Nov  5 23:49 package.json' }
+            ]
+          }
+        ]
+      };
+
+      sessionsData.unshift(newSess);
+      closeNewSessionModal();
+      selectSession(newSess.id);
+      setActiveScreen('session');
+      triggerToast('Started session: ' + newSess.name);
+    }
+
+    function openSettingsModal() {
+      const m = document.getElementById('modal-settings');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+    function closeSettingsModal() {
+      const m = document.getElementById('modal-settings');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+    function saveSettings() {
+      const host = document.getElementById('settings-host-url').value.trim();
+      document.getElementById('footer-host-label').textContent = host.replace(/^https?:\/\//, '');
+      closeSettingsModal();
+      triggerToast('Saved orchestrator settings (' + host + ')');
+    }
+
+    function setTheme(themeName) {
+      if (themeName === 'obsidian') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', themeName);
+      }
+      triggerToast('Theme: ' + themeName);
+    }
+
+    function setTermFontSize(size) {
+      document.documentElement.style.setProperty('--term-size', size);
+      triggerToast('Terminal font size: ' + size);
+    }
+
+    let toastTimer = null;
+    function triggerToast(msg) {
+      const pill = document.getElementById('toast-pill');
+      pill.textContent = msg;
+      pill.classList.remove('opacity-0', 'translate-y-2');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        pill.classList.add('opacity-0', 'translate-y-2');
+      }, 2200);
+    }
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeNewSessionModal();
+        closeSettingsModal();
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleQuickList();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === '1') {
+        e.preventDefault();
+        setActiveScreen('session');
+      } else if ((e.metaKey || e.ctrlKey) && e.key === '2') {
+        e.preventDefault();
+        setActiveScreen('sessions');
+      }
+    });
+
+    // Initialize Default Session on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      selectSession('sess-1');
+    });
+  </script>
+</body>
+</html>
