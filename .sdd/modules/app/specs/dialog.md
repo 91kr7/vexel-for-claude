@@ -19,6 +19,7 @@ Props:
 - `children` → the content between the title and the action row.
 - `primaryLabel`, `onPrimary()` → the primary action.
 - `primaryDisabled` → the primary action is disabled. Default `false`.
+- `primaryBusy` → the primary action runs: its button shows the Spinner (ProgressIndicator), is disabled and has `aria-busy="true"`. Its name does not change. Default `false`.
 - `onCancel()` → called by "Annulla" and by Esc.
 - `initialFocus` → `dialog` (default) or `cancel`.
 - `formName` → optional accessible name of the form that holds the content and the action row.
@@ -33,7 +34,7 @@ Shows:
 Keyboard:
 - Esc → `onCancel()`. Nothing else happens.
 - Enter, focus on a button → that button acts. The dialog adds nothing.
-- Enter, focus anywhere else in the dialog → `onPrimary()`, unless the primary action is disabled. A content element that handles Enter itself (prevents its default) keeps it.
+- Enter, focus anywhere else in the dialog → `onPrimary()`, unless the primary action is disabled or busy. A content element that handles Enter itself (prevents its default) keeps it.
 - Tab and Shift+Tab → move among the dialog elements only, and wrap from the last to the first and back.
 
 Focus:
@@ -49,8 +50,9 @@ Focus:
 ## Dependencies
 
 - IconSet (`TriangleAlertIcon`, warning tone only)
+- ProgressIndicator (`Spinner`)
 
 ## Requirements served
 
 - `plan-claude_sessions_client-ui_redesign/REQ-25`, `plan-claude_sessions_client-ui_redesign/REQ-26`, `plan-claude_sessions_client-ui_redesign/REQ-27`
-- `plan-claude_sessions_client-ui_redesign/REQ-1`, `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign/REQ-5`
+- `plan-claude_sessions_client-ui_redesign/REQ-1`, `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign/REQ-5`, `plan-claude_sessions_client-ui_redesign/REQ-31`

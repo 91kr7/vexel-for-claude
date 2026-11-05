@@ -21,6 +21,8 @@ Components and where the client uses them today:
 - `PowerIcon` → "Termina", in the session header
 - `LogInIcon` → "Riprendi qui"
 - `LoaderCircleIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon` → the StateBadge states `working`, `needs_input`, `idle`, `ended`
+- `LoaderCircleIcon`, rotating → the ProgressIndicator
+- `CircleXIcon` → the ErrorMessage
 - `TerminalIcon` → the "Esterna" mark of an external entry
 - `LockIcon` → the "Sola lettura" notice of the external view
 - `WrenchIcon` → a tool call in the external view
@@ -40,3 +42,4 @@ Components and where the client uses them today:
 - `plan-claude_sessions_client-ui_redesign/REQ-6`
 - `plan-claude_sessions_client-ui_redesign/REQ-7`
 - `plan-claude_sessions_client-ui_redesign/REQ-9`
+- `plan-claude_sessions_client-ui_redesign/REQ-30`

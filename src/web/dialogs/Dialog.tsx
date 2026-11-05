@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { Spinner } from '../feedback/ProgressIndicator';
 import { TriangleAlertIcon } from '../icons/Icons';
 
 export interface DialogProps {
@@ -8,6 +9,7 @@ export interface DialogProps {
   primaryLabel: string;
   onPrimary: () => void;
   primaryDisabled?: boolean;
+  primaryBusy?: boolean;
   onCancel: () => void;
   initialFocus?: 'dialog' | 'cancel';
   formName?: string;
@@ -24,6 +26,7 @@ export function Dialog({
   primaryLabel,
   onPrimary,
   primaryDisabled = false,
+  primaryBusy = false,
   onCancel,
   initialFocus = 'dialog',
   formName,
@@ -35,6 +38,7 @@ export function Dialog({
   const frameRef = useRef<HTMLDivElement>(null);
   const [previousFocus] = useState(() => (typeof document === 'undefined' ? null : document.activeElement));
   const warning = tone === 'warning';
+  const primaryBlocked = primaryDisabled || primaryBusy;
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -69,7 +73,7 @@ export function Dialog({
     } else if (event.key === 'Enter') {
       if (event.defaultPrevented || event.nativeEvent.isComposing || event.target instanceof HTMLButtonElement) return;
       event.preventDefault();
-      if (!primaryDisabled) onPrimary();
+      if (!primaryBlocked) onPrimary();
     } else if (event.key === 'Tab') {
       keepFocusInside(event);
     }
@@ -107,8 +111,10 @@ export function Dialog({
               type="button"
               className={warning ? 'button-danger' : 'button-primary'}
               onClick={onPrimary}
-              disabled={primaryDisabled}
+              disabled={primaryBlocked}
+              aria-busy={primaryBusy || undefined}
             >
+              {primaryBusy && <Spinner />}
               {primaryLabel}
             </button>
           </div>

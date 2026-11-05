@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { WarningDialog } from '../dialogs/WarningDialog';
+import { ErrorMessage } from '../feedback/ErrorMessage';
+import { Spinner } from '../feedback/ProgressIndicator';
 import { PowerIcon } from '../icons/Icons';
 import type { SessionState } from './live-session-store';
 
@@ -10,12 +12,23 @@ interface StopSessionButtonProps {
 
 export function StopSessionButton({ sessionId, state }: StopSessionButtonProps) {
   const [confirming, setConfirming] = useState(false);
+  const [stopping, setStopping] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   if (state === 'ended') return null;
 
-  const stop = () => {
+  const stop = async () => {
     setConfirming(false);
-    void fetch(`/api/sessions/${encodeURIComponent(sessionId)}/stop`, { method: 'POST' }).catch(() => {});
+    setFailed(false);
+    setStopping(true);
+    // On success the button stays busy until the state becomes "ended".
+    try {
+      const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/stop`, { method: 'POST' });
+      if (!response.ok) throw new Error(String(response.status));
+    } catch {
+      setStopping(false);
+      setFailed(true);
+    }
   };
 
   return (
@@ -23,17 +36,20 @@ export function StopSessionButton({ sessionId, state }: StopSessionButtonProps) 
       <button
         type="button"
         className="button-danger"
-        onClick={() => (state === 'working' ? setConfirming(true) : stop())}
+        disabled={stopping}
+        aria-busy={stopping || undefined}
+        onClick={() => (state === 'working' ? setConfirming(true) : void stop())}
       >
-        <PowerIcon />
+        {stopping ? <Spinner /> : <PowerIcon />}
         Termina
       </button>
+      {failed && <ErrorMessage>Terminazione della sessione non riuscita.</ErrorMessage>}
       {confirming && (
         <WarningDialog
           title="Terminare la sessione?"
           description="La sessione è in lavorazione. Il lavoro in corso si interrompe."
           primaryLabel="Termina"
-          onPrimary={stop}
+          onPrimary={() => void stop()}
           onCancel={() => setConfirming(false)}
         />
       )}

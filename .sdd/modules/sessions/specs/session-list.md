@@ -17,9 +17,12 @@ Props:
 - `sessions` → the list from LiveSessionStore.
 - `openSessionId` → the session shown in the open-session area, or `null`.
 - `onOpen(id)` → called on a click.
+- `status` → the load status from LiveSessionStore: `loading`, `ready` or `error`. Default `ready`.
 
 Shows:
-- no session → "Nessuna sessione."
+- `loading` → a ProgressIndicator "Caricamento…" in place of the entries and of "Nessuna sessione.".
+- `error` → an ErrorMessage "Connessione al server persa. Ricarica la pagina." above the entries. The entries already received stay.
+- `ready`, no session → "Nessuna sessione." With `error` and no session, only the ErrorMessage shows.
 - one entry per session, in `orderSessions` order.
 - each entry has two lines, the same for every entry:
   - first line → the label on the left, the StateBadge on the right.
@@ -43,9 +46,9 @@ Actions:
 
 - orderSessions
 - StateBadge
-- IconSet (module app)
+- IconSet, ProgressIndicator, ErrorMessage (module app)
 
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-11`, `plan-claude_sessions_client/REQ-12`, `plan-claude_sessions_client/REQ-16`, `plan-claude_sessions_client/REQ-22`, `plan-claude_sessions_client/REQ-29`, `plan-claude_sessions_client/REQ-30`
-- `plan-claude_sessions_client-ui_redesign/REQ-11`, `plan-claude_sessions_client-ui_redesign/REQ-12`, `plan-claude_sessions_client-ui_redesign/REQ-13`, `plan-claude_sessions_client-ui_redesign/REQ-15`, `plan-claude_sessions_client-ui_redesign/REQ-16`
+- `plan-claude_sessions_client-ui_redesign/REQ-11`, `plan-claude_sessions_client-ui_redesign/REQ-12`, `plan-claude_sessions_client-ui_redesign/REQ-13`, `plan-claude_sessions_client-ui_redesign/REQ-15`, `plan-claude_sessions_client-ui_redesign/REQ-16`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`

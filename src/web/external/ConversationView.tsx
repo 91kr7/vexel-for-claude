@@ -1,4 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ErrorMessage } from '../feedback/ErrorMessage';
+import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { ChevronDownIcon, ChevronRightIcon, LockIcon, WrenchIcon } from '../icons/Icons';
 import { SessionHeader, type SessionHeaderSummary } from '../sessions/SessionHeader';
 import { ResumeHereButton } from './ResumeHereButton';
@@ -70,8 +72,8 @@ function ToggleButton({ expanded, onClick }: { expanded: boolean; onClick: () =>
 }
 
 function LoadState({ content }: { content: FullContent }) {
-  if (content.status === 'loading') return <p className="item-load-state">Caricamento…</p>;
-  if (content.status === 'failed') return <p className="item-load-state error">Impossibile caricare il contenuto completo.</p>;
+  if (content.status === 'loading') return <ProgressIndicator className="item-load-state" />;
+  if (content.status === 'failed') return <ErrorMessage className="item-load-state">Impossibile caricare il contenuto completo.</ErrorMessage>;
   return null;
 }
 
@@ -191,7 +193,12 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
       />
       <div className="conversation-items" ref={listRef}>
         <div className="conversation-column">
-          {items === null && <p className="empty-state">{unavailable ? 'Conversazione non disponibile.' : 'Caricamento…'}</p>}
+          {items === null &&
+            (unavailable ? (
+              <ErrorMessage className="conversation-status">Conversazione non disponibile.</ErrorMessage>
+            ) : (
+              <ProgressIndicator className="conversation-status" />
+            ))}
           {items?.length === 0 && <p className="empty-state">Nessun messaggio.</p>}
           {items?.map((item, index) => <ItemBlock key={index} sessionId={sessionId} item={item} />)}
         </div>

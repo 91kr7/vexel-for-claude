@@ -1,5 +1,7 @@
+import { ErrorMessage } from '../feedback/ErrorMessage';
+import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { TerminalIcon } from '../icons/Icons';
-import type { SessionSummary } from './live-session-store';
+import type { LoadStatus, SessionSummary } from './live-session-store';
 import { orderSessions } from './session-order';
 import { StateBadge } from './StateBadge';
 
@@ -16,6 +18,7 @@ interface SessionListProps {
   sessions: readonly SessionSummary[];
   openSessionId: string | null;
   onOpen: (sessionId: string) => void;
+  status?: LoadStatus;
 }
 
 function formatActivity(iso: string): string {
@@ -25,11 +28,16 @@ function formatActivity(iso: string): string {
   return sameDay ? clock : `${time.toLocaleDateString('it-IT')} ${clock}`;
 }
 
-export function SessionList({ sessions, openSessionId, onOpen }: SessionListProps) {
+export function SessionList({ sessions, openSessionId, onOpen, status = 'ready' }: SessionListProps) {
   return (
     <nav className="session-list" aria-label="Elenco sessioni">
+      {status === 'error' && <ErrorMessage className="session-list-alert">Connessione al server persa. Ricarica la pagina.</ErrorMessage>}
       {sessions.length === 0 ? (
-        <p className="session-list-empty">Nessuna sessione.</p>
+        status === 'loading' ? (
+          <ProgressIndicator className="session-list-empty" />
+        ) : (
+          status === 'ready' && <p className="session-list-empty">Nessuna sessione.</p>
+        )
       ) : (
         <ul>
           {orderSessions(sessions).map((session) => (

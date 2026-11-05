@@ -14,7 +14,7 @@ export function AppLayout() {
   const [openIsExternal, setOpenIsExternal] = useState(false);
   const [choosingFolder, setChoosingFolder] = useState(false);
   const [resuming, setResuming] = useState(false);
-  const sessions = useLiveSessions();
+  const { sessions, status } = useLiveSessions();
   const lastOpenSummary = useRef<SessionSummary | undefined>(undefined);
   const listedSummary = sessions.find((session) => session.id === openSessionId);
   if (listedSummary) lastOpenSummary.current = listedSummary;
@@ -45,7 +45,7 @@ export function AppLayout() {
             Riprendi sessione
           </button>
         </div>
-        <SessionList sessions={sessions} openSessionId={openSessionId} onOpen={openFromList} />
+        <SessionList sessions={sessions} status={status} openSessionId={openSessionId} onOpen={openFromList} />
       </aside>
       <main className="session-area">
         {openSessionId && openIsExternal ? (
