@@ -11,7 +11,7 @@ status: validated
 | [visual-language](batches/batch-visual-language.md) | Visual language and keyboard use | REQ-2, REQ-6, REQ-7 | — | certified | The client follows the dark theme of the system |
 | [layout](batches/batch-layout.md) | Layout | REQ-8, REQ-9, REQ-10 | visual-language | certified | The user sees the list and the open session side by side |
 | [session-list](batches/batch-session-list.md) | Session list | REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16 | layout | certified | The user spots the session that needs input |
-| [open-session](batches/batch-open-session.md) | Open session | REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24 | session-list | todo | The user works in a hosted session under its header |
+| [open-session](batches/batch-open-session.md) | Open session | REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24 | session-list | implemented | The user works in a hosted session under its header |
 | [dialogs](batches/batch-dialogs.md) | Dialogs | REQ-25, REQ-26, REQ-27, REQ-28 | visual-language | todo | The user starts a session with the keyboard only |
 | [feedback-states](batches/batch-feedback-states.md) | Feedback states | REQ-1, REQ-3, REQ-4, REQ-5, REQ-29, REQ-30, REQ-31, REQ-32 | open-session, dialogs | todo | The user sees a stop in progress and its result |
 

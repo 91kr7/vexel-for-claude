@@ -325,20 +325,74 @@ input {
   flex-direction: column;
 }
 
-.session-toolbar {
+.session-header {
+  flex-shrink: 0;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.session-header-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.session-header-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.session-header-label {
+  min-width: 0;
+  margin: 0;
+  font-size: var(--font-size-lg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-header-folder {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-header-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
+}
+
+.read-only-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-full);
 }
 
 .session-terminal {
   flex: 1;
   min-height: 0;
   padding: var(--space-2);
-  margin: 0 var(--space-2) var(--space-2);
   background: var(--terminal-background);
-  border-radius: var(--radius-md);
 }
 
 .modal-backdrop {
@@ -499,11 +553,19 @@ input {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 var(--space-4) var(--space-4);
+  padding: var(--space-4);
+}
+
+.conversation-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 56rem;
+  margin: 0 auto;
 }
 
 .conversation-item {
-  margin-bottom: var(--space-3);
+  min-width: 0;
 }
 
 .conversation-item h3 {
@@ -519,7 +581,82 @@ input {
   overflow-wrap: anywhere;
 }
 
+.item-user {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-selected);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+}
+
+.item-assistant {
+  padding: 0 var(--space-3);
+}
+
+.item-tool-call,
+.item-tool-result {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.item-tool-call + .item-tool-result {
+  margin-top: calc(-1 * var(--space-2));
+  margin-left: var(--space-6);
+}
+
+.item-tool-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.item-tool-line .icon {
+  color: var(--color-text-muted);
+}
+
+.conversation-item .item-tool-line h3 {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.conversation-item .item-tool-summary {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-toggle {
+  flex-shrink: 0;
+  min-height: 1.5rem;
+  margin-left: auto;
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.item-tool-result .item-tool-line {
+  margin-bottom: var(--space-1);
+}
+
+.conversation-item .item-full,
+.conversation-item .item-load-state {
+  margin-top: var(--space-2);
+}
+
+.conversation-item .item-load-state {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.conversation-item .item-load-state.error {
+  color: var(--color-error);
+}
+
 .item-tool-call p,
+.item-tool-call pre,
 .item-tool-result pre {
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);

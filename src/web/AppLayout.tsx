@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { EmptyState } from './EmptyState';
 import { ConversationView } from './external/ConversationView';
 import { FolderChooser } from './folders/FolderChooser';
@@ -7,7 +7,7 @@ import { HistoryIcon, PlusIcon } from './icons/Icons';
 import { NeedsInputCounter } from './sessions/NeedsInputCounter';
 import { SessionList } from './sessions/SessionList';
 import { SessionView } from './sessions/SessionView';
-import { useLiveSessions } from './sessions/live-session-store';
+import { type SessionSummary, useLiveSessions } from './sessions/live-session-store';
 
 export function AppLayout() {
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
@@ -15,7 +15,10 @@ export function AppLayout() {
   const [choosingFolder, setChoosingFolder] = useState(false);
   const [resuming, setResuming] = useState(false);
   const sessions = useLiveSessions();
-  const openSessionState = sessions.find((session) => session.id === openSessionId)?.state;
+  const lastOpenSummary = useRef<SessionSummary | undefined>(undefined);
+  const listedSummary = sessions.find((session) => session.id === openSessionId);
+  if (listedSummary) lastOpenSummary.current = listedSummary;
+  const openSummary = listedSummary ?? (lastOpenSummary.current?.id === openSessionId ? lastOpenSummary.current : undefined);
   const openHosted = (sessionId: string) => {
     setOpenSessionId(sessionId);
     setOpenIsExternal(false);
@@ -46,9 +49,9 @@ export function AppLayout() {
       </aside>
       <main className="session-area">
         {openSessionId && openIsExternal ? (
-          <ConversationView key={openSessionId} sessionId={openSessionId} onResumed={openHosted} />
+          <ConversationView key={openSessionId} sessionId={openSessionId} session={openSummary} onResumed={openHosted} />
         ) : openSessionId ? (
-          <SessionView key={openSessionId} sessionId={openSessionId} state={openSessionState} />
+          <SessionView key={openSessionId} sessionId={openSessionId} session={openSummary} />
         ) : (
           <EmptyState onNewSession={() => setChoosingFolder(true)} onResumeSession={() => setResuming(true)} />
         )}

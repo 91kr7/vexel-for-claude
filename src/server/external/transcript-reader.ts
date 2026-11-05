@@ -1,12 +1,17 @@
-import { open, readdir, stat } from 'node:fs/promises';
+import { type FileHandle, open, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { defaultClaudeDir, userMessageOf } from '../history/session-history.js';
+
+export interface ItemRef {
+  offset: number;
+  block: number;
+}
 
 export type ConversationItem =
   | { kind: 'user'; text: string }
   | { kind: 'assistant'; text: string }
-  | { kind: 'tool_call'; name: string; summary: string }
-  | { kind: 'tool_result'; text: string; truncated: boolean };
+  | { kind: 'tool_call'; name: string; summary: string; ref?: ItemRef }
+  | { kind: 'tool_result'; text: string; truncated: boolean; ref?: ItemRef };
 
 export interface TranscriptReaderOptions {
   claudeDir?: string;
@@ -17,14 +22,25 @@ const RESULT_LINES = 5;
 const SUMMARY_LENGTH = 120;
 const SUMMARY_KEYS = ['command', 'file_path', 'path', 'pattern', 'url', 'query', 'description', 'prompt'];
 const NEWLINE = 0x0a;
+const LINE_CHUNK_BYTES = 64 * 1024;
 
 type Block = Record<string, unknown>;
 
+const isBlock = (value: unknown): value is Block => typeof value === 'object' && value !== null;
+
 function blocksOf(content: unknown): Block[] {
-  return Array.isArray(content) ? content.filter((block): block is Block => typeof block === 'object' && block !== null) : [];
+  return Array.isArray(content) ? content.filter(isBlock) : [];
 }
 
-function toolResultItem(block: Block): ConversationItem {
+function indexedBlocksOf(content: unknown): { block: Block; index: number }[] {
+  return Array.isArray(content) ? content.flatMap((block, index) => (isBlock(block) ? [{ block, index }] : [])) : [];
+}
+
+function withRef<T extends ConversationItem>(item: T, lineOffset: number | undefined, block: number): T {
+  return lineOffset === undefined ? item : { ...item, ref: { offset: lineOffset, block } };
+}
+
+function resultTextOf(block: Block): string {
   const text =
     typeof block.content === 'string'
       ? block.content
@@ -32,7 +48,11 @@ function toolResultItem(block: Block): ConversationItem {
           .filter((part) => part.type === 'text' && typeof part.text === 'string')
           .map((part) => part.text as string)
           .join('\n');
-  const lines = text.trimEnd().split('\n');
+  return text.trimEnd();
+}
+
+function toolResultItem(block: Block): ConversationItem {
+  const lines = resultTextOf(block).split('\n');
   return { kind: 'tool_result', text: lines.slice(0, RESULT_LINES).join('\n'), truncated: lines.length > RESULT_LINES };
 }
 
@@ -50,47 +70,94 @@ function summaryOf(input: unknown): string {
   return line.length > SUMMARY_LENGTH ? `${line.slice(0, SUMMARY_LENGTH).join('')}…` : line.join('');
 }
 
-function assistantItems(content: unknown): ConversationItem[] {
+function assistantItems(content: unknown, lineOffset: number | undefined): ConversationItem[] {
   if (typeof content === 'string') return content.trim() ? [{ kind: 'assistant', text: content.trim() }] : [];
   const items: ConversationItem[] = [];
-  for (const block of blocksOf(content)) {
+  for (const { block, index } of indexedBlocksOf(content)) {
     if (block.type === 'text' && typeof block.text === 'string' && block.text.trim()) {
       items.push({ kind: 'assistant', text: block.text.trim() });
     } else if (block.type === 'tool_use') {
-      items.push({ kind: 'tool_call', name: typeof block.name === 'string' ? block.name : '', summary: summaryOf(block.input) });
+      const name = typeof block.name === 'string' ? block.name : '';
+      items.push(withRef({ kind: 'tool_call', name, summary: summaryOf(block.input) }, lineOffset, index));
     }
   }
   return items;
 }
 
-export function itemsOf(entry: unknown): ConversationItem[] {
-  if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return [];
-  const record = entry as Record<string, unknown>;
-  if (record.isSidechain === true || record.isMeta === true) return [];
-  const content = (record.message as { content?: unknown } | undefined)?.content;
-  if (record.type === 'assistant') return assistantItems(content);
+function conversationEntryOf(entry: unknown): Record<string, unknown> | undefined {
+  if (!isBlock(entry) || Array.isArray(entry)) return undefined;
+  return entry.isSidechain === true || entry.isMeta === true ? undefined : entry;
+}
+
+const contentOf = (record: Record<string, unknown>): unknown => (record.message as { content?: unknown } | undefined)?.content;
+
+export function itemsOf(entry: unknown, lineOffset?: number): ConversationItem[] {
+  const record = conversationEntryOf(entry);
+  if (!record) return [];
+  const content = contentOf(record);
+  if (record.type === 'assistant') return assistantItems(content, lineOffset);
   if (record.type !== 'user') return [];
   const items: ConversationItem[] = [];
   const text = userMessageOf(record);
   if (text !== null) items.push({ kind: 'user', text });
-  for (const block of blocksOf(content)) {
-    if (block.type === 'tool_result') items.push(toolResultItem(block));
+  for (const { block, index } of indexedBlocksOf(content)) {
+    if (block.type === 'tool_result') items.push(withRef(toolResultItem(block), lineOffset, index));
   }
   return items;
 }
 
-function parseLines(text: string): ConversationItem[] {
+function fullContentOf(entry: unknown, blockIndex: number): string | undefined {
+  const record = conversationEntryOf(entry);
+  const content = record && contentOf(record);
+  const block: unknown = Array.isArray(content) ? content[blockIndex] : undefined;
+  if (!record || !isBlock(block)) return undefined;
+  if (record.type === 'assistant' && block.type === 'tool_use') {
+    return block.input === undefined ? '' : JSON.stringify(block.input, null, 2);
+  }
+  if (record.type === 'user' && block.type === 'tool_result') return resultTextOf(block);
+  return undefined;
+}
+
+function parseLines(buffer: Buffer, baseOffset: number): ConversationItem[] {
   const items: ConversationItem[] = [];
-  for (const line of text.split('\n')) {
+  let start = 0;
+  while (start <= buffer.length) {
+    const newline = buffer.indexOf(NEWLINE, start);
+    const end = newline === -1 ? buffer.length : newline;
+    const lineOffset = baseOffset + start;
+    const line = buffer.subarray(start, end).toString('utf8');
+    start = end + 1;
     let entry: unknown;
     try {
       entry = JSON.parse(line);
     } catch {
       continue;
     }
-    items.push(...itemsOf(entry));
+    items.push(...itemsOf(entry, lineOffset));
   }
   return items;
+}
+
+async function readLineAt(handle: FileHandle, offset: number): Promise<string | undefined> {
+  if (offset > 0) {
+    const previous = Buffer.alloc(1);
+    const { bytesRead } = await handle.read(previous, 0, 1, offset - 1);
+    if (bytesRead !== 1 || previous[0] !== NEWLINE) return undefined;
+  }
+  const chunks: Buffer[] = [];
+  let position = offset;
+  for (;;) {
+    const chunk = Buffer.alloc(LINE_CHUNK_BYTES);
+    const { bytesRead } = await handle.read(chunk, 0, chunk.length, position);
+    if (bytesRead === 0) return undefined;
+    const newline = chunk.subarray(0, bytesRead).indexOf(NEWLINE);
+    if (newline !== -1) {
+      chunks.push(chunk.subarray(0, newline));
+      return Buffer.concat(chunks).toString('utf8');
+    }
+    chunks.push(chunk.subarray(0, bytesRead));
+    position += bytesRead;
+  }
 }
 
 const isFile = (file: string) => stat(file).then((stats) => stats.isFile(), () => false);
@@ -127,11 +194,26 @@ export class TranscriptReader {
       const lastNewline = buffer.subarray(0, bytesRead).lastIndexOf(NEWLINE);
       if (lastNewline === -1) return { items: [], offset };
       return {
-        items: parseLines(buffer.subarray(0, lastNewline).toString('utf8')),
+        items: parseLines(buffer.subarray(0, lastNewline), offset),
         offset: offset + lastNewline + 1,
       };
     } catch {
       return { items: [], offset };
+    } finally {
+      await handle?.close().catch(() => {});
+    }
+  }
+
+  async readItem(file: string, ref: ItemRef): Promise<string | undefined> {
+    const valid = [ref.offset, ref.block].every((value) => Number.isSafeInteger(value) && value >= 0);
+    if (!valid) return undefined;
+    let handle;
+    try {
+      handle = await open(file, 'r');
+      const line = await readLineAt(handle, ref.offset);
+      return line === undefined ? undefined : fullContentOf(JSON.parse(line), ref.block);
+    } catch {
+      return undefined;
     } finally {
       await handle?.close().catch(() => {});
     }

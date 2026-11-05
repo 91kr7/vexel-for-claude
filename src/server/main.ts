@@ -5,6 +5,7 @@ import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
 import { registerConversationStreamRoute } from './external/conversation-stream-route.js';
 import { ExternalSessionScanner } from './external/external-session-scanner.js';
+import { registerItemContentRoute } from './external/item-content-route.js';
 import { TranscriptReader } from './external/transcript-reader.js';
 import { registerFolderRoute } from './folders/folder-route.js';
 import { ExternalSessionCheck } from './history/external-session-check.js';
@@ -54,6 +55,7 @@ registerFolderRoute(app);
 registerPastSessionListRoute(app, { history, externalCheck, registry, tracker });
 registerResumeSessionRoute(app, { history, registry });
 registerConversationStreamRoute(app, { scanner: externalScanner, reader: transcriptReader });
+registerItemContentRoute(app, { scanner: externalScanner, reader: transcriptReader });
 
 // In dev the page comes from Vite, so dist/web may not exist yet.
 if (existsSync(webRoot)) {

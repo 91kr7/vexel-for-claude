@@ -3,14 +3,14 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { CircleStopIcon } from '../icons/Icons';
-import type { SessionState } from './live-session-store';
+import { SessionHeader, type SessionHeaderSummary } from './SessionHeader';
 import { StopSessionButton } from './StopSessionButton';
 
 const ESCAPE = '\x1b';
 
 interface SessionViewProps {
   sessionId: string;
-  state?: SessionState;
+  session?: SessionHeaderSummary;
 }
 
 function attachUrl(sessionId: string): string {
@@ -18,7 +18,7 @@ function attachUrl(sessionId: string): string {
   return `${protocol}//${window.location.host}/api/sessions/${encodeURIComponent(sessionId)}/attach`;
 }
 
-export function SessionView({ sessionId, state }: SessionViewProps) {
+export function SessionView({ sessionId, session }: SessionViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
@@ -78,13 +78,18 @@ export function SessionView({ sessionId, state }: SessionViewProps) {
 
   return (
     <div className="session-view">
-      <div className="session-toolbar">
-        <button type="button" onClick={interrupt}>
-          <CircleStopIcon />
-          Interrompi
-        </button>
-        <StopSessionButton sessionId={sessionId} state={state} />
-      </div>
+      <SessionHeader
+        session={session}
+        actions={
+          <>
+            <button type="button" onClick={interrupt}>
+              <CircleStopIcon />
+              Interrompi
+            </button>
+            <StopSessionButton sessionId={sessionId} state={session?.state} />
+          </>
+        }
+      />
       <div className="session-terminal" ref={containerRef} />
     </div>
   );

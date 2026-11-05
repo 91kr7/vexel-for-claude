@@ -7,7 +7,8 @@
 | StartSessionRoute | REST endpoint | `src/server/sessions/start-session-route.ts` | `POST /api/sessions`: starts a session in an existing folder | `specs/start-session-route.md` |
 | StopSessionRoute | REST endpoint | `src/server/sessions/stop-session-route.ts` | `POST /api/sessions/:id/stop`: stops the CLI process, SIGTERM then SIGKILL | `specs/stop-session-route.md` |
 | AttachSessionRoute | REST endpoint (WebSocket) | `src/server/sessions/attach-session-route.ts` | `GET /api/sessions/:id/attach`: snapshot, live output, input and resize | `specs/attach-session-route.md` |
-| SessionView | UI component | `src/web/sessions/SessionView.tsx` | xterm.js terminal attached to a session, with "Interrompi" and "Termina" | `specs/session-view.md` |
+| SessionView | UI component | `src/web/sessions/SessionView.tsx` | SessionHeader with "Interrompi" and "Termina" above the xterm.js terminal attached to a session | `specs/session-view.md` |
+| SessionHeader | UI component | `src/web/sessions/SessionHeader.tsx` | Bar above the open session: label, state, folder and its actions | `specs/session-header.md` |
 | StopSessionButton | UI component | `src/web/sessions/StopSessionButton.tsx` | "Termina" button of the open session, with confirmation when working | `specs/stop-session-button.md` |
 | HookSettings | configuration | `src/server/sessions/hook-settings.ts`, `src/server/sessions/hook-forwarder.mjs` | Claude Code settings file whose hooks post each event to the server | `specs/hook-settings.md` |
 | SessionStateTracker | backend service | `src/server/sessions/session-state-tracker.ts` | State, label, last activity and Claude Code session id of each session, with change listeners | `specs/session-state-tracker.md` |

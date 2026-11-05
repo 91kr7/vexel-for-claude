@@ -18,10 +18,13 @@ Components and where the client uses them today:
 - `HistoryIcon` → "Riprendi sessione"
 - `SquareTerminalIcon` → the EmptyState
 - `CircleStopIcon` → "Interrompi"
-- `PowerIcon` → "Termina", in the session toolbar
+- `PowerIcon` → "Termina", in the session header
 - `LogInIcon` → "Riprendi qui"
 - `LoaderCircleIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon` → the StateBadge states `working`, `needs_input`, `idle`, `ended`
 - `TerminalIcon` → the "Esterna" mark of an external entry
+- `LockIcon` → the "Sola lettura" notice of the external view
+- `WrenchIcon` → a tool call in the external view
+- `ChevronRightIcon`, `ChevronDownIcon` → "Espandi" and "Comprimi" of a tool item in the external view
 
 ## Rules and invariants
 

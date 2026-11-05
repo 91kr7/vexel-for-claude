@@ -6,7 +6,7 @@ type: UI component
 
 # StateBadge
 
-**Purpose** → the state of one session as icon, colour and Italian name together. Used in the session list and, later, in the session header.
+**Purpose** → the state of one session as icon, colour and Italian name together. Used in the session list and in the SessionHeader.
 
 ## Contract
 

@@ -123,3 +123,36 @@ export function TerminalIcon() {
     </LucideIcon>
   );
 }
+
+export function LockIcon() {
+  return (
+    <LucideIcon>
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </LucideIcon>
+  );
+}
+
+export function WrenchIcon() {
+  return (
+    <LucideIcon>
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" />
+    </LucideIcon>
+  );
+}
+
+export function ChevronRightIcon() {
+  return (
+    <LucideIcon>
+      <path d="m9 18 6-6-6-6" />
+    </LucideIcon>
+  );
+}
+
+export function ChevronDownIcon() {
+  return (
+    <LucideIcon>
+      <path d="m6 9 6 6 6-6" />
+    </LucideIcon>
+  );
+}
