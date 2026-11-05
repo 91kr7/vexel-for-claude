@@ -38,3 +38,7 @@
 | 2026-11-05 | test | G5 session-list round 1 | sent back | Code change from the progress-bar decision; then re-test |
 | 2026-11-05 | test | G5 session-list round 2 | sent back | Tester race fix hung on absent chip (`boundingBox` waits); diagnosis sent to tester |
 | 2026-11-05 | test | G5 session-list round 3 | pass | Re-run by gatekeeper: 23 e2e + 416 unit green |
+| 2026-11-05 | dev | G4 hosted-session | pass | Build green re-run; `src/web/AppLayout.tsx` outside INTs justified by INT-6 (snackbar into the hint row) |
+| 2026-11-05 | dev | foreign change package.json | decided | `start` port 4001→4004 changed outside the cycle during the run; not committed, not reverted; for human review |
+| 2026-11-05 | dev | divergence hosted-session hint row | decided | Fixed 48 px row, no wrap (G1, no pty resize); panel min-height 0 instead of 560 px; same at 1440x900 |
+| 2026-11-05 | dev | divergence hosted-session folder path | decided | Absolute path shown; "~/" in the board is sample data (plan decision "paths are shown in full") |

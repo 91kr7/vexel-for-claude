@@ -35,7 +35,7 @@ export function StopSessionButton({ sessionId, state }: StopSessionButtonProps) 
     <>
       <button
         type="button"
-        className="button-danger"
+        className="btn label-l stop-session-button"
         disabled={stopping}
         aria-busy={stopping || undefined}
         onClick={() => (state === 'working' ? setConfirming(true) : void stop())}

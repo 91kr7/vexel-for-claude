@@ -42,7 +42,8 @@ Actions:
 ## Rules and invariants
 
 - One snackbar at a time. A newer session that starts to need input replaces the one shown.
-- The box is never wider than its container minus 48 px. A long folder name wraps.
+- Floating at the bottom right of the main area → the box is never wider than its container minus 48 px. A long folder name wraps.
+- In the hint row of a SessionView → see that spec.
 
 ## Dependencies
 

@@ -6,35 +6,43 @@ type: UI component
 
 # SessionHeader
 
-**Purpose** → the bar above the open session: its label, state and folder, with the actions for it.
+**Purpose** → the header of the open session, as the `header` of board "Sessione ospitata": avatar, folder name, state chip, a line of text, and the actions.
 
 ## Contract
 
 Description:
-- one bar across the top of the open-session area. The session data is on the left, the actions are on the right.
+- one row that wraps when it does not fit: 16 px gap, centred, padding 8 px 8 px 8 px 4 px, no background and no border. From left: the avatar, the text block, the actions.
+- the text block takes the free width (flex basis 280 px). On top, the name row (10 px gap, it wraps); below it, the line.
 
 Props:
 - `session` → `{ folder, label, state }` of the open session. Optional.
 - `actions` → the buttons of the session.
-- `notice` → an extra mark shown after the state. Optional.
+- `notice` → extra chips shown after the state chip. Optional.
+- `external` → `true` gives the Avatar its outlined terminal form. Optional.
+- `line` → the text of the line. Optional; default "<label> · <folder>".
 
 Shows:
-- with `session` → the label as a heading (`h2`), then the StateBadge of `state`, then `notice`. Below them, the folder.
-- without `session` → no label, state or folder. `notice` and `actions` still show.
-- `actions` on the right, always.
+- with `session`:
+  - the Avatar in its `header` size (48 px) for `folder`, `state` and `external`.
+  - the `h2` with the folder name (the last segment of `folder`), in `.title-l`, no margin.
+  - the StateBadge of `state` in its `chip` variant, then `notice`.
+  - the line, in `.body-m` and `--on-surface-variant`.
+- without `session` → no avatar, `h2`, chip or line. `notice` and `actions` still show.
+- `actions` → in a row with an 8 px gap, after the text block. The row wraps when it does not fit.
 
 ## Rules and invariants
 
-- A label or a folder too long for the bar is cut with an ellipsis. The full text is its tooltip (`title`).
-- The actions are never cut or pushed out of the bar by a long label or folder.
-- The header keeps its height. It never scrolls with the content below it.
+- The `h2` and the line stay on one row each. Text too long is cut with an ellipsis, and its full text is its tooltip (`title`).
+- The actions are never cut: when the header is too narrow they move to the next row, inside the header.
+- The header never shrinks, and it never scrolls with the content below it.
 
 ## Dependencies
 
-- StateBadge
-- ThemeTokens (module app)
+- Avatar, StateBadge
+- ThemeTokens, WebEntry (module app)
 
 ## Requirements served
 
 - `plan-claude_sessions_client-ui_redesign/REQ-17`
 - `plan-claude_sessions_client-ui_redesign/REQ-1`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-34`

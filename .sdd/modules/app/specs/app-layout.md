@@ -24,7 +24,9 @@ Shows:
 - no open session → the EmptyState in the main area.
 - an open hosted session → its SessionView, with the summary (folder, label, state) of that session from LiveSessionStore. No summary while the store does not list it yet.
 - an open external session → its ConversationView with its summary, in place of the SessionView. It stays open when the entry leaves the list, with the last summary the list gave.
-- the NeedsInputSnackbar of `useNeedsInputSnackbar`, when it gives a session → at the bottom right of the main area: 24 px from its right edge, 16 px from its bottom edge, above the content.
+- the NeedsInputSnackbar of `useNeedsInputSnackbar`, when it gives a session:
+  - an open hosted session → passed to its SessionView, which shows it at the right of the hint row.
+  - otherwise → at the bottom right of the main area: 24 px from its right edge, 16 px from its bottom edge, above the content.
 
 Actions:
 - "Nuova sessione", in the rail or in the EmptyState → opens FolderChooser.
@@ -64,4 +66,4 @@ else → "Nuova sessione" in the rail
 
 - `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-17`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-33`, `plan-claude_sessions_client/REQ-35`
 - `plan-claude_sessions_client-ui_redesign/REQ-8`, `plan-claude_sessions_client-ui_redesign/REQ-9`, `plan-claude_sessions_client-ui_redesign/REQ-10`, `plan-claude_sessions_client-ui_redesign/REQ-14`, `plan-claude_sessions_client-ui_redesign/REQ-17`, `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-10`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-15`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-10`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-15`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-33`

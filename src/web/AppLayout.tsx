@@ -32,6 +32,9 @@ export function AppLayout() {
     setOpenIsExternal(sessions.find((session) => session.id === sessionId)?.external === true);
   };
 
+  const openHostedView = openSessionId !== null && !openIsExternal;
+  const snackbar = snackbarSession && <NeedsInputSnackbar session={snackbarSession} onOpen={openFromList} />;
+
   const focusList = () => {
     const list = listPanelRef.current?.querySelector('.session-list');
     const target =
@@ -63,11 +66,11 @@ export function AppLayout() {
         {openSessionId && openIsExternal ? (
           <ConversationView key={openSessionId} sessionId={openSessionId} session={openSummary} onResumed={openHosted} />
         ) : openSessionId ? (
-          <SessionView key={openSessionId} sessionId={openSessionId} session={openSummary} onLeaveTerminal={focusList} />
+          <SessionView key={openSessionId} sessionId={openSessionId} session={openSummary} onLeaveTerminal={focusList} snackbar={snackbar} />
         ) : (
           <EmptyState onNewSession={() => setChoosingFolder(true)} onResumeSession={() => setResuming(true)} />
         )}
-        {snackbarSession && <NeedsInputSnackbar session={snackbarSession} onOpen={openFromList} />}
+        {!openHostedView && snackbar}
       </main>
       {choosingFolder && (
         <FolderChooser

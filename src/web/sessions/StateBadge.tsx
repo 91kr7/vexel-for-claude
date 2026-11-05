@@ -21,7 +21,15 @@ export function StateIcon({ state }: { state: SessionState }) {
   return <Icon />;
 }
 
-export function StateBadge({ state }: { state: SessionState }) {
+export function StateBadge({ state, variant = 'inline' }: { state: SessionState; variant?: 'inline' | 'chip' }) {
+  if (variant === 'chip') {
+    return (
+      <span className="chip label-l state-chip">
+        <StateIcon state={state} />
+        {STATE_NAMES[state]}
+      </span>
+    );
+  }
   return (
     <span className={`state-badge label-m state-${state}`}>
       <StateIcon state={state} />

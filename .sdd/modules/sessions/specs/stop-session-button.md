@@ -16,7 +16,7 @@ Props:
 
 Shows:
 - `state` is `ended` → nothing. The button disappears also while the confirmation is open.
-- any other `state`, `undefined` included → the button "Termina".
+- any other `state`, `undefined` included → the button "Termina": the tonal error button of board "Sessione ospitata" (`.btn`, `.label-l`, `--error-container` background, `--on-error-container` text, no border) with `PowerIcon` 20 px.
 - while the stop runs → "Termina" shows the Spinner (ProgressIndicator) in place of its icon, is disabled and has `aria-busy="true"`. It stays so after a `2xx` answer, until `state` becomes `ended` and the button disappears.
 - a failed stop → the button is enabled again, and an ErrorMessage "Terminazione della sessione non riuscita." shows next to it. The next stop request hides the message.
 
@@ -30,9 +30,10 @@ Actions:
 ## Dependencies
 
 - StopSessionRoute
-- WarningDialog, ProgressIndicator, ErrorMessage (module app)
+- WarningDialog, ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-24`
 - `plan-claude_sessions_client-ui_redesign/REQ-25`, `plan-claude_sessions_client-ui_redesign/REQ-26`, `plan-claude_sessions_client-ui_redesign/REQ-27`, `plan-claude_sessions_client-ui_redesign/REQ-28`, `plan-claude_sessions_client-ui_redesign/REQ-30`, `plan-claude_sessions_client-ui_redesign/REQ-31`, `plan-claude_sessions_client-ui_redesign/REQ-32`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-31`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-34`
