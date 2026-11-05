@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { ResumeDialog } from './ResumeDialog';
 
 const buttons = (html: string) =>
@@ -24,5 +25,12 @@ describe('ResumeDialog', () => {
     const primary = actions[1]?.attrs ?? '';
     expect(primary).toMatch(/\sclass="(?:[^"]*\s)?button-primary(?:\s[^"]*)?"/);
     expect(primary).toMatch(/\sdisabled(?:=""|\s|$)/);
+  });
+
+  // plan-claude_sessions_client-ui_redesign/REQ-29, ResumeDialog: the list loads behind a ProgressIndicator
+  it('shows the ProgressIndicator "Caricamento…" while the past sessions load', () => {
+    const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
+    expect(html).toContain(renderToStaticMarkup(<ProgressIndicator />));
+    expect(html).not.toContain('role="alert"');
   });
 });

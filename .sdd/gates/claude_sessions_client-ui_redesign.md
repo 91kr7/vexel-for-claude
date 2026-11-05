@@ -29,3 +29,4 @@
 | 2026-11-05 | dev | G4 feedback-states | pass | Build green on re-run; Dialog primaryBusy, CircleX icon, focus fixes accepted (serve REQ-4/REQ-5) |
 | 2026-11-05 | dev | question developer | human decision | Keyboard trap in the terminal: one key combination moves the focus from the terminal to the sidebar, with an on-screen hint (REQ-4) |
 | 2026-11-05 | dev | G4 feedback-states shortcut | pass | Ctrl+Shift+L leaves the terminal, hint in the session header; diff limited to SessionView, AppLayout, styles, specs |
+| 2026-11-05 | test | G5 feedback-states | sent back | D1 SessionList shows entries while loading (REQ-29); D2 no visible focus on the entry after Ctrl+Shift+L from a mouse-focused terminal (REQ-5) |

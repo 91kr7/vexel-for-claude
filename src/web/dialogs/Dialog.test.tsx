@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { Spinner } from '../feedback/ProgressIndicator';
 import { Dialog, type DialogProps } from './Dialog';
 
 const buttons = (html: string) =>
@@ -97,5 +98,22 @@ describe('Dialog', () => {
     expect(attr(tag, 'aria-modal')).toBe('true');
     expect(html).not.toContain('role="dialog"');
     expect(classes(button(html, 'Conferma')?.attrs ?? '')).toContain('button-danger');
+  });
+
+  // plan-claude_sessions_client-ui_redesign/REQ-31, Dialog: a busy primary action shows the spinner, is disabled and keeps its name
+  it('primaryBusy → the primary action has the spinner, is disabled, aria-busy and keeps its name', () => {
+    const busy = button(render({ primaryBusy: true }), 'Conferma');
+    expect(busy, 'the primary action keeps its name').toBeDefined();
+    expect(busy?.attrs).toMatch(/\sdisabled(?:=""|\s|$)/);
+    expect(attr(busy?.attrs ?? '', 'aria-busy')).toBe('true');
+    expect(render({ primaryBusy: true })).toContain(renderToStaticMarkup(<Spinner />));
+  });
+
+  // Dialog: primaryBusy defaults to false
+  it('without primaryBusy the primary action is enabled, not busy and has no spinner', () => {
+    const idle = button(render(), 'Conferma');
+    expect(idle?.attrs).not.toMatch(/\sdisabled(?:=""|\s|$)/);
+    expect(idle?.attrs).not.toContain('aria-busy="true"');
+    expect(render()).not.toContain(renderToStaticMarkup(<Spinner />));
   });
 });

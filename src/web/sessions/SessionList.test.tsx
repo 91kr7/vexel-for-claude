@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { TerminalIcon } from '../icons/Icons';
-import type { SessionState, SessionSummary } from './live-session-store';
+import { CircleXIcon, LoaderCircleIcon, TerminalIcon } from '../icons/Icons';
+import type { LoadStatus, SessionState, SessionSummary } from './live-session-store';
 import { SessionList } from './SessionList';
 import { StateBadge } from './StateBadge';
 
@@ -161,5 +161,51 @@ describe('SessionList', () => {
     expect(asking?.attributes).toMatch(/class="[^"]*\bneeds-input\b/);
     expect(asking?.attributes).toContain('aria-current="true"');
     expect(other?.attributes).not.toContain('aria-current');
+  });
+
+  describe('load status', () => {
+    const LOST = 'Connessione al server persa. Ricarica la pagina.';
+    const renderWith = (sessions: SessionSummary[], status: LoadStatus) =>
+      renderToStaticMarkup(<SessionList sessions={sessions} openSessionId={null} onOpen={() => {}} status={status} />);
+    const roleText = (html: string, role: string) =>
+      [...html.matchAll(new RegExp(`<([a-z]+)\\b[^>]*\\srole="${role}"[^>]*>([\\s\\S]*?)</\\1>`, 'g'))].map((m) => textOf(m[2] ?? ''));
+
+    // plan-claude_sessions_client-ui_redesign/REQ-29, SessionList: a loading indicator in place of "Nessuna sessione."
+    it('while loading shows the status "Caricamento…" and not "Nessuna sessione."', () => {
+      const html = renderWith([], 'loading');
+      expect(roleText(html, 'status')).toEqual(['Caricamento…']);
+      expect(textOf(html)).not.toContain('Nessuna sessione.');
+      expect(html).toContain(renderToStaticMarkup(<LoaderCircleIcon />));
+    });
+
+    // plan-claude_sessions_client-ui_redesign/REQ-29, SessionList: the indicator takes the place of the entries
+    it('while loading shows the indicator and no entry, even with sessions', () => {
+      const html = renderWith([session('a', 'idle', now)], 'loading');
+      expect(roleText(html, 'status')).toEqual(['Caricamento…']);
+      expect(entries(html)).toEqual([]);
+    });
+
+    // plan-claude_sessions_client-ui_redesign/REQ-30, SessionList: lost connection with no session shows only the error
+    it('on error with no session shows only the alert "Connessione al server persa. Ricarica la pagina."', () => {
+      const html = renderWith([], 'error');
+      expect(roleText(html, 'alert')).toEqual([LOST]);
+      expect(html).toContain(renderToStaticMarkup(<CircleXIcon />));
+      expect(textOf(html)).not.toContain('Nessuna sessione.');
+      expect(html).not.toContain('role="status"');
+    });
+
+    // plan-claude_sessions_client-ui_redesign/REQ-30, SessionList: the error shows above the entries already received
+    it('on error keeps the entries received, below the alert', () => {
+      const html = renderWith([session('a', 'idle', now), session('b', 'working', earlier)], 'error');
+      expect(entries(html)).toHaveLength(2);
+      expect(html.indexOf('role="alert"')).toBeGreaterThan(-1);
+      expect(html.indexOf('role="alert"')).toBeLessThan(html.indexOf('<button'));
+    });
+
+    // SessionList: status defaults to ready
+    it('with no status behaves as ready', () => {
+      expect(renderList([])).toBe(renderWith([], 'ready'));
+      expect(renderWith([], 'ready')).not.toMatch(/role="(status|alert)"/);
+    });
   });
 });

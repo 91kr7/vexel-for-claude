@@ -234,6 +234,6 @@ test.describe('folder chooser errors', () => {
     await page.route('**/api/sessions', (route) => route.abort());
     await pathField(page).fill(projectA);
     await page.getByRole('button', { name: 'Avvia sessione' }).click();
-    await expectErrorAndNoSession(page, 'Operazione non riuscita.');
+    await expectErrorAndNoSession(page, 'Avvio della sessione non riuscito.');
   });
 });
