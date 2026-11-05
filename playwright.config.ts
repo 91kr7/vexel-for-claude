@@ -1,17 +1,30 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
+import { E2E_CLAUDE_DIR } from './e2e/claude-dir';
 
 const port = 3100;
 const baseURL = `http://127.0.0.1:${port}`;
+// These specs share the server's fixture Claude Code folder, so they must never run at the same time.
+const claudeDirSpecs = /(resume-session|external-sessions)\.spec\.ts$/;
 
 export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
   use: { baseURL },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: claudeDirSpecs },
+    { name: 'chromium-claude-dir', use: { ...devices['Desktop Chrome'] }, testMatch: claudeDirSpecs, workers: 1 },
+  ],
   webServer: {
-    command: 'npm run --silent build && npm run --silent start',
+    // Not `npm start`: its fixed PORT would override the e2e port.
+    command: 'npm run --silent build && NODE_ENV=production npx tsx src/server/main.ts',
     url: `${baseURL}/api/health`,
-    env: { PORT: String(port) },
+    // The fake CLI stands in for Claude Code: e2e tests never start the real one.
+    env: {
+      PORT: String(port),
+      CLAUDE_CONFIG_DIR: E2E_CLAUDE_DIR,
+      AI_CLIENT_CLAUDE_CLI: fileURLToPath(new URL('./test-support/fake-claude.mjs', import.meta.url)),
+    },
     reuseExistingServer: !process.env.CI,
   },
 });

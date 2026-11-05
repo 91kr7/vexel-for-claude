@@ -1,5 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { AppLayout } from './AppLayout';
+import './styles.css';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -8,6 +10,6 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <h1>AI Client</h1>
+    <AppLayout />
   </StrictMode>,
 );
