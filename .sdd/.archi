@@ -90,7 +90,7 @@ The e2e run builds the app and starts it on port 3100. A server already listenin
 - **Ports.** 3000 for the server, 5173 for Vite (`strictPort`), 3100 for e2e. A separate e2e port avoids a clash with a running instance.
 - **Empty test runs pass.** Vitest uses `passWithNoTests`. `test:e2e` passes `--pass-with-no-tests`.
 - **No jsdom.** Vitest runs in the Node environment. A DOM environment is added when the first component test needs it.
-- **GUI language.** Not stated. The placeholder title "AI Client" and `lang="en"` are in English until the human decides.
+- **GUI language.** Italian, as the analysis `claude_sessions_client` sets. Code identifiers stay in English.
 - **No linter or formatter.** Not requested.
 - **Playwright browser.** Chromium headless shell installed (v1248) in `~/.cache/ms-playwright`.
 - **node-pty.** Version 1.1.0 installs and loads on Node 22 in this machine.
