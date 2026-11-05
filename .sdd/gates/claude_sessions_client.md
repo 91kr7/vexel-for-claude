@@ -44,3 +44,4 @@
 | 2026-11-05 | dev | G4 external-sessions | pass | Build green on re-run; diff explained by INT-1..INT-13; no write or `.key` access in `src/server/external` |
 | 2026-11-05 | dev | divergence developer | decided | Transcript folder = cwd with every non-alphanumeric replaced, fallback search by sessionId; external id = Claude sessionId; INT-3 inside scanner; no visible REQ change |
 | 2026-11-05 | test | G5 external-sessions | pass | 229 unit, 8 e2e green on re-run; tester full suites 361 unit, 43 e2e accepted; no source commit after it |
+| 2026-11-05 | close | merge | pass | All 5 batches certified; merged into main with --no-ff |
