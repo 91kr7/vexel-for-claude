@@ -1,0 +1,96 @@
+# Architecture — ai-client
+
+Created: 2026-11-05.
+
+A local web application for the developer's own Linux machine. One browser page manages several interactive Claude Code CLI sessions. The backend spawns processes in pseudo-terminals and streams them to the browser over WebSocket. The frontend renders the terminals.
+
+## Stack
+
+| Item | Choice |
+|------|--------|
+| Language | TypeScript 7.0 (`strict`, `noUncheckedIndexedAccess`) |
+| Runtime | Node.js 22 (installed v22.23.4), Linux only |
+| Package manager | npm 10.9.9, single package, no workspaces, ESM (`"type": "module"`) |
+| Backend | Fastify 5 + @fastify/websocket + @fastify/static, node-pty, run with `tsx` |
+| Frontend | React 18 + Vite 8, @xterm/xterm 6 + @xterm/addon-fit, plain CSS |
+| Tests | Vitest 5 (unit/integration), Playwright 1.64 with chromium (e2e) |
+
+## Structure
+
+```
+.
+├── package.json / package-lock.json
+├── tsconfig.json            solution file: references the three configs below
+├── tsconfig.server.json     src/server (NodeNext resolution, Node types)
+├── tsconfig.web.json        src/web (bundler resolution, DOM, react-jsx)
+├── tsconfig.node.json       root config files (vite, vitest, playwright)
+├── vite.config.ts           root src/web, output dist/web, dev proxy /api -> server
+├── vitest.config.ts         tests in src/**/*.test.{ts,tsx}
+├── playwright.config.ts     tests in e2e/, builds and starts the app on port 3100
+├── .gitignore
+└── src/
+    ├── server/main.ts       Fastify app: GET /api/health, serves dist/web if it exists
+    └── web/
+        ├── index.html       Vite entry page
+        └── main.tsx         React root, renders a placeholder title
+```
+
+Generated output, not versioned: `dist/web/` (frontend build), `test-results/`, `playwright-report/`.
+
+## Dependencies
+
+| Package | Kind | Why |
+|---------|------|-----|
+| fastify | runtime | HTTP server |
+| @fastify/websocket | runtime | WebSocket transport for terminal streams (registered, no route yet) |
+| @fastify/static | runtime | Serves the built frontend from `dist/web` |
+| node-pty | runtime | Pseudo-terminals for the CLI sessions (native build, not imported yet) |
+| tsx | runtime | Runs the TypeScript server in `dev` and `start` |
+| react, react-dom | runtime | UI |
+| @xterm/xterm, @xterm/addon-fit | runtime | Terminal view and resize to container (not imported yet) |
+| typescript | dev | Typecheck (`tsc -b`, no emit) |
+| vite, @vitejs/plugin-react | dev | Frontend dev server and bundle |
+| vitest | dev | Unit and integration tests |
+| @playwright/test | dev | e2e tests in chromium |
+| concurrently | dev | Runs server and Vite together in `dev` |
+| @types/node, @types/react, @types/react-dom | dev | Type definitions |
+
+## Conventions
+
+- Backend code lives in `src/server/`, frontend code in `src/web/`. They do not import each other.
+- Server imports use the `.js` extension (NodeNext ESM resolution).
+- File names are kebab-case. React component files are PascalCase (`SessionList.tsx`).
+- Unit tests sit next to the code: `<name>.test.ts` / `<name>.test.tsx`.
+- e2e tests go in `e2e/*.spec.ts`. The folder does not exist yet.
+- HTTP and WebSocket routes use the `/api` prefix. The dev proxy forwards only `/api`.
+- The server binds to `127.0.0.1` only. Port comes from `PORT` (default 3000).
+
+## Commands
+
+| Goal | Command | Quiet variant (for agents) |
+|------|---------|----------------------------|
+| Install | `npm install` | `npm install --silent` |
+| Dev (server :3000 + Vite :5173) | `npm run dev` | — |
+| Typecheck only | `npx tsc -b` | same (silent on success) |
+| Build | `npm run build` | `npx tsc -b && npx vite build --logLevel warn` |
+| Start built app (:3000) | `npm start` | `npm run --silent start` |
+| Unit tests | `npm test` | `npx vitest run --reporter=dot` |
+| One unit test file | `npx vitest run <path>` | `npx vitest run --reporter=dot <path>` |
+| e2e tests | `npm run test:e2e` | `npx playwright test --pass-with-no-tests --reporter=dot` |
+| One e2e file | `npx playwright test <path>` | `npx playwright test --reporter=dot <path>` |
+| Install e2e browser | `npx playwright install chromium` | — |
+
+The e2e run builds the app and starts it on port 3100. A server already listening there is reused outside CI.
+
+## Assumptions
+
+- **TypeScript 7.** npm resolved the latest major (7.0.2). Build mode (`tsc -b`) and the configs work with it.
+- **No server compile step.** `start` runs `src/server/main.ts` with `tsx`, so `tsx` is a runtime dependency. The app is local and always runs from the repository.
+- **Separate dev servers.** In `dev`, Vite serves the page and proxies `/api` (HTTP and WebSocket) to Fastify. The server registers static files only when `dist/web` exists.
+- **Ports.** 3000 for the server, 5173 for Vite (`strictPort`), 3100 for e2e. A separate e2e port avoids a clash with a running instance.
+- **Empty test runs pass.** Vitest uses `passWithNoTests`. `test:e2e` passes `--pass-with-no-tests`.
+- **No jsdom.** Vitest runs in the Node environment. A DOM environment is added when the first component test needs it.
+- **GUI language.** Not stated. The placeholder title "AI Client" and `lang="en"` are in English until the human decides.
+- **No linter or formatter.** Not requested.
+- **Playwright browser.** Chromium headless shell installed (v1248) in `~/.cache/ms-playwright`.
+- **node-pty.** Version 1.1.0 installs and loads on Node 22 in this machine.
