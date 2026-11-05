@@ -11,7 +11,8 @@ type: UI component
 ## Contract
 
 Description:
-- a modal with a path field, the list of subfolders of the current folder, and the buttons "Annulla" and "Avvia sessione".
+- a Dialog titled "Nuova sessione". Its form is named "Scegli la cartella del progetto". It holds a path field and the list of subfolders of the current folder.
+- primary action "Avvia sessione", cancel "Annulla". The path field has the focus on open.
 
 Props:
 - `onStarted(sessionId)` → called after the session started.
@@ -24,9 +25,10 @@ Shows:
 
 Actions:
 - click on a subfolder or on ".." → that folder becomes current; the field and the list update.
-- Enter in the path field → lists the typed folder.
+- Enter in the path field, the field holds a folder other than the listed one → lists the typed folder.
+- Enter in the path field, the field holds the listed folder → same as "Avvia sessione".
 - "Avvia sessione" → starts a session in the path of the field (StartSessionRoute). Success → `onStarted(id)`.
-- "Annulla" → `onCancel()`.
+- "Annulla" or Esc → `onCancel()`.
 
 Errors (shown in the dialog, the dialog stays open):
 - the folder does not exist → "La cartella non esiste."
@@ -37,13 +39,16 @@ Errors (shown in the dialog, the dialog stays open):
 ## Rules and invariants
 
 - A failed start starts no session and does not call `onStarted`.
+- "Avvia sessione" is disabled while the start request runs.
 - A path the user typed is never replaced by a listing that started before the user typed it.
 
 ## Dependencies
 
+- Dialog (module app)
 - FolderRoute
 - StartSessionRoute (module sessions)
 
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-1`
+- `plan-claude_sessions_client-ui_redesign/REQ-25`, `plan-claude_sessions_client-ui_redesign/REQ-26`, `plan-claude_sessions_client-ui_redesign/REQ-27`

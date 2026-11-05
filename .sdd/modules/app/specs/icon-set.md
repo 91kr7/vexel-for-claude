@@ -25,6 +25,7 @@ Components and where the client uses them today:
 - `LockIcon` → the "Sola lettura" notice of the external view
 - `WrenchIcon` → a tool call in the external view
 - `ChevronRightIcon`, `ChevronDownIcon` → "Espandi" and "Comprimi" of a tool item in the external view
+- `TriangleAlertIcon` → the title of a WarningDialog
 
 ## Rules and invariants
 

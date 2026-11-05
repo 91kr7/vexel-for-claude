@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Dialog } from '../dialogs/Dialog';
 
 interface FolderListing {
   path: string;
@@ -58,8 +59,7 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
     void browse();
   }, []);
 
-  const start = async (event: FormEvent) => {
-    event.preventDefault();
+  const start = async () => {
     setError(null);
     setBusy(true);
     try {
@@ -82,56 +82,54 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
   };
 
   return (
-    <div className="modal-backdrop">
-      <form className="modal folder-chooser" onSubmit={start} aria-label="Scegli la cartella del progetto">
-        <h2>Nuova sessione</h2>
-        <label htmlFor="folder-path">Cartella del progetto</label>
-        <input
-          id="folder-path"
-          type="text"
-          value={pathInput}
-          onChange={(event) => {
-            typingCount.current += 1;
-            setPathInput(event.target.value);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              void browse(pathInput.trim());
-            }
-          }}
-          autoFocus
-        />
-        <ul className="folder-list">
-          {listing?.parent != null && (
-            <li>
-              <button type="button" onClick={() => void browse(listing.parent ?? undefined)}>
-                ..
-              </button>
-            </li>
-          )}
-          {listing?.folders.map((name) => (
-            <li key={name}>
-              <button type="button" onClick={() => void browse(joinPath(listing.path, name))}>
-                {name}
-              </button>
-            </li>
-          ))}
-        </ul>
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
+    <Dialog
+      title="Nuova sessione"
+      formName="Scegli la cartella del progetto"
+      className="folder-chooser"
+      primaryLabel="Avvia sessione"
+      onPrimary={() => void start()}
+      primaryDisabled={busy}
+      onCancel={onCancel}
+    >
+      <label htmlFor="folder-path">Cartella del progetto</label>
+      <input
+        id="folder-path"
+        type="text"
+        value={pathInput}
+        onChange={(event) => {
+          typingCount.current += 1;
+          setPathInput(event.target.value);
+        }}
+        onKeyDown={(event) => {
+          const typed = pathInput.trim();
+          if (event.key === 'Enter' && typed !== listing?.path) {
+            event.preventDefault();
+            void browse(typed);
+          }
+        }}
+        autoFocus
+      />
+      <ul className="folder-list">
+        {listing?.parent != null && (
+          <li>
+            <button type="button" onClick={() => void browse(listing.parent ?? undefined)}>
+              ..
+            </button>
+          </li>
         )}
-        <div className="modal-actions">
-          <button type="button" onClick={onCancel}>
-            Annulla
-          </button>
-          <button type="submit" disabled={busy}>
-            Avvia sessione
-          </button>
-        </div>
-      </form>
-    </div>
+        {listing?.folders.map((name) => (
+          <li key={name}>
+            <button type="button" onClick={() => void browse(joinPath(listing.path, name))}>
+              {name}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+    </Dialog>
   );
 }

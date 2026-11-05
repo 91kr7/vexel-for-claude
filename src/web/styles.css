@@ -418,9 +418,27 @@ input {
   box-shadow: var(--shadow-modal);
 }
 
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+}
+
 .modal h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0 0 var(--space-2);
   font-size: var(--font-size-lg);
+}
+
+.dialog-warning {
+  border-top: 4px solid var(--color-warning);
+}
+
+.dialog-warning h2 .icon {
+  color: var(--color-warning);
 }
 
 .modal p {
@@ -512,6 +530,11 @@ input {
 
 .past-session:hover:not(:disabled) {
   background: var(--color-surface-hover);
+}
+
+.past-session[aria-pressed='true'] {
+  background: var(--color-surface-selected);
+  box-shadow: inset 4px 0 0 var(--color-primary);
 }
 
 .past-session-label {

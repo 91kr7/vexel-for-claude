@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { WarningDialog } from '../dialogs/WarningDialog';
 import { PowerIcon } from '../icons/Icons';
 import type { SessionState } from './live-session-store';
 
@@ -28,20 +29,13 @@ export function StopSessionButton({ sessionId, state }: StopSessionButtonProps) 
         Termina
       </button>
       {confirming && (
-        <div className="modal-backdrop">
-          <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="stop-session-title">
-            <h2 id="stop-session-title">Terminare la sessione?</h2>
-            <p>La sessione è in lavorazione. Il lavoro in corso si interrompe.</p>
-            <div className="modal-actions">
-              <button type="button" onClick={() => setConfirming(false)} autoFocus>
-                Annulla
-              </button>
-              <button type="button" onClick={stop}>
-                Termina
-              </button>
-            </div>
-          </div>
-        </div>
+        <WarningDialog
+          title="Terminare la sessione?"
+          description="La sessione è in lavorazione. Il lavoro in corso si interrompe."
+          primaryLabel="Termina"
+          onPrimary={stop}
+          onCancel={() => setConfirming(false)}
+        />
       )}
     </>
   );
