@@ -9,6 +9,7 @@ export function AppLayout() {
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
   const [choosingFolder, setChoosingFolder] = useState(false);
   const sessions = useLiveSessions();
+  const openSessionState = sessions.find((session) => session.id === openSessionId)?.state;
 
   return (
     <div className="app">
@@ -23,7 +24,7 @@ export function AppLayout() {
         <SessionList sessions={sessions} openSessionId={openSessionId} onOpen={setOpenSessionId} />
         <main className="session-area">
           {openSessionId ? (
-            <SessionView key={openSessionId} sessionId={openSessionId} />
+            <SessionView key={openSessionId} sessionId={openSessionId} state={openSessionState} />
           ) : (
             <p className="empty-state">Nessuna sessione aperta.</p>
           )}

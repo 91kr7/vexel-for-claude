@@ -5,6 +5,7 @@ import { TerminalMirror } from './terminal-mirror.js';
 const DEFAULT_COMMAND = 'claude';
 const INITIAL_COLS = 120;
 const INITIAL_ROWS = 30;
+const DEFAULT_STOP_TIMEOUT_MS = 5000;
 export const SESSION_ID_VARIABLE = 'AI_CLIENT_SESSION_ID';
 
 export interface SessionViewer {
@@ -19,11 +20,14 @@ export class Session {
   readonly #mirror: TerminalMirror;
   readonly #viewers = new Set<SessionViewer>();
   readonly #exitListeners = new Set<() => void>();
+  readonly #stopTimeoutMs: number;
+  #killTimer: NodeJS.Timeout | undefined;
   #exited = false;
 
-  constructor(id: string, cwd: string, command: string, args: string[]) {
+  constructor(id: string, cwd: string, command: string, args: string[], stopTimeoutMs = DEFAULT_STOP_TIMEOUT_MS) {
     this.id = id;
     this.cwd = cwd;
+    this.#stopTimeoutMs = stopTimeoutMs;
     this.#mirror = new TerminalMirror(INITIAL_COLS, INITIAL_ROWS);
     this.#pty = pty.spawn(command, args, {
       name: 'xterm-256color',
@@ -38,6 +42,7 @@ export class Session {
     });
     this.#pty.onExit(() => {
       this.#exited = true;
+      clearTimeout(this.#killTimer);
       for (const viewer of this.#viewers) viewer.end();
       this.#viewers.clear();
       for (const listener of this.#exitListeners) listener();
@@ -56,6 +61,14 @@ export class Session {
 
   write(data: string): void {
     if (!this.#exited) this.#pty.write(data);
+  }
+
+  stop(): void {
+    if (this.#exited || this.#killTimer) return;
+    this.#pty.kill('SIGTERM');
+    this.#killTimer = setTimeout(() => {
+      if (!this.#exited) this.#pty.kill('SIGKILL');
+    }, this.#stopTimeoutMs);
   }
 
   resize(cols: number, rows: number): void {
@@ -98,21 +111,24 @@ export class Session {
 export interface SessionRegistryOptions {
   command?: string;
   settingsPath?: string;
+  stopTimeoutMs?: number;
 }
 
 export class SessionRegistry {
   readonly #command: string;
   readonly #args: string[];
+  readonly #stopTimeoutMs: number | undefined;
   readonly #sessions = new Map<string, Session>();
   readonly #startListeners = new Set<(session: Session) => void>();
 
   constructor(options: SessionRegistryOptions = {}) {
     this.#command = options.command ?? (process.env.AI_CLIENT_CLAUDE_CLI || DEFAULT_COMMAND);
     this.#args = options.settingsPath ? ['--settings', options.settingsPath] : [];
+    this.#stopTimeoutMs = options.stopTimeoutMs;
   }
 
   start(cwd: string): Session {
-    const session = new Session(randomUUID(), cwd, this.#command, this.#args);
+    const session = new Session(randomUUID(), cwd, this.#command, this.#args, this.#stopTimeoutMs);
     this.#sessions.set(session.id, session);
     for (const listener of this.#startListeners) listener(session);
     return session;

@@ -16,7 +16,7 @@ type: configuration
 - at start, writes the HookSettings file for `http://127.0.0.1:<port>`.
 - one shared SessionRegistry that starts the CLI with that settings file.
 - one shared SessionStateTracker. It tracks every session the registry starts.
-- registers StartSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute and FolderRoute.
+- registers StartSessionRoute, StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute and FolderRoute.
 - serves the files of `dist/web` when the folder exists.
 
 ## Rules and invariants
@@ -26,9 +26,9 @@ type: configuration
 ## Dependencies
 
 - LocalAccessGuard
-- SessionRegistry, SessionStateTracker, HookSettings, StartSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute (module sessions)
+- SessionRegistry, SessionStateTracker, HookSettings, StartSessionRoute, StopSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute (module sessions)
 - FolderRoute (module folders)
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`
+- `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`, `plan-claude_sessions_client/REQ-23`

@@ -13,6 +13,7 @@ import { registerSessionListRoute } from './sessions/session-list-route.js';
 import { SessionRegistry } from './sessions/session-registry.js';
 import { SessionStateTracker } from './sessions/session-state-tracker.js';
 import { registerStartSessionRoute } from './sessions/start-session-route.js';
+import { registerStopSessionRoute } from './sessions/stop-session-route.js';
 
 const HOST = '127.0.0.1';
 const port = Number(process.env.PORT ?? 3000);
@@ -29,6 +30,7 @@ await app.register(fastifyWebsocket);
 
 app.get('/api/health', async () => ({ status: 'ok' }));
 registerStartSessionRoute(app, registry);
+registerStopSessionRoute(app, registry);
 registerAttachSessionRoute(app, registry, tracker);
 registerSessionListRoute(app, tracker);
 registerSessionEventsRoute(app, tracker);

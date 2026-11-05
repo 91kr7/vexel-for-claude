@@ -17,7 +17,7 @@ Description:
 Shows:
 - the counter and the list, always, also while a session is open. Both follow LiveSessionStore (`useLiveSessions`).
 - no open session → the text "Nessuna sessione aperta."
-- an open session → its SessionView.
+- an open session → its SessionView, with the state of that session from LiveSessionStore (none while the store does not list it yet).
 
 Actions:
 - "Nuova sessione" → opens FolderChooser.
@@ -32,4 +32,4 @@ Actions:
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-17`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`
+- `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-17`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`, `plan-claude_sessions_client/REQ-23`

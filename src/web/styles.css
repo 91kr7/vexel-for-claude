@@ -157,6 +157,7 @@ button {
 .session-toolbar {
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
   padding: 0.25rem 1rem;
 }
 

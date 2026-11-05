@@ -2,11 +2,14 @@ import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
+import type { SessionState } from './live-session-store';
+import { StopSessionButton } from './StopSessionButton';
 
 const ESCAPE = '\x1b';
 
 interface SessionViewProps {
   sessionId: string;
+  state?: SessionState;
 }
 
 function attachUrl(sessionId: string): string {
@@ -14,7 +17,7 @@ function attachUrl(sessionId: string): string {
   return `${protocol}//${window.location.host}/api/sessions/${encodeURIComponent(sessionId)}/attach`;
 }
 
-export function SessionView({ sessionId }: SessionViewProps) {
+export function SessionView({ sessionId, state }: SessionViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
@@ -78,6 +81,7 @@ export function SessionView({ sessionId }: SessionViewProps) {
         <button type="button" onClick={interrupt}>
           Interrompi
         </button>
+        <StopSessionButton sessionId={sessionId} state={state} />
       </div>
       <div className="session-terminal" ref={containerRef} />
     </div>
