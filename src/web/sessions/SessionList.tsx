@@ -1,8 +1,6 @@
 import { useId } from 'react';
-import { ErrorMessage } from '../feedback/ErrorMessage';
-import { ProgressIndicator } from '../feedback/ProgressIndicator';
-import { TerminalIcon } from '../icons/Icons';
-import { Avatar, folderNameOf } from './Avatar';
+import { AreaState } from '../feedback/AreaState';
+import { folderNameOf } from './Avatar';
 import type { LoadStatus, SessionSummary } from './live-session-store';
 import { ProgressBar } from './ProgressBar';
 import { RelativeTime } from './RelativeTime';
@@ -26,23 +24,10 @@ function PermissionText({ session }: { session: SessionSummary }) {
   );
 }
 
-function EntryHeading({ session, showTag = false }: { session: SessionSummary; showTag?: boolean }) {
+function EntryTitle({ session }: { session: SessionSummary }) {
   return (
-    <span className="session-entry-heading">
-      <span className="session-entry-title-line">
-        <span className="title-m session-entry-title" title={session.folder}>
-          {folderNameOf(session.folder)}
-        </span>
-        {showTag && (
-          <span className="label-m session-external">
-            <TerminalIcon />
-            Esterna
-          </span>
-        )}
-      </span>
-      <span className="body-m session-entry-label" title={session.label}>
-        {showTag ? <PermissionText session={session} /> : session.label}
-      </span>
+    <span className="session-entry-title" title={session.folder}>
+      {folderNameOf(session.folder)}
     </span>
   );
 }
@@ -57,15 +42,19 @@ function EntryRow({ session, open, onOpen }: EntryProps) {
   const externalNeedsInput = session.external === true && session.state === 'needs_input';
   return (
     <button type="button" className={entryClass(session)} aria-current={open ? 'true' : undefined} onClick={() => onOpen(session.id)}>
-      <Avatar folder={session.folder} state={session.state} external={session.external} />
-      <span className="session-entry-text">
-        <EntryHeading session={session} showTag={externalNeedsInput} />
-        {session.state === 'working' && !session.external && <ProgressBar />}
-      </span>
-      <span className="session-entry-side">
+      <span className="session-entry-line">
+        <StateBadge state={session.state} variant="dot" />
+        <EntryTitle session={session} />
+        {externalNeedsInput && <span className="mono-chip vx-surface-2 session-external">Esterna</span>}
         <StateBadge state={session.state} />
-        <RelativeTime className="body-s session-entry-time" iso={session.lastActivity} />
       </span>
+      <span className="session-entry-line session-entry-detail">
+        <span className={externalNeedsInput ? 'session-entry-label session-entry-permission' : 'session-entry-label'} title={session.label}>
+          {externalNeedsInput ? <PermissionText session={session} /> : session.label}
+        </span>
+        <RelativeTime className="session-entry-time" iso={session.lastActivity} />
+      </span>
+      {session.state === 'working' && !session.external && <ProgressBar />}
     </button>
   );
 }
@@ -73,7 +62,7 @@ function EntryRow({ session, open, onOpen }: EntryProps) {
 function NeedsInputCard({ session, open, onOpen }: EntryProps) {
   const lineId = useId();
   return (
-    <div className={open ? 'session-card open' : 'session-card'}>
+    <div className={open ? 'session-card vx-surface-2 open' : 'session-card vx-surface-2'}>
       <button
         type="button"
         className={entryClass(session)}
@@ -81,19 +70,19 @@ function NeedsInputCard({ session, open, onOpen }: EntryProps) {
         aria-describedby={lineId}
         onClick={() => onOpen(session.id)}
       >
-        <Avatar folder={session.folder} state={session.state} />
-        <span className="session-entry-text">
-          <EntryHeading session={session} />
+        <span className="session-entry-line">
+          <span className="perm-tag">Richiede input</span>
+          <EntryTitle session={session} />
         </span>
-        <span className="session-entry-side">
-          <StateBadge state={session.state} />
+        <span className="session-entry-label" title={session.label}>
+          {session.label}
         </span>
       </button>
+      <span className="session-card-line" id={lineId}>
+        <PermissionText session={session} /> · <RelativeTime iso={session.lastActivity} />
+      </span>
       <div className="session-card-actions">
-        <span className="body-s session-card-line" id={lineId}>
-          <PermissionText session={session} /> · <RelativeTime iso={session.lastActivity} />
-        </span>
-        <button type="button" className="btn label-l session-card-reply" onClick={() => onOpen(session.id)}>
+        <button type="button" className="button-primary session-card-reply" onClick={() => onOpen(session.id)}>
           Rispondi
         </button>
       </div>
@@ -111,17 +100,15 @@ interface SessionListProps {
 export function SessionList({ sessions, openSessionId, onOpen, status = 'ready' }: SessionListProps) {
   return (
     <div className="session-list">
-      {status === 'error' && <ErrorMessage className="session-list-alert">Connessione al server persa. Ricarica la pagina.</ErrorMessage>}
+      {status === 'error' && <AreaState kind="error" size="compact" title="Connessione al server persa. Ricarica la pagina." />}
       {status === 'loading' ? (
-        <ProgressIndicator className="session-list-empty" />
+        <AreaState kind="loading" size="compact" title="Caricamento…" />
       ) : sessions.length === 0 ? (
-        status === 'ready' && <p className="session-list-empty">Nessuna sessione.</p>
+        status === 'ready' && <AreaState kind="empty" size="compact" title="Nessuna sessione." />
       ) : (
         groupSessions(sessions).map((group) => (
           <div key={group.id} className="session-group">
-            <h2 className={`label-l session-group-heading session-group-${group.id}`}>
-              {group.title}
-            </h2>
+            <h2 className={`section-label session-group-heading session-group-${group.id}`}>{group.title}</h2>
             <ul>
               {group.sessions.map((session) => {
                 const Entry = session.state === 'needs_input' && !session.external ? NeedsInputCard : EntryRow;

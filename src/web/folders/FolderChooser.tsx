@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Dialog } from '../dialogs/Dialog';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
-import { FolderIcon, FolderPlusIcon } from '../icons/Icons';
+import { FolderIcon } from '../icons/Icons';
 import { Avatar, folderNameOf } from '../sessions/Avatar';
 
 interface FolderListing {
@@ -51,14 +51,14 @@ function FolderRow({ id, name, path, onOpen }: FolderRowProps) {
   return (
     <li>
       <button type="button" className="dialog-row" aria-labelledby={`${id}-name`} aria-describedby={`${id}-path`} onClick={onOpen}>
-        <span className="dialog-row-icon">
+        <span className="dialog-row-icon vx-surface-3">
           <FolderIcon />
         </span>
         <span className="dialog-row-text">
-          <span id={`${id}-name`} className="body-l dialog-row-title">
+          <span id={`${id}-name`} className="dialog-row-title">
             {name}
           </span>
-          <span id={`${id}-path`} className="mono dialog-row-detail">
+          <span id={`${id}-path`} className="dialog-row-detail">
             {path}
           </span>
         </span>
@@ -154,7 +154,6 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
 
   return (
     <Dialog
-      icon={<FolderPlusIcon />}
       title="Nuova sessione"
       description="Scegli il progetto in cui avviare Claude Code."
       formName="Scegli la cartella del progetto"
@@ -164,45 +163,42 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
       primaryBusy={busy}
       onCancel={onCancel}
     >
-      <label className="folder-field">
-        <span className="label-m folder-field-label">Cartella del progetto</span>
-        <span className="folder-field-box">
-          <FolderIcon />
-          <input
-            className="body-m folder-field-input"
-            type="text"
-            value={pathInput}
-            onChange={(event) => {
-              typingCount.current += 1;
-              setPathInput(event.target.value);
-            }}
-            onKeyDown={(event) => {
-              const typed = pathInput.trim();
-              if (event.key === 'Enter' && typed !== listing?.path) {
-                event.preventDefault();
-                void browse(typed);
-              }
-            }}
-            autoFocus
-          />
-        </span>
+      <label className="field">
+        <span className="field-label">Cartella del progetto</span>
+        <input
+          className="field-input"
+          type="text"
+          value={pathInput}
+          onChange={(event) => {
+            typingCount.current += 1;
+            setPathInput(event.target.value);
+          }}
+          onKeyDown={(event) => {
+            const typed = pathInput.trim();
+            if (event.key === 'Enter' && typed !== listing?.path) {
+              event.preventDefault();
+              void browse(typed);
+            }
+          }}
+          autoFocus
+        />
       </label>
       <div className="dialog-scroll">
         {recentFolders.length > 0 && (
           <>
-            <p className="label-l dialog-section-heading">Recenti</p>
+            <p className="section-label dialog-section-heading">Recenti</p>
             <div className="dialog-rows" role="radiogroup" aria-label="Progetti recenti">
               {recentFolders.map((folder, index) => {
                 const checked = pathInput.trim() === folder;
                 const id = `${rowId}-recent-${index}`;
                 return (
                   <label key={folder} className={checked ? 'dialog-row dialog-row-checked' : 'dialog-row'}>
-                    <Avatar folder={folder} size="dialog" />
+                    <Avatar folder={folder} />
                     <span className="dialog-row-text">
-                      <span id={`${id}-name`} className="body-l dialog-row-title">
+                      <span id={`${id}-name`} className="dialog-row-title">
                         {folderNameOf(folder)}
                       </span>
-                      <span id={`${id}-path`} className="mono dialog-row-detail">
+                      <span id={`${id}-path`} className="dialog-row-detail">
                         {folder}
                       </span>
                     </span>
@@ -221,7 +217,7 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
             </div>
           </>
         )}
-        <p className="label-l dialog-section-heading">Cartelle</p>
+        <p className="section-label dialog-section-heading">Cartelle</p>
         <ul className="dialog-rows folder-list" ref={listRef}>
           {listing?.parent != null && (
             <FolderRow id={`${rowId}-parent`} name=".." path={listing.parent} onOpen={() => void browse(listing.parent ?? undefined)} />

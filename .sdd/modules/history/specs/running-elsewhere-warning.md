@@ -11,16 +11,16 @@ type: UI component
 ## Contract
 
 Description:
-- a WarningDialog in the `attn` (amber) tone: the stop-confirmation layout with the `TriangleAlertIcon` in an `--attn-container` circle. It opens on top of the page and of other dialogs.
+- a WarningDialog in the `attn` (amber) tone: the text in the amber banner with the triangle icon, and an amber primary action. It opens on top of the page and of other dialogs.
 
 Props:
 - `onConfirm()` → called on "Riprendi comunque".
-- `onCancel()` → called on "Annulla" and on Esc.
+- `onCancel()` → called on "Annulla", "[Esc]" and Esc.
 
 Shows:
 - the title "Sessione in esecuzione in un terminale".
-- the text "Questa sessione è ancora in esecuzione in un altro terminale. Se la riprendi anche qui, le due istanze possono danneggiare la conversazione."
-- the buttons "Annulla" (focused) and "Riprendi comunque" (primary action, `--attn` text).
+- the text, in the banner, "Questa sessione è ancora in esecuzione in un altro terminale. Se la riprendi anche qui, le due istanze possono danneggiare la conversazione."
+- the buttons "Annulla" (focused) and "Riprendi comunque" (primary action, `.button-attn`).
 
 ## Rules and invariants
 
@@ -36,3 +36,4 @@ Shows:
 - `plan-claude_sessions_client/REQ-27`
 - `plan-claude_sessions_client-ui_redesign/REQ-25`, `plan-claude_sessions_client-ui_redesign/REQ-26`, `plan-claude_sessions_client-ui_redesign/REQ-27`, `plan-claude_sessions_client-ui_redesign/REQ-28`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-50`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-49`

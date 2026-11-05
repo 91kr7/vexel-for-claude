@@ -6,12 +6,12 @@ type: UI component
 
 # SessionList
 
-**Purpose** → the grouped entries of every hosted and external session, as the section "Elenco sessioni" of board "Sessione ospitata" and the variants of board "Voci dell'elenco".
+**Purpose** → the grouped entries of every hosted and external session, as compact rows of `#quick-session-list` in `.sdd/mockups/studio-dark/mock.html` (`.vx-session-row`, built by `renderSidebarQuickList()`).
 
 ## Contract
 
 Description:
-- a vertical, scrolling column inside the list panel of AppLayout. It holds headings and entries, 4 px apart. It is not a landmark: the list panel carries the label "Elenco sessioni".
+- a vertical, scrolling column inside the list panel of AppLayout, 10 px between its blocks. It is not a landmark: the list panel carries the label "Elenco sessioni".
 
 Props:
 - `sessions` → the list from LiveSessionStore.
@@ -20,64 +20,60 @@ Props:
 - `status` → the load status from LiveSessionStore: `loading`, `ready` or `error`. Default `ready`.
 
 Shows:
-- `loading` → a ProgressIndicator "Caricamento…" in place of the entries and of "Nessuna sessione.".
-- `error` → an ErrorMessage "Connessione al server persa. Ricarica la pagina." above the entries. The entries already received stay.
-- `ready`, no session → "Nessuna sessione." With `error` and no session, only the ErrorMessage shows.
-- the groups of `groupSessions`, in its order. Each group is a level-2 heading with the group title (`.label-l`), then a list with one item per session.
-  - heading margins: 8 px above for the first heading, 16 px for the others; 12 px left and right; 4 px below.
-  - heading colour: `--attn` for "Richiedono input", `--on-surface-variant` for the others.
+- `loading` → a compact AreaState `loading` "Caricamento…" in place of the entries.
+- `error` → a compact AreaState `error` "Connessione al server persa. Ricarica la pagina." (rose tile) above the entries. The entries already received stay.
+- `ready`, no session → a compact AreaState `empty` "Nessuna sessione.". With `error` and no session, only the error block shows.
+- the groups of `groupSessions`, in its order. Each group is a level-2 heading with the group title in `.section-label` (all muted, padding 0 × 6 px), 4 px above a list with one item per session. Rows are 2 px apart.
 
-Entry row (every entry but the hosted needs-input card): a button with the class `session-entry`.
-- layout: 12 px gap, padding 12 px 16 px, radius 16 px, no border, transparent, `--on-surface` text.
-- left → Avatar (`list` size) of the folder, state and external flag.
-- middle → the folder name (`folderNameOf`, `.title-m`, tooltip: the full folder path); below it the label (`.body-m`, `--on-surface-variant`, tooltip: the full label). A hosted working entry adds a ProgressBar 6 px under the label. An external entry never shows it.
-- right, aligned to the end → StateBadge, and 4 px below it the RelativeTime of the last activity (`.body-s`, `--on-surface-variant`).
-- folder name and label longer than the entry are cut on one line with an ellipsis.
+Entry row (every entry but the hosted needs-input card): a button with the class `session-entry`, the `.vx-session-row` look.
+- padding 6 × 8 px, 6 px radius, 12/18 px text in `--text-secondary`. Hover → `--bg-surface-2` and `--text-primary`.
+- line 1, 8 px gaps → the StateBadge `dot` (8 px), the folder name (`folderNameOf`, tooltip: the full folder path), then on the right the StateBadge `inline` (mono 10 px in the state colour).
+- line 2, 2 px below and 16 px in from the left → the label (11/16 px, `--text-muted`, tooltip: the full label), then on the right the RelativeTime of the last activity (mono 10 px, `--text-muted`).
+- a hosted working entry → a ProgressBar 2 px below line 2, 16 px in. An external entry never shows it.
+- folder name and label longer than the row are cut on one line with an ellipsis. A row with its two lines is 48 px high.
 
-Entry variants (board "Voci dell'elenco"):
+Entry variants:
 
 | Entry | Classes | Look |
 |-------|---------|------|
-| open (`aria-current="true"`) | — | `--secondary-container` background, `--on-secondary-container` text; the label takes the text colour |
-| ended | `ended` | `--on-surface-variant` text; the label takes the text colour; grey Avatar |
-| external, `working` or `idle` | `external` | 1 px dashed `--outline-variant` border, outlined Avatar with the terminal icon, no "Esterna" tag |
-| external, `needs_input` | `external needs-input` | `--attn-container` background, `--on-attn-container` text, radius 20 px, no border; the tag "Esterna" after the folder name; "Permesso per **<tool>**" in place of the label when `waitingTool` is known; outlined Avatar; no "Rispondi" |
+| open (`aria-current="true"`) | — | `--accent-glow` background, `--text-primary`, weight 600, 2 px `--accent-primary` bar on the left (padding left 6 px); label and time in `--text-secondary` |
+| ended | `ended` | text in `--text-muted` also on hover; zinc dot. Open → `--text-secondary` |
+| external | `external` | 1 px dashed `--border-strong` border all around (padding 5 × 7 px). Open → the dashed border stays and the accent bar is drawn inside it |
+| external, `needs_input` | `external needs-input` | dashed row with the amber dot; the chip "Esterna" (`.mono-chip` on surface 2) after the folder name; "Permesso per **<tool>**" in mono amber-300 in place of the label when `waitingTool` is known; no "Rispondi" |
 
-- the tag "Esterna" → `.label-m`, 20 px high, padding 0 6 px, radius 6 px, 1 px `--outline` border, `--on-surface-variant` text, with a 12 px terminal icon before the text.
-- an open external entry keeps its dashed border.
-
-Hosted needs-input card (board "Sessione ospitata"): a block with the class `session-card`.
-- 10 px gap, padding 14 px 16 px, radius 20 px, `--attn-container` background, `--on-attn-container` text.
-- top → a button with the classes `session-entry needs-input`: amber Avatar, folder name, label in the card text colour, and on the right the StateBadge "Richiede input".
-- bottom → the needs-input line (`.body-s`) and, at the end, the button "Rispondi" (`.btn .label-l`, 32 px high, padding 0 14 px, `--attn` background, `--sc-lowest` text).
-- needs-input line → "Permesso per **<tool>** · <time>", with the tool in bold. With no `waitingTool`, the label takes the place of "Permesso per <tool>". `<time>` is the RelativeTime of the last activity.
+Hosted needs-input card (look of `#permission-banner`): a block with the class `session-card`.
+- `.vx-surface-2`, 1 px amber-500 border at 40 %, 12 px radius, padding 14 px, `shadow-lg`. Items 4 px apart.
+- top → a button with the classes `session-entry needs-input`: the tag "Richiede input" (mono 10 px uppercase, weight 500, amber-300 on amber-500 at 20 %, amber-500 border at 40 %, 4 px radius) and the folder name (12 px weight 500, `--text-primary`); below, the label as in a row.
+- then the needs-input line → "Permesso per **<tool>** · <time>", with the tool in bold. With no `waitingTool`, the label takes the place of "Permesso per <tool>". `<time>` is the RelativeTime of the last activity. Look of `#perm-cmd`: mono 12/16 px, amber-300, `--bg-canvas`, `--border-subtle` border, 4 px radius, padding 6 × 10 px, one line cut with an ellipsis.
+- then, 12 px below and on the right, "Rispondi" → `.button-primary` in mono weight 500, padding 6 × 14 px, scaled to 95 % while pressed.
 - the card button is described by the needs-input line (`aria-describedby`).
-- the open card has `aria-current="true"` on its button and a 2 px `--primary` outline around the card.
+- the open card has `aria-current="true"` on its button, the accent glow over its background and the 2 px accent bar inside its left edge.
 
 Actions:
 - click on an entry row → `onOpen(id)`. Ended and external sessions too.
 - click anywhere on the hosted needs-input card → `onOpen(id)`, once.
 - "Rispondi" → `onOpen(id)`, once.
-- hover on an entry or card → an 8 % layer of the text colour over its background.
 
 ## Rules and invariants
 
 - No entry text wraps.
 - Only the open session's button has `aria-current="true"`.
 - The needs-input entries are the most visible of the list: amber, first group.
-- An external entry is told apart without colour: the dashed border or the "Esterna" tag, and the terminal avatar.
+- An external entry is told apart without colour: the dashed border, and the "Esterna" chip when it needs input.
+- The state of an entry is readable without colour: its name is always shown.
 
 ## Assumptions
 
-- Progress bar on hosted entries only (gatekeeper decision): both boards draw the external working row without a bar (`mobile-app` in "Sessione ospitata" and "Voci dell'elenco"). REQ-28 asks for the board, so `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-21` is read as hosted entries.
+- Progress bar on hosted entries only (gatekeeper decision of the previous plan).
+- The state name sits on line 1 and the time on line 2, so the folder name keeps more width in the 224 px panel.
 
 ## Dependencies
 
-- groupSessions, StateBadge, Avatar, RelativeTime, ProgressBar
-- IconSet, ProgressIndicator, ErrorMessage (module app)
+- groupSessions, StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`)
+- AreaState, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-11`, `plan-claude_sessions_client/REQ-12`, `plan-claude_sessions_client/REQ-16`, `plan-claude_sessions_client/REQ-22`, `plan-claude_sessions_client/REQ-29`, `plan-claude_sessions_client/REQ-30`
-- `plan-claude_sessions_client-ui_redesign/REQ-11`, `plan-claude_sessions_client-ui_redesign/REQ-12`, `plan-claude_sessions_client-ui_redesign/REQ-13`, `plan-claude_sessions_client-ui_redesign/REQ-15`, `plan-claude_sessions_client-ui_redesign/REQ-16`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-16` to `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-28`
+- `plan-claude_sessions_client-ui_redesign/REQ-11`, `plan-claude_sessions_client-ui_redesign/REQ-12`, `plan-claude_sessions_client-ui_redesign/REQ-13`, `plan-claude_sessions_client-ui_redesign/REQ-15`, `plan-claude_sessions_client-ui_redesign/REQ-16`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-23` to `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50`

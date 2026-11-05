@@ -11,14 +11,14 @@ type: UI component
 ## Contract
 
 - `ErrorMessage({ children, className? })` → `children` is the Italian text of the failure.
-  - shows CircleXIcon, then the text, both in `--color-error`.
+  - shows CircleXIcon (14 px), then the text (12/16 px), both in `--color-error` (rose-400).
   - role `alert`: screen readers announce it when it appears. Its text is exactly `children`.
   - `className` → extra class.
 
 ## Rules and invariants
 
 - The icon is decorative. It adds nothing to the text that screen readers read.
-- `--color-error` reaches 4.5:1 on every surface of both themes (ThemeTokens).
+- `--color-error` reaches 4.5:1 on the canvas and on every surface (ThemeTokens).
 
 ## Dependencies
 

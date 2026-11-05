@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { Dialog } from '../dialogs/Dialog';
 import { ErrorMessage } from '../feedback/ErrorMessage';
-import { ProgressIndicator } from '../feedback/ProgressIndicator';
+import { AreaState } from '../feedback/AreaState';
 import { HistoryIcon, TerminalIcon } from '../icons/Icons';
 import { Avatar } from '../sessions/Avatar';
 import { RunningElsewhereWarning } from './RunningElsewhereWarning';
@@ -90,7 +90,6 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
   return (
     <>
       <Dialog
-        icon={<HistoryIcon />}
         title="Riprendi sessione"
         className="resume-dialog"
         primaryLabel="Riprendi"
@@ -106,27 +105,27 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
           role={groups?.length ? 'radiogroup' : undefined}
           aria-label={groups?.length ? 'Sessioni passate' : undefined}
         >
-          {groups === null && error === null && <ProgressIndicator />}
-          {groups?.length === 0 && <p className="body-m">Nessuna sessione da riprendere.</p>}
+          {groups === null && error === null && <AreaState kind="loading" size="compact" title="Caricamento…" />}
+          {groups?.length === 0 && <AreaState kind="empty" size="compact" icon={<HistoryIcon />} title="Nessuna sessione da riprendere." />}
           {groups?.map((group) => (
             <section key={group.folder} className="past-session-group" aria-label={group.folder}>
-              <h3 className="label-l dialog-section-heading">{group.folder}</h3>
+              <h3 className="section-label section-label-path dialog-section-heading">{group.folder}</h3>
               <div className="dialog-rows">
                 {group.sessions.map((session) => {
                   const checked = selected?.id === session.id;
                   const id = `${rowId}-${session.id}`;
                   return (
                     <label key={session.id} className={checked ? 'dialog-row dialog-row-checked' : 'dialog-row'}>
-                      <Avatar folder={group.folder} size="dialog" />
+                      <Avatar folder={group.folder} />
                       <span className="dialog-row-text">
-                        <span id={`${id}-label`} className="body-l dialog-row-title">
+                        <span id={`${id}-label`} className="dialog-row-title">
                           {session.label}
                         </span>
-                        <time id={`${id}-time`} className="mono dialog-row-detail" dateTime={session.lastActivity}>
+                        <time id={`${id}-time`} className="dialog-row-detail" dateTime={session.lastActivity}>
                           {formatDate(session.lastActivity)}
                         </time>
                         {session.runningElsewhere && (
-                          <span id={`${id}-running`} className="chip label-l past-session-running">
+                          <span id={`${id}-running`} className="status-pill state-needs_input past-session-running">
                             <TerminalIcon />
                             In esecuzione in un terminale
                           </span>
