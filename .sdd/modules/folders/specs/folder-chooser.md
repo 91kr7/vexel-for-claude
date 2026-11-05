@@ -37,6 +37,7 @@ Errors (shown in the dialog, the dialog stays open):
 ## Rules and invariants
 
 - A failed start starts no session and does not call `onStarted`.
+- A path the user typed is never replaced by a listing that started before the user typed it.
 
 ## Dependencies
 

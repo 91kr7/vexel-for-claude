@@ -16,6 +16,7 @@ type: backend service (request hook)
   - its `Host` header names `localhost` or `127.0.0.1`, with any port or none (case-insensitive), and
   - its `Origin` header is missing, or it is an `http` or `https` origin on `localhost` or `127.0.0.1`, with any port or none.
 - Any other request → `403`, body `{ error: "forbidden" }`. A WebSocket upgrade is refused with the same `403` before the socket opens.
+- After the `403` to a refused WebSocket upgrade, the server closes the connection.
 
 ## Rules and invariants
 

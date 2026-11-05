@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 interface FolderListing {
   path: string;
@@ -32,17 +32,21 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
   const [pathInput, setPathInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const typingCount = useRef(0);
 
   const browse = async (path?: string) => {
     setError(null);
+    const typingCountAtStart = typingCount.current;
     try {
       const query = path === undefined ? '' : `?path=${encodeURIComponent(path)}`;
       const response = await fetch(`/api/folders${query}`);
+      if (typingCount.current !== typingCountAtStart) return;
       if (!response.ok) {
         setError(await errorMessage(response));
         return;
       }
       const next = (await response.json()) as FolderListing;
+      if (typingCount.current !== typingCountAtStart) return;
       setListing(next);
       setPathInput(next.path);
     } catch {
@@ -86,7 +90,10 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
           id="folder-path"
           type="text"
           value={pathInput}
-          onChange={(event) => setPathInput(event.target.value)}
+          onChange={(event) => {
+            typingCount.current += 1;
+            setPathInput(event.target.value);
+          }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
               event.preventDefault();

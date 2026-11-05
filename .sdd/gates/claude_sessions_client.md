@@ -18,3 +18,4 @@
 | 2026-11-05 | test | G5 session-interaction | sent back | Green (96 unit, 15 e2e) but two uncovered defects: refused WS upgrade leaves socket open; FolderChooser overwrites typed path (REQ-1) |
 | 2026-11-05 | test | question tester | decided | Both fixed: add rules to specs app/LocalAccessGuard and folders/FolderChooser; smallest change |
 | 2026-11-05 | test | `test.skip` in e2e | pass | Conditional guard when running as root, not a disabled test |
+| 2026-11-05 | dev | G4 session-interaction fix | pass | Diff limited to the two specs and two sources named in the fix round |
