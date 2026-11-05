@@ -11,3 +11,5 @@
 | 2026-11-06 | analysis | size check | pass | ordinary, 158 lines of 200 |
 | 2026-11-06 | analysis | G1 analysis | pass | Extra mock features left out (search, filters, compare, model chip, prompt box); all requirements trace to the mock's dark style or the human's answers |
 | 2026-11-06 | analysis | foreign change package.json | decided | Uncommitted `start` port change carried along, never committed; human already informed |
+| 2026-11-06 | plan | G2 requirements | pass | REQ-1..53 cover the analysis; only added behaviours REQ-15 and REQ-45, both in the spec |
+| 2026-11-06 | plan | G3 coverage | pass | One batch by human decision; 56 INTs, modify paths exist, all 53 REQs in Human acceptance, mock cited in every INT; planner decisions 1-10 follow the mock or contrast (REQ-52) |
