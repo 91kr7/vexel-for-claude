@@ -28,3 +28,4 @@
 | 2026-11-05 | test | G5 dialogs | pass | 136 unit, 31 e2e green on re-run; resume e2e updated to select + Riprendi; layout.spec.ts:341 flaked once under parallel load, watched in the final run |
 | 2026-11-05 | dev | G4 feedback-states | pass | Build green on re-run; Dialog primaryBusy, CircleX icon, focus fixes accepted (serve REQ-4/REQ-5) |
 | 2026-11-05 | dev | question developer | human decision | Keyboard trap in the terminal: one key combination moves the focus from the terminal to the sidebar, with an on-screen hint (REQ-4) |
+| 2026-11-05 | dev | G4 feedback-states shortcut | pass | Ctrl+Shift+L leaves the terminal, hint in the session header; diff limited to SessionView, AppLayout, styles, specs |

@@ -29,6 +29,7 @@ Actions:
 - ResumeDialog resumes a session → the dialog closes and the resumed session becomes the open one.
 - ResumeDialog cancelled → the dialog closes; the open session does not change.
 - click on a SessionList entry → that session becomes the open one. The other sessions keep running.
+- Ctrl+Shift+L in the terminal of the open SessionView → the focus moves to the open session's entry in the list. With no such entry, it moves to the first enabled button of the sidebar.
 - ConversationView resumes the session ("Riprendi qui") → the new hosted session becomes the open one.
 
 ## Rules and invariants
@@ -47,4 +48,4 @@ Actions:
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-17`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-33`, `plan-claude_sessions_client/REQ-35`
-- `plan-claude_sessions_client-ui_redesign/REQ-8`, `plan-claude_sessions_client-ui_redesign/REQ-9`, `plan-claude_sessions_client-ui_redesign/REQ-10`, `plan-claude_sessions_client-ui_redesign/REQ-14`, `plan-claude_sessions_client-ui_redesign/REQ-17`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`
+- `plan-claude_sessions_client-ui_redesign/REQ-8`, `plan-claude_sessions_client-ui_redesign/REQ-9`, `plan-claude_sessions_client-ui_redesign/REQ-10`, `plan-claude_sessions_client-ui_redesign/REQ-14`, `plan-claude_sessions_client-ui_redesign/REQ-17`, `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`

@@ -441,6 +441,22 @@ input {
   flex-direction: column;
 }
 
+.keyboard-hint {
+  flex-shrink: 0;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
+.keyboard-hint kbd {
+  padding: 0 var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
 .session-terminal {
   flex: 1;
   min-height: 0;

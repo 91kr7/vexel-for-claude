@@ -13,7 +13,7 @@ status: validated
 | [session-list](batches/batch-session-list.md) | Session list | REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16 | layout | certified | The user spots the session that needs input |
 | [open-session](batches/batch-open-session.md) | Open session | REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24 | session-list | certified | The user works in a hosted session under its header |
 | [dialogs](batches/batch-dialogs.md) | Dialogs | REQ-25, REQ-26, REQ-27, REQ-28 | visual-language | certified | The user starts a session with the keyboard only |
-| [feedback-states](batches/batch-feedback-states.md) | Feedback states | REQ-1, REQ-3, REQ-4, REQ-5, REQ-29, REQ-30, REQ-31, REQ-32 | open-session, dialogs | in progress | The user sees a stop in progress and its result |
+| [feedback-states](batches/batch-feedback-states.md) | Feedback states | REQ-1, REQ-3, REQ-4, REQ-5, REQ-29, REQ-30, REQ-31, REQ-32 | open-session, dialogs | implemented | The user sees a stop in progress and its result |
 
 Execution order: visual-language → layout → session-list → open-session. dialogs needs only visual-language, so it can run at any point after it. feedback-states comes last.
 

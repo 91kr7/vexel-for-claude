@@ -15,7 +15,11 @@ const SESSION_NOT_FOUND = 4404;
 interface SessionViewProps {
   sessionId: string;
   session?: SessionHeaderSummary;
+  onLeaveTerminal: () => void;
 }
+
+const isLeaveTerminalKey = (event: KeyboardEvent) =>
+  event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.key.toLowerCase() === 'l';
 
 function attachUrl(sessionId: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -27,10 +31,12 @@ function closeMessage(code: number): string | null {
   return code === SESSION_NOT_FOUND ? 'La sessione non esiste più.' : 'Connessione alla sessione persa.';
 }
 
-export function SessionView({ sessionId, session }: SessionViewProps) {
+export function SessionView({ sessionId, session, onLeaveTerminal }: SessionViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const onLeaveTerminalRef = useRef(onLeaveTerminal);
+  onLeaveTerminalRef.current = onLeaveTerminal;
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
@@ -77,6 +83,12 @@ export function SessionView({ sessionId, session }: SessionViewProps) {
       },
       { signal },
     );
+    terminal.attachCustomKeyEventHandler((event) => {
+      if (!isLeaveTerminalKey(event)) return true;
+      event.preventDefault();
+      if (event.type === 'keydown') onLeaveTerminalRef.current();
+      return false;
+    });
     const inputSubscription = terminal.onData((data) => send({ type: 'input', data }));
     const resizeSubscription = terminal.onResize(sendSize);
     const resizeObserver = new ResizeObserver(() => fitAddon.fit());
@@ -107,6 +119,11 @@ export function SessionView({ sessionId, session }: SessionViewProps) {
     <div className="session-view">
       <SessionHeader
         session={session}
+        notice={
+          <span className="keyboard-hint">
+            <kbd>Ctrl+Maiusc+L</kbd> torna all'elenco
+          </span>
+        }
         actions={
           <>
             <button type="button" onClick={interrupt}>

@@ -14,6 +14,7 @@ export function AppLayout() {
   const [openIsExternal, setOpenIsExternal] = useState(false);
   const [choosingFolder, setChoosingFolder] = useState(false);
   const [resuming, setResuming] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
   const { sessions, status } = useLiveSessions();
   const lastOpenSummary = useRef<SessionSummary | undefined>(undefined);
   const listedSummary = sessions.find((session) => session.id === openSessionId);
@@ -28,9 +29,15 @@ export function AppLayout() {
     setOpenIsExternal(sessions.find((session) => session.id === sessionId)?.external === true);
   };
 
+  const focusSidebar = () => {
+    const sidebar = sidebarRef.current;
+    const target = sidebar?.querySelector<HTMLElement>('[aria-current="true"]') ?? sidebar?.querySelector<HTMLElement>('button:not(:disabled)');
+    target?.focus();
+  };
+
   return (
     <div className="app">
-      <aside className="sidebar">
+      <aside className="sidebar" ref={sidebarRef}>
         <div className="sidebar-top">
           <div className="sidebar-title">
             <h1>Sessioni Claude</h1>
@@ -51,7 +58,7 @@ export function AppLayout() {
         {openSessionId && openIsExternal ? (
           <ConversationView key={openSessionId} sessionId={openSessionId} session={openSummary} onResumed={openHosted} />
         ) : openSessionId ? (
-          <SessionView key={openSessionId} sessionId={openSessionId} session={openSummary} />
+          <SessionView key={openSessionId} sessionId={openSessionId} session={openSummary} onLeaveTerminal={focusSidebar} />
         ) : (
           <EmptyState onNewSession={() => setChoosingFolder(true)} onResumeSession={() => setResuming(true)} />
         )}
