@@ -152,6 +152,40 @@ test('a new session becomes the open one; "Annulla" keeps the open session', asy
   await expect(terminal(page)).not.toContainText(`CWD:${projectA}`);
 });
 
+test('a path typed right after the chooser opens is the folder of the session', async ({ page }) => {
+  await page.getByRole('button', { name: 'Nuova sessione' }).click();
+  await pathField(page).fill(projectB);
+  await page.getByRole('button', { name: 'Avvia sessione' }).click();
+  await expect(chooser(page)).toBeHidden();
+  await expect(terminal(page)).toContainText(`CWD:${projectB}`);
+});
+
+test('a home listing that ends after the user typed does not replace the typed path', async ({ page }) => {
+  let releaseHome: () => void = () => {};
+  const homeHeld = new Promise<void>((resolve) => (releaseHome = resolve));
+  let homeRequested = false;
+  await page.route(
+    (url) => url.pathname === '/api/folders' && !url.searchParams.has('path'),
+    async (route) => {
+      homeRequested = true;
+      await homeHeld;
+      await route.continue();
+    },
+  );
+  await page.getByRole('button', { name: 'Nuova sessione' }).click();
+  await expect.poll(() => homeRequested).toBe(true);
+  await pathField(page).fill(projectB);
+  const homeListed = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/api/folders' && !new URL(response.url()).searchParams.has('path'),
+  );
+  releaseHome();
+  await homeListed;
+  await expect(pathField(page)).toHaveValue(projectB);
+  await page.getByRole('button', { name: 'Avvia sessione' }).click();
+  await expect(chooser(page)).toBeHidden();
+  await expect(terminal(page)).toContainText(`CWD:${projectB}`);
+});
+
 test.describe('folder chooser errors', () => {
   test.beforeEach(async ({ page }) => {
     await openChooser(page);

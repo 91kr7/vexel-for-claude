@@ -1,6 +1,6 @@
 import fastifyWebsocket from '@fastify/websocket';
 import Fastify, { type FastifyInstance } from 'fastify';
-import type { Socket } from 'node:net';
+import net from 'node:net';
 import WebSocket from 'ws';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { isLocalRequest, registerLocalAccessGuard } from './local-access-guard.js';
@@ -45,11 +45,9 @@ describe('isLocalRequest', () => {
 describe('registerLocalAccessGuard', () => {
   let app: FastifyInstance;
   let port: number;
-  const connections = new Set<Socket>();
 
   beforeAll(async () => {
     app = Fastify();
-    app.server.on('connection', (socket: Socket) => connections.add(socket));
     registerLocalAccessGuard(app);
     await app.register(fastifyWebsocket);
     app.get('/api/ping', async () => ({ ok: true }));
@@ -61,8 +59,6 @@ describe('registerLocalAccessGuard', () => {
   });
 
   afterAll(async () => {
-    // The server keeps refused upgrade connections open, so close them here or close() never resolves.
-    for (const socket of connections) socket.destroy();
     await app.close();
   });
 
@@ -111,5 +107,31 @@ describe('registerLocalAccessGuard', () => {
     ['a foreign Host', { Host: 'attacker.example:80' }],
   ])('refuses a WebSocket upgrade with %s with 403 before it opens', async (_label, headers) => {
     expect(await upgrade(headers)).toEqual({ opened: false, status: 403 });
+  });
+
+  it('closes the connection after the 403 to a refused WebSocket upgrade', async () => {
+    const result = await new Promise<{ status: string; closedByServer: boolean }>((resolve) => {
+      const socket = net.connect(port, '127.0.0.1', () => {
+        socket.write(
+          'GET /api/socket HTTP/1.1\r\nHost: localhost\r\nOrigin: http://evil.com\r\n' +
+            'Upgrade: websocket\r\nConnection: Upgrade\r\n' +
+            'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n',
+        );
+      });
+      let raw = '';
+      const timer = setTimeout(() => {
+        socket.destroy();
+        resolve({ status: raw.split('\r\n')[0] ?? '', closedByServer: false });
+      }, 3000);
+      socket.on('data', (chunk) => (raw += chunk.toString()));
+      socket.on('end', () => {
+        clearTimeout(timer);
+        socket.destroy();
+        resolve({ status: raw.split('\r\n')[0] ?? '', closedByServer: true });
+      });
+      socket.on('error', () => {});
+    });
+    expect(result.status).toMatch(/^HTTP\/1\.1 403/);
+    expect(result.closedByServer).toBe(true);
   });
 });
