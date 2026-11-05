@@ -176,6 +176,25 @@ async function expectFocusMarked(page: Page, what: string): Promise<void> {
   await expect.poll(() => hasFocusRing(page), { message: `${what} shows the focus ring` }).toBe(true);
 }
 
+/**
+ * The path field marks the focus with its outlined box: a 2 px border in the focus ring colour
+ * (plan-claude_sessions_client-ui_redesign-material3_mock, FolderChooser and gatekeeper decision on the field).
+ */
+async function expectFieldOutlined(page: Page): Promise<void> {
+  const ring = await resolved(page, await token(page, '--color-focus-ring'));
+  const borders = await pathField(page).evaluate((el) => {
+    const found: { width: number; style: string; colour: string }[] = [];
+    for (let node = el.parentElement; node && node.tagName !== 'FORM'; node = node.parentElement) {
+      const s = getComputedStyle(node);
+      found.push({ width: parseFloat(s.borderTopWidth), style: s.borderTopStyle, colour: s.borderTopColor });
+    }
+    return found;
+  });
+  const outlined = [];
+  for (const b of borders) if (b.width >= 2 && b.style === 'solid' && (await resolved(page, b.colour)).every((c, i) => c === ring[i])) outlined.push(b);
+  expect(outlined.length, 'the box around the path field has a 2 px border in the focus ring colour').toBeGreaterThan(0);
+}
+
 async function pressUntilFocused(page: Page, target: Locator, key: 'Tab' | 'Shift+Tab' = 'Tab'): Promise<void> {
   for (let i = 0; i < 300; i++) {
     if (await target.evaluate((el) => el === document.activeElement)) return;
@@ -646,7 +665,7 @@ test.describe('resume history', () => {
     await page.route('**/api/past-sessions', (route) => route.fulfill({ json: pastSessions }));
     await page.goto('/');
     await button(rail(page), 'Riprendi').click();
-    await history(page).getByRole('button').filter({ hasText: 'Prima sessione passata' }).click();
+    await history(page).getByRole('radio', { name: 'Prima sessione passata', exact: true }).click();
     const held = await hold(page, '**/api/past-sessions/*/resume', 'POST');
 
     await button(history(page), 'Riprendi').click();
@@ -755,7 +774,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expectFocusMarked(page, '"Nuova sessione"');
       await page.keyboard.press('Enter');
       await expect(pathField(page)).toBeFocused();
-      await expectFocusMarked(page, 'the path field');
+      await expectFieldOutlined(page);
       await page.keyboard.press('Escape');
       await expect(chooser(page)).toHaveCount(0);
       await expect(button(rail(page), 'Nuova sessione')).toBeFocused();

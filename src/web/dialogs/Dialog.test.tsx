@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { Spinner } from '../feedback/ProgressIndicator';
+import { HistoryIcon, TriangleAlertIcon } from '../icons/Icons';
 import { Dialog, type DialogProps } from './Dialog';
 
 const buttons = (html: string) =>
@@ -61,6 +62,39 @@ describe('Dialog', () => {
     const describedBy = attr(roleTag(html, 'dialog'), 'aria-describedby');
     expect(describedBy).toBeDefined();
     expect(textOfId(html, describedBy ?? '')).toBe('Spiegazione del dialogo.');
+  });
+
+  // Dialog: the description accepts markup, and its whole text is the accessible description
+  it('keeps markup in the description and describes the dialog with its text', () => {
+    const html = render({ description: <><b>billing-api</b> sta ancora lavorando.</> });
+    expect(html).toContain('<b>billing-api</b> sta ancora lavorando.');
+    const describedBy = attr(roleTag(html, 'dialog'), 'aria-describedby');
+    expect(textOfId(html, describedBy ?? '')).toBe('billing-api sta ancora lavorando.');
+  });
+
+  // Dialog: the icon sits on top, before the title
+  it('renders the icon before the title', () => {
+    const html = render({ icon: <HistoryIcon /> });
+    const icon = html.indexOf(renderToStaticMarkup(<HistoryIcon />));
+    expect(icon).toBeGreaterThanOrEqual(0);
+    expect(icon).toBeLessThan(html.indexOf('Titolo'));
+  });
+
+  // Dialog: without an icon, the default tone draws no icon
+  it('default tone without icon → no svg before the title', () => {
+    const html = render();
+    expect(html.slice(0, html.indexOf('Titolo'))).not.toContain('<svg');
+  });
+
+  // Dialog dependency: a warning tone without icon shows TriangleAlertIcon; with an icon, that icon only
+  it.each([
+    [undefined, renderToStaticMarkup(<TriangleAlertIcon />)],
+    [<HistoryIcon key="h" />, renderToStaticMarkup(<HistoryIcon />)],
+  ])('warning tone, icon %#: shows the expected icon before the title', (icon, expected) => {
+    const html = render({ tone: 'warning', ...(icon ? { icon } : {}) });
+    const head = html.slice(0, html.indexOf('Titolo'));
+    expect(head).toContain(expected);
+    expect(head.match(/<svg\b/g)).toHaveLength(1);
   });
 
   // Dialog: no description, no accessible description

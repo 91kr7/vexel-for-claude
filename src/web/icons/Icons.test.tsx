@@ -12,6 +12,8 @@ import {
   ChevronRightIcon,
   CircleStopIcon,
   CircleXIcon,
+  FolderIcon,
+  FolderPlusIcon,
   HistoryIcon,
   LoaderCircleIcon,
   LockIcon,
@@ -45,7 +47,11 @@ const icons: [string, ComponentType][] = [
   ['PencilIcon', PencilIcon],
   ['CheckIcon', CheckIcon],
   ['ArrowDownIcon', ArrowDownIcon],
+  ['FolderIcon', FolderIcon],
+  ['FolderPlusIcon', FolderPlusIcon],
 ];
+
+const FOLDER = 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z';
 
 const svgTag = (html: string) => html.match(/^<svg\b[^>]*>/)?.[0] ?? '';
 
@@ -152,6 +158,15 @@ describe('IconSet', () => {
     ['CircleXIcon', CircleXIcon, ['m15 9-6 6', 'm9 9 6 6']],
     ['LogInIcon', LogInIcon, ['M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4', 'm10 17 5-5-5-5', 'M15 12H3']],
   ])('%s draws the shapes of board "Sessione esterna"', (_, Icon, boardPaths) => {
+    expect(drawnShapes(renderToStaticMarkup(<Icon />))).toEqual(subpathsOf(boardPaths));
+  });
+
+  // IconSet rule and plan-claude_sessions_client-ui_redesign-material3_mock/REQ-44, REQ-47: the icons drawn by proposta-dialoghi.html
+  it.each<[string, ComponentType, string[]]>([
+    ['FolderPlusIcon', FolderPlusIcon, ['M12 10v6', 'M9 13h6', FOLDER]],
+    ['FolderIcon', FolderIcon, [FOLDER]],
+    ['PowerIcon', PowerIcon, ['M12 2v10', 'M18.4 6.6a9 9 0 1 1-12.77.04']],
+  ])('%s draws the shapes of board "Dialoghi"', (_, Icon, boardPaths) => {
     expect(drawnShapes(renderToStaticMarkup(<Icon />))).toEqual(subpathsOf(boardPaths));
   });
 

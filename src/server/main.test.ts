@@ -950,8 +950,8 @@ describe('plan-claude_sessions_client external sessions', { timeout: 20_000 }, (
         items: [
           { kind: 'user', text: 'Elenca i file' },
           { kind: 'assistant', text: 'Li elenco.' },
-          { kind: 'tool_call', name: 'Bash', summary: 'ls -la', ref: { offset: lineStart(lines, 1), block: 1 } },
-          { kind: 'tool_result', text: 'a\nb\nc\nd\ne', truncated: true, ref: { offset: lineStart(lines, 2), block: 0 } },
+          { kind: 'tool_call', name: 'Bash', summary: 'ls -la', id: 't1', ref: { offset: lineStart(lines, 1), block: 1 } },
+          { kind: 'tool_result', text: 'a\nb\nc\nd\ne', truncated: true, toolUseId: 't1', ref: { offset: lineStart(lines, 2), block: 0 } },
           { kind: 'assistant', text: 'Sono sette file.' },
         ],
       });
@@ -986,7 +986,7 @@ describe('plan-claude_sessions_client external sessions', { timeout: 20_000 }, (
       await waitFor(() => conversationItems(client).length >= 3, 'new items', 5000);
       expect(conversationItems(client)).toEqual([
         { kind: 'user', text: 'Avvia i test' },
-        { kind: 'tool_call', name: 'Bash', summary: 'npm test', ref: { offset: lineStart(lines, 1), block: 0 } },
+        { kind: 'tool_call', name: 'Bash', summary: 'npm test', id: 't2', ref: { offset: lineStart(lines, 1), block: 0 } },
         { kind: 'assistant', text: 'Tutti i test passano.' },
       ]);
       await terminal.end();

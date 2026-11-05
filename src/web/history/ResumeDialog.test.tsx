@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
+import { HistoryIcon } from '../icons/Icons';
 import { ResumeDialog } from './ResumeDialog';
 
 const buttons = (html: string) =>
@@ -25,6 +26,15 @@ describe('ResumeDialog', () => {
     const primary = actions[1]?.attrs ?? '';
     expect(primary).toMatch(/\sclass="(?:[^"]*\s)?button-primary(?:\s[^"]*)?"/);
     expect(primary).toMatch(/\sdisabled(?:=""|\s|$)/);
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-49, ResumeDialog: HistoryIcon on top and no description
+  it('shows HistoryIcon before the title and has no accessible description', () => {
+    const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
+    const icon = html.indexOf(renderToStaticMarkup(<HistoryIcon />));
+    expect(icon).toBeGreaterThanOrEqual(0);
+    expect(icon).toBeLessThan(html.indexOf('Riprendi sessione'));
+    expect(html.match(/<[a-z]+\b[^>]*\srole="dialog"[^>]*>/)?.[0]).not.toContain('aria-describedby');
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-29, ResumeDialog: the list loads behind a ProgressIndicator
