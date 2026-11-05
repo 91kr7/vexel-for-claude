@@ -36,3 +36,5 @@
 | 2026-11-05 | test | question tester progress bar on external | decided | Board wins (REQ-28, human "alla lettera"): no bar on external working entries; REQ-21 read as hosted entries. For human review |
 | 2026-11-05 | test | question tester layout.spec.ts:301 race | decided | Fix the test race now, before the plan's closing run |
 | 2026-11-05 | test | G5 session-list round 1 | sent back | Code change from the progress-bar decision; then re-test |
+| 2026-11-05 | test | G5 session-list round 2 | sent back | Tester race fix hung on absent chip (`boundingBox` waits); diagnosis sent to tester |
+| 2026-11-05 | test | G5 session-list round 3 | pass | Re-run by gatekeeper: 23 e2e + 416 unit green |
