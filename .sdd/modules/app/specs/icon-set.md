@@ -16,6 +16,7 @@ Shows:
 Components and where the client uses them today:
 - `PlusIcon` → "Nuova sessione"
 - `HistoryIcon` → "Riprendi sessione"
+- `SquareTerminalIcon` → the EmptyState
 - `CircleStopIcon` → "Interrompi"
 - `PowerIcon` → "Termina", in the session toolbar
 - `LogInIcon` → "Riprendi qui"
@@ -32,3 +33,4 @@ Components and where the client uses them today:
 - `plan-claude_sessions_client-ui_redesign/REQ-1`
 - `plan-claude_sessions_client-ui_redesign/REQ-6`
 - `plan-claude_sessions_client-ui_redesign/REQ-7`
+- `plan-claude_sessions_client-ui_redesign/REQ-9`

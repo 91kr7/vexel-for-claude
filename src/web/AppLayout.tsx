@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { EmptyState } from './EmptyState';
 import { ConversationView } from './external/ConversationView';
 import { FolderChooser } from './folders/FolderChooser';
 import { ResumeDialog } from './history/ResumeDialog';
@@ -26,32 +27,32 @@ export function AppLayout() {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>Sessioni Claude</h1>
-        <NeedsInputCounter sessions={sessions} />
-        <div className="app-header-actions">
-          <button type="button" onClick={() => setResuming(true)}>
-            <HistoryIcon />
-            Riprendi sessione
-          </button>
+      <aside className="sidebar">
+        <div className="sidebar-top">
+          <div className="sidebar-title">
+            <h1>Sessioni Claude</h1>
+            <NeedsInputCounter sessions={sessions} />
+          </div>
           <button type="button" className="button-primary" onClick={() => setChoosingFolder(true)}>
             <PlusIcon />
             Nuova sessione
           </button>
+          <button type="button" onClick={() => setResuming(true)}>
+            <HistoryIcon />
+            Riprendi sessione
+          </button>
         </div>
-      </header>
-      <div className="app-body">
         <SessionList sessions={sessions} openSessionId={openSessionId} onOpen={openFromList} />
-        <main className="session-area">
-          {openSessionId && openIsExternal ? (
-            <ConversationView key={openSessionId} sessionId={openSessionId} onResumed={openHosted} />
-          ) : openSessionId ? (
-            <SessionView key={openSessionId} sessionId={openSessionId} state={openSessionState} />
-          ) : (
-            <p className="empty-state">Nessuna sessione aperta.</p>
-          )}
-        </main>
-      </div>
+      </aside>
+      <main className="session-area">
+        {openSessionId && openIsExternal ? (
+          <ConversationView key={openSessionId} sessionId={openSessionId} onResumed={openHosted} />
+        ) : openSessionId ? (
+          <SessionView key={openSessionId} sessionId={openSessionId} state={openSessionState} />
+        ) : (
+          <EmptyState onNewSession={() => setChoosingFolder(true)} onResumeSession={() => setResuming(true)} />
+        )}
+      </main>
       {choosingFolder && (
         <FolderChooser
           onStarted={(sessionId) => {

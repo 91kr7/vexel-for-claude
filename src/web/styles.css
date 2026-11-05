@@ -94,24 +94,46 @@ input {
 }
 
 .app {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 20rem minmax(0, 1fr);
   height: 100%;
+  overflow: hidden;
 }
 
-.app-header {
+.sidebar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-2) var(--space-4);
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
   background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+}
+
+.sidebar-top {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
   border-bottom: 1px solid var(--color-border);
 }
 
-.app-header h1 {
+.sidebar-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.sidebar-title h1 {
+  min-width: 0;
   margin: 0;
   font-size: var(--font-size-xl);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .needs-input-counter {
@@ -128,18 +150,10 @@ input {
   font-weight: var(--font-weight-semibold);
 }
 
-.app-body {
+.session-list {
   flex: 1;
   min-height: 0;
-  display: flex;
-}
-
-.session-list {
-  width: 18rem;
-  flex-shrink: 0;
   overflow-y: auto;
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border);
 }
 
 .session-list ul {
@@ -235,6 +249,43 @@ input {
 .empty-state {
   margin: auto;
   color: var(--color-text-muted);
+}
+
+.app-empty-state {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.app-empty-state-icon .icon {
+  width: 3rem;
+  height: 3rem;
+  color: var(--color-text-muted);
+}
+
+.app-empty-state p {
+  margin: 0;
+}
+
+.app-empty-state-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.app-empty-state-hint {
+  color: var(--color-text-muted);
+}
+
+.app-empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
 }
 
 .session-view {
@@ -334,11 +385,6 @@ input {
   justify-content: flex-end;
   gap: var(--space-2);
   margin-top: var(--space-2);
-}
-
-.app-header-actions {
-  display: flex;
-  gap: var(--space-2);
 }
 
 .warning-backdrop {

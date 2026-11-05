@@ -17,4 +17,4 @@
 | orderSessions | frontend function | `src/web/sessions/session-order.ts` | List order: needs input first, then latest activity | `specs/session-order.md` |
 | LiveSessionStore | frontend service | `src/web/sessions/live-session-store.ts` | Session list in the page, loaded once and kept current by events | `specs/live-session-store.md` |
 | SessionList | UI component | `src/web/sessions/SessionList.tsx` | Panel with one entry per session; a click opens it | `specs/session-list.md` |
-| NeedsInputCounter | UI component | `src/web/sessions/NeedsInputCounter.tsx` | Header counter of the sessions in "Richiede input" | `specs/needs-input-counter.md` |
+| NeedsInputCounter | UI component | `src/web/sessions/NeedsInputCounter.tsx` | Sidebar counter of the sessions in "Richiede input" | `specs/needs-input-counter.md` |
