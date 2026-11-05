@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="it"><head>
+<meta charset="utf-8">
+<title>Vexel for Claude — sessione ospitata</title>
+<script src="b6fa610a-6205-4cb3-a0aa-3bca64042f02"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>/* cyrillic-ext */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("84f27719-1d6e-4604-bbde-5ea3dfcdcbec") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("08a24953-935d-440d-9663-786bbec991d9") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("3ec424ba-5f1c-4bf1-ab3d-28533988044d") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("9d385cc7-807d-4d74-b228-ffba17807635") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("f3e4e1e1-be61-4507-aff2-b95536c9dbaa") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("0ea5bb95-aefb-4794-be64-544add822384") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("0413314b-a589-47b8-b55c-6aaee0a16af7") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("3aa3d6ea-75de-449e-8fde-6e20b4d66fac") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("d2322862-c492-431f-ae81-ce240e109bae") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("757c44c3-a61c-4fe9-a43d-a849769fae44") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("0a27de3f-914a-45eb-a888-4dc75a866b77") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("2cd35163-fa22-46f3-bdc9-96677c8cbd7e") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("0413314b-a589-47b8-b55c-6aaee0a16af7") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("3aa3d6ea-75de-449e-8fde-6e20b4d66fac") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("d2322862-c492-431f-ae81-ce240e109bae") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("757c44c3-a61c-4fe9-a43d-a849769fae44") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("0a27de3f-914a-45eb-a888-4dc75a866b77") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("2cd35163-fa22-46f3-bdc9-96677c8cbd7e") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+body{margin:0}
+a{color:#415F91}a:hover{color:#284777}
+.m3{--primary:#5847B8;--on-primary:#FFFFFF;--primary-container:#E4DFFF;--on-primary-container:#3F2C9E;--secondary-container:#E4DFF9;--on-secondary-container:#47435A;--tertiary-container:#FFD8E8;--on-tertiary-container:#633B4F;--teal-container:#C8EBE6;--on-teal-container:#1F4D48;--error:#BA1A1A;--on-error:#FFFFFF;--error-container:#FFDAD6;--on-error-container:#93000A;--attn:#7C5800;--attn-container:#FFDEA7;--on-attn-container:#5E4200;--ember:#E07A4F;--surface:#FDF8FF;--on-surface:#1C1B21;--on-surface-variant:#47464F;--outline:#787680;--outline-variant:#C8C5D0;--sc-lowest:#FFFFFF;--sc-low:#F7F2FA;--sc:#F1ECF4;--sc-high:#EBE6EE;--sc-highest:#E5E1E9;--inverse-surface:#313036;--inverse-on-surface:#F4EFF7;--inverse-primary:#C6BFFF;--term-bg:#17151C;--term-fg:#E5E1E9;--term-dim:#928F9A}
+.m3.dark{--primary:#C6BFFF;--on-primary:#2A1688;--primary-container:#3F2C9E;--on-primary-container:#E4DFFF;--secondary-container:#47435A;--on-secondary-container:#E4DFF9;--tertiary-container:#633B4F;--on-tertiary-container:#FFD8E8;--teal-container:#1F4D48;--on-teal-container:#C8EBE6;--error:#FFB4AB;--on-error:#690005;--error-container:#93000A;--on-error-container:#FFDAD6;--attn:#F0BF48;--attn-container:#5E4200;--on-attn-container:#FFDEA7;--ember:#F09A72;--surface:#141318;--on-surface:#E5E1E9;--on-surface-variant:#C8C5D0;--outline:#928F9A;--outline-variant:#47464F;--sc-lowest:#0F0E13;--sc-low:#1C1B21;--sc:#201F25;--sc-high:#2B292F;--sc-highest:#36343A;--inverse-surface:#E5E1E9;--inverse-on-surface:#313036;--inverse-primary:#5847B8;--term-bg:#0F0E13}
+.brand{font-family:'Roboto Flex',system-ui,sans-serif;font-variation-settings:'wdth' 125,'GRAD' 50;font-weight:800;letter-spacing:-.5px}
+.m3{font-family:'Roboto Flex',system-ui,sans-serif;color:var(--on-surface);background:var(--surface)}
+.m3 button{font-family:inherit}
+.icon{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.label-l{font-size:14px;line-height:20px;font-weight:500;letter-spacing:.1px}
+.label-m{font-size:12px;line-height:16px;font-weight:500;letter-spacing:.5px}
+.body-m{font-size:14px;line-height:20px;letter-spacing:.25px}
+.body-s{font-size:12px;line-height:16px;letter-spacing:.4px}
+.title-m{font-size:16px;line-height:24px;font-weight:500;letter-spacing:.15px}
+.title-l{font-size:22px;line-height:28px;font-weight:500}
+.headline-s{font-size:24px;line-height:32px;font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 20px 0 16px;border-radius:20px;border:none;cursor:pointer}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 8px;border-radius:8px}
+.chip .icon{width:16px;height:16px}
+</style>
+</helmet>
+<div class="m3 {{themeClass}}" style="min-height: 900px; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <nav aria-label="Navigazione principale" style="flex: 0 0 96px; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px 0; background: var(--surface)">
+    <svg sc-camel-view-box="0 0 29 23" role="img" aria-label="Vexel" style="width: 36px; height: 29px; margin: 4px 0 12px">
+      <rect x="0" y="0" width="5" height="5" rx="1.5" fill="var(--primary)"></rect><rect x="24" y="0" width="5" height="5" rx="1.5" fill="var(--primary)"></rect>
+      <rect x="0" y="6" width="5" height="5" rx="1.5" fill="var(--primary)"></rect><rect x="24" y="6" width="5" height="5" rx="1.5" fill="var(--primary)"></rect>
+      <rect x="6" y="12" width="5" height="5" rx="1.5" fill="var(--primary)"></rect><rect x="18" y="12" width="5" height="5" rx="1.5" fill="var(--primary)"></rect>
+      <rect x="12" y="18" width="5" height="5" rx="1.5" fill="var(--ember)"></rect>
+    </svg>
+    <button type="button" aria-label="Nuova sessione" style="width: 56px; height: 56px; border-radius: 16px; border: none; background: var(--primary-container); color: var(--on-primary-container); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.18)">
+      <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="width: 24px; height: 24px"><path d="M12 5v14M5 12h14"></path></svg>
+    </button>
+    <div style="height: 12px"></div>
+    <a href="#" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--on-surface)">
+      <span style="width: 56px; height: 32px; border-radius: 16px; background: var(--secondary-container); color: var(--on-secondary-container); display: flex; align-items: center; justify-content: center; position: relative">
+        <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg>
+        <span class="label-m" style="position: absolute; top: -4px; right: 6px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 8px; background: var(--error); color: var(--on-error); font-size: 11px; line-height: 16px; text-align: center">1</span>
+      </span>
+      <span class="label-m">Sessioni</span>
+    </a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--on-surface-variant)">
+      <span style="width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center">
+        <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
+      </span>
+      <span class="label-m">Riprendi</span>
+    </a>
+  </nav>
+
+  <section aria-label="Elenco sessioni" style="flex: 1 1 340px; max-width: 400px; display: flex; flex-direction: column; gap: 4px; margin: 12px 0 12px 0; padding: 20px 12px; border-radius: 28px; background: var(--sc-low); box-sizing: border-box">
+    <div style="padding: 0 12px 4px; display: flex; align-items: baseline; gap: 8px">
+      <span class="brand" style="font-size: 28px; line-height: 34px; color: var(--primary)">Vexel</span>
+      <span class="label-l" style="color: var(--on-surface-variant)">for Claude</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 12px">
+      <h1 class="headline-s" style="margin: 0">Sessioni</h1>
+      <span class="chip label-l" style="background: var(--attn-container); color: var(--on-attn-container)">
+        <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>1 richiede input
+      </span>
+    </div>
+
+    <p class="label-l" style="margin: 8px 12px 4px; color: var(--attn)">Richiedono input</p>
+    <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 20px; background: var(--attn-container); color: var(--on-attn-container)">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <span class="label-l" style="width: 40px; height: 40px; border-radius: 12px; background: var(--attn); color: var(--sc-lowest); display: flex; align-items: center; justify-content: center; flex: none">WD</span>
+        <div style="min-width: 0; flex: 1">
+          <div class="title-m">web-dashboard</div>
+          <div class="body-m" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">rimuovi le dipendenze inutilizzate e aggiorna il lockfile</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="body-s">Permesso per <b>Bash</b> · 2 min fa</span>
+        <button type="button" class="btn label-l" style="height: 32px; padding: 0 14px; background: var(--attn); color: var(--sc-lowest)">Rispondi</button>
+      </div>
+    </div>
+
+    <p class="label-l" style="margin: 16px 12px 4px; color: var(--on-surface-variant)">In corso</p>
+    <button type="button" aria-current="true" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: none; border-radius: 16px; background: var(--secondary-container); color: var(--on-secondary-container); text-align: left; cursor: pointer">
+      <span class="label-l" style="width: 40px; height: 40px; border-radius: 20px; background: var(--primary-container); color: var(--on-primary-container); display: flex; align-items: center; justify-content: center; flex: none">BA</span>
+      <span style="min-width: 0; flex: 1; display: flex; flex-direction: column">
+        <span class="title-m">billing-api</span>
+        <span class="body-m" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">aggiungi la validazione dell'IBAN al form</span>
+      </span>
+      <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px">
+        <span class="label-m" style="display: inline-flex; align-items: center; gap: 4px"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="width: 14px; height: 14px"><circle cx="12" cy="12" r="10"></circle><path d="M10 15V9"></path><path d="M14 15V9"></path></svg>In attesa</span>
+        <span class="body-s" style="color: var(--on-surface-variant)">ora</span>
+      </span>
+    </button>
+    <button type="button" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: none; border-radius: 16px; background: transparent; color: var(--on-surface); text-align: left; cursor: pointer">
+      <span class="label-l" style="width: 40px; height: 40px; border-radius: 12px; background: var(--teal-container); color: var(--on-teal-container); display: flex; align-items: center; justify-content: center; flex: none">IT</span>
+      <span style="min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 6px">
+        <span style="display: flex; flex-direction: column">
+          <span class="title-m">infra-terraform</span>
+          <span class="body-m" style="color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">esegui terraform plan sul workspace di staging</span>
+        </span>
+        <span aria-hidden="true" style="display: block; height: 4px; border-radius: 2px; background: var(--primary-container); overflow: hidden"><span style="display: block; width: 45%; height: 4px; border-radius: 2px; background: var(--primary)"></span></span>
+      </span>
+      <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px">
+        <span class="label-m" style="color: var(--primary); display: inline-flex; align-items: center; gap: 4px"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="width: 14px; height: 14px"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>Lavora</span>
+        <span class="body-s" style="color: var(--on-surface-variant)">ora</span>
+      </span>
+    </button>
+
+    <p class="label-l" style="margin: 16px 12px 4px; color: var(--on-surface-variant)">In altri terminali</p>
+    <button type="button" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px dashed var(--outline-variant); border-radius: 16px; background: transparent; color: var(--on-surface); text-align: left; cursor: pointer">
+      <span style="width: 40px; height: 40px; border-radius: 20px; border: 1px solid var(--outline); color: var(--on-surface-variant); display: flex; align-items: center; justify-content: center; flex: none">
+        <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg>
+      </span>
+      <span style="min-width: 0; flex: 1; display: flex; flex-direction: column">
+        <span class="title-m">mobile-app</span>
+        <span class="body-m" style="color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">i test del checkout falliscono su Android</span>
+      </span>
+      <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px">
+        <span class="label-m" style="color: var(--primary)">Lavora</span>
+        <span class="body-s" style="color: var(--on-surface-variant)">1 min fa</span>
+      </span>
+    </button>
+  </section>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 12px 16px 16px 16px; box-sizing: border-box">
+    <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 8px 8px 8px 4px">
+      <span class="title-m" style="width: 48px; height: 48px; border-radius: 16px; background: var(--primary-container); color: var(--on-primary-container); display: flex; align-items: center; justify-content: center; flex: none">BA</span>
+      <div style="min-width: 0; flex: 1 1 280px">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+          <h2 class="title-l" style="margin: 0">billing-api</h2>
+          <span class="chip label-l" style="border: 1px solid var(--outline-variant); color: var(--on-surface-variant)"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M10 15V9"></path><path d="M14 15V9"></path></svg>In attesa</span>
+        </div>
+        <div class="body-m" style="color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">aggiungi la validazione dell'IBAN al form di pagamento · ~/projects/billing-api</div>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <button type="button" class="btn label-l" style="background: transparent; border: 1px solid var(--outline); color: var(--on-surface-variant)"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><rect x="9" y="9" width="6" height="6" rx="1"></rect></svg>Interrompi</button>
+        <button type="button" class="btn label-l" style="background: var(--error-container); color: var(--on-error-container)"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="M12 2v10"></path><path d="M18.4 6.6a9 9 0 1 1-12.77.04"></path></svg>Termina</button>
+      </div>
+    </header>
+
+    <div role="region" aria-label="Terminale di billing-api" style="flex: 1; min-height: 560px; border-radius: 28px; background: var(--term-bg); color: var(--term-fg); padding: 24px 28px; box-sizing: border-box; font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 14px; line-height: 22px; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+      <div style="border: 1px solid #D97757; border-radius: 10px; padding: 8px 14px; align-self: flex-start"><span style="color: #D97757">✻</span> <b>Welcome to Claude Code</b><br><span style="color: var(--term-dim)">cwd: ~/projects/billing-api</span></div>
+      <div><b>&gt;</b> aggiungi la validazione dell'IBAN al form di pagamento</div>
+      <div><span style="color: #D97757">⏺</span> Leggo il form attuale e i test esistenti.</div>
+      <div><span style="color: #95D592">⏺</span> <b>Read</b><span style="color: var(--term-dim)">(src/payments/PaymentForm.tsx)</span><br><span style="color: var(--term-dim)">  ⎿ Read 184 lines</span></div>
+      <div><span style="color: #D97757">⏺</span> Aggiungo un validatore ISO 13616 in src/payments/iban.ts e lo collego al campo IBAN.</div>
+      <div><span style="color: #95D592">⏺</span> <b>Edit</b><span style="color: var(--term-dim)">(src/payments/PaymentForm.tsx)</span><br><span style="color: var(--term-dim)">  ⎿ Updated with 12 additions and 3 removals</span></div>
+      <div style="margin-top: auto; border-top: 1px solid #33353A; padding-top: 12px"><b>&gt;</b> <span style="display: inline-block; width: 9px; height: 18px; background: var(--term-fg); vertical-align: -3px"></span></div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 0 8px">
+      <span class="body-s" style="color: var(--on-surface-variant); display: inline-flex; align-items: center; gap: 8px">
+        <kbd class="label-m" style="padding: 2px 8px; border-radius: 6px; background: var(--sc-high); color: var(--on-surface); font-family: inherit">Ctrl</kbd>+<kbd class="label-m" style="padding: 2px 8px; border-radius: 6px; background: var(--sc-high); color: var(--on-surface); font-family: inherit">Maiusc</kbd>+<kbd class="label-m" style="padding: 2px 8px; border-radius: 6px; background: var(--sc-high); color: var(--on-surface); font-family: inherit">L</kbd> torna all'elenco
+      </span>
+      <div role="status" style="display: flex; align-items: center; gap: 16px; padding: 6px 8px 6px 16px; border-radius: 4px; background: var(--inverse-surface); color: var(--inverse-on-surface); box-shadow: 0 3px 8px rgba(0,0,0,.2)">
+        <span class="body-m"><b>web-dashboard</b> richiede il tuo input</span>
+        <button type="button" class="label-l" style="height: 36px; padding: 0 12px; border: none; border-radius: 18px; background: transparent; color: var(--inverse-primary); cursor: pointer">Apri</button>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;dark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+
+
+</body></html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="it"><head>
+<meta charset="utf-8">
+<title>Vexel for Claude — sessione esterna</title>
+<script src="49255f20-7f5a-4c08-a693-6f663095aca0"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>/* cyrillic-ext */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("94f258a0-a34b-47b2-8f3f-740bc7b5452e") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("05c92e13-70c2-4d22-a664-5395e844e43b") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("f24fe09d-355e-4f54-adae-f90a3330bed2") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("af029ff3-1eae-4caa-878f-8e3a87ff178e") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("eb936b29-08fa-45d1-8344-be635a934cef") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("761f2722-a777-4c83-a149-8c6be49aad49") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("93ee984c-e5ee-44ed-9249-b590f898fabb") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("1927522a-6246-4849-9d8a-8b05d6e680b1") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("5e184db1-f6c1-42d1-a053-3248497bb741") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("c91914d2-3d21-4be9-986a-36f2b0892fbf") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("986029db-a7b1-4644-ade5-72b3018b5b21") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("a2819b04-16b7-464b-9283-0afde6b2ecc8") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("93ee984c-e5ee-44ed-9249-b590f898fabb") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("1927522a-6246-4849-9d8a-8b05d6e680b1") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("5e184db1-f6c1-42d1-a053-3248497bb741") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("c91914d2-3d21-4be9-986a-36f2b0892fbf") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("986029db-a7b1-4644-ade5-72b3018b5b21") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("a2819b04-16b7-464b-9283-0afde6b2ecc8") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+body{margin:0}
+a{color:#5847B8}a:hover{color:#3F2C9E}
+.m3{--primary:#5847B8;--on-primary:#FFFFFF;--primary-container:#E4DFFF;--on-primary-container:#3F2C9E;--secondary-container:#E4DFF9;--on-secondary-container:#47435A;--tertiary-container:#FFD8E8;--on-tertiary-container:#633B4F;--teal-container:#C8EBE6;--on-teal-container:#1F4D48;--error:#BA1A1A;--on-error:#FFFFFF;--error-container:#FFDAD6;--on-error-container:#93000A;--attn:#7C5800;--attn-container:#FFDEA7;--on-attn-container:#5E4200;--ok:#2E6B32;--ok-container:#C3EFC0;--on-ok-container:#0F5223;--ember:#E07A4F;--surface:#FDF8FF;--on-surface:#1C1B21;--on-surface-variant:#47464F;--outline:#787680;--outline-variant:#C8C5D0;--sc-lowest:#FFFFFF;--sc-low:#F7F2FA;--sc:#F1ECF4;--sc-high:#EBE6EE;--sc-highest:#E5E1E9;--inverse-surface:#313036;--inverse-on-surface:#F4EFF7;--inverse-primary:#C6BFFF}
+.m3.dark{--primary:#C6BFFF;--on-primary:#2A1688;--primary-container:#3F2C9E;--on-primary-container:#E4DFFF;--secondary-container:#47435A;--on-secondary-container:#E4DFF9;--tertiary-container:#633B4F;--on-tertiary-container:#FFD8E8;--teal-container:#1F4D48;--on-teal-container:#C8EBE6;--error:#FFB4AB;--on-error:#690005;--error-container:#93000A;--on-error-container:#FFDAD6;--attn:#F0BF48;--attn-container:#5E4200;--on-attn-container:#FFDEA7;--ok:#95D592;--ok-container:#0F5223;--on-ok-container:#C3EFC0;--ember:#F09A72;--surface:#141318;--on-surface:#E5E1E9;--on-surface-variant:#C8C5D0;--outline:#928F9A;--outline-variant:#47464F;--sc-lowest:#0F0E13;--sc-low:#1C1B21;--sc:#201F25;--sc-high:#2B292F;--sc-highest:#36343A;--inverse-surface:#E5E1E9;--inverse-on-surface:#313036;--inverse-primary:#5847B8}
+.m3{font-family:'Roboto Flex',system-ui,sans-serif;color:var(--on-surface);background:var(--surface)}
+.m3 button{font-family:inherit}
+.brand{font-variation-settings:'wdth' 125,'GRAD' 50;font-weight:800;letter-spacing:-.5px}
+.mono{font-family:'Roboto Mono',ui-monospace,monospace}
+.icon{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.label-l{font-size:14px;line-height:20px;font-weight:500;letter-spacing:.1px}
+.label-m{font-size:12px;line-height:16px;font-weight:500;letter-spacing:.5px}
+.body-l{font-size:16px;line-height:24px;letter-spacing:.5px}
+.body-m{font-size:14px;line-height:20px;letter-spacing:.25px}
+.body-s{font-size:12px;line-height:16px;letter-spacing:.4px}
+.title-m{font-size:16px;line-height:24px;font-weight:500;letter-spacing:.15px}
+.title-l{font-size:22px;line-height:28px;font-weight:500}
+.headline-s{font-size:24px;line-height:32px;font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 20px 0 16px;border-radius:20px;border:none;cursor:pointer}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 8px;border-radius:8px}
+.chip .icon{width:16px;height:16px}
+</style>
+</helmet>
+<div class="m3 {{themeClass}}" style="min-height: 900px; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <nav aria-label="Navigazione principale" style="flex: 0 0 96px; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px 0">
+    <svg sc-camel-view-box="0 0 29 23" role="img" aria-label="Vexel" style="width: 36px; height: 29px; margin: 4px 0 12px">
+      <rect x="0" y="0" width="5" height="5" rx="1.5" fill="var(--primary)"></rect><rect x="24" y="0" width="5" height="5" rx="1.5" fill="var(--primary)"></rect>
+      <rect x="0" y="6" width="5" height="5" rx="1.5" fill="var(--primary)"></rect><rect x="24" y="6" width="5" height="5" rx="1.5" fill="var(--primary)"></rect>
+      <rect x="6" y="12" width="5" height="5" rx="1.5" fill="var(--primary)"></rect><rect x="18" y="12" width="5" height="5" rx="1.5" fill="var(--primary)"></rect>
+      <rect x="12" y="18" width="5" height="5" rx="1.5" fill="var(--ember)"></rect>
+    </svg>
+    <button type="button" aria-label="Nuova sessione" style="width: 56px; height: 56px; border-radius: 16px; border: none; background: var(--primary-container); color: var(--on-primary-container); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.18)">
+      <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="width: 24px; height: 24px"><path d="M12 5v14M5 12h14"></path></svg>
+    </button>
+    <div style="height: 12px"></div>
+    <a href="#" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--on-surface)">
+      <span style="width: 56px; height: 32px; border-radius: 16px; background: var(--secondary-container); color: var(--on-secondary-container); display: flex; align-items: center; justify-content: center; position: relative">
+        <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg>
+        <span style="position: absolute; top: -4px; right: 6px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 8px; background: var(--error); color: var(--on-error); font-size: 11px; line-height: 16px; font-weight: 500; text-align: center">1</span>
+      </span>
+      <span class="label-m">Sessioni</span>
+    </a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--on-surface-variant)">
+      <span style="width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center">
+        <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
+      </span>
+      <span class="label-m">Riprendi</span>
+    </a>
+  </nav>
+
+  <section aria-label="Elenco sessioni" style="flex: 1 1 340px; max-width: 400px; display: flex; flex-direction: column; gap: 4px; margin: 12px 0; padding: 20px 12px; border-radius: 28px; background: var(--sc-low); box-sizing: border-box">
+    <div style="padding: 0 12px 4px; display: flex; align-items: baseline; gap: 8px">
+      <span class="brand" style="font-size: 28px; line-height: 34px; color: var(--primary)">Vexel</span>
+      <span class="label-l" style="color: var(--on-surface-variant)">for Claude</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 12px">
+      <h1 class="headline-s" style="margin: 0">Sessioni</h1>
+      <span class="chip label-l" style="background: var(--attn-container); color: var(--on-attn-container)"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>1 richiede input</span>
+    </div>
+    <p class="label-l" style="margin: 8px 12px 4px; color: var(--attn)">Richiedono input</p>
+    <button type="button" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: none; border-radius: 20px; background: var(--attn-container); color: var(--on-attn-container); text-align: left; cursor: pointer">
+      <span class="label-l" style="width: 40px; height: 40px; border-radius: 12px; background: var(--attn); color: var(--sc-lowest); display: flex; align-items: center; justify-content: center; flex: none">WD</span>
+      <span style="min-width: 0; flex: 1; display: flex; flex-direction: column"><span class="title-m">web-dashboard</span><span class="body-m" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Permesso per Bash · 2 min fa</span></span>
+    </button>
+    <p class="label-l" style="margin: 16px 12px 4px; color: var(--on-surface-variant)">In corso</p>
+    <button type="button" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: none; border-radius: 16px; background: transparent; color: var(--on-surface); text-align: left; cursor: pointer">
+      <span class="label-l" style="width: 40px; height: 40px; border-radius: 20px; background: var(--primary-container); color: var(--on-primary-container); display: flex; align-items: center; justify-content: center; flex: none">BA</span>
+      <span style="min-width: 0; flex: 1; display: flex; flex-direction: column"><span class="title-m">billing-api</span><span class="body-m" style="color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">aggiungi la validazione dell'IBAN</span></span>
+      <span class="label-m" style="color: var(--on-surface-variant)">In attesa</span>
+    </button>
+    <button type="button" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: none; border-radius: 16px; background: transparent; color: var(--on-surface); text-align: left; cursor: pointer">
+      <span class="label-l" style="width: 40px; height: 40px; border-radius: 12px; background: var(--teal-container); color: var(--on-teal-container); display: flex; align-items: center; justify-content: center; flex: none">IT</span>
+      <span style="min-width: 0; flex: 1; display: flex; flex-direction: column"><span class="title-m">infra-terraform</span><span class="body-m" style="color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">esegui terraform plan su staging</span></span>
+      <span class="label-m" style="color: var(--primary)">Lavora</span>
+    </button>
+    <p class="label-l" style="margin: 16px 12px 4px; color: var(--on-surface-variant)">In altri terminali</p>
+    <button type="button" aria-current="true" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: none; border-radius: 16px; background: var(--secondary-container); color: var(--on-secondary-container); text-align: left; cursor: pointer">
+      <span style="width: 40px; height: 40px; border-radius: 20px; border: 1px solid var(--outline); display: flex; align-items: center; justify-content: center; flex: none"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg></span>
+      <span style="min-width: 0; flex: 1; display: flex; flex-direction: column"><span class="title-m">mobile-app</span><span class="body-m" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">i test del checkout falliscono su Android</span></span>
+      <span class="label-m" style="color: var(--primary)">Lavora</span>
+    </button>
+  </section>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 12px 16px 16px 16px; box-sizing: border-box">
+    <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 8px 8px 8px 4px">
+      <span style="width: 48px; height: 48px; border-radius: 24px; border: 1px solid var(--outline); color: var(--on-surface-variant); display: flex; align-items: center; justify-content: center; flex: none"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="width: 24px; height: 24px"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg></span>
+      <div style="min-width: 0; flex: 1 1 280px">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+          <h2 class="title-l" style="margin: 0">mobile-app</h2>
+          <span class="chip label-l" style="background: var(--primary-container); color: var(--on-primary-container)"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>Lavora</span>
+          <span class="chip label-l" style="border: 1px solid var(--outline-variant); color: var(--on-surface-variant)"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Sola lettura</span>
+        </div>
+        <div class="body-m" style="color: var(--on-surface-variant)">Aperta in un altro terminale · ~/projects/mobile-app</div>
+      </div>
+      <button type="button" class="btn label-l" style="background: var(--primary); color: var(--on-primary)"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><path d="m10 17 5-5-5-5"></path><path d="M15 12H3"></path></svg>Riprendi qui</button>
+    </header>
+
+    <div style="flex: 1; position: relative; border-radius: 28px; background: var(--sc-low); padding: 28px 24px 80px; box-sizing: border-box; overflow: hidden">
+      <div style="max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px">
+
+        <div style="align-self: flex-end; max-width: 80%; padding: 12px 16px; border-radius: 20px 20px 4px 20px; background: var(--primary); color: var(--on-primary)">
+          <div class="body-l">i test della schermata di checkout falliscono su Android, puoi capire perché?</div>
+          <div class="body-s" style="opacity: .8; text-align: right; margin-top: 4px">20:45</div>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: flex-start">
+          <svg sc-camel-view-box="0 0 24 24" aria-hidden="true" style="width: 28px; height: 28px; flex: none; fill: var(--ember)"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"></path></svg>
+          <div class="body-l" style="padding-top: 2px">Lancio la suite di checkout per vedere gli errori.</div>
+        </div>
+
+        <div style="margin-left: 40px; border-radius: 16px; background: var(--sc-lowest); border: 1px solid var(--outline-variant); overflow: hidden">
+          <button type="button" aria-expanded="true" style="width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border: none; background: transparent; color: var(--on-surface); text-align: left; cursor: pointer">
+            <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="color: var(--on-surface-variant)"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg>
+            <span class="label-l">Bash</span>
+            <span class="mono body-m" style="flex: 1; min-width: 0; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">npm test -- src/screens/Checkout.test.tsx</span>
+            <span class="chip label-m" style="height: 24px; background: var(--error-container); color: var(--on-error-container)"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>1 fallito</span>
+            <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+          </button>
+          <pre class="mono body-s" style="margin: 0; padding: 12px 16px 14px 48px; background: var(--sc); color: var(--on-surface); white-space: pre-wrap; border-top: 1px solid var(--outline-variant)">FAIL src/screens/Checkout.test.tsx
+  ✕ renders total with Android font scale (48 ms)
+  Expected: "€ 1.234,50"
+  Received: "€ 1,234.50"</pre>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: flex-start">
+          <svg sc-camel-view-box="0 0 24 24" aria-hidden="true" style="width: 28px; height: 28px; flex: none; fill: var(--ember)"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"></path></svg>
+          <div class="body-l" style="padding-top: 2px">Il formato valuta usa la locale del device invece di it-IT. Correggo <span class="mono" style="font-size: 14px; padding: 1px 6px; border-radius: 6px; background: var(--sc-high)">formatPrice</span>.</div>
+        </div>
+
+        <div style="margin-left: 40px; display: flex; flex-direction: column; gap: 6px">
+          <button type="button" aria-expanded="false" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border: 1px solid var(--outline-variant); border-radius: 16px; background: var(--sc-lowest); color: var(--on-surface); text-align: left; cursor: pointer">
+            <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="color: var(--on-surface-variant)"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"></path></svg>
+            <span class="label-l">Edit</span>
+            <span class="mono body-m" style="flex: 1; min-width: 0; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">src/utils/formatPrice.ts</span>
+            <span class="chip label-m" style="height: 24px; background: var(--ok-container); color: var(--on-ok-container)"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Fatto</span>
+            <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+          </button>
+          <button type="button" aria-expanded="false" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border: 1px solid var(--outline-variant); border-radius: 16px; background: var(--sc-lowest); color: var(--on-surface); text-align: left; cursor: pointer">
+            <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="color: var(--on-surface-variant)"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg>
+            <span class="label-l">Bash</span>
+            <span class="mono body-m" style="flex: 1; min-width: 0; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">npm test -- src/screens/Checkout.test.tsx</span>
+            <span class="chip label-m" style="height: 24px; background: var(--ok-container); color: var(--on-ok-container)"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>14 superati</span>
+            <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+          </button>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: flex-start">
+          <svg sc-camel-view-box="0 0 24 24" aria-hidden="true" style="width: 28px; height: 28px; flex: none; fill: var(--ember)"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"></path></svg>
+          <div class="body-l" style="padding-top: 2px">Tutti i 14 test passano. Il prezzo ora è formattato sempre in it-IT, indipendentemente dalla lingua del telefono.</div>
+        </div>
+      </div>
+
+      <button type="button" class="btn label-l" style="position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); height: 40px; background: var(--primary-container); color: var(--on-primary-container); box-shadow: 0 2px 6px rgba(0,0,0,.2)"><svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg>2 nuovi messaggi</button>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;dark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+
+
+</body></html>
