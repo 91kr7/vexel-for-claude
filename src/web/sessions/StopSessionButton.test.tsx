@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { PowerIcon } from '../icons/Icons';
 import type { SessionState } from './live-session-store';
 import { StopSessionButton } from './StopSessionButton';
 
@@ -16,5 +17,18 @@ describe('StopSessionButton', () => {
     const html = renderToStaticMarkup(<StopSessionButton sessionId="s1" state={state} />);
     expect(buttonLabels(html)).toEqual(['Termina']);
     expect(html).not.toContain('Terminare la sessione?');
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29: "Termina" is the board button (.btn, .label-l) with the power icon before its text
+  it('renders "Termina" as a .btn.label-l button with the power icon first', () => {
+    const html = renderToStaticMarkup(<StopSessionButton sessionId="s1" state="idle" />);
+    const button = html.match(/<button\b([^>]*)>([\s\S]*?)<\/button>/);
+    expect(button, html).not.toBeNull();
+    const classes = button?.[1]?.match(/\sclass="([^"]*)"/)?.[1]?.split(/\s+/) ?? [];
+    expect(classes).toEqual(expect.arrayContaining(['btn', 'label-l']));
+    const inner = button?.[2] ?? '';
+    const icon = renderToStaticMarkup(<PowerIcon />);
+    expect(inner.startsWith(icon), 'the icon comes first').toBe(true);
+    expect(inner.slice(icon.length).trim()).toBe('Termina');
   });
 });

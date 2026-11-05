@@ -15,12 +15,12 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await postHook(request, id, { hook_event_name: 'Stop' });
 });
 
-const list = (page: Page) => page.getByRole('navigation', { name: 'Elenco sessioni' });
-const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
-const counter = (page: Page) => page.getByRole('status').filter({ hasText: 'Richiede input:' });
+const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
+const counter = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('status').filter({ hasText: 'richiede input' });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const pathField = (page: Page) => page.getByRole('textbox', { name: 'Cartella del progetto', exact: true });
-const TIME = /\d{2}:\d{2}:\d{2}/;
+const RELATIVE_TIME = /^(ora|\d+ min fa)$/;
 
 async function newFolder(name: string): Promise<string> {
   const folder = path.join(projectsRoot, name);
@@ -42,7 +42,7 @@ async function postHook(request: APIRequestContext, id: string, event: Record<st
 }
 
 async function startViaUi(page: Page, folder: string): Promise<string> {
-  await page.getByRole('complementary').getByRole('button', { name: 'Nuova sessione' }).click();
+  await page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Nuova sessione' }).click();
   await expect(pathField(page)).toHaveValue(os.homedir());
   await pathField(page).fill(folder);
   const started = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/sessions' && r.request().method() === 'POST');
@@ -80,21 +80,21 @@ test('the user sees which session needs input', async ({ page, request }) => {
   await page.goto('/');
 
   for (const [folder, label, state] of [
-    [busy, 'Analizza i log del server', 'In lavorazione'],
+    [busy, 'Analizza i log del server', 'Lavora'],
     [calm, 'calm', 'In attesa'],
     [asks, 'Elimina la cartella build', 'Richiede input'],
   ]) {
-    await expect(entry(page, folder)).toContainText(folder);
+    await expect(entry(page, folder)).toContainText(path.basename(folder));
     await expect(entry(page, folder)).toContainText(label);
     await expect(entry(page, folder)).toContainText(state);
-    await expect(entry(page, folder)).toContainText(TIME);
   }
-  await expect(list(page).getByRole('button').first()).toContainText(asks);
+  for (const folder of [busy, calm]) await expect(entry(page, folder).locator('time')).toHaveText(RELATIVE_TIME);
+  await expect(entry(page, asks)).toHaveAccessibleDescription(/^Permesso per Bash · (ora|\d+ min fa)$/);
+  await expect(list(page).getByRole('button').first().getByTitle(asks, { exact: true })).toBeVisible();
   await expect(entry(page, asks)).toHaveClass(/\bneeds-input\b/);
   await expect(entry(page, busy)).not.toHaveClass(/\bneeds-input\b/);
   await expect(entry(page, calm)).not.toHaveClass(/\bneeds-input\b/);
-  await expect(counter(page)).toHaveText('Richiede input: 1');
-  await expect(counter(page)).toHaveClass(/\bactive\b/);
+  await expect(counter(page)).toHaveText('1 richiede input');
 });
 
 // plan-claude_sessions_client/REQ-14, REQ-15
@@ -106,7 +106,7 @@ test('the list follows the state without a reload', async ({ page }) => {
   await page.evaluate(() => ((globalThis as unknown as { notReloaded: boolean }).notReloaded = true));
 
   await typeLine(page, 'TURN');
-  await expect(entry(page, folder)).toContainText('In lavorazione');
+  await expect(entry(page, folder)).toContainText('Lavora');
   await expect(terminal(page)).toContainText('TURN-DONE');
   await expect(entry(page, folder)).toContainText('In attesa');
 
@@ -116,24 +116,24 @@ test('the list follows the state without a reload', async ({ page }) => {
 // plan-claude_sessions_client/REQ-14, REQ-15, REQ-17
 test('the counter follows a permission request without a reload', async ({ page }) => {
   await page.goto('/');
-  await expect(counter(page)).toHaveText('Richiede input: 0');
-  await expect(counter(page)).not.toHaveClass(/\bactive\b/);
+  await expect(counter(page)).toHaveCount(0);
   const folder = await newFolder('permission');
   await startViaUi(page, folder);
 
   await typeLine(page, 'PERM');
   await expect(entry(page, folder)).toContainText('Richiede input');
   await expect(entry(page, folder)).toHaveClass(/\bneeds-input\b/);
-  await expect(counter(page)).toHaveText('Richiede input: 1');
+  await expect(counter(page)).toHaveText('1 richiede input');
 
   await page.keyboard.type('y');
   await expect(terminal(page)).toContainText('ANSWER:y');
   await expect(entry(page, folder)).toContainText('In attesa');
-  await expect(counter(page)).toHaveText('Richiede input: 0');
+  await expect(counter(page)).toHaveCount(0);
 });
 
 // plan-claude_sessions_client/REQ-17, REQ-18, REQ-19, REQ-21
 test('the user switches between sessions', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');
   const folderA = await newFolder('switch-a');
   const folderB = await newFolder('switch-b');
@@ -158,14 +158,13 @@ test('the user switches between sessions', async ({ page }) => {
   await expect(terminal(page)).toContainText('PERMISSION?(y/n)', { timeout: 1000 });
   await expect(terminal(page)).not.toContainText(`CWD:${folderA}`);
   await expect(terminal(page)).not.toContainText('TICK');
-  await expect(counter(page)).toBeVisible();
-  await expect(counter(page)).toHaveText('Richiede input: 1');
+  await expect(counter(page)).toHaveText('1 richiede input');
   await page.waitForTimeout(1000);
 
   await entry(page, folderA).click();
   await expect(terminal(page)).toContainText(`CWD:${folderA}`, { timeout: 1000 });
   await expect.poll(() => lastTick(page)).toBeGreaterThan(tickBeforeLeaving + 2);
-  await expect(entry(page, folderA)).toContainText('In lavorazione');
+  await expect(entry(page, folderA)).toContainText('Lavora');
 
   await entry(page, folderB).click();
   await expect(terminal(page)).toContainText('PERMISSION?(y/n)', { timeout: 1000 });
@@ -180,12 +179,12 @@ test('sessions survive a page reload', async ({ page }) => {
   const folder = await newFolder('reload');
   await startViaUi(page, folder);
   await typeLine(page, 'WORK');
-  await expect(entry(page, folder)).toContainText('In lavorazione');
+  await expect(entry(page, folder)).toContainText('Lavora');
   await expect(terminal(page)).toContainText('TICK2');
 
   await page.reload();
   await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
-  await expect(entry(page, folder)).toContainText('In lavorazione');
+  await expect(entry(page, folder)).toContainText('Lavora');
   await entry(page, folder).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
   await expect(terminal(page)).toContainText('LINE:WORK');
@@ -196,11 +195,13 @@ test('sessions survive a page reload', async ({ page }) => {
 // plan-claude_sessions_client/REQ-21, REQ-22
 test('ten sessions at once', async ({ page, request }) => {
   const folders: string[] = [];
+  const ids: string[] = [];
   for (let n = 1; n <= 10; n += 1) {
     const folder = await newFolder(`ten-${String(n).padStart(2, '0')}`);
     const id = await startViaApi(request, folder);
     await postHook(request, id, { hook_event_name: 'UserPromptSubmit', prompt: `Compito numero ${n}` });
     folders.push(folder);
+    ids.push(id);
   }
   await page.setViewportSize({ width: 1280, height: 500 });
   await page.goto('/');
@@ -208,10 +209,11 @@ test('ten sessions at once', async ({ page, request }) => {
   for (const folder of folders) {
     await entry(page, folder).scrollIntoViewIfNeeded();
     await expect(entry(page, folder)).toBeVisible();
-    await expect(entry(page, folder)).toContainText('In lavorazione');
+    await expect(entry(page, folder)).toContainText('Lavora');
   }
-  const scrolls = await list(page).evaluate((nav) => nav.scrollHeight > nav.clientHeight);
+  const scrolls = await list(page).locator('.session-list').evaluate((el) => el.scrollHeight > el.clientHeight);
   expect(scrolls, 'the list scrolls when its entries do not fit').toBe(true);
+  await postHook(request, ids[4] ?? '', { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
   await expect(counter(page)).toBeInViewport();
 
   for (const index of [2, 7, 0, 9]) {

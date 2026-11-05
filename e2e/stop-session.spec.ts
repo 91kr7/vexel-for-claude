@@ -15,8 +15,8 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
-const list = (page: Page) => page.getByRole('navigation', { name: 'Elenco sessioni' });
-const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
+const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const stopButton = (page: Page) => page.getByRole('button', { name: 'Termina', exact: true }).first();
 const confirmation = (page: Page) =>
@@ -76,7 +76,8 @@ test('the user stops an idle session', async ({ page, request }) => {
   await expect(entry(page, folder)).toContainText('Terminata');
   expect(stops.map((r) => [r.method(), r.postData()])).toEqual([['POST', null]]);
   await expect(page.getByRole('button', { name: 'Termina', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Interrompi' })).toBeVisible();
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-31
+  await expect(page.getByRole('button', { name: 'Interrompi' })).toHaveCount(0);
 });
 
 // plan-claude_sessions_client/REQ-23
@@ -97,7 +98,7 @@ test('a session that needs input stops at once', async ({ page, request }) => {
 test('stopping a working session asks for confirmation; "Annulla" keeps it working', async ({ page, request }) => {
   const { id, folder } = await openSession(page, request, 'working-cancel');
   await typeLine(page, 'WORK');
-  await expect(entry(page, folder)).toContainText('In lavorazione');
+  await expect(entry(page, folder)).toContainText('Lavora');
   const stops = recordStopRequests(page, id);
 
   await stopButton(page).click();
@@ -113,7 +114,7 @@ test('stopping a working session asks for confirmation; "Annulla" keeps it worki
   await expect(confirmation(page)).toHaveCount(0);
   const tick = await lastTick(page);
   await expect.poll(() => lastTick(page)).toBeGreaterThan(tick + 2);
-  await expect(entry(page, folder)).toContainText('In lavorazione');
+  await expect(entry(page, folder)).toContainText('Lavora');
   expect(stops, 'no stop request after "Annulla"').toHaveLength(0);
   await expect(stopButton(page)).toBeVisible();
 });
@@ -122,7 +123,7 @@ test('stopping a working session asks for confirmation; "Annulla" keeps it worki
 test('confirming the stop of a working session ends it', async ({ page, request }) => {
   const { id, folder } = await openSession(page, request, 'working-confirm');
   await typeLine(page, 'WORK');
-  await expect(entry(page, folder)).toContainText('In lavorazione');
+  await expect(entry(page, folder)).toContainText('Lavora');
   const stops = recordStopRequests(page, id);
 
   await stopButton(page).click();
@@ -138,7 +139,7 @@ test('confirming the stop of a working session ends it', async ({ page, request 
 test('the confirmation disappears when the session ends meanwhile', async ({ page, request }) => {
   const { id, folder } = await openSession(page, request, 'ends-while-confirming');
   await typeLine(page, 'WORK');
-  await expect(entry(page, folder)).toContainText('In lavorazione');
+  await expect(entry(page, folder)).toContainText('Lavora');
   await stopButton(page).click();
   await expect(confirmation(page)).toBeVisible();
 
@@ -181,7 +182,7 @@ test('a state change of the open session keeps its terminal connection', async (
   await expect(terminal(page)).toContainText('READY');
 
   await typeLine(page, 'TURN');
-  await expect(entry(page, folder)).toContainText('In lavorazione');
+  await expect(entry(page, folder)).toContainText('Lavora');
   await expect(terminal(page)).toContainText('TURN-DONE');
   await expect(entry(page, folder)).toContainText('In attesa');
 

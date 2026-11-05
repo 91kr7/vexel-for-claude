@@ -29,10 +29,14 @@ type: backend service
 
 `ConversationItem`:
 
-- `{ kind: "user", text }` → a user message.
+- `{ kind: "user", text, timestamp? }` → a user message. `timestamp` → the `timestamp` of its line, when it is a string.
 - `{ kind: "assistant", text }` → a text reply of Claude.
-- `{ kind: "tool_call", name, summary, ref? }` → a tool call: the tool name and a one-line summary of its input.
-- `{ kind: "tool_result", text, truncated, ref? }` → a tool result cut to its first 5 lines. `truncated` is `true` when lines were cut.
+- `{ kind: "tool_call", name, summary, moreInput?, id?, ref? }` → a tool call: the tool name and a one-line summary of its input.
+  - `id` → the `id` of the `tool_use` block, when it is a string.
+  - `moreInput: true` → the full input shows more than the summary (rule "More input" below). Absent otherwise.
+- `{ kind: "tool_result", text, truncated, isError?, toolUseId?, ref? }` → a tool result cut to its first 5 lines. `truncated` is `true` when lines were cut.
+  - `toolUseId` → the `tool_use_id` of the block, when it is a string.
+  - `isError: true` → the block has `is_error` `true`. Absent otherwise.
 - `ref` → `{ offset, block }`: the byte offset where the item's line starts in the file, and the index of the item's block in `message.content` (counted over all the array elements).
 
 Line to items:
@@ -69,6 +73,16 @@ summary = value with whitespace collapsed to one space, trimmed, cut to 120 char
           plus "…" when it was longer
 ```
 
+More input:
+
+```
+no input                                                   → no moreInput
+input an object with no keys                               → no moreInput
+input an object with one key, whose value equals summary   → no moreInput
+anything else (more keys, a cut or reflowed value, input
+not an object)                                             → moreInput: true
+```
+
 ## Rules and invariants
 
 - It opens files read-only. It never creates, changes or deletes anything under `claudeDir`.
@@ -82,3 +96,4 @@ summary = value with whitespace collapsed to one space, trimmed, cut to 120 char
 
 - `plan-claude_sessions_client/REQ-33`, `plan-claude_sessions_client/REQ-36`
 - `plan-claude_sessions_client-ui_redesign/REQ-21`, `plan-claude_sessions_client-ui_redesign/REQ-24`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-36`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-39`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-40`

@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { TriangleAlertIcon } from '../icons/Icons';
 import { RunningElsewhereWarning } from './RunningElsewhereWarning';
 
 const buttonLabels = (html: string) => [...html.matchAll(/<button[^>]*>([\s\S]*?)<\/button>/g)].map((m) => m[1]?.replace(/<[^>]*>/g, '').trim());
@@ -15,6 +16,14 @@ describe('RunningElsewhereWarning', () => {
       'Questa sessione è ancora in esecuzione in un altro terminale. Se la riprendi anche qui, le due istanze possono danneggiare la conversazione.',
     );
     expect(buttonLabels(html)).toEqual(['Annulla', 'Riprendi comunque']);
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-50, RunningElsewhereWarning: TriangleAlertIcon on top
+  it('shows TriangleAlertIcon before the title', () => {
+    const html = renderToStaticMarkup(<RunningElsewhereWarning onConfirm={() => {}} onCancel={() => {}} />);
+    const icon = html.indexOf(renderToStaticMarkup(<TriangleAlertIcon />));
+    expect(icon).toBeGreaterThanOrEqual(0);
+    expect(icon).toBeLessThan(html.indexOf('Sessione in esecuzione in un terminale'));
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-25, REQ-28: "Riprendi comunque" is the primary action, in the danger style

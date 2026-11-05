@@ -104,17 +104,35 @@ describe('ExternalSessionScanner entries', () => {
     expect(f.scanner.list().map((s) => s.id)).toEqual(['interactive']);
   });
 
-  // plan-claude_sessions_client/REQ-31
-  it('state is working for status "busy" and idle for any other status or none', async () => {
+  // plan-claude_sessions_client/REQ-31, plan-claude_sessions_client-ui_redesign-material3_mock/REQ-17: busy is working, waiting is needs_input, anything else idle
+  it('state is working for status "busy", needs_input for "waiting" and idle for any other status or none', async () => {
     const f = fixture();
     f.files = [
       sessionFile(1, 'busy', { status: 'busy' }),
       sessionFile(2, 'idle', { status: 'idle' }),
-      sessionFile(3, 'other', { status: 'waiting' }),
-      sessionFile(4, 'none', { status: undefined }),
+      sessionFile(3, 'waiting', { status: 'waiting' }),
+      sessionFile(4, 'shell', { status: 'shell' }),
+      sessionFile(5, 'none', { status: undefined }),
     ];
     await f.scanner.scan();
-    expect(Object.fromEntries(f.scanner.list().map((s) => [s.id, s.state]))).toEqual({ busy: 'working', idle: 'idle', other: 'idle', none: 'idle' });
+    expect(Object.fromEntries(f.scanner.list().map((s) => [s.id, s.state]))).toEqual({
+      busy: 'working',
+      idle: 'idle',
+      waiting: 'needs_input',
+      shell: 'idle',
+      none: 'idle',
+    });
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-17: a session that starts waiting is notified as needs_input
+  it('notifies the change to needs_input when a busy session starts waiting', async () => {
+    const f = fixture();
+    f.files = [sessionFile(1, 'asks', { status: 'busy' })];
+    await f.scanner.scan();
+    f.changes.length = 0;
+    f.files = [sessionFile(1, 'asks', { status: 'waiting' })];
+    await f.scanner.scan();
+    expect(f.changes).toEqual([{ type: 'session', session: expect.objectContaining({ id: 'asks', state: 'needs_input', external: true }) }]);
   });
 
   // plan-claude_sessions_client/REQ-30

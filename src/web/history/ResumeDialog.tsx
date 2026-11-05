@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Dialog } from '../dialogs/Dialog';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
+import { HistoryIcon, TerminalIcon } from '../icons/Icons';
+import { Avatar } from '../sessions/Avatar';
 import { RunningElsewhereWarning } from './RunningElsewhereWarning';
 
 interface PastSessionEntry {
@@ -44,6 +46,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
   const [busy, setBusy] = useState(false);
   const [warningFor, setWarningFor] = useState<string | null>(null);
   const [selected, setSelected] = useState<PastSessionEntry | null>(null);
+  const rowId = useId();
 
   useEffect(() => {
     let active = true;
@@ -87,6 +90,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
   return (
     <>
       <Dialog
+        icon={<HistoryIcon />}
         title="Riprendi sessione"
         className="resume-dialog"
         primaryLabel="Riprendi"
@@ -97,33 +101,51 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
         primaryBusy={busy}
         onCancel={onCancel}
       >
-        <div className="past-session-groups">
+        <div
+          className="dialog-scroll"
+          role={groups?.length ? 'radiogroup' : undefined}
+          aria-label={groups?.length ? 'Sessioni passate' : undefined}
+        >
           {groups === null && error === null && <ProgressIndicator />}
-          {groups?.length === 0 && <p>Nessuna sessione da riprendere.</p>}
+          {groups?.length === 0 && <p className="body-m">Nessuna sessione da riprendere.</p>}
           {groups?.map((group) => (
             <section key={group.folder} className="past-session-group" aria-label={group.folder}>
-              <h3>{group.folder}</h3>
-              <ul>
-                {group.sessions.map((session) => (
-                  <li key={session.id}>
-                    <button
-                      type="button"
-                      className="past-session"
-                      aria-pressed={selected?.id === session.id}
-                      disabled={busy}
-                      onClick={() => setSelected(session)}
-                    >
-                      <span className="past-session-label">{session.label}</span>
-                      <span className="past-session-meta">
-                        <time dateTime={session.lastActivity}>{formatDate(session.lastActivity)}</time>
+              <h3 className="label-l dialog-section-heading">{group.folder}</h3>
+              <div className="dialog-rows">
+                {group.sessions.map((session) => {
+                  const checked = selected?.id === session.id;
+                  const id = `${rowId}-${session.id}`;
+                  return (
+                    <label key={session.id} className={checked ? 'dialog-row dialog-row-checked' : 'dialog-row'}>
+                      <Avatar folder={group.folder} size="dialog" />
+                      <span className="dialog-row-text">
+                        <span id={`${id}-label`} className="body-l dialog-row-title">
+                          {session.label}
+                        </span>
+                        <time id={`${id}-time`} className="mono dialog-row-detail" dateTime={session.lastActivity}>
+                          {formatDate(session.lastActivity)}
+                        </time>
                         {session.runningElsewhere && (
-                          <span className="past-session-running">In esecuzione in un terminale</span>
+                          <span id={`${id}-running`} className="chip label-l past-session-running">
+                            <TerminalIcon />
+                            In esecuzione in un terminale
+                          </span>
                         )}
                       </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                      <input
+                        type="radio"
+                        className="dialog-radio"
+                        name={`${rowId}-session`}
+                        checked={checked}
+                        disabled={busy}
+                        aria-labelledby={`${id}-label`}
+                        aria-describedby={session.runningElsewhere ? `${id}-time ${id}-running` : `${id}-time`}
+                        onChange={() => setSelected(session)}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
             </section>
           ))}
         </div>

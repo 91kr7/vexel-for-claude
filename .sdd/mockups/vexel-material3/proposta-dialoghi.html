@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="it"><head>
+<meta charset="utf-8">
+<title>Vexel for Claude — dialoghi</title>
+<script src="28d21f51-b2ea-4999-8148-e11ff974c487"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>/* cyrillic-ext */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("d0f34bf7-2e3e-4ffd-9c6d-15747bc173bd") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("34dd96d2-6748-4cc2-ab6b-1492e4a8acd2") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("3e5922bd-b877-4c52-961a-519f74ee5c2f") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("04aea179-effa-4281-a018-af1e28afddff") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("bd5bcdb7-2b31-44a9-ab27-9ee98397ce97") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Roboto Flex';
+  font-style: normal;
+  font-weight: 400 800;
+  font-stretch: 25% 151%;
+  font-display: swap;
+  src: url("9cf872fe-aa1d-431e-9064-a8b670f13210") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("6f2b5152-9241-4772-be82-9d832239f96d") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("becb96f3-cdf4-445d-a155-8038c3dcf586") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("043c8aa0-d4ab-4816-b173-a7a352a0b0eb") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("b7b7a1da-0112-4aa7-aa3a-541f1cdfb8d1") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("d619297f-e6fc-4991-9a26-39e200452a7c") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("7ba198c9-46f0-4d59-ba4d-41ac616c61ab") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("6f2b5152-9241-4772-be82-9d832239f96d") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("becb96f3-cdf4-445d-a155-8038c3dcf586") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("043c8aa0-d4ab-4816-b173-a7a352a0b0eb") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("b7b7a1da-0112-4aa7-aa3a-541f1cdfb8d1") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("d619297f-e6fc-4991-9a26-39e200452a7c") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("7ba198c9-46f0-4d59-ba4d-41ac616c61ab") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+body{margin:0}
+a{color:#5847B8}a:hover{color:#3F2C9E}
+.m3{--primary:#5847B8;--on-primary:#FFFFFF;--primary-container:#E4DFFF;--on-primary-container:#3F2C9E;--secondary-container:#E4DFF9;--on-secondary-container:#47435A;--teal-container:#C8EBE6;--on-teal-container:#1F4D48;--error:#BA1A1A;--error-container:#FFDAD6;--on-error-container:#93000A;--surface:#FDF8FF;--on-surface:#1C1B21;--on-surface-variant:#47464F;--outline:#787680;--outline-variant:#C8C5D0;--sc-low:#F7F2FA;--sc:#F1ECF4;--sc-high:#EBE6EE;--sc-highest:#E5E1E9;--dialog:#F1ECF4}
+.m3.dark{--primary:#C6BFFF;--on-primary:#2A1688;--primary-container:#3F2C9E;--on-primary-container:#E4DFFF;--secondary-container:#47435A;--on-secondary-container:#E4DFF9;--teal-container:#1F4D48;--on-teal-container:#C8EBE6;--error:#FFB4AB;--error-container:#93000A;--on-error-container:#FFDAD6;--surface:#141318;--on-surface:#E5E1E9;--on-surface-variant:#C8C5D0;--outline:#928F9A;--outline-variant:#47464F;--sc-low:#1C1B21;--sc:#201F25;--sc-high:#2B292F;--sc-highest:#36343A;--dialog:#2B292F}
+.m3{font-family:'Roboto Flex',system-ui,sans-serif;color:var(--on-surface);background:var(--surface)}
+.m3 button,.m3 input{font-family:inherit}
+.mono{font-family:'Roboto Mono',ui-monospace,monospace}
+.icon{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.label-l{font-size:14px;line-height:20px;font-weight:500;letter-spacing:.1px}
+.label-m{font-size:12px;line-height:16px;font-weight:500;letter-spacing:.5px}
+.body-l{font-size:16px;line-height:24px;letter-spacing:.5px}
+.body-m{font-size:14px;line-height:20px;letter-spacing:.25px}
+.headline-s{font-size:24px;line-height:32px;font-weight:400}
+.btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 24px;border-radius:20px;border:none;cursor:pointer;background:transparent}
+</style>
+</helmet>
+<div class="m3 {{themeClass}}" style="min-height: 900px; position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 48px; padding: 48px 24px; box-sizing: border-box; background: var(--sc)">
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(0,0,0,.32)"></div>
+
+  <div role="dialog" aria-modal="true" aria-labelledby="new-title" style="position: relative; width: 100%; max-width: 520px; border-radius: 28px; background: var(--dialog); padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.25)">
+    <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="width: 24px; height: 24px; color: var(--primary); align-self: center"><path d="M12 10v6"></path><path d="M9 13h6"></path><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
+    <div style="text-align: center">
+      <h2 id="new-title" class="headline-s" style="margin: 0 0 8px">Nuova sessione</h2>
+      <p class="body-m" style="margin: 0; color: var(--on-surface-variant)">Scegli il progetto in cui avviare Claude Code.</p>
+    </div>
+    <label style="position: relative; display: block; margin-top: 8px">
+      <span class="label-m" style="position: absolute; top: -8px; left: 12px; padding: 0 4px; background: var(--dialog); color: var(--primary)">Cartella del progetto</span>
+      <span style="display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 12px 0 16px; border: 2px solid var(--primary); border-radius: 4px; box-sizing: border-box">
+        <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="color: var(--on-surface-variant)"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
+        <input class="mono body-m" value="~/projects/billing-api" style="flex: 1; min-width: 0; border: none; outline: none; background: transparent; color: var(--on-surface)">
+      </span>
+    </label>
+    <p class="label-l" style="margin: 4px 0 0; color: var(--on-surface-variant)">Recenti</p>
+    <div role="radiogroup" aria-label="Progetti recenti" style="display: flex; flex-direction: column; gap: 4px">
+      <label style="display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-radius: 16px; background: var(--secondary-container); color: var(--on-secondary-container); cursor: pointer">
+        <span class="label-l" style="width: 36px; height: 36px; border-radius: 18px; background: var(--primary-container); color: var(--on-primary-container); display: flex; align-items: center; justify-content: center; flex: none">BA</span>
+        <span style="flex: 1; min-width: 0"><span class="body-l" style="display: block">billing-api</span><span class="mono" style="display: block; font-size: 12px; line-height: 16px; opacity: .8">~/projects/billing-api</span></span>
+        <input type="radio" name="recent" checked="" style="width: 20px; height: 20px; accent-color: var(--primary)">
+      </label>
+      <label style="display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-radius: 16px; cursor: pointer">
+        <span class="label-l" style="width: 36px; height: 36px; border-radius: 12px; background: var(--teal-container); color: var(--on-teal-container); display: flex; align-items: center; justify-content: center; flex: none">IT</span>
+        <span style="flex: 1; min-width: 0"><span class="body-l" style="display: block">infra-terraform</span><span class="mono" style="display: block; font-size: 12px; line-height: 16px; color: var(--on-surface-variant)">~/projects/infra-terraform</span></span>
+        <input type="radio" name="recent" style="width: 20px; height: 20px; accent-color: var(--primary)">
+      </label>
+      <label style="display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-radius: 16px; cursor: pointer">
+        <span class="label-l" style="width: 36px; height: 36px; border-radius: 18px; background: var(--sc-highest); color: var(--on-surface-variant); display: flex; align-items: center; justify-content: center; flex: none">DS</span>
+        <span style="flex: 1; min-width: 0"><span class="body-l" style="display: block">docs-site</span><span class="mono" style="display: block; font-size: 12px; line-height: 16px; color: var(--on-surface-variant)">~/projects/docs-site</span></span>
+        <input type="radio" name="recent" style="width: 20px; height: 20px; accent-color: var(--primary)">
+      </label>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px">
+      <button type="button" class="btn label-l" style="color: var(--primary)">Annulla</button>
+      <button type="button" class="btn label-l" style="background: var(--primary); color: var(--on-primary)">Avvia sessione</button>
+    </div>
+  </div>
+
+  <div role="alertdialog" aria-modal="true" aria-labelledby="stop-title" aria-describedby="stop-desc" style="position: relative; width: 100%; max-width: 360px; border-radius: 28px; background: var(--dialog); padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.25)">
+    <span style="align-self: center; width: 48px; height: 48px; border-radius: 24px; background: var(--error-container); color: var(--on-error-container); display: flex; align-items: center; justify-content: center">
+      <svg class="icon" sc-camel-view-box="0 0 24 24" aria-hidden="true" style="width: 24px; height: 24px"><path d="M12 2v10"></path><path d="M18.4 6.6a9 9 0 1 1-12.77.04"></path></svg>
+    </span>
+    <div style="text-align: center">
+      <h2 id="stop-title" class="headline-s" style="margin: 0 0 12px">Terminare la sessione?</h2>
+      <p id="stop-desc" class="body-m" style="margin: 0; color: var(--on-surface-variant)"><b style="color: var(--on-surface)">billing-api</b> sta ancora lavorando. Il turno in corso verrà interrotto; potrai riprendere la conversazione dalla cronologia.</p>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px">
+      <button type="button" class="btn label-l" style="color: var(--primary); outline: 3px solid var(--primary); outline-offset: 2px">Annulla</button>
+      <button type="button" class="btn label-l" style="color: var(--error)">Termina</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;dark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+
+
+</body></html>

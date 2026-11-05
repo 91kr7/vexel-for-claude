@@ -10,7 +10,7 @@ type: document
 
 ## Contract
 
-- One entry per font or icon set, with: the files in the repository, the source project, the package and version it came from, and the licence.
+- One entry per font or icon set, with: the files in the repository, the source project, the package and version it came from (or where it was taken, when no version is recorded), and the licence.
 - Each entry names the path of its licence file in the repository.
 
 ## Rules and invariants

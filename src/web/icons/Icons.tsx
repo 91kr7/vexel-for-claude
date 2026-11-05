@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-// Path data copied from lucide-static 1.69.0 (ISC, see LICENSE in this folder).
+// Path data copied from lucide-static 1.69.0, or from the mock boards where they draw the icon (ISC, see LICENSE in this folder).
 function LucideIcon({ children }: { children: ReactNode }) {
   return (
     <svg
@@ -32,9 +32,29 @@ export function PlusIcon() {
 export function HistoryIcon() {
   return (
     <LucideIcon>
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
       <path d="M3 3v5h5" />
       <path d="M12 7v5l4 2" />
+    </LucideIcon>
+  );
+}
+
+const FOLDER_PATH = 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z';
+
+export function FolderIcon() {
+  return (
+    <LucideIcon>
+      <path d={FOLDER_PATH} />
+    </LucideIcon>
+  );
+}
+
+export function FolderPlusIcon() {
+  return (
+    <LucideIcon>
+      <path d="M12 10v6" />
+      <path d="M9 13h6" />
+      <path d={FOLDER_PATH} />
     </LucideIcon>
   );
 }
@@ -125,6 +145,14 @@ export function CircleOffIcon() {
   );
 }
 
+export function CircleMinusIcon() {
+  return (
+    <LucideIcon>
+      <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM8 12h8" />
+    </LucideIcon>
+  );
+}
+
 export function TerminalIcon() {
   return (
     <LucideIcon>
@@ -174,5 +202,39 @@ export function CircleXIcon() {
       <path d="m15 9-6 6" />
       <path d="m9 9 6 6" />
     </LucideIcon>
+  );
+}
+
+export function PencilIcon() {
+  return (
+    <LucideIcon>
+      <path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z" />
+    </LucideIcon>
+  );
+}
+
+export function CheckIcon() {
+  return (
+    <LucideIcon>
+      <path d="M20 6 9 17l-5-5" />
+    </LucideIcon>
+  );
+}
+
+export function ArrowDownIcon() {
+  return (
+    <LucideIcon>
+      <path d="M12 5v14" />
+      <path d="m19 12-7 7-7-7" />
+    </LucideIcon>
+  );
+}
+
+// Mock artwork, not a Lucide icon: a filled shape.
+export function SparkIcon() {
+  return (
+    <svg className="spark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+      <path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z" />
+    </svg>
   );
 }

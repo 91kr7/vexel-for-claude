@@ -18,11 +18,13 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
-const sidebar = (page: Page) => page.getByRole('complementary');
+const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione principale' });
+const panel = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const mainArea = (page: Page) => page.getByRole('main');
-const list = (page: Page) => page.getByRole('navigation', { name: 'Elenco sessioni' });
-const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
-const counter = (page: Page) => sidebar(page).getByRole('status').filter({ hasText: 'Richiede input:' });
+const list = (page: Page) => panel(page).locator('.session-list');
+const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
+const panelTitle = (page: Page) => panel(page).getByRole('heading', { level: 1, name: 'Sessioni', exact: true });
+const brand = (page: Page) => panel(page).getByText('Vexel', { exact: true });
 const chooser = (page: Page) => page.getByRole('form', { name: 'Scegli la cartella del progetto' });
 const pathField = (page: Page) => page.getByRole('textbox', { name: 'Cartella del progetto', exact: true });
 const resumeDialog = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessione' });
@@ -106,23 +108,36 @@ async function expectNoHorizontalScroll(page: Page): Promise<void> {
   expect(sizes.body[0], 'body scroll width').toBeLessThanOrEqual(sizes.body[1]!);
 }
 
-/** REQ-10 checks for the current window: no horizontal scroll, sidebar and main side by side, nothing overlapping or sticking out. */
+/** REQ-10 checks for the current window: no horizontal scroll, rail, list panel and main side by side, nothing overlapping or sticking out. */
 async function expectPageFits(page: Page, width: number): Promise<void> {
   await expectNoHorizontalScroll(page);
-  const side = await box(sidebar(page));
+  const railBox = await box(rail(page));
+  const side = await box(panel(page));
   const main = await box(mainArea(page));
-  expect(side.x, 'sidebar starts at the left edge').toBeGreaterThanOrEqual(-0.5);
-  expect(side.x + side.width, 'sidebar ends before the main area').toBeLessThanOrEqual(main.x + 0.5);
+  expect(railBox.x, 'rail starts at the left edge').toBeGreaterThanOrEqual(-0.5);
+  expect(railBox.x + railBox.width, 'rail ends before the list panel').toBeLessThanOrEqual(side.x + 0.5);
+  expect(side.x + side.width, 'list panel ends before the main area').toBeLessThanOrEqual(main.x + 0.5);
   expect(main.x + main.width, 'main area ends inside the window').toBeLessThanOrEqual(width + 0.5);
-  expect(await horizontalOverflow(sidebar(page)), 'sidebar content inside the sidebar').toEqual([]);
+  expect(await horizontalOverflow(rail(page)), 'rail content inside the rail').toEqual([]);
+  expect(await horizontalOverflow(panel(page)), 'list panel content inside the panel').toEqual([]);
   expect(await horizontalOverflow(mainArea(page)), 'main content inside the main area').toEqual([]);
-  await expectNoOverlap({
-    title: sidebar(page).getByRole('heading', { name: 'Sessioni Claude' }),
-    counter: counter(page),
-    'sidebar Nuova sessione': button(sidebar(page), 'Nuova sessione'),
-    'sidebar Riprendi sessione': button(sidebar(page), 'Riprendi sessione'),
+  const head: Record<string, Locator> = {
+    brand: brand(page),
+    title: panelTitle(page),
+    'rail Nuova sessione': button(rail(page), 'Nuova sessione'),
+    'rail Sessioni': button(rail(page), 'Sessioni'),
+    'rail Riprendi': button(rail(page), 'Riprendi'),
     list: list(page),
-  });
+  };
+  await expectNoOverlap(head);
+  // Sessions of other spec files can make the chip appear or vanish at any time: check it only while it is shown.
+  const [chip] = await panel(page).getByRole('status').locator('.chip').all();
+  const chipBox = chip ? await chip.boundingBox({ timeout: 1000 }).catch(() => null) : null;
+  if (chipBox) {
+    for (const [name, locator] of Object.entries(head)) {
+      expect(overlaps(chipBox, await box(locator)), `chip overlaps ${name}`).toBe(false);
+    }
+  }
 }
 
 async function computedColour(page: Page, cssValue: string): Promise<string> {
@@ -220,35 +235,27 @@ test('the empty state buttons are reached with Tab and triggered with Enter and 
   await expect(resumeDialog(page)).toBeVisible();
 });
 
-// AppLayout "Description": sidebar order, no header bar
-test('the sidebar holds the title, the counter, "Nuova sessione", "Riprendi sessione" and then the list; there is no header bar', async ({ page }) => {
+// AppLayout "Description": list panel order, no header bar
+test('the list panel holds the brand, the title "Sessioni" and the counter above the list; there is no header bar', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('banner')).toHaveCount(0);
-  const items = [
-    sidebar(page).getByRole('heading', { level: 1, name: 'Sessioni Claude' }),
-    counter(page),
-    button(sidebar(page), 'Nuova sessione'),
-    button(sidebar(page), 'Riprendi sessione'),
-    list(page),
-  ];
-  for (const item of items) await expect(item).toBeVisible();
-  await expect(sidebar(page).locator('nav[aria-label="Elenco sessioni"]')).toHaveCount(1);
+  const items = [brand(page), panelTitle(page), panel(page).getByRole('status').first(), list(page)];
+  for (const item of [brand(page), panelTitle(page), list(page)]) await expect(item).toBeVisible();
+  await expect(panel(page).getByRole('status')).not.toHaveCount(0);
+  await expect(panel(page)).toHaveJSProperty('tagName', 'SECTION');
 
   const handles = await Promise.all(items.map((l) => l.elementHandle()));
   const inOrder = await page.evaluate(
     (els) => els.every((el, i) => i === 0 || !!(els[i - 1]!.compareDocumentPosition(el!) & Node.DOCUMENT_POSITION_FOLLOWING)),
     handles,
   );
-  expect(inOrder, 'document order title, counter, Nuova, Riprendi, list').toBe(true);
+  expect(inOrder, 'document order brand, title, counter, list').toBe(true);
 
   const listTop = (await box(list(page))).y;
-  for (const item of items.slice(0, 4)) {
+  for (const item of [brand(page), panelTitle(page)]) {
     const b = await box(item);
-    expect(b.y + b.height, 'top items sit above the list').toBeLessThanOrEqual(listTop + 0.5);
+    expect(b.y + b.height, 'head items sit above the list').toBeLessThanOrEqual(listTop + 0.5);
   }
-  const primary = await computedColour(page, 'var(--color-primary)');
-  await page.mouse.move(0, 0);
-  expect(await button(sidebar(page), 'Nuova sessione').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(primary);
 });
 
 // plan-claude_sessions_client-ui_redesign/REQ-8
@@ -263,11 +270,11 @@ test('the session list and the open session are visible side by side', async ({ 
 
   await expect(entry(page, first)).toBeVisible();
   await expect(entry(page, second)).toBeVisible();
-  await expect(counter(page)).toBeVisible();
+  await expect(panelTitle(page)).toBeVisible();
   await expect(mainArea(page).locator('.xterm')).toBeVisible();
   await expect(emptyTitle(page)).toBeHidden();
 
-  const side = await box(sidebar(page));
+  const side = await box(panel(page));
   const term = await box(mainArea(page).locator('.xterm'));
   const listBox = await box(list(page));
   expect(side.x + side.width, 'list on the left of the session').toBeLessThanOrEqual(term.x + 0.5);
@@ -277,19 +284,22 @@ test('the session list and the open session are visible side by side', async ({ 
   await expectNoHorizontalScroll(page);
 });
 
-// AppLayout: fixed-width sidebar, the main area takes the rest of the width
-test('the sidebar keeps its width and the main area takes the rest of the window', async ({ page }) => {
-  const widths: number[] = [];
+// AppLayout "Description": the rail keeps 96 px, the list panel at most 400 px, the main area takes the rest of the width
+test('the rail keeps its width, the list panel stays within 400 px and the main area reaches the right edge', async ({ page }) => {
+  const mainWidths: number[] = [];
   for (const width of [1280, 3840]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await expect(emptyTitle(page)).toBeVisible();
-    const side = await box(sidebar(page));
+    const railBox = await box(rail(page));
+    const side = await box(panel(page));
     const main = await box(mainArea(page));
-    widths.push(side.width);
-    expect(side.width + main.width, `sidebar + main fill ${width} px`).toBeCloseTo(width, 0);
+    expect(railBox.width, `rail width at ${width} px`).toBeCloseTo(96, 0);
+    expect(side.width, `list panel width at ${width} px`).toBeLessThanOrEqual(400.5);
+    expect(main.x + main.width, `main area reaches the right edge at ${width} px`).toBeCloseTo(width, 0);
+    mainWidths.push(main.width);
   }
-  expect(widths[1]).toBeCloseTo(widths[0]!, 0);
+  expect(mainWidths[1]! - mainWidths[0]!, 'the extra width goes to the main area').toBeGreaterThanOrEqual(3840 - 1280 - 400);
 });
 
 // plan-claude_sessions_client-ui_redesign/REQ-10
@@ -320,35 +330,25 @@ for (const width of [1280, 3840]) {
       Termina: button(mainArea(page), 'Termina'),
       terminal: mainArea(page).locator('.xterm'),
     });
-    const side = await box(sidebar(page));
+    const side = await box(panel(page));
     const e = await box(entry(page, folder));
-    expect(e.x + e.width, 'long entry stays inside the sidebar').toBeLessThanOrEqual(side.x + side.width + 0.5);
+    expect(e.x + e.width, 'long entry stays inside the list panel').toBeLessThanOrEqual(side.x + side.width + 0.5);
   });
 }
 
-// AppLayout rule: a sidebar title too long for its width is cut with an ellipsis
-test('a sidebar title too long for the sidebar is cut with an ellipsis and overlaps nothing', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto('/');
-  const title = sidebar(page).getByRole('heading', { level: 1 });
-  await title.evaluate((el) => (el.textContent = 'Sessioni Claude '.repeat(12).trim()));
-  const cut = await title.evaluate((el) => ({ overflowing: el.scrollWidth > el.clientWidth, textOverflow: getComputedStyle(el).textOverflow }));
-  expect(cut).toEqual({ overflowing: true, textOverflow: 'ellipsis' });
-  await expectPageFits(page, 1280);
-});
-
-// AppLayout rule: the top of the sidebar stays in place, only the SessionList scrolls
-test('when the entries do not fit, only the list scrolls and the top of the sidebar stays in place', async ({ page, request }) => {
+// AppLayout rule: the rail and the head of the list panel stay in place, only the SessionList scrolls
+test('when the entries do not fit, only the list scrolls and the rail and the panel head stay in place', async ({ page, request }) => {
   await page.setViewportSize({ width: 1280, height: 600 });
   for (let i = 0; i < 12; i++) await startViaApi(request, await makeFolder(`scroll-${String(i).padStart(2, '0')}`));
   await page.goto('/');
   await expect(list(page).getByRole('button').filter({ hasText: 'scroll-' })).toHaveCount(12);
 
   const top = {
-    title: sidebar(page).getByRole('heading', { name: 'Sessioni Claude' }),
-    counter: counter(page),
-    new: button(sidebar(page), 'Nuova sessione'),
-    resume: button(sidebar(page), 'Riprendi sessione'),
+    brand: brand(page),
+    title: panelTitle(page),
+    new: button(rail(page), 'Nuova sessione'),
+    sessions: button(rail(page), 'Sessioni'),
+    resume: button(rail(page), 'Riprendi'),
   };
   const before = await Promise.all(Object.values(top).map(box));
   const lastEntry = list(page).getByRole('button').last();
@@ -359,11 +359,16 @@ test('when the entries do not fit, only the list scrolls and the top of the side
   await page.mouse.move(listBox.x + listBox.width / 2, listBox.y + listBox.height / 2);
   await page.mouse.wheel(0, 5000);
   await expect.poll(async () => (await box(lastEntry)).y, 'the list scrolls').toBeLessThan(lastBefore.y);
-  const lastAfter = await box(lastEntry);
-  expect(lastAfter.y + lastAfter.height, 'the last entry is reachable in the window').toBeLessThanOrEqual(600 + 0.5);
+  await expect
+    .poll(async () => {
+      await page.mouse.wheel(0, 5000);
+      const lastAfter = await box(lastEntry);
+      return lastAfter.y + lastAfter.height;
+    }, 'the last entry is reachable in the window')
+    .toBeLessThanOrEqual(600 + 0.5);
 
   const after = await Promise.all(Object.values(top).map(box));
-  expect(after, 'the top of the sidebar does not move').toEqual(before);
+  expect(after, 'the rail and the panel head do not move').toEqual(before);
   for (const b of after) expect(b.y, 'top items stay in the window').toBeGreaterThanOrEqual(0);
   expect(await page.evaluate(() => window.scrollY), 'the page itself does not scroll').toBe(0);
 });

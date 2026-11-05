@@ -26,7 +26,7 @@ test.afterAll(async () => {
   await rm(projectsRoot, { recursive: true, force: true });
 });
 
-const sidebarButton = (page: Page, name: string) => page.getByRole('complementary').getByRole('button', { name });
+const railButton = (page: Page, name: string) => page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name, exact: true });
 const chooser = (page: Page) => page.getByRole('dialog', { name: 'Nuova sessione' });
 const pathField = (page: Page) => page.getByRole('textbox', { name: 'Cartella del progetto', exact: true });
 const history = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessione' });
@@ -34,8 +34,8 @@ const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Sessione 
 const confirmation = (page: Page) => page.getByRole('alertdialog', { name: 'Terminare la sessione?' });
 const action = (dialog: Locator, name: string) => dialog.getByRole('button', { name, exact: true });
 const pastEntry = (page: Page, folder: string, label: string) =>
-  history(page).getByRole('region', { name: folder }).getByRole('button').filter({ hasText: label });
-const listEntry = (page: Page, folder: string) => page.getByRole('navigation', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: folder });
+  history(page).getByRole('region', { name: folder }).getByRole('radio', { name: label, exact: true });
+const listEntry = (page: Page, folder: string) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
 const isStartRequest = (url: string, method: string) => new URL(url).pathname === '/api/sessions' && method === 'POST';
@@ -55,10 +55,13 @@ const paint = (element: Locator) =>
     const s = getComputedStyle(el);
     return `${s.backgroundColor} ${s.color} ${s.borderTopColor}`;
   });
-const topBorder = (dialog: Locator) =>
+/** Size and background of the box that holds the first icon of the dialog. */
+const iconLook = (dialog: Locator) =>
   dialog.evaluate((el) => {
-    const s = getComputedStyle(el);
-    return `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}`;
+    const holder = el.querySelector('svg')?.parentElement;
+    if (!holder) return 'no icon';
+    const box = holder.getBoundingClientRect();
+    return `${Math.round(box.width)}x${Math.round(box.height)} ${getComputedStyle(holder).backgroundColor}`;
   });
 
 /** Primary and cancel action paint, measured with the mouse away from both buttons. */
@@ -67,8 +70,8 @@ async function actionPaints(page: Page, dialog: Locator, primary: string): Promi
   return { primary: await paint(action(dialog, primary)), cancel: await paint(action(dialog, 'Annulla')) };
 }
 
-/** True when an icon sits on the left of the title text, on the same line. */
-const iconBeforeTitle = (dialog: Locator, title: string) =>
+/** True when an icon sits above the title text, centred on it. */
+const iconAboveTitle = (dialog: Locator, title: string) =>
   dialog.evaluate((el, text) => {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
     let node: Node | null;
@@ -79,7 +82,7 @@ const iconBeforeTitle = (dialog: Locator, title: string) =>
     const titleBox = range.getBoundingClientRect();
     return [...el.querySelectorAll('svg')].some((svg) => {
       const box = svg.getBoundingClientRect();
-      return box.width > 0 && box.right <= titleBox.left + 1 && box.bottom > titleBox.top && box.top < titleBox.bottom;
+      return box.width > 0 && box.bottom <= titleBox.top + 1 && Math.abs(box.left + box.width / 2 - (titleBox.left + titleBox.width / 2)) <= 1;
     });
   }, title);
 
@@ -91,7 +94,7 @@ async function newFolder(name: string): Promise<string> {
 
 /** Opens the chooser and waits for its initial listing of the home folder. */
 async function openChooser(page: Page): Promise<void> {
-  await sidebarButton(page, 'Nuova sessione').click();
+  await railButton(page, 'Nuova sessione').click();
   await expect(chooser(page)).toBeVisible();
   await expect(pathField(page)).toHaveValue(os.homedir());
 }
@@ -119,7 +122,7 @@ async function runInTerminal(sessionId: string): Promise<void> {
 }
 
 async function openHistory(page: Page): Promise<void> {
-  await sidebarButton(page, 'Riprendi sessione').click();
+  await railButton(page, 'Riprendi').click();
   await expect(history(page)).toBeVisible();
   await expect(history(page)).not.toContainText('Caricamento…');
 }
@@ -136,7 +139,7 @@ async function openWorkingSession(page: Page, request: APIRequestContext, name: 
   await page.locator('.xterm-screen').click();
   await page.keyboard.type('WORK');
   await page.keyboard.press('Enter');
-  await expect(listEntry(page, folder)).toContainText('In lavorazione');
+  await expect(listEntry(page, folder)).toContainText('Lavora');
   return { id, folder };
 }
 
@@ -226,7 +229,7 @@ test.describe('folder chooser', () => {
     await page.keyboard.press('Escape');
 
     await expect(chooser(page)).toBeHidden();
-    await expect(sidebarButton(page, 'Nuova sessione')).toBeFocused();
+    await expect(railButton(page, 'Nuova sessione')).toBeFocused();
     await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
     expect(starts).toEqual([]);
   });
@@ -280,8 +283,8 @@ test.describe('folder chooser', () => {
 });
 
 test.describe('resume history', () => {
-  // plan-claude_sessions_client-ui_redesign/REQ-25, REQ-26, ResumeDialog: a click or the keyboard only selects an entry
-  test('an entry is selected by click, Space or Enter, and "Riprendi" or Enter outside a button resumes it', async ({ page }) => {
+  // plan-claude_sessions_client-ui_redesign/REQ-25, REQ-26, ResumeDialog: a click, Space or the arrow keys only select an entry
+  test('an entry is selected by click, Space or the arrow keys, and Enter outside a button resumes it', async ({ page }) => {
     const folder = await newFolder('history-select');
     await pastSession('e2e-dialogs-a', folder, 'Prima sessione', new Date('2026-10-20T10:00:00Z'));
     await pastSession('e2e-dialogs-b', folder, 'Seconda sessione', new Date('2026-10-21T10:00:00Z'));
@@ -291,32 +294,32 @@ test.describe('resume history', () => {
     const first = pastEntry(page, folder, 'Prima sessione');
     const second = pastEntry(page, folder, 'Seconda sessione');
 
-    await expect(history(page).locator('[aria-pressed="true"]')).toHaveCount(0);
+    await expect(history(page).getByRole('radio', { checked: true })).toHaveCount(0);
     await expect(action(history(page), 'Riprendi')).toBeDisabled();
     expect(await holdsFocus(history(page)), 'the dialog holds the focus on open').toBe(true);
     await page.keyboard.press('Enter');
 
     await first.click();
-    await expect(first).toHaveAttribute('aria-pressed', 'true');
-    await expect(second).toHaveAttribute('aria-pressed', 'false');
+    await expect(first).toBeChecked();
+    await expect(second).not.toBeChecked();
     await expect(action(history(page), 'Riprendi')).toBeEnabled();
     const paints = await actionPaints(page, history(page), 'Riprendi');
     expect(paints.primary, 'the primary action looks different').not.toBe(paints.cancel);
 
     await second.focus();
     await page.keyboard.press('Space');
-    await expect(second).toHaveAttribute('aria-pressed', 'true');
-    await expect(first).toHaveAttribute('aria-pressed', 'false');
+    await expect(second).toBeChecked();
+    await expect(first).not.toBeChecked();
 
-    await first.focus();
-    await page.keyboard.press('Enter');
-    await expect(first).toHaveAttribute('aria-pressed', 'true');
-    await expect(second).toHaveAttribute('aria-pressed', 'false');
+    const firstIsAbove = (await first.boundingBox())!.y < (await second.boundingBox())!.y;
+    await page.keyboard.press(firstIsAbove ? 'ArrowUp' : 'ArrowDown');
+    await expect(first).toBeChecked();
+    await expect(second).not.toBeChecked();
     await page.waitForTimeout(500);
     await expect(history(page)).toBeVisible();
     expect(resumes, 'selecting an entry sends no request').toEqual([]);
 
-    await history(page).evaluate((el) => (el as HTMLElement).focus());
+    await expect(first).toBeFocused();
     const resumed = page.waitForResponse((r) => isResumeRequest(r.url(), r.request().method()));
     await page.keyboard.press('Enter');
     const response = await resumed;
@@ -340,7 +343,7 @@ test.describe('resume history', () => {
     await page.keyboard.press('Escape');
 
     await expect(history(page)).toBeHidden();
-    await expect(sidebarButton(page, 'Riprendi sessione')).toBeFocused();
+    await expect(railButton(page, 'Riprendi')).toBeFocused();
     await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
     expect(resumes).toEqual([]);
   });
@@ -354,7 +357,7 @@ test.describe('resume history', () => {
     await page.goto('/');
     await openHistory(page);
     await pastEntry(page, folder, 'Sessione nel terminale').click();
-    const historyLook = { frame: await topBorder(history(page)), ...(await actionPaints(page, history(page), 'Riprendi')) };
+    const historyLook = { icon: await iconLook(history(page)), ...(await actionPaints(page, history(page), 'Riprendi')) };
 
     await action(history(page), 'Riprendi').click();
 
@@ -371,8 +374,8 @@ test.describe('resume history', () => {
     const warningPaints = await actionPaints(page, warning(page), 'Riprendi comunque');
     expect(warningPaints.primary, 'the primary action looks different from "Annulla"').not.toBe(warningPaints.cancel);
     expect(warningPaints.primary, 'the primary action looks different from a normal dialog').not.toBe(historyLook.primary);
-    expect(await topBorder(warning(page)), 'the warning frame looks different').not.toBe(historyLook.frame);
-    expect(await iconBeforeTitle(warning(page), 'Sessione in esecuzione in un terminale'), 'a warning icon before the title').toBe(true);
+    expect(await iconLook(warning(page)), 'the warning icon sits in a coloured circle').not.toBe(historyLook.icon);
+    expect(await iconAboveTitle(warning(page), 'Sessione in esecuzione in un terminale'), 'a warning icon above the title').toBe(true);
 
     await page.keyboard.press('Escape');
 
@@ -400,27 +403,29 @@ test.describe('stop confirmation', () => {
     const { id, folder } = await openWorkingSession(page, request, 'stop-enter');
     const stops = record(page, (url, method) => new URL(url).pathname === `/api/sessions/${id}/stop` && method === 'POST');
     await openChooser(page);
-    const chooserLook = { frame: await topBorder(chooser(page)), ...(await actionPaints(page, chooser(page), 'Avvia sessione')) };
+    const chooserLook = { icon: await iconLook(chooser(page)), ...(await actionPaints(page, chooser(page), 'Avvia sessione')) };
     await page.keyboard.press('Escape');
     await expect(chooser(page)).toBeHidden();
 
     await page.getByRole('button', { name: 'Termina', exact: true }).first().click();
 
     await expect(confirmation(page)).toBeVisible();
-    await expect(confirmation(page)).toContainText('La sessione è in lavorazione. Il lavoro in corso si interrompe.');
+    await expect(confirmation(page)).toContainText(
+      'stop-enter sta ancora lavorando. Il turno in corso verrà interrotto; potrai riprendere la conversazione dalla cronologia.',
+    );
     await expect(action(confirmation(page), 'Annulla')).toBeFocused();
     const paints = await actionPaints(page, confirmation(page), 'Termina');
     expect(paints.primary, 'the primary action looks different from "Annulla"').not.toBe(paints.cancel);
     expect(paints.primary, 'the primary action looks different from the folder chooser one').not.toBe(chooserLook.primary);
-    expect(await topBorder(confirmation(page)), 'the frame looks different from the folder chooser').not.toBe(chooserLook.frame);
-    expect(await iconBeforeTitle(confirmation(page), 'Terminare la sessione?'), 'a warning icon before the title').toBe(true);
+    expect(await iconLook(confirmation(page)), 'the icon sits in a coloured circle, unlike the folder chooser').not.toBe(chooserLook.icon);
+    expect(await iconAboveTitle(confirmation(page), 'Terminare la sessione?'), 'a warning icon above the title').toBe(true);
 
     await page.keyboard.press('Enter');
 
     await expect(confirmation(page)).toBeHidden();
     const tick = await lastTick(page);
     await expect.poll(() => lastTick(page)).toBeGreaterThan(tick + 2);
-    await expect(listEntry(page, folder)).toContainText('In lavorazione');
+    await expect(listEntry(page, folder)).toContainText('Lavora');
     expect(stops).toEqual([]);
   });
 
@@ -435,7 +440,7 @@ test.describe('stop confirmation', () => {
 
     await expect(confirmation(page)).toBeHidden();
     await page.waitForTimeout(500);
-    await expect(listEntry(page, folder)).toContainText('In lavorazione');
+    await expect(listEntry(page, folder)).toContainText('Lavora');
     expect(stops).toEqual([]);
   });
 

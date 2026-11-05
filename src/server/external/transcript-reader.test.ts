@@ -51,8 +51,8 @@ describe('itemsOf', () => {
   // plan-claude_sessions_client/REQ-33
   it('gives one tool_result item per tool_result block of a user line', () => {
     expect(itemsOf(userEntry([toolResult('primo'), toolResult('secondo')]))).toEqual([
-      { kind: 'tool_result', text: 'primo', truncated: false },
-      { kind: 'tool_result', text: 'secondo', truncated: false },
+      { kind: 'tool_result', text: 'primo', truncated: false, toolUseId: 'toolu_1' },
+      { kind: 'tool_result', text: 'secondo', truncated: false, toolUseId: 'toolu_1' },
     ]);
   });
 
@@ -61,13 +61,14 @@ describe('itemsOf', () => {
       kind: 'tool_result',
       text: 'riga a\nriga b',
       truncated: false,
+      toolUseId: 'toolu_1',
     });
   });
 
   it('a tool result loses its trailing whitespace and is cut to its first 5 lines', () => {
-    expect(resultOf('uno\ndue  \n\n')).toEqual({ kind: 'tool_result', text: 'uno\ndue', truncated: false });
-    expect(resultOf('1\n2\n3\n4\n5\n')).toEqual({ kind: 'tool_result', text: '1\n2\n3\n4\n5', truncated: false });
-    expect(resultOf('1\n2\n3\n4\n5\n6\n7')).toEqual({ kind: 'tool_result', text: '1\n2\n3\n4\n5', truncated: true });
+    expect(resultOf('uno\ndue  \n\n')).toEqual({ kind: 'tool_result', text: 'uno\ndue', truncated: false, toolUseId: 'toolu_1' });
+    expect(resultOf('1\n2\n3\n4\n5\n')).toEqual({ kind: 'tool_result', text: '1\n2\n3\n4\n5', truncated: false, toolUseId: 'toolu_1' });
+    expect(resultOf('1\n2\n3\n4\n5\n6\n7')).toEqual({ kind: 'tool_result', text: '1\n2\n3\n4\n5', truncated: true, toolUseId: 'toolu_1' });
   });
 
   // plan-claude_sessions_client/REQ-33
@@ -87,7 +88,7 @@ describe('itemsOf', () => {
     ]);
     expect(itemsOf(entry)).toEqual<ConversationItem[]>([
       { kind: 'assistant', text: 'Leggo il file.' },
-      { kind: 'tool_call', name: 'Read', summary: '/src/app.ts' },
+      { kind: 'tool_call', name: 'Read', summary: '/src/app.ts', id: 'toolu_1' },
       { kind: 'assistant', text: 'Fatto.' },
     ]);
   });
@@ -123,6 +124,69 @@ describe('itemsOf tool call summary', () => {
     const exact = 'a'.repeat(120);
     expect(summaryOf({ command: exact })).toBe(exact);
     expect(summaryOf({ command: `${exact}bcd` })).toBe(`${exact}…`);
+  });
+});
+
+describe('itemsOf card fields', () => {
+  const callOf = (block: object) => itemsOf(assistantEntry([block]))[0];
+  const moreInputOf = (input?: unknown) => (callOf(toolUse('Tool', input)) as { moreInput?: boolean } | undefined)?.moreInput;
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-36: the time of a user message comes from its line
+  it('a user item carries the timestamp of its line only when it is a string', () => {
+    const at = '2026-11-05T20:45:00.000Z';
+    expect(itemsOf(userEntry('Ciao', undefined, { timestamp: at }))).toEqual([{ kind: 'user', text: 'Ciao', timestamp: at }]);
+    expect(itemsOf(userEntry('Ciao', undefined, { timestamp: 1_762_375_500_000 }))).toEqual([{ kind: 'user', text: 'Ciao' }]);
+    expect(itemsOf(userEntry('Ciao'))).toEqual([{ kind: 'user', text: 'Ciao' }]);
+  });
+
+  it('a tool result of a timestamped user line does not carry the timestamp', () => {
+    expect(itemsOf(userEntry([toolResult('ok')], undefined, { timestamp: '2026-11-05T20:45:00.000Z' }))).toEqual([
+      { kind: 'tool_result', text: 'ok', truncated: false, toolUseId: 'toolu_1' },
+    ]);
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-39: a call and its result are joined by the tool-use id
+  it('a tool call carries the id of its tool_use block only when it is a string', () => {
+    expect(callOf({ type: 'tool_use', id: 'toolu_abc', name: 'Read', input: { file_path: '/a' } })).toEqual({
+      kind: 'tool_call', name: 'Read', summary: '/a', id: 'toolu_abc',
+    });
+    expect(callOf({ type: 'tool_use', id: 7, name: 'Read', input: { file_path: '/a' } })).toEqual({ kind: 'tool_call', name: 'Read', summary: '/a' });
+    expect(callOf({ type: 'tool_use', name: 'Read', input: { file_path: '/a' } })).toEqual({ kind: 'tool_call', name: 'Read', summary: '/a' });
+  });
+
+  it('a tool result carries the tool_use_id of its block only when it is a string', () => {
+    const result = (block: object) => itemsOf(userEntry([{ type: 'tool_result', content: 'ok', ...block }]))[0];
+    expect(result({ tool_use_id: 'toolu_abc' })).toEqual({ kind: 'tool_result', text: 'ok', truncated: false, toolUseId: 'toolu_abc' });
+    expect(result({ tool_use_id: 7 })).toEqual({ kind: 'tool_result', text: 'ok', truncated: false });
+    expect(result({})).toEqual({ kind: 'tool_result', text: 'ok', truncated: false });
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-40: the outcome of a result
+  it('a tool result carries isError: true only when is_error is true', () => {
+    const result = (extra: object) => itemsOf(userEntry([{ ...toolResult('esito'), ...extra }]))[0];
+    expect(result({ is_error: true })).toEqual({ kind: 'tool_result', text: 'esito', truncated: false, isError: true, toolUseId: 'toolu_1' });
+    for (const extra of [{ is_error: false }, { is_error: 'true' }, { is_error: 1 }, {}]) {
+      expect(result(extra)).toEqual({ kind: 'tool_result', text: 'esito', truncated: false, toolUseId: 'toolu_1' });
+    }
+  });
+
+  // TranscriptReader "More input": no input, no keys, or one key equal to the summary
+  it('a tool call has no moreInput when the summary already shows the whole input', () => {
+    expect(moreInputOf()).toBeUndefined();
+    expect(moreInputOf({})).toBeUndefined();
+    expect(moreInputOf({ command: 'npm run build' })).toBeUndefined();
+    expect(moreInputOf({ anything: 'valore unico' })).toBeUndefined();
+    expect(callOf(toolUse('Tool'))).not.toHaveProperty('moreInput');
+  });
+
+  // TranscriptReader "More input": anything else
+  it('a tool call has moreInput: true when the full input shows more than the summary', () => {
+    expect(moreInputOf({ command: 'ls', description: 'Elenca' })).toBe(true);
+    expect(moreInputOf({ command: 'npm  run\nbuild' })).toBe(true);
+    expect(moreInputOf({ command: 'a'.repeat(121) })).toBe(true);
+    expect(moreInputOf({ count: 3 })).toBe(true);
+    expect(moreInputOf('solo testo')).toBe(true);
+    expect(moreInputOf(['a', 'b'])).toBe(true);
   });
 });
 
@@ -223,18 +287,18 @@ describe('itemsOf item reference', () => {
     const entry = assistantEntry([{ type: 'thinking', thinking: 'ragiono' }, { type: 'text', text: 'Leggo.' }, toolUse('Read', { file_path: '/a.ts' })]);
     expect(itemsOf(entry, 42)).toEqual<ConversationItem[]>([
       { kind: 'assistant', text: 'Leggo.' },
-      { kind: 'tool_call', name: 'Read', summary: '/a.ts', ref: { offset: 42, block: 2 } },
+      { kind: 'tool_call', name: 'Read', summary: '/a.ts', id: 'toolu_1', ref: { offset: 42, block: 2 } },
     ]);
     expect(itemsOf(userEntry([{ type: 'text', text: 'nota' }, toolResult('uno'), toolResult('due')]), 0)).toEqual<ConversationItem[]>([
       { kind: 'user', text: 'nota' },
-      { kind: 'tool_result', text: 'uno', truncated: false, ref: { offset: 0, block: 1 } },
-      { kind: 'tool_result', text: 'due', truncated: false, ref: { offset: 0, block: 2 } },
+      { kind: 'tool_result', text: 'uno', truncated: false, toolUseId: 'toolu_1', ref: { offset: 0, block: 1 } },
+      { kind: 'tool_result', text: 'due', truncated: false, toolUseId: 'toolu_1', ref: { offset: 0, block: 2 } },
     ]);
   });
 
   it('without a line offset, no item carries a reference', () => {
-    expect(itemsOf(assistantEntry([toolUse('Bash', { command: 'ls' })]))).toEqual([{ kind: 'tool_call', name: 'Bash', summary: 'ls' }]);
-    expect(itemsOf(userEntry([toolResult('ok')]))).toEqual([{ kind: 'tool_result', text: 'ok', truncated: false }]);
+    expect(itemsOf(assistantEntry([toolUse('Bash', { command: 'ls' })]))).toEqual([{ kind: 'tool_call', name: 'Bash', summary: 'ls', id: 'toolu_1' }]);
+    expect(itemsOf(userEntry([toolResult('ok')]))).toEqual([{ kind: 'tool_result', text: 'ok', truncated: false, toolUseId: 'toolu_1' }]);
   });
 });
 
@@ -259,8 +323,14 @@ describe('TranscriptReader item reference and readItem', () => {
     expect(items).toEqual<ConversationItem[]>([
       { kind: 'user', text: 'Perché è così? 😀' },
       { kind: 'assistant', text: 'Controllo.' },
-      { kind: 'tool_call', name: 'Bash', summary: 'npm run build', ref: { offset: Buffer.byteLength(first), block: 1 } },
-      { kind: 'tool_result', text: 'riga 1\nriga 2\nriga 3\nriga 4\nriga 5', truncated: true, ref: { offset: Buffer.byteLength(first + second), block: 0 } },
+      { kind: 'tool_call', name: 'Bash', summary: 'npm run build', moreInput: true, id: 'toolu_1', ref: { offset: Buffer.byteLength(first), block: 1 } },
+      {
+        kind: 'tool_result',
+        text: 'riga 1\nriga 2\nriga 3\nriga 4\nriga 5',
+        truncated: true,
+        toolUseId: 'toolu_1',
+        ref: { offset: Buffer.byteLength(first + second), block: 0 },
+      },
     ]);
   });
 
@@ -269,7 +339,7 @@ describe('TranscriptReader item reference and readItem', () => {
     const second = line(assistantEntry([toolUse('Read', { file_path: '/x' })]));
     await writeFile(file, first + second);
     expect((await reader.readFrom(file, Buffer.byteLength(first))).items).toEqual([
-      { kind: 'tool_call', name: 'Read', summary: '/x', ref: { offset: Buffer.byteLength(first), block: 0 } },
+      { kind: 'tool_call', name: 'Read', summary: '/x', id: 'toolu_1', ref: { offset: Buffer.byteLength(first), block: 0 } },
     ]);
   });
 

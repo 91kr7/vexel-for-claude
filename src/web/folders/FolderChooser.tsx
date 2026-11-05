@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Dialog } from '../dialogs/Dialog';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
+import { FolderIcon, FolderPlusIcon } from '../icons/Icons';
+import { Avatar, folderNameOf } from '../sessions/Avatar';
 
 interface FolderListing {
   path: string;
@@ -31,6 +33,40 @@ function joinPath(folder: string, name: string): string {
   return folder === '/' ? `/${name}` : `${folder}/${name}`;
 }
 
+async function loadRecentFolders(): Promise<string[]> {
+  const response = await fetch('/api/past-sessions');
+  if (!response.ok) return [];
+  const groups = (await response.json()) as { folder: string }[];
+  return [...new Set(groups.map((group) => group.folder))];
+}
+
+interface FolderRowProps {
+  id: string;
+  name: string;
+  path: string;
+  onOpen: () => void;
+}
+
+function FolderRow({ id, name, path, onOpen }: FolderRowProps) {
+  return (
+    <li>
+      <button type="button" className="dialog-row" aria-labelledby={`${id}-name`} aria-describedby={`${id}-path`} onClick={onOpen}>
+        <span className="dialog-row-icon">
+          <FolderIcon />
+        </span>
+        <span className="dialog-row-text">
+          <span id={`${id}-name`} className="body-l dialog-row-title">
+            {name}
+          </span>
+          <span id={`${id}-path`} className="mono dialog-row-detail">
+            {path}
+          </span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
 export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
   const [listing, setListing] = useState<FolderListing | null>(null);
   const [pathInput, setPathInput] = useState('');
@@ -40,6 +76,8 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
   const typingCount = useRef(0);
   const browseCount = useRef(0);
   const listRef = useRef<HTMLUListElement>(null);
+  const [recentFolders, setRecentFolders] = useState<string[]>([]);
+  const rowId = useId();
 
   const browse = async (path?: string) => {
     setError(null);
@@ -70,6 +108,24 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
   }, []);
 
   useEffect(() => {
+    let active = true;
+    loadRecentFolders()
+      .catch(() => [])
+      .then((folders) => {
+        if (active) setRecentFolders(folders);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const chooseRecent = (folder: string) => {
+    typingCount.current += 1;
+    setPathInput(folder);
+    void browse(folder);
+  };
+
+  useEffect(() => {
     // The clicked folder button leaves the page with the old listing: keep the focus in the dialog.
     if (document.activeElement === document.body) listRef.current?.querySelector('button')?.focus();
   }, [listing]);
@@ -98,7 +154,9 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
 
   return (
     <Dialog
+      icon={<FolderPlusIcon />}
       title="Nuova sessione"
+      description="Scegli il progetto in cui avviare Claude Code."
       formName="Scegli la cartella del progetto"
       className="folder-chooser"
       primaryLabel="Avvia sessione"
@@ -106,41 +164,80 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
       primaryBusy={busy}
       onCancel={onCancel}
     >
-      <label htmlFor="folder-path">Cartella del progetto</label>
-      <input
-        id="folder-path"
-        type="text"
-        value={pathInput}
-        onChange={(event) => {
-          typingCount.current += 1;
-          setPathInput(event.target.value);
-        }}
-        onKeyDown={(event) => {
-          const typed = pathInput.trim();
-          if (event.key === 'Enter' && typed !== listing?.path) {
-            event.preventDefault();
-            void browse(typed);
-          }
-        }}
-        autoFocus
-      />
-      <ul className="folder-list" ref={listRef}>
-        {listing?.parent != null && (
-          <li>
-            <button type="button" onClick={() => void browse(listing.parent ?? undefined)}>
-              ..
-            </button>
-          </li>
+      <label className="folder-field">
+        <span className="label-m folder-field-label">Cartella del progetto</span>
+        <span className="folder-field-box">
+          <FolderIcon />
+          <input
+            className="body-m folder-field-input"
+            type="text"
+            value={pathInput}
+            onChange={(event) => {
+              typingCount.current += 1;
+              setPathInput(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              const typed = pathInput.trim();
+              if (event.key === 'Enter' && typed !== listing?.path) {
+                event.preventDefault();
+                void browse(typed);
+              }
+            }}
+            autoFocus
+          />
+        </span>
+      </label>
+      <div className="dialog-scroll">
+        {recentFolders.length > 0 && (
+          <>
+            <p className="label-l dialog-section-heading">Recenti</p>
+            <div className="dialog-rows" role="radiogroup" aria-label="Progetti recenti">
+              {recentFolders.map((folder, index) => {
+                const checked = pathInput.trim() === folder;
+                const id = `${rowId}-recent-${index}`;
+                return (
+                  <label key={folder} className={checked ? 'dialog-row dialog-row-checked' : 'dialog-row'}>
+                    <Avatar folder={folder} size="dialog" />
+                    <span className="dialog-row-text">
+                      <span id={`${id}-name`} className="body-l dialog-row-title">
+                        {folderNameOf(folder)}
+                      </span>
+                      <span id={`${id}-path`} className="mono dialog-row-detail">
+                        {folder}
+                      </span>
+                    </span>
+                    <input
+                      type="radio"
+                      className="dialog-radio"
+                      name={`${rowId}-recent`}
+                      checked={checked}
+                      aria-labelledby={`${id}-name`}
+                      aria-describedby={`${id}-path`}
+                      onChange={() => chooseRecent(folder)}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          </>
         )}
-        {listing?.folders.map((name) => (
-          <li key={name}>
-            <button type="button" onClick={() => void browse(joinPath(listing.path, name))}>
-              {name}
-            </button>
-          </li>
-        ))}
-      </ul>
-      {listingFolder && <ProgressIndicator />}
+        <p className="label-l dialog-section-heading">Cartelle</p>
+        <ul className="dialog-rows folder-list" ref={listRef}>
+          {listing?.parent != null && (
+            <FolderRow id={`${rowId}-parent`} name=".." path={listing.parent} onOpen={() => void browse(listing.parent ?? undefined)} />
+          )}
+          {listing?.folders.map((name, index) => (
+            <FolderRow
+              key={name}
+              id={`${rowId}-folder-${index}`}
+              name={name}
+              path={joinPath(listing.path, name)}
+              onOpen={() => void browse(joinPath(listing.path, name))}
+            />
+          ))}
+        </ul>
+        {listingFolder && <ProgressIndicator />}
+      </div>
       {error && <ErrorMessage>{error}</ErrorMessage>}
     </Dialog>
   );

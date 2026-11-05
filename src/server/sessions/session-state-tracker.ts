@@ -8,6 +8,7 @@ export interface SessionSummary {
   label: string;
   state: SessionState;
   lastActivity: string;
+  waitingTool?: string;
 }
 
 export interface TrackedSession {
@@ -40,6 +41,11 @@ interface Entry {
   summary: SessionSummary;
   labelFromPrompt: boolean;
   claudeSessionId: string | undefined;
+  lastPreToolUse?: string;
+}
+
+function isToolName(value: unknown): value is string {
+  return typeof value === 'string' && value !== '';
 }
 
 function stateOf(event: HookEvent): SessionState | undefined {
@@ -105,8 +111,14 @@ export class SessionStateTracker {
     if (entry.summary.state === 'ended' || state === undefined) return true;
     const isIdleReminder = event.hook_event_name === 'Notification' && event.notification_type === 'idle_prompt';
     if (isIdleReminder && entry.summary.state === 'idle') return true;
+    if (event.hook_event_name === 'PreToolUse' && isToolName(event.tool_name)) entry.lastPreToolUse = event.tool_name;
     const changes: Partial<SessionSummary> = { state };
     if (!isIdleReminder) changes.lastActivity = this.#now().toISOString();
+    if (event.hook_event_name === 'PermissionRequest' && isToolName(event.tool_name)) {
+      changes.waitingTool = event.tool_name;
+    } else if (event.hook_event_name === 'Notification' && event.notification_type === 'permission_prompt') {
+      changes.waitingTool = entry.summary.waitingTool ?? entry.lastPreToolUse;
+    }
     if (event.hook_event_name === 'UserPromptSubmit' && !entry.labelFromPrompt) {
       const label = labelOf(event.prompt);
       if (label !== '') {
@@ -155,6 +167,7 @@ export class SessionStateTracker {
     const entry = this.#entries.get(sessionId);
     if (!entry) return;
     entry.summary = { ...entry.summary, ...changes };
+    if (entry.summary.state !== 'needs_input' || entry.summary.waitingTool === undefined) delete entry.summary.waitingTool;
     this.#notify(entry.summary);
   }
 

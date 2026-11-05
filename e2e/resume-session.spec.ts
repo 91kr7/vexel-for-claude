@@ -28,9 +28,9 @@ test.afterAll(async () => {
 const dialog = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessione' });
 const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Sessione in esecuzione in un terminale' });
 const pastEntry = (page: Page, folder: string, label: string) =>
-  dialog(page).getByRole('region', { name: folder }).getByRole('button').filter({ hasText: label });
+  dialog(page).getByRole('region', { name: folder }).getByRole('radio', { name: label, exact: true });
 const resumeButton = (page: Page) => dialog(page).getByRole('button', { name: 'Riprendi', exact: true });
-const listEntry = (page: Page, label: string) => page.getByRole('navigation', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: label });
+const listEntry = (page: Page, label: string) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: label });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const isResumeRequest = (url: string, method: string) => /\/api\/past-sessions\/[^/]+\/resume$/.test(new URL(url).pathname) && method === 'POST';
 
@@ -64,7 +64,7 @@ async function runInTerminal(sessionId: string): Promise<void> {
 }
 
 async function openDialog(page: Page): Promise<void> {
-  await page.getByRole('complementary').getByRole('button', { name: 'Riprendi sessione' }).click();
+  await page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Riprendi', exact: true }).click();
   await expect(dialog(page)).toBeVisible();
   await expect(dialog(page)).not.toContainText('Caricamento…');
 }
@@ -104,11 +104,11 @@ test('the user resumes a session started in the terminal, chosen under its folde
   await openDialog(page);
   const groups = dialog(page).getByRole('region');
   await expect(groups.getByRole('heading')).toHaveText([shop, blog]);
-  const shopEntries = dialog(page).getByRole('region', { name: shop }).getByRole('button');
+  const shopEntries = dialog(page).getByRole('region', { name: shop }).getByRole('radio');
   await expect(shopEntries).toHaveCount(2);
-  await expect(shopEntries.first()).toContainText(label);
-  await expect(shopEntries.first()).toContainText(/25\/10\/2026/);
-  await expect(shopEntries.nth(1)).toContainText('Sessione più vecchia');
+  await expect(shopEntries.first()).toHaveAccessibleName(label);
+  await expect(shopEntries.first()).toHaveAccessibleDescription(/25\/10\/2026/);
+  await expect(shopEntries.nth(1)).toHaveAccessibleName('Sessione più vecchia');
 
   await choose(page, shop, label);
 
@@ -131,7 +131,8 @@ test('a session still running in a terminal resumes only after "Riprendi comunqu
   await page.goto('/');
   await openDialog(page);
   const entry = pastEntry(page, api, 'Rifattorizza il router');
-  await expect(entry).toContainText('In esecuzione in un terminale');
+  await expect(entry).toHaveAccessibleDescription(/In esecuzione in un terminale/);
+  await expect(dialog(page).getByText('In esecuzione in un terminale', { exact: true })).toBeVisible();
 
   await entry.click();
   await resumeButton(page).click();
