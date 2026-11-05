@@ -13,3 +13,5 @@
 | 2026-11-05 | plan | question planner | decided | Terminal mirror scrollback 10 000 lines, not 50 000; REQ-21/REQ-22 cost of snapshot |
 | 2026-11-05 | plan | G3 coverage | pass | Later-batch `modify` points cite components by INT id: files do not exist yet |
 | 2026-11-05 | plan | `.archi` GUI language | decided | Updated to Italian; source analysis Assumptions |
+| 2026-11-05 | dev | G4 session-interaction | pass | Build green on re-run; diff explained by INT-1..INT-12 |
+| 2026-11-05 | dev | divergence developer | decided | `@types/ws` dev dependency accepted: needed by `tsc -b`; `.archi` dependency table updated |

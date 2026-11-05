@@ -42,18 +42,19 @@ Generated output, not versioned: `dist/web/` (frontend build), `test-results/`, 
 | Package | Kind | Why |
 |---------|------|-----|
 | fastify | runtime | HTTP server |
-| @fastify/websocket | runtime | WebSocket transport for terminal streams (registered, no route yet) |
+| @fastify/websocket | runtime | WebSocket transport for terminal streams |
 | @fastify/static | runtime | Serves the built frontend from `dist/web` |
-| node-pty | runtime | Pseudo-terminals for the CLI sessions (native build, not imported yet) |
+| node-pty | runtime | Pseudo-terminals for the CLI sessions (native build) |
 | tsx | runtime | Runs the TypeScript server in `dev` and `start` |
 | react, react-dom | runtime | UI |
-| @xterm/xterm, @xterm/addon-fit | runtime | Terminal view and resize to container (not imported yet) |
+| @xterm/xterm, @xterm/addon-fit | runtime | Terminal view and resize to container |
+| @xterm/headless, @xterm/addon-serialize | runtime | Server-side terminal mirror per session and its serialized snapshot |
 | typescript | dev | Typecheck (`tsc -b`, no emit) |
 | vite, @vitejs/plugin-react | dev | Frontend dev server and bundle |
 | vitest | dev | Unit and integration tests |
 | @playwright/test | dev | e2e tests in chromium |
 | concurrently | dev | Runs server and Vite together in `dev` |
-| @types/node, @types/react, @types/react-dom | dev | Type definitions |
+| @types/node, @types/react, @types/react-dom, @types/ws | dev | Type definitions |
 
 ## Conventions
 

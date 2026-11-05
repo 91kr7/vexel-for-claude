@@ -8,7 +8,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [session-interaction](batches/batch-session-interaction.md) | Session interaction | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10 | — | todo | The user starts a session in a project folder |
+| [session-interaction](batches/batch-session-interaction.md) | Session interaction | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10 | — | implemented | The user starts a session in a project folder |
 | [session-list](batches/batch-session-list.md) | Session list | REQ-11, REQ-12, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22 | session-interaction | todo | The user sees which session needs input |
 | [stop-session](batches/batch-stop-session.md) | Stop a session | REQ-23, REQ-24 | session-list | todo | The user stops an idle session |
 | [resume-session](batches/batch-resume-session.md) | Resume a past session | REQ-13, REQ-25, REQ-26, REQ-27, REQ-28 | session-list | todo | The user resumes a session started in the terminal |
