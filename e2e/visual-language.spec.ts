@@ -141,8 +141,7 @@ async function contrastFailures(page: Page): Promise<string[]> {
 // plan-claude_sessions_client-ui_redesign/REQ-2
 test('the client is light on a light system and turns dark at once, with no reload, when the system turns dark', async ({ page }) => {
   await page.goto('/');
-  const header = page.getByRole('button', { name: 'Nuova sessione' });
-  await expect(header).toBeVisible();
+  await expect(page.getByRole('complementary').getByRole('button', { name: 'Nuova sessione' })).toBeVisible();
   await page.evaluate(() => ((window as unknown as { noReloadMarker: boolean }).noReloadMarker = true));
 
   const lightBg = await resolved(page, await effectiveBackground(page.locator('body')));
@@ -273,7 +272,7 @@ test('the UI uses the bundled Inter Variable font and the terminal does not', as
 });
 
 // IconSet: each button keeps its accessible name and shows one decorative icon sized by --icon-size in its text colour
-test('the header and session toolbar buttons carry decorative icons', async ({ page, request }) => {
+test('the sidebar and session toolbar buttons carry decorative icons', async ({ page, request }) => {
   await openSession(page, request, 'icons');
   const iconSize = await page.evaluate(() => {
     const probe = document.createElement('div');
@@ -331,7 +330,7 @@ test('"Nuova sessione" looks primary, toolbar "Termina" looks danger, "Riprendi 
 // WebEntry: the element focused from the keyboard shows a ring in --color-focus-ring
 test('a button focused from the keyboard shows the focus ring colour', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Nuova sessione' })).toBeVisible();
+  await expect(page.getByRole('complementary').getByRole('button', { name: 'Nuova sessione' })).toBeVisible();
   const ring = await resolved(page, (await tokens(page, ['--color-focus-ring']))['--color-focus-ring']!);
 
   let focusedTag = '';

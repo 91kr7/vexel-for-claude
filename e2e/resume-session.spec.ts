@@ -63,7 +63,7 @@ async function runInTerminal(sessionId: string): Promise<void> {
 }
 
 async function openDialog(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Riprendi sessione' }).click();
+  await page.getByRole('complementary').getByRole('button', { name: 'Riprendi sessione' }).click();
   await expect(dialog(page)).toBeVisible();
   await expect(dialog(page)).not.toContainText('Caricamento…');
 }
