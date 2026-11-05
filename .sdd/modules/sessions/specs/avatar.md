@@ -37,7 +37,7 @@ Sizes, as the boards draw them:
 | `dialog` | 36 px | `.label-l` | 18 px | 12 px | 20 px |
 | `header` | 48 px | `.title-m` | 16 px | 12 px | 24 px |
 
-The `external` variant is always a full circle (half the side).
+The `external` variant is always a full circle (half the side). Its 1 px border is added outside the side, as on the boards: it measures the side plus 2 px outside (42 px `list`, 38 px `dialog`, 50 px `header`).
 
 Functions:
 - `folderNameOf(folder) → string` → the last non-empty segment of the path (`/home/u/web-dashboard/` → `web-dashboard`). A path with no segment gives the path itself.

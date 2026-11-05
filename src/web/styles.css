@@ -669,6 +669,7 @@ input {
 
 .avatar-external {
   border-radius: 50%;
+  box-sizing: content-box;
   border: 1px solid var(--outline);
   color: var(--on-surface-variant);
 }
