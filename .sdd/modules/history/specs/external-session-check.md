@@ -17,8 +17,11 @@ type: backend service
   - the name is only digits plus `.json`
   - `<procDir>/<pid>` exists (the process is alive)
   - `<pid>` is not in `hostedPids` (the pids of the processes the client hosts)
+- `runningSessions(hostedPids) → Promise<RunningSessionFile[]>` → the same files as `runningSessionIds`, with their data: `{ pid, sessionId, cwd?, kind?, status?, updatedAt? }`.
+  - `pid` → the number in the file name.
+  - `cwd`, `kind`, `status` → present only when they are strings in the file. `updatedAt` → present only when it is a number.
 - a file with invalid JSON or without a string `sessionId` → ignored.
-- no `sessions` folder → empty set.
+- no `sessions` folder → empty set (empty array for `runningSessions`).
 
 ## Rules and invariants
 
@@ -31,4 +34,4 @@ type: backend service
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-27`
+- `plan-claude_sessions_client/REQ-27`, `plan-claude_sessions_client/REQ-29`

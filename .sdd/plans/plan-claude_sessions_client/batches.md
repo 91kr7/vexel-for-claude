@@ -12,7 +12,7 @@ status: validated
 | [session-list](batches/batch-session-list.md) | Session list | REQ-11, REQ-12, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22 | session-interaction | certified | The user sees which session needs input |
 | [stop-session](batches/batch-stop-session.md) | Stop a session | REQ-23, REQ-24 | session-list | certified | The user stops an idle session |
 | [resume-session](batches/batch-resume-session.md) | Resume a past session | REQ-13, REQ-25, REQ-26, REQ-27, REQ-28 | session-list | certified | The user resumes a session started in the terminal |
-| [external-sessions](batches/batch-external-sessions.md) | External sessions | REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36 | resume-session | todo | The user sees a session that runs in another terminal |
+| [external-sessions](batches/batch-external-sessions.md) | External sessions | REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36 | resume-session | implemented | The user sees a session that runs in another terminal |
 
 Execution order: session-interaction → session-list → stop-session and resume-session. The last two are independent of each other. external-sessions comes after resume-session.
 

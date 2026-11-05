@@ -6,3 +6,4 @@
 | sessions | Claude Code CLI sessions: start, stop, terminal mirror, attach, state tracking, session list, terminal view | `sessions/index.md` |
 | folders | Browse and choose the project folder of a new session | `folders/index.md` |
 | history | Past Claude Code sessions of the machine: read the history, detect external terminals, resume | `history/index.md` |
+| external | Claude Code sessions running in other terminals: scan, list entries, read-only conversation, take over | `external/index.md` |

@@ -41,3 +41,5 @@
 | 2026-11-05 | dev | G4 resume-session | pass | Build green on re-run; diff explained by INT-1..INT-10; `package.json` port change is the human's, committed apart |
 | 2026-11-05 | dev | divergence developer | decided | Resumed session gets its Claude id at track time; sessions with no user message not listed; no visible REQ change |
 | 2026-11-05 | test | G5 resume-session | pass | 221 unit, 35 e2e green on orchestrator re-run; e2e server command bypasses `npm start` because the human's `start` script fixes the port |
+| 2026-11-05 | dev | G4 external-sessions | pass | Build green on re-run; diff explained by INT-1..INT-13; no write or `.key` access in `src/server/external` |
+| 2026-11-05 | dev | divergence developer | decided | Transcript folder = cwd with every non-alphanumeric replaced, fallback search by sessionId; external id = Claude sessionId; INT-3 inside scanner; no visible REQ change |

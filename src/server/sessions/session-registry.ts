@@ -163,4 +163,10 @@ export class SessionRegistry {
   list(): Session[] {
     return [...this.#sessions.values()];
   }
+
+  hostedPids(): number[] {
+    return this.list()
+      .filter((session) => !session.exited)
+      .map((session) => session.pid);
+  }
 }

@@ -24,6 +24,7 @@ type: backend service
 - `onSessionStart(listener) → unsubscribe` → `listener(session)` for each session started later.
 - `get(id) → Session | undefined` → the session with that id, also after its process ended.
 - `list() → Session[]` → every session started, in start order, ended ones included.
+- `hostedPids() → number[]` → the `pid` of every session whose process has not ended.
 
 `Session`:
 
@@ -57,4 +58,4 @@ type: backend service
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-6`, `plan-claude_sessions_client/REQ-7`, `plan-claude_sessions_client/REQ-10`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-26`
+- `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-6`, `plan-claude_sessions_client/REQ-7`, `plan-claude_sessions_client/REQ-10`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-26`, `plan-claude_sessions_client/REQ-29`

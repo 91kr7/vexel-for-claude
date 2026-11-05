@@ -292,3 +292,48 @@ button {
 .past-session-running {
   color: #e5a33a;
 }
+
+.session-external {
+  color: #7fb2e5;
+}
+
+.conversation-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.conversation-view .error {
+  margin: 0;
+}
+
+.conversation-items {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 1rem 1rem;
+}
+
+.conversation-item {
+  margin-bottom: 0.75rem;
+}
+
+.conversation-item h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.conversation-item p,
+.conversation-item pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.item-tool-call p,
+.item-tool-result pre {
+  font-family: monospace;
+  font-size: 0.85rem;
+}

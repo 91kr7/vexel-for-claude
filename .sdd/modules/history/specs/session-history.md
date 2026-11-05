@@ -20,6 +20,8 @@ type: backend service
 - `get(sessionId) → Promise<PastSession | undefined>` → the session with that id, or `undefined`.
   - an id with characters other than letters, digits, `-` and `_` → `undefined`. No file is opened.
 
+- `userMessageOf(entry) → string | null` → the first user message rule below, applied to one parsed line.
+
 `PastSession` → `{ id, folder, firstUserMessage, lastModified }`.
 
 - `id` → the file name without `.jsonl`. It is the id that `claude --resume` takes.

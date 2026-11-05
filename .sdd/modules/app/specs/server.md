@@ -18,11 +18,15 @@ type: configuration
 - one shared SessionStateTracker. It tracks every session the registry starts.
 - registers StartSessionRoute, StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute and FolderRoute.
 - one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute and ResumeSessionRoute with them, the registry and the tracker.
+- one ExternalSessionScanner on that ExternalSessionCheck and SessionHistory, with the hosted pids of the registry. It starts with the server.
+- passes the scanner to SessionListRoute and SessionEventsRoute.
+- one TranscriptReader with the default Claude Code folder. Registers ConversationStreamRoute with it and the scanner.
 - serves the files of `dist/web` when the folder exists.
 
 ## Rules and invariants
 
 - Never reachable from another machine: no other bind address.
+- LocalAccessGuard covers every route, ConversationStreamRoute included.
 
 ## Dependencies
 
@@ -30,7 +34,8 @@ type: configuration
 - SessionRegistry, SessionStateTracker, HookSettings, StartSessionRoute, StopSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute (module sessions)
 - FolderRoute (module folders)
 - SessionHistory, ExternalSessionCheck, PastSessionListRoute, ResumeSessionRoute (module history)
+- ExternalSessionScanner, TranscriptReader, ConversationStreamRoute (module external)
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`
+- `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-29`, `plan-claude_sessions_client/REQ-32`, `plan-claude_sessions_client/REQ-33`

@@ -8,6 +8,15 @@ const STATE_NAMES: Record<SessionState, string> = {
   ended: 'Terminata',
 };
 
+const EXTERNAL_TOOLTIP = 'Sessione in un altro terminale: lo stato «Richiede input» non è disponibile';
+
+function entryClass(session: SessionSummary): string {
+  const classes = ['session-entry'];
+  if (session.state === 'needs_input') classes.push('needs-input');
+  if (session.external) classes.push('external');
+  return classes.join(' ');
+}
+
 interface SessionListProps {
   sessions: readonly SessionSummary[];
   openSessionId: string | null;
@@ -32,7 +41,7 @@ export function SessionList({ sessions, openSessionId, onOpen }: SessionListProp
             <li key={session.id}>
               <button
                 type="button"
-                className={session.state === 'needs_input' ? 'session-entry needs-input' : 'session-entry'}
+                className={entryClass(session)}
                 aria-current={session.id === openSessionId ? 'true' : undefined}
                 onClick={() => onOpen(session.id)}
               >
@@ -41,6 +50,11 @@ export function SessionList({ sessions, openSessionId, onOpen }: SessionListProp
                 <span className="session-entry-meta">
                   <span className={`session-state state-${session.state}`}>{STATE_NAMES[session.state]}</span>
                   <time dateTime={session.lastActivity}>{formatActivity(session.lastActivity)}</time>
+                  {session.external && (
+                    <span className="session-external" title={EXTERNAL_TOOLTIP}>
+                      Esterna
+                    </span>
+                  )}
                 </span>
               </button>
             </li>

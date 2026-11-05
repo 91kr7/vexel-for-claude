@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ConversationView } from './external/ConversationView';
 import { FolderChooser } from './folders/FolderChooser';
 import { ResumeDialog } from './history/ResumeDialog';
 import { NeedsInputCounter } from './sessions/NeedsInputCounter';
@@ -8,10 +9,19 @@ import { useLiveSessions } from './sessions/live-session-store';
 
 export function AppLayout() {
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
+  const [openIsExternal, setOpenIsExternal] = useState(false);
   const [choosingFolder, setChoosingFolder] = useState(false);
   const [resuming, setResuming] = useState(false);
   const sessions = useLiveSessions();
   const openSessionState = sessions.find((session) => session.id === openSessionId)?.state;
+  const openHosted = (sessionId: string) => {
+    setOpenSessionId(sessionId);
+    setOpenIsExternal(false);
+  };
+  const openFromList = (sessionId: string) => {
+    setOpenSessionId(sessionId);
+    setOpenIsExternal(sessions.find((session) => session.id === sessionId)?.external === true);
+  };
 
   return (
     <div className="app">
@@ -28,9 +38,11 @@ export function AppLayout() {
         </div>
       </header>
       <div className="app-body">
-        <SessionList sessions={sessions} openSessionId={openSessionId} onOpen={setOpenSessionId} />
+        <SessionList sessions={sessions} openSessionId={openSessionId} onOpen={openFromList} />
         <main className="session-area">
-          {openSessionId ? (
+          {openSessionId && openIsExternal ? (
+            <ConversationView key={openSessionId} sessionId={openSessionId} onResumed={openHosted} />
+          ) : openSessionId ? (
             <SessionView key={openSessionId} sessionId={openSessionId} state={openSessionState} />
           ) : (
             <p className="empty-state">Nessuna sessione aperta.</p>
@@ -41,7 +53,7 @@ export function AppLayout() {
         <FolderChooser
           onStarted={(sessionId) => {
             setChoosingFolder(false);
-            setOpenSessionId(sessionId);
+            openHosted(sessionId);
           }}
           onCancel={() => setChoosingFolder(false)}
         />
@@ -50,7 +62,7 @@ export function AppLayout() {
         <ResumeDialog
           onResumed={(sessionId) => {
             setResuming(false);
-            setOpenSessionId(sessionId);
+            openHosted(sessionId);
           }}
           onCancel={() => setResuming(false)}
         />

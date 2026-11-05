@@ -6,7 +6,7 @@ type: UI component
 
 # SessionList
 
-**Purpose** → the panel with every hosted session.
+**Purpose** → the panel with every hosted session and every external session.
 
 ## Contract
 
@@ -25,6 +25,7 @@ Shows:
 - last activity → local time `HH:MM:SS` (Italian format). On another day the date comes before the time.
 - entries in `needs_input` are highlighted (class `needs-input`).
 - the open session's entry has `aria-current="true"`.
+- an external entry (`external: true`) has the class `external` and the marker "Esterna". The marker tooltip (`title`) is "Sessione in un altro terminale: lo stato «Richiede input» non è disponibile".
 
 Actions:
 - click on an entry → `onOpen(id)`. Ended sessions too.
@@ -35,4 +36,4 @@ Actions:
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-11`, `plan-claude_sessions_client/REQ-12`, `plan-claude_sessions_client/REQ-16`, `plan-claude_sessions_client/REQ-22`
+- `plan-claude_sessions_client/REQ-11`, `plan-claude_sessions_client/REQ-12`, `plan-claude_sessions_client/REQ-16`, `plan-claude_sessions_client/REQ-22`, `plan-claude_sessions_client/REQ-29`, `plan-claude_sessions_client/REQ-30`

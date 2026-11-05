@@ -3,6 +3,9 @@ import { fileURLToPath } from 'node:url';
 import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
+import { registerConversationStreamRoute } from './external/conversation-stream-route.js';
+import { ExternalSessionScanner } from './external/external-session-scanner.js';
+import { TranscriptReader } from './external/transcript-reader.js';
 import { registerFolderRoute } from './folders/folder-route.js';
 import { ExternalSessionCheck } from './history/external-session-check.js';
 import { registerPastSessionListRoute } from './history/past-session-list-route.js';
@@ -30,6 +33,12 @@ const tracker = new SessionStateTracker();
 registry.onSessionStart((session) => tracker.track(session));
 const history = new SessionHistory();
 const externalCheck = new ExternalSessionCheck();
+const externalScanner = new ExternalSessionScanner({
+  check: externalCheck,
+  history,
+  hostedPids: () => registry.hostedPids(),
+});
+const transcriptReader = new TranscriptReader();
 
 registerLocalAccessGuard(app);
 await app.register(fastifyWebsocket);
@@ -38,16 +47,18 @@ app.get('/api/health', async () => ({ status: 'ok' }));
 registerStartSessionRoute(app, registry);
 registerStopSessionRoute(app, registry);
 registerAttachSessionRoute(app, registry, tracker);
-registerSessionListRoute(app, tracker);
-registerSessionEventsRoute(app, tracker);
+registerSessionListRoute(app, tracker, externalScanner);
+registerSessionEventsRoute(app, tracker, externalScanner);
 registerHookEventRoute(app, tracker);
 registerFolderRoute(app);
 registerPastSessionListRoute(app, { history, externalCheck, registry, tracker });
 registerResumeSessionRoute(app, { history, registry });
+registerConversationStreamRoute(app, { scanner: externalScanner, reader: transcriptReader });
 
 // In dev the page comes from Vite, so dist/web may not exist yet.
 if (existsSync(webRoot)) {
   await app.register(fastifyStatic, { root: webRoot });
 }
 
+externalScanner.start();
 await app.listen({ host: HOST, port });

@@ -8,15 +8,15 @@ export interface SessionSummary {
   label: string;
   state: SessionState;
   lastActivity: string;
+  external?: true;
 }
 
-interface SessionEvent {
-  type: 'session';
-  session: SessionSummary;
-}
+type SessionEvent = { type: 'session'; session: SessionSummary } | { type: 'session-removed'; id: string };
 
 function isSessionEvent(value: unknown): value is SessionEvent {
-  return typeof value === 'object' && value !== null && (value as { type?: unknown }).type === 'session';
+  if (typeof value !== 'object' || value === null) return false;
+  const { type, id } = value as { type?: unknown; id?: unknown };
+  return type === 'session' || (type === 'session-removed' && typeof id === 'string');
 }
 
 export class LiveSessionStore {
@@ -33,7 +33,7 @@ export class LiveSessionStore {
     this.stop();
     const socket = new WebSocket(`${this.#origin.replace(/^http/, 'ws')}/api/sessions/events`);
     const listeners = new AbortController();
-    let pending: SessionSummary[] | undefined = [];
+    let pending: SessionEvent[] | undefined = [];
 
     socket.addEventListener(
       'message',
@@ -45,8 +45,8 @@ export class LiveSessionStore {
           return;
         }
         if (!isSessionEvent(message)) return;
-        if (pending) pending.push(message.session);
-        else this.#upsert([message.session]);
+        if (pending) pending.push(message);
+        else this.#apply([message]);
       },
       { signal: listeners.signal },
     );
@@ -60,7 +60,7 @@ export class LiveSessionStore {
             const events = pending ?? [];
             pending = undefined;
             this.#sessions = sessions;
-            this.#upsert(events);
+            this.#apply(events);
           })
           .catch(() => {});
       },
@@ -85,12 +85,16 @@ export class LiveSessionStore {
 
   getSnapshot = (): readonly SessionSummary[] => this.#sessions;
 
-  #upsert(updates: SessionSummary[]): void {
-    const next = [...this.#sessions];
-    for (const update of updates) {
-      const index = next.findIndex((session) => session.id === update.id);
-      if (index === -1) next.push(update);
-      else next[index] = update;
+  #apply(events: SessionEvent[]): void {
+    let next = [...this.#sessions];
+    for (const event of events) {
+      if (event.type === 'session-removed') {
+        next = next.filter((session) => session.id !== event.id);
+        continue;
+      }
+      const index = next.findIndex((session) => session.id === event.session.id);
+      if (index === -1) next.push(event.session);
+      else next[index] = event.session;
     }
     this.#sessions = next;
     for (const listener of this.#listeners) listener();

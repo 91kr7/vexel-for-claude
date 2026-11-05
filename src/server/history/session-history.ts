@@ -35,7 +35,7 @@ function textOf(content: unknown): string | undefined {
   return block?.text;
 }
 
-function userMessageOf(entry: Record<string, unknown>): string | null {
+export function userMessageOf(entry: Record<string, unknown>): string | null {
   if (entry.type !== 'user' || entry.isMeta === true || entry.isSidechain === true) return null;
   const message = entry.message as { content?: unknown } | undefined;
   const text = textOf(message?.content);
