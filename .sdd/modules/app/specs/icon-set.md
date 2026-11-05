@@ -26,9 +26,12 @@ Components and where the client uses them today:
 - `CircleOffIcon` → no user since `CircleMinusIcon` replaced it in the StateBadge
 - `CircleAlertIcon` → the needs-input chip of the list panel
 - `TerminalIcon` → the external Avatar and the "Esterna" tag of the session list, "Sessioni" in the rail
-- `LockIcon` → the "Sola lettura" notice of the external view
-- `WrenchIcon` → a tool call in the external view
-- `ChevronRightIcon`, `ChevronDownIcon` → "Espandi" and "Comprimi" of a tool item in the external view
+- `LockIcon` → the "Sola lettura" chip of the external view
+- `TerminalIcon`, `PencilIcon`, `WrenchIcon` → the tool icon of a tool card in the external view
+- `ChevronRightIcon`, `ChevronDownIcon` → a closed and an open tool card
+- `CheckIcon`, `CircleXIcon` → the outcome chips "Fatto" and "Fallito" of a tool card
+- `ArrowDownIcon` → the "N nuovi messaggi" button
+- `SparkIcon` → a Claude message in the external view. It is the ember four-point star of board "Sessione esterna", mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`. Its size and colour come from the stylesheet.
 - `TriangleAlertIcon` → the title of a WarningDialog
 
 ## Rules and invariants
@@ -46,3 +49,4 @@ Components and where the client uses them today:
 - `plan-claude_sessions_client-ui_redesign/REQ-9`
 - `plan-claude_sessions_client-ui_redesign/REQ-30`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-20`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-37`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-39`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-40`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-41`

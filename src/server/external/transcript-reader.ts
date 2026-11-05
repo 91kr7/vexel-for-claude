@@ -8,10 +8,10 @@ export interface ItemRef {
 }
 
 export type ConversationItem =
-  | { kind: 'user'; text: string }
+  | { kind: 'user'; text: string; timestamp?: string }
   | { kind: 'assistant'; text: string }
-  | { kind: 'tool_call'; name: string; summary: string; ref?: ItemRef }
-  | { kind: 'tool_result'; text: string; truncated: boolean; ref?: ItemRef };
+  | { kind: 'tool_call'; name: string; summary: string; moreInput?: true; id?: string; ref?: ItemRef }
+  | { kind: 'tool_result'; text: string; truncated: boolean; isError?: true; toolUseId?: string; ref?: ItemRef };
 
 export interface TranscriptReaderOptions {
   claudeDir?: string;
@@ -53,7 +53,13 @@ function resultTextOf(block: Block): string {
 
 function toolResultItem(block: Block): ConversationItem {
   const lines = resultTextOf(block).split('\n');
-  return { kind: 'tool_result', text: lines.slice(0, RESULT_LINES).join('\n'), truncated: lines.length > RESULT_LINES };
+  return {
+    kind: 'tool_result',
+    text: lines.slice(0, RESULT_LINES).join('\n'),
+    truncated: lines.length > RESULT_LINES,
+    ...(block.is_error === true && { isError: true }),
+    ...(typeof block.tool_use_id === 'string' && { toolUseId: block.tool_use_id }),
+  };
 }
 
 function summaryOf(input: unknown): string {
@@ -70,6 +76,25 @@ function summaryOf(input: unknown): string {
   return line.length > SUMMARY_LENGTH ? `${line.slice(0, SUMMARY_LENGTH).join('')}…` : line.join('');
 }
 
+function hasMoreInput(input: unknown, summary: string): boolean {
+  if (input === undefined) return false;
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) return true;
+  const values = Object.values(input);
+  if (values.length === 0) return false;
+  return !(values.length === 1 && values[0] === summary);
+}
+
+function toolCallItem(block: Block): ConversationItem {
+  const summary = summaryOf(block.input);
+  return {
+    kind: 'tool_call',
+    name: typeof block.name === 'string' ? block.name : '',
+    summary,
+    ...(hasMoreInput(block.input, summary) && { moreInput: true }),
+    ...(typeof block.id === 'string' && { id: block.id }),
+  };
+}
+
 function assistantItems(content: unknown, lineOffset: number | undefined): ConversationItem[] {
   if (typeof content === 'string') return content.trim() ? [{ kind: 'assistant', text: content.trim() }] : [];
   const items: ConversationItem[] = [];
@@ -77,8 +102,7 @@ function assistantItems(content: unknown, lineOffset: number | undefined): Conve
     if (block.type === 'text' && typeof block.text === 'string' && block.text.trim()) {
       items.push({ kind: 'assistant', text: block.text.trim() });
     } else if (block.type === 'tool_use') {
-      const name = typeof block.name === 'string' ? block.name : '';
-      items.push(withRef({ kind: 'tool_call', name, summary: summaryOf(block.input) }, lineOffset, index));
+      items.push(withRef(toolCallItem(block), lineOffset, index));
     }
   }
   return items;
@@ -99,7 +123,7 @@ export function itemsOf(entry: unknown, lineOffset?: number): ConversationItem[]
   if (record.type !== 'user') return [];
   const items: ConversationItem[] = [];
   const text = userMessageOf(record);
-  if (text !== null) items.push({ kind: 'user', text });
+  if (text !== null) items.push({ kind: 'user', text, ...(typeof record.timestamp === 'string' && { timestamp: record.timestamp }) });
   for (const { block, index } of indexedBlocksOf(content)) {
     if (block.type === 'tool_result') items.push(withRef(toolResultItem(block), lineOffset, index));
   }

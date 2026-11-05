@@ -15,7 +15,7 @@ Props:
 - `onResumed(id)` → called with the id of the new hosted session.
 
 Shows:
-- the button "Riprendi qui". While the request runs it shows the Spinner (ProgressIndicator) in place of its icon, is disabled and has `aria-busy="true"`.
+- the button "Riprendi qui" as the filled board button: `.btn` `.label-l`, `--primary` with `--on-primary` text, the log-in icon. While the request runs it shows the Spinner (ProgressIndicator) in place of its icon, is disabled and has `aria-busy="true"`.
 - an ErrorMessage after a failed request:
   - `404` `session_not_found` → "La sessione non esiste più."
   - `404` `folder_not_found` → "La cartella del progetto non esiste."
@@ -40,3 +40,4 @@ Actions:
 
 - `plan-claude_sessions_client/REQ-35`
 - `plan-claude_sessions_client-ui_redesign/REQ-30`, `plan-claude_sessions_client-ui_redesign/REQ-31`, `plan-claude_sessions_client-ui_redesign/REQ-32`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-35`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-43`

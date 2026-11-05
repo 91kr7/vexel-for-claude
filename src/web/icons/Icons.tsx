@@ -184,3 +184,37 @@ export function CircleXIcon() {
     </LucideIcon>
   );
 }
+
+export function PencilIcon() {
+  return (
+    <LucideIcon>
+      <path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z" />
+    </LucideIcon>
+  );
+}
+
+export function CheckIcon() {
+  return (
+    <LucideIcon>
+      <path d="M20 6 9 17l-5-5" />
+    </LucideIcon>
+  );
+}
+
+export function ArrowDownIcon() {
+  return (
+    <LucideIcon>
+      <path d="M12 5v14" />
+      <path d="m19 12-7 7-7-7" />
+    </LucideIcon>
+  );
+}
+
+// Mock artwork, not a Lucide icon: a filled shape.
+export function SparkIcon() {
+  return (
+    <svg className="spark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+      <path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z" />
+    </svg>
+  );
+}

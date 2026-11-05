@@ -44,3 +44,7 @@
 | 2026-11-05 | dev | divergence hosted-session folder path | decided | Absolute path shown; "~/" in the board is sample data (plan decision "paths are shown in full") |
 | 2026-11-05 | test | G5 hosted-session round 1 | sent back | Tester expects 42 px Interrompi; board is a `button`, border-box by UA default, so 40 px total is the board value; test fixed by tester |
 | 2026-11-05 | test | G5 hosted-session round 2 | pass | Re-run by gatekeeper: 53 e2e green; unit 84 green by tester |
+| 2026-11-05 | dev | G4 external-session | pass | Build green re-run; diff limited to INT-1..10 files, specs, index |
+| 2026-11-05 | dev | divergence external-session item fields | decided | `moreInput`, `isError` optional, present only when true; serves INT-7, keeps typecheck green |
+| 2026-11-05 | dev | divergence external-session singular | decided | "1 nuovo messaggio" for N = 1, correct Italian; plural as the board otherwise |
+| 2026-11-05 | dev | divergence external-session orphan result | decided | `tool_result` with no call becomes its own card "Risultato" with wrench icon |
