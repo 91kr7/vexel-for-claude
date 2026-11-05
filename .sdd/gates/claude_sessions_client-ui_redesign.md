@@ -25,3 +25,4 @@
 | 2026-11-05 | dev | divergence developer | decided | Item content route also serves ids no longer listed (view stays open after the entry leaves); read-only, local-only, same data as past sessions |
 | 2026-11-05 | test | G5 open-session | pass | 252 unit, 38 e2e green on re-run; old REQ-33/34 tests now expect ref (planned contract change); layout Tab limit raised for shared server |
 | 2026-11-05 | dev | G4 dialogs | pass | Build green on re-run; diff explained by the batch INTs; resume select + Riprendi as planned |
+| 2026-11-05 | test | G5 dialogs | pass | 136 unit, 31 e2e green on re-run; resume e2e updated to select + Riprendi; layout.spec.ts:341 flaked once under parallel load, watched in the final run |

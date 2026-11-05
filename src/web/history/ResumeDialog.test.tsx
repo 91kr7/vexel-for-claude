@@ -2,6 +2,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { ResumeDialog } from './ResumeDialog';
 
+const buttons = (html: string) =>
+  [...html.matchAll(/<button([^>]*)>([\s\S]*?)<\/button>/g)].map((m) => ({ attrs: m[1] ?? '', label: m[2]?.replace(/<[^>]*>/g, '').trim() }));
+
 describe('ResumeDialog', () => {
   // plan-claude_sessions_client/REQ-25: before the past sessions arrive
   it('opens as a modal titled "Riprendi sessione", shows "Caricamento…" and the button "Annulla"', () => {
@@ -11,5 +14,15 @@ describe('ResumeDialog', () => {
     expect(html).toContain('Riprendi sessione');
     expect(html).toContain('Caricamento…');
     expect(html).toMatch(/<button[^>]*>Annulla<\/button>/);
+  });
+
+  // plan-claude_sessions_client-ui_redesign/REQ-25: "Annulla" and the primary "Riprendi", disabled while no entry is selected
+  it('has "Annulla" and the primary action "Riprendi", disabled on open', () => {
+    const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
+    const actions = buttons(html);
+    expect(actions.map((b) => b.label)).toEqual(['Annulla', 'Riprendi']);
+    const primary = actions[1]?.attrs ?? '';
+    expect(primary).toMatch(/\sclass="(?:[^"]*\s)?button-primary(?:\s[^"]*)?"/);
+    expect(primary).toMatch(/\sdisabled(?:=""|\s|$)/);
   });
 });

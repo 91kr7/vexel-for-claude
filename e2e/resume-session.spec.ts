@@ -29,6 +29,7 @@ const dialog = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessio
 const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Sessione in esecuzione in un terminale' });
 const pastEntry = (page: Page, folder: string, label: string) =>
   dialog(page).getByRole('region', { name: folder }).getByRole('button').filter({ hasText: label });
+const resumeButton = (page: Page) => dialog(page).getByRole('button', { name: 'Riprendi', exact: true });
 const listEntry = (page: Page, label: string) => page.getByRole('navigation', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: label });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const isResumeRequest = (url: string, method: string) => /\/api\/past-sessions\/[^/]+\/resume$/.test(new URL(url).pathname) && method === 'POST';
@@ -71,6 +72,7 @@ async function openDialog(page: Page): Promise<void> {
 async function choose(page: Page, folder: string, label: string): Promise<string> {
   const resumed = page.waitForResponse((r) => isResumeRequest(r.url(), r.request().method()));
   await pastEntry(page, folder, label).click();
+  await resumeButton(page).click();
   const response = await resumed;
   expect(response.status()).toBe(201);
   const { id } = (await response.json()) as { id: string };
@@ -132,6 +134,7 @@ test('a session still running in a terminal resumes only after "Riprendi comunqu
   await expect(entry).toContainText('In esecuzione in un terminale');
 
   await entry.click();
+  await resumeButton(page).click();
   await expect(warning(page)).toBeVisible();
   await expect(warning(page)).toContainText('le due istanze possono danneggiare la conversazione');
   await expect(warning(page).getByRole('button', { name: 'Annulla' })).toBeFocused();
@@ -141,6 +144,7 @@ test('a session still running in a terminal resumes only after "Riprendi comunqu
   expect(resumeRequests).toEqual([]);
 
   await entry.click();
+  await resumeButton(page).click();
   const resumed = page.waitForResponse((r) => isResumeRequest(r.url(), r.request().method()));
   await warning(page).getByRole('button', { name: 'Riprendi comunque' }).click();
   const response = await resumed;
@@ -165,8 +169,10 @@ test('a session or a folder that disappeared after the dialog opened shows an er
   await rm(tools, { recursive: true });
 
   await pastEntry(page, docs, 'Sessione cancellata').click();
+  await resumeButton(page).click();
   await expect(dialog(page).getByRole('alert')).toHaveText('La sessione non esiste più.');
   await pastEntry(page, tools, 'Cartella cancellata').click();
+  await resumeButton(page).click();
   await expect(dialog(page).getByRole('alert')).toHaveText('La cartella del progetto non esiste.');
   await expect(dialog(page)).toBeVisible();
   await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();

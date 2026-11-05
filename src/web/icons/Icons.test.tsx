@@ -15,6 +15,7 @@ import {
   PlusIcon,
   PowerIcon,
   TerminalIcon,
+  TriangleAlertIcon,
   WrenchIcon,
 } from './Icons';
 
@@ -26,6 +27,7 @@ const icons: [string, ComponentType][] = [
   ['LogInIcon', LogInIcon],
   ['LoaderCircleIcon', LoaderCircleIcon],
   ['CircleAlertIcon', CircleAlertIcon],
+  ['TriangleAlertIcon', TriangleAlertIcon],
   ['CirclePauseIcon', CirclePauseIcon],
   ['CircleOffIcon', CircleOffIcon],
   ['TerminalIcon', TerminalIcon],
