@@ -152,6 +152,62 @@ describe('SessionRegistry.start', () => {
   });
 });
 
+describe('SessionRegistry resume, pid and list', () => {
+  const startResumed = (registry: SessionRegistry, resume: { sessionId: string; firstUserMessage?: string | null }) => {
+    const session = registry.start(workDir, resume);
+    started.push(session);
+    return session;
+  };
+
+  // plan-claude_sessions_client/REQ-25, REQ-26
+  it('passes --resume <sessionId> after --settings, and nothing else', async () => {
+    const registry = new SessionRegistry({ command: FAKE_CLI, settingsPath: '/tmp/hooks/hook-settings.json' });
+    const viewer = await attachReady(startResumed(registry, { sessionId: 'past-123', firstUserMessage: 'Ciao' }));
+    expect(viewer.text).toContain('ARGS:["--settings","/tmp/hooks/hook-settings.json","--resume","past-123"]');
+    expect(viewer.text).toContain(`CWD:${workDir}`);
+  });
+
+  it('passes only --resume <sessionId> when settingsPath is not set', async () => {
+    const viewer = await attachReady(startResumed(new SessionRegistry({ command: FAKE_CLI }), { sessionId: 'past-456' }));
+    expect(viewer.text).toContain('ARGS:["--resume","past-456"]');
+  });
+
+  it('keeps the resume data in resumedFrom, undefined for a new session', () => {
+    const registry = new SessionRegistry({ command: FAKE_CLI });
+    const resume = { sessionId: 'past-789', firstUserMessage: 'Correggi il bug' };
+    expect(startResumed(registry, resume).resumedFrom).toEqual(resume);
+    expect(startFake(registry).resumedFrom).toBeUndefined();
+  });
+
+  it('gives the pid of the CLI process', async () => {
+    const session = startFake();
+    await attachReady(session);
+    expect(session.pid).toBeGreaterThan(0);
+    expect(() => process.kill(session.pid, 0)).not.toThrow();
+    session.write('/exit\r');
+    await waitFor(() => session.exited, 'process exit');
+    await waitFor(() => {
+      try {
+        process.kill(session.pid, 0);
+        return false;
+      } catch {
+        return true;
+      }
+    }, 'process gone');
+  });
+
+  it('list gives every session in start order, ended ones included', async () => {
+    const registry = new SessionRegistry({ command: FAKE_CLI });
+    const a = startFake(registry);
+    const b = startResumed(registry, { sessionId: 'past-list' });
+    const c = startFake(registry);
+    await attachReady(b);
+    b.write('/exit\r');
+    await waitFor(() => b.exited, 'process exit');
+    expect(registry.list()).toEqual([a, b, c]);
+  });
+});
+
 describe('SessionRegistry.onSessionStart', () => {
   // plan-claude_sessions_client/REQ-14: listeners see each started session before start returns
   it('calls each listener with the session before start returns, until unsubscribed', () => {

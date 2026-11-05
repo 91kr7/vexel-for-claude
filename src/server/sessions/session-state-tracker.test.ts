@@ -289,3 +289,68 @@ describe('SessionStateTracker.list and onChange', () => {
     expect(tracker.get('missing')).toBeUndefined();
   });
 });
+
+describe('SessionStateTracker Claude Code session id', () => {
+  const trackResumed = (id: string, resumedFrom: { sessionId: string; firstUserMessage?: string | null }, cwd = '/home/dev/projects/shop-api') => {
+    const session = Object.assign(new FakeSession(id, cwd), { resumedFrom });
+    tracker.track(session);
+    return session;
+  };
+
+  // plan-claude_sessions_client/REQ-25
+  it('takes the session_id of a hook event, the last one wins', () => {
+    trackNew('s1');
+    expect(tracker.liveClaudeSessionIds()).toEqual(new Set());
+    tracker.applyHookEvent('s1', hook('UserPromptSubmit', { prompt: 'Ciao', session_id: 'claude-a' }));
+    expect(tracker.liveClaudeSessionIds()).toEqual(new Set(['claude-a']));
+    tracker.applyHookEvent('s1', hook('Stop', { session_id: 'claude-b' }));
+    expect(tracker.liveClaudeSessionIds()).toEqual(new Set(['claude-b']));
+  });
+
+  it('takes it also from an event that changes no state, and notifies nothing for it', () => {
+    trackNew('s1');
+    changes = [];
+    tracker.applyHookEvent('s1', hook('SessionStart', { session_id: 'claude-start' }));
+    expect(tracker.liveClaudeSessionIds()).toEqual(new Set(['claude-start']));
+    expect(changes).toEqual([]);
+  });
+
+  it('ignores an empty or non-string session_id', () => {
+    trackNew('s1');
+    tracker.applyHookEvent('s1', hook('Stop', { session_id: 'claude-a' }));
+    tracker.applyHookEvent('s1', hook('Stop', { session_id: '' }));
+    tracker.applyHookEvent('s1', hook('Stop', { session_id: 42 }));
+    expect(tracker.liveClaudeSessionIds()).toEqual(new Set(['claude-a']));
+  });
+
+  it('liveClaudeSessionIds leaves out ended sessions', () => {
+    trackNew('s1');
+    const ended = trackNew('s2');
+    tracker.applyHookEvent('s1', hook('Stop', { session_id: 'claude-live' }));
+    tracker.applyHookEvent('s2', hook('Stop', { session_id: 'claude-ended' }));
+    ended.exit();
+    expect(tracker.liveClaudeSessionIds()).toEqual(new Set(['claude-live']));
+  });
+
+  it('a resumed session has its Claude Code session id from the start', () => {
+    trackResumed('s1', { sessionId: 'past-1' });
+    expect(tracker.liveClaudeSessionIds()).toEqual(new Set(['past-1']));
+  });
+
+  // plan-claude_sessions_client/REQ-13
+  it('a resumed session takes its first user message as label, with the label rule, and keeps it', () => {
+    trackResumed('s1', { sessionId: 'past-1', firstUserMessage: `  Correggi\n\til   bug ${'y'.repeat(100)}` });
+    const label = `Correggi il bug ${'y'.repeat(64)}`;
+    expect(tracker.get('s1')?.label).toBe(label);
+    expect(changes.at(-1)?.label).toBe(label);
+    tracker.applyHookEvent('s1', hook('UserPromptSubmit', { prompt: 'Nuovo messaggio' }));
+    expect(tracker.get('s1')?.label).toBe(label);
+  });
+
+  it.each([undefined, null, '   '])('a resumed session with first user message %j is labelled by its folder until the first prompt', (firstUserMessage) => {
+    trackResumed('s1', { sessionId: 'past-1', firstUserMessage }, '/home/dev/projects/shop-api');
+    expect(tracker.get('s1')?.label).toBe('shop-api');
+    tracker.applyHookEvent('s1', hook('UserPromptSubmit', { prompt: 'Nuovo messaggio' }));
+    expect(tracker.get('s1')?.label).toBe('Nuovo messaggio');
+  });
+});

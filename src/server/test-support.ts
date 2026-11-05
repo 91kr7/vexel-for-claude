@@ -1,5 +1,5 @@
 // Shared helpers for the server tests. Not imported by application code.
-import { mkdtemp, writeFile, chmod } from 'node:fs/promises';
+import { mkdtemp, writeFile, chmod, mkdir, readdir, readFile, stat, utimes } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -110,4 +110,45 @@ export async function writeSigtermScript(dir: string, name: string, onSigterm: '
   );
   await chmod(file, 0o755);
   return file;
+}
+
+/** Writes `<claudeDir>/projects/<project>/<id>.jsonl` with one JSON line per entry (strings are written as is). */
+export async function writeHistorySession(
+  claudeDir: string,
+  project: string,
+  id: string,
+  entries: (object | string)[],
+  modified?: Date,
+): Promise<string> {
+  const dir = path.join(claudeDir, 'projects', project);
+  await mkdir(dir, { recursive: true });
+  const file = path.join(dir, `${id}.jsonl`);
+  await writeFile(file, entries.map((entry) => (typeof entry === 'string' ? entry : JSON.stringify(entry))).join('\n') + '\n');
+  if (modified) await utimes(file, modified, modified);
+  return file;
+}
+
+export const userEntry = (content: unknown, cwd?: string, extra: object = {}) => ({
+  type: 'user',
+  ...(cwd === undefined ? {} : { cwd }),
+  message: { role: 'user', content },
+  ...extra,
+});
+
+/** Path, content and modification time of every file under `dir`, to prove nothing changed. */
+export async function snapshotTree(dir: string): Promise<Record<string, { content: string; mtimeMs: number }>> {
+  const result: Record<string, { content: string; mtimeMs: number }> = {};
+  const walk = async (current: string): Promise<void> => {
+    for (const entry of await readdir(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        result[`${path.relative(dir, full)}/`] = { content: '', mtimeMs: (await stat(full)).mtimeMs };
+        await walk(full);
+      } else if (entry.isFile()) {
+        result[path.relative(dir, full)] = { content: await readFile(full, 'utf8'), mtimeMs: (await stat(full)).mtimeMs };
+      }
+    }
+  };
+  await walk(dir);
+  return result;
 }

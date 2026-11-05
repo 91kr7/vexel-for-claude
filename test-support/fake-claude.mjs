@@ -9,6 +9,7 @@
 // not starting with `/` or `HOOK `, plus TURN (Stop after 1.5 s), WORK (tool use, TICK<n> every 250 ms
 // for 30 s, then Stop), PERM (PermissionRequest, waits for one key, then Stop) and
 // `HOOK <event> [field=value ...]` (fires that single event).
+// Hook events carry `session_id` = the `--resume <id>` value, `fake` without it.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
@@ -26,6 +27,8 @@ out('READY');
 process.on('SIGWINCH', () => out(`WINCH:${process.stdout.columns}x${process.stdout.rows}`));
 
 const settingsIndex = process.argv.indexOf('--settings');
+const resumeIndex = process.argv.indexOf('--resume');
+const claudeSessionId = resumeIndex > 0 ? process.argv[resumeIndex + 1] : 'fake';
 const hooks = settingsIndex > 0 ? JSON.parse(readFileSync(process.argv[settingsIndex + 1], 'utf8')).hooks ?? {} : {};
 
 function matches(matcher, target) {
@@ -38,7 +41,7 @@ function fireHook(input) {
   for (const group of hooks[input.hook_event_name] ?? []) {
     if (!matches(group.matcher, target)) continue;
     for (const hook of group.hooks ?? []) {
-      execFileSync('sh', ['-c', hook.command], { input: JSON.stringify({ session_id: 'fake', cwd: process.cwd(), ...input }) });
+      execFileSync('sh', ['-c', hook.command], { input: JSON.stringify({ session_id: claudeSessionId, cwd: process.cwd(), ...input }) });
     }
   }
 }

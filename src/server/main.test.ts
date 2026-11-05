@@ -1,13 +1,24 @@
 // REQ tests of plan-claude_sessions_client against the real server process.
 import { type ChildProcess, spawn } from 'node:child_process';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { FAKE_CLI, type WsClient, connectWs, delay, hex, tempDir, waitFor } from './test-support.js';
+import {
+  FAKE_CLI,
+  type WsClient,
+  connectWs,
+  delay,
+  hex,
+  snapshotTree,
+  tempDir,
+  userEntry,
+  waitFor,
+  writeHistorySession,
+} from './test-support.js';
 
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 let server: ChildProcess;
@@ -15,6 +26,8 @@ let port: number;
 let base: string;
 let projectsRoot: string;
 let project: string;
+// Fixture Claude Code folder (CLAUDE_CONFIG_DIR): the tests never touch the real ~/.claude.
+let claudeDir: string;
 const clients: WsClient[] = [];
 
 function freePort(): Promise<number> {
@@ -85,11 +98,12 @@ beforeAll(async () => {
   projectsRoot = await tempDir('ai-client-projects-');
   project = path.join(projectsRoot, 'project-a');
   await mkdir(project);
+  claudeDir = await tempDir('ai-client-claude-');
   port = await freePort();
   base = `http://127.0.0.1:${port}`;
   server = spawn(path.join(repoRoot, 'node_modules/.bin/tsx'), ['src/server/main.ts'], {
     cwd: repoRoot,
-    env: { ...process.env, PORT: String(port), AI_CLIENT_CLAUDE_CLI: FAKE_CLI, FAKE_CLI_MARK: 'server-env' },
+    env: { ...process.env, PORT: String(port), AI_CLIENT_CLAUDE_CLI: FAKE_CLI, FAKE_CLI_MARK: 'server-env', CLAUDE_CONFIG_DIR: claudeDir },
     stdio: 'ignore',
   });
   let healthy = false;
@@ -546,5 +560,178 @@ describe('plan-claude_sessions_client/REQ-23 stop a session', () => {
     await delay(500);
     expect(client.closeCode).toBeUndefined();
     expect((await summaryOf(id))?.state).toBe('idle');
+  });
+});
+
+interface PastSessionGroup {
+  folder: string;
+  sessions: { id: string; label: string; lastActivity: string; runningElsewhere: boolean }[];
+}
+
+async function pastSessions(): Promise<PastSessionGroup[]> {
+  const response = await fetch(`${base}/api/past-sessions`);
+  expect(response.status).toBe(200);
+  return (await response.json()) as PastSessionGroup[];
+}
+
+const pastIds = async () => (await pastSessions()).flatMap((group) => group.sessions.map((session) => session.id));
+const resumePast = (id: string) => fetch(`${base}/api/past-sessions/${id}/resume`, { method: 'POST' });
+
+async function historyFolder(name: string): Promise<string> {
+  const folder = path.join(projectsRoot, name);
+  await mkdir(folder);
+  return folder;
+}
+
+/** A session file shaped like the ones Claude Code writes for a session started in a terminal. */
+async function terminalSession(id: string, folder: string, firstMessage: string, modified: Date): Promise<string> {
+  const common = { cwd: folder, sessionId: id, version: '2.1.0', gitBranch: 'main', userType: 'external', isSidechain: false };
+  return writeHistorySession(
+    claudeDir,
+    folder.replaceAll('/', '-'),
+    id,
+    [
+      { type: 'file-history-snapshot', messageId: 'm0', snapshot: {} },
+      { ...common, type: 'user', isMeta: true, message: { role: 'user', content: '<local-command-caveat>Caveat</local-command-caveat>' } },
+      { ...common, type: 'user', message: { role: 'user', content: firstMessage } },
+      { ...common, type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'Fatto.' }] } },
+      { ...common, type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 't1', content: 'ok' }] } },
+    ],
+    modified,
+  );
+}
+
+async function resumeAndAttach(pastId: string): Promise<{ id: string; client: WsClient }> {
+  const response = await resumePast(pastId);
+  expect(response.status).toBe(201);
+  const { id } = (await response.json()) as { id: string };
+  return { id, client: await attach(id) };
+}
+
+describe('plan-claude_sessions_client/REQ-25 resume a past session chosen by project folder', () => {
+  it('the past sessions come grouped by folder, the most recent first, and the chosen one resumes in its folder', async () => {
+    const alpha = await historyFolder('hist-alpha');
+    const beta = await historyFolder('hist-beta');
+    await terminalSession('req25-a-old', alpha, 'Alfa vecchia', new Date('2026-10-01T10:00:00Z'));
+    await terminalSession('req25-b', beta, 'Beta', new Date('2026-10-03T10:00:00Z'));
+    await terminalSession('req25-a-new', alpha, 'Alfa nuova', new Date('2026-10-02T10:00:00Z'));
+
+    const groups = (await pastSessions()).filter((group) => [alpha, beta].includes(group.folder));
+    expect(groups.map((group) => [group.folder, group.sessions.map((session) => [session.id, session.label])])).toEqual([
+      [beta, [['req25-b', 'Beta']]],
+      [alpha, [['req25-a-new', 'Alfa nuova'], ['req25-a-old', 'Alfa vecchia']]],
+    ]);
+    expect(groups[0]?.sessions[0]?.lastActivity).toBe('2026-10-03T10:00:00.000Z');
+
+    const { id, client } = await resumeAndAttach('req25-a-new');
+    expect(client.text()).toContain(`CWD:${alpha}`);
+    expect(settingsArgs(client)?.slice(2)).toEqual(['--resume', 'req25-a-new']);
+    expect(await summaryOf(id)).toMatchObject({ id, folder: alpha, state: 'idle' });
+  });
+
+  it('a hosted session that has not ended is not offered again, and comes back once it ends', async () => {
+    const folder = await historyFolder('hist-hosted');
+    await terminalSession('req25-hosted', folder, 'Ospitata', new Date('2026-10-04T10:00:00Z'));
+    const { id, client } = await resumeAndAttach('req25-hosted');
+    input(client, 'HOOK Stop\r');
+    await waitFor(() => client.text().includes('LINE:HOOK Stop'), 'hook fired');
+    expect(await pastIds()).not.toContain('req25-hosted');
+    input(client, '/exit\r');
+    await client.closed;
+    await waitForState(id, 'ended');
+    expect(await pastIds()).toContain('req25-hosted');
+  });
+
+  it('an unknown session or a missing folder is refused and starts no session', async () => {
+    const folder = await historyFolder('hist-gone');
+    await terminalSession('req25-gone', folder, 'Cartella sparita', new Date('2026-10-05T10:00:00Z'));
+    await rm(folder, { recursive: true });
+    const countBefore = (await listSessions()).length;
+
+    const unknown = await resumePast('req25-no-such-session');
+    expect(unknown.status).toBe(404);
+    expect(await unknown.json()).toEqual({ error: 'session_not_found' });
+    const gone = await resumePast('req25-gone');
+    expect(gone.status).toBe(404);
+    expect(await gone.json()).toEqual({ error: 'folder_not_found' });
+    expect((await listSessions()).length).toBe(countBefore);
+  });
+});
+
+describe('plan-claude_sessions_client/REQ-26 a session started from the terminal can be resumed', () => {
+  it('a terminal session is offered with its first message and resumes in the client', async () => {
+    const folder = await historyFolder('hist-terminal');
+    await terminalSession('req26-terminal', folder, 'Aggiungi i test di integrazione', new Date('2026-10-06T10:00:00Z'));
+    const group = (await pastSessions()).find((g) => g.folder === folder);
+    expect(group?.sessions).toEqual([
+      { id: 'req26-terminal', label: 'Aggiungi i test di integrazione', lastActivity: '2026-10-06T10:00:00.000Z', runningElsewhere: false },
+    ]);
+    const { client } = await resumeAndAttach('req26-terminal');
+    expect(settingsArgs(client)).toContain('req26-terminal');
+  });
+});
+
+describe('plan-claude_sessions_client/REQ-13 the label of a resumed session', () => {
+  it('is the start of its first user message, and later messages do not change it', async () => {
+    const folder = await historyFolder('hist-label');
+    const first = `Rivedi   il modulo\n di pagamento ${'z'.repeat(100)}`;
+    await terminalSession('req13-resumed', folder, first, new Date('2026-10-07T10:00:00Z'));
+    const { id, client } = await resumeAndAttach('req13-resumed');
+    const label = `Rivedi il modulo di pagamento ${'z'.repeat(50)}`;
+    expect((await summaryOf(id))?.label).toBe(label);
+    input(client, 'Nuovo messaggio\r');
+    await waitFor(() => client.text().includes('LINE:Nuovo messaggio'), 'new message');
+    expect((await summaryOf(id))?.label).toBe(label);
+  });
+});
+
+describe('plan-claude_sessions_client/REQ-27 a session still running in a terminal is flagged', () => {
+  it('runningElsewhere is true while the terminal process lives, false once it has ended', async () => {
+    const folder = await historyFolder('hist-running');
+    await terminalSession('req27-running', folder, 'In terminale', new Date('2026-10-08T10:00:00Z'));
+    await terminalSession('req27-closed', folder, 'Chiusa', new Date('2026-10-07T10:00:00Z'));
+    const terminal = spawn('sleep', ['60'], { stdio: 'ignore' });
+    const finished = spawn('true', [], { stdio: 'ignore' });
+    await new Promise((resolve) => finished.once('exit', resolve));
+    await mkdir(path.join(claudeDir, 'sessions'), { recursive: true });
+    await writeFile(path.join(claudeDir, 'sessions', `${terminal.pid}.json`), JSON.stringify({ pid: terminal.pid, sessionId: 'req27-running' }));
+    await writeFile(path.join(claudeDir, 'sessions', `${finished.pid}.json`), JSON.stringify({ pid: finished.pid, sessionId: 'req27-closed' }));
+    try {
+      const flags = () => pastSessions().then((groups) => groups.find((g) => g.folder === folder)?.sessions.map((s) => [s.id, s.runningElsewhere]));
+      expect(await flags()).toEqual([
+        ['req27-running', true],
+        ['req27-closed', false],
+      ]);
+      terminal.kill('SIGKILL');
+      await new Promise((resolve) => terminal.once('exit', resolve));
+      expect(await flags()).toEqual([
+        ['req27-running', false],
+        ['req27-closed', false],
+      ]);
+    } finally {
+      terminal.kill('SIGKILL');
+    }
+  });
+});
+
+describe('plan-claude_sessions_client/REQ-28 the client does not change the session history', () => {
+  it('listing, resuming, using and ending a session leave every history file with the same content and modification time', async () => {
+    const folder = await historyFolder('hist-intact');
+    await terminalSession('req28-intact', folder, 'Storia intatta', new Date('2026-10-09T10:00:00Z'));
+    await writeHistorySession(claudeDir, 'odd', 'req28-odd', ['{broken', userEntry('<command-name>/clear</command-name>')]);
+    const before = await snapshotTree(claudeDir);
+
+    await pastSessions();
+    const { id, client } = await resumeAndAttach('req28-intact');
+    input(client, 'Un nuovo messaggio\r');
+    await waitFor(() => client.text().includes('LINE:Un nuovo messaggio'), 'new message');
+    await waitForState(id, 'working');
+    input(client, '/exit\r');
+    await client.closed;
+    await waitForState(id, 'ended');
+    await pastSessions();
+
+    // The fake CLI writes nothing, so any difference comes from the client.
+    expect(await snapshotTree(claudeDir)).toEqual(before);
   });
 });
