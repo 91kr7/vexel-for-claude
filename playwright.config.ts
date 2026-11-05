@@ -5,7 +5,7 @@ import { E2E_CLAUDE_DIR } from './e2e/claude-dir';
 const port = 3100;
 const baseURL = `http://127.0.0.1:${port}`;
 // These specs share the server's fixture Claude Code folder, so they must never run at the same time.
-const claudeDirSpecs = /(resume-session|external-sessions|session-entries)\.spec\.ts$/;
+const claudeDirSpecs = /(resume-session|external-sessions|session-entries|open-session-external)\.spec\.ts$/;
 
 export default defineConfig({
   testDir: './e2e',

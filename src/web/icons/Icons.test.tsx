@@ -5,13 +5,17 @@ import {
   CircleAlertIcon,
   CircleOffIcon,
   CirclePauseIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
   CircleStopIcon,
   HistoryIcon,
   LoaderCircleIcon,
+  LockIcon,
   LogInIcon,
   PlusIcon,
   PowerIcon,
   TerminalIcon,
+  WrenchIcon,
 } from './Icons';
 
 const icons: [string, ComponentType][] = [
@@ -25,6 +29,10 @@ const icons: [string, ComponentType][] = [
   ['CirclePauseIcon', CirclePauseIcon],
   ['CircleOffIcon', CircleOffIcon],
   ['TerminalIcon', TerminalIcon],
+  ['LockIcon', LockIcon],
+  ['WrenchIcon', WrenchIcon],
+  ['ChevronRightIcon', ChevronRightIcon],
+  ['ChevronDownIcon', ChevronDownIcon],
 ];
 
 const svgTag = (html: string) => html.match(/^<svg\b[^>]*>/)?.[0] ?? '';

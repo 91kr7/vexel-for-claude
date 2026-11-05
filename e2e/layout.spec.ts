@@ -137,7 +137,8 @@ async function computedColour(page: Page, cssValue: string): Promise<string> {
 }
 
 async function tabTo(page: Page, target: Locator): Promise<void> {
-  for (let i = 0; i < 20; i++) {
+  // The list before the main area holds the sessions of every spec that shares the server.
+  for (let i = 0; i < 200; i++) {
     if (await target.evaluate((el) => el === document.activeElement)) return;
     await page.keyboard.press('Tab');
   }

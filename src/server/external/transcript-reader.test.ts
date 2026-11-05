@@ -216,3 +216,135 @@ describe('TranscriptReader.readFrom', () => {
     expect(await snapshotTree(claudeDir)).toEqual(before);
   });
 });
+
+describe('itemsOf item reference', () => {
+  // plan-claude_sessions_client-ui_redesign/REQ-21
+  it('with a line offset, each tool item carries { offset, block }, the block counted over all the content elements', () => {
+    const entry = assistantEntry([{ type: 'thinking', thinking: 'ragiono' }, { type: 'text', text: 'Leggo.' }, toolUse('Read', { file_path: '/a.ts' })]);
+    expect(itemsOf(entry, 42)).toEqual<ConversationItem[]>([
+      { kind: 'assistant', text: 'Leggo.' },
+      { kind: 'tool_call', name: 'Read', summary: '/a.ts', ref: { offset: 42, block: 2 } },
+    ]);
+    expect(itemsOf(userEntry([{ type: 'text', text: 'nota' }, toolResult('uno'), toolResult('due')]), 0)).toEqual<ConversationItem[]>([
+      { kind: 'user', text: 'nota' },
+      { kind: 'tool_result', text: 'uno', truncated: false, ref: { offset: 0, block: 1 } },
+      { kind: 'tool_result', text: 'due', truncated: false, ref: { offset: 0, block: 2 } },
+    ]);
+  });
+
+  it('without a line offset, no item carries a reference', () => {
+    expect(itemsOf(assistantEntry([toolUse('Bash', { command: 'ls' })]))).toEqual([{ kind: 'tool_call', name: 'Bash', summary: 'ls' }]);
+    expect(itemsOf(userEntry([toolResult('ok')]))).toEqual([{ kind: 'tool_result', text: 'ok', truncated: false }]);
+  });
+});
+
+describe('TranscriptReader item reference and readItem', () => {
+  const line = (entry: object) => `${JSON.stringify(entry)}\n`;
+  const longResult = Array.from({ length: 8 }, (_, i) => `riga ${i + 1}`).join('\n');
+  const input = { command: 'npm run build', description: 'Compila', options: { watch: false } };
+  let file: string;
+
+  beforeEach(async () => {
+    await mkdir(path.join(claudeDir, 'projects', '-p'), { recursive: true });
+    file = path.join(claudeDir, 'projects', '-p', 'sess.jsonl');
+  });
+
+  // plan-claude_sessions_client-ui_redesign/REQ-21: the offset is in bytes, so a multi-byte character before it counts
+  it('readFrom gives each tool item the byte offset of its line and its block index', async () => {
+    const first = line(userEntry('Perché è così? 😀'));
+    const second = line(assistantEntry([{ type: 'text', text: 'Controllo.' }, toolUse('Bash', input)]));
+    const third = line(userEntry([toolResult(longResult)]));
+    await writeFile(file, first + second + third);
+    const { items } = await reader.readFrom(file, 0);
+    expect(items).toEqual<ConversationItem[]>([
+      { kind: 'user', text: 'Perché è così? 😀' },
+      { kind: 'assistant', text: 'Controllo.' },
+      { kind: 'tool_call', name: 'Bash', summary: 'npm run build', ref: { offset: Buffer.byteLength(first), block: 1 } },
+      { kind: 'tool_result', text: 'riga 1\nriga 2\nriga 3\nriga 4\nriga 5', truncated: true, ref: { offset: Buffer.byteLength(first + second), block: 0 } },
+    ]);
+  });
+
+  it('readFrom from a later offset still gives the offset of the line from the start of the file', async () => {
+    const first = line(userEntry('Ciao è'));
+    const second = line(assistantEntry([toolUse('Read', { file_path: '/x' })]));
+    await writeFile(file, first + second);
+    expect((await reader.readFrom(file, Buffer.byteLength(first))).items).toEqual([
+      { kind: 'tool_call', name: 'Read', summary: '/x', ref: { offset: Buffer.byteLength(first), block: 0 } },
+    ]);
+  });
+
+  // plan-claude_sessions_client-ui_redesign/REQ-21
+  it('readItem gives the whole input of a tool call as JSON indented by 2 spaces, and "" with no input', async () => {
+    const first = line(assistantEntry([toolUse('Bash', input), toolUse('NoInput')]));
+    await writeFile(file, first);
+    expect(await reader.readItem(file, { offset: 0, block: 0 })).toBe(JSON.stringify(input, null, 2));
+    expect(await reader.readItem(file, { offset: 0, block: 1 })).toBe('');
+  });
+
+  // plan-claude_sessions_client-ui_redesign/REQ-21
+  it('readItem gives the whole text of a tool result, with no cut and no trailing whitespace', async () => {
+    const first = line(userEntry([toolResult(`${longResult}\n\n  `)]));
+    const second = line(userEntry([toolResult([{ type: 'text', text: 'parte a' }, { type: 'image', source: {} }, { type: 'text', text: 'parte b\n' }])]));
+    await writeFile(file, first + second);
+    expect(await reader.readItem(file, { offset: 0, block: 0 })).toBe(longResult);
+    expect(await reader.readItem(file, { offset: Buffer.byteLength(first), block: 0 })).toBe('parte a\nparte b');
+  });
+
+  it('readItem reads the items that readFrom references', async () => {
+    await writeFile(file, line(userEntry('Vai')) + line(assistantEntry([toolUse('Bash', input)])) + line(userEntry([toolResult(longResult)])));
+    const refs = (await reader.readFrom(file, 0)).items.flatMap((item) => ('ref' in item && item.ref ? [item.ref] : []));
+    expect(refs).toHaveLength(2);
+    expect(await Promise.all(refs.map((ref) => reader.readItem(file, ref)))).toEqual([JSON.stringify(input, null, 2), longResult]);
+  });
+
+  it('readItem is undefined when the offset is not the start of a complete line', async () => {
+    const first = line(assistantEntry([toolUse('Bash', input)]));
+    const partial = line(assistantEntry([toolUse('Read', { file_path: '/y' })])).slice(0, -1);
+    await writeFile(file, first + partial);
+    expect(await reader.readItem(file, { offset: 1, block: 0 })).toBeUndefined();
+    expect(await reader.readItem(file, { offset: Buffer.byteLength(first) - 1, block: 0 })).toBeUndefined();
+    expect(await reader.readItem(file, { offset: Buffer.byteLength(first), block: 0 })).toBeUndefined();
+    expect(await reader.readItem(file, { offset: 100_000, block: 0 })).toBeUndefined();
+  });
+
+  it('readItem is undefined for a line that is not valid JSON, a sidechain or a meta entry', async () => {
+    const broken = '{"type":"assistant","message":\n';
+    const sidechain = line(assistantEntry([toolUse('Bash', input)], { isSidechain: true }));
+    const meta = line(userEntry([toolResult('nascosto')], undefined, { isMeta: true }));
+    await writeFile(file, broken + sidechain + meta);
+    expect(await reader.readItem(file, { offset: 0, block: 0 })).toBeUndefined();
+    expect(await reader.readItem(file, { offset: Buffer.byteLength(broken), block: 0 })).toBeUndefined();
+    expect(await reader.readItem(file, { offset: Buffer.byteLength(broken + sidechain), block: 0 })).toBeUndefined();
+  });
+
+  it('readItem is undefined for a block that is not a tool_use of an assistant line or a tool_result of a user line', async () => {
+    const assistantLine = line(assistantEntry([{ type: 'text', text: 'Testo' }, toolResult('su assistant')]));
+    const userLine = line(userEntry([{ type: 'text', text: 'Testo' }, toolUse('Bash', input)]));
+    const stringLine = line(userEntry('solo testo'));
+    const otherType = line({ type: 'system', message: { content: [toolUse('Bash', input)] } });
+    await writeFile(file, assistantLine + userLine + stringLine + otherType);
+    const at = (offset: number, block: number) => reader.readItem(file, { offset, block });
+    expect(await at(0, 0)).toBeUndefined();
+    expect(await at(0, 1)).toBeUndefined();
+    expect(await at(0, 2)).toBeUndefined();
+    const userOffset = Buffer.byteLength(assistantLine);
+    expect(await at(userOffset, 0)).toBeUndefined();
+    expect(await at(userOffset, 1)).toBeUndefined();
+    expect(await at(Buffer.byteLength(assistantLine + userLine), 0)).toBeUndefined();
+    expect(await at(Buffer.byteLength(assistantLine + userLine + stringLine), 0)).toBeUndefined();
+  });
+
+  it('readItem is undefined for a file that cannot be read', async () => {
+    expect(await reader.readItem(path.join(claudeDir, 'projects', '-p', 'missing.jsonl'), { offset: 0, block: 0 })).toBeUndefined();
+  });
+
+  // plan-claude_sessions_client/REQ-36: reading an item stays read-only
+  it('readItem changes nothing under claudeDir', async () => {
+    await writeFile(file, line(assistantEntry([toolUse('Bash', input)])) + '{"partial');
+    const before = await snapshotTree(claudeDir);
+    await reader.readItem(file, { offset: 0, block: 0 });
+    await reader.readItem(file, { offset: 3, block: 0 });
+    await reader.readItem(path.join(claudeDir, 'projects', '-p', 'missing.jsonl'), { offset: 0, block: 0 });
+    expect(await snapshotTree(claudeDir)).toEqual(before);
+  });
+});

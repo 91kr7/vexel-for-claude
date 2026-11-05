@@ -23,3 +23,4 @@
 | 2026-11-05 | test | G5 session-list | pass | 97 unit, 33 e2e green on re-run; Esterna unit check updated and made stricter |
 | 2026-11-05 | dev | G4 open-session | pass | Build green on re-run; diff explained by INT-1..INT-11; transcripts opened read-only |
 | 2026-11-05 | dev | divergence developer | decided | Item content route also serves ids no longer listed (view stays open after the entry leaves); read-only, local-only, same data as past sessions |
+| 2026-11-05 | test | G5 open-session | pass | 252 unit, 38 e2e green on re-run; old REQ-33/34 tests now expect ref (planned contract change); layout Tab limit raised for shared server |

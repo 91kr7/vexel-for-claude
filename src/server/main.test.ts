@@ -813,6 +813,9 @@ function conversation(id: string): WsClient {
   return client;
 }
 
+/** Byte offset where line `index` starts in a transcript written one JSON entry per line. */
+const lineStart = (entries: object[], index: number) => entries.slice(0, index).reduce((sum, entry) => sum + Buffer.byteLength(JSON.stringify(entry)) + 1, 0);
+
 const conversationItems = (client: WsClient) =>
   client.frames.flatMap((frame) => (JSON.parse(frame) as { type: string; items: unknown[] }).items);
 
@@ -931,12 +934,13 @@ describe('plan-claude_sessions_client external sessions', { timeout: 20_000 }, (
   describe('plan-claude_sessions_client/REQ-33 the conversation of an external session, read-only as text', () => {
     it('gives the user messages, the replies, the tool calls and the cut tool results of the transcript', async () => {
       const folder = await historyFolder('ext-conversation');
-      await writeHistorySession(claudeDir, claudeProject(folder), 'req33-talk', [
+      const lines = [
         userEntry('Elenca i file', folder),
         { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'Li elenco.' }, { type: 'tool_use', id: 't1', name: 'Bash', input: { command: 'ls -la' } }] } },
         userEntry([{ type: 'tool_result', tool_use_id: 't1', content: 'a\nb\nc\nd\ne\nf\ng' }], folder),
         assistantEntry('Sono sette file.'),
-      ]);
+      ];
+      await writeHistorySession(claudeDir, claudeProject(folder), 'req33-talk', lines);
       const terminal = await externalTerminal('req33-talk', folder);
       await waitForExternal('req33-talk');
       const client = conversation('req33-talk');
@@ -946,8 +950,8 @@ describe('plan-claude_sessions_client external sessions', { timeout: 20_000 }, (
         items: [
           { kind: 'user', text: 'Elenca i file' },
           { kind: 'assistant', text: 'Li elenco.' },
-          { kind: 'tool_call', name: 'Bash', summary: 'ls -la' },
-          { kind: 'tool_result', text: 'a\nb\nc\nd\ne', truncated: true },
+          { kind: 'tool_call', name: 'Bash', summary: 'ls -la', ref: { offset: lineStart(lines, 1), block: 1 } },
+          { kind: 'tool_result', text: 'a\nb\nc\nd\ne', truncated: true, ref: { offset: lineStart(lines, 2), block: 0 } },
           { kind: 'assistant', text: 'Sono sette file.' },
         ],
       });
@@ -973,18 +977,16 @@ describe('plan-claude_sessions_client external sessions', { timeout: 20_000 }, (
       await waitForExternal('req34-live');
       const client = conversation('req34-live');
       await waitFor(() => client.frames.length > 0, 'first frame');
-      await writeFile(
-        file,
-        [
-          JSON.stringify(userEntry('Avvia i test', folder)),
-          JSON.stringify({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'tool_use', id: 't2', name: 'Bash', input: { command: 'npm test' } }] } }),
-          JSON.stringify(assistantEntry('Tutti i test passano.')),
-        ].join('\n') + '\n',
-      );
+      const lines = [
+        userEntry('Avvia i test', folder),
+        { type: 'assistant', message: { role: 'assistant', content: [{ type: 'tool_use', id: 't2', name: 'Bash', input: { command: 'npm test' } }] } },
+        assistantEntry('Tutti i test passano.'),
+      ];
+      await writeFile(file, lines.map((entry) => JSON.stringify(entry)).join('\n') + '\n');
       await waitFor(() => conversationItems(client).length >= 3, 'new items', 5000);
       expect(conversationItems(client)).toEqual([
         { kind: 'user', text: 'Avvia i test' },
-        { kind: 'tool_call', name: 'Bash', summary: 'npm test' },
+        { kind: 'tool_call', name: 'Bash', summary: 'npm test', ref: { offset: lineStart(lines, 1), block: 0 } },
         { kind: 'assistant', text: 'Tutti i test passano.' },
       ]);
       await terminal.end();
@@ -1029,5 +1031,67 @@ describe('plan-claude_sessions_client external sessions', { timeout: 20_000 }, (
       expect(await snapshotTree(claudeDir)).toEqual(before);
       await terminal.end();
     });
+  });
+});
+
+describe('plan-claude_sessions_client-ui_redesign/REQ-21 full content of a tool item of an external session', { timeout: 20_000 }, () => {
+  const fullInput = { command: 'npm run build', description: 'Compila il progetto', env: { CI: '1' } };
+  const fullOutput = Array.from({ length: 12 }, (_, i) => `riga ${i + 1}`).join('\n');
+  const itemContent = (id: string, ref: { offset: number; block: number }, headers: Record<string, string> = {}) =>
+    fetch(`${base}/api/external-sessions/${id}/items?offset=${ref.offset}&block=${ref.block}`, { headers });
+
+  it('the references of the conversation give the full tool input and output, also after the session ended, and nothing is written', async () => {
+    const folder = await historyFolder('ext-expand');
+    await writeHistorySession(claudeDir, claudeProject(folder), 'req21-expand', [
+      userEntry('Compila', folder),
+      { type: 'assistant', message: { role: 'assistant', content: [{ type: 'tool_use', id: 't1', name: 'Bash', input: fullInput }] } },
+      userEntry([{ type: 'tool_result', tool_use_id: 't1', content: fullOutput }], folder),
+    ]);
+    const terminal = await externalTerminal('req21-expand', folder);
+    await waitForExternal('req21-expand');
+    const before = await snapshotTree(claudeDir);
+    const client = conversation('req21-expand');
+    await waitFor(() => client.frames.length > 0, 'first frame');
+    const [call, result] = conversationItems(client).filter((item) => (item as { kind: string }).kind !== 'user') as {
+      kind: string;
+      ref: { offset: number; block: number };
+    }[];
+    expect(call?.kind).toBe('tool_call');
+    expect(result?.kind).toBe('tool_result');
+
+    const callResponse = await itemContent('req21-expand', call?.ref ?? { offset: -1, block: -1 });
+    expect(callResponse.status).toBe(200);
+    expect(await callResponse.json()).toEqual({ text: JSON.stringify(fullInput, null, 2) });
+    const resultResponse = await itemContent('req21-expand', result?.ref ?? { offset: -1, block: -1 });
+    expect(resultResponse.status).toBe(200);
+    expect(await resultResponse.json()).toEqual({ text: fullOutput });
+
+    await terminal.end();
+    await waitForList((sessions) => !sessions.some((s) => s.id === 'req21-expand'), 'external entry removed');
+    const afterEnd = await itemContent('req21-expand', result?.ref ?? { offset: -1, block: -1 });
+    expect(afterEnd.status).toBe(200);
+    expect(await afterEnd.json()).toEqual({ text: fullOutput });
+    expect(await snapshotTree(claudeDir)).toEqual(before);
+  });
+
+  it('a bad reference, a reference to no tool item and an unknown session are refused', async () => {
+    const folder = await historyFolder('ext-expand-errors');
+    await writeHistorySession(claudeDir, claudeProject(folder), 'req21-errors', [userEntry('Solo testo', folder)]);
+    const invalid = await fetch(`${base}/api/external-sessions/req21-errors/items?offset=abc&block=0`);
+    expect(invalid.status).toBe(400);
+    expect(await invalid.json()).toEqual({ error: 'invalid_reference' });
+    const notTool = await itemContent('req21-errors', { offset: 0, block: 0 });
+    expect(notTool.status).toBe(404);
+    expect(await notTool.json()).toEqual({ error: 'item_not_found' });
+    const unknown = await itemContent('req21-missing', { offset: 0, block: 0 });
+    expect(unknown.status).toBe(404);
+    expect(await unknown.json()).toEqual({ error: 'session_not_found' });
+  });
+
+  // plan-claude_sessions_client/REQ-9 holds for the new route
+  it('refuses a page of another origin', async () => {
+    const response = await itemContent('req21-errors', { offset: 0, block: 0 }, { origin: 'http://evil.example' });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'forbidden' });
   });
 });
