@@ -19,3 +19,4 @@
 | 2026-11-05 | test | question tester | decided | Both fixed: add rules to specs app/LocalAccessGuard and folders/FolderChooser; smallest change |
 | 2026-11-05 | test | `test.skip` in e2e | pass | Conditional guard when running as root, not a disabled test |
 | 2026-11-05 | dev | G4 session-interaction fix | pass | Diff limited to the two specs and two sources named in the fix round |
+| 2026-11-05 | test | G5 session-interaction | pass | 97 unit, 17 e2e, green on 3 orchestrator re-runs; one unnamed e2e failure in tester run not reproduced in 300+ repeats, logged as possible flake |
