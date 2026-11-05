@@ -32,12 +32,10 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready' 
   return (
     <nav className="session-list" aria-label="Elenco sessioni">
       {status === 'error' && <ErrorMessage className="session-list-alert">Connessione al server persa. Ricarica la pagina.</ErrorMessage>}
-      {sessions.length === 0 ? (
-        status === 'loading' ? (
-          <ProgressIndicator className="session-list-empty" />
-        ) : (
-          status === 'ready' && <p className="session-list-empty">Nessuna sessione.</p>
-        )
+      {status === 'loading' ? (
+        <ProgressIndicator className="session-list-empty" />
+      ) : sessions.length === 0 ? (
+        status === 'ready' && <p className="session-list-empty">Nessuna sessione.</p>
       ) : (
         <ul>
           {orderSessions(sessions).map((session) => (

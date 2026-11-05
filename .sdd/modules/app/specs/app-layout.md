@@ -29,7 +29,7 @@ Actions:
 - ResumeDialog resumes a session → the dialog closes and the resumed session becomes the open one.
 - ResumeDialog cancelled → the dialog closes; the open session does not change.
 - click on a SessionList entry → that session becomes the open one. The other sessions keep running.
-- Ctrl+Shift+L in the terminal of the open SessionView → the focus moves to the open session's entry in the list. With no such entry, it moves to the first enabled button of the sidebar.
+- Ctrl+Shift+L in the terminal of the open SessionView → the focus moves to the open session's entry in the list. With no such entry, it moves to the first enabled button of the sidebar. The focused element shows the focus ring, also when the terminal got the focus by a mouse click.
 - ConversationView resumes the session ("Riprendi qui") → the new hosted session becomes the open one.
 
 ## Rules and invariants

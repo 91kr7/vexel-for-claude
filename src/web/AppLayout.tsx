@@ -32,7 +32,7 @@ export function AppLayout() {
   const focusSidebar = () => {
     const sidebar = sidebarRef.current;
     const target = sidebar?.querySelector<HTMLElement>('[aria-current="true"]') ?? sidebar?.querySelector<HTMLElement>('button:not(:disabled)');
-    target?.focus();
+    target?.focus({ focusVisible: true });
   };
 
   return (
