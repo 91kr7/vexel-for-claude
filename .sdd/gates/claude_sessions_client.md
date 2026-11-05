@@ -28,3 +28,5 @@
 | 2026-11-05 | dev | G4 stop-session | pass | Build green on re-run; diff explained by INT-1..INT-4 |
 | 2026-11-05 | dev | divergence developer | decided | `Session.stop()` added for INT-1; INT-3/INT-4 one component with state passed by AppLayout; no visible behaviour change |
 | 2026-11-05 | test | G5 stop-session | sent back | D1: confirmation dialog painted under the xterm terminal (REQ-24); 2 e2e red |
+| 2026-11-05 | dev | G4 stop-session fix | pass | `.modal-backdrop` z-index only; build green; D1 tests green |
+| 2026-11-05 | test | G5 stop-session | sent back | Tester: e2e "a failed stop request changes nothing" compares whole body text, fails when other sessions change; chooser typed-path e2e flaky under full e2e run only |
