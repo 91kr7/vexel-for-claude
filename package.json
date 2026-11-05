@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "concurrently -k -n server,web \"tsx watch src/server/main.ts\" \"vite\"",
     "build": "tsc -b && vite build",
-    "start": "NODE_ENV=production tsx src/server/main.ts",
+    "start": "NODE_ENV=production PORT=4001 tsx src/server/main.ts",
     "test": "vitest run",
     "test:e2e": "playwright test --pass-with-no-tests"
   },
