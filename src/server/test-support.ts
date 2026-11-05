@@ -99,3 +99,15 @@ export function connectWs(url: string, headers: Record<string, string> = {}): Ws
   socket.on('error', () => {});
   return client;
 }
+
+/** Writes an executable CLI stand-in that prints READY, and GOT-SIGTERM on each SIGTERM; `exit` ends it there, `ignore` keeps it alive. */
+export async function writeSigtermScript(dir: string, name: string, onSigterm: 'exit' | 'ignore'): Promise<string> {
+  const file = path.join(dir, name);
+  const handler = onSigterm === 'exit' ? 'process.exit(0);' : '';
+  await writeFile(
+    file,
+    `#!/usr/bin/env node\nprocess.on('SIGTERM', () => { process.stdout.write('GOT-SIGTERM\\r\\n'); ${handler} });\nprocess.stdout.write('READY\\r\\n');\nsetInterval(() => {}, 1000);\n`,
+  );
+  await chmod(file, 0o755);
+  return file;
+}

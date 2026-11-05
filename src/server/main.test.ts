@@ -501,3 +501,50 @@ describe('plan-claude_sessions_client/REQ-20 sessions survive the page', () => {
     await waitFor(() => Math.max(...ticks()) > seen, 'turn goes on');
   });
 });
+
+describe('plan-claude_sessions_client/REQ-23 stop a session', () => {
+  const stopSession = (id: string, headers: Record<string, string> = {}) =>
+    fetch(`${base}/api/sessions/${id}/stop`, { method: 'POST', headers });
+
+  it('the stop request ends the CLI; the session stays listed as ended and the pages get the change', async () => {
+    const events = connectWs(`ws://127.0.0.1:${port}/api/sessions/events`, { Origin: base });
+    clients.push(events);
+    await new Promise<void>((resolve) => events.socket.once('open', () => resolve()));
+    const id = await startSession();
+    const client = await attach(id);
+    const response = await stopSession(id);
+    expect(response.status).toBe(202);
+    expect(await response.text()).toBe('');
+    await client.closed;
+    await waitForState(id, 'ended');
+    const pushedStates = events.frames
+      .map((frame) => JSON.parse(frame) as { type: string; session: SessionSummary })
+      .filter((frame) => frame.type === 'session' && frame.session.id === id)
+      .map((frame) => frame.session.state);
+    expect(pushedStates.at(-1)).toBe('ended');
+  });
+
+  it('stopping an ended session is accepted, an unknown session is rejected', async () => {
+    const id = await startSession();
+    const client = await attach(id);
+    input(client, '/exit\r');
+    await client.closed;
+    await waitForState(id, 'ended');
+    const again = await stopSession(id);
+    expect(again.status).toBe(202);
+    expect(await again.text()).toBe('');
+    const unknown = await stopSession('no-such-session');
+    expect(unknown.status).toBe(404);
+    expect(await unknown.json()).toEqual({ error: 'session_not_found' });
+  });
+
+  it('a page of another origin cannot stop a session', async () => {
+    const id = await startSession();
+    const client = await attach(id);
+    const response = await stopSession(id, { origin: 'http://evil.example' });
+    expect(response.status).toBe(403);
+    await delay(500);
+    expect(client.closeCode).toBeUndefined();
+    expect((await summaryOf(id))?.state).toBe('idle');
+  });
+});

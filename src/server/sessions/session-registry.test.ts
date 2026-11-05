@@ -10,6 +10,7 @@ import {
   tempDir,
   waitFor,
   writeFakeCliWrapper,
+  writeSigtermScript,
 } from '../test-support.js';
 import { type Session, SessionRegistry } from './session-registry.js';
 
@@ -354,5 +355,97 @@ describe('Session.attach', () => {
     await delay(200);
     expect(calls).toEqual(['send', 'end']);
     expect(late.frames[0]).toContain('BYE');
+  });
+});
+
+describe('Session.stop', () => {
+  const stopped: Session[] = [];
+  let exitsOnSigterm: string;
+  let ignoresSigterm: string;
+
+  beforeAll(async () => {
+    exitsOnSigterm = await writeSigtermScript(workDir, 'exits-on-sigterm.mjs', 'exit');
+    ignoresSigterm = await writeSigtermScript(workDir, 'ignores-sigterm.mjs', 'ignore');
+  });
+
+  afterAll(async () => {
+    for (const session of stopped) session.stop();
+    await waitFor(() => stopped.every((session) => session.exited), 'stopped sessions exit', 8000);
+  });
+
+  async function startStoppable(command: string, stopTimeoutMs?: number) {
+    const registry = new SessionRegistry(stopTimeoutMs === undefined ? { command } : { command, stopTimeoutMs });
+    const session = registry.start(workDir);
+    stopped.push(session);
+    const viewer = await attachReady(session);
+    let exits = 0;
+    session.onExit(() => {
+      exits += 1;
+    });
+    return { session, viewer, exits: () => exits };
+  }
+
+  const sigterms = (viewer: RecordingViewer) => viewer.text.split('GOT-SIGTERM').length - 1;
+
+  // plan-claude_sessions_client/REQ-23, SessionRegistry: stop() sends SIGTERM and the end follows the normal path
+  it('sends SIGTERM; a process that ends on it exits with onExit and viewer end()', async () => {
+    const { session, viewer, exits } = await startStoppable(exitsOnSigterm, 10_000);
+    session.stop();
+    await waitFor(() => session.exited, 'exit on SIGTERM', 3000);
+    expect(sigterms(viewer)).toBe(1);
+    await delay(100);
+    expect(exits()).toBe(1);
+    expect(viewer.ended).toBe(1);
+  });
+
+  // plan-claude_sessions_client/REQ-23, SessionRegistry: SIGKILL after stopTimeoutMs when the process is still alive
+  it('sends SIGKILL after stopTimeoutMs to a process that survives SIGTERM', async () => {
+    const { session, viewer, exits } = await startStoppable(ignoresSigterm, 1000);
+    session.stop();
+    await waitFor(() => sigterms(viewer) === 1, 'SIGTERM received');
+    await delay(500);
+    expect(session.exited, 'still alive before stopTimeoutMs').toBe(false);
+    await waitFor(() => session.exited, 'exit after SIGKILL', 3000);
+    await delay(100);
+    expect(exits()).toBe(1);
+    expect(viewer.ended).toBe(1);
+  });
+
+  // plan-claude_sessions_client/REQ-23, SessionRegistry: stopTimeoutMs defaults to 5000
+  it('waits 5 seconds by default before SIGKILL', async () => {
+    const { session, viewer } = await startStoppable(ignoresSigterm);
+    const stoppedAt = Date.now();
+    session.stop();
+    await waitFor(() => sigterms(viewer) === 1, 'SIGTERM received');
+    await delay(4500 - (Date.now() - stoppedAt));
+    expect(session.exited, 'still alive at 4.5 s').toBe(false);
+    await waitFor(() => session.exited, 'exit after SIGKILL', 3000);
+    expect(Date.now() - stoppedAt).toBeGreaterThanOrEqual(5000);
+  }, 15_000);
+
+  // plan-claude_sessions_client/REQ-23, SessionRegistry: stop() while a previous stop() waits has no effect
+  it('a second stop() while the first waits sends no signal and does not delay SIGKILL', async () => {
+    const { session, viewer } = await startStoppable(ignoresSigterm, 1000);
+    const stoppedAt = Date.now();
+    session.stop();
+    await waitFor(() => sigterms(viewer) === 1, 'SIGTERM received');
+    await delay(700 - (Date.now() - stoppedAt));
+    session.stop();
+    await waitFor(() => session.exited, 'exit after SIGKILL', 3000);
+    expect(Date.now() - stoppedAt, 'SIGKILL timer of the first stop()').toBeLessThan(1500);
+    expect(sigterms(viewer)).toBe(1);
+  });
+
+  // plan-claude_sessions_client/REQ-23, SessionRegistry: stop() after the process ended has no effect
+  it('stop() after the process ended has no effect', async () => {
+    const { session, viewer, exits } = await startStoppable(FAKE_CLI);
+    session.write('/exit\r');
+    await waitFor(() => session.exited, 'exit');
+    await delay(100);
+    expect(() => session.stop()).not.toThrow();
+    await delay(300);
+    expect(session.exited).toBe(true);
+    expect(exits()).toBe(1);
+    expect(viewer.ended).toBe(1);
   });
 });
