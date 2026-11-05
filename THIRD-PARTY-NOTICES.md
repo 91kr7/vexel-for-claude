@@ -2,10 +2,16 @@
 
 The client ships these files from other projects. They are copied into the repository and served by the client itself.
 
-## Inter (font)
+## Roboto Flex (font)
 
-- Files → `src/web/fonts/inter-latin-wght-normal.woff2` (variable weight, latin subset).
-- Source → Inter by The Inter Project Authors, https://github.com/rsms/inter. Taken from the npm package `@fontsource-variable/inter` 5.3.0 (https://fontsource.org/fonts/inter).
+- Files → `src/web/fonts/roboto-flex-latin.woff2` (variable weight 400–800 and width 25–151, latin subset).
+- Source → Roboto Flex by The Roboto Flex Project Authors, https://github.com/googlefonts/roboto-flex. Taken from the latin subset that Google Fonts serves, as embedded in the mock `.sdd/mockups/vexel-material3/`. The mock does not record the version.
+- Licence → SIL Open Font License 1.1. Full text in `src/web/fonts/OFL.txt`.
+
+## Roboto Mono (font)
+
+- Files → `src/web/fonts/roboto-mono-latin.woff2` (weights 400 and 500, latin subset).
+- Source → Roboto Mono by The Roboto Mono Project Authors, https://github.com/googlefonts/robotomono. Taken from the latin subset that Google Fonts serves, as embedded in the mock `.sdd/mockups/vexel-material3/`. The mock does not record the version.
 - Licence → SIL Open Font License 1.1. Full text in `src/web/fonts/OFL.txt`.
 
 ## Lucide (icons)

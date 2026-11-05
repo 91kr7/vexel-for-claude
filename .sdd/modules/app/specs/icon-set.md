@@ -11,7 +11,7 @@ type: UI component
 ## Contract
 
 Shows:
-- one inline SVG with the class `icon`, sized by `--icon-size`, drawn in the current text colour.
+- one inline SVG with the class `icon`, sized by `--icon-size` (20 px; 16 px inside a `.chip`), drawn in the current text colour.
 
 Components and where the client uses them today:
 - `PlusIcon` → "Nuova sessione"

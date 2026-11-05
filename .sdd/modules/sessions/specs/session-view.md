@@ -21,6 +21,8 @@ Props:
 - `session` → `{ folder, label, state }` of the session, optional. It goes to the SessionHeader, and its `state` to StopSessionButton. A change of `session` does not reconnect the terminal.
 
 Shows:
+- the terminal text in Roboto Mono, 14 px, rows about 22 px high. The font is loaded before the terminal opens and fits; if it fails to load, the terminal opens with the next font of `--font-mono`.
+- the terminal background in `--term-bg` and its default text in `--term-fg`, of the active theme. A change of the system theme recolours the open terminal at once, with no reconnect. The colours that Claude Code writes stay as written.
 - in the header, next to the state, the hint "Ctrl+Maiusc+L torna all'elenco", always visible, in `--color-text-muted` with the keys in `--color-text`.
 - a ProgressIndicator "Caricamento…" over the terminal, from the start until the first frame (the snapshot) arrives or the connection closes. A click goes through it to the terminal.
 - the session snapshot, then its live output, from AttachSessionRoute.
@@ -47,9 +49,10 @@ Actions:
 
 - AttachSessionRoute
 - SessionHeader, StopSessionButton
-- ProgressIndicator, ErrorMessage (module app)
+- ProgressIndicator, ErrorMessage, ThemeTokens, BundledFont (module app)
 
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-2`, `plan-claude_sessions_client/REQ-3`, `plan-claude_sessions_client/REQ-4`, `plan-claude_sessions_client/REQ-5`, `plan-claude_sessions_client/REQ-8`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`, `plan-claude_sessions_client/REQ-21`, `plan-claude_sessions_client/REQ-22`, `plan-claude_sessions_client/REQ-23`
 - `plan-claude_sessions_client-ui_redesign/REQ-17`, `plan-claude_sessions_client-ui_redesign/REQ-18`, `plan-claude_sessions_client-ui_redesign/REQ-24`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`, `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign/REQ-5`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-2`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-5`

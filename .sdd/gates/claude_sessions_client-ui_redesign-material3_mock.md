@@ -16,3 +16,7 @@
 | 2026-11-05 | plan | G2 requirements | pass | All analysis requirements covered by REQ-1..52 and the batch constraints |
 | 2026-11-05 | plan | planner risk external needs input | decided | Claude Code 2.1.318 writes session-file `status` `waiting` (with `waitingFor`) while waiting for the user; INT-11 of `batch-session-list.md` maps it to `needs_input`; source CLI binary strings |
 | 2026-11-05 | plan | G3 coverage | pass | All REQs served, batches per feature, modify paths exist, Human acceptance present, IDENTICAL instruction and board files in every batch |
+| 2026-11-05 | dev | G4 colours-type | pass | Build green re-run; diff limited to INT-1..7 files, specs, index |
+| 2026-11-05 | dev | divergence colours-type tertiary | decided | Pink tertiary roles left out: no board uses them, human asked for blue/grey |
+| 2026-11-05 | dev | divergence colours-type Inter files | decided | Unused `src/web/fonts/inter*` kept: deleting files from an earlier cycle is not asked by any convention; flagged for human review |
+| 2026-11-05 | dev | divergence colours-type font tokens | decided | `--font-ui`/`--font-mono` in `tokens.css` instead of `styles.css`; same result, follows existing idiom |

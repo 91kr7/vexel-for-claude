@@ -1,5 +1,5 @@
 @import './theme/tokens.css';
-@import './fonts/inter.css';
+@import './fonts/roboto.css';
 
 * {
   box-sizing: border-box;
@@ -35,7 +35,99 @@ h3 {
 .icon {
   width: var(--icon-size);
   height: var(--icon-size);
-  flex-shrink: 0;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.brand {
+  font-family: var(--font-ui);
+  font-variation-settings: 'wdth' 125, 'GRAD' 50;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.label-l {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}
+
+.label-m {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.body-l {
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.5px;
+}
+
+.body-m {
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.25px;
+}
+
+.body-s {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.4px;
+}
+
+.title-m {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  letter-spacing: 0.15px;
+}
+
+.title-l {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 500;
+}
+
+.headline-s {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 500;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 20px 0 16px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px 0 8px;
+  border-radius: 8px;
+}
+
+.chip .icon {
+  width: 16px;
+  height: 16px;
 }
 
 button {
@@ -331,36 +423,50 @@ input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-6);
+  gap: 8px;
+  padding: 24px;
   text-align: center;
 }
 
 .app-empty-state-icon .icon {
-  width: 3rem;
-  height: 3rem;
-  color: var(--color-text-muted);
+  width: 48px;
+  height: 48px;
+  color: var(--on-surface-variant);
 }
 
 .app-empty-state p {
   margin: 0;
 }
 
-.app-empty-state-title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-}
-
 .app-empty-state-hint {
-  color: var(--color-text-muted);
+  color: var(--on-surface-variant);
 }
 
 .app-empty-state-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--space-2);
-  margin-top: var(--space-4);
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.app-empty-state-new {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.app-empty-state-new:hover {
+  background: color-mix(in srgb, var(--primary), var(--on-primary) 8%);
+}
+
+.app-empty-state-resume {
+  background: transparent;
+  border: 1px solid var(--outline);
+  color: var(--on-surface-variant);
+}
+
+.app-empty-state-resume:hover {
+  background: color-mix(in srgb, var(--on-surface-variant) 8%, transparent);
 }
 
 .session-view {
