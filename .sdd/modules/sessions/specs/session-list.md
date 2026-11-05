@@ -30,7 +30,7 @@ Shows:
 Entry row (every entry but the hosted needs-input card): a button with the class `session-entry`.
 - layout: 12 px gap, padding 12 px 16 px, radius 16 px, no border, transparent, `--on-surface` text.
 - left → Avatar (`list` size) of the folder, state and external flag.
-- middle → the folder name (`folderNameOf`, `.title-m`, tooltip: the full folder path); below it the label (`.body-m`, `--on-surface-variant`, tooltip: the full label). A working entry adds a ProgressBar 6 px under the label.
+- middle → the folder name (`folderNameOf`, `.title-m`, tooltip: the full folder path); below it the label (`.body-m`, `--on-surface-variant`, tooltip: the full label). A hosted working entry adds a ProgressBar 6 px under the label. An external entry never shows it.
 - right, aligned to the end → StateBadge, and 4 px below it the RelativeTime of the last activity (`.body-s`, `--on-surface-variant`).
 - folder name and label longer than the entry are cut on one line with an ellipsis.
 
@@ -66,6 +66,10 @@ Actions:
 - Only the open session's button has `aria-current="true"`.
 - The needs-input entries are the most visible of the list: amber, first group.
 - An external entry is told apart without colour: the dashed border or the "Esterna" tag, and the terminal avatar.
+
+## Assumptions
+
+- Progress bar on hosted entries only (gatekeeper decision): both boards draw the external working row without a bar (`mobile-app` in "Sessione ospitata" and "Voci dell'elenco"). REQ-28 asks for the board, so `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-21` is read as hosted entries.
 
 ## Dependencies
 

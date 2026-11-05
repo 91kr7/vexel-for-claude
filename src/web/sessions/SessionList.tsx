@@ -60,7 +60,7 @@ function EntryRow({ session, open, onOpen }: EntryProps) {
       <Avatar folder={session.folder} state={session.state} external={session.external} />
       <span className="session-entry-text">
         <EntryHeading session={session} showTag={externalNeedsInput} />
-        {session.state === 'working' && <ProgressBar />}
+        {session.state === 'working' && !session.external && <ProgressBar />}
       </span>
       <span className="session-entry-side">
         <StateBadge state={session.state} />
