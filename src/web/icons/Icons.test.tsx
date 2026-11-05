@@ -2,6 +2,8 @@ import type { ComponentType } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
+  ArrowDownIcon,
+  CheckIcon,
   CircleAlertIcon,
   CircleMinusIcon,
   CircleOffIcon,
@@ -9,12 +11,15 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   CircleStopIcon,
+  CircleXIcon,
   HistoryIcon,
   LoaderCircleIcon,
   LockIcon,
   LogInIcon,
+  PencilIcon,
   PlusIcon,
   PowerIcon,
+  SparkIcon,
   TerminalIcon,
   TriangleAlertIcon,
   WrenchIcon,
@@ -37,6 +42,9 @@ const icons: [string, ComponentType][] = [
   ['WrenchIcon', WrenchIcon],
   ['ChevronRightIcon', ChevronRightIcon],
   ['ChevronDownIcon', ChevronDownIcon],
+  ['PencilIcon', PencilIcon],
+  ['CheckIcon', CheckIcon],
+  ['ArrowDownIcon', ArrowDownIcon],
 ];
 
 const svgTag = (html: string) => html.match(/^<svg\b[^>]*>/)?.[0] ?? '';
@@ -132,6 +140,39 @@ describe('IconSet', () => {
     ['CircleAlertIcon', CircleAlertIcon, ['M12 8v4', 'M12 16h.01']],
   ])('%s draws the shapes of the board', (_, Icon, boardPaths) => {
     expect(drawnShapes(renderToStaticMarkup(<Icon />))).toEqual(subpathsOf(boardPaths));
+  });
+
+  // IconSet rule and plan-claude_sessions_client-ui_redesign-material3_mock/REQ-39, REQ-40, REQ-41: the icons drawn by proposta-sessione-esterna.html
+  it.each<[string, ComponentType, string[]]>([
+    ['PencilIcon', PencilIcon, ['M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z']],
+    ['CheckIcon', CheckIcon, ['M20 6 9 17l-5-5']],
+    ['ArrowDownIcon', ArrowDownIcon, ['M12 5v14', 'm19 12-7 7-7-7']],
+    ['ChevronRightIcon', ChevronRightIcon, ['m9 18 6-6-6-6']],
+    ['ChevronDownIcon', ChevronDownIcon, ['m6 9 6 6 6-6']],
+    ['CircleXIcon', CircleXIcon, ['m15 9-6 6', 'm9 9 6 6']],
+    ['LogInIcon', LogInIcon, ['M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4', 'm10 17 5-5-5-5', 'M15 12H3']],
+  ])('%s draws the shapes of board "Sessione esterna"', (_, Icon, boardPaths) => {
+    expect(drawnShapes(renderToStaticMarkup(<Icon />))).toEqual(subpathsOf(boardPaths));
+  });
+
+  it('CircleXIcon draws the circle of board "Sessione esterna"', () => {
+    expect(renderToStaticMarkup(<CircleXIcon />)).toMatch(/<circle\b(?=[^>]*\scx="12")(?=[^>]*\scy="12")(?=[^>]*\sr="10")[^>]*>/);
+  });
+
+  // IconSet: SparkIcon is the ember four-point star of the board, a filled shape with the class "spark"
+  it('SparkIcon is one decorative inline svg with the class "spark", filled with currentColor, with the star of the board', () => {
+    const html = renderToStaticMarkup(<SparkIcon />);
+    expect(html.match(/<svg\b/g)).toHaveLength(1);
+    const tag = svgTag(html);
+    expect(tag).toMatch(/\sclass="(?:[^"]*\s)?spark(?:\s[^"]*)?"/);
+    expect(tag).toContain('aria-hidden="true"');
+    expect(tag).toContain('focusable="false"');
+    expect(tag).not.toMatch(/\s(?:aria-label|role|tabindex)=/i);
+    const fills = [...html.matchAll(/\sfill="([^"]*)"/g)].map((m) => m[1]);
+    expect(fills).toContain('currentColor');
+    for (const paint of [...html.matchAll(/\s(?:stroke|fill)="([^"]*)"/g)].map((m) => m[1])) expect(['currentColor', 'none']).toContain(paint);
+    expect(drawnShapes(html)).toEqual(subpathsOf(['M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z']));
+    expect(html).not.toMatch(/\s(?:xlink:)?href=|url\(|<(?:image|use|foreignObject)\b/);
   });
 
   // IconSet rule: the circle-alert of the board keeps its circle

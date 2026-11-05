@@ -194,15 +194,19 @@ test('a click on an external entry shows its conversation read-only, updated liv
   await page.goto('/');
   await listEntry(page, folder).click(SCAN);
 
-  await expect(items(page)).toHaveCount(4);
-  await expect(items(page).nth(0).getByRole('heading')).toHaveText('Utente');
+  // The call and its result are one card.
+  await expect(items(page)).toHaveCount(3);
+  await expect(items(page).nth(0)).toHaveAccessibleName('Utente');
   await expect(items(page).nth(0)).toContainText('Elenca i file del progetto');
-  await expect(items(page).nth(1).getByRole('heading')).toHaveText('Claude');
+  await expect(items(page).nth(1)).toHaveAccessibleName('Claude');
   await expect(items(page).nth(1)).toContainText('Li elenco subito.');
-  await expect(items(page).nth(2).getByRole('heading')).toHaveText('Strumento: Bash');
-  await expect(items(page).nth(2)).toContainText('ls -la src');
-  await expect(items(page).nth(3).getByRole('heading')).toHaveText('Risultato');
-  await expect(items(page).nth(3).locator('pre')).toHaveText('uno\ndue\ntre\nquattro\ncinque\n…');
+  const bash = items(page).nth(2);
+  await expect(bash).toHaveAccessibleName('Strumento: Bash');
+  await expect(bash).toContainText('ls -la src');
+  await expect(bash).toContainText('Fatto');
+  await expect(bash.locator('pre')).toHaveCount(0);
+  await bash.getByRole('button').first().click();
+  await expect(bash.locator('pre')).toHaveText('uno\ndue\ntre\nquattro\ncinque\nsei\nsette');
   await expect(conversationView(page)).not.toContainText('non mostrare');
   await expect(page.locator('.session-area').getByRole('textbox')).toHaveCount(0);
   await expect(terminal(page)).toHaveCount(0);
@@ -214,11 +218,12 @@ test('a click on an external entry shows its conversation read-only, updated liv
       assistant(folder, [{ type: 'text', text: 'Il file principale è main.ts.' }]),
     ]),
   );
-  await expect(items(page)).toHaveCount(6);
-  await expect(items(page).nth(4)).toContainText('Strumento: Read');
-  await expect(items(page).nth(4)).toContainText('/src/main.ts');
-  await expect(items(page).nth(5)).toContainText('Il file principale è main.ts.');
-  await expect(items(page).nth(5)).toBeInViewport();
+  await expect(items(page)).toHaveCount(5);
+  await expect(items(page).nth(3)).toHaveAccessibleName('Strumento: Read');
+  await expect(items(page).nth(3)).toContainText('/src/main.ts');
+  await expect(items(page).nth(3)).not.toContainText(/Fatto|Fallito/);
+  await expect(items(page).nth(4)).toContainText('Il file principale è main.ts.');
+  await expect(items(page).nth(4)).toBeInViewport();
 
   const before = await snapshotFixture();
   await page.waitForTimeout(2500);
@@ -227,7 +232,7 @@ test('a click on an external entry shows its conversation read-only, updated liv
 
   session.end();
   await expect(listEntry(page, folder)).toHaveCount(0, SCAN);
-  await expect(items(page)).toHaveCount(6);
+  await expect(items(page)).toHaveCount(5);
 });
 
 // plan-claude_sessions_client/REQ-30, REQ-33, REQ-34: a new session has no message yet

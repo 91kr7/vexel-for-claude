@@ -38,9 +38,9 @@ const view = (page: Page) => page.locator('.conversation-view');
 const header = (page: Page) => view(page).locator('.session-header');
 const scroller = (page: Page) => view(page).locator('.conversation-items');
 const items = (page: Page) => view(page).getByRole('article');
-const itemWithHeading = (page: Page, heading: string) => items(page).filter({ has: page.getByRole('heading', { name: heading, exact: true }) });
-const expandButton = (item: Locator) => item.getByRole('button', { name: 'Espandi' });
-const collapseButton = (item: Locator) => item.getByRole('button', { name: 'Comprimi' });
+const item = (page: Page, name: string) => view(page).getByRole('article', { name, exact: true });
+/** The row of a tool card: one button that opens and closes it. */
+const cardRow = (card: Locator) => card.getByRole('button').first();
 const isItemRequest = (url: string) => /\/api\/external-sessions\/[^/]+\/items$/.test(new URL(url).pathname);
 
 async function newFolder(name: string): Promise<string> {
@@ -114,19 +114,19 @@ test('the external view shows its header, a read-only notice that stays in view,
   await page.goto('/');
   await listEntry(page, folder).click(SCAN);
 
-  // SessionHeader: the h2 is the folder name, the line is "<label> · <folder>".
+  // SessionHeader: the h2 is the folder name, the line is "Aperta in un altro terminale · <folder>".
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('negozio');
   await expect(header(page)).toContainText('In attesa');
-  await expect(header(page).getByText(`Sistema il carrello del negozio · ${folder}`, { exact: true })).toBeVisible();
+  await expect(header(page).getByText(`Aperta in un altro terminale · ${folder}`, { exact: true })).toBeVisible();
   await expect(header(page).getByRole('button', { name: 'Riprendi qui' })).toBeVisible();
   const notice = header(page).getByText('Sola lettura', { exact: true });
   await expect(notice).toBeVisible();
   await expect(items(page).last()).toBeInViewport();
 
   // REQ-20: each kind has its own look, and the text sits in a centred column narrower than the list.
-  const userItem = itemWithHeading(page, 'Utente').first();
-  const claudeItem = itemWithHeading(page, 'Claude').first();
-  const toolItem = itemWithHeading(page, 'Strumento: Read');
+  const userItem = item(page, 'Utente').first();
+  const claudeItem = item(page, 'Claude').first();
+  const toolItem = item(page, 'Strumento: Read');
   await expect(toolItem).toContainText('/src/cart.ts');
   await expect(toolItem.locator('svg').first()).toBeAttached();
   const looks = [await lookOf(userItem), await lookOf(claudeItem), await lookOf(toolItem)];
@@ -150,12 +150,12 @@ test('the external view shows its header, a read-only notice that stays in view,
   process.kill('SIGKILL');
   await expect(listEntry(page, folder)).toHaveCount(0, SCAN);
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('negozio');
-  await expect(header(page).getByText(`Sistema il carrello del negozio · ${folder}`, { exact: true })).toBeVisible();
+  await expect(header(page).getByText(`Aperta in un altro terminale · ${folder}`, { exact: true })).toBeVisible();
   await expect(notice).toBeVisible();
 });
 
-// plan-claude_sessions_client-ui_redesign/REQ-21, REQ-4 — scenario "The user expands a long tool output"
-test('tool calls and long tool outputs are collapsed, expand to their full content on demand and collapse again', async ({ page }) => {
+// plan-claude_sessions_client-ui_redesign/REQ-21, REQ-4, plan-claude_sessions_client-ui_redesign-material3_mock/REQ-39 — scenario "The user expands a long tool output"
+test('tool cards are closed, open to their full input and output on demand and close again', async ({ page }) => {
   const folder = await newFolder('espandi');
   const input = { command: 'npm run build -- --mode production', description: 'Compila il progetto' };
   await writeTranscript(folder, 'e2e-open-expand', [
@@ -173,43 +173,43 @@ test('tool calls and long tool outputs are collapsed, expand to their full conte
 
   await page.goto('/');
   await listEntry(page, folder).click(SCAN);
-  await expect(items(page)).toHaveCount(5);
-  const call = itemWithHeading(page, 'Strumento: Bash');
-  const [longResult, shortResult] = [itemWithHeading(page, 'Risultato').nth(0), itemWithHeading(page, 'Risultato').nth(1)];
+  // A call and its result are one card.
+  await expect(items(page)).toHaveCount(3);
+  const bash = item(page, 'Strumento: Bash');
+  const read = item(page, 'Strumento: Read');
 
-  // Collapsed: the call is its one-line summary, the long output its first 5 lines and "…", the short output has no button.
-  await expect(call).toContainText(input.command);
-  await expect(call.locator('pre')).toHaveCount(0);
-  await expect(expandButton(call)).toHaveAttribute('aria-expanded', 'false');
-  await expect(longResult.locator('pre')).toHaveText(`${lines(5)}\n…`);
-  await expect(expandButton(longResult)).toHaveAttribute('aria-expanded', 'false');
-  await expect(shortResult.getByRole('button')).toHaveCount(0);
-  await expect(shortResult.locator('pre')).toHaveText(lines(3, 'breve'));
+  // Closed: the row shows the one-line summary and the outcome, nothing below it.
+  await expect(bash).toContainText(input.command);
+  await expect(bash).toContainText('Fatto');
+  for (const card of [bash, read]) {
+    await expect(card.locator('pre')).toHaveCount(0);
+    await expect(cardRow(card)).toHaveAttribute('aria-expanded', 'false');
+  }
   expect(itemRequests).toEqual([]);
 
-  await expandButton(longResult).click();
-  await expect(longResult.locator('pre')).toHaveText(lines(8));
-  await expect(collapseButton(longResult)).toHaveAttribute('aria-expanded', 'true');
-  expect(itemRequests).toHaveLength(1);
-  await collapseButton(longResult).click();
-  await expect(longResult.locator('pre')).toHaveText(`${lines(5)}\n…`);
-  await expect(expandButton(longResult)).toHaveAttribute('aria-expanded', 'false');
+  // Open: the full input (it has more than the summary) above the full output, each loaded once.
+  await cardRow(bash).click();
+  await expect(bash.locator('pre')).toHaveText(`${JSON.stringify(input, null, 2)}\n\n${lines(8)}`);
+  await expect(cardRow(bash)).toHaveAttribute('aria-expanded', 'true');
+  expect(itemRequests).toHaveLength(2);
+  await cardRow(bash).click();
+  await expect(bash.locator('pre')).toHaveCount(0);
+  await expect(cardRow(bash)).toHaveAttribute('aria-expanded', 'false');
 
-  // The keyboard alone expands and collapses the call.
-  await expandButton(call).focus();
+  // The keyboard alone opens and closes a card. A short output whose input is the summary needs no request.
+  await cardRow(read).focus();
   await page.keyboard.press('Enter');
-  await expect(call.locator('pre')).toHaveText(JSON.stringify(input, null, 2));
-  await expect(collapseButton(call)).toBeFocused();
+  await expect(read.locator('pre')).toHaveText(lines(3, 'breve'));
+  await expect(cardRow(read)).toBeFocused();
+  await expect(cardRow(read)).toHaveAttribute('aria-expanded', 'true');
   await page.keyboard.press('Enter');
-  await expect(call.locator('pre')).toHaveCount(0);
-  await expect(expandButton(call)).toHaveAttribute('aria-expanded', 'false');
+  await expect(read.locator('pre')).toHaveCount(0);
+  await expect(cardRow(read)).toHaveAttribute('aria-expanded', 'false');
   expect(itemRequests).toHaveLength(2);
 
-  // Later expands reuse the loaded content.
-  await expandButton(longResult).click();
-  await expect(longResult.locator('pre')).toHaveText(lines(8));
-  await expandButton(call).click();
-  await expect(call.locator('pre')).toHaveText(JSON.stringify(input, null, 2));
+  // Later opens reuse the loaded content.
+  await cardRow(bash).click();
+  await expect(bash.locator('pre')).toHaveText(`${JSON.stringify(input, null, 2)}\n\n${lines(8)}`);
   expect(itemRequests).toHaveLength(2);
 });
 
@@ -231,18 +231,22 @@ test('the full content shows "Caricamento…" while it loads, an error when it f
 
   await page.goto('/');
   await listEntry(page, folder).click(SCAN);
-  const result = itemWithHeading(page, 'Risultato');
-  await expect(result.locator('pre')).toHaveText(`${lines(5)}\n…`);
+  const card = item(page, 'Strumento: Bash');
+  await expect(card).toContainText('Fatto');
+  await expect(card.locator('pre')).toHaveCount(0);
 
-  await expandButton(result).click();
-  await expect(result).toContainText('Impossibile caricare il contenuto completo.');
-  await collapseButton(result).click();
-  await expect(result).not.toContainText('Impossibile caricare il contenuto completo.');
+  // Until the full text is loaded, the block shows the cut text and "…".
+  await cardRow(card).click();
+  await expect(card.getByRole('alert')).toHaveText('Impossibile caricare il contenuto completo.');
+  await expect(card.locator('pre')).toHaveText(`${lines(5)}\n…`);
+  await cardRow(card).click();
+  await expect(card).not.toContainText('Impossibile caricare il contenuto completo.');
 
-  await expandButton(result).click();
-  await expect(result).toContainText('Caricamento…');
-  await expect(result.locator('pre')).toHaveText(lines(9));
-  await expect(result).not.toContainText('Caricamento…');
+  await cardRow(card).click();
+  await expect(card.getByRole('status').filter({ hasText: 'Caricamento…' })).toBeVisible();
+  await expect(card.locator('pre')).toHaveText(lines(9));
+  await expect(card).not.toContainText('Caricamento…');
+  await expect(card).not.toContainText('Impossibile caricare il contenuto completo.');
   expect(attempts).toBe(2);
 });
 

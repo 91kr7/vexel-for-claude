@@ -92,6 +92,35 @@ describe('ConversationStreamRoute', () => {
     });
   });
 
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-36, REQ-39, REQ-40: the data of the bubbles and of the tool cards
+  it('sends the user time, the tool-use ids that join a call to its result, and the outcome of each result', async () => {
+    const at = '2026-11-05T20:45:00.000Z';
+    const toolUse = (id: string, command: string) => ({ type: 'tool_use', id, name: 'Bash', input: { command } });
+    await writeTranscript(
+      'live',
+      line(userEntry('Lancia i test', undefined, { timestamp: at })) +
+        line({ type: 'assistant', message: { role: 'assistant', content: [toolUse('toolu_a', 'npm test'), toolUse('toolu_b', 'npm run lint')] } }) +
+        line(userEntry([
+          { type: 'tool_result', tool_use_id: 'toolu_a', content: 'FAIL', is_error: true },
+          { type: 'tool_result', tool_use_id: 'toolu_b', content: 'ok' },
+        ])),
+    );
+    await startApp();
+    const client = connect('live');
+    await waitFor(() => client.frames.length > 0, 'first frame');
+    const items = frames(client)[0]!.items.map((item) => {
+      const { ref, ...rest } = item as { ref?: unknown };
+      return rest;
+    });
+    expect(items).toEqual([
+      { kind: 'user', text: 'Lancia i test', timestamp: at },
+      { kind: 'tool_call', name: 'Bash', summary: 'npm test', id: 'toolu_a' },
+      { kind: 'tool_call', name: 'Bash', summary: 'npm run lint', id: 'toolu_b' },
+      { kind: 'tool_result', text: 'FAIL', truncated: false, isError: true, toolUseId: 'toolu_a' },
+      { kind: 'tool_result', text: 'ok', truncated: false, toolUseId: 'toolu_b' },
+    ]);
+  });
+
   // plan-claude_sessions_client/REQ-33
   it('sends an empty first frame when there is no transcript yet, then the items once the session writes it', async () => {
     await startApp();
