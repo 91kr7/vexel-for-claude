@@ -184,14 +184,17 @@ async function styleOf(target: Locator): Promise<Style> {
 const isCircle = (radius: string, side: number) => radius === '50%' || parseFloat(radius) === side / 2;
 const transparent = (colour: string) => colour === 'transparent' || /^rgba\(.*,\s*0\)$/.test(colour);
 
-/** Row geometry of board "Voci dell'elenco": 12 px gap, padding 12 px 16 px, radius 16 px, 40 px avatar. */
-async function expectBoardRow(row: Locator, name: string, radius = '16px'): Promise<void> {
+/**
+ * Row geometry of board "Voci dell'elenco": 12 px gap, padding 12 px 16 px, radius 16 px, 40 px avatar.
+ * The outlined external avatar is a 40 px content-box span with a 1 px border: 42 px outside.
+ */
+async function expectBoardRow(row: Locator, name: string, radius = '16px', avatarSide = 40): Promise<void> {
   const s = await styleOf(row);
   expect([s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft], `${name}: padding`).toEqual(['12px', '16px', '12px', '16px']);
   expect(s.columnGap, `${name}: gap`).toBe('12px');
   expect(s.borderRadius, `${name}: radius`).toBe(radius);
   const box = await avatar(row).boundingBox();
-  expect([box?.width, box?.height], `${name}: 40 px avatar`).toEqual([40, 40]);
+  expect([box?.width, box?.height], `${name}: ${avatarSide} px avatar`).toEqual([avatarSide, avatarSide]);
 }
 
 /** Text styles of board "Voci dell'elenco": title-m folder name, body-m label, label-m state with a 14 px icon, body-s time. */
@@ -407,7 +410,7 @@ test('working, external, ended and open entries match their board variants in bo
       [ended, 'ended'],
       [outside, 'external'],
     ] as const) {
-      await expectBoardRow(entry(page, folder), `${scheme} ${name}`);
+      await expectBoardRow(entry(page, folder), `${scheme} ${name}`, '16px', name === 'external' ? 42 : 40);
       await expectBoardText(page, entry(page, folder), folder, `${scheme} ${name}`);
     }
 
@@ -497,7 +500,7 @@ test('an external session that waits for input is the amber row with "Esterna" u
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     const t = async (name: string) => token(page, name);
-    await expectBoardRow(row, `${scheme} external needs input`, '20px');
+    await expectBoardRow(row, `${scheme} external needs input`, '20px', 42);
     await expectBoardText(page, row, outside, `${scheme} external needs input`);
     const s = await styleOf(row);
     expect([s.backgroundColor, s.color], `${scheme}: amber row`).toEqual([await t('--attn-container'), await t('--on-attn-container')]);
