@@ -20,3 +20,4 @@
 | 2026-11-05 | dev | divergence colours-type tertiary | decided | Pink tertiary roles left out: no board uses them, human asked for blue/grey |
 | 2026-11-05 | dev | divergence colours-type Inter files | decided | Unused `src/web/fonts/inter*` kept: deleting files from an earlier cycle is not asked by any convention; flagged for human review |
 | 2026-11-05 | dev | divergence colours-type font tokens | decided | `--font-ui`/`--font-mono` in `tokens.css` instead of `styles.css`; same result, follows existing idiom |
+| 2026-11-05 | test | G5 colours-type round 1 | sent back | Red: `src/web/fonts/inter*` still tracked, breaks ThirdPartyNotices/BundledFont; INT-3 "replace Inter" asks their removal, so the earlier "keep" decision is reversed |

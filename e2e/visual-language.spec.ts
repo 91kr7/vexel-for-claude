@@ -168,23 +168,20 @@ test('the page declares both colour schemes for native controls', async ({ page 
   expect(content?.split(/\s+/).sort()).toEqual(['dark', 'light']);
 });
 
-// plan-claude_sessions_client-ui_redesign/REQ-2, ThemeTokens and WebEntry: the terminal keeps its dark colours in both themes
-test('the terminal of a hosted session keeps the same dark background in both themes', async ({ page, request }) => {
+// plan-claude_sessions_client-ui_redesign/REQ-2, ThemeTokens and WebEntry: the terminal has the dark --term-bg of the active theme
+test('the terminal of a hosted session is dark in both themes, in the --term-bg of each', async ({ page, request }) => {
   await openSession(page, request, 'terminal-theme');
   const terminalBackground = () =>
     effectiveBackground(page.locator('.xterm-screen')).then((c) => resolved(page, c));
-  const tokenBackground = async () => resolved(page, (await tokens(page, ['--terminal-background']))['--terminal-background']!);
+  const tokenBackground = async () => resolved(page, (await tokens(page, ['--term-bg']))['--term-bg']!);
 
-  const light = await terminalBackground();
   const lightToken = await tokenBackground();
+  expect(await terminalBackground()).toEqual(lightToken);
+  expect(luminance(lightToken), 'light terminal background is dark').toBeLessThan(0.05);
   await page.emulateMedia({ colorScheme: 'dark' });
-  const dark = await terminalBackground();
   const darkToken = await tokenBackground();
-
-  expect(luminance(light), 'terminal background is dark').toBeLessThan(0.05);
-  expect(dark).toEqual(light);
-  expect(darkToken).toEqual(lightToken);
-  expect(luminance(lightToken)).toBeLessThan(0.05);
+  await expect.poll(terminalBackground).toEqual(darkToken);
+  expect(luminance(darkToken), 'dark terminal background is dark').toBeLessThan(0.05);
   await expect(terminal(page)).toContainText('READY');
 });
 
@@ -232,10 +229,10 @@ test('with no internet connection the page and a session load their font and ico
     expect(new URL(f.url).origin).toBe(origin);
     expect(f.status).toBe(200);
   }
-  const interLoaded = await page.evaluate(() =>
-    [...document.fonts].some((f) => f.family.replace(/["']/g, '') === 'Inter Variable' && f.status === 'loaded'),
+  const loaded = await page.evaluate(() =>
+    [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/["']/g, '')),
   );
-  expect(interLoaded, 'Inter Variable is loaded').toBe(true);
+  expect(new Set(loaded), 'Roboto Flex and Roboto Mono are loaded').toEqual(new Set(['Roboto Flex', 'Roboto Mono']));
   await expect(page.getByRole('button', { name: 'Nuova sessione' }).locator('svg.icon')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Interrompi' }).locator('svg.icon')).toBeVisible();
 });
@@ -254,21 +251,21 @@ test('the built page and stylesheets reference no external resource', async () =
   }
 });
 
-// BundledFont: @font-face contract and the terminal keeps its own font
-test('the UI uses the bundled Inter Variable font and the terminal does not', async ({ page, request }) => {
+// BundledFont: the UI uses Roboto Flex, the terminal Roboto Mono
+test('the UI uses the bundled Roboto Flex font and the terminal uses Roboto Mono', async ({ page, request }) => {
   await openSession(page, request, 'font');
   const face = await page.evaluate(async () => {
     await document.fonts.ready;
-    const f = [...document.fonts].find((x) => x.family.replace(/["']/g, '') === 'Inter Variable');
+    const f = [...document.fonts].find((x) => x.family.replace(/["']/g, '') === 'Roboto Flex');
     return f && { weight: f.weight, display: f.display };
   });
-  expect(face).toEqual({ weight: '100 900', display: 'swap' });
+  expect(face).toEqual({ weight: '400 800', display: 'swap' });
   for (const name of ['Nuova sessione', 'Riprendi sessione']) {
     const family = await page.getByRole('button', { name }).evaluate((el) => getComputedStyle(el).fontFamily);
-    expect(family, name).toMatch(/^["']?Inter Variable/);
+    expect(family, name).toMatch(/^["']?Roboto Flex/);
   }
-  expect(await page.locator('body').evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Inter Variable/);
-  expect(await terminal(page).evaluate((el) => getComputedStyle(el).fontFamily)).not.toMatch(/Inter/);
+  expect(await page.locator('body').evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Roboto Flex/);
+  expect(await terminal(page).evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Roboto Mono/);
 });
 
 // IconSet: each button keeps its accessible name and shows one decorative icon sized by --icon-size in its text colour
@@ -282,7 +279,7 @@ test('the sidebar and session toolbar buttons carry decorative icons', async ({ 
     probe.remove();
     return width;
   });
-  expect(iconSize).toBeGreaterThan(0);
+  expect(iconSize).toBe(20);
 
   const buttons = [
     page.getByRole('button', { name: 'Nuova sessione', exact: true }),
@@ -362,15 +359,18 @@ test('each bundled font and icon set is recorded with its source, version and an
   for (const entry of entries) {
     const title = entry.split('\n', 1)[0]!;
     expect(entry, `${title}: source`).toMatch(/https?:\/\//);
-    expect(entry, `${title}: package version`).toMatch(/\b\d+\.\d+\.\d+\b/);
-    expect(entry, `${title}: licence`).toMatch(/licen[cs]e/i);
     const paths = [...entry.matchAll(/`([^`]+)`/g)].map((m) => m[1]!).filter((p) => p.includes('/') && !p.startsWith('@'));
+    // ThirdPartyNotices: the version, or where the files were taken when no version is recorded.
+    const takenFrom = paths.some((p) => !p.startsWith('src/'));
+    expect(/\b\d+\.\d+\.\d+\b/.test(entry) || takenFrom, `${title}: package version or where it was taken`).toBe(true);
+    expect(entry, `${title}: licence`).toMatch(/licen[cs]e/i);
     const licenceFiles = paths.filter((p) => /(LICENSE|OFL|COPYING)[^/]*$/i.test(p));
     expect(licenceFiles.length, `${title}: licence file named`).toBeGreaterThan(0);
     for (const p of paths) expect(existsSync(path.join(repoRoot, p)), `${title}: ${p} exists`).toBe(true);
   }
 
-  expect(notices).toContain('src/web/fonts/inter-latin-wght-normal.woff2');
+  expect(notices).toContain('src/web/fonts/roboto-flex-latin.woff2');
+  expect(notices).toContain('src/web/fonts/roboto-mono-latin.woff2');
   expect(notices).toContain('src/web/fonts/OFL.txt');
   expect(notices).toContain('src/web/icons/Icons.tsx');
   expect(notices).toContain('src/web/icons/LICENSE');
