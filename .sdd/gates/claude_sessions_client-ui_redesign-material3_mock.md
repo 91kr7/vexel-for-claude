@@ -51,3 +51,6 @@
 | 2026-11-05 | test | G5 external-session round 1 | sent back | Red: outlined external avatar 48 px outside, board span is content-box (48 + border = 50; 40 + border = 42 in the list); code defect |
 | 2026-11-05 | test | G5 external-session round 2 | sent back | After fix: 3 tests out of date (40 px external avatar, hint in header); sent to tester citing boards and REQ-33 |
 | 2026-11-05 | test | G5 external-session round 3 | pass | Re-run by gatekeeper: 65 e2e green; unit 147 green by tester |
+| 2026-11-05 | dev | G4 dialogs | pass | Build green re-run; `tokens.css` and `SessionView.tsx` outside INTs justified (scrim REQ-51, folder name for INT-3) |
+| 2026-11-05 | dev | divergence dialogs field font | decided | Field value in Roboto Flex as the board renders it (`.m3 input` inherits), not mono |
+| 2026-11-05 | dev | divergence dialogs field border and focus ring | decided | 2 px `--primary` field border and 3 px ring on "Annulla" as drawn on the board |

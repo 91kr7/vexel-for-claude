@@ -173,7 +173,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal, snackbar }: S
                 Interrompi
               </button>
             )}
-            <StopSessionButton sessionId={sessionId} state={session?.state} />
+            <StopSessionButton sessionId={sessionId} state={session?.state} folderName={session && folderNameOf(session.folder)} />
           </>
         }
       />

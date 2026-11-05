@@ -50,7 +50,7 @@ type: configuration
 | `--color-state-idle`, `--color-success` | `--ok` |
 | `--terminal-background` | `--term-bg` |
 
-- `--color-backdrop` and `--shadow-modal` keep their own values, per set.
+- `--color-backdrop` → black at 32 %. `--shadow-modal` → `0 8px 24px`, black at 25 %. Both are the same in the two sets, as board "Dialoghi" draws them.
 - The colour set follows `prefers-color-scheme`. Light is the default. Dark applies when the system asks for dark.
 - A change of the system setting applies at once, with no reload.
 
@@ -79,3 +79,4 @@ type: configuration
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-3`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-4`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-5`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-51`

@@ -82,8 +82,8 @@
   --color-danger-hover: color-mix(in srgb, var(--error), var(--on-error) 8%);
   --color-on-danger: var(--on-error);
   --color-focus-ring: var(--primary);
-  --color-backdrop: rgb(15 18 24 / 45%);
-  --shadow-modal: 0 12px 32px rgb(15 18 24 / 18%);
+  --color-backdrop: rgb(0 0 0 / 32%);
+  --shadow-modal: 0 8px 24px rgb(0 0 0 / 25%);
 
   --color-state-needs-input: var(--attn);
   --color-state-needs-input-bg: var(--attn-container);
@@ -132,8 +132,5 @@
     --inverse-on-surface: #313131;
     --inverse-primary: #165d90;
     --term-bg: #0f0f0f;
-
-    --color-backdrop: rgb(0 0 0 / 60%);
-    --shadow-modal: 0 12px 32px rgb(0 0 0 / 45%);
   }
 }

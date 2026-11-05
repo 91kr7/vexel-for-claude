@@ -19,7 +19,7 @@ Props:
   - a new `sessionId` → closes the connection of the previous session. The terminal is empty, then shows the snapshot of the new session, then its live output. It fits the panel and sends `resize`.
   - the terminal never shows output of the previous session after a switch.
 - `onLeaveTerminal()` → called when the user presses Ctrl+Shift+L in the terminal.
-- `session` → `{ folder, label, state }` of the session, optional. It goes to the SessionHeader, and its `state` to StopSessionButton. A change of `session` does not reconnect the terminal.
+- `session` → `{ folder, label, state }` of the session, optional. It goes to the SessionHeader, and its `state` and folder name to StopSessionButton. A change of `session` does not reconnect the terminal.
 - `snackbar` → an element shown at the right of the hint row, optional (the NeedsInputSnackbar).
 
 Shows:
@@ -62,4 +62,4 @@ Actions:
 
 - `plan-claude_sessions_client/REQ-2`, `plan-claude_sessions_client/REQ-3`, `plan-claude_sessions_client/REQ-4`, `plan-claude_sessions_client/REQ-5`, `plan-claude_sessions_client/REQ-8`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`, `plan-claude_sessions_client/REQ-21`, `plan-claude_sessions_client/REQ-22`, `plan-claude_sessions_client/REQ-23`
 - `plan-claude_sessions_client-ui_redesign/REQ-17`, `plan-claude_sessions_client-ui_redesign/REQ-18`, `plan-claude_sessions_client-ui_redesign/REQ-24`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`, `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign/REQ-5`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-2`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-30`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-31`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-32`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-33`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-34`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-2`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-30`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-31`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-32`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-33`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-34`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-47`

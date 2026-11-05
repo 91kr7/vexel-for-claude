@@ -39,6 +39,26 @@ export function HistoryIcon() {
   );
 }
 
+const FOLDER_PATH = 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z';
+
+export function FolderIcon() {
+  return (
+    <LucideIcon>
+      <path d={FOLDER_PATH} />
+    </LucideIcon>
+  );
+}
+
+export function FolderPlusIcon() {
+  return (
+    <LucideIcon>
+      <path d="M12 10v6" />
+      <path d="M9 13h6" />
+      <path d={FOLDER_PATH} />
+    </LucideIcon>
+  );
+}
+
 export function CircleStopIcon() {
   return (
     <LucideIcon>

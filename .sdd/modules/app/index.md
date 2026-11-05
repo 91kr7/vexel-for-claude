@@ -11,8 +11,8 @@
 | WebEntry | UI entry point | `src/web/index.html`, `src/web/main.tsx`, `src/web/styles.css` | Italian page that mounts AppLayout with the global styles and the board type, button, chip and icon classes, in the system theme | `specs/web-entry.md` |
 | ThemeTokens | configuration | `src/web/theme/tokens.css` | Board colour roles with the light-blue and grey palette, old colour names, type, spacing, radii, icons and focus ring, light and dark | `specs/theme-tokens.md` |
 | BundledFont | configuration | `src/web/fonts/roboto.css`, `src/web/fonts/roboto-flex-latin.woff2`, `src/web/fonts/roboto-mono-latin.woff2`, `src/web/fonts/OFL.txt` | Roboto Flex and Roboto Mono fonts shipped with the client, with their licence | `specs/bundled-font.md` |
-| Dialog | UI component | `src/web/dialogs/Dialog.tsx` | Shared modal frame: title, content, primary action and "Annulla", Enter, Esc, focus trap | `specs/dialog.md` |
-| WarningDialog | UI component | `src/web/dialogs/WarningDialog.tsx` | Dialog for a risky action: warning look, danger primary, focus on "Annulla" | `specs/warning-dialog.md` |
+| Dialog | UI component | `src/web/dialogs/Dialog.tsx` | Shared modal frame of board "Dialoghi": scrim, icon, title, description, content, "Annulla" and primary action, Enter, Esc, focus trap | `specs/dialog.md` |
+| WarningDialog | UI component | `src/web/dialogs/WarningDialog.tsx` | Stop-confirmation frame for a risky action: icon in a circle, error or amber tone, focus on "Annulla" | `specs/warning-dialog.md` |
 | ProgressIndicator | UI component | `src/web/feedback/ProgressIndicator.tsx` | Rotating indicator with an Italian label for a loading area, and the Spinner of a busy button | `specs/progress-indicator.md` |
 | ErrorMessage | UI component | `src/web/feedback/ErrorMessage.tsx` | Icon and Italian text in the error colour, announced as an alert | `specs/error-message.md` |
 | IconSet | UI component | `src/web/icons/Icons.tsx`, `src/web/icons/LICENSE` | Lucide icons as local decorative SVG components, with their licence | `specs/icon-set.md` |

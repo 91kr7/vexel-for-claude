@@ -13,6 +13,7 @@ type: UI component
 Props:
 - `sessionId` → the session to stop.
 - `state` → its current state, or `undefined` when the page does not know it yet.
+- `folderName` → the name of the session folder, optional. The confirmation shows it.
 
 Shows:
 - `state` is `ended` → nothing. The button disappears also while the confirmation is open.
@@ -21,7 +22,8 @@ Shows:
 - a failed stop → the button is enabled again, and an ErrorMessage "Terminazione della sessione non riuscita." shows next to it. The next stop request hides the message.
 
 Actions:
-- "Termina", `state` is `working` → opens a WarningDialog "Terminare la sessione?" with the text "La sessione è in lavorazione. Il lavoro in corso si interrompe.", the buttons "Annulla" (focused) and "Termina" (primary action). No request yet.
+- "Termina", `state` is `working` → opens a WarningDialog in the `error` tone with `PowerIcon`, the title "Terminare la sessione?", the buttons "Annulla" (focused) and "Termina" (primary action). No request yet.
+  - its text → "**<folderName>** sta ancora lavorando. Il turno in corso verrà interrotto; potrai riprendere la conversazione dalla cronologia." The folder name is bold, in `--on-surface`. Without `folderName` the text starts with "La sessione", not bold.
   - "Annulla" or Esc → the dialog closes. No request.
   - "Termina" → the dialog closes and the stop request leaves.
 - "Termina", any other `state` → the stop request leaves at once.
@@ -37,3 +39,4 @@ Actions:
 - `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-24`
 - `plan-claude_sessions_client-ui_redesign/REQ-25`, `plan-claude_sessions_client-ui_redesign/REQ-26`, `plan-claude_sessions_client-ui_redesign/REQ-27`, `plan-claude_sessions_client-ui_redesign/REQ-28`, `plan-claude_sessions_client-ui_redesign/REQ-30`, `plan-claude_sessions_client-ui_redesign/REQ-31`, `plan-claude_sessions_client-ui_redesign/REQ-32`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-31`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-34`
+- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-47`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-48`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-52`

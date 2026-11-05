@@ -14,7 +14,7 @@ type: UI entry point
 - the page declares `color-scheme: light dark`. Scrollbars and native controls follow the system theme.
 - the script renders AppLayout in `#root`, with the global styles.
 - the global styles take every value from ThemeTokens. The UI text uses Roboto Flex, `--font-mono` text uses Roboto Mono.
-- buttons → secondary by default. The class `button-primary` gives the primary look, the class `button-danger` the danger look. A disabled button looks dimmed.
+- buttons → secondary by default. The class `button-primary` gives the primary look, the class `button-danger` the danger look: a transparent text button in `--error`, with an 8 % layer of its colour under the pointer. A disabled button looks dimmed.
 - global classes, IDENTICAL to the `<style>` block of board "Sessione ospitata":
 
 | Class | Look |

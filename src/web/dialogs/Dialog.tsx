@@ -4,7 +4,8 @@ import { TriangleAlertIcon } from '../icons/Icons';
 
 export interface DialogProps {
   title: string;
-  description?: string;
+  description?: ReactNode;
+  icon?: ReactNode;
   children?: ReactNode;
   primaryLabel: string;
   onPrimary: () => void;
@@ -15,6 +16,7 @@ export interface DialogProps {
   formName?: string;
   className?: string;
   tone?: 'default' | 'warning';
+  accent?: 'error' | 'attn';
 }
 
 const FOCUSABLE = 'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])';
@@ -22,6 +24,7 @@ const FOCUSABLE = 'button:not(:disabled), input:not(:disabled), select:not(:disa
 export function Dialog({
   title,
   description,
+  icon,
   children,
   primaryLabel,
   onPrimary,
@@ -32,6 +35,7 @@ export function Dialog({
   formName,
   className,
   tone = 'default',
+  accent = 'error',
 }: DialogProps) {
   const titleId = useId();
   const descriptionId = useId();
@@ -51,7 +55,11 @@ export function Dialog({
   }, [previousFocus]);
 
   const keepFocusInside = (event: KeyboardEvent<HTMLDivElement>) => {
-    const focusable = [...event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE)];
+    const frame = event.currentTarget;
+    const isTabStop = (element: HTMLElement) =>
+      !(element instanceof HTMLInputElement && element.type === 'radio' && !element.checked) ||
+      frame.querySelector(`input[type="radio"][name="${CSS.escape(element.name)}"]:checked`) === null;
+    const focusable = [...frame.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(isTabStop);
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
     if (!first || !last) {
@@ -88,7 +96,7 @@ export function Dialog({
     >
       <div
         ref={frameRef}
-        className={['modal', warning ? 'dialog-warning' : '', className ?? ''].filter(Boolean).join(' ')}
+        className={['modal', warning ? `dialog-warning dialog-${accent}` : '', className ?? ''].filter(Boolean).join(' ')}
         role={warning ? 'alertdialog' : 'dialog'}
         aria-modal="true"
         aria-labelledby={titleId}
@@ -97,19 +105,29 @@ export function Dialog({
         onKeyDown={handleKeyDown}
       >
         <form className="dialog-form" aria-label={formName} onSubmit={(event) => event.preventDefault()}>
-          <h2 id={titleId}>
-            {warning && <TriangleAlertIcon />}
-            {title}
-          </h2>
-          {description !== undefined && <p id={descriptionId}>{description}</p>}
+          {warning ? (
+            <span className="dialog-icon-circle">{icon ?? <TriangleAlertIcon />}</span>
+          ) : (
+            icon !== undefined && <span className="dialog-icon">{icon}</span>
+          )}
+          <div className="dialog-heading">
+            <h2 id={titleId} className="headline-s">
+              {title}
+            </h2>
+            {description !== undefined && (
+              <p id={descriptionId} className="body-m dialog-description">
+                {description}
+              </p>
+            )}
+          </div>
           {children}
           <div className="modal-actions">
-            <button type="button" onClick={onCancel} autoFocus={initialFocus === 'cancel'}>
+            <button type="button" className="btn label-l dialog-cancel" onClick={onCancel} autoFocus={initialFocus === 'cancel'}>
               Annulla
             </button>
             <button
               type="button"
-              className={warning ? 'button-danger' : 'button-primary'}
+              className={`btn label-l ${warning ? 'button-danger' : 'button-primary'}`}
               onClick={onPrimary}
               disabled={primaryBlocked}
               aria-busy={primaryBusy || undefined}

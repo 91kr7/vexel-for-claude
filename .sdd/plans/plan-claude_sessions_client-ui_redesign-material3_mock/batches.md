@@ -13,7 +13,7 @@ status: validated
 | [session-list](batches/batch-session-list.md) | Session list | REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28 | page-frame | certified | The user answers a waiting session from its card |
 | [hosted-session](batches/batch-hosted-session.md) | Hosted session | REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34 | session-list | certified | The user works in a hosted session laid out as the board |
 | [external-session](batches/batch-external-session.md) | External session | REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42, REQ-43 | hosted-session | certified | The user reads an external session laid out as the board |
-| [dialogs](batches/batch-dialogs.md) | Dialogs | REQ-44, REQ-45, REQ-46, REQ-47, REQ-48, REQ-49, REQ-50, REQ-51, REQ-52 | session-list | todo | The user picks a recent folder for a new session |
+| [dialogs](batches/batch-dialogs.md) | Dialogs | REQ-44, REQ-45, REQ-46, REQ-47, REQ-48, REQ-49, REQ-50, REQ-51, REQ-52 | session-list | implemented | The user picks a recent folder for a new session |
 
 Execution order: colours-type → page-frame → session-list → hosted-session → external-session. dialogs needs only session-list, so it can run at any point after it.
 
