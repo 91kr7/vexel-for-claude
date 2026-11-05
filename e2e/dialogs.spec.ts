@@ -35,7 +35,7 @@ const confirmation = (page: Page) => page.getByRole('alertdialog', { name: 'Term
 const action = (dialog: Locator, name: string) => dialog.getByRole('button', { name, exact: true });
 const pastEntry = (page: Page, folder: string, label: string) =>
   history(page).getByRole('region', { name: folder }).getByRole('button').filter({ hasText: label });
-const listEntry = (page: Page, folder: string) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: folder });
+const listEntry = (page: Page, folder: string) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
 const isStartRequest = (url: string, method: string) => new URL(url).pathname === '/api/sessions' && method === 'POST';
@@ -136,7 +136,7 @@ async function openWorkingSession(page: Page, request: APIRequestContext, name: 
   await page.locator('.xterm-screen').click();
   await page.keyboard.type('WORK');
   await page.keyboard.press('Enter');
-  await expect(listEntry(page, folder)).toContainText('In lavorazione');
+  await expect(listEntry(page, folder)).toContainText('Lavora');
   return { id, folder };
 }
 
@@ -420,7 +420,7 @@ test.describe('stop confirmation', () => {
     await expect(confirmation(page)).toBeHidden();
     const tick = await lastTick(page);
     await expect.poll(() => lastTick(page)).toBeGreaterThan(tick + 2);
-    await expect(listEntry(page, folder)).toContainText('In lavorazione');
+    await expect(listEntry(page, folder)).toContainText('Lavora');
     expect(stops).toEqual([]);
   });
 
@@ -435,7 +435,7 @@ test.describe('stop confirmation', () => {
 
     await expect(confirmation(page)).toBeHidden();
     await page.waitForTimeout(500);
-    await expect(listEntry(page, folder)).toContainText('In lavorazione');
+    await expect(listEntry(page, folder)).toContainText('Lavora');
     expect(stops).toEqual([]);
   });
 

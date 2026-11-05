@@ -7,8 +7,7 @@ import { type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
 
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
-const TOOLTIP = 'Sessione in un altro terminale: lo stato «Richiede input» non è disponibile';
-const TIME = /\d{2}:\d{2}:\d{2}/;
+const RELATIVE_TIME = /^(ora|\d+ min fa)$/;
 // The scanner reads the sessions folder every 2 seconds.
 const SCAN = { timeout: 10_000 };
 
@@ -33,7 +32,7 @@ test.afterAll(async () => {
 });
 
 const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
-const listEntry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
+const listEntry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const counter = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('status').filter({ hasText: 'richiede input' });
 const conversationView = (page: Page) => page.locator('.conversation-view');
 const items = (page: Page) => conversationView(page).getByRole('article');
@@ -101,7 +100,7 @@ async function expectNoReload(page: Page): Promise<void> {
   expect(await page.evaluate(() => 'e2eSamePage' in globalThis)).toBe(true);
 }
 
-// plan-claude_sessions_client/REQ-29, REQ-30, REQ-31 — scenario "The user sees a session that runs in another terminal"
+// plan-claude_sessions_client/REQ-29, REQ-30, REQ-31, plan-claude_sessions_client-ui_redesign-material3_mock/REQ-18, REQ-24 — scenario "The user sees a session that runs in another terminal"
 test('a session that runs in another terminal is listed as external with its folder, first message, state and time', async ({ page }) => {
   const folder = await newFolder('shop');
   const firstMessage = `Aggiorna la pagina del carrello e ${'aggiungi i test '.repeat(6)}`;
@@ -113,15 +112,16 @@ test('a session that runs in another terminal is listed as external with its fol
   const entry = listEntry(page, folder);
   await expect(entry).toBeVisible(SCAN);
   await expect(entry).toContainText(firstMessage.replace(/\s+/g, ' ').trim().slice(0, 80));
+  await expect(entry).toContainText('shop');
   await expect(entry).toContainText('In attesa');
-  await expect(entry).toContainText(TIME);
+  await expect(entry.locator('time')).toHaveText(RELATIVE_TIME);
   await expect(entry).toHaveClass(/\bexternal\b/);
-  const marker = entry.getByText('Esterna', { exact: true });
-  await expect(marker).toBeVisible();
-  await expect(marker).toHaveAttribute('title', TOOLTIP);
+  await expect(entry.locator('.avatar-external svg')).toBeVisible();
+  await expect(list(page).getByRole('heading', { level: 2, name: 'In altri terminali', exact: true })).toBeVisible();
+  await expect(entry).not.toContainText('Esterna');
 });
 
-// plan-claude_sessions_client/REQ-31, REQ-32 — scenario "The external state follows the terminal"
+// plan-claude_sessions_client/REQ-31, REQ-32, plan-claude_sessions_client-ui_redesign-material3_mock/REQ-17 — scenario "The external state follows the terminal"
 test('the external state follows the terminal without a reload', async ({ page }) => {
   const folder = await newFolder('blog');
   const session = await runInTerminal('e2e-ext-blog', folder, 'idle');
@@ -132,27 +132,29 @@ test('the external state follows the terminal without a reload', async ({ page }
   await markNoReload(page);
 
   await session.update({ status: 'busy', updatedAt: Date.now() });
-  await expect(entry).toContainText('In lavorazione', SCAN);
+  await expect(entry).toContainText('Lavora', SCAN);
+  await session.update({ status: 'waiting', updatedAt: Date.now() });
+  await expect(entry).toContainText('Richiede input', SCAN);
   await session.update({ status: 'idle', updatedAt: Date.now() });
   await expect(entry).toContainText('In attesa', SCAN);
   await expectNoReload(page);
 });
 
-// plan-claude_sessions_client/REQ-31 — scenario "A waiting external session shows as working"
-test('an external session that waits for a permission answer shows as working and is not counted as needing input', async ({ page }) => {
+// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-17, REQ-25: an external session that waits for the user needs input and is counted
+test('an external session that waits for a permission answer needs input and is counted', async ({ page }) => {
   const folder = await newFolder('permission');
-  await runInTerminal('e2e-ext-permission', folder, 'busy');
+  await runInTerminal('e2e-ext-permission', folder, 'waiting');
 
   await page.goto('/');
   const entry = listEntry(page, folder);
-  await expect(entry).toContainText('In lavorazione', SCAN);
-  await expect(entry).not.toContainText('Richiede input');
-  await expect(entry).not.toHaveClass(/\bneeds-input\b/);
+  await expect(entry).toContainText('Richiede input', SCAN);
+  await expect(entry).toHaveClass(/\bneeds-input\b/);
+  await expect(entry).toContainText('Esterna');
   const needsInputEntries = list(page).locator('.session-entry.needs-input');
   await expect
     .poll(async () => {
       const n = await needsInputEntries.count();
-      return n === 0 ? (await counter(page).count()) === 0 : (await counter(page).textContent())?.trim() === `${n} richiede input`;
+      return n > 0 && (await counter(page).textContent())?.trim() === `${n} richiede input`;
     })
     .toBe(true);
 });

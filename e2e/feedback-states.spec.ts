@@ -25,7 +25,7 @@ test.afterAll(async () => {
 const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione principale' });
 const mainArea = (page: Page) => page.getByRole('main');
 const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
-const entry = (page: Page, text: string) => list(page).getByRole('button').filter({ hasText: text });
+const entry = (page: Page, text: string) => list(page).getByRole('button').filter({ has: page.getByTitle(text, { exact: true }) });
 const header = (page: Page) => mainArea(page).locator('.session-header');
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const button = (scope: Locator, name: string) => scope.getByRole('button', { name, exact: true });

@@ -145,7 +145,7 @@ const aliases: [string, string][] = [
 ];
 
 const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
-const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
+const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const mainArea = (page: Page) => page.getByRole('main');
 const emptyButton = (page: Page, name: string) => mainArea(page).getByRole('button', { name, exact: true });

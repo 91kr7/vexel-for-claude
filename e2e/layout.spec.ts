@@ -22,7 +22,7 @@ const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione p
 const panel = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const mainArea = (page: Page) => page.getByRole('main');
 const list = (page: Page) => panel(page).locator('.session-list');
-const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
+const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const panelTitle = (page: Page) => panel(page).getByRole('heading', { level: 1, name: 'Sessioni', exact: true });
 const brand = (page: Page) => panel(page).getByText('Vexel', { exact: true });
 const chooser = (page: Page) => page.getByRole('form', { name: 'Scegli la cartella del progetto' });
@@ -353,8 +353,13 @@ test('when the entries do not fit, only the list scrolls and the rail and the pa
   await page.mouse.move(listBox.x + listBox.width / 2, listBox.y + listBox.height / 2);
   await page.mouse.wheel(0, 5000);
   await expect.poll(async () => (await box(lastEntry)).y, 'the list scrolls').toBeLessThan(lastBefore.y);
-  const lastAfter = await box(lastEntry);
-  expect(lastAfter.y + lastAfter.height, 'the last entry is reachable in the window').toBeLessThanOrEqual(600 + 0.5);
+  await expect
+    .poll(async () => {
+      await page.mouse.wheel(0, 5000);
+      const lastAfter = await box(lastEntry);
+      return lastAfter.y + lastAfter.height;
+    }, 'the last entry is reachable in the window')
+    .toBeLessThanOrEqual(600 + 0.5);
 
   const after = await Promise.all(Object.values(top).map(box));
   expect(after, 'the rail and the panel head do not move').toEqual(before);

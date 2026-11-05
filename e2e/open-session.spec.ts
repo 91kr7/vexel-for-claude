@@ -22,7 +22,7 @@ test.afterEach(async ({ request }) => {
 });
 
 const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
-const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
+const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const mainArea = (page: Page) => page.getByRole('main');
 const header = (page: Page) => mainArea(page).locator('.session-header');
 const terminalBox = (page: Page) => mainArea(page).locator('.session-terminal');
@@ -84,7 +84,7 @@ test('with 10 sessions, opening and switching a hosted session shows its header 
   const [first = '', second = ''] = [folders[3], folders[8]];
 
   await page.goto('/');
-  await expect(list(page).getByRole('button').filter({ hasText: projectsRoot })).toHaveCount(10);
+  await expect(list(page).getByRole('button').filter({ has: page.locator(`[title^="${projectsRoot}"]`) })).toHaveCount(10);
 
   await entry(page, first).click();
   await expectHeaderOf(page, first, path.basename(first), 'In attesa');

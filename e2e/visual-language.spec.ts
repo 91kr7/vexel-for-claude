@@ -23,7 +23,7 @@ test.afterEach(async ({ request }) => {
 });
 
 const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
-const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
+const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
 async function openSession(page: Page, request: APIRequestContext, name: string): Promise<void> {

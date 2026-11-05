@@ -354,3 +354,103 @@ describe('SessionStateTracker Claude Code session id', () => {
     expect(tracker.get('s1')?.label).toBe('Nuovo messaggio');
   });
 });
+
+describe('SessionStateTracker waiting tool', () => {
+  const waitingTool = (id = 's1') => tracker.get(id)?.waitingTool;
+  const permissionPrompt = hook('Notification', { notification_type: 'permission_prompt' });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-22: PermissionRequest gives its tool_name as waiting tool
+  it('takes the tool_name of a PermissionRequest and notifies it', () => {
+    trackNew();
+    tracker.applyHookEvent('s1', hook('PermissionRequest', { tool_name: 'Bash' }));
+    expect(state()).toBe('needs_input');
+    expect(waitingTool()).toBe('Bash');
+    expect(changes.at(-1)?.waitingTool).toBe('Bash');
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-22: permission_prompt takes the last PreToolUse tool
+  it('takes the last PreToolUse tool on a permission_prompt', () => {
+    trackNew();
+    tracker.applyHookEvent('s1', hook('PreToolUse', { tool_name: 'Read' }));
+    tracker.applyHookEvent('s1', hook('PreToolUse', { tool_name: 'Edit' }));
+    expect(waitingTool()).toBeUndefined();
+    tracker.applyHookEvent('s1', permissionPrompt);
+    expect(waitingTool()).toBe('Edit');
+  });
+
+  // session-state-tracker spec: permission_prompt keeps a waiting tool already set
+  it('keeps the PermissionRequest tool on a later permission_prompt', () => {
+    trackNew();
+    tracker.applyHookEvent('s1', hook('PreToolUse', { tool_name: 'Read' }));
+    tracker.applyHookEvent('s1', hook('PermissionRequest', { tool_name: 'Bash' }));
+    tracker.applyHookEvent('s1', permissionPrompt);
+    expect(waitingTool()).toBe('Bash');
+  });
+
+  // session-state-tracker spec: no known tool gives no waiting tool
+  it('has no waiting tool on a permission_prompt with no PreToolUse before', () => {
+    trackNew();
+    tracker.applyHookEvent('s1', permissionPrompt);
+    expect(state()).toBe('needs_input');
+    expect(tracker.get('s1')).not.toHaveProperty('waitingTool');
+  });
+
+  // session-state-tracker spec: an empty tool_name is not remembered
+  it('ignores an empty tool_name', () => {
+    trackNew();
+    tracker.applyHookEvent('s1', hook('PermissionRequest', { tool_name: '' }));
+    expect(waitingTool()).toBeUndefined();
+  });
+
+  // session-state-tracker spec: AskUserQuestion and elicitation_dialog give no waiting tool
+  it('gives no waiting tool for AskUserQuestion or an elicitation_dialog', () => {
+    trackNew('ask');
+    tracker.applyHookEvent('ask', hook('PreToolUse', { tool_name: 'AskUserQuestion' }));
+    expect(state('ask')).toBe('needs_input');
+    expect(waitingTool('ask')).toBeUndefined();
+    trackNew('elicit');
+    tracker.applyHookEvent('elicit', hook('Notification', { notification_type: 'elicitation_dialog' }));
+    expect(state('elicit')).toBe('needs_input');
+    expect(waitingTool('elicit')).toBeUndefined();
+  });
+
+  // session-state-tracker spec: another event that keeps needs_input leaves the waiting tool unchanged
+  it('keeps the waiting tool on another event that keeps needs_input', () => {
+    trackNew();
+    tracker.applyHookEvent('s1', hook('PermissionRequest', { tool_name: 'Bash' }));
+    tracker.applyHookEvent('s1', hook('Notification', { notification_type: 'elicitation_dialog' }));
+    expect(waitingTool()).toBe('Bash');
+  });
+
+  // session-state-tracker spec: the waiting tool goes away when the state leaves needs_input, by event, input or exit
+  it('removes the waiting tool when the state leaves needs_input', () => {
+    trackNew('event');
+    tracker.applyHookEvent('event', hook('PermissionRequest', { tool_name: 'Bash' }));
+    tracker.applyHookEvent('event', hook('PostToolUse', { tool_name: 'Bash' }));
+    expect(state('event')).toBe('working');
+    expect(tracker.get('event')).not.toHaveProperty('waitingTool');
+    expect(changes.at(-1)).not.toHaveProperty('waitingTool');
+
+    trackNew('input');
+    tracker.applyHookEvent('input', hook('PermissionRequest', { tool_name: 'Bash' }));
+    tracker.applyUserInput('input', '\x1b');
+    expect(state('input')).toBe('idle');
+    expect(tracker.get('input')).not.toHaveProperty('waitingTool');
+
+    const exiting = trackNew('exit');
+    tracker.applyHookEvent('exit', hook('PermissionRequest', { tool_name: 'Bash' }));
+    exiting.exit();
+    expect(state('exit')).toBe('ended');
+    expect(tracker.get('exit')).not.toHaveProperty('waitingTool');
+  });
+
+  // session-state-tracker spec: an old PermissionRequest tool does not come back on a later permission_prompt
+  it('uses the newest PreToolUse tool, not an old waiting tool, on a new permission_prompt', () => {
+    trackNew();
+    tracker.applyHookEvent('s1', hook('PermissionRequest', { tool_name: 'Bash' }));
+    tracker.applyHookEvent('s1', hook('PostToolUse', { tool_name: 'Bash' }));
+    tracker.applyHookEvent('s1', hook('PreToolUse', { tool_name: 'Write' }));
+    tracker.applyHookEvent('s1', permissionPrompt);
+    expect(waitingTool()).toBe('Write');
+  });
+});

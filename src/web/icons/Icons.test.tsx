@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
   CircleAlertIcon,
+  CircleMinusIcon,
   CircleOffIcon,
   CirclePauseIcon,
   ChevronDownIcon,
@@ -30,6 +31,7 @@ const icons: [string, ComponentType][] = [
   ['TriangleAlertIcon', TriangleAlertIcon],
   ['CirclePauseIcon', CirclePauseIcon],
   ['CircleOffIcon', CircleOffIcon],
+  ['CircleMinusIcon', CircleMinusIcon],
   ['TerminalIcon', TerminalIcon],
   ['LockIcon', LockIcon],
   ['WrenchIcon', WrenchIcon],
@@ -135,6 +137,16 @@ describe('IconSet', () => {
   // IconSet rule: the circle-alert of the board keeps its circle
   it('CircleAlertIcon draws the circle of the board', () => {
     expect(renderToStaticMarkup(<CircleAlertIcon />)).toMatch(/<circle\b(?=[^>]*\scx="12")(?=[^>]*\scy="12")(?=[^>]*\sr="10")[^>]*>/);
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-20: the circle-minus of the ended state draws the shapes of proposta-voci-elenco.html
+  it('CircleMinusIcon draws the circle and the bar of the board', () => {
+    const html = renderToStaticMarkup(<CircleMinusIcon />);
+    const boardCircle = 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z';
+    const hasCircle =
+      /<circle\b(?=[^>]*\scx="12")(?=[^>]*\scy="12")(?=[^>]*\sr="10")[^>]*>/.test(html) || drawnShapes(html).includes(boardCircle);
+    expect(hasCircle, 'circle of radius 10 centred in the box').toBe(true);
+    expect(drawnShapes(html).filter((d) => d !== boardCircle)).toEqual(subpathsOf(['M8 12h8']));
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-6, IconSet: the SVG is inline and makes no network request

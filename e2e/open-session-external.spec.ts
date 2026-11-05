@@ -33,7 +33,7 @@ test.afterAll(async () => {
 });
 
 const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
-const listEntry = (page: Page, folder: string) => list(page).getByRole('button').filter({ hasText: folder });
+const listEntry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const view = (page: Page) => page.locator('.conversation-view');
 const header = (page: Page) => view(page).locator('.session-header');
 const scroller = (page: Page) => view(page).locator('.conversation-items');
@@ -298,7 +298,7 @@ test('with 10 active sessions, a transcript with large outputs opens, and the vi
   for (let i = 1; i <= 8; i += 1) await runInTerminal(`e2e-open-other-${i}`, await newFolder(`altra-${i}`));
 
   await page.goto('/');
-  await expect(list(page).getByRole('button').filter({ hasText: projectsRoot })).toHaveCount(10, SCAN);
+  await expect(list(page).getByRole('button').filter({ has: page.locator(`[title^="${projectsRoot}"]`) })).toHaveCount(10, SCAN);
 
   await listEntry(page, big).click();
   await expect(items(page).last()).toContainText('Fine analisi dei log.', ONE_SECOND);

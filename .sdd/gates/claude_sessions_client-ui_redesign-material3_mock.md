@@ -33,3 +33,6 @@
 | 2026-11-05 | dev | conflict old REQ-12 colour per state | decided | Board wins: only "Lavora" coloured, states told apart by icon + text, needs input bold, ended dimmed. For human review |
 | 2026-11-05 | dev | divergence session-list needs-input card | decided | State badge added (REQ-19/20); whole card clickable to keep "click opens any entry" |
 | 2026-11-05 | dev | divergence session-list external needs input | decided | Amber row with "Esterna", no dashed border: `proposta-voci-elenco.html` wins for that state |
+| 2026-11-05 | test | question tester progress bar on external | decided | Board wins (REQ-28, human "alla lettera"): no bar on external working entries; REQ-21 read as hosted entries. For human review |
+| 2026-11-05 | test | question tester layout.spec.ts:301 race | decided | Fix the test race now, before the plan's closing run |
+| 2026-11-05 | test | G5 session-list round 1 | sent back | Code change from the progress-bar decision; then re-test |

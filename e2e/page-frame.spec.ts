@@ -24,7 +24,7 @@ const railButton = (page: Page, name: string) => rail(page).getByRole('button', 
 const panel = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const mainArea = (page: Page) => page.getByRole('main');
 const entries = (page: Page) => panel(page).getByRole('button');
-const entry = (page: Page, folder: string) => entries(page).filter({ hasText: folder });
+const entry = (page: Page, folder: string) => entries(page).filter({ has: page.getByTitle(folder, { exact: true }) });
 const chip = (page: Page) => panel(page).getByRole('status').filter({ hasText: 'richiede input' });
 const badge = (page: Page) => railButton(page, 'Sessioni').locator('.nav-rail-badge');
 const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'richiede il tuo input' });

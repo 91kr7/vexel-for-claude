@@ -1,31 +1,32 @@
 import type { ComponentType } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { CircleAlertIcon, CircleOffIcon, CirclePauseIcon, LoaderCircleIcon } from '../icons/Icons';
+import { CircleAlertIcon, CircleMinusIcon, CirclePauseIcon, LoaderCircleIcon } from '../icons/Icons';
 import type { SessionState } from './live-session-store';
 import { StateBadge, StateIcon } from './StateBadge';
 
 const table: [SessionState, string, ComponentType][] = [
-  ['working', 'In lavorazione', LoaderCircleIcon],
+  ['working', 'Lavora', LoaderCircleIcon],
   ['needs_input', 'Richiede input', CircleAlertIcon],
   ['idle', 'In attesa', CirclePauseIcon],
-  ['ended', 'Terminata', CircleOffIcon],
+  ['ended', 'Terminata', CircleMinusIcon],
 ];
 
 const textOf = (html: string) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
 describe('StateBadge', () => {
-  // plan-claude_sessions_client-ui_redesign/REQ-12: one inline element with the classes state-badge and state-<state>
-  it.each(table)('%s renders one span with the class "state-badge" and its state class', (state) => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-20, StateBadge: one inline element with the classes state-badge, label-m and state-<state>
+  it.each(table)('%s renders one span with the classes "state-badge", "label-m" and its state class', (state) => {
     const html = renderToStaticMarkup(<StateBadge state={state} />);
     const root = html.match(/^<span\b([^>]*)>[\s\S]*<\/span>$/);
     expect(root, html).not.toBeNull();
     const classes = root?.[1]?.match(/\sclass="([^"]*)"/)?.[1]?.split(/\s+/) ?? [];
     expect(classes).toContain('state-badge');
+    expect(classes).toContain('label-m');
     expect(classes).toContain(`state-${state}`);
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-12: the icon of the table, then the Italian name
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-20: the board icon of the state, then its name
   it.each(table)('%s shows its icon and then the name "%s"', (state, name, Icon) => {
     const html = renderToStaticMarkup(<StateBadge state={state} />);
     const inner = html.replace(/^<span\b[^>]*>/, '').replace(/<\/span>$/, '');
