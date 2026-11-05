@@ -8,3 +8,9 @@
 | 2026-11-05 | analyse | question analyst | decided | Compact tool calls apply to the external view only; no new input field; hosted terminal not reformatted |
 | 2026-11-05 | analyse | size check | pass | ordinary, 124 lines, budget 200 |
 | 2026-11-05 | analyse | G1 analysis | pass | |
+| 2026-11-05 | plan | question planner | decided | Risky dialogs keep initial focus on "Annulla"; source specs stop-session-button.md, running-elsewhere-warning.md, constraint no behaviour change |
+| 2026-11-05 | plan | question planner | decided | Expanded tool output shows the full content; REQ-21 "expand", REQ-24 must hold |
+| 2026-11-05 | plan | G2 requirements | pass | |
+| 2026-11-05 | plan | question planner | decided | Folder chooser Enter: lists a different typed folder, starts on the listed one; smallest change satisfying REQ-26 |
+| 2026-11-05 | plan | G3 coverage | pass | Resume history select + "Riprendi" accepted: interaction in scope per analysis Summary, REQ-25 |
+| 2026-11-05 | plan | requirements.md constraint reworded | pass | Old-plan tests may change labels/UI steps; no REQ changed |
