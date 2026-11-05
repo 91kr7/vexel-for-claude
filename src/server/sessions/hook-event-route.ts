@@ -10,7 +10,13 @@ function isHookEvent(body: unknown): body is HookEvent {
 export function registerHookEventRoute(app: FastifyInstance, tracker: SessionStateTracker): void {
   app.post<{ Params: { id: string }; Body: unknown }>(
     '/api/sessions/:id/hook-events',
-    { bodyLimit: BODY_LIMIT_BYTES },
+    {
+      bodyLimit: BODY_LIMIT_BYTES,
+      errorHandler: (error, _request, reply) => {
+        if (error.statusCode === 400) return reply.code(400).send({ error: 'invalid_event' });
+        return reply.send(error);
+      },
+    },
     async (request, reply) => {
       if (!isHookEvent(request.body)) {
         return reply.code(400).send({ error: 'invalid_event' });

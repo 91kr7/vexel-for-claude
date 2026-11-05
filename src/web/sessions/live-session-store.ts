@@ -38,7 +38,12 @@ export class LiveSessionStore {
     socket.addEventListener(
       'message',
       (event: MessageEvent) => {
-        const message: unknown = JSON.parse(String(event.data));
+        let message: unknown;
+        try {
+          message = JSON.parse(String(event.data));
+        } catch {
+          return;
+        }
         if (!isSessionEvent(message)) return;
         if (pending) pending.push(message.session);
         else this.#upsert([message.session]);
@@ -51,6 +56,7 @@ export class LiveSessionStore {
         void fetch(`${this.#origin}/api/sessions`, { signal: listeners.signal })
           .then((response) => response.json() as Promise<SessionSummary[]>)
           .then((sessions) => {
+            if (listeners.signal.aborted) return;
             const events = pending ?? [];
             pending = undefined;
             this.#sessions = sessions;
