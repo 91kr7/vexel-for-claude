@@ -1,3 +1,5 @@
+import os from 'node:os';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './e2e/claude-dir';
@@ -5,7 +7,7 @@ import { E2E_CLAUDE_DIR } from './e2e/claude-dir';
 const port = 3100;
 const baseURL = `http://127.0.0.1:${port}`;
 // These specs share the server's fixture Claude Code folder, so they must never run at the same time.
-const claudeDirSpecs = /(resume-session|history-search|external-sessions|session-entries|open-session-external|dialogs|desktop-bridge-external)\.spec\.ts$/;
+const claudeDirSpecs = /(resume-session|dismiss-resume|history-search|external-sessions|session-entries|open-session-external|dialogs|desktop-bridge-external|running-tool|rename)\.spec\.ts$/;
 // Specs that launch Electron open windows on the user's display: only `npm run test:e2e:desktop` runs them (E2E_DESKTOP=1).
 const electronSpecs = /desktop-(window|notifications|tray)\.spec\.ts$/;
 const electron = process.env.E2E_DESKTOP === '1';
@@ -31,6 +33,8 @@ export default defineConfig({
     env: {
       PORT: String(port),
       CLAUDE_CONFIG_DIR: E2E_CLAUDE_DIR,
+      // The session names of the e2e server, never the user's own.
+      AI_CLIENT_DATA_DIR: path.join(os.tmpdir(), 'ai-client-e2e-data'),
       AI_CLIENT_CLAUDE_CLI: fileURLToPath(new URL('./test-support/fake-claude.mjs', import.meta.url)),
     },
     reuseExistingServer: !process.env.CI,

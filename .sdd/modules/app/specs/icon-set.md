@@ -28,7 +28,8 @@ Components and where the client uses them today:
 - `SearchIcon` → the search bar of the ResumeDialog
 - `XIcon` → "Clear Search" in the search bar of the ResumeDialog
 - `MoonIcon`, `SunIcon` → the ThemeSwitch in the dark and in the light theme
-- no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `PencilIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
+- `PencilIcon` → "Rename" of a list entry
+- no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
 
 ## Rules and invariants
 

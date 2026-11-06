@@ -181,7 +181,8 @@ describe('SessionList', () => {
     const [item] = items(html);
     expect(item).toMatch(/^<div\b[^>]*\sclass="[^"]*\bsession-card\b/);
     const [cardEntry, reply, ...rest] = buttonsIn(item ?? '');
-    expect(rest).toEqual([]);
+    // plan-session_list_improvements/REQ-25: the only other button of the card is "Rename"
+    expect(rest.map((b) => b.attributes.match(/\saria-label="([^"]*)"/)?.[1])).toEqual(['Rename']);
     expect(classesOf(cardEntry?.attributes ?? '')).toEqual(expect.arrayContaining(['session-entry', 'needs-input']));
     expect(hasAvatar(cardEntry?.html ?? '')).toBe(false);
     expect(cardEntry?.text).toBe('Needs Input web-dashboard rimuovi le dipendenze');
@@ -208,8 +209,10 @@ describe('SessionList', () => {
     const group = groupsOf(html).get('Needs Input') ?? '';
     const outside = items(group).find((item) => item.includes('title="/home/dev/progetti/mobile-app"')) ?? '';
     expect(outside).not.toContain('session-card');
+    // plan-session_list_improvements/REQ-25: the entry button and "Rename", nothing else
     const buttons = buttonsIn(outside);
-    expect(buttons).toHaveLength(1);
+    expect(buttons).toHaveLength(2);
+    expect(buttons[1]?.attributes).toContain('aria-label="Rename"');
     expect(classesOf(buttons[0]?.attributes ?? '')).toEqual(expect.arrayContaining(['session-entry', 'external', 'needs-input']));
     expect(buttons[0]?.text).not.toContain('Reply');
     expect(buttons[0]?.html).toContain(dotOf('needs_input'));
@@ -339,5 +342,42 @@ describe('SessionList', () => {
       expect(renderList([])).toBe(renderWith([], 'ready'));
       expect(renderWith([], 'ready')).not.toMatch(/role="(status|alert)"/);
     });
+  });
+});
+
+describe('SessionList, ended hosted entry actions', () => {
+  const now = new Date();
+  const actionNames = (itemHtml: string) => [...itemHtml.matchAll(/<button\b[^>]*\saria-label="(Resume|Dismiss)"/g)].map((m) => m[1]);
+  const itemOf = (html: string, id: string) => items(html).find((item) => item.includes(`title="${folderOf(id)}"`)) ?? '';
+
+  // plan-session_list_improvements/REQ-1, REQ-2: an ended hosted entry offers "Dismiss", and "Resume" only when resumable
+  it('offers "Resume" and "Dismiss" on a resumable ended hosted entry, and only "Dismiss" on one with no conversation', () => {
+    const html = renderList([{ ...session('saved', 'ended', now), resumable: true }, session('empty', 'ended', now)]);
+    expect(actionNames(itemOf(html, 'saved'))).toEqual(['Resume', 'Dismiss']);
+    expect(actionNames(itemOf(html, 'empty'))).toEqual(['Dismiss']);
+  });
+
+  // plan-session_list_improvements/REQ-3: no other entry offers "Dismiss" or "Resume"
+  it('offers neither action on working, needs-input, idle or external entries, ended external ones included', () => {
+    const html = renderList([
+      { ...session('work', 'working', now), resumable: true },
+      { ...session('wait', 'needs_input', now), resumable: true },
+      { ...session('rest', 'idle', now), resumable: true },
+      external('ext-work', 'working', now),
+      external('ext-wait', 'needs_input', now),
+      { ...external('ext-ended', 'ended', now), resumable: true },
+    ]);
+    expect(items(html)).toHaveLength(6);
+    expect(actionNames(html)).toEqual([]);
+  });
+
+  // EndedEntryActions: the buttons sit beside the entry button, not inside it
+  it('puts the actions outside the entry button of the ended entry', () => {
+    const item = itemOf(renderList([{ ...session('saved', 'ended', now), resumable: true }]), 'saved');
+    const entryButton = /<button\b[^>]*class="[^"]*\bsession-entry\b[^"]*"[^>]*>([\s\S]*?)<\/button>/.exec(item)?.[1] ?? '';
+    expect(entryButton).toContain(`title="${folderOf('saved')}"`);
+    expect(entryButton).not.toContain('<button');
+    expect(entryButton).not.toMatch(/aria-label="(Resume|Dismiss)"/);
+    expect(actionNames(item)).toEqual(['Resume', 'Dismiss']);
   });
 });

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDesktopBridge } from './desktop-bridge';
 import { EmptyState } from './EmptyState';
 import { ConversationView } from './external/ConversationView';
@@ -27,6 +27,10 @@ export function AppLayout() {
   const listedSummary = sessions.find((session) => session.id === openSessionId);
   if (listedSummary) lastOpenSummary.current = listedSummary;
   const openSummary = listedSummary ?? (lastOpenSummary.current?.id === openSessionId ? lastOpenSummary.current : undefined);
+  const openHostedLeftList = !openIsExternal && !listedSummary && openSummary !== undefined;
+  useEffect(() => {
+    if (openHostedLeftList) setOpenSessionId(null);
+  }, [openHostedLeftList]);
   const openHosted = (sessionId: string) => {
     setOpenSessionId(sessionId);
     setOpenIsExternal(false);
@@ -69,6 +73,7 @@ export function AppLayout() {
             status={status}
             order={sessionOrder}
             onReorder={moveSession}
+            onResumed={openHosted}
             openSessionId={openSessionId}
             onOpen={openFromList}
           />

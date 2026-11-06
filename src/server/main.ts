@@ -16,10 +16,15 @@ import { registerLocalAccessGuard } from './local-access-guard.js';
 import { registerAttachSessionRoute } from './sessions/attach-session-route.js';
 import { AttentionMonitor } from './sessions/attention-monitor.js';
 import { registerAttentionRoute } from './sessions/attention-route.js';
+import { registerDismissSessionRoute } from './sessions/dismiss-session-route.js';
 import { registerHookEventRoute } from './sessions/hook-event-route.js';
 import { writeHookSettings } from './sessions/hook-settings.js';
+import { registerRenameSessionRoute } from './sessions/rename-session-route.js';
+import { registerResumeEndedSessionRoute } from './sessions/resume-ended-session-route.js';
+import { RunningToolMonitor } from './sessions/running-tool-monitor.js';
 import { registerSessionEventsRoute } from './sessions/session-events-route.js';
 import { registerSessionListRoute } from './sessions/session-list-route.js';
+import { dataDirOf, SessionNameStore } from './sessions/session-name-store.js';
 import { SessionRegistry } from './sessions/session-registry.js';
 import { SessionStateTracker } from './sessions/session-state-tracker.js';
 import { registerStartSessionRoute } from './sessions/start-session-route.js';
@@ -39,7 +44,8 @@ function parsePort(value: string | undefined): number | undefined {
 const app = Fastify({ logger: true });
 const settingsPath = await writeHookSettings(`http://${HOST}:${port}`);
 const registry = new SessionRegistry({ settingsPath });
-const tracker = new SessionStateTracker();
+const names = await SessionNameStore.load(dataDirOf());
+const tracker = new SessionStateTracker({ names });
 registry.onSessionStart((session) => tracker.track(session));
 const history = new SessionHistory();
 const externalCheck = new ExternalSessionCheck();
@@ -47,9 +53,11 @@ const externalScanner = new ExternalSessionScanner({
   check: externalCheck,
   history,
   hostedPids: () => registry.hostedPids(),
+  names,
 });
 const transcriptReader = new TranscriptReader();
 const attentionMonitor = new AttentionMonitor({ tracker, scanner: externalScanner, registry });
+const runningToolMonitor = new RunningToolMonitor({ tracker, scanner: externalScanner, reader: transcriptReader });
 
 registerLocalAccessGuard(app, { viteDevPort });
 await app.register(fastifyWebsocket);
@@ -57,12 +65,15 @@ await app.register(fastifyWebsocket);
 app.get('/api/health', async () => ({ status: 'ok' }));
 registerStartSessionRoute(app, registry);
 registerStopSessionRoute(app, registry);
+registerDismissSessionRoute(app, tracker);
+registerRenameSessionRoute(app, { tracker, scanner: externalScanner, names });
+registerResumeEndedSessionRoute(app, { tracker, history, registry, externalCheck });
 registerAttachSessionRoute(app, registry, tracker);
-registerSessionListRoute(app, tracker, externalScanner);
-registerSessionEventsRoute(app, tracker, externalScanner);
+registerSessionListRoute(app, tracker, externalScanner, runningToolMonitor);
+registerSessionEventsRoute(app, tracker, externalScanner, runningToolMonitor);
 registerHookEventRoute(app, tracker);
 registerFolderRoute(app);
-registerPastSessionListRoute(app, { history, externalCheck, registry, tracker });
+registerPastSessionListRoute(app, { history, externalCheck, registry, tracker, names });
 registerResumeSessionRoute(app, { history, registry });
 registerConversationStreamRoute(app, { scanner: externalScanner, reader: transcriptReader });
 registerItemContentRoute(app, { scanner: externalScanner, reader: transcriptReader });
@@ -74,9 +85,11 @@ if (existsSync(webRoot)) {
 }
 
 externalScanner.start();
+runningToolMonitor.start();
 await app.listen({ host: HOST, port });
 
 async function stopServer(): Promise<void> {
+  runningToolMonitor.stop();
   const running = registry.list().filter((session) => !session.exited);
   await Promise.all(
     running.map(

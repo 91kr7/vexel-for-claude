@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { ExternalSessionCheck, RunningSessionFile } from '../history/external-session-check.js';
 import type { SessionHistory } from '../history/session-history.js';
+import type { SessionNameStore } from '../sessions/session-name-store.js';
 import { labelOf } from '../sessions/session-state-tracker.js';
 
 export interface ExternalSessionSummary {
@@ -20,6 +21,7 @@ export interface ExternalSessionScannerDependencies {
   check: Pick<ExternalSessionCheck, 'runningSessions'>;
   history: Pick<SessionHistory, 'get'>;
   hostedPids: () => Iterable<number>;
+  names?: Pick<SessionNameStore, 'get' | 'onChange'>;
   intervalMs?: number;
   now?: () => Date;
 }
@@ -28,6 +30,7 @@ const DEFAULT_INTERVAL_MS = 2000;
 
 interface Entry {
   summary: ExternalSessionSummary;
+  defaultLabel: string;
   labelFromMessage: boolean;
   firstSeen: string;
 }
@@ -67,6 +70,14 @@ export class ExternalSessionScanner {
     this.#deps = deps;
     this.#intervalMs = deps.intervalMs ?? DEFAULT_INTERVAL_MS;
     this.#now = deps.now ?? (() => new Date());
+    deps.names?.onChange((id) => {
+      const entry = this.#entries.get(id);
+      if (!entry) return;
+      const label = this.#labelOf(id, entry.defaultLabel);
+      if (label === entry.summary.label) return;
+      entry.summary = { ...entry.summary, label };
+      this.#notify({ type: 'session', session: { ...entry.summary } });
+    });
   }
 
   start(): void {
@@ -94,7 +105,7 @@ export class ExternalSessionScanner {
     for (const [id, file] of found) {
       const known = this.#entries.get(id);
       const firstSeen = known?.firstSeen ?? scanTime;
-      let label = known?.labelFromMessage ? known.summary.label : '';
+      let defaultLabel = known?.labelFromMessage ? known.defaultLabel : '';
       let labelFromMessage = known?.labelFromMessage ?? false;
       if (!labelFromMessage) {
         const message = await this.#deps.history
@@ -102,18 +113,19 @@ export class ExternalSessionScanner {
           .then((past) => labelOf(past?.firstUserMessage))
           .catch(() => '');
         labelFromMessage = message !== '';
-        label = message || path.basename(file.cwd) || file.cwd;
+        defaultLabel = message || path.basename(file.cwd) || file.cwd;
       }
       const summary: ExternalSessionSummary = {
         id,
         folder: file.cwd,
-        label,
+        label: this.#labelOf(id, defaultLabel),
         state: stateOf(file.status),
         lastActivity: typeof file.updatedAt === 'number' ? new Date(file.updatedAt).toISOString() : firstSeen,
         external: true,
       };
-      this.#entries.set(id, { summary, labelFromMessage, firstSeen });
-      if (!known || !sameSummary(known.summary, summary)) this.#notify({ type: 'session', session: { ...summary } });
+      const current = this.#entries.get(id);
+      this.#entries.set(id, { summary, defaultLabel, labelFromMessage, firstSeen });
+      if (!current || !sameSummary(current.summary, summary)) this.#notify({ type: 'session', session: { ...summary } });
     }
     for (const id of [...this.#entries.keys()]) {
       if (found.has(id)) continue;
@@ -141,6 +153,10 @@ export class ExternalSessionScanner {
     if (generation !== this.#generation) return;
     this.#timer = setTimeout(() => void this.#loop(generation), this.#intervalMs);
     this.#timer.unref();
+  }
+
+  #labelOf(id: string, defaultLabel: string): string {
+    return this.#deps.names?.get(id) ?? defaultLabel;
   }
 
   #notify(change: ExternalSessionChange): void {

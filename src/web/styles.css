@@ -874,6 +874,28 @@ input {
   color: var(--text-muted);
 }
 
+.session-entry-tool {
+  gap: 4px;
+  padding-left: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 15px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.session-entry-tool-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-entry-tool-others {
+  flex: none;
+}
+
 .session-entry-permission b,
 .session-card-line b {
   font-weight: 500;
@@ -890,6 +912,7 @@ input {
 
 .session-entry.ended[aria-current='true'],
 .session-entry[aria-current='true'] .session-entry-label,
+.session-entry[aria-current='true'] .session-entry-tool,
 .session-entry[aria-current='true'] .session-entry-time {
   color: var(--text-secondary);
 }
@@ -905,6 +928,114 @@ input {
 
 .session-entry .progress-bar {
   margin-left: 16px;
+}
+
+.ended-entry-actions {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  display: flex;
+  gap: 2px;
+  border-radius: 4px;
+  background-color: var(--bg-surface-2);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.session-list li:hover .ended-entry-actions,
+.session-list li:has(:focus-visible) .ended-entry-actions,
+.ended-entry-actions.shown {
+  opacity: 1;
+}
+
+.ended-entry-action {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+
+.ended-entry-action:hover {
+  background-color: var(--bg-surface-3);
+  color: var(--text-primary);
+}
+
+.ended-entry-action[aria-disabled='true'] {
+  cursor: default;
+}
+
+.ended-entry-action[aria-disabled='true']:not([aria-busy]) {
+  opacity: 0.55;
+}
+
+.ended-entry-action .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.ended-entry-error {
+  padding: 2px 8px 0 24px;
+}
+
+.entry-rename {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  background-color: var(--bg-surface-2);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.session-list li:hover > .entry-rename,
+.session-list li:has(:focus-visible) > .entry-rename {
+  opacity: 1;
+}
+
+.entry-rename:hover {
+  background-color: var(--bg-surface-3);
+  color: var(--text-primary);
+}
+
+.entry-rename .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.session-list li:has(> .entry-rename:not([hidden])) .ended-entry-actions {
+  right: 28px;
+}
+
+.session-list li:has(> .session-card) > .entry-rename {
+  top: 10px;
+  right: 10px;
+}
+
+.session-name-editor {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.session-name-input {
+  width: 100%;
+  padding: 0 4px;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.session-card > div.session-entry::after {
+  content: none;
 }
 
 .progress-bar {
