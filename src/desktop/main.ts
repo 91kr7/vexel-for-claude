@@ -73,6 +73,16 @@ async function requestQuit(): Promise<void> {
   }
 }
 
+// Mutter's auto-maximize maximizes a frameless window when it maps; the window opens at its own size.
+function undoAutoMaximize(window: BrowserWindow): void {
+  const undo = () => {
+    window.once('unmaximize', () => window.setSize(1280, 800));
+    window.unmaximize();
+  };
+  window.once('maximize', undo);
+  setTimeout(() => window.off('maximize', undo), 2000);
+}
+
 async function start(): Promise<void> {
   tray = new Tray(iconPath);
   updateTray([]);
@@ -88,6 +98,7 @@ async function start(): Promise<void> {
     webPreferences: { preload: preloadPath },
   });
   mainWindow = current;
+  undoAutoMaximize(current);
   const updateWindowFocus = () =>
     runNotificationCommands(
       notificationRules.setWindowFocused(current.isFocused() && current.isVisible() && !current.isMinimized()),
