@@ -21,7 +21,8 @@ async function tailLines(file: string): Promise<ConversationItem[][]> {
   try {
     handle = await open(file, 'r');
     const { size } = await handle.stat();
-    const start = Math.max(0, size - TAIL_BYTES);
+    // One byte before the tail, so a line that starts right at the tail is seen as complete.
+    const start = size > TAIL_BYTES ? size - TAIL_BYTES - 1 : 0;
     const buffer = Buffer.alloc(size - start);
     const { bytesRead } = await handle.read(buffer, 0, buffer.length, start);
     const lines = buffer.subarray(0, bytesRead).toString('utf8').split('\n');
