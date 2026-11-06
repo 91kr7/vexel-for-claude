@@ -12,3 +12,4 @@
 | 2026-11-06 | plan | question planner Q1 Search/zoom | human decision | Search stays in the header; zoom controls move to the right end of the hosted footer; departure from the analysis |
 | 2026-11-06 | plan | G2 requirements | pass | REQ-1..28 in 2 features cover the spec; REQ-15 and footer REQs to follow the human decision on Search/zoom |
 | 2026-11-06 | plan | G3 coverage | pass | 2 batches (list-width REQ-1..14, header-footer REQ-15..29), no dependency, modify paths exist; REQ-11 relies on the existing terminal refit; both batches may touch `styles.css`, run in sequence |
+| 2026-11-06 | plan | analysis correction | pass | Human decision on Search/zoom folded into the analysis (header bullet, footer bullet, assumption) |

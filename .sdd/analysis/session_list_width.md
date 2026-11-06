@@ -51,7 +51,7 @@ List panel width
 - The user must be able to reach the edge with the keyboard and change the width with the arrow keys, with visible focus.
 
 Session header
-- The header of a hosted session must show only the folder name, the session label or name, the state badge, and the interrupt and stop actions.
+- The header of a hosted session must show only the folder name, the session label or name, the state badge, and the search, interrupt and stop actions.
 - The header of an external session must show only the folder name, the session label or name, the state badge, the read-only chip and the resume-here action.
 - The header must stay on one line at every main area width from 700 px up. Its items must never overlap or wrap.
 - A label or name that does not fit must be cut with an ellipsis, and the full text must show on hover and on focus.
@@ -61,6 +61,7 @@ Footer bar
 - The footer must show the folder path, the context occupancy, the total tokens and the estimated cost.
 - On an external session, the footer must keep the text that says the session is open in another terminal, before the path.
 - On a hosted session, the footer must also show the key that moves the focus from the terminal to the list, as the hint does today.
+- On a hosted session, the terminal text size controls must show at the right end of the footer.
 - The four token parts (input, output, cache write, cache read) must show in a tooltip on the token total, on hover and on keyboard focus.
 - The context occupancy must keep its 70% and 90% highlights in the footer.
 - A path that does not fit must be cut with an ellipsis, and the full path must show on hover.
@@ -87,6 +88,7 @@ Text
 - The footer follows Claude Code's own status line, which shows context and cost under the prompt ([status line](https://code.claude.com/docs/en/statusline)).
 - External sessions get the same footer, so both session views place the same information in the same spot.
 - The four token parts go into a tooltip, because the human asked for less text on one line. No figure is lost.
+- The terminal search stays in the header and the text size controls go to the right end of the footer. The human decided this on 2026-11-06: "lo zoom mettilo in basso a destra mentre il search va bene in alto".
 
 ## Risks
 
