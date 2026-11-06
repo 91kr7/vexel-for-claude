@@ -1,8 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { CircleAlertIcon } from '../icons/Icons';
 import type { SessionState, SessionSummary } from './live-session-store';
 import { NeedsInputCounter, countNeedsInput } from './NeedsInputCounter';
+import { StateBadge, StateDot } from './StateBadge';
 
 const textOf = (html: string) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -27,7 +27,8 @@ function element(html: string, opening: RegExp): { attributes: string; inner: st
 
 const statusElement = (html: string) => element(html, /<(\w+)([^>]*\srole="status"[^>]*)\/?>/);
 const statusInner = (html: string) => statusElement(html)?.inner ?? '';
-const chipOf = (html: string) => element(html, /<(\w+)([^>]*\sclass="[^"]*\bchip\b[^"]*"[^>]*)>/);
+const chipOf = (html: string) => element(html, /<(\w+)([^>]*)>/);
+const classesOf = (attributes: string) => attributes.match(/\sclass="([^"]*)"/)?.[1]?.split(/\s+/) ?? [];
 
 describe('countNeedsInput', () => {
   // NeedsInputCounter contract: countNeedsInput gives the number of sessions in needs_input
@@ -42,7 +43,7 @@ describe('countNeedsInput', () => {
 });
 
 describe('NeedsInputCounter', () => {
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-11: the chip reads "N richiede input" inside the status element
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-21: the chip reads "N richiede input" inside the status element
   it('shows the chip "N richiede input" inside the role="status" element when N > 0', () => {
     const html = renderCounter(['needs_input', 'working', 'needs_input', 'ended', 'idle']);
     expect(statusElement(html), html).not.toBeNull();
@@ -51,18 +52,20 @@ describe('NeedsInputCounter', () => {
     expect(textOf(chip?.inner ?? '')).toBe('2 richiede input');
   });
 
-  // NeedsInputCounter "Shows": the chip carries the .chip and .label-l classes of the board
-  it('gives the chip the classes "chip" and "label-l"', () => {
+  // NeedsInputCounter "Shows": the pill has the classes of the amber StateBadge chip
+  it('gives the pill the classes of the needs_input StateBadge chip', () => {
     const chip = chipOf(statusInner(renderCounter(['needs_input'])));
-    expect(chip?.attributes).toMatch(/class="(?=[^"]*\bchip\b)(?=[^"]*\blabel-l\b)[^"]*"/);
+    const badge = chipOf(renderToStaticMarkup(<StateBadge state="needs_input" variant="chip" />));
+    expect(classesOf(chip?.attributes ?? '')).toEqual(expect.arrayContaining(classesOf(badge?.attributes ?? '')));
   });
 
-  // NeedsInputCounter "Shows": the circle-alert icon comes before the text
-  it('shows the circle-alert icon before the text', () => {
+  // NeedsInputCounter "Shows": the pulsing amber dot comes before the text, no icon
+  it('shows the amber StateDot before the text and no icon', () => {
     const inner = (chipOf(statusInner(renderCounter(['needs_input', 'idle'])))?.inner ?? '').trim();
-    const icon = renderToStaticMarkup(<CircleAlertIcon />);
-    expect(inner.startsWith(icon), inner).toBe(true);
-    expect(textOf(inner.slice(icon.length))).toBe('1 richiede input');
+    const dot = renderToStaticMarkup(<StateDot state="needs_input" />);
+    expect(inner.startsWith(dot), inner).toBe(true);
+    expect(textOf(inner.slice(dot.length))).toBe('1 richiede input');
+    expect(inner).not.toMatch(/<svg\b/);
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-11: hidden at zero, while the status element stays present
@@ -71,8 +74,7 @@ describe('NeedsInputCounter', () => {
       const html = renderCounter(states);
       expect(statusElement(html), html).not.toBeNull();
       expect(textOf(statusInner(html)), html).toBe('');
-      expect(html).not.toMatch(/\bchip\b/);
-      expect(html).not.toMatch(/<svg\b/);
+      expect(statusInner(html), html).toBe('');
     }
   });
 });

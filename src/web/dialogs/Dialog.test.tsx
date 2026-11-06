@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { Spinner } from '../feedback/ProgressIndicator';
-import { HistoryIcon, TriangleAlertIcon } from '../icons/Icons';
+import { TriangleAlertIcon } from '../icons/Icons';
 import { Dialog, type DialogProps } from './Dialog';
 
 const buttons = (html: string) =>
@@ -33,15 +33,32 @@ describe('Dialog', () => {
     expect(html).not.toContain('role="alertdialog"');
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-25: one cancel action, then one primary action
-  it('has one action row: "Annulla" first, then the primary action', () => {
-    expect(buttons(render()).map((b) => b.label)).toEqual(['Annulla', 'Conferma']);
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44, plan-claude_sessions_client-ui_redesign/REQ-25: "[Esc]" in the header, then "Annulla" and the primary action
+  it('has "[Esc]" in the header, then "Annulla" and the primary action', () => {
+    expect(buttons(render()).map((b) => b.label)).toEqual(['[Esc]', 'Annulla', 'Conferma']);
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-25: the primary action looks different from the cancel action
-  it('styles only the primary action with the primary style', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44, Dialog "Actions": the "[Esc]" button is named "Chiudi (Esc)" and sits after the title
+  it('names "[Esc]" "Chiudi (Esc)" and places it after the title', () => {
+    const html = render();
+    const esc = button(html, '[Esc]');
+    expect(attr(esc?.attrs ?? '', 'aria-label')).toBe('Chiudi (Esc)');
+    expect(attr(esc?.attrs ?? '', 'type')).toBe('button');
+    expect(html.indexOf('[Esc]')).toBeGreaterThan(html.indexOf('Titolo'));
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44: the accent dot before the title is decorative
+  it('shows a decorative element before the title and no icon', () => {
+    const head = render().split('Titolo')[0] ?? '';
+    expect(head).toMatch(/<span\b[^>]*aria-hidden="true"[^>]*>\s*<\/span>/);
+    expect(head).not.toContain('<svg');
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-47: "Annulla" neutral, primary action accent
+  it('styles "Annulla" as .button-neutral and the primary action as .button-primary', () => {
     const html = render();
     expect(classes(button(html, 'Conferma')?.attrs ?? '')).toContain('button-primary');
+    expect(classes(button(html, 'Annulla')?.attrs ?? '')).toContain('button-neutral');
     expect(classes(button(html, 'Annulla')?.attrs ?? '')).not.toContain('button-primary');
   });
 
@@ -72,29 +89,17 @@ describe('Dialog', () => {
     expect(textOfId(html, describedBy ?? '')).toBe('billing-api sta ancora lavorando.');
   });
 
-  // Dialog: the icon sits on top, before the title
-  it('renders the icon before the title', () => {
-    const html = render({ icon: <HistoryIcon /> });
-    const icon = html.indexOf(renderToStaticMarkup(<HistoryIcon />));
-    expect(icon).toBeGreaterThanOrEqual(0);
-    expect(icon).toBeLessThan(html.indexOf('Titolo'));
+  // Dialog "Shows": the description sits at the top of the body, before the content
+  it('places the description before the content', () => {
+    const html = render({ description: 'Spiegazione del dialogo.' });
+    expect(html.indexOf('Spiegazione del dialogo.')).toBeGreaterThan(html.indexOf('Titolo'));
+    expect(html.indexOf('Spiegazione del dialogo.')).toBeLessThan(html.indexOf('Contenuto'));
   });
 
-  // Dialog: without an icon, the default tone draws no icon
-  it('default tone without icon → no svg before the title', () => {
-    const html = render();
-    expect(html.slice(0, html.indexOf('Titolo'))).not.toContain('<svg');
-  });
-
-  // Dialog dependency: a warning tone without icon shows TriangleAlertIcon; with an icon, that icon only
-  it.each([
-    [undefined, renderToStaticMarkup(<TriangleAlertIcon />)],
-    [<HistoryIcon key="h" />, renderToStaticMarkup(<HistoryIcon />)],
-  ])('warning tone, icon %#: shows the expected icon before the title', (icon, expected) => {
-    const html = render({ tone: 'warning', ...(icon ? { icon } : {}) });
-    const head = html.slice(0, html.indexOf('Titolo'));
-    expect(head).toContain(expected);
-    expect(head.match(/<svg\b/g)).toHaveLength(1);
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44: a warning tone has no icon before the title either
+  it('warning tone → no icon before the title', () => {
+    const head = render({ tone: 'warning' }).split('Titolo')[0] ?? '';
+    expect(head).not.toContain('<svg');
   });
 
   // Dialog: no description, no accessible description
@@ -113,8 +118,8 @@ describe('Dialog', () => {
     expect(button(html, 'Annulla')?.attrs).not.toMatch(/\sdisabled\b/);
   });
 
-  // Dialog: formName is the accessible name of the form that holds the content and the action row
-  it('names the form with formName and keeps the content and the actions inside it', () => {
+  // Dialog: formName is the accessible name of the form that holds the body and the footer
+  it('names the form with formName and keeps the content and the footer actions inside it', () => {
     const html = render({ formName: 'Modulo del dialogo' });
     const form = html.match(/<form\b[^>]*>([\s\S]*)<\/form>/);
     expect(form).not.toBeNull();
@@ -124,14 +129,31 @@ describe('Dialog', () => {
     expect(form?.[1]).toContain('Conferma');
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-28, Dialog: tone warning is an alert dialog with a danger primary
-  it('tone warning → alertdialog with a danger primary action', () => {
+  // plan-claude_sessions_client-ui_redesign/REQ-28, plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-48: tone warning is an alert dialog with a rose primary
+  it('tone warning → alertdialog with a .button-danger primary action', () => {
     const html = render({ tone: 'warning' });
     const tag = roleTag(html, 'alertdialog');
     expect(tag).not.toBe('');
     expect(attr(tag, 'aria-modal')).toBe('true');
     expect(html).not.toContain('role="dialog"');
     expect(classes(button(html, 'Conferma')?.attrs ?? '')).toContain('button-danger');
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-49: warning tone with accent attn → amber primary and the description in a banner with the triangle
+  it('tone warning, accent attn → .button-attn primary and the triangle icon before the description', () => {
+    const html = render({ tone: 'warning', accent: 'attn', description: 'Testo di avviso.' });
+    expect(classes(button(html, 'Conferma')?.attrs ?? '')).toContain('button-attn');
+    expect(classes(button(html, 'Conferma')?.attrs ?? '')).not.toContain('button-danger');
+    const triangle = html.indexOf(renderToStaticMarkup(<TriangleAlertIcon />));
+    expect(triangle).toBeGreaterThan(html.indexOf('Titolo'));
+    expect(triangle).toBeLessThan(html.indexOf('Testo di avviso.'));
+  });
+
+  // Dialog: the accent has no effect on the default tone
+  it('default tone with accent attn keeps the .button-primary primary action and no triangle', () => {
+    const html = render({ accent: 'attn', description: 'Testo.' });
+    expect(classes(button(html, 'Conferma')?.attrs ?? '')).toContain('button-primary');
+    expect(html).not.toContain('<svg');
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-31, Dialog: a busy primary action shows the spinner, is disabled and keeps its name

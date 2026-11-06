@@ -55,36 +55,11 @@ const paint = (element: Locator) =>
     const s = getComputedStyle(el);
     return `${s.backgroundColor} ${s.color} ${s.borderTopColor}`;
   });
-/** Size and background of the box that holds the first icon of the dialog. */
-const iconLook = (dialog: Locator) =>
-  dialog.evaluate((el) => {
-    const holder = el.querySelector('svg')?.parentElement;
-    if (!holder) return 'no icon';
-    const box = holder.getBoundingClientRect();
-    return `${Math.round(box.width)}x${Math.round(box.height)} ${getComputedStyle(holder).backgroundColor}`;
-  });
-
 /** Primary and cancel action paint, measured with the mouse away from both buttons. */
 async function actionPaints(page: Page, dialog: Locator, primary: string): Promise<{ primary: string; cancel: string }> {
   await page.mouse.move(0, 0);
   return { primary: await paint(action(dialog, primary)), cancel: await paint(action(dialog, 'Annulla')) };
 }
-
-/** True when an icon sits above the title text, centred on it. */
-const iconAboveTitle = (dialog: Locator, title: string) =>
-  dialog.evaluate((el, text) => {
-    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-    let node: Node | null;
-    while ((node = walker.nextNode()) && node.textContent?.trim() !== text);
-    if (!node) return false;
-    const range = document.createRange();
-    range.selectNodeContents(node);
-    const titleBox = range.getBoundingClientRect();
-    return [...el.querySelectorAll('svg')].some((svg) => {
-      const box = svg.getBoundingClientRect();
-      return box.width > 0 && box.bottom <= titleBox.top + 1 && Math.abs(box.left + box.width / 2 - (titleBox.left + titleBox.width / 2)) <= 1;
-    });
-  }, title);
 
 async function newFolder(name: string): Promise<string> {
   const folder = path.join(projectsRoot, name);
@@ -357,7 +332,7 @@ test.describe('resume history', () => {
     await page.goto('/');
     await openHistory(page);
     await pastEntry(page, folder, 'Sessione nel terminale').click();
-    const historyLook = { icon: await iconLook(history(page)), ...(await actionPaints(page, history(page), 'Riprendi')) };
+    const historyLook = await actionPaints(page, history(page), 'Riprendi');
 
     await action(history(page), 'Riprendi').click();
 
@@ -374,8 +349,6 @@ test.describe('resume history', () => {
     const warningPaints = await actionPaints(page, warning(page), 'Riprendi comunque');
     expect(warningPaints.primary, 'the primary action looks different from "Annulla"').not.toBe(warningPaints.cancel);
     expect(warningPaints.primary, 'the primary action looks different from a normal dialog').not.toBe(historyLook.primary);
-    expect(await iconLook(warning(page)), 'the warning icon sits in a coloured circle').not.toBe(historyLook.icon);
-    expect(await iconAboveTitle(warning(page), 'Sessione in esecuzione in un terminale'), 'a warning icon above the title').toBe(true);
 
     await page.keyboard.press('Escape');
 
@@ -403,7 +376,7 @@ test.describe('stop confirmation', () => {
     const { id, folder } = await openWorkingSession(page, request, 'stop-enter');
     const stops = record(page, (url, method) => new URL(url).pathname === `/api/sessions/${id}/stop` && method === 'POST');
     await openChooser(page);
-    const chooserLook = { icon: await iconLook(chooser(page)), ...(await actionPaints(page, chooser(page), 'Avvia sessione')) };
+    const chooserLook = await actionPaints(page, chooser(page), 'Avvia sessione');
     await page.keyboard.press('Escape');
     await expect(chooser(page)).toBeHidden();
 
@@ -417,8 +390,6 @@ test.describe('stop confirmation', () => {
     const paints = await actionPaints(page, confirmation(page), 'Termina');
     expect(paints.primary, 'the primary action looks different from "Annulla"').not.toBe(paints.cancel);
     expect(paints.primary, 'the primary action looks different from the folder chooser one').not.toBe(chooserLook.primary);
-    expect(await iconLook(confirmation(page)), 'the icon sits in a coloured circle, unlike the folder chooser').not.toBe(chooserLook.icon);
-    expect(await iconAboveTitle(confirmation(page), 'Terminare la sessione?'), 'a warning icon above the title').toBe(true);
 
     await page.keyboard.press('Enter');
 

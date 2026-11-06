@@ -1,16 +1,15 @@
-import type { ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { PowerIcon, TriangleAlertIcon } from '../icons/Icons';
+import { TriangleAlertIcon } from '../icons/Icons';
 import { WarningDialog } from './WarningDialog';
 
 const buttons = (html: string) =>
   [...html.matchAll(/<button([^>]*)>([\s\S]*?)<\/button>/g)].map((m) => ({ attrs: m[1] ?? '', label: m[2]?.replace(/<[^>]*>/g, '').trim() }));
 const classes = (attrs: string) => attrs.match(/\sclass="([^"]*)"/)?.[1]?.split(/\s+/) ?? [];
 
-const render = (icon?: ReactElement) =>
+const render = (accent?: 'error' | 'attn') =>
   renderToStaticMarkup(
-    <WarningDialog title="Azione rischiosa" primaryLabel="Procedi" onPrimary={() => {}} onCancel={() => {}} icon={icon}>
+    <WarningDialog title="Azione rischiosa" description="Testo del rischio." primaryLabel="Procedi" onPrimary={() => {}} onCancel={() => {}} accent={accent}>
       <p>Contenuto</p>
     </WarningDialog>,
   );
@@ -23,41 +22,35 @@ describe('WarningDialog', () => {
     expect(html).not.toContain('role="dialog"');
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-25, REQ-28: "Annulla", then the primary action in the danger style
-  it('has "Annulla" and a danger-styled primary action', () => {
-    const [cancel, primary, ...rest] = buttons(render());
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-48: "[Esc]", "Annulla" neutral, then the rose primary action
+  it('error (default) → "[Esc]", "Annulla" as .button-neutral and the primary action as .button-danger', () => {
+    const [esc, cancel, primary, ...rest] = buttons(render());
     expect(rest).toEqual([]);
+    expect(esc?.label).toBe('[Esc]');
     expect(cancel?.label).toBe('Annulla');
+    expect(classes(cancel?.attrs ?? '')).toContain('button-neutral');
     expect(primary?.label).toBe('Procedi');
     expect(classes(primary?.attrs ?? '')).toContain('button-danger');
-    expect(classes(cancel?.attrs ?? '')).not.toContain('button-danger');
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-28, WarningDialog: a warning icon before the title
-  it('shows a decorative icon before the title', () => {
-    const html = render();
-    const icon = html.search(/<svg\b[^>]*aria-hidden="true"/);
-    expect(icon).toBeGreaterThanOrEqual(0);
-    expect(icon).toBeLessThan(html.indexOf('Azione rischiosa'));
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-49: attn → amber primary action
+  it('attn → the primary action is .button-attn', () => {
+    const primary = buttons(render('attn'))[2];
+    expect(primary?.label).toBe('Procedi');
+    expect(classes(primary?.attrs ?? '')).toContain('button-attn');
+    expect(classes(primary?.attrs ?? '')).not.toContain('button-danger');
   });
 
-  // WarningDialog: the icon defaults to TriangleAlertIcon; a given icon replaces it
-  it.each([
-    [undefined, TriangleAlertIcon],
-    [<PowerIcon key="p" />, PowerIcon],
-  ])('icon %#: shows only the expected icon on top', (icon, Expected) => {
-    const head = render(icon).split('Azione rischiosa')[0] ?? '';
-    expect(head).toContain(renderToStaticMarkup(<Expected />));
-    expect(head.match(/<svg\b/g)).toHaveLength(1);
+  // WarningDialog spec: the frame has no icon; only attn shows the triangle, inside the banner before the text
+  it('error → no icon at all', () => {
+    expect(render('error')).not.toContain('<svg');
   });
 
-  // WarningDialog: the accent changes the colours only; both accents keep the danger-styled primary text button
-  it.each(['error', 'attn'] as const)('accent %s keeps "Annulla" and the button-danger primary action', (accent) => {
-    const html = renderToStaticMarkup(
-      <WarningDialog title="Azione rischiosa" primaryLabel="Procedi" onPrimary={() => {}} onCancel={() => {}} accent={accent} />,
-    );
-    const [cancel, primary] = buttons(html);
-    expect(cancel?.label).toBe('Annulla');
-    expect(classes(primary?.attrs ?? '')).toContain('button-danger');
+  it('attn → one triangle icon, after the title and before the text', () => {
+    const html = render('attn');
+    const triangle = renderToStaticMarkup(<TriangleAlertIcon />);
+    expect(html.match(/<svg\b/g)).toHaveLength(1);
+    expect(html.indexOf(triangle)).toBeGreaterThan(html.indexOf('Azione rischiosa'));
+    expect(html.indexOf(triangle)).toBeLessThan(html.indexOf('Testo del rischio.'));
   });
 });

@@ -15,6 +15,27 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await postHook(request, id, { hook_event_name: 'Stop' });
 });
 
+// Other spec files start sessions on the same server at the same time: the page shows only the sessions of this file.
+test.beforeEach(async ({ page }) => {
+  const own = (session: { folder?: unknown } | undefined) => typeof session?.folder === 'string' && session.folder.startsWith(projectsRoot + path.sep);
+  await page.route(
+    (url) => url.pathname === '/api/sessions',
+    async (route) => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      const response = await route.fetch();
+      const sessions = (await response.json()) as { folder?: unknown }[];
+      await route.fulfill({ response, json: sessions.filter(own) });
+    },
+  );
+  await page.routeWebSocket(/\/api\/sessions\/events$/, (ws) => {
+    const server = ws.connectToServer();
+    server.onMessage((message) => {
+      const frame = JSON.parse(String(message)) as { type?: string; session?: { folder?: unknown } };
+      if (frame.type !== 'session' || own(frame.session)) ws.send(message);
+    });
+  });
+});
+
 const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const counter = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('status').filter({ hasText: 'richiede input' });

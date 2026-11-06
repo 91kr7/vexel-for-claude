@@ -1,4 +1,5 @@
-// e2e of plan-claude_sessions_client-ui_redesign-material3_mock, batch colours-type.
+// e2e of plan-claude_sessions_client-ui_redesign-material3_mock, batch colours-type, brought to the one dark set and the light-blue accent
+// of plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark.
 /// <reference lib="dom" />
 import { mkdir, mkdtemp, readFile, readdir } from 'node:fs/promises';
 import os from 'node:os';
@@ -6,7 +7,6 @@ import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 
 type Rgba = [number, number, number, number];
-type Scheme = 'light' | 'dark';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const mockDir = path.join(repoRoot, '.sdd/mockups/vexel-material3');
@@ -22,127 +22,6 @@ test.beforeAll(async () => {
 test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
-
-// Board values, from the `.m3` and `.m3.dark` rules of the four boards.
-const primaryFamily: Record<Scheme, Record<string, string>> = {
-  light: {
-    '--primary': '#5847B8',
-    '--on-primary': '#FFFFFF',
-    '--primary-container': '#E4DFFF',
-    '--on-primary-container': '#3F2C9E',
-    '--inverse-primary': '#C6BFFF',
-  },
-  dark: {
-    '--primary': '#C6BFFF',
-    '--on-primary': '#2A1688',
-    '--primary-container': '#3F2C9E',
-    '--on-primary-container': '#E4DFFF',
-    '--inverse-primary': '#5847B8',
-  },
-};
-
-const neutrals: Record<Scheme, Record<string, string>> = {
-  light: {
-    '--secondary-container': '#E4DFF9',
-    '--on-secondary-container': '#47435A',
-    '--surface': '#FDF8FF',
-    '--on-surface': '#1C1B21',
-    '--on-surface-variant': '#47464F',
-    '--outline': '#787680',
-    '--outline-variant': '#C8C5D0',
-    '--sc-lowest': '#FFFFFF',
-    '--sc-low': '#F7F2FA',
-    '--sc': '#F1ECF4',
-    '--sc-high': '#EBE6EE',
-    '--sc-highest': '#E5E1E9',
-    '--dialog': '#F1ECF4',
-    '--inverse-surface': '#313036',
-    '--inverse-on-surface': '#F4EFF7',
-    '--term-bg': '#17151C',
-    '--term-fg': '#E5E1E9',
-    '--term-dim': '#928F9A',
-  },
-  dark: {
-    '--secondary-container': '#47435A',
-    '--on-secondary-container': '#E4DFF9',
-    '--surface': '#141318',
-    '--on-surface': '#E5E1E9',
-    '--on-surface-variant': '#C8C5D0',
-    '--outline': '#928F9A',
-    '--outline-variant': '#47464F',
-    '--sc-lowest': '#0F0E13',
-    '--sc-low': '#1C1B21',
-    '--sc': '#201F25',
-    '--sc-high': '#2B292F',
-    '--sc-highest': '#36343A',
-    '--dialog': '#2B292F',
-    '--inverse-surface': '#E5E1E9',
-    '--inverse-on-surface': '#313036',
-    '--term-bg': '#0F0E13',
-    '--term-fg': '#E5E1E9',
-    '--term-dim': '#928F9A',
-  },
-};
-
-const statusRoles: Record<Scheme, Record<string, string>> = {
-  light: {
-    '--teal-container': '#C8EBE6',
-    '--on-teal-container': '#1F4D48',
-    '--error': '#BA1A1A',
-    '--on-error': '#FFFFFF',
-    '--error-container': '#FFDAD6',
-    '--on-error-container': '#93000A',
-    '--attn': '#7C5800',
-    '--attn-container': '#FFDEA7',
-    '--on-attn-container': '#5E4200',
-    '--ok': '#2E6B32',
-    '--ok-container': '#C3EFC0',
-    '--on-ok-container': '#0F5223',
-    '--ember': '#E07A4F',
-  },
-  dark: {
-    '--teal-container': '#1F4D48',
-    '--on-teal-container': '#C8EBE6',
-    '--error': '#FFB4AB',
-    '--on-error': '#690005',
-    '--error-container': '#93000A',
-    '--on-error-container': '#FFDAD6',
-    '--attn': '#F0BF48',
-    '--attn-container': '#5E4200',
-    '--on-attn-container': '#FFDEA7',
-    '--ok': '#95D592',
-    '--ok-container': '#0F5223',
-    '--on-ok-container': '#C3EFC0',
-    '--ember': '#F09A72',
-  },
-};
-
-// ThemeTokens: old names and the role each one points to.
-const aliases: [string, string][] = [
-  ['--color-bg', '--surface'],
-  ['--color-surface', '--sc-low'],
-  ['--color-surface-hover', '--sc-high'],
-  ['--color-surface-selected', '--secondary-container'],
-  ['--color-border', '--outline-variant'],
-  ['--color-border-strong', '--outline'],
-  ['--color-text', '--on-surface'],
-  ['--color-text-muted', '--on-surface-variant'],
-  ['--color-state-ended', '--on-surface-variant'],
-  ['--color-external', '--on-surface-variant'],
-  ['--color-primary', '--primary'],
-  ['--color-focus-ring', '--primary'],
-  ['--color-state-working', '--primary'],
-  ['--color-on-primary', '--on-primary'],
-  ['--color-danger', '--error'],
-  ['--color-error', '--error'],
-  ['--color-on-danger', '--on-error'],
-  ['--color-state-needs-input', '--attn'],
-  ['--color-warning', '--attn'],
-  ['--color-state-needs-input-bg', '--attn-container'],
-  ['--color-state-idle', '--ok'],
-  ['--color-success', '--ok'],
-  ['--terminal-background', '--term-bg'],
-];
 
 const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
@@ -246,15 +125,6 @@ function cssPx(locator: Locator, property: string): Promise<number> {
   return locator.evaluate((el, p) => parseFloat(getComputedStyle(el).getPropertyValue(p)), property);
 }
 
-/** Background layers from the root down to the element, for compositing translucent layers. */
-function backgroundLayers(locator: Locator): Promise<string[]> {
-  return locator.evaluate((el) => {
-    const layers: string[] = [];
-    for (let node: Element | null = el; node; node = node.parentElement) layers.unshift(getComputedStyle(node).backgroundColor);
-    return layers;
-  });
-}
-
 function effectiveBackground(locator: Locator): Promise<string> {
   return locator.evaluate((el) => {
     for (let node: Element | null = el; node; node = node.parentElement) {
@@ -265,78 +135,26 @@ function effectiveBackground(locator: Locator): Promise<string> {
   });
 }
 
-const closeTo = (a: Rgba, b: Rgba, tol: number) => a.slice(0, 3).every((c, i) => Math.abs(c - b[i]!) <= tol);
 
 for (const scheme of ['light', 'dark'] as const) {
-  test.describe(`${scheme} theme`, () => {
+  test.describe(`${scheme} system theme`, () => {
     test.use({ colorScheme: scheme });
 
-    // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-1, REQ-4
-    test('the primary family is light blue with the lightness of the board colour it replaces', async ({ page }) => {
+    // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-5, REQ-6 and batch decision "Light blue": hue 205, L* gaps of the mock orange family
+    test('the accent family is light blue, with the CIELAB lightness gaps of the mock orange family', async ({ page }) => {
       await page.goto('/');
-      const t = await tokens(page, Object.keys(primaryFamily[scheme]));
-      const failures: string[] = [];
-      for (const [name, boardHex] of Object.entries(primaryFamily[scheme])) {
-        expect(t[name], `${name} is defined`).not.toBe('');
-        const colour = await resolved(page, t[name]!);
-        const board = hexToRgba(boardHex);
-        const dL = lab(colour).L - lab(board).L;
-        if (Math.abs(dL) > 2) failures.push(`${name}: L* differs by ${dL.toFixed(2)} from ${boardHex}`);
-        // Board white has no hue: only its lightness carries over.
-        if (hsl(board).s === 0) continue;
-        const { h, s } = hsl(colour);
-        if (s === 0 || hueDistance(h, 205) > 2) failures.push(`${name}: HSL hue ${h.toFixed(1)}, saturation ${s.toFixed(2)}`);
+      const t = await tokens(page, ['--accent-primary', '--accent-secondary', '--accent-deep']);
+      const [primary, secondary, deep] = await Promise.all(Object.values(t).map((v) => resolved(page, v)));
+      for (const [name, colour] of [['--accent-primary', primary!], ['--accent-secondary', secondary!], ['--accent-deep', deep!]] as const) {
+        expect(hueDistance(hsl(colour).h, 205), `${name} hue ${hsl(colour).h.toFixed(1)}`).toBeLessThanOrEqual(2);
       }
-      expect(failures).toEqual([]);
+      const gap = (a: string, b: string) => lab(hexToRgba(a)).L - lab(hexToRgba(b)).L;
+      expect(lab(secondary!).L - lab(primary!).L, 'secondary: lighter by the #e06d44 → #f29a76 gap').toBeCloseTo(gap('#f29a76', '#e06d44'), 0);
+      expect(lab(primary!).L - lab(deep!).L, 'deep: darker by the #e06d44 → #9a3412 gap').toBeCloseTo(gap('#e06d44', '#9a3412'), 0);
     });
 
-    // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-2, REQ-4
-    test('the neutrals and the terminal roles are grey with the lightness of the board colour they replace', async ({ page }) => {
-      await page.goto('/');
-      const t = await tokens(page, Object.keys(neutrals[scheme]));
-      const failures: string[] = [];
-      for (const [name, boardHex] of Object.entries(neutrals[scheme])) {
-        expect(t[name], `${name} is defined`).not.toBe('');
-        const c = lab(await resolved(page, t[name]!));
-        const dL = c.L - lab(hexToRgba(boardHex)).L;
-        if (Math.abs(dL) > 2) failures.push(`${name}: L* differs by ${dL.toFixed(2)} from ${boardHex}`);
-        if (Math.abs(c.a) > 2 || Math.abs(c.b) > 2) failures.push(`${name}: a*=${c.a.toFixed(2)} b*=${c.b.toFixed(2)}`);
-      }
-      expect(failures).toEqual([]);
-    });
-
-    // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-3
-    test('the status roles have the board values', async ({ page }) => {
-      await page.goto('/');
-      const t = await tokens(page, Object.keys(statusRoles[scheme]));
-      for (const [name, boardHex] of Object.entries(statusRoles[scheme])) {
-        expect(t[name], `${name} is defined`).not.toBe('');
-        expect(await resolved(page, t[name]!), name).toEqual(hexToRgba(boardHex));
-      }
-    });
-
-    // ThemeTokens: old names point to the roles
-    test('the old colour names point to their roles', async ({ page }) => {
-      await page.goto('/');
-      const names = [...new Set(aliases.flat()), '--color-primary-hover', '--color-danger-hover', '--on-primary', '--on-error'];
-      const t = await tokens(page, names);
-      for (const [oldName, role] of aliases) {
-        expect(t[oldName], `${oldName} is defined`).not.toBe('');
-        expect(await resolved(page, t[oldName]!), `${oldName} -> ${role}`).toEqual(await resolved(page, t[role]!));
-      }
-      const hovers: [string, string, string][] = [
-        ['--color-primary-hover', '--primary', '--on-primary'],
-        ['--color-danger-hover', '--error', '--on-error'],
-      ];
-      for (const [hover, base, layer] of hovers) {
-        const expected = await composite(page, ['#fff', t[base]!, `color-mix(in srgb, ${t[layer]} 8%, transparent)`]);
-        const actual = await resolved(page, t[hover]!);
-        expect(closeTo(actual, expected, 2), `${hover}: ${actual} vs ${base} with 8% of ${layer} ${expected}`).toBe(true);
-      }
-    });
-
-    // ThemeTokens rule: no violet, purple or pink token; tertiary roles not defined
-    test('no colour token is violet, purple or pink and the tertiary roles are not defined', async ({ page }) => {
+    // ThemeTokens "Rules": no token is orange, indigo, violet or pink; the Material 3 roles are not defined
+    test('no colour token is orange, indigo, violet or pink, and the Material 3 roles are not defined', async ({ page }) => {
       await page.goto('/');
       const names = await rootCustomProperties(page);
       expect(names.length).toBeGreaterThan(0);
@@ -348,51 +166,37 @@ for (const scheme of ['light', 'dark'] as const) {
         const rgba = await resolved(page, t[name]!);
         const c = lab(rgba);
         const { h } = hsl(rgba);
-        if (Math.hypot(c.a, c.b) > 6 && h >= 240 && h <= 345) offenders.push(`${name}: ${t[name]} (hue ${h.toFixed(0)})`);
+        // The mock's cool greys reach a chroma of about 7 at hue 240: only clearly coloured tokens count.
+        const coloured = Math.hypot(c.a, c.b) > 15;
+        if (coloured && ((h >= 5 && h <= 35) || (h >= 235 && h <= 345))) offenders.push(`${name}: ${t[name]} (hue ${h.toFixed(0)})`);
       }
       expect(offenders).toEqual([]);
-      const tertiary = await tokens(page, ['--tertiary', '--on-tertiary', '--tertiary-container', '--on-tertiary-container']);
-      expect(Object.values(tertiary)).toEqual(['', '', '', '']);
+      const removed = await tokens(page, ['--primary', '--on-primary', '--secondary-container', '--sc-low', '--sc-highest', '--ember', '--tertiary', '--dialog', '--icon-size']);
+      expect(Object.values(removed)).toEqual(Array<string>(9).fill(''));
     });
 
-    // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-1, REQ-2 (human acceptance: light-blue accents, grey surfaces)
-    test('"Nuova sessione" is light blue and the page surface is neutral grey', async ({ page }) => {
+    // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-1, REQ-5 (human acceptance: light-blue accent, near-black page)
+    test('"Nuova sessione" is light blue and the page is the near-black canvas', async ({ page }) => {
       await page.goto('/');
       const button = emptyButton(page, 'Nuova sessione');
       await expect(button).toBeVisible();
       await page.mouse.move(0, 0);
       const accent = await resolved(page, await button.evaluate((el) => getComputedStyle(el).backgroundColor));
       expect(hueDistance(hsl(accent).h, 205), `"Nuova sessione" hue ${hsl(accent).h}`).toBeLessThanOrEqual(2);
-      const surface = lab(await resolved(page, await effectiveBackground(page.locator('body'))));
-      expect(Math.abs(surface.a), 'page surface a*').toBeLessThanOrEqual(2);
-      expect(Math.abs(surface.b), 'page surface b*').toBeLessThanOrEqual(2);
+      const surface = await resolved(page, await effectiveBackground(page.locator('body')));
+      expect(luminance(surface), 'near-black canvas').toBeLessThan(0.01);
     });
   });
 }
 
-// ThemeTokens rule: --term-fg is the same light grey in both sets; --term-bg is dark grey in both
-test('the terminal text colour is the same in both sets and the terminal background is dark in both', async ({ page }) => {
+// ThemeTokens: --term-fg and --term-bg are the text and the canvas, whatever the system theme
+test('the terminal colours are the primary text on the canvas, and the system theme does not change them', async ({ page }) => {
   await page.goto('/');
-  const light = await tokens(page, ['--term-fg', '--term-bg']);
+  const light = await tokens(page, ['--term-fg', '--term-bg', '--text-primary', '--bg-canvas']);
+  expect(await resolved(page, light['--term-fg']!)).toEqual(await resolved(page, light['--text-primary']!));
+  expect(await resolved(page, light['--term-bg']!)).toEqual(await resolved(page, light['--bg-canvas']!));
   await page.emulateMedia({ colorScheme: 'dark' });
-  const dark = await tokens(page, ['--term-fg', '--term-bg']);
-  expect(await resolved(page, dark['--term-fg']!)).toEqual(await resolved(page, light['--term-fg']!));
-  expect(luminance(await resolved(page, light['--term-bg']!))).toBeLessThan(0.05);
-  expect(luminance(await resolved(page, dark['--term-bg']!))).toBeLessThan(0.05);
-});
-
-// ThemeTokens: icon size of the board `.icon`
-test('the icon size token is 20 px', async ({ page }) => {
-  await page.goto('/');
-  const size = await page.evaluate(() => {
-    const probe = document.createElement('div');
-    probe.style.width = 'var(--icon-size)';
-    document.body.append(probe);
-    const width = probe.getBoundingClientRect().width;
-    probe.remove();
-    return width;
-  });
-  expect(size).toBe(20);
+  expect(await tokens(page, ['--term-fg', '--term-bg', '--text-primary', '--bg-canvas'])).toEqual(light);
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-5, BundledFont "Contract"
@@ -485,8 +289,8 @@ test('the font licence and the third-party notices cover Roboto Flex and Roboto 
   expect(notices).not.toMatch(/\bInter\b/);
 });
 
-// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-5: UI text in Roboto Flex, `.mono` in Roboto Mono
-test('the UI text is in Roboto Flex and the mono class is in Roboto Mono', async ({ page }) => {
+// plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-10: UI text in Roboto Flex
+test('the UI text is in Roboto Flex', async ({ page }) => {
   await page.goto('/');
   await expect(emptyButton(page, 'Nuova sessione')).toBeVisible();
   const family = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontFamily);
@@ -496,152 +300,89 @@ test('the UI text is in Roboto Flex and the mono class is in Roboto Mono', async
     expect(await family(railButton), name).toMatch(/^["']?Roboto Flex["']?,/);
   }
   expect(await family(page.getByText('Nessuna sessione aperta.'))).toMatch(/^["']?Roboto Flex["']?,/);
-  const mono = await page.evaluate(() => {
-    const probe = document.createElement('span');
-    probe.className = 'mono';
-    document.body.append(probe);
-    const f = getComputedStyle(probe).fontFamily;
-    probe.remove();
-    return f;
-  });
-  expect(mono).toMatch(/^["']?Roboto Mono["']?,/);
+  expect(await family(emptyButton(page, 'Riprendi sessione'))).toMatch(/^["']?Roboto Flex["']?,/);
 });
 
-// WebEntry: global classes IDENTICAL to the board `<style>` block
-test('the board type, button, chip and icon classes have the board look', async ({ page }) => {
+// WebEntry "Rules": the Material 3 type classes, `.brand`, `.btn`, `.chip` and `.mono` no longer exist
+test('no stylesheet defines the Material 3 type classes, .brand, .btn, .chip or .mono', async ({ page }) => {
   await page.goto('/');
-  const looks = await page.evaluate(() => {
-    const props = [
-      'font-family', 'font-size', 'line-height', 'font-weight', 'letter-spacing', 'font-variation-settings',
-      'display', 'align-items', 'gap', 'height', 'width', 'padding', 'border-radius', 'border-top-style',
-      'border-top-width', 'cursor', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'color', 'flex-shrink',
-    ];
-    const read = (el: Element) => {
-      const s = getComputedStyle(el);
-      return Object.fromEntries(props.map((p) => [p, s.getPropertyValue(p)]));
+  const selectors = await page.evaluate(() => {
+    const found: string[] = [];
+    const visit = (rules: CSSRuleList) => {
+      for (const rule of rules) {
+        if (rule instanceof CSSStyleRule) found.push(rule.selectorText);
+        else if ('cssRules' in rule) visit((rule as CSSGroupingRule).cssRules);
+      }
     };
-    const out: Record<string, Record<string, string>> = {};
-    for (const cls of ['brand', 'label-l', 'label-m', 'body-l', 'body-m', 'body-s', 'title-m', 'title-l', 'headline-s', 'btn', 'chip']) {
-      const el = document.createElement('div');
-      el.className = cls;
-      el.textContent = 'x';
-      document.body.append(el);
-      out[cls] = read(el);
-    }
-    const svgNs = 'http://www.w3.org/2000/svg';
-    const icon = document.createElementNS(svgNs, 'svg');
-    icon.setAttribute('class', 'icon');
-    document.body.append(icon);
-    out.icon = read(icon);
-    const chip = document.createElement('div');
-    chip.className = 'chip';
-    const chipIcon = document.createElementNS(svgNs, 'svg');
-    chipIcon.setAttribute('class', 'icon');
-    chip.append(chipIcon);
-    document.body.append(chip);
-    out.chipIcon = read(chipIcon);
-    return out;
+    for (const sheet of document.styleSheets) visit(sheet.cssRules);
+    return found;
   });
-
-  expect(looks.brand!['font-family']).toMatch(/^["']?Roboto Flex["']?,/);
-  expect(looks.brand!['font-weight']).toBe('800');
-  expect(looks.brand!['letter-spacing']).toBe('-0.5px');
-  expect(looks.brand!['font-variation-settings']).toMatch(/"wdth" 125/);
-  expect(looks.brand!['font-variation-settings']).toMatch(/"GRAD" 50/);
-
-  const type: [string, string, string, string, string][] = [
-    // class, size, line height, weight, letter spacing
-    ['label-l', '14px', '20px', '500', '0.1px'],
-    ['label-m', '12px', '16px', '500', '0.5px'],
-    ['body-l', '16px', '24px', '400', '0.5px'],
-    ['body-m', '14px', '20px', '400', '0.25px'],
-    ['body-s', '12px', '16px', '400', '0.4px'],
-    ['title-m', '16px', '24px', '500', '0.15px'],
-    ['title-l', '22px', '28px', '500', 'normal'],
-    ['headline-s', '24px', '32px', '500', 'normal'],
-  ];
-  for (const [cls, size, lineHeight, weight, spacing] of type) {
-    const l = looks[cls]!;
-    expect([l['font-size'], l['line-height'], l['font-weight'], l['letter-spacing']], cls).toEqual([size, lineHeight, weight, spacing]);
-  }
-
-  const btn = looks.btn!;
-  expect([btn.display, btn['align-items'], btn.gap, btn.height, btn.padding, btn['border-radius'], btn.cursor]).toEqual([
-    'inline-flex', 'center', '8px', '40px', '0px 20px 0px 16px', '20px', 'pointer',
-  ]);
-  expect(btn['border-top-style'] === 'none' || btn['border-top-width'] === '0px', 'btn has no border').toBe(true);
-
-  const chip = looks.chip!;
-  expect([chip.display, chip['align-items'], chip.gap, chip.height, chip.padding, chip['border-radius']]).toEqual([
-    'inline-flex', 'center', '6px', '28px', '0px 10px 0px 8px', '8px',
-  ]);
-
-  const icon = looks.icon!;
-  expect([icon.width, icon.height, icon.fill, icon['stroke-width'], icon['stroke-linecap'], icon['stroke-linejoin'], icon['flex-shrink']]).toEqual([
-    '20px', '20px', 'none', '2px', 'round', 'round', '0',
-  ]);
-  expect(icon.stroke, 'icon stroke is the text colour').toBe(icon.color);
-  expect([looks.chipIcon!.width, looks.chipIcon!.height]).toEqual(['16px', '16px']);
+  const removed = /\.(?:label-[lms]|body-[lms]|title-[lm]|headline-s|brand|btn|chip|mono)(?![\w-])/;
+  expect(selectors.filter((selector) => removed.test(selector))).toEqual([]);
 });
 
-// EmptyState "Shows", plan-claude_sessions_client-ui_redesign-material3_mock/REQ-1, REQ-2, REQ-5
-test('the empty state is drawn with the board type classes, buttons and colour roles', async ({ page }) => {
+// EmptyState "Shows", AreaState `full`: tile, Roboto Flex 24/32 title, 12/16 secondary text, the accent and the neutral buttons
+test('the empty state is the full area-state block with the accent and the neutral buttons', async ({ page }) => {
   await page.goto('/');
   const title = mainArea(page).getByText('Nessuna sessione aperta.', { exact: true });
   const hint = mainArea(page).getByText('Avvia una nuova sessione o riprendine una passata.', { exact: true });
   await expect(title).toBeVisible();
   await page.mouse.move(0, 0);
-  const t = await tokens(page, ['--primary', '--on-primary', '--outline', '--on-surface-variant']);
+  const t = await tokens(page, ['--accent-primary', '--on-accent', '--bg-surface-1', '--bg-surface-2', '--text-primary', '--text-secondary']);
   const rgb = async (css: string) => resolved(page, css);
   const style = (l: Locator, p: string) => l.evaluate((el, prop) => getComputedStyle(el).getPropertyValue(prop), p);
 
-  await expect(title).toHaveClass(/\btitle-l\b/);
-  expect([await style(title, 'font-size'), await style(title, 'line-height'), await style(title, 'font-weight')]).toEqual(['22px', '28px', '500']);
-  await expect(hint).toHaveClass(/\bbody-m\b/);
-  expect([await style(hint, 'font-size'), await style(hint, 'line-height')]).toEqual(['14px', '20px']);
-  expect(await rgb(await style(hint, 'color')), 'hint colour').toEqual(await rgb(t['--on-surface-variant']!));
+  expect([await style(title, 'font-size'), await style(title, 'line-height'), await style(title, 'font-weight')]).toEqual(['24px', '32px', '400']);
+  expect([await style(hint, 'font-size'), await style(hint, 'line-height')]).toEqual(['12px', '16px']);
+  expect(await rgb(await style(hint, 'color')), 'text colour').toEqual(await rgb(t['--text-secondary']!));
+  expect(await cssPx(hint, 'max-width')).toBeLessThanOrEqual(448);
+
+  const block = title.locator('xpath=..');
+  expect(await rgb(await style(block, 'background-color')), 'block on surface 1').toEqual(await rgb(t['--bg-surface-1']!));
+  expect([await cssPx(block, 'padding-top'), await cssPx(block, 'border-top-left-radius')]).toEqual([40, 12]);
+  expect(await cssPx(block, 'max-width')).toBeLessThanOrEqual(528);
 
   const icon = mainArea(page).locator('svg.icon:not(button svg)');
   await expect(icon).toHaveCount(1);
+  const tile = icon.locator('xpath=..');
+  const tileBox = (await tile.boundingBox())!;
+  expect([tileBox.width, tileBox.height]).toEqual([48, 48]);
+  expect(await cssPx(tile, 'border-top-left-radius')).toBe(12);
   const iconBox = (await icon.boundingBox())!;
-  expect([iconBox.width, iconBox.height]).toEqual([48, 48]);
-  expect(await rgb(await style(icon, 'color')), 'icon colour').toEqual(await rgb(t['--on-surface-variant']!));
+  expect([iconBox.width, iconBox.height]).toEqual([24, 24]);
+  expect(await rgb(await style(icon, 'color')), 'icon in the accent').toEqual(await rgb(t['--accent-primary']!));
 
   const filled = emptyButton(page, 'Nuova sessione');
-  const outlined = emptyButton(page, 'Riprendi sessione');
-  for (const b of [filled, outlined]) {
-    await expect(b).toHaveClass(/\bbtn\b/);
-    await expect(b).toHaveClass(/\blabel-l\b/);
-    expect([await cssPx(b, 'height'), await cssPx(b, 'border-top-left-radius'), await cssPx(b, 'font-size')]).toEqual([40, 20, 14]);
-    expect(await style(b, 'font-weight')).toBe('500');
+  const neutral = emptyButton(page, 'Riprendi sessione');
+  for (const b of [filled, neutral]) {
+    expect([await cssPx(b, 'padding-top'), await cssPx(b, 'padding-left'), await cssPx(b, 'border-top-left-radius'), await cssPx(b, 'font-size')]).toEqual([8, 16, 8, 12]);
   }
-  expect(await rgb(await style(filled, 'background-color')), 'filled background').toEqual(await rgb(t['--primary']!));
-  expect(await rgb(await style(filled, 'color')), 'filled text').toEqual(await rgb(t['--on-primary']!));
-
-  expect(await style(outlined, 'background-color'), 'outlined background').toBe('rgba(0, 0, 0, 0)');
-  expect([await style(outlined, 'border-top-style'), await style(outlined, 'border-top-width')]).toEqual(['solid', '1px']);
-  expect(await rgb(await style(outlined, 'border-top-color')), 'outlined border').toEqual(await rgb(t['--outline']!));
-  expect(await rgb(await style(outlined, 'color')), 'outlined text').toEqual(await rgb(t['--on-surface-variant']!));
+  expect(await rgb(await style(filled, 'background-color')), 'accent background').toEqual(await rgb(t['--accent-primary']!));
+  expect(await rgb(await style(filled, 'color')), 'text on the accent').toEqual(await rgb(t['--on-accent']!));
+  expect(await rgb(await style(neutral, 'background-color')), 'neutral background').toEqual(await rgb(t['--bg-surface-2']!));
+  expect(await rgb(await style(neutral, 'color')), 'neutral text').toEqual(await rgb(t['--text-primary']!));
 });
 
-// EmptyState: on hover, each button takes an 8% layer of its text colour
-test('each empty state button takes an 8% layer of its text colour on hover', async ({ page }) => {
+// WebEntry `.button-neutral`: on hover, surface 3 and the strong border
+test('the neutral empty state button takes surface 3 and the strong border on hover', async ({ page }) => {
   await page.goto('/');
-  await expect(emptyButton(page, 'Nuova sessione')).toBeVisible();
-  for (const name of ['Nuova sessione', 'Riprendi sessione']) {
-    const b = emptyButton(page, name);
-    await page.mouse.move(0, 0);
-    const shown = async () => composite(page, ['#fff', ...(await backgroundLayers(b))]);
-    const rest = await shown();
-    const text = await b.evaluate((el) => getComputedStyle(el).color);
-    const expected = await composite(page, [`rgb(${rest.slice(0, 3).join(',')})`, `color-mix(in srgb, ${text} 8%, transparent)`]);
-    await b.hover();
-    await expect.poll(async () => closeTo(await shown(), expected, 2), { message: `${name} hover layer, expected ${expected}` }).toBe(true);
-  }
+  const b = emptyButton(page, 'Riprendi sessione');
+  await expect(b).toBeVisible();
+  const t = await tokens(page, ['--bg-surface-3', '--border-strong']);
+  await b.hover();
+  await expect.poll(async () => resolved(page, await b.evaluate((el) => getComputedStyle(el).backgroundColor))).toEqual(await resolved(page, t['--bg-surface-3']!));
+  expect(await b.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(await page.evaluate((v) => {
+    const probe = document.createElement('div');
+    probe.style.color = v;
+    document.body.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  }, t['--border-strong']!));
 });
 
-// SessionView "Shows": Roboto Mono, 14 px, rows about 22 px, font loaded before the terminal opens
-test('the terminal opens in Roboto Mono at 14 px, after the font has loaded', async ({ page, request }) => {
+// SessionView "Shows", plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-34: Roboto Mono, 12 px, line height 1.2, font loaded before the terminal opens
+test('the terminal opens in Roboto Mono at 12 px, after the font has loaded', async ({ page, request }) => {
   await page.addInitScript(() => {
     const w = window as unknown as { monoLoadedAtOpen?: boolean };
     new MutationObserver((_, observer) => {
@@ -655,14 +396,15 @@ test('the terminal opens in Roboto Mono at 14 px, after the font has loaded', as
   await openSession(page, request, 'terminal-font');
   expect(await page.evaluate(() => (window as unknown as { monoLoadedAtOpen?: boolean }).monoLoadedAtOpen)).toBe(true);
   expect(await terminal(page).evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Roboto Mono["']?/);
-  expect(await cssPx(terminal(page), 'font-size')).toBe(14);
+  expect(await cssPx(terminal(page), 'font-size')).toBe(12);
   const rowHeight = await terminal(page).locator(':scope > div').first().evaluate((el) => el.getBoundingClientRect().height);
-  expect(rowHeight).toBeGreaterThanOrEqual(21);
-  expect(rowHeight).toBeLessThanOrEqual(23);
+  // xterm multiplies the font's cell height (about 1.32 em for Roboto Mono) by the line height 1.2.
+  expect(rowHeight).toBeGreaterThanOrEqual(18);
+  expect(rowHeight).toBeLessThanOrEqual(20);
 });
 
-// SessionView "Shows", plan-claude_sessions_client-ui_redesign-material3_mock/REQ-2: terminal colours follow the active theme with no reconnect
-test('the open terminal takes --term-bg and --term-fg of the active theme and recolours at once with no reconnect', async ({ page, request }) => {
+// SessionView "Shows", plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-1, REQ-34: the terminal is on the canvas in the primary text, and a system theme change does not recolour or reconnect it
+test('the open terminal takes --term-bg and --term-fg, and a system theme change neither recolours nor reconnects it', async ({ page, request }) => {
   let sockets = 0;
   page.on('websocket', () => sockets++);
   await openSession(page, request, 'terminal-colours');
@@ -677,19 +419,13 @@ test('the open terminal takes --term-bg and --term-fg of the active theme and re
     };
   };
 
-  const light = await colours();
-  expect(light.bg, 'light background').toEqual(light.tokenBg);
-  expect(light.fg, 'light text').toEqual(light.tokenFg);
+  const before = await colours();
+  expect(before.bg, 'background').toEqual(before.tokenBg);
+  expect(before.fg, 'text').toEqual(before.tokenFg);
 
   await page.emulateMedia({ colorScheme: 'dark' });
-  const darkBg = await resolved(page, (await tokens(page, ['--term-bg']))['--term-bg']!);
-  expect(darkBg, 'the dark set has its own --term-bg').not.toEqual(light.tokenBg);
-  await expect.poll(async () => (await colours()).bg, { message: 'dark background' }).toEqual(darkBg);
-  const dark = await colours();
-  expect(dark.fg, 'dark text').toEqual(dark.tokenFg);
-
-  await page.emulateMedia({ colorScheme: 'light' });
-  await expect.poll(async () => (await colours()).bg, { message: 'back to light' }).toEqual(light.tokenBg);
+  await page.waitForTimeout(200);
+  expect(await colours(), 'the system theme changes nothing').toEqual(before);
 
   expect(sockets, 'no reconnect').toBe(opened);
   await expect(terminal(page)).toContainText('READY');

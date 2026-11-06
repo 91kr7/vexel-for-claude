@@ -134,13 +134,13 @@ function colours(target: Locator): Promise<{ text: string; icon: string; backgro
   });
 }
 
-async function expectLook(page: Page, target: Locator, colourToken: string): Promise<void> {
+/** Icon in `iconToken`, text in `textToken` when given, and the text at AA contrast on its background. */
+async function expectLook(page: Page, target: Locator, iconToken: string, textToken?: string): Promise<void> {
   const look = await colours(target);
-  const expected = await resolved(page, await token(page, colourToken));
-  expect(await resolved(page, look.text), `text in ${colourToken}`).toEqual(expected);
-  expect(await resolved(page, look.icon), `icon in ${colourToken}`).toEqual(expected);
+  expect(await resolved(page, look.icon), `icon in ${iconToken}`).toEqual(await resolved(page, await token(page, iconToken)));
+  if (textToken) expect(await resolved(page, look.text), `text in ${textToken}`).toEqual(await resolved(page, await token(page, textToken)));
   const ratio = contrast(await resolved(page, look.text), await resolved(page, look.background));
-  expect(ratio, `contrast of ${colourToken} on ${look.background}`).toBeGreaterThanOrEqual(4.5);
+  expect(ratio, `contrast of the text on ${look.background}`).toBeGreaterThanOrEqual(4.5);
 }
 
 /** The animations of every element inside the target: name and duration. */
@@ -176,23 +176,14 @@ async function expectFocusMarked(page: Page, what: string): Promise<void> {
   await expect.poll(() => hasFocusRing(page), { message: `${what} shows the focus ring` }).toBe(true);
 }
 
-/**
- * The path field marks the focus with its outlined box: a 2 px border in the focus ring colour
- * (plan-claude_sessions_client-ui_redesign-material3_mock, FolderChooser and gatekeeper decision on the field).
- */
+/** The path field marks the focus with the accent border (plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-46). */
 async function expectFieldOutlined(page: Page): Promise<void> {
-  const ring = await resolved(page, await token(page, '--color-focus-ring'));
-  const borders = await pathField(page).evaluate((el) => {
-    const found: { width: number; style: string; colour: string }[] = [];
-    for (let node = el.parentElement; node && node.tagName !== 'FORM'; node = node.parentElement) {
-      const s = getComputedStyle(node);
-      found.push({ width: parseFloat(s.borderTopWidth), style: s.borderTopStyle, colour: s.borderTopColor });
-    }
-    return found;
-  });
-  const outlined = [];
-  for (const b of borders) if (b.width >= 2 && b.style === 'solid' && (await resolved(page, b.colour)).every((c, i) => c === ring[i])) outlined.push(b);
-  expect(outlined.length, 'the box around the path field has a 2 px border in the focus ring colour').toBeGreaterThan(0);
+  const accent = await resolved(page, await token(page, '--accent-border'));
+  await expect
+    .poll(async () => resolved(page, await pathField(page).evaluate((el) => getComputedStyle(el).borderTopColor)), {
+      message: 'the focused path field has the accent border',
+    })
+    .toEqual(accent);
 }
 
 async function pressUntilFocused(page: Page, target: Locator, key: 'Tab' | 'Shift+Tab' = 'Tab'): Promise<void> {
@@ -556,7 +547,7 @@ test.describe('folder chooser', () => {
     await expect(alert).toHaveText('La cartella non esiste.');
     await expect(chooser(page)).toBeVisible();
     await expect(alert.locator('svg')).toHaveCount(1);
-    await expectLook(page, alert, '--color-error');
+    await expectLook(page, alert, '--color-error', '--color-error');
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-29, FolderChooser: "Caricamento…" under the list on every listing
@@ -737,21 +728,21 @@ for (const scheme of ['light', 'dark'] as const) {
   test.describe(`${scheme} theme`, () => {
     test.use({ colorScheme: scheme });
 
-    // plan-claude_sessions_client-ui_redesign/REQ-1, REQ-3, ProgressIndicator: muted text with AA contrast and a rotating icon
-    test('the loading indicator is in the muted text colour with AA contrast, and its icon rotates', async ({ page }) => {
+    // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50, REQ-51, AreaState: accent icon, AA text and a rotating icon
+    test('the loading state has its icon in the accent, its text with AA contrast, and its icon rotates', async ({ page }) => {
       const held = await hold(page, '**/api/sessions', 'GET');
       await page.goto('/');
       const indicator = loading(list(page));
       await expect(indicator).toBeVisible();
 
-      await expectLook(page, indicator, '--color-text-muted');
+      await expectLook(page, indicator, '--accent-primary');
       const running = (await animations(indicator)).filter((a) => a.name !== 'none' && a.duration > 0 && a.state === 'running');
       expect(running.length, 'an element of the indicator rotates').toBeGreaterThan(0);
       held.release();
     });
 
-    // plan-claude_sessions_client-ui_redesign/REQ-1, REQ-3, ErrorMessage: error colour with AA contrast, in the list panel and in a dialog
-    test('an error message is in the error colour with AA contrast, in the list panel and in a dialog', async ({ page }) => {
+    // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50, REQ-51: rose icon in the list error block, rose inline error in a dialog, AA contrast
+    test('an error has the rose icon and AA contrast in the list panel, and is rose text in a dialog', async ({ page }) => {
       await page.route('**/api/sessions', (route) => (route.request().method() === 'GET' ? fail(500)(route) : route.fallback()));
       await page.goto('/');
       await expect(list(page).getByRole('alert')).toHaveText(LOST_SERVER);
@@ -760,12 +751,29 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.route('**/api/past-sessions', fail(500));
       await button(rail(page), 'Riprendi').click();
       await expect(history(page).getByRole('alert')).toBeVisible();
-      await expectLook(page, history(page).getByRole('alert'), '--color-error');
+      await expectLook(page, history(page).getByRole('alert'), '--color-error', '--color-error');
     });
 
     // plan-claude_sessions_client-ui_redesign/REQ-4, REQ-5: the human acceptance scenario of the keyboard walk through the client
     test('every screen and dialog works with Tab, Enter and Esc, and the focused element is always marked', async ({ page }) => {
       const folder = await newFolder(`keyboard-walk-${scheme}`);
+      // Only this walk's session in the list: other tests, and earlier runs on a reused server, add entries the Tab walk would cross.
+      const own = (session: { folder?: unknown } | undefined) => session?.folder === folder;
+      await page.route(
+        (url) => url.pathname === '/api/sessions',
+        async (route) => {
+          if (route.request().method() !== 'GET') return route.fallback();
+          const response = await route.fetch();
+          await route.fulfill({ response, json: ((await response.json()) as { folder?: unknown }[]).filter(own) });
+        },
+      );
+      await page.routeWebSocket(EVENTS, (ws) => {
+        const server = ws.connectToServer();
+        server.onMessage((message) => {
+          const frame = JSON.parse(String(message)) as { type?: string; session?: { folder?: unknown } };
+          if (frame.type !== 'session' || own(frame.session)) ws.send(message);
+        });
+      });
       await page.route('**/api/past-sessions', (route) => route.fulfill({ json: [] }));
       await page.goto('/');
       await expect(loading(list(page))).toHaveCount(0);

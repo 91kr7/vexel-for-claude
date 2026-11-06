@@ -30,7 +30,9 @@ const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Sessione 
 const pastEntry = (page: Page, folder: string, label: string) =>
   dialog(page).getByRole('region', { name: folder }).getByRole('radio', { name: label, exact: true });
 const resumeButton = (page: Page) => dialog(page).getByRole('button', { name: 'Riprendi', exact: true });
-const listEntry = (page: Page, label: string) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: label });
+/** The list entry of the session in `folder` with `label`: the folder path keeps out the sessions of earlier runs on a reused server. */
+const listEntry = (page: Page, folder: string, label: string) =>
+  page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: label }).filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const isResumeRequest = (url: string, method: string) => /\/api\/past-sessions\/[^/]+\/resume$/.test(new URL(url).pathname) && method === 'POST';
 
@@ -115,7 +117,7 @@ test('the user resumes a session started in the terminal, chosen under its folde
   await expect(dialog(page)).toBeHidden();
   await expect(terminal(page)).toContainText(`CWD:${shop}`);
   await expect(terminal(page)).toContainText('"--resume","e2e-shop"');
-  await expect(listEntry(page, label)).toBeVisible();
+  await expect(listEntry(page, shop, label)).toBeVisible();
 });
 
 // plan-claude_sessions_client/REQ-27 — scenario "The session still runs in a terminal"

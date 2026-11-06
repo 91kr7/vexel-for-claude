@@ -1,4 +1,5 @@
-// e2e of plan-claude_sessions_client-ui_redesign-material3_mock, batch session-list. The server runs the fake CLI (playwright.config.ts).
+// e2e of plan-claude_sessions_client-ui_redesign-material3_mock, batch session-list, brought to the Studio rows of plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark.
+// The server runs the fake CLI (playwright.config.ts).
 /// <reference lib="dom" />
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
@@ -180,47 +181,56 @@ async function styleOf(target: Locator): Promise<Style> {
   }, PROPS as unknown as string[]);
 }
 
-/** A radius that draws a full circle on a square of the given side. */
-const isCircle = (radius: string, side: number) => radius === '50%' || parseFloat(radius) === side / 2;
 const transparent = (colour: string) => colour === 'transparent' || /^rgba\(.*,\s*0\)$/.test(colour);
+const MONO = /^["']?Roboto Mono["']?/;
+/** The decorative status dot of a row: its first aria-hidden element. */
+const dot = (row: Locator) => row.locator('[aria-hidden="true"]').first();
 
-/**
- * Row geometry of board "Voci dell'elenco": 12 px gap, padding 12 px 16 px, radius 16 px, 40 px avatar.
- * The outlined external avatar is a 40 px content-box span with a 1 px border: 42 px outside.
- */
-async function expectBoardRow(row: Locator, name: string, radius = '16px', avatarSide = 40): Promise<void> {
+/** Row geometry of `.vx-session-row` (SessionList "Entry row"): padding 6 × 8 px (5 × 7 px inside the dashed border), 6 px radius, 8 px dot, no avatar. */
+async function expectStudioRow(row: Locator, name: string, external = false): Promise<void> {
   const s = await styleOf(row);
-  expect([s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft], `${name}: padding`).toEqual(['12px', '16px', '12px', '16px']);
-  expect(s.columnGap, `${name}: gap`).toBe('12px');
-  expect(s.borderRadius, `${name}: radius`).toBe(radius);
-  const box = await avatar(row).boundingBox();
-  expect([box?.width, box?.height], `${name}: ${avatarSide} px avatar`).toEqual([avatarSide, avatarSide]);
+  const pad = external ? ['5px', '7px', '5px', '7px'] : ['6px', '8px', '6px', '8px'];
+  if (s.borderLeftWidth === '0px' || s.borderLeftStyle === 'none' || external) {
+    expect([s.paddingTop, s.paddingRight, s.paddingBottom], `${name}: padding`).toEqual(pad.slice(0, 3));
+  }
+  expect(s.borderRadius, `${name}: radius`).toBe('6px');
+  await expect(avatar(row), `${name}: no avatar`).toHaveCount(0);
+  const box = await dot(row).boundingBox();
+  expect([box?.width, box?.height], `${name}: 8 px dot`).toEqual([8, 8]);
 }
 
-/** Text styles of board "Voci dell'elenco": title-m folder name, body-m label, label-m state with a 14 px icon, body-s time. */
-async function expectBoardText(page: Page, row: Locator, folder: string, name: string): Promise<void> {
+/** Text styles of a row: 12 px folder name, mono 10 px state in its colour, mono 10 px muted time. */
+async function expectStudioText(page: Page, row: Locator, folder: string, name: string, stateColour: string): Promise<void> {
   const title = await styleOf(row.getByTitle(folder, { exact: true }));
-  expect([title.fontSize, title.lineHeight, title.fontWeight], `${name}: title-m`).toEqual(['16px', '24px', '500']);
+  expect(title.fontSize, `${name}: 12 px folder name`).toBe('12px');
   const state = await styleOf(badge(row));
-  expect([state.fontSize, state.lineHeight], `${name}: label-m state`).toEqual(['12px', '16px']);
-  const icon = await badge(row).locator('svg').boundingBox();
-  expect([icon?.width, icon?.height], `${name}: 14 px state icon`).toEqual([14, 14]);
+  expect([state.fontSize, state.color], `${name}: mono 10 px state`).toEqual(['10px', stateColour]);
+  expect(await badge(row).evaluate((el) => getComputedStyle(el).fontFamily), `${name}: mono state`).toMatch(MONO);
   const time = row.locator('time');
   if ((await time.count()) > 0) {
     const t = await styleOf(time);
-    expect([t.fontSize, t.lineHeight, t.color], `${name}: body-s time`).toEqual(['12px', '16px', await token(page, '--on-surface-variant')]);
+    expect([t.fontSize, t.color], `${name}: mono 10 px muted time`).toEqual(['10px', await token(page, '--text-muted')]);
+    expect(await time.evaluate((el) => getComputedStyle(el).fontFamily), `${name}: mono time`).toMatch(MONO);
   }
 }
 
 const borderOf = (s: Style) => ({ width: s.borderTopWidth, style: s.borderTopStyle, colour: s.borderTopColor });
-const hasNoBorder = (s: Style) => s.borderTopStyle === 'none' || s.borderTopWidth === '0px';
 
-/** True when the target is drawn with a 2 px ring of the given colour, as an outline or an outer box-shadow. */
-const hasRing = (s: Style, colour: string) =>
-  (s.outlineStyle !== 'none' && s.outlineWidth === '2px' && s.outlineColor === colour) ||
-  s.boxShadow.includes(`${colour} 0px 0px 0px 2px`);
+/** Whether the element draws a 2 px bar of `colour` at its left edge: border, inset shadow or ::before. */
+const hasLeftBar = (target: Locator, colour: string) =>
+  target.evaluate((el, c) => {
+    const near2 = (v: string) => Math.abs(parseFloat(v) - 2) <= 0.6;
+    const s = getComputedStyle(el);
+    if (near2(s.borderLeftWidth) && s.borderLeftColor === c && s.borderLeftStyle !== 'none') return true;
+    if (s.boxShadow.includes(c) && /inset/.test(s.boxShadow)) return true;
+    for (const pseudo of ['::before', '::after']) {
+      const p = getComputedStyle(el, pseudo);
+      if (p.content !== 'none' && near2(p.width) && p.backgroundColor === c) return true;
+    }
+    return false;
+  }, colour);
 
-// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-16, REQ-17, REQ-19, REQ-20, REQ-22, REQ-23 — scenario "The user answers a waiting session from its card"
+// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-16, REQ-17, REQ-22, REQ-23, plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-28 — scenario "The user answers a waiting session from its card"
 test('the user answers a waiting session from its amber card with "Rispondi"', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const web = await newFolder('web-dashboard');
@@ -238,12 +248,14 @@ test('the user answers a waiting session from its amber card with "Rispondi"', a
   await expect(groupItems(page, 'In corso').filter({ has: byFolder(page, billing) })).toHaveCount(1);
 
   const webCard = card(page, web);
-  await expect(avatar(webCard)).toHaveText('WD');
+  await expect(avatar(webCard)).toHaveCount(0);
   await expect(entry(page, web)).toContainText('web-dashboard');
   await expect(entry(page, web)).toContainText('rimuovi le dipendenze inutilizzate');
-  await expect(badge(webCard)).toHaveText('Richiede input');
+  await expect(webCard.getByText('Richiede input', { exact: true })).toBeVisible();
   await expect(entry(page, web)).toHaveAccessibleDescription('Permesso per Bash · ora');
-  expect(Number((await styleOf(webCard.getByText('Bash', { exact: true }))).fontWeight), 'tool name in bold').toBeGreaterThanOrEqual(700);
+  const toolWeight = Number((await styleOf(webCard.getByText('Bash', { exact: true }))).fontWeight);
+  const lineWeight = Number((await styleOf(webCard.getByText(/^Permesso per/))).fontWeight);
+  expect(toolWeight, 'tool name in bold').toBeGreaterThan(lineWeight);
   await expect(terminal(page)).toContainText(`CWD:${billing}`);
 
   await webCard.getByRole('button', { name: 'Rispondi', exact: true }).click();
@@ -333,19 +345,21 @@ test('sessions sit in their groups, in order, latest activity first, and an empt
   await expect(groupItems(page, 'Richiedono input')).toHaveCount(1);
   await expect(groupItems(page, 'In corso')).toHaveCount(3);
 
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12: every group title is the mono uppercase muted label
   await pointerAway(page);
-  const attn = await token(page, '--attn');
-  const variant = await token(page, '--on-surface-variant');
-  const styles = await Promise.all(GROUPS.map((title) => styleOf(heading(page, title))));
-  styles.forEach((s, i) => {
-    expect(s.color, `${GROUPS[i]}: colour`).toBe(i === 0 ? attn : variant);
-    expect([s.fontSize, s.lineHeight, s.fontWeight], `${GROUPS[i]}: label-l`).toEqual(['14px', '20px', '500']);
-    expect([s.marginTop, s.marginRight, s.marginBottom, s.marginLeft], `${GROUPS[i]}: margins`).toEqual([i === 0 ? '8px' : '16px', '12px', '4px', '12px']);
-  });
+  const muted = await token(page, '--text-muted');
+  for (const title of GROUPS) {
+    const s = await styleOf(heading(page, title));
+    expect([s.color, s.fontSize], `${title}: muted 10 px`).toEqual([muted, '10px']);
+    expect(await heading(page, title).evaluate((el) => [getComputedStyle(el).textTransform, getComputedStyle(el).fontFamily])).toEqual([
+      'uppercase',
+      expect.stringMatching(MONO),
+    ]);
+  }
 });
 
-// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-18, REQ-19, REQ-20, REQ-21, REQ-24, REQ-26, REQ-27, REQ-28 — scenario "The user tells working, external and ended sessions apart"
-test('working, external, ended and open entries match their board variants in both themes', async ({ page, request }) => {
+// plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-8, REQ-9, REQ-23 to REQ-27, REQ-29 — scenario "The list shows each session as a compact Studio row"
+test('working, external, ended and open entries have their Studio row variants whatever the system theme', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const working = await newFolder('infra-terraform');
   const open = await newFolder('billing-api');
@@ -367,11 +381,6 @@ test('working, external, ended and open entries match their board variants in bo
   await expect(groupItems(page, 'In altri terminali').filter({ has: byFolder(page, outside) })).toHaveCount(1);
   await expect(groupItems(page, 'Terminate').filter({ has: byFolder(page, ended) })).toHaveCount(1);
 
-  await expect(avatar(entry(page, working))).toHaveText('IT');
-  await expect(avatar(entry(page, open))).toHaveText('BA');
-  await expect(avatar(entry(page, ended))).toHaveText('DS');
-  await expect(avatar(entry(page, outside))).toHaveText('');
-  await expect(avatar(entry(page, outside)).locator('svg')).toBeVisible();
   for (const [folder, state] of [
     [working, 'Lavora'],
     [open, 'In attesa'],
@@ -389,8 +398,9 @@ test('working, external, ended and open entries match their board variants in bo
   await expect(entry(page, ended).locator('.progress-bar')).toHaveCount(0);
   await expect(entry(page, outside).locator('.progress-bar'), 'external working entry: no bar').toHaveCount(0);
   const label = await labelOf(request, workingId);
-  const [labelBox, barBox] = [await entry(page, working).getByTitle(label, { exact: true }).boundingBox(), await bar.boundingBox()];
-  expect(barBox!.y - (labelBox!.y + labelBox!.height), 'bar 6 px under the label').toBeCloseTo(6, 0);
+  const line2 = entry(page, working).getByTitle(label, { exact: true }).locator('xpath=..');
+  const [lineBox, barBox] = [await line2.boundingBox(), await bar.boundingBox()];
+  expect.soft(barBox!.y - (lineBox!.y + lineBox!.height), 'bar 2 px under line 2').toBeCloseTo(2, 0);
   const indicator = bar.locator('*').first();
   const moves = await indicator.evaluate(async (el) => {
     const x0 = el.getBoundingClientRect().left;
@@ -403,74 +413,49 @@ test('working, external, ended and open entries match their board variants in bo
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     const t = async (name: string) => token(page, name);
+    const emerald400 = 'rgb(52, 211, 153)';
+    const zinc400 = 'rgb(161, 161, 170)';
 
-    for (const [folder, name] of [
-      [working, 'working'],
-      [open, 'open'],
-      [ended, 'ended'],
-      [outside, 'external'],
-    ] as const) {
-      await expectBoardRow(entry(page, folder), `${scheme} ${name}`, '16px', name === 'external' ? 42 : 40);
-      await expectBoardText(page, entry(page, folder), folder, `${scheme} ${name}`);
-    }
+    await expectStudioRow(entry(page, working), `${scheme} working`);
+    await expectStudioText(page, entry(page, working), working, `${scheme} working`, emerald400);
+    await expectStudioRow(entry(page, ended), `${scheme} ended`);
+    await expectStudioText(page, entry(page, ended), ended, `${scheme} ended`, zinc400);
+    await expectStudioRow(entry(page, outside), `${scheme} external`, true);
+    await expectStudioText(page, entry(page, outside), outside, `${scheme} external`, emerald400);
+    await expectStudioRow(entry(page, open), `${scheme} open`);
 
     const w = await styleOf(entry(page, working));
     expect(transparent(w.backgroundColor), `${scheme} working: transparent`).toBe(true);
-    expect(w.color, `${scheme} working: text`).toBe(await t('--on-surface'));
-    expect(hasNoBorder(w), `${scheme} working: no border`).toBe(true);
-    expect((await styleOf(entry(page, working).getByTitle(label, { exact: true }))).color, `${scheme} working: label`).toBe(await t('--on-surface-variant'));
-    expect((await styleOf(badge(entry(page, working)))).color, `${scheme} Lavora`).toBe(await t('--primary'));
-    const workingAvatar = await styleOf(avatar(entry(page, working)));
-    const variants = [
-      { background: await t('--primary-container'), color: await t('--on-primary-container'), radius: '20px' },
-      { background: await t('--teal-container'), color: await t('--on-teal-container'), radius: '12px' },
-    ];
-    expect(variants, `${scheme} working: primary round or teal square avatar`).toContainEqual({
-      background: workingAvatar.backgroundColor,
-      color: workingAvatar.color,
-      radius: workingAvatar.borderRadius,
-    });
+    expect(w.color, `${scheme} working: text`).toBe(await t('--text-secondary'));
+    expect((await styleOf(entry(page, working).getByTitle(label, { exact: true }))).color, `${scheme} working: label`).toBe(await t('--text-muted'));
+    expect((await styleOf(dot(entry(page, working)))).backgroundColor, `${scheme} working: emerald dot`).toBe(emerald400);
+    expect(await dot(entry(page, working)).evaluate((el) => getComputedStyle(el).animationName), `${scheme} working: pulsing dot`).not.toBe('none');
     const track = await styleOf(bar);
-    expect([track.height, track.borderRadius, track.backgroundColor], `${scheme} bar track`).toEqual(['4px', '2px', await t('--primary-container')]);
+    expect([track.height, track.borderRadius, track.backgroundColor], `${scheme} bar track`).toEqual(['4px', '2px', 'rgba(16, 185, 129, 0.15)']);
     const ind = await styleOf(indicator);
-    expect([ind.height, ind.borderRadius, ind.backgroundColor], `${scheme} bar indicator`).toEqual(['4px', '2px', await t('--primary')]);
+    expect([ind.height, ind.borderRadius, ind.backgroundColor], `${scheme} bar indicator`).toEqual(['4px', '2px', emerald400]);
     expect(parseFloat(ind.width) / parseFloat(track.width), `${scheme} indicator 45 %`).toBeCloseTo(0.45, 2);
 
     const o = await styleOf(entry(page, open));
-    expect([o.backgroundColor, o.color], `${scheme} open: highlighted`).toEqual([await t('--secondary-container'), await t('--on-secondary-container')]);
-    expect((await styleOf(entry(page, open).getByTitle('billing-api', { exact: true }))).color, `${scheme} open: label in the text colour`).toBe(o.color);
-    expect((await styleOf(badge(entry(page, open)))).color, `${scheme} In attesa`).toBe(o.color);
+    expect([o.backgroundColor, o.color, o.fontWeight], `${scheme} open: accent glow`).toEqual([await t('--accent-glow'), await t('--text-primary'), '600']);
+    expect(await hasLeftBar(entry(page, open), await t('--accent-primary')), `${scheme} open: 2 px accent bar`).toBe(true);
+    expect((await styleOf(entry(page, open).locator('time'))).color, `${scheme} open: time in the secondary colour`).toBe(await t('--text-secondary'));
+    expect((await styleOf(dot(entry(page, open)))).backgroundColor, `${scheme} open idle: zinc dot`).toBe(zinc400);
+    expect(await dot(entry(page, open)).evaluate((el) => getComputedStyle(el).animationName), `${scheme} idle: no pulse`).toBe('none');
 
     const e = await styleOf(entry(page, ended));
     expect(transparent(e.backgroundColor), `${scheme} ended: transparent`).toBe(true);
-    expect(e.color, `${scheme} ended: dimmed text`).toBe(await t('--on-surface-variant'));
-    expect((await styleOf(entry(page, ended).getByTitle('docs-site', { exact: true }))).color, `${scheme} ended: label in the text colour`).toBe(e.color);
-    expect((await styleOf(badge(entry(page, ended)))).color, `${scheme} Terminata`).toBe(e.color);
-    const endedAvatar = await styleOf(avatar(entry(page, ended)));
-    expect([endedAvatar.backgroundColor, endedAvatar.color, endedAvatar.borderRadius], `${scheme} ended avatar`).toEqual([
-      await t('--sc-highest'),
-      await t('--on-surface-variant'),
-      '20px',
-    ]);
+    expect(e.color, `${scheme} ended: dimmed text`).toBe(await t('--text-muted'));
+    expect((await styleOf(dot(entry(page, ended)))).backgroundColor, `${scheme} ended: zinc dot`).toBe(zinc400);
 
     const x = await styleOf(entry(page, outside));
     expect(transparent(x.backgroundColor), `${scheme} external: transparent`).toBe(true);
-    expect(x.color, `${scheme} external: text`).toBe(await t('--on-surface'));
-    expect(borderOf(x), `${scheme} external: dashed border`).toEqual({ width: '1px', style: 'dashed', colour: await t('--outline-variant') });
-    const outsideAvatar = await styleOf(avatar(entry(page, outside)));
-    expect(transparent(outsideAvatar.backgroundColor), `${scheme} external avatar: transparent`).toBe(true);
-    expect([borderOf(outsideAvatar), isCircle(outsideAvatar.borderRadius, 40), outsideAvatar.color], `${scheme} external avatar: outlined circle`).toEqual([
-      { width: '1px', style: 'solid', colour: await t('--outline') },
-      true,
-      await t('--on-surface-variant'),
-    ]);
-    const icon = await avatar(entry(page, outside)).locator('svg').boundingBox();
-    expect([icon?.width, icon?.height], `${scheme} external avatar: 20 px terminal icon`).toEqual([20, 20]);
+    expect(borderOf(x), `${scheme} external: dashed border`).toEqual({ width: '1px', style: 'dashed', colour: await t('--border-strong') });
   }
 
-  const avatarClass = (await avatar(entry(page, working)).getAttribute('class')) ?? '';
-  await page.reload();
-  await expect(avatar(entry(page, working)), 'same avatar variant after a reload').toHaveClass(avatarClass);
+  // the ended row stays dimmed under the pointer
+  await entry(page, ended).hover();
+  await expect.poll(async () => (await styleOf(entry(page, ended))).color).toBe(await token(page, '--text-muted'));
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-17, REQ-25 — scenario "The user sees an external session that waits for input"
@@ -490,9 +475,9 @@ test('an external session that waits for input is the amber row with "Esterna" u
   await expect(badge(row)).toHaveText('Richiede input');
   await expect(counter(page)).toHaveText('1 richiede input');
 
-  const tag = row.locator('.label-m', { hasText: 'Esterna' }).filter({ hasNotText: 'Richiede' });
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-27: the "Esterna" mono chip after the folder name, the dashed row, the amber dot
+  const tag = row.getByText('Esterna', { exact: true });
   await expect(tag).toHaveText('Esterna');
-  await expect(tag.locator('svg')).toBeVisible();
   const [titleBox, tagBox] = [await row.getByTitle(outside, { exact: true }).boundingBox(), await tag.boundingBox()];
   expect(tagBox!.x, '"Esterna" after the folder name').toBeGreaterThanOrEqual(titleBox!.x + titleBox!.width - 0.5);
 
@@ -500,43 +485,28 @@ test('an external session that waits for input is the amber row with "Esterna" u
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     const t = async (name: string) => token(page, name);
-    await expectBoardRow(row, `${scheme} external needs input`, '20px', 42);
-    await expectBoardText(page, row, outside, `${scheme} external needs input`);
+    await expectStudioRow(row, `${scheme} external needs input`, true);
+    await expectStudioText(page, row, outside, `${scheme} external needs input`, 'rgb(251, 191, 36)');
     const s = await styleOf(row);
-    expect([s.backgroundColor, s.color], `${scheme}: amber row`).toEqual([await t('--attn-container'), await t('--on-attn-container')]);
-    expect(hasNoBorder(s), `${scheme}: no dashed border`).toBe(true);
-    expect(Number((await styleOf(badge(row))).fontWeight), `${scheme}: bold state`).toBeGreaterThanOrEqual(700);
-    const a = await styleOf(avatar(row));
-    expect([borderOf(a), isCircle(a.borderRadius, 40)], `${scheme}: outlined avatar`).toEqual([{ width: '1px', style: 'solid', colour: await t('--outline') }, true]);
+    expect(borderOf(s), `${scheme}: dashed border`).toEqual({ width: '1px', style: 'dashed', colour: await t('--border-strong') });
+    expect((await styleOf(dot(row))).backgroundColor, `${scheme}: amber dot`).toBe('rgb(251, 191, 36)');
+    expect(await dot(row).evaluate((el) => getComputedStyle(el).animationName), `${scheme}: pulsing dot`).not.toBe('none');
     const tagStyle = await styleOf(tag);
-    expect(
-      {
-        height: tagStyle.height,
-        padding: [tagStyle.paddingLeft, tagStyle.paddingRight],
-        radius: tagStyle.borderRadius,
-        border: borderOf(tagStyle),
-        color: tagStyle.color,
-        font: [tagStyle.fontSize, tagStyle.fontWeight],
-      },
-      `${scheme}: "Esterna" tag`,
-    ).toEqual({
-      height: '20px',
-      padding: ['6px', '6px'],
-      radius: '6px',
-      border: { width: '1px', style: 'solid', colour: await t('--outline') },
-      color: await t('--on-surface-variant'),
-      font: ['12px', '500'],
+    expect({ radius: tagStyle.borderRadius, background: tagStyle.backgroundColor, color: tagStyle.color, size: tagStyle.fontSize }, `${scheme}: "Esterna" chip`).toEqual({
+      radius: '4px',
+      background: await t('--bg-surface-2'),
+      color: await t('--text-secondary'),
+      size: '10px',
     });
-    const tagIcon = await tag.locator('svg').boundingBox();
-    expect([tagIcon?.width, tagIcon?.height], `${scheme}: 12 px terminal icon`).toEqual([12, 12]);
+    expect(await tag.evaluate((el) => getComputedStyle(el).fontFamily), `${scheme}: mono chip`).toMatch(MONO);
   }
 
-  await row.click();
+    await row.click();
   await expect(row).toHaveAttribute('aria-current', 'true');
 });
 
-// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-22, REQ-26, REQ-28: the hosted needs-input card of board "Sessione ospitata", in both themes, with the primary ring when open
-test('the hosted needs-input card matches the board in both themes and gets the primary ring when open', async ({ page, request }) => {
+// plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-24, REQ-28: the hosted needs-input card in the permission-banner look, with the accent bar when open
+test('the hosted needs-input card has the permission-banner look whatever the system theme, and the accent glow and bar when open', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const asks = await newFolder('web-dashboard');
   const asksId = await startViaApi(request, asks);
@@ -552,27 +522,36 @@ test('the hosted needs-input card matches the board in both themes and gets the 
     const t = async (name: string) => token(page, name);
     const c = await styleOf(webCard);
     expect(
-      { background: c.backgroundColor, color: c.color, radius: c.borderRadius, padding: [c.paddingTop, c.paddingRight, c.paddingBottom, c.paddingLeft] },
+      { background: c.backgroundColor, border: borderOf(c), radius: c.borderRadius, padding: [c.paddingTop, c.paddingRight, c.paddingBottom, c.paddingLeft] },
       `${scheme}: card`,
-    ).toEqual({ background: await t('--attn-container'), color: await t('--on-attn-container'), radius: '20px', padding: ['14px', '16px', '14px', '16px'] });
-    expect(hasRing(c, await t('--primary')), `${scheme}: no ring while not open`).toBe(false);
-    const a = await styleOf(avatar(webCard));
-    expect([a.backgroundColor, a.color, a.borderRadius, a.width, a.height], `${scheme}: amber square avatar`).toEqual([
-      await t('--attn'),
-      await t('--sc-lowest'),
-      '12px',
-      '40px',
-      '40px',
-    ]);
-    const b = await styleOf(badge(webCard));
-    expect([b.color, Number(b.fontWeight) >= 700], `${scheme}: bold state in the card colour`).toEqual([c.color, true]);
+    ).toEqual({
+      background: await t('--bg-surface-2'),
+      border: { width: '1px', style: 'solid', colour: 'rgba(245, 158, 11, 0.4)' },
+      radius: '12px',
+      padding: ['14px', '14px', '14px', '14px'],
+    });
+    await expect(avatar(webCard)).toHaveCount(0);
+    const tag = await styleOf(webCard.getByText('Richiede input', { exact: true }));
+    expect({ color: tag.color, background: tag.backgroundColor, size: tag.fontSize, radius: tag.borderRadius }, `${scheme}: amber tag`).toEqual({
+      color: 'rgb(252, 211, 77)',
+      background: 'rgba(245, 158, 11, 0.2)',
+      size: '10px',
+      radius: '4px',
+    });
     const r = await styleOf(reply);
-    expect(
-      { height: r.height, padding: [r.paddingLeft, r.paddingRight], background: r.backgroundColor, color: r.color, font: [r.fontSize, r.fontWeight] },
-      `${scheme}: "Rispondi"`,
-    ).toEqual({ height: '32px', padding: ['14px', '14px'], background: await t('--attn'), color: await t('--sc-lowest'), font: ['14px', '500'] });
-    const line = await styleOf(webCard.getByText('Permesso per'));
-    expect([line.fontSize, line.lineHeight], `${scheme}: body-s line`).toEqual(['12px', '16px']);
+    expect({ background: r.backgroundColor, color: r.color, padding: [r.paddingLeft, r.paddingRight] }, `${scheme}: accent "Rispondi"`).toEqual({
+      background: await t('--accent-primary'),
+      color: await t('--bg-canvas'),
+      padding: ['14px', '14px'],
+    });
+    const line = webCard.getByText(/^Permesso per/);
+    const l = await styleOf(line);
+    expect({ size: l.fontSize, color: l.color, background: l.backgroundColor }, `${scheme}: #perm-cmd line`).toEqual({
+      size: '12px',
+      color: 'rgb(252, 211, 77)',
+      background: await t('--bg-canvas'),
+    });
+    expect(await line.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(MONO);
   }
 
   await reply.click();
@@ -580,9 +559,10 @@ test('the hosted needs-input card matches the board in both themes and gets the 
   await pointerAway(page);
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme });
-    const c = await styleOf(webCard);
-    expect(hasRing(c, await token(page, '--primary')), `${scheme}: 2 px primary ring when open`).toBe(true);
-    expect(c.backgroundColor, `${scheme}: still amber when open`).toBe(await token(page, '--attn-container'));
+    const accent = await token(page, '--accent-primary');
+    const barred = (await hasLeftBar(webCard, accent)) || (await hasLeftBar(entry(page, asks), accent));
+    expect(barred, `${scheme}: 2 px accent bar when open`).toBe(true);
+    expect((await styleOf(webCard)).borderTopColor, `${scheme}: still amber when open`).toBe('rgba(245, 158, 11, 0.4)');
   }
 });
 
@@ -662,8 +642,8 @@ test('a long folder name and a long label are cut on one line with an ellipsis, 
   expect(row!.height, 'no text wraps: same height as a short entry').toBeCloseTo(shortRow!.height, 0);
 });
 
-// plan-claude_sessions_client-ui_redesign/REQ-14, plan-claude_sessions_client-ui_redesign-material3_mock/REQ-11; NeedsInputCounter: hidden at 0, amber chip with its icon above 0
-test('the counter is hidden at 0, shows the amber chip with its icon above 0, and stays visible whatever the main area shows', async ({
+// plan-claude_sessions_client-ui_redesign/REQ-14, plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-21; NeedsInputCounter: hidden at 0, amber pill with its dot above 0
+test('the counter is hidden at 0, shows the amber pill with its dot above 0, and stays visible whatever the main area shows', async ({
   page,
   request,
 }) => {
@@ -679,23 +659,25 @@ test('the counter is hidden at 0, shows the amber chip with its icon above 0, an
   const id = await startViaApi(request, folder);
   await postHook(request, id, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
   await expect(counter(page)).toHaveText('1 richiede input');
-  const chip = counter(page).locator('.chip');
-  const icon = chip.locator('svg.icon');
-  await expect(icon).toBeVisible();
-  const iconBeforeText = await chip.evaluate((el) => {
-    const svg = el.querySelector('svg')!.getBoundingClientRect();
+  const chip = counter(page).locator(':scope > *').first();
+  const pillDot = chip.locator('[aria-hidden="true"]').first();
+  await expect(pillDot).toBeVisible();
+  const dotBeforeText = await chip.evaluate((el) => {
+    const mark = el.querySelector('[aria-hidden="true"]')!.getBoundingClientRect();
     const text = [...el.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && /richiede input/.test(n.textContent ?? ''));
     const range = document.createRange();
     range.selectNodeContents(text!);
-    return svg.right <= range.getBoundingClientRect().left + 0.5;
+    return mark.right <= range.getBoundingClientRect().left + 0.5;
   });
-  expect(iconBeforeText, 'icon before the text').toBe(true);
+  expect(dotBeforeText, 'dot before the text').toBe(true);
   const style = await chip.evaluate((el) => {
     const s = getComputedStyle(el);
-    return { color: s.color, background: s.backgroundColor };
+    return { color: s.color, background: s.backgroundColor, font: s.fontFamily };
   });
-  expect(style.background).toBe(await token(page, '--attn-container'));
-  expect(style.color).toBe(await token(page, '--on-attn-container'));
+  expect(style.background).toBe('rgba(245, 158, 11, 0.15)');
+  expect(style.color).toBe('rgb(251, 191, 36)');
+  expect(style.font).toMatch(MONO);
+  expect(await pillDot.evaluate((el) => getComputedStyle(el).animationName), 'the dot pulses').not.toBe('none');
 
   await rail(page).getByRole('button', { name: 'Nuova sessione', exact: true }).click();
   await expect(page.getByRole('form', { name: 'Scegli la cartella del progetto' })).toBeVisible();

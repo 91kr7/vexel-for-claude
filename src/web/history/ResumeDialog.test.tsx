@@ -1,7 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { ProgressIndicator } from '../feedback/ProgressIndicator';
-import { HistoryIcon } from '../icons/Icons';
+import { AreaState } from '../feedback/AreaState';
 import { ResumeDialog } from './ResumeDialog';
 
 const buttons = (html: string) =>
@@ -22,25 +21,23 @@ describe('ResumeDialog', () => {
   it('has "Annulla" and the primary action "Riprendi", disabled on open', () => {
     const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
     const actions = buttons(html);
-    expect(actions.map((b) => b.label)).toEqual(['Annulla', 'Riprendi']);
-    const primary = actions[1]?.attrs ?? '';
+    expect(actions.map((b) => b.label)).toEqual(['[Esc]', 'Annulla', 'Riprendi']);
+    const primary = actions[2]?.attrs ?? '';
     expect(primary).toMatch(/\sclass="(?:[^"]*\s)?button-primary(?:\s[^"]*)?"/);
     expect(primary).toMatch(/\sdisabled(?:=""|\s|$)/);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-49, ResumeDialog: HistoryIcon on top and no description
-  it('shows HistoryIcon before the title and has no accessible description', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44, ResumeDialog: no icon before the title and no description
+  it('shows no icon before the title and has no accessible description', () => {
     const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
-    const icon = html.indexOf(renderToStaticMarkup(<HistoryIcon />));
-    expect(icon).toBeGreaterThanOrEqual(0);
-    expect(icon).toBeLessThan(html.indexOf('Riprendi sessione'));
+    expect(html.slice(0, html.indexOf('Riprendi sessione'))).not.toContain('<svg');
     expect(html.match(/<[a-z]+\b[^>]*\srole="dialog"[^>]*>/)?.[0]).not.toContain('aria-describedby');
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-29, ResumeDialog: the list loads behind a ProgressIndicator
-  it('shows the ProgressIndicator "Caricamento…" while the past sessions load', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50, ResumeDialog: the list loads behind a compact AreaState
+  it('shows the compact AreaState "Caricamento…" while the past sessions load', () => {
     const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
-    expect(html).toContain(renderToStaticMarkup(<ProgressIndicator />));
+    expect(html).toContain(renderToStaticMarkup(<AreaState kind="loading" size="compact" title="Caricamento…" />));
     expect(html).not.toContain('role="alert"');
   });
 });
