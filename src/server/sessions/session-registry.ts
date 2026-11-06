@@ -30,6 +30,9 @@ export class Session {
   readonly #stopTimeoutMs: number;
   #killTimer: NodeJS.Timeout | undefined;
   #exited = false;
+  #exitCode: number | undefined;
+  #signal: number | undefined;
+  #stopRequested = false;
 
   constructor(
     id: string,
@@ -56,8 +59,10 @@ export class Session {
       this.#mirror.write(data);
       for (const viewer of this.#viewers) viewer.send(data);
     });
-    this.#pty.onExit(() => {
+    this.#pty.onExit(({ exitCode, signal }) => {
       this.#exited = true;
+      if (signal) this.#signal = signal;
+      else this.#exitCode = exitCode;
       clearTimeout(this.#killTimer);
       for (const viewer of this.#viewers) viewer.end();
       this.#viewers.clear();
@@ -75,12 +80,25 @@ export class Session {
     return this.#exited;
   }
 
+  get exitCode(): number | undefined {
+    return this.#exitCode;
+  }
+
+  get signal(): number | undefined {
+    return this.#signal;
+  }
+
+  get stopRequested(): boolean {
+    return this.#stopRequested;
+  }
+
   write(data: string): void {
     if (!this.#exited) this.#pty.write(data);
   }
 
   stop(): void {
     if (this.#exited || this.#killTimer) return;
+    this.#stopRequested = true;
     this.#pty.kill('SIGTERM');
     this.#killTimer = setTimeout(() => {
       if (!this.#exited) this.#pty.kill('SIGKILL');

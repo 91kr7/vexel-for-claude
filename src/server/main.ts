@@ -14,6 +14,8 @@ import { registerResumeSessionRoute } from './history/resume-session-route.js';
 import { SessionHistory } from './history/session-history.js';
 import { registerLocalAccessGuard } from './local-access-guard.js';
 import { registerAttachSessionRoute } from './sessions/attach-session-route.js';
+import { AttentionMonitor } from './sessions/attention-monitor.js';
+import { registerAttentionRoute } from './sessions/attention-route.js';
 import { registerHookEventRoute } from './sessions/hook-event-route.js';
 import { writeHookSettings } from './sessions/hook-settings.js';
 import { registerSessionEventsRoute } from './sessions/session-events-route.js';
@@ -40,6 +42,7 @@ const externalScanner = new ExternalSessionScanner({
   hostedPids: () => registry.hostedPids(),
 });
 const transcriptReader = new TranscriptReader();
+const attentionMonitor = new AttentionMonitor({ tracker, scanner: externalScanner, registry });
 
 registerLocalAccessGuard(app);
 await app.register(fastifyWebsocket);
@@ -56,6 +59,7 @@ registerPastSessionListRoute(app, { history, externalCheck, registry, tracker })
 registerResumeSessionRoute(app, { history, registry });
 registerConversationStreamRoute(app, { scanner: externalScanner, reader: transcriptReader });
 registerItemContentRoute(app, { scanner: externalScanner, reader: transcriptReader });
+registerAttentionRoute(app, attentionMonitor);
 
 // In dev the page comes from Vite, so dist/web may not exist yet.
 if (existsSync(webRoot)) {

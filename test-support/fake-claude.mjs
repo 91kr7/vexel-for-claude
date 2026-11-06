@@ -4,7 +4,8 @@
 // On start it prints its cwd, arguments, terminal variables and size.
 // Every input chunk is echoed as `IN:<hex>`; every line ended by Enter as `LINE:<text>`.
 // Line commands: STREAM (5 chunks, 300 ms apart), ASK (waits for one key, then ANSWER:<key>),
-// COUNT (400 numbered lines, 5 ms apart), /exit (exits with code 0).
+// COUNT (400 numbered lines, 5 ms apart), /exit (exits with code 0), /crash <code> (exits with that code),
+// /pid (prints PID:<pid>).
 // With `--settings <file>` it runs the file's hooks like Claude Code: UserPromptSubmit for every line
 // not starting with `/` or `HOOK `, plus TURN (Stop after 1.5 s), WORK (tool use, TICK<n> every 250 ms
 // for 30 s, then Stop), PERM (PermissionRequest, waits for one key, then Stop) and
@@ -60,6 +61,10 @@ function runLine(text) {
   if (text === '/exit') {
     out('BYE');
     process.exit(0);
+  } else if (text.startsWith('/crash ')) {
+    process.exit(Number(text.slice('/crash '.length)));
+  } else if (text === '/pid') {
+    out(`PID:${process.pid}`);
   } else if (text === 'STREAM') {
     let n = 0;
     const timer = setInterval(() => {

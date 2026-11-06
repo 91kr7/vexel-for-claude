@@ -30,7 +30,13 @@ export interface SessionStateTrackerOptions {
   now?: () => Date;
 }
 
-type ChangeListener = (summary: SessionSummary) => void;
+export type ChangeCause =
+  | { type: 'track' }
+  | { type: 'hook'; hookEventName: string }
+  | { type: 'input' }
+  | { type: 'exit' };
+
+type ChangeListener = (summary: SessionSummary, cause: ChangeCause) => void;
 
 const LABEL_LENGTH = 80;
 const ESCAPE = '\x1b';
@@ -97,8 +103,10 @@ export class SessionStateTracker {
       labelFromPrompt: resumedLabel !== '',
       claudeSessionId: session.resumedFrom?.sessionId,
     });
-    this.#notify(summary);
-    session.onExit(() => this.#update(session.id, { state: 'ended', lastActivity: this.#now().toISOString() }));
+    this.#notify(summary, { type: 'track' });
+    session.onExit(() =>
+      this.#update(session.id, { state: 'ended', lastActivity: this.#now().toISOString() }, { type: 'exit' }),
+    );
   }
 
   applyHookEvent(sessionId: string, event: HookEvent): boolean {
@@ -126,7 +134,7 @@ export class SessionStateTracker {
         entry.labelFromPrompt = true;
       }
     }
-    this.#update(sessionId, changes);
+    this.#update(sessionId, changes, { type: 'hook', hookEventName: event.hook_event_name });
     return true;
   }
 
@@ -138,12 +146,16 @@ export class SessionStateTracker {
     if (interrupts && (entry.summary.state === 'working' || entry.summary.state === 'needs_input')) {
       changes.state = 'idle';
     }
-    this.#update(sessionId, changes);
+    this.#update(sessionId, changes, { type: 'input' });
   }
 
   get(sessionId: string): SessionSummary | undefined {
     const entry = this.#entries.get(sessionId);
     return entry && { ...entry.summary };
+  }
+
+  claudeSessionId(sessionId: string): string | undefined {
+    return this.#entries.get(sessionId)?.claudeSessionId;
   }
 
   liveClaudeSessionIds(): Set<string> {
@@ -163,15 +175,15 @@ export class SessionStateTracker {
     return () => this.#listeners.delete(listener);
   }
 
-  #update(sessionId: string, changes: Partial<SessionSummary>): void {
+  #update(sessionId: string, changes: Partial<SessionSummary>, cause: ChangeCause): void {
     const entry = this.#entries.get(sessionId);
     if (!entry) return;
     entry.summary = { ...entry.summary, ...changes };
     if (entry.summary.state !== 'needs_input' || entry.summary.waitingTool === undefined) delete entry.summary.waitingTool;
-    this.#notify(entry.summary);
+    this.#notify(entry.summary, cause);
   }
 
-  #notify(summary: SessionSummary): void {
-    for (const listener of this.#listeners) listener({ ...summary });
+  #notify(summary: SessionSummary, cause: ChangeCause): void {
+    for (const listener of this.#listeners) listener({ ...summary }, { ...cause });
   }
 }

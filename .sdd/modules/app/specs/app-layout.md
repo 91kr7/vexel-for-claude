@@ -43,6 +43,8 @@ else → "New Claude Code Session" in the rail
   The focused element shows the focus ring, also after a mouse click.
 - "Open" in the snackbar → that session becomes the open one, hosted or external as for a list click. The snackbar disappears.
 - ConversationView resumes the session ("Resume Here") → the new hosted session becomes the open one.
+- "open this session" from the desktop app (useDesktopBridge) → when LiveSessionStore lists the session, it becomes the open one, hosted or external as for a list click. Else nothing changes.
+- each change of the open session is reported to the desktop app (useDesktopBridge).
 
 ## Rules and invariants
 
@@ -53,7 +55,7 @@ else → "New Claude Code Session" in the rail
 
 ## Dependencies
 
-- TopBar, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry
+- TopBar, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge
 - FolderChooser (module folders)
 - ResumeDialog (module history)
 - SessionView, SessionList, NeedsInputCounter, LiveSessionStore, SessionOrderStore (module sessions)
@@ -66,3 +68,4 @@ else → "New Claude Code Session" in the rail
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-15`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-21`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-53`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-9`
+- `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-20`
