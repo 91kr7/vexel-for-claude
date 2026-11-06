@@ -163,8 +163,9 @@ async function styles(target: Locator, properties: string[]): Promise<Record<str
   }, properties);
 }
 
+/** Polls, so a colour transition (0.12 s on the rows) settles before the comparison. */
 async function expectStyles(target: Locator, expected: Record<string, string>, what: string): Promise<void> {
-  expect(await styles(target, Object.keys(expected)), what).toEqual(expected);
+  await expect.poll(() => styles(target, Object.keys(expected)), { message: what }).toEqual(expected);
 }
 
 /** The computed colour of a CSS value, e.g. `var(--primary)`, in the theme of the page. */

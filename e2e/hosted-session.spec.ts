@@ -143,17 +143,17 @@ for (const colorScheme of ['light', 'dark'] as const) {
       const mono = /^["']?Roboto Mono["']?/;
       const main = await box(mainArea(page));
 
-      // subbar: 40 px, padding 4 16, surface 1, subtle line below, across the main area, no avatar
+      // subbar: 40 px with its bottom line, padding 0 16 (mock `h-10 px-4`), surface 1, subtle line below, across the main area, no avatar
       const head = header(page);
-      expect(await styles(head, ['padding-top', 'padding-right', 'padding-left', 'background-color', 'border-bottom-width', 'border-bottom-color'])).toEqual({
-        'padding-top': '4px', 'padding-right': '16px', 'padding-left': '16px',
+      expect(await styles(head, ['padding-top', 'padding-bottom', 'padding-right', 'padding-left', 'background-color', 'border-bottom-width', 'border-bottom-color'])).toEqual({
+        'padding-top': '0px', 'padding-bottom': '0px', 'padding-right': '16px', 'padding-left': '16px',
         'background-color': await colour('--bg-surface-1'), 'border-bottom-width': '1px', 'border-bottom-color': await colour('--border-subtle'),
       });
       const headBox = await box(head);
       near(headBox.y, main.y, 'header top');
       near(headBox.x, main.x, 'header left');
       near(headBox.width, main.width, 'header width');
-      near(headBox.height, 40, 'header height');
+      expect(headBox.height, 'header height').toBeCloseTo(40, 0);
       await expect(head.locator('.avatar')).toHaveCount(0);
 
       // name, "/", mono path, the label chip
