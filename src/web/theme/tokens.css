@@ -51,6 +51,9 @@
   --term-fg: #f3f2ee;
   --term-cursor: #8ccfff;
   --term-selection: rgba(140, 207, 255, 0.3);
+  --term-match-bg: #713f12;
+  --term-match-current-bg: #92400e;
+  --term-match-current-border: #fcd34d;
   --color-error: var(--rose-400);
   --color-focus-ring: var(--accent-primary);
   --color-backdrop: rgba(0, 0, 0, 0.65);

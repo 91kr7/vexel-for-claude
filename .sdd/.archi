@@ -57,6 +57,7 @@ Generated output, not versioned: `dist/web/` (frontend build), `dist/desktop/` (
 | react, react-dom | runtime | UI |
 | @xterm/xterm, @xterm/addon-fit | runtime | Terminal view and resize to container |
 | @xterm/addon-web-links | runtime | Web addresses of the terminal rows as links (same major line as `@xterm/xterm` 6) |
+| @xterm/addon-search | runtime | Search of the terminal text, scrollback included, with match highlights (same major line as `@xterm/xterm` 6) |
 | @xterm/headless, @xterm/addon-serialize | runtime | Server-side terminal mirror per session and its serialized snapshot |
 | @jellybrick/dbus-next | runtime | D-Bus client of the desktop app for the system notifications (assumption "Notification mechanism"). Pure JavaScript, no native build |
 | typescript | dev | Typecheck (`tsc -b`, no emit) |

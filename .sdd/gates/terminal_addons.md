@@ -13,3 +13,4 @@
 | 2026-11-06 | test | G5 clickable-links round 1 | sent back | 3 red in `web-address-links.test.ts`: range end `{x:0}` on the next row when an address ends on the last column; `!` cuts the address |
 | 2026-11-06 | dev | G4 clickable-links fix round 1 | pass | Own address pattern (ends at whitespace or quotes), range end moved back to the last column; typecheck green |
 | 2026-11-06 | test | G5 clickable-links round 2 | pass | Re-run by gatekeeper: unit 47/47, browser e2e 9/9 on port 3200; Electron check 1/1 from round 1 untouched by the fix |
+| 2026-11-06 | dev | G4 search | pass | Build green (re-run); files map to the batch INTs; accepted: current match shown as selection colour plus outline (renderer paints selection over decorations), `allowProposedApi` for highlights, worktree now has its own node_modules |

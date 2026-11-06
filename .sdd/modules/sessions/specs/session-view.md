@@ -11,20 +11,21 @@ type: UI component
 ## Contract
 
 Description:
-- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the hint row.
+- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with "Search", "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the hint row.
 - the panel takes all the height the header and the hint row leave.
 
 Props:
 - `sessionId` → the session to show.
   - a new `sessionId` → closes the connection of the previous session. The terminal is empty, then shows the snapshot of the new session, then its live output. It fits the panel and sends `resize`.
   - the terminal never shows output of the previous session after a switch.
+  - a new `sessionId` closes the search box, with its text and its count.
 - `onLeaveTerminal()` → called when the user presses Ctrl+Shift+L in the terminal.
 - `session` → `{ folder, label, state }` of the session, optional. It goes to the SessionHeader, and its `state` and folder name to StopSessionButton. A change of `session` does not reconnect the terminal.
 
 Shows:
 - the terminal panel → `role="region"` named "Terminal: <folder name>" ("Terminal" without `session`). 16 px from the left, right and top, 8 px radius, 1 px `--border-subtle` border, `--term-bg` background, padding 12 px. The terminal fills the box inside the padding.
 - the terminal → Roboto Mono 12 px, line height 1.2. Background `--term-bg`, default text `--term-fg`, cursor `--term-cursor`, selection `--term-selection`. These tokens have the same dark values in both themes, so the panel stays dark in the light theme. The font is loaded before the terminal opens and fits; if it fails to load, the terminal opens with the next font of `--font-mono`. The ANSI colours that Claude Code writes stay as written.
-- while the terminal has the keyboard focus, the panel shows the focus ring (`--color-focus-ring`) around its rounded edge.
+- while the terminal or the search box has the keyboard focus, the panel shows the focus ring (`--color-focus-ring`) around its rounded edge.
 - the hint row → 40 px high, padding 0 × 16 px, centred: the keys "Ctrl", "Shift", "L" as `.kbd-badge`, joined by "+", then "back to the list", 11 px in `--text-muted`, 6 px gaps. Always visible, never cut.
 - a ProgressIndicator "Loading…" centred over the panel, on surface 2 with an 8 px radius, from the start until the first frame (the snapshot) arrives or the connection closes. A click goes through it to the terminal.
 - the session snapshot, then its live output, from AttachSessionRoute.
@@ -36,19 +37,32 @@ Shows:
   - code `1000` (the session process ended) → no message. The header shows "Ended".
   - code `4404` → "The session no longer exists."
   - any other code (e.g. the server stopped) → "Connection to the session lost."
+- "Search" → an icon button (search icon, 26 px, `--text-secondary`) with the accessible name "Search" and the tooltip "Search (Ctrl+Shift+F)". It shows in every state, `ended` included, before "Interrupt".
+- the TerminalSearchBox at the top right of the panel, while the search is open. Its count follows the search, also while new output arrives.
+- the search matches → every match on a `--term-match-bg` background. The current match has a 1 px `--term-match-current-border` outline over the selection colour, so it looks different from the others.
 - "Interrupt" → `.button-danger` (rose, look of `#subbar-stop-btn`) with the decorative glyph "■" before the text. Its accessible name is "Interrupt". It shows in every state except `ended`, `undefined` included.
 
 Actions:
-- every key typed in the terminal → sent to the pty as `input`, Esc included. Ctrl+Shift+L is the only exception.
+- every key typed in the terminal → sent to the pty as `input`, Esc included. Ctrl+Shift+L and Ctrl+Shift+F are the only exceptions.
 - Ctrl+click on a link → LinkOpener `openLink` with the full address (a wrapped address included). The session stays on screen.
 - a plain click on a link (no Ctrl) → opens nothing; focus and text selection work as on any other text.
 - Ctrl+Shift+L in the terminal (no Alt, no Meta, either case of L) → `onLeaveTerminal()`. The terminal does not process it, nothing goes to the pty, and the browser default is prevented.
+- Ctrl+Shift+F in the terminal (no Alt, no Meta, either case of F) → opens the search box and focuses its field. Nothing goes to the pty and the browser default is prevented. Outside the terminal the key does nothing here.
+- "Search" → opens the search box and focuses its field.
+- opening the search while it is open → focuses the field and selects its text.
+- a change of the search text → searches the whole terminal buffer, scrollback included. Plain text, case ignored.
+  - empty text → no highlight, no selection, empty count.
+  - otherwise → all matches highlighted. The current match is the first one from the current match (or the buffer start), going down and wrapping. The terminal scrolls to it when it is off screen. The count shows its position and the total, or "No results".
+- Enter or "Next match" → the next match becomes current; after the last one comes the first. Shift+Enter or "Previous match" → the previous one; before the first comes the last. Each one scrolls to it and updates the count. With empty text they do nothing.
+- Esc in the box or "Close search" → the box closes, the highlights and the selection go, the text is cleared, and the terminal gets the focus.
+- the search also works on the terminal of an ended session.
 - "Interrupt" → sends Esc (`\x1b`) as `input`, then gives focus back to the terminal.
 - the panel changes size → the terminal fits it and sends the new `resize`. It also sends a `resize` as soon as it connects.
 
 ## Rules and invariants
 
 - Human decision (`plan-claude_sessions_client-ui_redesign/REQ-4`): one key combination moves the focus from the terminal to the sidebar, with an on-screen hint. Claude Code needs Tab, Shift+Tab and Esc, so the terminal keeps them.
+- No key typed in the search box goes to the pty.
 - Why Ctrl+Shift+L: Claude Code does not use it (Ctrl+L, which it uses to redraw, stays free without Shift). Chromium and Firefox on Linux give it no default action. Ctrl+Shift+E would open the Firefox network monitor. "L" stands for the session list.
 - The hint row has a fixed height. The snackbar is fixed to the window (AppLayout), so it never changes the panel size and never resizes the terminal.
 - The view does not read the system theme.
@@ -57,9 +71,10 @@ Actions:
 ## Dependencies
 
 - AttachSessionRoute
-- WebAddressLinks, LinkOpener
+- WebAddressLinks, LinkOpener, TerminalSearchBox
+- `@xterm/addon-search`
 - SessionHeader, StopSessionButton, Avatar (`folderNameOf`)
-- ProgressIndicator, ErrorMessage, ThemeTokens, WebEntry, BundledFont (module app)
+- ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, WebEntry, BundledFont (module app)
 
 ## Requirements served
 
@@ -68,4 +83,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-34`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-35`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-light_theme/REQ-12`
-- `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`
+- `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`, `plan-terminal_addons/REQ-14`, `plan-terminal_addons/REQ-15`, `plan-terminal_addons/REQ-16`, `plan-terminal_addons/REQ-17`, `plan-terminal_addons/REQ-18`, `plan-terminal_addons/REQ-19`, `plan-terminal_addons/REQ-20`, `plan-terminal_addons/REQ-21`, `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-23`, `plan-terminal_addons/REQ-24`, `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-26`, `plan-terminal_addons/REQ-27`, `plan-terminal_addons/REQ-28`, `plan-terminal_addons/REQ-29`

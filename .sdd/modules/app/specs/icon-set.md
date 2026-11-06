@@ -25,10 +25,11 @@ Components and where the client uses them today:
 - `ArrowDownIcon` → the "N new messages" button
 - `TriangleAlertIcon` → the amber banner of a WarningDialog (RunningElsewhereWarning)
 - `FolderIcon` → the "Folders" rows of the FolderChooser
-- `SearchIcon` → the search bar of the ResumeDialog
-- `XIcon` → "Clear Search" in the search bar of the ResumeDialog
+- `SearchIcon` → the search bar of the ResumeDialog, "Search" in the SessionView subbar, the TerminalSearchBox
+- `XIcon` → "Clear Search" in the search bar of the ResumeDialog, "Close search" in the TerminalSearchBox
+- `ChevronUpIcon`, `ChevronDownIcon` → "Previous match" and "Next match" in the TerminalSearchBox
 - `MoonIcon`, `SunIcon` → the ThemeSwitch in the dark and in the light theme
-- no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `PencilIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
+- no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `PencilIcon`, `ChevronRightIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
 
 ## Rules and invariants
 
@@ -49,3 +50,4 @@ Components and where the client uses them today:
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-44`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-17`
 - `plan-light_theme/REQ-2`
+- `plan-terminal_addons/REQ-25`

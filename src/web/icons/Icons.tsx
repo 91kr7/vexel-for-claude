@@ -195,6 +195,14 @@ export function ChevronDownIcon() {
   );
 }
 
+export function ChevronUpIcon() {
+  return (
+    <LucideIcon>
+      <path d="m18 15-6-6-6 6" />
+    </LucideIcon>
+  );
+}
+
 export function CircleXIcon() {
   return (
     <LucideIcon>
