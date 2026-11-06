@@ -70,7 +70,7 @@ const SURFACES = ['--bg-canvas', '--bg-surface-1', '--bg-surface-2', '--bg-surfa
 let projectsRoot: string;
 const createdIds: string[] = [];
 
-// A dark system theme: the client theme must not follow it.
+// The page starts dark: the config gives the browser a saved dark choice (REQ-17). A dark system theme: the client must not follow it.
 test.use({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark' });
 
 test.beforeEach(async () => {
@@ -386,13 +386,13 @@ test.describe('theme switch', () => {
     expect(navigations).toBe(0);
   });
 
-  // ThemeStore rule: in this batch the store does not save the theme, so a reload starts dark
-  test('a reload starts again from the dark theme', async ({ page }) => {
+  // REQ-17: the chosen theme survives a reload
+  test('a reload keeps the light theme the user chose', async ({ page }) => {
     await page.goto('/');
     await toLight(page);
     await page.reload();
-    await expect(themeSwitch(page)).toHaveAttribute('aria-pressed', 'true');
-    expect(await themeMark(page)).toBe('dark');
+    await expect(themeSwitch(page)).toHaveAttribute('aria-pressed', 'false');
+    expect(await themeMark(page)).toBe('light');
   });
 
   // REQ-4, REQ-12 — scenario "The user switches the client to the light theme"

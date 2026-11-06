@@ -9,6 +9,9 @@ const claudeDirSpecs = /(resume-session|history-search|external-sessions|session
 // Specs that launch Electron open windows on the user's display: only `npm run test:e2e:desktop` runs them (E2E_DESKTOP=1).
 const electronSpecs = /desktop-window\.spec\.ts$/;
 const electron = process.env.E2E_DESKTOP === '1';
+// The specs of earlier plans were written for a client that started dark: the browser runs as a user who chose dark.
+// e2e/remembered-theme.spec.ts clears this choice to test the light default.
+const darkChoice = { cookies: [], origins: [{ origin: baseURL, localStorage: [{ name: 'ai-client.theme', value: 'dark' }] }] };
 
 export default defineConfig({
   testDir: './e2e',
@@ -17,8 +20,8 @@ export default defineConfig({
   projects: electron
     ? [{ name: 'electron', use: { ...devices['Desktop Chrome'] }, testMatch: electronSpecs, workers: 1 }]
     : [
-        { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: [claudeDirSpecs, electronSpecs] },
-        { name: 'chromium-claude-dir', use: { ...devices['Desktop Chrome'] }, testMatch: claudeDirSpecs, workers: 1 },
+        { name: 'chromium', use: { ...devices['Desktop Chrome'], storageState: darkChoice }, testIgnore: [claudeDirSpecs, electronSpecs] },
+        { name: 'chromium-claude-dir', use: { ...devices['Desktop Chrome'], storageState: darkChoice }, testMatch: claudeDirSpecs, workers: 1 },
       ],
   webServer: {
     // Not `npm start`: its fixed PORT would override the e2e port.
