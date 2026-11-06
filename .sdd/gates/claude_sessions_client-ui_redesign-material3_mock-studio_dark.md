@@ -27,3 +27,6 @@
 | 2026-11-06 | fix reopen | branch already merged | human decision | Human asked to reopen the batch; work resumes on the same branch |
 | 2026-11-06 | fix reopen | foreign change package.json | human decision | Left in the working tree, never committed |
 | 2026-11-06 | analysis | G1 analysis correction | pass | Dialogs line: backdrop with no blur; decision line under Constraints |
+| 2026-11-06 | plan | G2 requirements amendment | pass | REQ-43: backdrop with no blur, matches the analysis; REQ-41 unchanged |
+| 2026-11-06 | plan | G3 coverage amendment | pass | INT-48 drops the blur, acceptance scenario adds smooth scroll of "Riprendi sessione"; coverage unchanged |
+| 2026-11-06 | dev | batch reopened | decided | `studio-dark-restyle` certified → in progress, human asked to reopen it as a fix |
