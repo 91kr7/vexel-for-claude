@@ -45,3 +45,5 @@
 | 2026-11-05 | dev | divergence developer | decided | Transcript folder = cwd with every non-alphanumeric replaced, fallback search by sessionId; external id = Claude sessionId; INT-3 inside scanner; no visible REQ change |
 | 2026-11-05 | test | G5 external-sessions | pass | 229 unit, 8 e2e green on re-run; tester full suites 361 unit, 43 e2e accepted; no source commit after it |
 | 2026-11-05 | close | merge | pass | All 5 batches certified; merged into main with --no-ff |
+| 2026-11-06 | analysis (fix strict origin) | question analyst Q1 | decided | Fix, not evolution: request "Correggere"; local-access NFR aims to let only the user drive sessions |
+| 2026-11-06 | analysis (fix strict origin) | G1 analysis | pass | Minimal edit, +37 lines; `<qualsiasi porta>` is raw request text, not a placeholder |
