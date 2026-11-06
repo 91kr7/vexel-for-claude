@@ -9,6 +9,7 @@ export interface SessionSummary {
   state: SessionState;
   lastActivity: string;
   waitingTool?: string;
+  resumable?: true;
 }
 
 export interface TrackedSession {
@@ -37,6 +38,7 @@ export type ChangeCause =
   | { type: 'exit' };
 
 type ChangeListener = (summary: SessionSummary, cause: ChangeCause) => void;
+type RemoveListener = (sessionId: string) => void;
 
 const LABEL_LENGTH = 80;
 const ESCAPE = '\x1b';
@@ -84,6 +86,7 @@ export class SessionStateTracker {
   readonly #now: () => Date;
   readonly #entries = new Map<string, Entry>();
   readonly #listeners = new Set<ChangeListener>();
+  readonly #removeListeners = new Set<RemoveListener>();
 
   constructor(options: SessionStateTrackerOptions = {}) {
     this.#now = options.now ?? (() => new Date());
@@ -98,6 +101,7 @@ export class SessionStateTracker {
       state: 'idle',
       lastActivity: this.#now().toISOString(),
     };
+    if (session.resumedFrom?.sessionId) summary.resumable = true;
     this.#entries.set(session.id, {
       summary,
       labelFromPrompt: resumedLabel !== '',
@@ -127,6 +131,7 @@ export class SessionStateTracker {
     } else if (event.hook_event_name === 'Notification' && event.notification_type === 'permission_prompt') {
       changes.waitingTool = entry.summary.waitingTool ?? entry.lastPreToolUse;
     }
+    if (event.hook_event_name === 'UserPromptSubmit') changes.resumable = true;
     if (event.hook_event_name === 'UserPromptSubmit' && !entry.labelFromPrompt) {
       const label = labelOf(event.prompt);
       if (label !== '') {
@@ -170,9 +175,21 @@ export class SessionStateTracker {
     return [...this.#entries.values()].map((entry) => ({ ...entry.summary }));
   }
 
+  dismiss(sessionId: string): boolean {
+    if (this.#entries.get(sessionId)?.summary.state !== 'ended') return false;
+    this.#entries.delete(sessionId);
+    for (const listener of this.#removeListeners) listener(sessionId);
+    return true;
+  }
+
   onChange(listener: ChangeListener): () => void {
     this.#listeners.add(listener);
     return () => this.#listeners.delete(listener);
+  }
+
+  onRemove(listener: RemoveListener): () => void {
+    this.#removeListeners.add(listener);
+    return () => this.#removeListeners.delete(listener);
   }
 
   #update(sessionId: string, changes: Partial<SessionSummary>, cause: ChangeCause): void {

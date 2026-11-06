@@ -21,6 +21,7 @@ Shows:
 - the rail badge, the counter and the list, always, also while a session is open. All follow LiveSessionStore (`useLiveSessions`). The rail badge gets `countNeedsInput` of the list. The list also gets its load status, and the order of `useSessionOrder` for the live sessions and their status. Its `onReorder` is the `move` of the same hook.
 - no open session → the EmptyState in the main area.
 - an open hosted session → its SessionView, with the summary (folder, label, state) of that session from LiveSessionStore. No summary while the store does not list it yet.
+- an open hosted session that the store listed and then no longer lists (dismissed, or resumed from its entry) → no open session: the EmptyState.
 - an open external session → its ConversationView with its summary, in place of the SessionView. It stays open when the entry leaves the list, with the last summary the list gave.
 - the NeedsInputSnackbar of `useNeedsInputSnackbar`, when it gives a session → fixed at the bottom right of the window, whatever the main area shows.
 
@@ -31,6 +32,7 @@ Actions:
 - "Resume" in the rail, or "Resume Session" in the EmptyState → opens ResumeDialog.
 - ResumeDialog resumes a session → the dialog closes and the resumed session becomes the open one.
 - ResumeDialog cancelled → the dialog closes; the open session does not change.
+- "Resume" on an ended entry of SessionList (`onResumed`) → the new hosted session becomes the open one.
 - click on a SessionList entry → that session becomes the open one. The other sessions keep running.
 - "Sessions" in the rail, or Ctrl+Shift+L in the terminal of the open SessionView → the focus moves to a list entry:
 
@@ -69,3 +71,4 @@ else → "New Claude Code Session" in the rail
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-9`
 - `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-20`
+- `plan-session_list_improvements/REQ-7`, `plan-session_list_improvements/REQ-10`

@@ -10,6 +10,7 @@ export interface SessionSummary {
   lastActivity: string;
   external?: true;
   waitingTool?: string;
+  resumable?: true;
 }
 
 export type LoadStatus = 'loading' | 'ready' | 'error';

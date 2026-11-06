@@ -9,9 +9,11 @@ export function registerSessionEventsRoute(
 ): void {
   app.get('/api/sessions/events', { websocket: true }, (socket) => {
     const unsubscribe = tracker.onChange((session) => socket.send(JSON.stringify({ type: 'session', session })));
+    const unsubscribeRemove = tracker.onRemove((id) => socket.send(JSON.stringify({ type: 'session-removed', id })));
     const unsubscribeExternal = external?.onChange((change) => socket.send(JSON.stringify(change)));
     socket.on('close', () => {
       unsubscribe();
+      unsubscribeRemove();
       unsubscribeExternal?.();
     });
   });

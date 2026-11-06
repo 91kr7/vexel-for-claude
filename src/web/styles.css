@@ -907,6 +907,53 @@ input {
   margin-left: 16px;
 }
 
+.ended-entry-actions {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  display: flex;
+  gap: 2px;
+  border-radius: 4px;
+  background-color: var(--bg-surface-2);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.session-list li:hover .ended-entry-actions,
+.session-list li:has(:focus-visible) .ended-entry-actions,
+.ended-entry-actions.shown {
+  opacity: 1;
+}
+
+.ended-entry-action {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+
+.ended-entry-action:hover {
+  background-color: var(--bg-surface-3);
+  color: var(--text-primary);
+}
+
+.ended-entry-action[aria-disabled='true'] {
+  cursor: default;
+}
+
+.ended-entry-action[aria-disabled='true']:not([aria-busy]) {
+  opacity: 0.55;
+}
+
+.ended-entry-action .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.ended-entry-error {
+  padding: 2px 8px 0 24px;
+}
+
 .progress-bar {
   display: block;
   height: 4px;

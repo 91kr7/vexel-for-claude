@@ -20,6 +20,7 @@ Props:
 - `status` → the load status from LiveSessionStore: `loading`, `ready` or `error`. Default `ready`.
 - `order` → the order of the sessions inside each group, from SessionOrderStore. Default: no order, so each group is in latest-activity order.
 - `onReorder(sessionId, groupId, index)` → moves a session to place `index` (0-based) of its group, as SessionOrderStore `move`. Optional.
+- `onResumed(id)` → a session was resumed from an ended entry; `id` is the new hosted session. Optional.
 
 Shows:
 - `loading` → a compact AreaState `loading` "Loading…" in place of the entries.
@@ -41,6 +42,7 @@ Entry variants:
 | open (`aria-current="true"`) | — | `--accent-glow` background, `--text-primary`, weight 600, 2 px `--accent-primary` bar on the left (padding left 6 px); label and time in `--text-secondary` |
 | ended | `ended` | text in `--text-muted` also on hover; zinc dot. Open → `--text-secondary` |
 | external | `external` | 1 px dashed `--border-strong` border all around (padding 5 × 7 px). Open → the dashed border stays and the accent bar is drawn inside it |
+| ended hosted | `ended` | plus EndedEntryActions beside the entry button: "Dismiss" always, "Resume" only when the summary has `resumable: true` |
 | external, `needs_input` | `external needs-input` | dashed row with the amber dot; the chip "External" (`.mono-chip` on surface 2) after the folder name; "Permission for **<tool>**" in mono amber-300 in place of the label when `waitingTool` is known; no "Reply" |
 
 Hosted needs-input card (look of `#permission-banner`): a block with the class `session-card`.
@@ -55,6 +57,7 @@ Actions:
 - click on an entry row → `onOpen(id)`. Ended and external sessions too.
 - click anywhere on the hosted needs-input card → `onOpen(id)`, once.
 - "Reply" → `onOpen(id)`, once.
+- "Resume" and "Dismiss" of an ended hosted entry → EndedEntryActions. A resume calls `onResumed(id)` with the new session id. They do not call `onOpen`.
 - every entry, row or card, is draggable with the mouse. A click with no drag still opens the session.
 - drag over an entry of the dragged session's own group → the upper half of the entry means "before it", the lower half means "after it".
 - drop on an entry of the own group → `onReorder(id, group, index)` once. `index` is the place the session takes in the group without it:
@@ -80,6 +83,7 @@ Drag feedback (the mock has no drag state):
 
 - No entry text wraps.
 - Only the open session's button has `aria-current="true"`.
+- Only the entries of ended hosted sessions show "Dismiss" or "Resume". Working, needs-input, idle and external entries show neither.
 - The needs-input entries are the most visible of the list: amber, first group.
 - An external entry is told apart without colour: the dashed border, and the "External" chip when it needs input.
 - The state of an entry is readable without colour: its name is always shown.
@@ -91,7 +95,7 @@ Drag feedback (the mock has no drag state):
 
 ## Dependencies
 
-- groupSessions, SessionOrderStore (`SessionOrder`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`)
+- groupSessions, SessionOrderStore (`SessionOrder`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions
 - AreaState, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
@@ -101,3 +105,4 @@ Drag feedback (the mock has no drag state):
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-23` to `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-10`
+- `plan-session_list_improvements/REQ-1`, `plan-session_list_improvements/REQ-2`, `plan-session_list_improvements/REQ-3`, `plan-session_list_improvements/REQ-13`

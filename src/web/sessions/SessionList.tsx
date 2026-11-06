@@ -1,6 +1,7 @@
 import { type DragEvent, useEffect, useId, useState } from 'react';
 import { AreaState } from '../feedback/AreaState';
 import { folderNameOf } from './Avatar';
+import { EndedEntryActions } from './EndedEntryActions';
 import type { LoadStatus, SessionSummary } from './live-session-store';
 import { ProgressBar } from './ProgressBar';
 import { RelativeTime } from './RelativeTime';
@@ -97,6 +98,7 @@ interface SessionListProps {
   status?: LoadStatus;
   order?: SessionOrder;
   onReorder?: (sessionId: string, groupId: SessionGroupId, index: number) => void;
+  onResumed?: (sessionId: string) => void;
 }
 
 interface DragState {
@@ -105,7 +107,7 @@ interface DragState {
   slot: number | null;
 }
 
-export function SessionList({ sessions, openSessionId, onOpen, status = 'ready', order, onReorder }: SessionListProps) {
+export function SessionList({ sessions, openSessionId, onOpen, status = 'ready', order, onReorder, onResumed }: SessionListProps) {
   const [drag, setDrag] = useState<DragState | null>(null);
   const groups = groupSessions(sessions, order);
   const draggedGroup = drag && groups.find((group) => group.id === drag.groupId && group.sessions.some((session) => session.id === drag.sessionId));
@@ -182,6 +184,9 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
                     onDragOver={inDraggedGroup ? (event) => dragOverEntry(event, entryIndex) : undefined}
                   >
                     <Entry session={session} open={session.id === openSessionId} onOpen={onOpen} />
+                    {session.state === 'ended' && !session.external && (
+                      <EndedEntryActions sessionId={session.id} resumable={session.resumable === true} onResumed={onResumed} />
+                    )}
                   </li>
                 );
               })}

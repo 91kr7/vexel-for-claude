@@ -30,7 +30,7 @@ type: frontend service
 - The list starts empty and holds only data received from the server. A failed load leaves it as it was.
 - `stop()` does not change the status: a socket closed by `stop()` is not an error.
 - Frames that are not `{ type: "session" }` or `{ type: "session-removed" }` are ignored.
-- Entries keep the `external: true` marker the server gives to external sessions.
+- Entries keep the `external: true` marker the server gives to external sessions, and the `resumable: true` marker of hosted sessions.
 
 ## Dependencies
 

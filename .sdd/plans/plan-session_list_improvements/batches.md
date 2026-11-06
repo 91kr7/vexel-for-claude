@@ -6,7 +6,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [dismiss-resume](batches/batch-dismiss-resume.md) | Dismiss and Resume | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | — | todo | The user resumes an ended session with one click |
+| [dismiss-resume](batches/batch-dismiss-resume.md) | Dismiss and Resume | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | — | implemented | The user resumes an ended session with one click |
 | [running-tool](batches/batch-running-tool.md) | Running tool | REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24 | — | todo | A working session shows its running tool |
 | [rename](batches/batch-rename.md) | Rename | REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39 | dismiss-resume | todo | The user names a session from the list |
 
