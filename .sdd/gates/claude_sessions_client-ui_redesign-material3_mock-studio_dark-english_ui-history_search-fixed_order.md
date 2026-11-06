@@ -24,3 +24,6 @@
 | 2026-11-06 | dev | divergence `useSessionOrder` returns `{ order, move }` | decided | Needed for `batch-drag-reorder/INT-5`; AppLayout is the only caller |
 | 2026-11-06 | dev | divergence drop on own group heading or gaps | decided | Uses the last landing line shown; recorded in SessionList spec |
 | 2026-11-06 | dev | G4 drag-reorder | pass | Build re-run green; diff = 4 INT sources + 3 specs, sessions index, status; no test or plan file |
+| 2026-11-06 | dev | tester e2e helper extra 1 px move | pass | Harness only: Playwright sends one dragover per move; no source change |
+| 2026-11-06 | dev | G5 drag-reorder | pass | Re-run 31/31 unit, 8/8 e2e `drag-reorder`; tester full run 783/783 unit, 275/275 e2e; no skip or only; REQ-6..10 tested |
+| 2026-11-06 | closing | merge into main | pass | All batches certified; no source change after the full run |
