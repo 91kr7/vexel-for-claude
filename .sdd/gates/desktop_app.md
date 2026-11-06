@@ -15,3 +15,6 @@
 | 2026-11-06 | analysis | question analyst Q1 (revisited) | human decision | Chained slug rejected: renamed to `desktop_app`, branch `feat/desktop_app`; guideline `knowledge-base/entries/short-request-slugs.md`. Q1 should have been escalated, not decided |
 | 2026-11-06 | dev | question developer Q1 | decided | Desktop app default port 4001 = `npm start` (commit d166dbd), `PORT` overrides; batch scenarios updated from 3000 |
 | 2026-11-06 | dev | G4 desktop-window | pass | Build green (re-run); files map to INT-1..9; divergences accepted: direct `node --import tsx` server command, `AI_CLIENT_NODE` for the menu entry (nvm PATH) |
+| 2026-11-06 | test | G5 desktop-window round 1 | sent back | 1 red: `menu-entry.test.ts` Exec uses bare `env`, spec requires absolute paths; fix in code (`/usr/bin/env`) |
+| 2026-11-06 | dev | G4 desktop-window fix round 1 | pass | One-line change in `src/desktop/menu-entry.ts`; build green |
+| 2026-11-06 | test | G5 desktop-window round 2 | pass | Re-run by gatekeeper: unit `src/desktop` 49/49, e2e `desktop-window.spec.ts` 9/9; no `.only`/`.skip` |
