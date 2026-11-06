@@ -160,15 +160,16 @@ export class RunningToolMonitor {
     transcript.reading = true;
     try {
       transcript.file ??= await this.#reader.locate(session.folder, transcript.claudeSessionId);
-      if (transcript.file === undefined) return;
-      const { items, offset } = await this.#reader.readFrom(transcript.file, transcript.offset);
-      transcript.offset = offset;
-      applyItems(transcript.calls, items);
-      const last = [...transcript.calls.values()].at(-1);
-      if (last && !last.inputRead && last.ref) {
-        last.input = parseInput(await this.#reader.readItem(transcript.file, last.ref));
+      if (transcript.file !== undefined) {
+        const { items, offset } = await this.#reader.readFrom(transcript.file, transcript.offset);
+        transcript.offset = offset;
+        applyItems(transcript.calls, items);
+        const last = [...transcript.calls.values()].at(-1);
+        if (last && !last.inputRead && last.ref) {
+          last.input = parseInput(await this.#reader.readItem(transcript.file, last.ref));
+        }
+        if (last) last.inputRead = true;
       }
-      if (last) last.inputRead = true;
     } catch {
       return;
     } finally {
