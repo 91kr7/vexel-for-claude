@@ -18,3 +18,8 @@
 | 2026-11-06 | dev | divergence accent deep | decided | `--accent-deep` `#008ef4` (hue 205°) only at the dark end of gradients; for human review |
 | 2026-11-06 | dev | divergence row and dialog details | decided | State name right of line 1, time right of line 2; dialog row hover on surface 3 (surface 2 would not show); ResumeDialog load error stays inline |
 | 2026-11-06 | dev | process developer commands | decided | One `python3 --version`, one `perl` substitution and `sed -i` edits reported; no effect outside the batch files |
+| 2026-11-06 | test | G5 studio-dark-restyle round 1 | sent back | Full run 233/238: blur dropped by minifier (REQ-41/43), external subbar 41 px (REQ-53), progress bar 4 px gap (SessionList spec); unit 701 green |
+| 2026-11-06 | test | closing full run by gatekeeper | sent back | After fix: unit 701 green, e2e 235/238; hosted-session subbar padding test out of date, board-dialogs:574 transition race; both test-only |
+| 2026-11-06 | test | G5 studio-dark-restyle round 3 | pass | Two spec files re-run by gatekeeper, 23 green; no source change since the closing full run |
+| 2026-11-06 | closing | stale e2e server | escalated | Orphan e2e server on port 3100 (PID 2058924) from the interrupted M3 run; stopping it was denied by the permission classifier; left to the human |
+| 2026-11-06 | closing | merge into main | pass | The only batch certified |
