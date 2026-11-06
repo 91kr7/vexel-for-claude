@@ -14,4 +14,4 @@
 | NotificationRules | backend service | `src/desktop/notification-rules.ts` | Decides which notification to show, group in 5-second bursts or close, from events, the needs-input list, the window focus and the open session | `specs/notification-rules.md` |
 | NotificationTexts | backend service | `src/desktop/notification-texts.ts` | English title "<folder> · <label>" and body of each notification, and the grouped title and body | `specs/notification-texts.md` |
 | SystemNotifications | backend service | `src/desktop/system-notifications.ts` | Shows, replaces and closes one notification per session over D-Bus `org.freedesktop.Notifications`, and reports clicks and closes | `specs/system-notifications.md` |
-| DesktopBridge | Electron preload | `src/desktop/desktop-bridge.cts` | `window.desktopBridge`: the page reports its open session and receives "open this session" | `specs/desktop-bridge.md` |
+| DesktopBridge | Electron preload | `src/desktop/desktop-bridge.cts` | `window.desktopBridge`: the page reports its open session, receives "open this session" and reads the absolute path of a dropped file | `specs/desktop-bridge.md` |

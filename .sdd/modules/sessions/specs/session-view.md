@@ -41,6 +41,8 @@ Shows:
 - the TerminalSearchBox at the top right of the panel, while the search is open. Its count follows the search, also while new output arrives.
 - the search matches → every match on a `--term-match-bg` background. The current match has a 1 px `--term-match-current-border` outline over the selection colour, so it looks different from the others.
 - the TerminalZoomControls → after "Search" and before "Interrupt", in every state, `ended` included. They show the size of TerminalFontSizeStore.
+- while files are dragged over the panel, in the desktop app (useDesktopBridge gives a path lookup) and the session is not `ended` (`undefined` included) → the panel shows that it accepts the drop: the `drop-target` class, a 2 px dashed `--accent-primary` outline and an `--accent-primary` border. It goes when the drag leaves the panel or the files are dropped. In the browser client and on an ended session the panel never shows it.
+- after a drop on the panel in the browser client (no path lookup) → the message "Paths can be dropped only in the desktop app." (`role="status"`) at the bottom centre of the panel, for 4 seconds; a new drop starts the 4 seconds again. It does not take the pointer.
 - "Interrupt" → `.button-danger` (rose, look of `#subbar-stop-btn`) with the decorative glyph "■" before the text. Its accessible name is "Interrupt". It shows in every state except `ended`, `undefined` included.
 
 Actions:
@@ -61,6 +63,11 @@ Actions:
 - Enter or "Next match" → the next match becomes current; after the last one comes the first. Shift+Enter or "Previous match" → the previous one; before the first comes the last. Each one scrolls to it and updates the count. With empty text they do nothing.
 - Esc in the box or "Close search" → the box closes, the highlights and the selection go, the text is cleared, and the terminal gets the focus.
 - the search also works on the terminal of an ended session.
+- drop of files on the panel (a drag whose data types include `Files`) → the page default is prevented (the file never opens). Then:
+  - desktop app, session not `ended` → the absolute path of each file and folder, in drop order, from the path lookup; files with an empty path are left out. With at least one path → the text of droppedPathsText goes to the terminal as a paste: wrapped in bracketed paste marks when Claude Code turned bracketed paste mode on, plain otherwise, then sent to the pty as `input`. No Enter is added. The terminal gets the focus.
+  - desktop app, session `ended` → nothing is inserted and nothing goes to the pty.
+  - browser client → nothing is inserted and nothing goes to the pty; the message above shows.
+- a drag that carries no files (e.g. text) → the panel does not change it: no drop state, no message.
 - "Interrupt" → sends Esc (`\x1b`) as `input`, then gives focus back to the terminal.
 - the panel changes size → the terminal fits it and sends the new `resize`. It also sends a `resize` as soon as it connects.
 
@@ -73,11 +80,13 @@ Actions:
 - The view does not read the system theme.
 - One size for all terminals: the terminal opens at the current size of TerminalFontSizeStore. The zoom changes only the terminal text: the subbar, the hint row and the rest of the page keep their size.
 - Removing the view closes its connection. The session keeps running.
+- A browser never gives a page the absolute path of a dropped file, and Electron 45 gives it only through the preload (DesktopBridge `getPathForFile`). So the drop inserts paths only in the desktop app.
 
 ## Dependencies
 
 - AttachSessionRoute
-- WebAddressLinks, LinkOpener, TerminalSearchBox, TerminalFontSizeStore, TerminalZoomControls
+- WebAddressLinks, LinkOpener, TerminalSearchBox, TerminalFontSizeStore, TerminalZoomControls, droppedPathsText
+- useDesktopBridge `desktopFilePathLookup` (module app)
 - `@xterm/addon-search`
 - SessionHeader, StopSessionButton, Avatar (`folderNameOf`)
 - ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, WebEntry, BundledFont (module app)
@@ -89,4 +98,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-34`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-35`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-light_theme/REQ-12`
-- `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`, `plan-terminal_addons/REQ-14`, `plan-terminal_addons/REQ-15`, `plan-terminal_addons/REQ-16`, `plan-terminal_addons/REQ-17`, `plan-terminal_addons/REQ-18`, `plan-terminal_addons/REQ-19`, `plan-terminal_addons/REQ-20`, `plan-terminal_addons/REQ-21`, `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-23`, `plan-terminal_addons/REQ-24`, `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-26`, `plan-terminal_addons/REQ-27`, `plan-terminal_addons/REQ-28`, `plan-terminal_addons/REQ-29`, `plan-terminal_addons/REQ-32`, `plan-terminal_addons/REQ-33`, `plan-terminal_addons/REQ-34`, `plan-terminal_addons/REQ-35`, `plan-terminal_addons/REQ-36`, `plan-terminal_addons/REQ-37`, `plan-terminal_addons/REQ-38`, `plan-terminal_addons/REQ-39`, `plan-terminal_addons/REQ-42`, `plan-terminal_addons/REQ-43`
+- `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`, `plan-terminal_addons/REQ-14`, `plan-terminal_addons/REQ-15`, `plan-terminal_addons/REQ-16`, `plan-terminal_addons/REQ-17`, `plan-terminal_addons/REQ-18`, `plan-terminal_addons/REQ-19`, `plan-terminal_addons/REQ-20`, `plan-terminal_addons/REQ-21`, `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-23`, `plan-terminal_addons/REQ-24`, `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-26`, `plan-terminal_addons/REQ-27`, `plan-terminal_addons/REQ-28`, `plan-terminal_addons/REQ-29`, `plan-terminal_addons/REQ-32`, `plan-terminal_addons/REQ-33`, `plan-terminal_addons/REQ-34`, `plan-terminal_addons/REQ-35`, `plan-terminal_addons/REQ-36`, `plan-terminal_addons/REQ-37`, `plan-terminal_addons/REQ-38`, `plan-terminal_addons/REQ-39`, `plan-terminal_addons/REQ-42`, `plan-terminal_addons/REQ-43`, `plan-terminal_addons/REQ-46`, `plan-terminal_addons/REQ-47`, `plan-terminal_addons/REQ-48`, `plan-terminal_addons/REQ-50`, `plan-terminal_addons/REQ-51`, `plan-terminal_addons/REQ-52`, `plan-terminal_addons/REQ-54`

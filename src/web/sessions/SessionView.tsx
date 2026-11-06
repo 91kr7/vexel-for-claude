@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { type DragEvent, useEffect, useRef, useState } from 'react';
 import { type IBufferRange, Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { type ISearchOptions, SearchAddon } from '@xterm/addon-search';
 import '@xterm/xterm/css/xterm.css';
+import { desktopFilePathLookup } from '../desktop-bridge';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { SearchIcon } from '../icons/Icons';
 import { folderNameOf } from './Avatar';
+import { droppedPathsText } from './dropped-paths-text';
 import { openLink } from './link-opener';
 import { SessionHeader, type SessionHeaderSummary } from './SessionHeader';
 import { StopSessionButton } from './StopSessionButton';
@@ -21,6 +23,7 @@ const SESSION_NOT_FOUND = 4404;
 const TERMINAL_LINE_HEIGHT = 1.2;
 const LINK_TOOLTIP_OFFSET = 12;
 const LINK_TOOLTIP_MAX_WIDTH = 480;
+const DROP_NOTICE_MS = 4000;
 
 interface SessionViewProps {
   sessionId: string;
@@ -50,6 +53,8 @@ function zoomShortcut(event: KeyboardEvent, store: TerminalFontSizeStore): (() =
   if (event.key === '0') return () => store.reset();
   return null;
 }
+
+const isFileDrag = (event: DragEvent) => event.dataTransfer.types.includes('Files');
 
 function attachUrl(sessionId: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -134,8 +139,16 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<TerminalSearchResults | null>(null);
+  const [dropTarget, setDropTarget] = useState(false);
+  const [dropNotice, setDropNotice] = useState(0);
   const fontSizeStore = pageTerminalFontSizeStore();
   const fontSize = useTerminalFontSize(fontSizeStore);
+
+  useEffect(() => {
+    if (dropNotice === 0) return;
+    const timer = setTimeout(() => setDropNotice(0), DROP_NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [dropNotice]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -301,6 +314,35 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
     terminalRef.current?.focus();
   };
 
+  const acceptsDrop = () => session?.state !== 'ended' && desktopFilePathLookup() !== null;
+
+  const dragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(event)) return;
+    event.preventDefault();
+    if (acceptsDrop()) setDropTarget(true);
+  };
+
+  const dragLeave = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropTarget(false);
+  };
+
+  const drop = (event: DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(event)) return;
+    event.preventDefault();
+    setDropTarget(false);
+    const pathOf = desktopFilePathLookup();
+    if (!pathOf) {
+      setDropNotice((count) => count + 1);
+      return;
+    }
+    const terminal = terminalRef.current;
+    if (session?.state === 'ended' || !terminal) return;
+    const paths = Array.from(event.dataTransfer.files, pathOf).filter((path) => path !== '');
+    if (paths.length === 0) return;
+    terminal.paste(droppedPathsText(paths));
+    terminal.focus();
+  };
+
   return (
     <div className="session-view">
       <SessionHeader
@@ -330,9 +372,12 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
       />
       {connectionError && <ErrorMessage className="session-alert">{connectionError}</ErrorMessage>}
       <div
-        className="session-terminal-panel"
+        className={dropTarget ? 'session-terminal-panel drop-target' : 'session-terminal-panel'}
         role="region"
         aria-label={session ? `Terminal: ${folderNameOf(session.folder)}` : 'Terminal'}
+        onDragOver={dragOver}
+        onDragLeave={dragLeave}
+        onDrop={drop}
       >
         <div className="session-terminal" ref={containerRef} />
         {searchOpen && (
@@ -345,6 +390,11 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
             onPrevious={findPrevious}
             onClose={closeSearch}
           />
+        )}
+        {dropNotice > 0 && (
+          <div className="terminal-drop-notice" role="status">
+            Paths can be dropped only in the desktop app.
+          </div>
         )}
         {loading && (
           <div className="session-terminal-loading">

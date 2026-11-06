@@ -17,3 +17,4 @@
 | 2026-11-06 | test | G5 search | pass | Re-run by gatekeeper: 3 unit files 148/148; e2e 11 new + 25 related on port 3200; terminal echo jumping into scrollback after long output seen also without search: outside the batch, noted for the human |
 | 2026-11-06 | dev | G4 font-zoom | pass | Build green (re-run); files map to INT-1..6; desktop menu rebuilt without the three page zoom items (checked headless, no window); Ctrl+Shift+- (undo) still reaches Claude Code |
 | 2026-11-06 | test | G5 font-zoom | pass | Re-run by gatekeeper: store and controls 38/38; tester 219 unit, 41 browser e2e, 2 Electron (port 3200); desktop restart for REQ-44 covered by unit + reload only |
+| 2026-11-06 | dev | G4 file-drop | pass | Build green (re-run); files map to INT-1..7; accepted: file drags prevent the default in the browser too (needed for the REQ-54 message), focus to the terminal after a drop |

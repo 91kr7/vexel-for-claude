@@ -18,4 +18,11 @@ electron.contextBridge.exposeInMainWorld('desktopBridge', {
       electron.ipcRenderer.removeListener(OPEN_SESSION_CHANNEL, forward);
     };
   },
+  getPathForFile(file: unknown): string {
+    try {
+      return electron.webUtils.getPathForFile(file as Parameters<typeof electron.webUtils.getPathForFile>[0]);
+    } catch {
+      return '';
+    }
+  },
 });

@@ -1132,9 +1132,32 @@ input {
   outline-offset: var(--focus-ring-offset);
 }
 
+.session-terminal-panel.drop-target {
+  border-color: var(--accent-primary);
+  outline: 2px dashed var(--accent-primary);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .session-terminal {
   flex: 1;
   min-height: 0;
+}
+
+.terminal-drop-notice {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 20;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background-color: var(--bg-surface-2);
+  color: var(--text-primary);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 .session-terminal-loading {
