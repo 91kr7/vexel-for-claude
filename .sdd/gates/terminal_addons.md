@@ -15,3 +15,4 @@
 | 2026-11-06 | test | G5 clickable-links round 2 | pass | Re-run by gatekeeper: unit 47/47, browser e2e 9/9 on port 3200; Electron check 1/1 from round 1 untouched by the fix |
 | 2026-11-06 | dev | G4 search | pass | Build green (re-run); files map to the batch INTs; accepted: current match shown as selection colour plus outline (renderer paints selection over decorations), `allowProposedApi` for highlights, worktree now has its own node_modules |
 | 2026-11-06 | test | G5 search | pass | Re-run by gatekeeper: 3 unit files 148/148; e2e 11 new + 25 related on port 3200; terminal echo jumping into scrollback after long output seen also without search: outside the batch, noted for the human |
+| 2026-11-06 | dev | G4 font-zoom | pass | Build green (re-run); files map to INT-1..6; desktop menu rebuilt without the three page zoom items (checked headless, no window); Ctrl+Shift+- (undo) still reaches Claude Code |

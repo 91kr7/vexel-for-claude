@@ -14,7 +14,8 @@ Shows:
 - one inline SVG with the class `icon`, 16 px unless its container sets another size, drawn in the current text colour.
 
 Components and where the client uses them today:
-- `PlusIcon` → "New Session" in the top bar and the EmptyState, "New Claude Code Session" in the rail
+- `PlusIcon` → "New Session" in the top bar and the EmptyState, "New Claude Code Session" in the rail, "Larger text" in the TerminalZoomControls
+- `MinusIcon` → "Smaller text" in the TerminalZoomControls
 - `HistoryIcon` → "Resume Session" in the EmptyState, "Resume" in the rail, the empty state of the ResumeDialog
 - `SquareTerminalIcon` → the tile of an empty AreaState
 - `LogInIcon` → "Resume Here"
@@ -50,4 +51,4 @@ Components and where the client uses them today:
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-44`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-17`
 - `plan-light_theme/REQ-2`
-- `plan-terminal_addons/REQ-25`
+- `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-35`

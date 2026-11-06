@@ -2,7 +2,7 @@
 
 | Component | Type | Path | Responsibility | Spec |
 |-----------|------|------|----------------|------|
-| DesktopApp | Electron main process | `src/desktop/main.ts` | One-instance window and tray icon: shows the startup page, starts the backend through the launcher, loads the client page, wires the notifications and the tray signal, sends web links to the system browser; close hides the window, quit confirms and stops the backend it started | `specs/desktop-app.md` |
+| DesktopApp | Electron main process | `src/desktop/main.ts` | One-instance window and tray icon: shows the startup page, starts the backend through the launcher, loads the client page, wires the notifications and the tray signal, sends web links to the system browser, keeps the page zoom keys out of the menu; close hides the window, quit confirms and stops the backend it started | `specs/desktop-app.md` |
 | BackendLauncher | backend service | `src/desktop/backend-launcher.ts` | Reuses a backend that answers the health check, or starts the server detached and waits until it is ready or has failed; stops the server it started | `specs/backend-launcher.md` |
 | StartupPage | UI page | `src/desktop/startup-page.ts` | Light data URL page "Starting the backend…" or "The backend could not start." with the output lines | `specs/startup-page.md` |
 | AppIcon | asset | `src/desktop/icons/vexel-for-claude.svg`, `src/desktop/icons/vexel-for-claude.png` | "VX" logo mark icon for the menu entry and the window | `specs/app-icon.md` |

@@ -11,7 +11,7 @@ type: UI component
 ## Contract
 
 Description:
-- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with "Search", "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the hint row.
+- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with "Search", the TerminalZoomControls, "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the hint row.
 - the panel takes all the height the header and the hint row leave.
 
 Props:
@@ -24,7 +24,7 @@ Props:
 
 Shows:
 - the terminal panel → `role="region"` named "Terminal: <folder name>" ("Terminal" without `session`). 16 px from the left, right and top, 8 px radius, 1 px `--border-subtle` border, `--term-bg` background, padding 12 px. The terminal fills the box inside the padding.
-- the terminal → Roboto Mono 12 px, line height 1.2. Background `--term-bg`, default text `--term-fg`, cursor `--term-cursor`, selection `--term-selection`. These tokens have the same dark values in both themes, so the panel stays dark in the light theme. The font is loaded before the terminal opens and fits; if it fails to load, the terminal opens with the next font of `--font-mono`. The ANSI colours that Claude Code writes stay as written.
+- the terminal → Roboto Mono at the size of TerminalFontSizeStore (12 px by default), line height 1.2. Background `--term-bg`, default text `--term-fg`, cursor `--term-cursor`, selection `--term-selection`. These tokens have the same dark values in both themes, so the panel stays dark in the light theme. The font is loaded before the terminal opens and fits; if it fails to load, the terminal opens with the next font of `--font-mono`. The ANSI colours that Claude Code writes stay as written.
 - while the terminal or the search box has the keyboard focus, the panel shows the focus ring (`--color-focus-ring`) around its rounded edge.
 - the hint row → 40 px high, padding 0 × 16 px, centred: the keys "Ctrl", "Shift", "L" as `.kbd-badge`, joined by "+", then "back to the list", 11 px in `--text-muted`, 6 px gaps. Always visible, never cut.
 - a ProgressIndicator "Loading…" centred over the panel, on surface 2 with an 8 px radius, from the start until the first frame (the snapshot) arrives or the connection closes. A click goes through it to the terminal.
@@ -40,14 +40,19 @@ Shows:
 - "Search" → an icon button (search icon, 26 px, `--text-secondary`) with the accessible name "Search" and the tooltip "Search (Ctrl+Shift+F)". It shows in every state, `ended` included, before "Interrupt".
 - the TerminalSearchBox at the top right of the panel, while the search is open. Its count follows the search, also while new output arrives.
 - the search matches → every match on a `--term-match-bg` background. The current match has a 1 px `--term-match-current-border` outline over the selection colour, so it looks different from the others.
+- the TerminalZoomControls → after "Search" and before "Interrupt", in every state, `ended` included. They show the size of TerminalFontSizeStore.
 - "Interrupt" → `.button-danger` (rose, look of `#subbar-stop-btn`) with the decorative glyph "■" before the text. Its accessible name is "Interrupt". It shows in every state except `ended`, `undefined` included.
 
 Actions:
-- every key typed in the terminal → sent to the pty as `input`, Esc included. Ctrl+Shift+L and Ctrl+Shift+F are the only exceptions.
+- every key typed in the terminal → sent to the pty as `input`, Esc included. Ctrl+Shift+L, Ctrl+Shift+F and the zoom keys are the only exceptions.
 - Ctrl+click on a link → LinkOpener `openLink` with the full address (a wrapped address included). The session stays on screen.
 - a plain click on a link (no Ctrl) → opens nothing; focus and text selection work as on any other text.
 - Ctrl+Shift+L in the terminal (no Alt, no Meta, either case of L) → `onLeaveTerminal()`. The terminal does not process it, nothing goes to the pty, and the browser default is prevented.
 - Ctrl+Shift+F in the terminal (no Alt, no Meta, either case of F) → opens the search box and focuses its field. Nothing goes to the pty and the browser default is prevented. Outside the terminal the key does nothing here.
+- the zoom keys in the terminal → Ctrl, without Alt or Meta, with a key that produces `=` or `+` → `larger()`, `-` → `smaller()`, `0` → `reset()` of TerminalFontSizeStore. Shift does not matter: the produced character decides (on an Italian keyboard Ctrl+Shift+0 produces `=`). Nothing goes to the pty and the browser default (page zoom) is prevented. Outside the terminal these keys do nothing here.
+  - Ctrl+Shift+- produces `_` (undo) → not a zoom key: it goes to the pty as today.
+- "Smaller text", the default size button and "Larger text" of the TerminalZoomControls → `smaller()`, `reset()` and `larger()` of TerminalFontSizeStore.
+- a change of the TerminalFontSizeStore size → the terminal shows its text at the new size and fits the panel again. A new number of rows or columns goes to the pty as `resize`. This also holds for the terminal of an ended session.
 - "Search" → opens the search box and focuses its field.
 - opening the search while it is open → focuses the field and selects its text.
 - a change of the search text → searches the whole terminal buffer, scrollback included. Plain text, case ignored.
@@ -66,12 +71,13 @@ Actions:
 - Why Ctrl+Shift+L: Claude Code does not use it (Ctrl+L, which it uses to redraw, stays free without Shift). Chromium and Firefox on Linux give it no default action. Ctrl+Shift+E would open the Firefox network monitor. "L" stands for the session list.
 - The hint row has a fixed height. The snackbar is fixed to the window (AppLayout), so it never changes the panel size and never resizes the terminal.
 - The view does not read the system theme.
+- One size for all terminals: the terminal opens at the current size of TerminalFontSizeStore. The zoom changes only the terminal text: the subbar, the hint row and the rest of the page keep their size.
 - Removing the view closes its connection. The session keeps running.
 
 ## Dependencies
 
 - AttachSessionRoute
-- WebAddressLinks, LinkOpener, TerminalSearchBox
+- WebAddressLinks, LinkOpener, TerminalSearchBox, TerminalFontSizeStore, TerminalZoomControls
 - `@xterm/addon-search`
 - SessionHeader, StopSessionButton, Avatar (`folderNameOf`)
 - ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, WebEntry, BundledFont (module app)
@@ -83,4 +89,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-34`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-35`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-light_theme/REQ-12`
-- `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`, `plan-terminal_addons/REQ-14`, `plan-terminal_addons/REQ-15`, `plan-terminal_addons/REQ-16`, `plan-terminal_addons/REQ-17`, `plan-terminal_addons/REQ-18`, `plan-terminal_addons/REQ-19`, `plan-terminal_addons/REQ-20`, `plan-terminal_addons/REQ-21`, `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-23`, `plan-terminal_addons/REQ-24`, `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-26`, `plan-terminal_addons/REQ-27`, `plan-terminal_addons/REQ-28`, `plan-terminal_addons/REQ-29`
+- `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`, `plan-terminal_addons/REQ-14`, `plan-terminal_addons/REQ-15`, `plan-terminal_addons/REQ-16`, `plan-terminal_addons/REQ-17`, `plan-terminal_addons/REQ-18`, `plan-terminal_addons/REQ-19`, `plan-terminal_addons/REQ-20`, `plan-terminal_addons/REQ-21`, `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-23`, `plan-terminal_addons/REQ-24`, `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-26`, `plan-terminal_addons/REQ-27`, `plan-terminal_addons/REQ-28`, `plan-terminal_addons/REQ-29`, `plan-terminal_addons/REQ-32`, `plan-terminal_addons/REQ-33`, `plan-terminal_addons/REQ-34`, `plan-terminal_addons/REQ-35`, `plan-terminal_addons/REQ-36`, `plan-terminal_addons/REQ-37`, `plan-terminal_addons/REQ-38`, `plan-terminal_addons/REQ-39`, `plan-terminal_addons/REQ-42`, `plan-terminal_addons/REQ-43`

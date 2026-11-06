@@ -29,6 +29,14 @@ export function PlusIcon() {
   );
 }
 
+export function MinusIcon() {
+  return (
+    <LucideIcon>
+      <path d="M5 12h14" />
+    </LucideIcon>
+  );
+}
+
 export function HistoryIcon() {
   return (
     <LucideIcon>

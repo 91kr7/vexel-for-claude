@@ -10,13 +10,14 @@ import { folderNameOf } from './Avatar';
 import { openLink } from './link-opener';
 import { SessionHeader, type SessionHeaderSummary } from './SessionHeader';
 import { StopSessionButton } from './StopSessionButton';
+import { pageTerminalFontSizeStore, type TerminalFontSizeStore, useTerminalFontSize } from './terminal-font-size-store';
 import { TerminalSearchBox, type TerminalSearchResults } from './TerminalSearchBox';
+import { TerminalZoomControls } from './TerminalZoomControls';
 import { loadWebAddressLinks } from './web-address-links';
 
 const ESCAPE = '\x1b';
 const SESSION_ENDED = 1000;
 const SESSION_NOT_FOUND = 4404;
-const TERMINAL_FONT_SIZE = 12;
 const TERMINAL_LINE_HEIGHT = 1.2;
 const LINK_TOOLTIP_OFFSET = 12;
 const LINK_TOOLTIP_MAX_WIDTH = 480;
@@ -40,6 +41,15 @@ interface LinkTooltip {
 
 const isCtrlShiftKey = (event: KeyboardEvent, key: string) =>
   event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.key.toLowerCase() === key;
+
+// Matched on the produced character, so Ctrl+Shift+- (undo, "_") still reaches the pty.
+function zoomShortcut(event: KeyboardEvent, store: TerminalFontSizeStore): (() => void) | null {
+  if (!event.ctrlKey || event.altKey || event.metaKey) return null;
+  if (event.key === '=' || event.key === '+') return () => store.larger();
+  if (event.key === '-') return () => store.smaller();
+  if (event.key === '0') return () => store.reset();
+  return null;
+}
 
 function attachUrl(sessionId: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -105,8 +115,8 @@ function searchOptions(element: Element): ISearchOptions {
 }
 
 // xterm measures the cell size when it opens, so the font must be ready first.
-function loadTerminalFont(fontFamily: string): Promise<unknown> {
-  const faces = ['400', '500'].map((weight) => document.fonts.load(`${weight} ${TERMINAL_FONT_SIZE}px ${fontFamily}`));
+function loadTerminalFont(fontFamily: string, fontSize: number): Promise<unknown> {
+  const faces = ['400', '500'].map((weight) => document.fonts.load(`${weight} ${fontSize}px ${fontFamily}`));
   return Promise.all(faces).catch(() => undefined);
 }
 
@@ -124,6 +134,8 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<TerminalSearchResults | null>(null);
+  const fontSizeStore = pageTerminalFontSizeStore();
+  const fontSize = useTerminalFontSize(fontSizeStore);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -137,7 +149,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
     const fontFamily = cssVar(container, '--font-mono');
     let cancelled = false;
     let closeTerminal: (() => void) | undefined;
-    void loadTerminalFont(fontFamily).then(() => {
+    void loadTerminalFont(fontFamily, fontSizeStore.getSnapshot()).then(() => {
       if (!cancelled) closeTerminal = openTerminal(container, fontFamily);
     });
     return () => {
@@ -152,7 +164,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
       scrollback: 10_000,
       fontFamily,
       allowProposedApi: true,
-      fontSize: TERMINAL_FONT_SIZE,
+      fontSize: fontSizeStore.getSnapshot(),
       lineHeight: TERMINAL_LINE_HEIGHT,
       theme: terminalTheme(container),
       linkHandler: {
@@ -207,7 +219,11 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
       { signal },
     );
     terminal.attachCustomKeyEventHandler((event) => {
-      const shortcut = isCtrlShiftKey(event, 'l') ? () => onLeaveTerminalRef.current() : isCtrlShiftKey(event, 'f') ? openSearch : null;
+      const shortcut = isCtrlShiftKey(event, 'l')
+        ? () => onLeaveTerminalRef.current()
+        : isCtrlShiftKey(event, 'f')
+          ? openSearch
+          : zoomShortcut(event, fontSizeStore);
       if (!shortcut) return true;
       event.preventDefault();
       if (event.type === 'keydown') shortcut();
@@ -217,11 +233,16 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
     const resizeSubscription = terminal.onResize(sendSize);
     const resizeObserver = new ResizeObserver(() => fitAddon.fit());
     resizeObserver.observe(container);
+    const unsubscribeFontSize = fontSizeStore.subscribe(() => {
+      terminal.options.fontSize = fontSizeStore.getSnapshot();
+      fitAddon.fit();
+    });
     terminal.focus();
 
     return () => {
       listeners.abort();
       resizeObserver.disconnect();
+      unsubscribeFontSize();
       inputSubscription.dispose();
       resizeSubscription.dispose();
       webAddressLinks.dispose();
@@ -289,6 +310,12 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
             <button type="button" className="session-search-button" aria-label="Search" title="Search (Ctrl+Shift+F)" onClick={openSearch}>
               <SearchIcon />
             </button>
+            <TerminalZoomControls
+              size={fontSize}
+              onSmaller={() => fontSizeStore.smaller()}
+              onReset={() => fontSizeStore.reset()}
+              onLarger={() => fontSizeStore.larger()}
+            />
             {session?.state !== 'ended' && (
               <button type="button" className="button-danger session-interrupt" onClick={interrupt}>
                 <span className="stop-glyph" aria-hidden="true">

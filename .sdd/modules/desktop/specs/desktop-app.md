@@ -11,6 +11,7 @@ type: Electron main process
 ## Contract
 
 - launch → it shows the TrayIcon with no session that needs input, and opens one window "Vexel for Claude", 1280 × 800, on the StartupPage in the loading state. The window has the AppIcon, a hidden menu bar (Alt shows it) and the DesktopBridge preload.
+- the application menu → the Electron default menu without "Actual Size", "Zoom In" and "Zoom Out". So Ctrl+=, Ctrl++, Ctrl+- and Ctrl+0 never zoom the page and reach the page as plain keys. The other menu items and their keys stay as they are.
 - then it runs `launchBackend` with the repository folder and the log file `backend.log` in the Electron logs folder.
   - ready → it starts the AttentionClient on the backend origin, then the window loads `<origin>/`, the client page of the backend.
   - failed → the window shows the StartupPage in the error state, with the output lines.
@@ -64,4 +65,4 @@ Tray:
 - `plan-desktop_app/REQ-1`, `plan-desktop_app/REQ-3`, `plan-desktop_app/REQ-4`, `plan-desktop_app/REQ-6`, `plan-desktop_app/REQ-7`, `plan-desktop_app/REQ-9`, `plan-desktop_app/REQ-11`, `plan-desktop_app/REQ-12`, `plan-desktop_app/REQ-13`, `plan-desktop_app/REQ-14`, `plan-desktop_app/REQ-15`, `plan-desktop_app/REQ-16`, `plan-desktop_app/REQ-17`
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-3`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-25`, `plan-session_notifications/REQ-28`
 - `plan-session_notifications/REQ-30`, `plan-session_notifications/REQ-32`, `plan-session_notifications/REQ-33`, `plan-session_notifications/REQ-34`, `plan-session_notifications/REQ-36`
-- `plan-terminal_addons/REQ-9`, `plan-terminal_addons/REQ-11`, `plan-terminal_addons/REQ-12`
+- `plan-terminal_addons/REQ-9`, `plan-terminal_addons/REQ-11`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-39`
