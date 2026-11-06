@@ -19,3 +19,5 @@
 | 2026-11-07 | dev | key hint in the footer | human decision | Footer drops the Ctrl+Shift+L hint, shortcut kept; REQ-22 withdrawn; developer, planner and analysis updated; future shortcut system out of scope |
 | 2026-11-07 | dev | G4 header-footer | sent back | Footer cost tooltip "estimate at API list prices" differs from the list entry text the plan cites; align with `SessionList.tsx` "Estimated cost at API list prices" |
 | 2026-11-07 | dev | G4 header-footer | pass | Build green (re-run); files map to INT-1..6; key hint removed per human decision; accepted: optional `line` prop kept on SessionHeader (existing test uses it); old header/hint tests expected to need rewriting |
+| 2026-11-07 | test | G5 header-footer | pass | Re-run by gatekeeper: unit 5 files 70/70, e2e header-footer + font-zoom 14/14; tester full runs unit 1984/1984, browser e2e 439 + 10 red (8 font-zoom outdated then rewritten green, 1 studio-dark flake green alone); only tests and `playwright.config.ts` changed |
+| 2026-11-07 | test | regression light-theme.spec.ts:486 | escalated | Outside the plan's perimeter; fails on `main` too (worktree run), older than this cycle |
