@@ -13,3 +13,5 @@
 | 2026-11-06 | plan | G3 coverage | pass | 2 vertical batches, REQ-1..17 covered; window-tray modify targets named by component (created by desktop-window); texts, labels and 15 s limit accepted as planner defaults |
 | 2026-11-06 | dev | entry gate desktop-window | decided | Developer stopped before writing anything; batch set back to `todo` |
 | 2026-11-06 | analysis | question analyst Q1 (revisited) | human decision | Chained slug rejected: renamed to `desktop_app`, branch `feat/desktop_app`; guideline `knowledge-base/entries/short-request-slugs.md`. Q1 should have been escalated, not decided |
+| 2026-11-06 | dev | question developer Q1 | decided | Desktop app default port 4001 = `npm start` (commit d166dbd), `PORT` overrides; batch scenarios updated from 3000 |
+| 2026-11-06 | dev | G4 desktop-window | pass | Build green (re-run); files map to INT-1..9; divergences accepted: direct `node --import tsx` server command, `AI_CLIENT_NODE` for the menu entry (nvm PATH) |

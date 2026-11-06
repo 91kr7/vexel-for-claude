@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.desktop.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.desktop.build.tsbuildinfo",
+    "noEmit": false,
+    "rootDir": "src/desktop",
+    "outDir": "dist/desktop"
+  },
+  "exclude": ["src/desktop/**/*.test.ts"]
+}

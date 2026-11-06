@@ -20,7 +20,7 @@ The client opens in an Electron window, from the Linux application menu. The win
 
 - **Electron** is the desktop runtime. The raw request names it (gatekeeper decision, 2026-11-06).
 - **The backend runs outside Electron.** The desktop app starts the server as a separate process with the system Node 22, so node-pty keeps its current build. It runs the same command as `npm start` directly, not through npm, so that a stop signal reaches the server in `window-tray`.
-- **Address.** `127.0.0.1`, port from `PORT`, default `3000`, the same as the server. The window loads the page from that address. LocalAccessGuard already accepts it, so the guard does not change (REQ-8, REQ-10).
+- **Address.** `127.0.0.1`, port from `PORT`, default `4001`, the same as `npm start` (gatekeeper decision, 2026-11-06: `npm start` runs on 4001 since commit d166dbd). The window loads the page from that address. LocalAccessGuard already accepts it, so the guard does not change (REQ-8, REQ-10).
 - **A running backend** is one where `GET /api/health` answers `200` with `{ status: "ok" }`. Any other answer, or none, means that no backend runs.
 - **Ready and failed.** The backend is ready when `GET /api/health` answers. It has failed when its process exits first, or when it is not ready within 15 seconds. If another program holds the port, the server cannot bind and exits, so this case is a failure too.
 - **Startup page text.** "Starting the backend…" while waiting. On failure: "The backend could not start." followed by the last lines of the backend output. The page uses the client's dark "Studio" colours. It cannot import `src/web` (see `.sdd/.archi` conventions), so it carries its own small style.
@@ -72,13 +72,13 @@ The developer writes the specs of the new components and records them in the ind
 
 - REQ → REQ-8, REQ-10
 - Given → the desktop app started the backend
-- When → the user opens `http://127.0.0.1:3000` in a browser on the same machine
+- When → the user opens `http://127.0.0.1:4001` in a browser on the same machine
 - Then → the browser shows the same sessions as the window
 - And → from another machine of the network, the client address does not answer
 
 ### Scenario: The window says that the backend could not start
 
 - REQ → REQ-7
-- Given → no backend runs, and another program holds port 3000
+- Given → no backend runs, and another program holds port 4001
 - When → the user opens "Vexel for Claude"
 - Then → the window shows "The backend could not start." with the reason, not an empty page

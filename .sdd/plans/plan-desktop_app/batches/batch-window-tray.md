@@ -52,7 +52,7 @@ The developer updates the spec of Server and the specs of the Desktop app and th
 - Given → the desktop app started the backend, and a session is working
 - When → the user chooses "Quit" in the tray
 - Then → the app asks "Quit Vexel for Claude?"
-- And → after "Quit" in that dialog, the window and the tray icon disappear, and `http://127.0.0.1:3000` no longer answers
+- And → after "Quit" in that dialog, the window and the tray icon disappear, and `http://127.0.0.1:4001` no longer answers
 
 ### Scenario: Quitting leaves a backend the user started elsewhere
 

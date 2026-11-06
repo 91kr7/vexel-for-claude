@@ -6,7 +6,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [desktop-window](batches/batch-desktop-window.md) | Desktop window | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10 | — | todo | The client opens in its own window from the application menu |
+| [desktop-window](batches/batch-desktop-window.md) | Desktop window | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10 | — | implemented | The client opens in its own window from the application menu |
 | [window-tray](batches/batch-window-tray.md) | Window and tray | REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17 | desktop-window | todo | Sessions keep running with the window closed |
 
 Execution order: `desktop-window`, then `window-tray`.
