@@ -18,3 +18,5 @@
 | 2026-11-06 | dev | divergence INT-18, INT-14, INT-16, INT-26 | decided | No code needed: loading text from ProgressIndicator default (INT-8), accessible names are the visible text, no Italian left |
 | 2026-11-06 | dev | divergence resume dialog date | decided | `en-GB` locale keeps the it-IT shape: day first, 24-hour, seconds (REQ-8) |
 | 2026-11-06 | dev | G4 english-ui | pass | Build re-run green; diff = 20 INT sources + specs, indexes, `.archi`; no test or plan file; no Italian left in `src/web` |
+| 2026-11-06 | test | G5 english-ui | pass | Unit 731, e2e 246 (tester, full suites); gatekeeper re-run of batch tests 30 + 7 + 5 green; tests only, no `.only`/`.skip`; REQ-12, REQ-16 in external specs |
+| 2026-11-06 | closing | merge into main | pass | The only batch certified; no source change after the full run |
