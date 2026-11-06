@@ -21,3 +21,4 @@
 | 2026-11-07 | dev | G4 header-footer | pass | Build green (re-run); files map to INT-1..6; key hint removed per human decision; accepted: optional `line` prop kept on SessionHeader (existing test uses it); old header/hint tests expected to need rewriting |
 | 2026-11-07 | test | G5 header-footer | pass | Re-run by gatekeeper: unit 5 files 70/70, e2e header-footer + font-zoom 14/14; tester full runs unit 1984/1984, browser e2e 439 + 10 red (8 font-zoom outdated then rewritten green, 1 studio-dark flake green alone); only tests and `playwright.config.ts` changed |
 | 2026-11-07 | test | regression light-theme.spec.ts:486 | escalated | Outside the plan's perimeter; fails on `main` too (worktree run), older than this cycle |
+| 2026-11-07 | closing | merge with light-theme.spec.ts:486 red | human decision | Merge anyway; the failure predates this cycle and stays open |
