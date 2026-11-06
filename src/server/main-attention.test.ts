@@ -1,4 +1,4 @@
-// REQ tests of plan-session_notifications, batches needs-input-notification, turn-end-notification and session-end-notification, against the real server process.
+// REQ tests of plan-session_notifications, batches needs-input-notification, turn-end-notification, session-end-notification and tray-signal, against the real server process.
 import { type ChildProcess, spawn } from 'node:child_process';
 import { appendFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
@@ -9,6 +9,7 @@ import { FAKE_CLI, type WsClient, connectWs, delay, tempDir, waitFor, writeHisto
 
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ISO_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 // plan-session_notifications/REQ-2
 const FIVE_SECONDS = 5000;
 // ExternalSessionScanner scans every 2 seconds: one full scan plus margin.
@@ -39,6 +40,7 @@ interface AttentionSession {
   sessionId: string;
   folder: string;
   label: string;
+  waitingSince?: string;
 }
 type Frame = { type: 'needs-input'; sessions: AttentionSession[] } | { type: 'event'; event: AttentionEvent };
 
@@ -156,7 +158,7 @@ describe('plan-session_notifications/REQ-1, REQ-2, REQ-7, REQ-8 a hosted session
     expect(eventsOf(client, id)).toEqual([
       { id: expect.stringMatching(UUID), sessionId: id, kind: 'needs_input', folder, label: 'Fix the login form', waitingTool: 'Bash' },
     ]);
-    expect(lastList(client)).toContainEqual({ sessionId: id, folder, label: 'Fix the login form' });
+    expect(lastList(client)).toContainEqual({ sessionId: id, folder, label: 'Fix the login form', waitingSince: expect.stringMatching(ISO_TIME) });
   });
 });
 
@@ -203,10 +205,54 @@ describe('plan-session_notifications/REQ-5 state changes before the desktop app 
     await waitFor(() => eventsOf(early, id).length >= 1, 'event on the early client', FIVE_SECONDS);
 
     const late = await attention();
-    expect(frames(late)[0]).toEqual({ type: 'needs-input', sessions: expect.arrayContaining([{ sessionId: id, folder, label: 'Deploy' }]) });
+    expect(frames(late)[0]).toEqual({ type: 'needs-input', sessions: expect.arrayContaining([{ sessionId: id, folder, label: 'Deploy', waitingSince: expect.stringMatching(ISO_TIME) }]) });
     await askPermission(id, 'Bash');
     await delay(800);
     expect(eventsOf(late, id)).toEqual([]);
+  });
+});
+
+describe('plan-session_notifications/REQ-35 when each listed session started to need input', { timeout: TEST_TIMEOUT }, () => {
+  const sinceOf = (client: WsClient, sessionId: string) => lists(client).at(-1)?.find((session) => session.sessionId === sessionId)?.waitingSince;
+
+  it('gives each session the time it entered needs input, keeps it while the session waits, and gives a new one when it waits again', async () => {
+    const client = await attention();
+    const first = await startSession('waits-first');
+    const second = await startSession('waits-second');
+    await prompt(first.id, 'Migrate the database');
+    await prompt(second.id, 'Update the docs');
+
+    const beforeFirst = Date.now();
+    await askPermission(first.id, 'Bash');
+    await waitFor(() => listed(client, first.id), 'first session in the list', FIVE_SECONDS);
+    const afterFirst = Date.now();
+    await delay(50);
+    const beforeSecond = Date.now();
+    await askPermission(second.id, 'Edit');
+    await waitFor(() => listed(client, second.id), 'second session in the list', FIVE_SECONDS);
+    const afterSecond = Date.now();
+
+    const firstSince = sinceOf(client, first.id);
+    const secondSince = sinceOf(client, second.id);
+    expect(firstSince).toMatch(ISO_TIME);
+    expect(secondSince).toMatch(ISO_TIME);
+    expect(Date.parse(firstSince!)).toBeGreaterThanOrEqual(beforeFirst);
+    expect(Date.parse(firstSince!)).toBeLessThanOrEqual(afterFirst);
+    expect(Date.parse(secondSince!)).toBeGreaterThanOrEqual(beforeSecond);
+    expect(Date.parse(secondSince!)).toBeLessThanOrEqual(afterSecond);
+
+    await askPermission(first.id, 'Bash');
+    await delay(300);
+    const late = await attention();
+    expect(sinceOf(late, first.id)).toBe(firstSince);
+    expect(sinceOf(late, second.id)).toBe(secondSince);
+
+    await hook(first.id, { hook_event_name: 'PostToolUse' });
+    await waitFor(() => !listed(client, first.id), 'first session out of the list', FIVE_SECONDS);
+    const beforeAgain = Date.now();
+    await askPermission(first.id, 'Bash');
+    await waitFor(() => listed(client, first.id), 'first session back in the list', FIVE_SECONDS);
+    expect(Date.parse(sinceOf(client, first.id)!)).toBeGreaterThanOrEqual(beforeAgain);
   });
 });
 
@@ -249,7 +295,7 @@ describe('plan-session_notifications external sessions', { timeout: TEST_TIMEOUT
     expect(eventsOf(client, 'ext-waiting')).toEqual([
       { id: expect.stringMatching(UUID), sessionId: 'ext-waiting', kind: 'needs_input', folder: cwd, label: 'billing' },
     ]);
-    expect(lastList(client)).toContainEqual({ sessionId: 'ext-waiting', folder: cwd, label: 'billing' });
+    expect(lastList(client)).toContainEqual({ sessionId: 'ext-waiting', folder: cwd, label: 'billing', waitingSince: expect.stringMatching(ISO_TIME) });
 
     await session.write('busy');
     await waitFor(() => !listed(client, 'ext-waiting'), 'external session out of the list', FIVE_SECONDS);

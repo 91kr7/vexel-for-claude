@@ -11,6 +11,7 @@ import type { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { Message, type MessageBus, sessionBus, type Variant } from '@jellybrick/dbus-next';
 import { type ElectronApplication, type Page, _electron, expect, test } from '@playwright/test';
+import { killLeftovers } from './leftovers';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
@@ -106,7 +107,10 @@ test.beforeEach(() => {
 test.afterEach(async () => {
   for (const app of apps.splice(0)) await quitDesktop(app);
   for (const port of ports.splice(0)) await stopListeners(port);
-  for (const dir of dirs.splice(0)) await rm(dir, { recursive: true, force: true });
+  for (const dir of dirs.splice(0)) {
+    killLeftovers(dir);
+    await rm(dir, { recursive: true, force: true });
+  }
 });
 
 // Not `app.close()`: the detached backend inherits Electron's descriptors, Playwright's connection included, so close() would wait for the backend.

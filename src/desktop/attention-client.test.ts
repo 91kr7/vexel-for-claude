@@ -359,7 +359,9 @@ describe('connectAttention with the real backend', () => {
       label: 'Fix the login form',
       waitingTool: 'Bash',
     });
-    expect(calls.filter(([kind]) => kind === 'list').at(-1)?.[1]).toEqual([{ sessionId: id, folder, label: 'Fix the login form' }]);
+    expect(calls.filter(([kind]) => kind === 'list').at(-1)?.[1]).toEqual([
+      { sessionId: id, folder, label: 'Fix the login form', waitingSince: expect.any(String) },
+    ]);
   }, 40_000);
 });
 
@@ -432,6 +434,39 @@ describe('connectAttention session-end events', () => {
     const { error: _error, ...endedWithNoError } = ended;
     for (const bad of [endedWithNoError, { ...ended, error: 'true' }, { ...ended, error: 1 }, { ...ended, error: null }]) {
       server.send({ type: 'event', event: bad });
+    }
+    server.send({ type: 'needs-input', sessions: [session] });
+    await waitFor(() => calls.length >= 1, 'the valid frame');
+    await delay(100);
+
+    expect(calls).toEqual([['list', [session]]]);
+  });
+});
+
+describe('connectAttention waiting-since times', () => {
+  // plan-session_notifications/REQ-35: list entries carry waitingSince, and a backend that sends none still works
+  it('passes on list entries with a waitingSince string and entries with none', async () => {
+    const { server, origin } = await backend();
+    const { calls, handlers } = recorder();
+    connect(origin, handlers);
+    await waitFor(() => server.connections.length === 1, 'connection');
+
+    const timed: AttentionSession = { ...session, sessionId: 's2', waitingSince: '2026-11-06T10:00:00.000Z' };
+    server.send({ type: 'needs-input', sessions: [timed, session] });
+    await waitFor(() => calls.length >= 1, 'list');
+
+    expect(calls).toEqual([['list', [timed, session]]]);
+  });
+
+  // AttentionClient: waitingSince is a string, else the frame does not have the list shape
+  it('ignores a list frame with a waitingSince that is not a string', async () => {
+    const { server, origin } = await backend();
+    const { calls, handlers } = recorder();
+    connect(origin, handlers);
+    await waitFor(() => server.connections.length === 1, 'connection');
+
+    for (const bad of [42, null, true, { at: '2026-11-06T10:00:00.000Z' }]) {
+      server.send({ type: 'needs-input', sessions: [session, { ...session, sessionId: 's2', waitingSince: bad }] });
     }
     server.send({ type: 'needs-input', sessions: [session] });
     await waitFor(() => calls.length >= 1, 'the valid frame');

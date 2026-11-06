@@ -112,15 +112,16 @@ function setup() {
   const tracker = new FakeTracker();
   const scanner = new FakeScanner();
   const turns = new FakeTurns();
+  const clock = { now: new Date('2026-11-06T12:00:00.000Z') };
   const start = () => {
-    const monitor = new AttentionMonitor({ tracker, scanner, turns });
+    const monitor = new AttentionMonitor({ tracker, scanner, turns, now: () => new Date(clock.now) });
     const events: AttentionEvent[] = [];
     const lists: AttentionSession[][] = [];
     monitor.onEvent((event) => events.push(event));
     monitor.onNeedsInputChange((sessions) => lists.push(sessions));
     return { monitor, events, lists };
   };
-  return { tracker, scanner, turns, start };
+  return { tracker, scanner, turns, clock, start };
 }
 
 describe('AttentionMonitor events', () => {
@@ -314,9 +315,9 @@ describe('AttentionMonitor needs-input list', () => {
     tracker.set(hosted('h2', 'needs_input', { folder: '/projects/three', label: 'Three' }));
 
     expect(monitor.needsInput()).toEqual([
-      { sessionId: 'h1', folder: '/projects/one', label: 'One' },
-      { sessionId: 'e1', folder: '/projects/two', label: 'Two' },
-      { sessionId: 'h2', folder: '/projects/three', label: 'Three' },
+      { sessionId: 'h1', folder: '/projects/one', label: 'One', waitingSince: '2026-11-06T10:00:00.000Z' },
+      { sessionId: 'e1', folder: '/projects/two', label: 'Two', waitingSince: '2026-11-06T12:00:00.000Z' },
+      { sessionId: 'h2', folder: '/projects/three', label: 'Three', waitingSince: '2026-11-06T10:00:00.000Z' },
     ]);
   });
 
@@ -373,15 +374,16 @@ describe('AttentionMonitor needs-input list', () => {
     tracker.set(hosted('h1', 'idle', { folder: '/p/a', label: 'A' }));
 
     expect(lists).toEqual([
-      [{ sessionId: 'h1', folder: '/p/a', label: 'A' }],
+      [{ sessionId: 'h1', folder: '/p/a', label: 'A', waitingSince: '2026-11-06T12:00:00.000Z' }],
       [
-        { sessionId: 'h1', folder: '/p/a', label: 'A' },
-        { sessionId: 'e1', folder: '/p/b', label: 'B' },
+        { sessionId: 'h1', folder: '/p/a', label: 'A', waitingSince: '2026-11-06T12:00:00.000Z' },
+        { sessionId: 'e1', folder: '/p/b', label: 'B', waitingSince: '2026-11-06T10:00:00.000Z' },
       ],
-      [{ sessionId: 'e1', folder: '/p/b', label: 'B' }],
+      [{ sessionId: 'e1', folder: '/p/b', label: 'B', waitingSince: '2026-11-06T10:00:00.000Z' }],
     ]);
   });
 
+  // AttentionMonitor: a folder or label change is a list change; the spec gives no order between sessions waiting at start
   it('calls the list listeners when the folder or the label of a listed session changes', () => {
     const { tracker, scanner, start } = setup();
     tracker.seed(hosted('h1', 'needs_input', { folder: '/p/a', label: 'A' }));
@@ -391,16 +393,16 @@ describe('AttentionMonitor needs-input list', () => {
     tracker.set(hosted('h1', 'needs_input', { folder: '/p/a', label: 'A renamed' }));
     scanner.set(external('e1', 'needs_input', { folder: '/p/b', label: 'First message' }));
 
-    // The spec gives no order between two sessions already waiting at start.
     const byId = (sessions: AttentionSession[]) => [...sessions].sort((a, b) => a.sessionId.localeCompare(b.sessionId));
+    const since = '2026-11-06T10:00:00.000Z';
     expect(lists.map(byId)).toEqual([
       [
-        { sessionId: 'e1', folder: '/p/b', label: 'b' },
-        { sessionId: 'h1', folder: '/p/a', label: 'A renamed' },
+        { sessionId: 'e1', folder: '/p/b', label: 'b', waitingSince: since },
+        { sessionId: 'h1', folder: '/p/a', label: 'A renamed', waitingSince: since },
       ],
       [
-        { sessionId: 'e1', folder: '/p/b', label: 'First message' },
-        { sessionId: 'h1', folder: '/p/a', label: 'A renamed' },
+        { sessionId: 'e1', folder: '/p/b', label: 'First message', waitingSince: since },
+        { sessionId: 'h1', folder: '/p/a', label: 'A renamed', waitingSince: since },
       ],
     ]);
   });
@@ -447,6 +449,114 @@ describe('AttentionMonitor needs-input list', () => {
     tracker.set(hosted('h1', 'needs_input'));
 
     expect(lists).toEqual([]);
+  });
+});
+
+describe('AttentionMonitor waiting-since times', () => {
+  const sinceOf = (sessions: AttentionSession[], id: string) => sessions.find((session) => session.sessionId === id)?.waitingSince;
+
+  // plan-session_notifications/REQ-35: a session that enters needs_input from a known state waits since now()
+  it('is the clock time of the change when a known hosted or external session enters needs_input', () => {
+    const { tracker, scanner, clock, start } = setup();
+    tracker.seed(hosted('h1', 'working'));
+    scanner.seed(external('e1', 'idle'));
+    const { monitor } = start();
+
+    clock.now = new Date('2026-11-06T12:01:00.000Z');
+    tracker.set(hosted('h1', 'needs_input', { lastActivity: '2026-11-06T11:00:00.000Z' }));
+    clock.now = new Date('2026-11-06T12:02:00.000Z');
+    scanner.set(external('e1', 'needs_input', { lastActivity: '2026-11-06T11:00:00.000Z' }));
+
+    expect(sinceOf(monitor.needsInput(), 'h1')).toBe('2026-11-06T12:01:00.000Z');
+    expect(sinceOf(monitor.needsInput(), 'e1')).toBe('2026-11-06T12:02:00.000Z');
+  });
+
+  // plan-session_notifications/REQ-35: a session in needs_input at first sight waits since its last activity
+  it('is the last activity of a session in needs_input at first sight, at start or later', () => {
+    const { tracker, scanner, start } = setup();
+    tracker.seed(hosted('h1', 'needs_input', { lastActivity: '2026-11-06T09:01:00.000Z' }));
+    scanner.seed(external('e1', 'needs_input', { lastActivity: '2026-11-06T09:02:00.000Z' }));
+    const { monitor } = start();
+
+    tracker.set(hosted('h2', 'needs_input', { lastActivity: '2026-11-06T09:03:00.000Z' }));
+    scanner.set(external('e2', 'needs_input', { lastActivity: '2026-11-06T09:04:00.000Z' }));
+
+    const list = monitor.needsInput();
+    expect(['h1', 'e1', 'h2', 'e2'].map((id) => sinceOf(list, id))).toEqual([
+      '2026-11-06T09:01:00.000Z',
+      '2026-11-06T09:02:00.000Z',
+      '2026-11-06T09:03:00.000Z',
+      '2026-11-06T09:04:00.000Z',
+    ]);
+  });
+
+  // AttentionMonitor: waitingSince stays while the session stays in the list
+  it('stays the same while the session stays in the list, also when its folder, label or last activity changes', () => {
+    const { tracker, scanner, clock, start } = setup();
+    tracker.seed(hosted('h1', 'working'));
+    scanner.seed(external('e1', 'needs_input', { lastActivity: '2026-11-06T09:00:00.000Z' }));
+    const { monitor, lists } = start();
+    clock.now = new Date('2026-11-06T12:01:00.000Z');
+    tracker.set(hosted('h1', 'needs_input'));
+
+    clock.now = new Date('2026-11-06T12:30:00.000Z');
+    tracker.set(hosted('h1', 'needs_input', { label: 'Renamed', waitingTool: 'Bash', lastActivity: '2026-11-06T12:29:00.000Z' }));
+    scanner.set(external('e1', 'needs_input', { folder: '/projects/moved', label: 'First message', lastActivity: '2026-11-06T12:29:00.000Z' }));
+
+    expect(lists.at(-1)).toEqual(monitor.needsInput());
+    expect(monitor.needsInput()).toEqual([
+      { sessionId: 'e1', folder: '/projects/moved', label: 'First message', waitingSince: '2026-11-06T09:00:00.000Z' },
+      { sessionId: 'h1', folder: '/projects/ai-client', label: 'Renamed', waitingSince: '2026-11-06T12:01:00.000Z' },
+    ]);
+  });
+
+  // AttentionMonitor: a session that leaves the list and comes back gets a new waitingSince
+  it('is new when the session leaves the list and enters it again', () => {
+    const { tracker, scanner, clock, start } = setup();
+    tracker.seed(hosted('h1', 'working'));
+    scanner.seed(external('e1', 'working'));
+    const { monitor } = start();
+    clock.now = new Date('2026-11-06T12:01:00.000Z');
+    tracker.set(hosted('h1', 'needs_input'));
+    scanner.set(external('e1', 'needs_input'));
+
+    tracker.set(hosted('h1', 'working'));
+    scanner.set(external('e1', 'idle'));
+    clock.now = new Date('2026-11-06T12:05:00.000Z');
+    tracker.set(hosted('h1', 'needs_input'));
+    scanner.set(external('e1', 'needs_input'));
+
+    expect(monitor.needsInput().map((session) => session.waitingSince)).toEqual(['2026-11-06T12:05:00.000Z', '2026-11-06T12:05:00.000Z']);
+  });
+
+  // AttentionMonitor: a session that the scanner removes and that comes back is a first sight
+  it('is the last activity of an external session that the scanner removed and that comes back in needs_input', () => {
+    const { scanner, clock, start } = setup();
+    scanner.seed(external('e1', 'working'));
+    const { monitor } = start();
+    clock.now = new Date('2026-11-06T12:01:00.000Z');
+    scanner.set(external('e1', 'needs_input'));
+
+    scanner.remove('e1');
+    clock.now = new Date('2026-11-06T12:05:00.000Z');
+    scanner.set(external('e1', 'needs_input', { lastActivity: '2026-11-06T12:04:00.000Z' }));
+
+    expect(sinceOf(monitor.needsInput(), 'e1')).toBe('2026-11-06T12:04:00.000Z');
+  });
+
+  // AttentionMonitor: the default clock is the system clock
+  it('uses the system clock when no clock is given', () => {
+    const tracker = new FakeTracker();
+    tracker.seed(hosted('h1', 'working'));
+    const monitor = new AttentionMonitor({ tracker, scanner: new FakeScanner(), turns: new FakeTurns() });
+
+    const before = Date.now();
+    tracker.set(hosted('h1', 'needs_input'));
+    const after = Date.now();
+
+    const since = Date.parse(sinceOf(monitor.needsInput(), 'h1') ?? '');
+    expect(since).toBeGreaterThanOrEqual(before);
+    expect(since).toBeLessThanOrEqual(after);
   });
 });
 
