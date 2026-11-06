@@ -21,7 +21,21 @@ export function turnEndBody(excerpt?: string): string {
   return excerpt || 'Claude finished';
 }
 
+export function sessionEndBody(error?: boolean): string {
+  return error === true ? 'Session ended with an error' : 'Session ended';
+}
+
+function bodyOf(event: AttentionEvent): string {
+  switch (event.kind) {
+    case 'needs_input':
+      return needsInputBody(event.waitingTool);
+    case 'turn_end':
+      return turnEndBody(event.excerpt);
+    case 'session_end':
+      return sessionEndBody(event.error);
+  }
+}
+
 export function notificationTexts(event: AttentionEvent): NotificationText {
-  const body = event.kind === 'turn_end' ? turnEndBody(event.excerpt) : needsInputBody(event.waitingTool);
-  return { title: notificationTitle(event.folder, event.label), body };
+  return { title: notificationTitle(event.folder, event.label), body: bodyOf(event) };
 }

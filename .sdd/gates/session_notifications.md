@@ -22,3 +22,4 @@
 | 2026-11-06 | test | G5 turn-end-notification round 1 | sent back | 1 red in `turn-reader.test.ts`: a line that starts exactly 128 KiB before the end is dropped (`tailLines` always drops the first line when `start > 0`); spec `sessions/turn-reader.md` |
 | 2026-11-06 | dev | G4 turn-end-notification fix round 1 | pass | Tail read starts one byte earlier in `src/server/sessions/turn-reader.ts`; typecheck green |
 | 2026-11-06 | test | G5 turn-end-notification round 2 | pass | Re-run by gatekeeper: batch and touched-component files 238/238; browser e2e 4/4 from round 1 untouched by the fix; no Electron run needed |
+| 2026-11-06 | dev | G4 session-end-notification | pass | Build green (re-run); files map to INT-1..4; divergences accepted: one-line wiring in `src/server/main.ts` (registry to the monitor, needed by INT-2), AttentionClient accepts `session_end`, optional `registry` keeps old tests compiling |

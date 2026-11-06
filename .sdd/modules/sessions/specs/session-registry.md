@@ -32,7 +32,10 @@ type: backend service
 - `pid` → the process id of the CLI.
 - `resumedFrom` → the `resume` given to `start`, or `undefined`.
 - `exited` → `true` once the process ended.
-- `onExit(listener) → unsubscribe` → `listener()` once, when the process ends. A listener added after the end is never called.
+- `exitCode` → the exit code, once the process exited by itself. `undefined` while it runs, and when a signal ended it.
+- `signal` → the number of the signal that ended the process (e.g. `9` for `SIGKILL`). `undefined` while it runs, and when it exited by itself.
+- `stopRequested` → `true` once `stop()` was called while the process was running. Else `false`. It never goes back to `false`.
+- `onExit(listener) → unsubscribe` → `listener()` once, when the process ends. `exitCode` and `signal` are already set when it runs. A listener added after the end is never called.
 - `write(data)` → sends the data to the pty as typed input. No effect after the process ended.
 - `stop()` → sends `SIGTERM` to the process. If the process is still alive after `stopTimeoutMs`, sends `SIGKILL`.
   - no effect after the process ended, or while a previous `stop()` is still waiting.
@@ -59,3 +62,4 @@ type: backend service
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-6`, `plan-claude_sessions_client/REQ-7`, `plan-claude_sessions_client/REQ-10`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-26`, `plan-claude_sessions_client/REQ-29`
+- `plan-session_notifications/REQ-21`, `plan-session_notifications/REQ-22`, `plan-session_notifications/REQ-23`

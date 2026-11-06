@@ -1,7 +1,7 @@
 import type { EventEmitter } from 'node:events';
 import { Message, MessageType, sessionBus, Variant } from '@jellybrick/dbus-next';
 
-export type NotificationKind = 'needs_input' | 'turn_end';
+export type NotificationKind = 'needs_input' | 'turn_end' | 'session_end';
 export type NotificationUrgency = 'low' | 'normal' | 'critical';
 
 export interface NotificationRequest {
@@ -45,6 +45,7 @@ const URGENCY_LEVEL: Record<NotificationUrgency, number> = { low: 0, normal: 1, 
 const LOOK: Record<NotificationKind, Pick<ServerNotification, 'urgency' | 'expireTimeoutMs'>> = {
   needs_input: { urgency: 'critical', expireTimeoutMs: 0 },
   turn_end: { urgency: 'normal', expireTimeoutMs: -1 },
+  session_end: { urgency: 'normal', expireTimeoutMs: -1 },
 };
 
 function escapeMarkup(text: string): string {

@@ -42,7 +42,7 @@ const externalScanner = new ExternalSessionScanner({
   hostedPids: () => registry.hostedPids(),
 });
 const transcriptReader = new TranscriptReader();
-const attentionMonitor = new AttentionMonitor({ tracker, scanner: externalScanner });
+const attentionMonitor = new AttentionMonitor({ tracker, scanner: externalScanner, registry });
 
 registerLocalAccessGuard(app);
 await app.register(fastifyWebsocket);

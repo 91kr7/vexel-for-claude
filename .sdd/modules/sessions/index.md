@@ -2,7 +2,7 @@
 
 | Component | Type | Path | Responsibility | Spec |
 |-----------|------|------|----------------|------|
-| SessionRegistry | backend service | `src/server/sessions/session-registry.ts` | Spawns the CLI in a pty (new or `--resume`) with the hook settings and keeps each session by id, with its viewers and pids | `specs/session-registry.md` |
+| SessionRegistry | backend service | `src/server/sessions/session-registry.ts` | Spawns the CLI in a pty (new or `--resume`) with the hook settings and keeps each session by id, with its viewers, pids and how its process ended | `specs/session-registry.md` |
 | TerminalMirror | backend service | `src/server/sessions/terminal-mirror.ts` | Headless terminal of a session that gives a serialized snapshot | `specs/terminal-mirror.md` |
 | StartSessionRoute | REST endpoint | `src/server/sessions/start-session-route.ts` | `POST /api/sessions`: starts a session in an existing folder | `specs/start-session-route.md` |
 | StopSessionRoute | REST endpoint | `src/server/sessions/stop-session-route.ts` | `POST /api/sessions/:id/stop`: stops the CLI process, SIGTERM then SIGKILL | `specs/stop-session-route.md` |
@@ -15,7 +15,7 @@
 | HookEventRoute | REST endpoint | `src/server/sessions/hook-event-route.ts` | `POST /api/sessions/:id/hook-events`: passes a hook event to the tracker | `specs/hook-event-route.md` |
 | SessionListRoute | REST endpoint | `src/server/sessions/session-list-route.ts` | `GET /api/sessions`: the hosted and external sessions with their summary | `specs/session-list-route.md` |
 | SessionEventsRoute | REST endpoint (WebSocket) | `src/server/sessions/session-events-route.ts` | `GET /api/sessions/events`: pushes each session change to the pages | `specs/session-events-route.md` |
-| AttentionMonitor | backend service | `src/server/sessions/attention-monitor.ts` | Events when a hosted or external session enters `needs_input` or ends a turn, and the list of the sessions that need input | `specs/attention-monitor.md` |
+| AttentionMonitor | backend service | `src/server/sessions/attention-monitor.ts` | Events when a hosted or external session enters `needs_input` or ends a turn, or a hosted session ends without a user stop, and the list of the sessions that need input | `specs/attention-monitor.md` |
 | TurnReader | backend service | `src/server/sessions/turn-reader.ts` | Reads the end of a session transcript: Claude's final response of the last turn, and whether the user interrupted it | `specs/turn-reader.md` |
 | plainExcerpt | backend function | `src/server/sessions/plain-excerpt.ts` | Markdown response to plain text of at most 100 characters | `specs/plain-excerpt.md` |
 | AttentionRoute | REST endpoint (WebSocket) | `src/server/sessions/attention-route.ts` | `GET /api/attention`: the needs-input list on connect and on each change, and each new event | `specs/attention-route.md` |

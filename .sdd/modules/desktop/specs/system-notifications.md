@@ -17,7 +17,7 @@ type: backend service
   - `appName`, `appIcon` = `iconPath`, `summary` = `title`.
   - `body` → escaped when the server lists the capability `body-markup`: `&`, `<`, `>` become `&amp;`, `&lt;`, `&gt;`. Else as given.
   - `actions` → `["default", "Open"]`. The `default` action is a click on the notification.
-  - by `kind`: `needs_input` → urgency `critical`, expire timeout `0` (never expires). `turn_end` → urgency `normal`, expire timeout `-1` (the server's usual timeout).
+  - by `kind`: `needs_input` → urgency `critical`, expire timeout `0` (never expires). `turn_end` and `session_end` → urgency `normal`, expire timeout `-1` (the server's usual timeout).
   - `replacesId` → the id of the notification the session has, else `0`. So a session with a notification gets it replaced in place, with the same id, whatever the kinds of the old and the new one.
 - `close(sessionId) → Promise<void>` → closes the notification of the session. Nothing when it has none.
 - `onClick(listener) → unsubscribe` → `listener(sessionId)` when the server reports the `default` action on the notification of that session.
@@ -42,3 +42,4 @@ The D-Bus server: `GetCapabilities`, `Notify` (urgency as the `urgency` byte hin
 ## Requirements served
 
 - `plan-session_notifications/REQ-10`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-18`, `plan-session_notifications/REQ-19`
+- `plan-session_notifications/REQ-24`

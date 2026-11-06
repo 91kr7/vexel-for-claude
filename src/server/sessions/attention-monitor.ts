@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { ExternalSessionScanner } from '../external/external-session-scanner.js';
 import { plainExcerpt } from './plain-excerpt.js';
+import type { Session } from './session-registry.js';
 import type { ChangeCause, SessionState, SessionStateTracker, SessionSummary } from './session-state-tracker.js';
 import { type LastTurn, TurnReader } from './turn-reader.js';
 
@@ -13,12 +14,15 @@ export interface AttentionSession {
 export interface AttentionEvent {
   id: string;
   sessionId: string;
-  kind: 'needs_input' | 'turn_end';
+  kind: 'needs_input' | 'turn_end' | 'session_end';
   folder: string;
   label: string;
   waitingTool?: string;
   excerpt?: string;
+  error?: boolean;
 }
+
+type ProcessEnd = Pick<Session, 'exitCode' | 'signal' | 'stopRequested'>;
 
 export interface AttentionMonitorSources {
   tracker: Pick<SessionStateTracker, 'list'> & {
@@ -27,6 +31,7 @@ export interface AttentionMonitorSources {
   };
   scanner: Pick<ExternalSessionScanner, 'list' | 'onChange'>;
   turns?: Pick<TurnReader, 'lastTurn'>;
+  registry?: { get(sessionId: string): ProcessEnd | undefined };
 }
 
 interface ObservedSession {
@@ -48,7 +53,7 @@ export class AttentionMonitor {
   readonly #eventListeners = new Set<(event: AttentionEvent) => void>();
   readonly #listListeners = new Set<(sessions: AttentionSession[]) => void>();
 
-  constructor({ tracker, scanner, turns = new TurnReader() }: AttentionMonitorSources) {
+  constructor({ tracker, scanner, turns = new TurnReader(), registry }: AttentionMonitorSources) {
     const hostedTurn = (session: ObservedSession) => () => {
       const claudeSessionId = tracker.claudeSessionId?.(session.id);
       return claudeSessionId === undefined ? Promise.resolve(NO_FINAL_RESPONSE) : turns.lastTurn(session.folder, claudeSessionId);
@@ -56,7 +61,9 @@ export class AttentionMonitor {
     for (const session of [...tracker.list(), ...scanner.list()]) this.#observe(session);
     tracker.onChange((session, cause?: ChangeCause) => {
       const stopped = cause?.type === 'hook' && cause.hookEventName === 'Stop';
+      const seen = this.#states.has(session.id);
       this.#observe(session, stopped ? hostedTurn(session) : undefined);
+      if (seen && cause?.type === 'exit') this.#checkSessionEnd(session, registry?.get(session.id));
     });
     scanner.onChange((change) => {
       if (change.type === 'session') {
@@ -108,6 +115,12 @@ export class AttentionMonitor {
     const excerpt = turn.finalResponse === undefined ? '' : plainExcerpt(turn.finalResponse);
     if (excerpt !== '') event.excerpt = excerpt;
     this.#emit(event);
+  }
+
+  #checkSessionEnd(session: ObservedSession, ended: ProcessEnd | undefined): void {
+    if (!ended || ended.stopRequested) return;
+    if (ended.signal === undefined && ended.exitCode === 0) return;
+    this.#emit({ ...this.#event(session, 'session_end'), error: ended.signal === undefined });
   }
 
   #event(session: ObservedSession, kind: AttentionEvent['kind']): AttentionEvent {

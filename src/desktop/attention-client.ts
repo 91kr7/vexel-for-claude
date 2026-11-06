@@ -7,11 +7,12 @@ export interface AttentionSession {
 export interface AttentionEvent {
   id: string;
   sessionId: string;
-  kind: 'needs_input' | 'turn_end';
+  kind: 'needs_input' | 'turn_end' | 'session_end';
   folder: string;
   label: string;
   waitingTool?: string;
   excerpt?: string;
+  error?: boolean;
 }
 
 export interface AttentionHandlers {
@@ -43,11 +44,12 @@ function isAttentionEvent(value: unknown): value is AttentionEvent {
     isRecord(value) &&
     typeof value.id === 'string' &&
     typeof value.sessionId === 'string' &&
-    (value.kind === 'needs_input' || value.kind === 'turn_end') &&
+    (value.kind === 'needs_input' || value.kind === 'turn_end' || value.kind === 'session_end') &&
     typeof value.folder === 'string' &&
     typeof value.label === 'string' &&
     (value.waitingTool === undefined || typeof value.waitingTool === 'string') &&
-    (value.excerpt === undefined || typeof value.excerpt === 'string')
+    (value.excerpt === undefined || typeof value.excerpt === 'string') &&
+    (value.error === undefined ? value.kind !== 'session_end' : typeof value.error === 'boolean')
   );
 }
 
