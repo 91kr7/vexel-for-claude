@@ -4,8 +4,8 @@
 // On start it prints its cwd, arguments, terminal variables and size.
 // Every input chunk is echoed as `IN:<hex>`; every line ended by Enter as `LINE:<text>`.
 // Line commands: STREAM (5 chunks, 300 ms apart), ASK (waits for one key, then ANSWER:<key>),
-// COUNT (400 numbered lines, 5 ms apart), /exit (exits with code 0), /crash <code> (exits with that code),
-// /pid (prints PID:<pid>).
+// COUNT (400 numbered lines, 5 ms apart), LINKS (web addresses and OSC 8 hyperlinks, see printLinks),
+// /exit (exits with code 0), /crash <code> (exits with that code), /pid (prints PID:<pid>).
 // With `--settings <file>` it runs the file's hooks like Claude Code: UserPromptSubmit for every line
 // not starting with `/` or `HOOK `, plus TURN (Stop after 1.5 s), WORK (tool use, TICK<n> every 250 ms
 // for 30 s, then Stop), PERM (PermissionRequest, waits for one key, then Stop) and
@@ -47,6 +47,22 @@ function fireHook(input) {
   }
 }
 
+// Rows for the link tests. HARD is broken at the terminal width with CR LF, as Claude Code breaks long lines itself.
+function printLinks() {
+  const hyperlink = (address, text) => `\x1b]8;;${address}\x07${text}\x1b]8;;\x07`;
+  out('WEB:see https://example.test/plain/page.');
+  out('PAREN:(https://example.test/paren/x),');
+  out(`SOFT:https://example.test/soft/${'a'.repeat(260)}.`);
+  const hard = `HARD:https://example.test/hard/${'b'.repeat(260)}. done`;
+  const columns = process.stdout.columns;
+  const rows = [];
+  for (let start = 0; start < hard.length; start += columns) rows.push(hard.slice(start, start + columns));
+  out(rows.join('\r\n'));
+  out(`OSC8:${hyperlink('https://example.test/docs/page', 'docs')} end`);
+  out(`FILE:${hyperlink('file:///etc/hostname', 'secret')} end`);
+  out('LINKS-DONE');
+}
+
 let line = '';
 let onAnswer;
 
@@ -75,6 +91,8 @@ function runLine(text) {
   } else if (text === 'ASK') {
     onAnswer = () => {};
     out('PERMISSION?(y/n)');
+  } else if (text === 'LINKS') {
+    printLinks();
   } else if (text === 'COUNT') {
     let n = 0;
     const timer = setInterval(() => {
