@@ -910,11 +910,39 @@ input {
   white-space: nowrap;
 }
 
+.session-entry-context {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 15px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .session-entry.ended[aria-current='true'],
 .session-entry[aria-current='true'] .session-entry-label,
 .session-entry[aria-current='true'] .session-entry-tool,
 .session-entry[aria-current='true'] .session-entry-time {
   color: var(--text-secondary);
+}
+
+.session-entry-context + .session-entry-time {
+  margin-left: -2px;
+}
+
+.session-entry[aria-current='true'] .session-entry-context.usage-normal,
+.session-card.open .session-entry-context.usage-normal {
+  color: var(--text-secondary);
+}
+
+.session-entry-context.usage-warning,
+.session-header-context .usage-warning {
+  color: var(--amber-400);
+}
+
+.session-entry-context.usage-error,
+.session-header-context .usage-error {
+  color: var(--rose-400);
 }
 
 .session-entry .session-entry-label.session-entry-permission {
@@ -1222,6 +1250,10 @@ input {
 
 .session-header-subtitle {
   display: block;
+  color: var(--text-muted);
+}
+
+.session-header-context-label {
   color: var(--text-muted);
 }
 

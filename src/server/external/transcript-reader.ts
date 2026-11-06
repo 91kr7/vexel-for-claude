@@ -161,6 +161,35 @@ function parseLines(buffer: Buffer, baseOffset: number): ConversationItem[] {
   return items;
 }
 
+function parseEntries(buffer: Buffer): Record<string, unknown>[] {
+  const entries: Record<string, unknown>[] = [];
+  for (const line of buffer.toString('utf8').split('\n')) {
+    try {
+      const entry: unknown = JSON.parse(line);
+      if (isBlock(entry) && !Array.isArray(entry)) entries.push(entry);
+    } catch {
+      continue;
+    }
+  }
+  return entries;
+}
+
+async function readToLineEnd(handle: FileHandle, position: number): Promise<Buffer | undefined> {
+  const chunks: Buffer[] = [];
+  for (;;) {
+    const chunk = Buffer.alloc(LINE_CHUNK_BYTES);
+    const { bytesRead } = await handle.read(chunk, 0, chunk.length, position);
+    if (bytesRead === 0) return undefined;
+    const newline = chunk.subarray(0, bytesRead).indexOf(NEWLINE);
+    if (newline !== -1) {
+      chunks.push(chunk.subarray(0, newline + 1));
+      return Buffer.concat(chunks);
+    }
+    chunks.push(chunk.subarray(0, bytesRead));
+    position += bytesRead;
+  }
+}
+
 async function readLineAt(handle: FileHandle, offset: number): Promise<string | undefined> {
   if (offset > 0) {
     const previous = Buffer.alloc(1);
@@ -222,6 +251,38 @@ export class TranscriptReader {
       };
     } catch {
       return { items: [], offset };
+    } finally {
+      await handle?.close().catch(() => {});
+    }
+  }
+
+  async readEntriesFrom(
+    file: string,
+    offset: number,
+    maxBytes = Infinity,
+  ): Promise<{ entries: Record<string, unknown>[]; offset: number; more: boolean }> {
+    let handle;
+    try {
+      handle = await open(file, 'r');
+      const { size } = await handle.stat();
+      if (size <= offset) return { entries: [], offset, more: false };
+      const buffer = Buffer.alloc(Math.min(size - offset, Math.max(1, maxBytes)));
+      const { bytesRead } = await handle.read(buffer, 0, buffer.length, offset);
+      let lines = buffer.subarray(0, bytesRead);
+      let lastNewline = lines.lastIndexOf(NEWLINE);
+      if (lastNewline === -1 && offset + bytesRead < size) {
+        // A line longer than maxBytes is read whole, or reading would never move past it.
+        const rest = await readToLineEnd(handle, offset + bytesRead);
+        if (rest) {
+          lines = Buffer.concat([lines, rest]);
+          lastNewline = lines.length - 1;
+        }
+      }
+      if (lastNewline === -1) return { entries: [], offset, more: false };
+      const next = offset + lastNewline + 1;
+      return { entries: parseEntries(lines.subarray(0, lastNewline)), offset: next, more: offset + lines.length < size };
+    } catch {
+      return { entries: [], offset, more: false };
     } finally {
       await handle?.close().catch(() => {});
     }

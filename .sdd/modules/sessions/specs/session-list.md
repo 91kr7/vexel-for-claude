@@ -31,7 +31,8 @@ Shows:
 Entry row (every entry but the hosted needs-input card): a button with the class `session-entry`, the `.vx-session-row` look.
 - padding 6 × 8 px, 6 px radius, 12/18 px text in `--text-secondary`. Hover → `--bg-surface-2` and `--text-primary`.
 - line 1, 8 px gaps → the StateBadge `dot` (8 px), the folder name (`folderNameOf`, tooltip: the full folder path), then on the right the StateBadge `inline` (mono 10 px in the state colour).
-- line 2, 2 px below and 16 px in from the left → the label (11/16 px, `--text-muted`, tooltip: the full label), then on the right the RelativeTime of the last activity (mono 10 px, `--text-muted`).
+- line 2, 2 px below and 16 px in from the left → the label (11/16 px, `--text-muted`, tooltip: the full label), then on the right the context percentage, then the RelativeTime of the last activity (mono 10 px, `--text-muted`).
+- context percentage → only when the summary has `usage.context`: "<percent>%" by `percentOf`, mono 10 px, 6 px before the time. Colour by `usageLevelOf`: `normal` in `--text-muted` (`--text-secondary` when open), `warning` in amber-400, `error` in rose-400. No `usage.context` → nothing, never "0%". Every state shows it, ended included.
 - tool line, only for a `working` entry whose summary has `runningTool` → line 3, 2 px below line 2 and 16 px in: "<name>: <argument>", or "<name>" when there is no argument, then "+<others>" when `others` > 0. Mono 10/15 px, weight 400, `--text-muted` (`--text-secondary` when open). The text is cut with an ellipsis; "+<others>" always stays visible. Tooltip: the whole line. No tool line in any other state.
 - a hosted working entry → a ProgressBar 2 px below its last line, 16 px in. An external entry never shows it.
 - folder name and label longer than the row are cut on one line with an ellipsis. A row with its two lines is 48 px high. A tool line makes it taller.
@@ -48,7 +49,7 @@ Entry variants:
 
 Hosted needs-input card (look of `#permission-banner`): a block with the class `session-card`.
 - `.vx-surface-2`, 1 px amber-500 border at 40 %, 12 px radius, padding 14 px, `shadow-lg`. Items 4 px apart.
-- top → a button with the classes `session-entry needs-input`: the tag "Needs Input" (mono 10 px uppercase, weight 500, amber-300 on amber-500 at 20 %, amber-500 border at 40 %, 4 px radius) and the folder name (12 px weight 500, `--text-primary`); below, the label as in a row.
+- top → a button with the classes `session-entry needs-input`: the tag "Needs Input" (mono 10 px uppercase, weight 500, amber-300 on amber-500 at 20 %, amber-500 border at 40 %, 4 px radius) and the folder name (12 px weight 500, `--text-primary`); below, the label as in a row, with the context percentage of a row at its right.
 - then the needs-input line → "Permission for **<tool>** · <time>", with the tool in bold. With no `waitingTool`, the label takes the place of "Permission for <tool>". `<time>` is the RelativeTime of the last activity. Look of `#perm-cmd`: mono 12/16 px, amber-300, `--bg-canvas`, `--border-subtle` border, 4 px radius, padding 6 × 10 px, one line cut with an ellipsis.
 - then, 12 px below and on the right, "Reply" → `.button-primary` in mono weight 500, padding 6 × 14 px, scaled to 95 % while pressed.
 - the card button is described by the needs-input line (`aria-describedby`).
@@ -108,7 +109,7 @@ Drag feedback (the mock has no drag state):
 
 ## Dependencies
 
-- groupSessions, SessionOrderStore (`SessionOrder`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions, SessionNameEditor
+- groupSessions, SessionOrderStore (`SessionOrder`), usage format (`percentOf`, `usageLevelOf`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions, SessionNameEditor
 - AreaState, IconSet, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
@@ -121,3 +122,4 @@ Drag feedback (the mock has no drag state):
 - `plan-session_list_improvements/REQ-1`, `plan-session_list_improvements/REQ-2`, `plan-session_list_improvements/REQ-3`, `plan-session_list_improvements/REQ-13`
 - `plan-session_list_improvements/REQ-14` to `plan-session_list_improvements/REQ-17`, `plan-session_list_improvements/REQ-19`, `plan-session_list_improvements/REQ-22`, `plan-session_list_improvements/REQ-23`
 - `plan-session_list_improvements/REQ-25`, `plan-session_list_improvements/REQ-38`, `plan-session_list_improvements/REQ-39`
+- `plan-session_usage/REQ-1`, `plan-session_usage/REQ-8`, `plan-session_usage/REQ-9`, `plan-session_usage/REQ-10`

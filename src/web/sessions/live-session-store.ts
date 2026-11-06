@@ -8,6 +8,15 @@ export interface RunningTool {
   others: number;
 }
 
+export interface ContextOccupancy {
+  used: number;
+  window: number;
+}
+
+export interface SessionUsage {
+  context?: ContextOccupancy;
+}
+
 export interface SessionSummary {
   id: string;
   folder: string;
@@ -18,6 +27,7 @@ export interface SessionSummary {
   waitingTool?: string;
   resumable?: true;
   runningTool?: RunningTool;
+  usage?: SessionUsage;
 }
 
 export type LoadStatus = 'loading' | 'ready' | 'error';

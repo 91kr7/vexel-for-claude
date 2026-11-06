@@ -6,7 +6,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [context-occupancy](batches/batch-context-occupancy.md) | Context occupancy | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12 | — | todo | A session shows how full its context is |
+| [context-occupancy](batches/batch-context-occupancy.md) | Context occupancy | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12 | — | implemented | A session shows how full its context is |
 | [tokens-consumed](batches/batch-tokens-consumed.md) | Tokens consumed | REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21 | context-occupancy | todo | The header shows the tokens of the session |
 | [estimated-cost](batches/batch-estimated-cost.md) | Estimated cost | REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35 | tokens-consumed | todo | Every session shows its estimated cost |
 
