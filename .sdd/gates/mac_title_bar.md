@@ -14,3 +14,4 @@
 | 2026-11-06 | test | G5 title-bar round 3 | pass | Re-run by gatekeeper: Electron frameless checks 3/3 (1280 × 800 now holds), unit 2 files green; browser e2e 14/14 from round 1 untouched |
 | 2026-11-06 | dev | G4 window-buttons | sent back | Lucide paths copied into `startup-page.ts` not named in `THIRD-PARTY-NOTICES.md` |
 | 2026-11-06 | dev | G4 window-buttons | pass | Build green (re-run); files map to the INTs; accepted: no `Dialog.tsx` change (z-index above backdrops, focus trap unchanged), reuse of `XIcon`, optional window functions on the page side, symbol 52 % black for 3:1; startup page script allowed by hash in its CSP |
+| 2026-11-06 | test | G5 window-buttons | pass | Re-run by gatekeeper: 3 unit files green; tester 17 + 14 browser e2e, 5 Electron (red hides to tray); full suites deferred to one closing run after merging feat/terminal_addons (human decision) |
