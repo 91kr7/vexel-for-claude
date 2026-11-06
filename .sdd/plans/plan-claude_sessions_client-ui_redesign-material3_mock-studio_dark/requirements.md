@@ -80,7 +80,7 @@ status: validated
 
 | ID | Requirement |
 |----|-------------|
-| REQ-43 | Every dialog has the mock's modal style: black backdrop at 65 % with blur, surface 2, strong border, 12 px radius, then header, body and footer. |
+| REQ-43 | Every dialog has the mock's modal style: black backdrop at 65 % with no blur, surface 2, strong border, 12 px radius, then header, body and footer. |
 | REQ-44 | The dialog header shows the accent dot, the title and a mono "[Esc]" control. |
 | REQ-45 | A click on "[Esc]" closes the dialog in the same way as "Annulla". |
 | REQ-46 | Field labels are 11 px mono, and fields sit on the canvas colour and take the accent border on focus. |

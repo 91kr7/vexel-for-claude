@@ -15,6 +15,7 @@ status: validated
 - **Look only.** No intervention adds a behaviour, except REQ-15 (INT-16) and REQ-45 (INT-50). The mock's extra features are listed under "Do not copy" in the batch file.
 - **No new tools.** Plain CSS, React and xterm options, as in `.sdd/.archi`. Tailwind is not installed. The batch file resolves the mock's Tailwind classes into a table of values. The fonts stay the bundled Roboto Flex and Roboto Mono, so nothing is downloaded.
 - **Technical decisions.** These are in the batch file, section "Decisions for this batch", because the developer reads only that file. They cover the accent values, the dark text on accent fills, the dots in place of the state icons, the dropped tool and dialog icons, the subbar line, the message avatars, the "[Esc]" name, the area states and the mono weights.
+- **No blur behind dialogs, human decision 2026-11-06.** The blur on the dialog backdrop made the "Riprendi sessione" list scroll slowly. REQ-43 now asks for no blur, and INT-48 drops it. The glass toast of REQ-41 keeps its blur. The analysis is corrected the same way, so this is not a departure.
 - **Indexes and specs.** The developer updates the indexes and component specs of the touched components, and adds the two new components. The specs say "light and dark" and "board" today, so they will change.
 
 ## Departures

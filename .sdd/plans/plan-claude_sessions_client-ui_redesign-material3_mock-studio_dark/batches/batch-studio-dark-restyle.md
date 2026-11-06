@@ -78,7 +78,7 @@ The mock's Tailwind classes resolve to these standard Tailwind v3 values.
 | zinc-400 / 500 | `#a1a1aa` / `#71717a` |
 | `/15`, `/30`, `/40`, `/65` after a colour | that colour at 15 %, 30 %, 40 %, 65 % opacity |
 | `animate-pulse` | `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`, keyframe `50% { opacity: .5 }` |
-| `backdrop-blur-sm` | `blur(4px)` |
+| `backdrop-blur-sm` | not used: the dialog backdrop has no blur (INT-48) |
 | `shadow-sm` | `0 1px 2px 0 rgb(0 0 0 / .05)` |
 | `shadow-lg` | `0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1)` |
 | `shadow-2xl` | `0 25px 50px -12px rgb(0 0 0 / .25)` |
@@ -163,7 +163,7 @@ Each row names the mock element to copy. For each UI row: open the mock file and
 
 | ID | Type | Where | What | REQ | Depends |
 |----|------|-------|------|-----|---------|
-| INT-48 | modify | `src/web/dialogs/Dialog.tsx` | `.sdd/mockups/studio-dark/mock.html` → `#modal-new-session`. Backdrop black at 65 % with `blur(4px)`. Frame `.vx-surface-2` with the strong border, 12 px radius, `shadow-2xl`, at most 448 px wide. Header, body and footer sections. No icon. | REQ-43 | INT-5, INT-8 |
+| INT-48 | modify | `src/web/dialogs/Dialog.tsx` | `.sdd/mockups/studio-dark/mock.html` → `#modal-new-session`. Backdrop black at 65 %, with no backdrop blur (human decision 2026-11-06: scroll performance). Frame `.vx-surface-2` with the strong border, 12 px radius, `shadow-2xl`, at most 448 px wide. Header, body and footer sections. No icon. | REQ-43 | INT-5, INT-8 |
 | INT-49 | modify | `src/web/dialogs/Dialog.tsx` | `.sdd/mockups/studio-dark/mock.html` → `#modal-new-session` header. Accent dot (8 px), title 14 px semibold, and on the right "[Esc]" in mono 12 px muted, primary on hover. | REQ-44 | INT-48 |
 | INT-50 | modify | `src/web/dialogs/Dialog.tsx` | `.sdd/mockups/studio-dark/mock.html` → `[Esc]` button of `#modal-new-session`. A click on "[Esc]" calls `onCancel()`, as "Annulla" does. Its accessible name is "Chiudi (Esc)", and it is part of the focus trap. | REQ-45 | INT-49 |
 | INT-51 | modify | `src/web/dialogs/Dialog.tsx` | `.sdd/mockups/studio-dark/mock.html` → `#modal-new-session` footer. Surface 1 with a subtle top border, aligned right. "Annulla" takes the neutral class and the primary action the accent class. Busy and disabled do not change. | REQ-47, REQ-52 | INT-9, INT-48 |
@@ -212,8 +212,9 @@ Each row names the mock element to copy. For each UI row: open the mock file and
 - REQ → REQ-15, REQ-43, REQ-44, REQ-45, REQ-46, REQ-47
 - Given → no dialog is open
 - When → the user clicks "Nuova sessione" in the top bar
-- Then → the new-session dialog opens over a dark blurred page, with a light-blue dot, the title, "[Esc]", the mono label "Cartella del progetto", and a footer with a grey "Annulla" and a light-blue "Avvia sessione"
+- Then → the new-session dialog opens over a darkened page with no blur, with a light-blue dot, the title, "[Esc]", the mono label "Cartella del progetto", and a footer with a grey "Annulla" and a light-blue "Avvia sessione"
 - And → a click on "[Esc]" closes the dialog and the open session does not change
+- And → with sessions running behind it, the "Riprendi sessione" dialog list scrolls smoothly
 
 ### Scenario: The stop confirmation is drawn in rose
 

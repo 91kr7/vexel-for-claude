@@ -25,7 +25,7 @@ Props:
 - `accent` → `error` (default) or `attn`. The colour of a `warning` tone. No effect on the `default` tone.
 
 Shows (sizes in px):
-- the backdrop → the whole page, black at 65 % (`--color-backdrop`) with a 4 px blur, padding 16. The frame sits centred in it.
+- the backdrop → the whole page, black at 65 % (`--color-backdrop`), no blur, padding 16. The frame sits centred in it.
 - the frame → `.vx-surface-2` with a 1 `--border-strong` border, 12 radius, `shadow-2xl`, full width up to 448, as tall as the backdrop allows. No icon.
 - the header → padding 12 × 16, 1 `--border-subtle` line below. From the left: an 8 accent dot (decorative), the title (14/20, weight 600), and on the right the button "[Esc]" (mono 12/16, `--text-muted`, `--text-primary` on hover).
 - the body → padding 16, items 14 apart, text 12/16. The description first, in `--text-secondary`; bold parts in `--text-primary`.
