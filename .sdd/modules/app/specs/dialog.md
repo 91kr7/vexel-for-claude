@@ -52,6 +52,8 @@ Focus:
 - Stacked dialogs → Esc and Enter act on the dialog that holds the focus, which is the top one. The dialog below stays open.
 - The dialog never submits a page form. It sends no request on its own.
 - A frame taller than the backdrop allows does not grow past it. The caller's content decides what scrolls.
+- Desktop window: the frame is never a drag area (`-webkit-app-region: no-drag`), also over the TopBar. The backdrop sets no drag value, so the TopBar drag area outside the frame still moves the window.
+- Desktop window: the WindowButtons stay above the backdrop, visible and clickable. They are outside the dialog: Tab never reaches them, and a click on them leaves the focus in the dialog.
 
 ## Dependencies
 
@@ -65,3 +67,4 @@ Focus:
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-52`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-43`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-45`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-47`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-52`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`
+- `plan-mac_title_bar/REQ-8`, `plan-mac_title_bar/REQ-11`, `plan-mac_title_bar/REQ-24`

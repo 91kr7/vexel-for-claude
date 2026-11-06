@@ -29,6 +29,14 @@ export function PlusIcon() {
   );
 }
 
+export function MinusIcon() {
+  return (
+    <LucideIcon>
+      <path d="M5 12h14" />
+    </LucideIcon>
+  );
+}
+
 export function HistoryIcon() {
   return (
     <LucideIcon>
@@ -195,6 +203,14 @@ export function ChevronDownIcon() {
   );
 }
 
+export function ChevronUpIcon() {
+  return (
+    <LucideIcon>
+      <path d="m18 15-6-6-6 6" />
+    </LucideIcon>
+  );
+}
+
 export function CircleXIcon() {
   return (
     <LucideIcon>
@@ -244,6 +260,28 @@ export function XIcon() {
     <LucideIcon>
       <path d="M18 6 6 18" />
       <path d="m6 6 12 12" />
+    </LucideIcon>
+  );
+}
+
+export function Maximize2Icon() {
+  return (
+    <LucideIcon>
+      <path d="M15 3h6v6" />
+      <path d="m21 3-7 7" />
+      <path d="m3 21 7-7" />
+      <path d="M9 21H3v-6" />
+    </LucideIcon>
+  );
+}
+
+export function Minimize2Icon() {
+  return (
+    <LucideIcon>
+      <path d="m14 10 7-7" />
+      <path d="M20 10h-6V4" />
+      <path d="m3 21 7-7" />
+      <path d="M4 14h6v6" />
     </LucideIcon>
   );
 }

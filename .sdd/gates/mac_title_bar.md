@@ -1,0 +1,21 @@
+# Gates — mac_title_bar
+
+| Date | Phase | Gate | Verdict | Reason |
+|------|-------|------|---------|--------|
+| 2026-11-06 | analysis | question analyst Q1 | decided | Evolution: a window without the native bar was never specified; `light_theme.md` line 79 left it out |
+| 2026-11-06 | analysis | G1 analysis | pass | ordinary, 101/200 lines; derived additions accepted: buttons and drag in every window state, empty drag area at every width, clicks on controls never drag, browser unchanged |
+| 2026-11-06 | plan | question planner Q1 | decided | No added window border: the spec lists it only as a risk; to check by hand on GNOME |
+| 2026-11-06 | plan | G2 requirements | pass | REQ-1..28 in 2 features (title bar, window buttons) cover the spec |
+| 2026-11-06 | plan | G3 coverage | pass | 2 batches, REQ-1..28 covered, all modify paths exist; startup page stays light (no access to the saved theme) accepted; double click left to the desktop's title bar action via the drag region |
+| 2026-11-06 | dev | G4 title-bar | pass | Build green (re-run); files map to INT-1..5; accepted: INT-4 as a `.modal` rule in `styles.css` instead of `Dialog.tsx` (smaller change); GNOME double click, edge resize and shadow unverified, left to tests and the human |
+| 2026-11-06 | test | question tester Q1 | decided | Alt menu bar lost without the native frame: accepted, the request removes the native chrome; DesktopApp spec drops "Alt shows it" |
+| 2026-11-06 | test | G5 title-bar round 1 | sent back | Window opens maximized with `frame: false` (GNOME auto-maximize), DesktopApp spec says 1280 × 800: code defect; Alt test to follow the spec change |
+| 2026-11-06 | dev | G4 title-bar fix rounds 1-2 | pass | Undo GNOME auto-maximize, then keep 1280 × 800 against the restore for 1 s; build green |
+| 2026-11-06 | test | G5 title-bar round 3 | pass | Re-run by gatekeeper: Electron frameless checks 3/3 (1280 × 800 now holds), unit 2 files green; browser e2e 14/14 from round 1 untouched |
+| 2026-11-06 | dev | G4 window-buttons | sent back | Lucide paths copied into `startup-page.ts` not named in `THIRD-PARTY-NOTICES.md` |
+| 2026-11-06 | dev | G4 window-buttons | pass | Build green (re-run); files map to the INTs; accepted: no `Dialog.tsx` change (z-index above backdrops, focus trap unchanged), reuse of `XIcon`, optional window functions on the page side, symbol 52 % black for 3:1; startup page script allowed by hash in its CSP |
+| 2026-11-06 | test | G5 window-buttons | pass | Re-run by gatekeeper: 3 unit files green; tester 17 + 14 browser e2e, 5 Electron (red hides to tray); full suites deferred to one closing run after merging feat/terminal_addons (human decision) |
+| 2026-11-06 | closing | merge feat/terminal_addons | decided | Merged into this branch so the full suites run once for both cycles (human decision); 9 conflicts resolved as a union |
+| 2026-11-06 | closing | full suites round 1 | sent back | unit 1918/1918; browser e2e 424 + 5 red; Electron 24 + 5 red; triage: 5 outdated tests, 4 flakes, 1 spec conflict, no code defect |
+| 2026-11-06 | closing | ThemeTokens no-orange rule | decided | The rule targets the old mock's accent families; amber/brown for warnings, needs input and search highlights allowed |
+| 2026-11-06 | closing | full suites round 2 | pass | Only test files and one spec line changed after round 1; every failed test re-run green (browser 39/39 on the 3 files, Electron 23/23); no source change, so no third full run |

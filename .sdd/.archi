@@ -56,6 +56,8 @@ Generated output, not versioned: `dist/web/` (frontend build), `dist/desktop/` (
 | electron | runtime | Desktop window; the app runs it from the repository |
 | react, react-dom | runtime | UI |
 | @xterm/xterm, @xterm/addon-fit | runtime | Terminal view and resize to container |
+| @xterm/addon-web-links | runtime | Web addresses of the terminal rows as links (same major line as `@xterm/xterm` 6) |
+| @xterm/addon-search | runtime | Search of the terminal text, scrollback included, with match highlights (same major line as `@xterm/xterm` 6) |
 | @xterm/headless, @xterm/addon-serialize | runtime | Server-side terminal mirror per session and its serialized snapshot |
 | @jellybrick/dbus-next | runtime | D-Bus client of the desktop app for the system notifications (assumption "Notification mechanism"). Pure JavaScript, no native build |
 | typescript | dev | Typecheck (`tsc -b`, no emit) |
@@ -98,6 +100,12 @@ Generated output, not versioned: `dist/web/` (frontend build), `dist/desktop/` (
 | Install e2e browser | `npx playwright install chromium` | — |
 
 The e2e run builds the app and starts it on port 3100. A server already listening there is reused outside CI.
+
+Two environment variables let parallel cycles run e2e side by side. Their defaults keep the behaviour above.
+
+- `E2E_PORT` → port of the e2e server (default 3100). The base URL, the stored theme choice and the health check follow it.
+- `E2E_CLAUDE_DIR` → fixture Claude Code folder of the e2e server (default `<os tmp>/ai-client-e2e-claude`).
+- e.g. `E2E_PORT=3200 E2E_CLAUDE_DIR=/tmp/ai-client-e2e-claude-b npx playwright test --reporter=dot <path>`
 
 ## Assumptions
 

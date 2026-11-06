@@ -184,6 +184,8 @@ test.describe('Tokens consumed', () => {
     expect(resume.status()).toBe(201);
     const { id: resumedId } = (await resume.json()) as { id: string };
     createdIds.push(resumedId);
+    // ResumeEndedSessionRoute lists the new session before it removes the ended one: wait for the list to settle.
+    await expect(entry(page, folder)).toHaveCount(1);
     await entry(page, folder).click();
     await expect(chip(page)).toHaveText(chipShows('12.4k'));
 

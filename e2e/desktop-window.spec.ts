@@ -1,4 +1,4 @@
-// e2e of plan-desktop_app, batches desktop-window and window-tray, and of plan-light_theme, batch remembered-theme. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
+// e2e of plan-desktop_app, batches desktop-window and window-tray, of plan-light_theme, batch remembered-theme, and of plan-mac_title_bar, batches title-bar and window-buttons. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -22,6 +22,8 @@ const LOADING = 'Starting the backend…';
 const ERROR = 'The backend could not start.';
 
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
+// The arguments of the menu entry (MenuEntry `Exec`): without `--no-sandbox`, Ubuntu's AppArmor makes Electron abort at launch.
+const SECOND_LAUNCH_ARGS = ['--no-sandbox', '.'];
 
 // Cleanup registry, emptied after each test.
 const apps: ElectronApplication[] = [];
@@ -420,7 +422,7 @@ test.describe('Desktop window', () => {
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.minimize());
     await expect.poll(async () => (await windowState(app))[0]?.minimized).toBe(true);
 
-    const second = spawn(electronBinary, ['.'], { cwd: repoRoot, env, stdio: 'ignore' });
+    const second = spawn(electronBinary, SECOND_LAUNCH_ARGS, { cwd: repoRoot, env, stdio: 'ignore' });
     children.push(second);
     const exitCode = await new Promise<number | null>((resolve) => second.once('exit', (code) => resolve(code)));
     expect(exitCode).not.toBeNull();
@@ -507,7 +509,7 @@ test.describe('Window and tray', () => {
     await closeWindow(app);
     await expect.poll(async () => (await windowState(app)).map((state) => state.visible)).toEqual([false]);
 
-    const second = spawn(electronBinary, ['.'], { cwd: repoRoot, env, stdio: 'ignore' });
+    const second = spawn(electronBinary, SECOND_LAUNCH_ARGS, { cwd: repoRoot, env, stdio: 'ignore' });
     children.push(second);
     const exitCode = await new Promise<number | null>((resolve) => second.once('exit', (code) => resolve(code)));
     expect(exitCode).not.toBeNull();
@@ -685,5 +687,155 @@ test.describe('Remembered theme in the desktop app', () => {
     await page.goto(`http://127.0.0.1:${port}/`);
     await expect(page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true })).toHaveAttribute('aria-pressed', 'false');
     expect(await page.locator('html').getAttribute('data-theme'), 'the browser keeps its own choice').toBe('light');
+  });
+});
+
+/** The window area at a point: the last element, in document order, that declares a drag value over the point wins. */
+const appRegionAt = (page: Page, x: number, y: number) =>
+  page.evaluate(
+    ([px, py]) => {
+      let region = 'none';
+      for (const element of document.querySelectorAll('*')) {
+        const value = getComputedStyle(element).getPropertyValue('-webkit-app-region');
+        const box = element.getBoundingClientRect();
+        if ((value === 'drag' || value === 'no-drag') && px >= box.left && px < box.right && py >= box.top && py < box.bottom) region = value;
+      }
+      return region;
+    },
+    [x, y] as const,
+  );
+
+// plan-mac_title_bar, batch title-bar. The window manager's drag, double click, edge resize and shortcuts are checked by hand.
+test.describe('Frameless window', () => {
+  test.describe.configure({ timeout: 90_000 });
+
+  test.beforeAll(buildDesktop);
+
+  test('REQ-1, REQ-2, REQ-3, REQ-5, REQ-6, REQ-8, REQ-10: no native frame, drag areas on the startup page and the top bar, close to the tray', async () => {
+    const port = await freePort();
+    const env = await desktopEnv(port);
+    const slowNode = path.join(env.HOME!, 'slow-node');
+    await writeFile(slowNode, `#!/bin/sh\nsleep 3\nexec '${process.execPath}' "$@"\n`);
+    await chmod(slowNode, 0o755);
+    const app = await launchDesktop({ ...env, AI_CLIENT_NODE: slowNode });
+    const window = await app.firstWindow();
+
+    await expect(window.getByText(LOADING, { exact: true })).toBeVisible();
+    const width = (await window.evaluate(() => innerWidth)) as number;
+    for (const x of [1, width / 2, width - 1]) expect(await appRegionAt(window, x, 24), `REQ-10: startup bar at ${x}`).toBe('drag');
+
+    await expect(list(window)).toBeVisible({ timeout: 20_000 });
+    const banner = window.getByRole('banner');
+    const brand = (await banner.getByText('Vexel', { exact: true }).boundingBox())!;
+    expect(await appRegionAt(window, brand.x + brand.width / 2, brand.y + brand.height / 2), 'REQ-6: the brand').toBe('drag');
+    const newSession = (await banner.getByRole('button', { name: 'New Session', exact: true }).boundingBox())!;
+    expect(await appRegionAt(window, newSession.x + newSession.width / 2, newSession.y + newSession.height / 2), 'REQ-8: "New Session"').toBe('no-drag');
+
+    const native = await app.evaluate(({ BrowserWindow }) => {
+      const current = BrowserWindow.getAllWindows()[0]!;
+      const handle = current.getNativeWindowHandle();
+      return { xid: handle.length >= 8 ? Number(handle.readBigUInt64LE()) : handle.readUInt32LE(), resizable: current.isResizable(), title: current.getTitle() };
+    });
+    expect(native.resizable, 'REQ-2').toBe(true);
+    expect(native.title, 'REQ-3').toBe('Vexel for Claude');
+    const xprop = execFileSync('xprop', ['-id', String(native.xid), '_MOTIF_WM_HINTS', '_NET_WM_NAME'], { encoding: 'utf8' });
+    const hints = xprop.match(/_MOTIF_WM_HINTS\(_MOTIF_WM_HINTS\) = (.*)/)?.[1]?.split(',').map((value) => Number(value.trim()));
+    expect(hints, `REQ-1: the window asks for no decorations\n${xprop}`).toBeDefined();
+    expect(hints![0]! & 2, 'REQ-1: the decorations field is set').toBe(2);
+    expect(hints![2], 'REQ-1: no decorations').toBe(0);
+    expect(xprop, 'REQ-3: the name the task switcher reads').toContain('_NET_WM_NAME(UTF8_STRING) = "Vexel for Claude"');
+
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.close());
+    await expect.poll(async () => (await windowState(app)).map((state) => state.visible), { message: 'REQ-5: the window hides' }).toEqual([false]);
+    expect(app.process().exitCode, 'REQ-5: the app keeps running').toBeNull();
+    expect(await healthStatus(port), 'REQ-5: the backend keeps running').toBe(200);
+  });
+
+  test('REQ-10, DesktopApp: on the backend error the startup bar is a drag area; no menu bar, also on Alt, and the application menu stays', async () => {
+    const holder = http.createServer((_request, response) => response.writeHead(404).end());
+    holders.push(holder);
+    await new Promise<void>((resolve) => holder.listen(0, '127.0.0.1', resolve));
+    const app = await launchDesktop(await desktopEnv((holder.address() as net.AddressInfo).port));
+    const window = await app.firstWindow();
+    await expect(window.getByText(ERROR, { exact: true })).toBeVisible({ timeout: 30_000 });
+    const width = (await window.evaluate(() => innerWidth)) as number;
+    for (const x of [1, width / 2, width - 1]) expect(await appRegionAt(window, x, 24), `REQ-10: startup bar at ${x}`).toBe('drag');
+
+    const menuBar = await app.evaluate(async ({ BrowserWindow, Menu }) => {
+      const current = BrowserWindow.getAllWindows()[0]!;
+      const before = current.isMenuBarVisible();
+      current.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Alt' });
+      current.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Alt' });
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return { before, afterAlt: current.isMenuBarVisible(), applicationMenu: Menu.getApplicationMenu() !== null };
+    });
+    expect(menuBar, 'DesktopApp: no menu bar, also on Alt; the application menu stays').toEqual({ before: false, afterAlt: false, applicationMenu: true });
+  });
+});
+
+// plan-mac_title_bar, batch window-buttons: the buttons drive the real window. Their look and hover are checked in e2e/window-buttons.spec.ts.
+test.describe('Window buttons', () => {
+  test.describe.configure({ timeout: 90_000 });
+
+  test.beforeAll(buildDesktop);
+
+  const isMaximized = (app: ElectronApplication) => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isMaximized());
+  const isMinimized = async (app: ElectronApplication) => (await windowState(app))[0]?.minimized;
+  const restoreFromMinimized = (app: ElectronApplication) => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.restore());
+
+  test('REQ-16, REQ-17, REQ-18, REQ-21: green maximizes and restores, yellow minimizes, red hides the window to the tray with a working session', async () => {
+    const port = await freePort();
+    const env = await desktopEnv(port);
+    const app = await launchDesktop(env);
+    const window = await app.firstWindow();
+    await expect(list(window)).toBeVisible({ timeout: 20_000 });
+    const id = await startSession(port, path.join(env.HOME!, 'project-red-button'));
+    await makeWorking(port, id);
+    const bar = window.getByRole('banner');
+
+    await bar.getByRole('button', { name: 'Maximize', exact: true }).click();
+    await expect.poll(() => isMaximized(app), { message: 'REQ-18: the window maximizes' }).toBe(true);
+    await expect(bar.getByRole('button', { name: 'Restore', exact: true }), 'REQ-21: the green button now restores').toBeVisible();
+    await bar.getByRole('button', { name: 'Restore', exact: true }).click();
+    await expect.poll(() => isMaximized(app), { message: 'REQ-18: the window restores' }).toBe(false);
+    await expect(bar.getByRole('button', { name: 'Maximize', exact: true })).toBeVisible();
+
+    await bar.getByRole('button', { name: 'Minimize', exact: true }).click();
+    await expect.poll(() => isMinimized(app), { message: 'REQ-17: the window minimizes' }).toBe(true);
+    await restoreFromMinimized(app);
+    await expect.poll(() => isMinimized(app)).toBe(false);
+
+    await bar.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect.poll(async () => (await windowState(app)).map((state) => state.visible), { message: 'REQ-16: the window hides' }).toEqual([false]);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    expect(app.process().exitCode, 'REQ-16: the app keeps running').toBeNull();
+    expect(app.process().signalCode).toBeNull();
+    if (hasTrayHost()) expect(trayItemOf(app.process().pid!), 'REQ-16: the tray icon stays').toBeDefined();
+    expect(await healthStatus(port), 'REQ-16: the backend keeps running').toBe(200);
+    expect(await sessionState(port, id), 'REQ-16: the session keeps working').toBe('working');
+  });
+
+  test('REQ-23: on the backend error message the bridge is there and the buttons maximize, minimize and close the window', async () => {
+    const holder = http.createServer((_request, response) => response.writeHead(404).end());
+    holders.push(holder);
+    await new Promise<void>((resolve) => holder.listen(0, '127.0.0.1', resolve));
+    const app = await launchDesktop(await desktopEnv((holder.address() as net.AddressInfo).port));
+    const window = await app.firstWindow();
+    await expect(window.getByText(ERROR, { exact: true })).toBeVisible({ timeout: 30_000 });
+
+    await window.getByRole('button', { name: 'Maximize', exact: true }).click();
+    await expect.poll(() => isMaximized(app), { message: 'the window maximizes' }).toBe(true);
+    await expect(window.getByRole('button', { name: 'Restore', exact: true }), 'REQ-21 on the startup page').toBeVisible();
+    await window.getByRole('button', { name: 'Restore', exact: true }).click();
+    await expect.poll(() => isMaximized(app), { message: 'the window restores' }).toBe(false);
+
+    await window.getByRole('button', { name: 'Minimize', exact: true }).click();
+    await expect.poll(() => isMinimized(app), { message: 'the window minimizes' }).toBe(true);
+    await restoreFromMinimized(app);
+    await expect.poll(() => isMinimized(app)).toBe(false);
+
+    await window.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect.poll(async () => (await windowState(app)).map((state) => state.visible), { message: 'the window hides' }).toEqual([false]);
+    expect(app.process().exitCode, 'the app keeps running').toBeNull();
   });
 });

@@ -3,7 +3,7 @@
 import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { type APIRequestContext, type Page, expect, test } from '@playwright/test';
+import { type Page, expect, test } from '@playwright/test';
 
 const OTHER_PAGE = 'http://localhost:8080/';
 const hex = (text: string) => Buffer.from(text, 'utf8').toString('hex');
@@ -28,12 +28,6 @@ async function newFolder(name: string): Promise<string> {
   const folder = path.join(projectsRoot, name);
   await mkdir(folder);
   return folder;
-}
-
-async function sessionIds(request: APIRequestContext): Promise<string[]> {
-  const response = await request.get('/api/sessions');
-  expect(response.status()).toBe(200);
-  return ((await response.json()) as { id: string }[]).map((session) => session.id);
 }
 
 /** The fake page of another local server. Its console records the browser's network errors. */
@@ -125,7 +119,6 @@ test('a page of another local server cannot read or drive a session', async ({ p
 test('a page of another local server cannot start a session', async ({ page, baseURL, request }) => {
   const port = new URL(baseURL!).port;
   const folder = await newFolder('foreign-start');
-  const before = await sessionIds(request);
   const { other } = await openOtherPage(page);
   // An opaque no-cors response hides its status from the page and from Playwright's events: read it from the browser's network log.
   const cdp = await other.context().newCDPSession(other);
@@ -139,5 +132,7 @@ test('a page of another local server cannot start a session', async ({ page, bas
     { url: `http://127.0.0.1:${port}/api/sessions`, body: JSON.stringify({ path: folder }) },
   );
   await expect.poll(() => statuses).toEqual([403]);
-  expect(await sessionIds(request)).toEqual(before);
+  // Other workers start sessions meanwhile: only the folder of this test counts.
+  const sessions = (await (await request.get('/api/sessions')).json()) as { folder: string }[];
+  expect(sessions.filter((session) => session.folder === folder)).toEqual([]);
 });

@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, Menu, Tray } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, shell, Tray } from 'electron';
 import { type AttentionSession, connectAttention } from './attention-client.js';
 import { type LaunchResult, launchBackend, stopStartedBackend } from './backend-launcher.js';
 import { type NotificationCommand, NotificationRules } from './notification-rules.js';
@@ -9,6 +9,7 @@ import { confirmQuit } from './quit-check.js';
 import { startupPageUrl } from './startup-page.js';
 import { SystemNotifications } from './system-notifications.js';
 import { trayIconFile, trayMenuTemplate, trayTooltip } from './tray-icon.js';
+import { connectWindowActions } from './window-actions.js';
 
 const rootDir = fileURLToPath(new URL('../..', import.meta.url));
 const iconsDir = path.join(rootDir, 'src/desktop/icons');
@@ -16,6 +17,7 @@ const iconPath = path.join(iconsDir, 'vexel-for-claude.png');
 const preloadPath = fileURLToPath(new URL('desktop-bridge.cjs', import.meta.url));
 const OPEN_SESSION_CHANGED_CHANNEL = 'desktop-bridge:open-session-changed';
 const OPEN_SESSION_CHANNEL = 'desktop-bridge:open-session';
+const PAGE_ZOOM_ROLES = new Set(['zoomin', 'zoomout', 'resetzoom']);
 
 let mainWindow: BrowserWindow | undefined;
 let tray: Tray | undefined;
@@ -30,6 +32,20 @@ function showWindow(): void {
   if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
   mainWindow.focus();
+}
+
+function isWebAddress(address: string): boolean {
+  return URL.canParse(address) && ['http:', 'https:'].includes(new URL(address).protocol);
+}
+
+// The page takes Ctrl+=, Ctrl++, Ctrl+- and Ctrl+0 for the terminal text, so the menu must not zoom the page.
+function withoutPageZoom(menu: Menu): Menu {
+  const items = menu.items
+    .filter((item) => !PAGE_ZOOM_ROLES.has(item.role?.toLowerCase() ?? ''))
+    .map((item) =>
+      item.submenu ? new MenuItem({ label: item.label, role: item.role, submenu: withoutPageZoom(item.submenu) }) : item,
+    );
+  return Menu.buildFromTemplate(items);
 }
 
 function runNotificationCommands(commands: NotificationCommand[]): void {
@@ -73,7 +89,26 @@ async function requestQuit(): Promise<void> {
   }
 }
 
+// Mutter's auto-maximize maximizes a frameless window when it maps; the window opens at its own size.
+function undoAutoMaximize(window: BrowserWindow): void {
+  const keepStartSize = () => {
+    const [width, height] = window.getSize();
+    if (window.isMaximized() || (width === 1280 && height === 800)) return;
+    window.setSize(1280, 800);
+    window.center();
+  };
+  const undo = () => {
+    window.on('resize', keepStartSize);
+    setTimeout(() => window.off('resize', keepStartSize), 1000);
+    window.unmaximize();
+  };
+  window.once('maximize', undo);
+  setTimeout(() => window.off('maximize', undo), 2000);
+}
+
 async function start(): Promise<void> {
+  const applicationMenu = Menu.getApplicationMenu();
+  if (applicationMenu) Menu.setApplicationMenu(withoutPageZoom(applicationMenu));
   tray = new Tray(iconPath);
   updateTray([]);
 
@@ -84,9 +119,15 @@ async function start(): Promise<void> {
     icon: iconPath,
     backgroundColor: '#0b0b0e',
     autoHideMenuBar: true,
+    frame: false,
     webPreferences: { preload: preloadPath },
   });
   mainWindow = current;
+  undoAutoMaximize(current);
+  current.webContents.setWindowOpenHandler(({ url }) => {
+    if (isWebAddress(url)) void shell.openExternal(url);
+    return { action: 'deny' };
+  });
   const updateWindowFocus = () =>
     runNotificationCommands(
       notificationRules.setWindowFocused(current.isFocused() && current.isVisible() && !current.isMinimized()),
@@ -96,6 +137,7 @@ async function start(): Promise<void> {
     if (current.isDestroyed() || event.sender !== current.webContents) return;
     if (typeof sessionId === 'string' || sessionId === null) runNotificationCommands(notificationRules.setOpenSession(sessionId));
   });
+  connectWindowActions(current, ipcMain);
   notifications.onClick(openNotifiedSession);
   notifications.onClosed((sessionId) => notificationRules.notificationClosed(sessionId));
   current.on('close', (event) => {

@@ -182,6 +182,23 @@ async function effectiveBackground(target: Locator): Promise<string> {
 const token = (page: Page, name: string) => page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name);
 
 /** Every custom property of the page root with its computed value. */
+/** The largest difference of one colour channel between two PNG screenshots of the same size, decoded in the page. */
+const maxChannelDifference = (page: Page, a: Buffer, b: Buffer) =>
+  page.evaluate(async ([a, b]) => {
+    const pixels = async (base64: string) => {
+      const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${base64}`)).blob());
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const context = canvas.getContext('2d')!;
+      context.drawImage(bitmap, 0, 0);
+      return context.getImageData(0, 0, bitmap.width, bitmap.height).data;
+    };
+    const [first, second] = [await pixels(a), await pixels(b)];
+    if (first.length !== second.length) return Infinity;
+    let max = 0;
+    for (let i = 0; i < first.length; i++) max = Math.max(max, Math.abs(first[i]! - second[i]!));
+    return max;
+  }, [a.toString('base64'), b.toString('base64')] as const);
+
 const allTokens = (page: Page) =>
   page.evaluate(() => {
     const s = getComputedStyle(document.documentElement);
@@ -501,7 +518,9 @@ test.describe('theme switch', () => {
     // REQ-13: the dark theme is the same as before the change
     expect(await allTokens(page)).toEqual(darkTokens);
     await sw.evaluate((el) => (el as HTMLElement).blur());
-    expect(await page.screenshot({ animations: 'disabled' }), 'the dark client looks as before').toEqual(darkShot);
+    const afterShot = await page.screenshot({ animations: 'disabled' });
+    // Anti-aliasing of rounded corners can differ by one level between two renders.
+    expect(await maxChannelDifference(page, darkShot, afterShot), 'the dark client looks as before').toBeLessThanOrEqual(1);
   });
 });
 

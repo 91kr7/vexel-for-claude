@@ -1,4 +1,5 @@
-// Tests of plan-desktop_app, batch desktop-window: StartupPage spec (REQ-7). Colours and CSP are checked in the browser by e2e/desktop-window.spec.ts.
+// Tests of plan-desktop_app, batch desktop-window: StartupPage spec (REQ-7), and of plan-mac_title_bar, batch window-buttons (REQ-23). Colours and CSP are checked in the browser by e2e/desktop-window.spec.ts.
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { startupPageHtml, startupPageUrl } from './startup-page.js';
 
@@ -41,9 +42,21 @@ describe('startupPageHtml', () => {
     expect(html).toContain('a &amp; b');
   });
 
-  it.each([{ kind: 'loading' as const }, { kind: 'error' as const, outputLines: ['x'] }])('$kind → carries no script', (state) => {
-    expect(startupPageHtml(state)).not.toMatch(/<script/i);
-  });
+  // StartupPage rule, plan-mac_title_bar/REQ-23: one inline script, the only one the page policy allows, by its SHA-256 hash
+  it.each([{ kind: 'loading' as const }, { kind: 'error' as const, outputLines: ['x'] }])(
+    '$kind → one inline script, allowed by its hash and nothing else',
+    (state) => {
+      const html = startupPageHtml(state);
+      const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
+      expect(scripts).toHaveLength(1);
+      expect(scripts[0]![1], 'no external source').not.toMatch(/\ssrc=/i);
+      const policy = html.match(/<meta\b[^>]*http-equiv="Content-Security-Policy"[^>]*content="([^"]*)"/i)?.[1];
+      expect(policy, 'the page declares its policy').toBeDefined();
+      const scriptSrc = policy!.split(';').map((directive) => directive.trim()).find((directive) => directive.startsWith('script-src '));
+      const hash = createHash('sha256').update(scripts[0]![2]!).digest('base64');
+      expect(scriptSrc).toBe(`script-src 'sha256-${hash}'`);
+    },
+  );
 });
 
 describe('startupPageUrl', () => {

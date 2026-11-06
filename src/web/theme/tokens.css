@@ -51,9 +51,18 @@
   --term-fg: #f3f2ee;
   --term-cursor: #8ccfff;
   --term-selection: rgba(140, 207, 255, 0.3);
+  --term-match-bg: #713f12;
+  --term-match-current-bg: #92400e;
+  --term-match-current-border: #fcd34d;
   --color-error: var(--rose-400);
   --color-focus-ring: var(--accent-primary);
   --color-backdrop: rgba(0, 0, 0, 0.65);
+
+  --window-close: #ff5f57;
+  --window-minimize: #febc2e;
+  --window-maximize: #28c840;
+  /* 52 %, not 50 %: the red needs it for 3:1. */
+  --window-symbol: rgba(0, 0, 0, 0.52);
 
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
