@@ -181,7 +181,8 @@ describe('SessionList', () => {
     const [item] = items(html);
     expect(item).toMatch(/^<div\b[^>]*\sclass="[^"]*\bsession-card\b/);
     const [cardEntry, reply, ...rest] = buttonsIn(item ?? '');
-    expect(rest).toEqual([]);
+    // plan-session_list_improvements/REQ-25: the only other button of the card is "Rename"
+    expect(rest.map((b) => b.attributes.match(/\saria-label="([^"]*)"/)?.[1])).toEqual(['Rename']);
     expect(classesOf(cardEntry?.attributes ?? '')).toEqual(expect.arrayContaining(['session-entry', 'needs-input']));
     expect(hasAvatar(cardEntry?.html ?? '')).toBe(false);
     expect(cardEntry?.text).toBe('Needs Input web-dashboard rimuovi le dipendenze');
@@ -208,8 +209,10 @@ describe('SessionList', () => {
     const group = groupsOf(html).get('Needs Input') ?? '';
     const outside = items(group).find((item) => item.includes('title="/home/dev/progetti/mobile-app"')) ?? '';
     expect(outside).not.toContain('session-card');
+    // plan-session_list_improvements/REQ-25: the entry button and "Rename", nothing else
     const buttons = buttonsIn(outside);
-    expect(buttons).toHaveLength(1);
+    expect(buttons).toHaveLength(2);
+    expect(buttons[1]?.attributes).toContain('aria-label="Rename"');
     expect(classesOf(buttons[0]?.attributes ?? '')).toEqual(expect.arrayContaining(['session-entry', 'external', 'needs-input']));
     expect(buttons[0]?.text).not.toContain('Reply');
     expect(buttons[0]?.html).toContain(dotOf('needs_input'));

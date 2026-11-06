@@ -25,7 +25,8 @@ const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigati
 const railButton = (page: Page, name: string) => rail(page).getByRole('button', { name, exact: true });
 const panel = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const mainArea = (page: Page) => page.getByRole('main');
-const entries = (page: Page) => panel(page).getByRole('button');
+// plan-session_list_improvements/REQ-25: every entry also has a "Rename" button, which is not an entry.
+const entries = (page: Page) => panel(page).getByRole('button').and(page.locator(':not([aria-label="Rename"])'));
 const entry = (page: Page, folder: string) => entries(page).filter({ has: page.getByTitle(folder, { exact: true }) });
 const chip = (page: Page) => panel(page).getByRole('status').filter({ hasText: /needs? input/ });
 const badge = (page: Page) => railButton(page, 'Sessions').locator('.nav-rail-badge');
