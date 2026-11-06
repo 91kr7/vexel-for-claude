@@ -45,3 +45,9 @@
 | 2026-11-05 | dev | divergence developer | decided | Transcript folder = cwd with every non-alphanumeric replaced, fallback search by sessionId; external id = Claude sessionId; INT-3 inside scanner; no visible REQ change |
 | 2026-11-05 | test | G5 external-sessions | pass | 229 unit, 8 e2e green on re-run; tester full suites 361 unit, 43 e2e accepted; no source commit after it |
 | 2026-11-05 | close | merge | pass | All 5 batches certified; merged into main with --no-ff |
+| 2026-11-06 | analysis (fix strict origin) | question analyst Q1 | decided | Fix, not evolution: request "Correggere"; local-access NFR aims to let only the user drive sessions |
+| 2026-11-06 | analysis (fix strict origin) | G1 analysis | pass | Minimal edit, +37 lines; `<qualsiasi porta>` is raw request text, not a placeholder |
+| 2026-11-06 | plan (fix strict origin) | G2 requirements | pass | REQ-37..45 mirror the "Local access" bullets; `http` scheme in REQ-37 accepted as assumption |
+| 2026-11-06 | plan (fix strict origin) | G3 coverage | pass | One batch `local-access`, REQ-37..45 covered, 3 existing modify paths + `package.json`; dev signal from the `dev` script, not `NODE_ENV` |
+| 2026-11-06 | dev (fix strict origin) | G4 local-access | pass | Build green (re-run); files map to INT-1..4; divergences accepted: guard reads the real listening port from the server (works with `PORT=0`), optional `allowedPorts` default `[]` (strictest); 5 old guard test cases expect the old rule |
+| 2026-11-06 | test (fix strict origin) | G5 local-access | pass | Re-run by gatekeeper: 110/110 batch files. Tester closing pass: unit 1279/1279, default e2e 317/317; 5 old guard cases adapted to the new contract; no Electron run |

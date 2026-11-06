@@ -1,9 +1,9 @@
 ---
 request_slug: claude_sessions_client
-date: 2026-11-05
-type: new
+date: 2026-11-06
+type: fix
 size: broad
-reference: none
+reference: .sdd/analysis/claude_sessions_client.md
 ---
 
 # Analysis — Client for active Claude sessions
@@ -12,6 +12,18 @@ reference: none
 
 > partendo da sdd-init e decidendo tutti in autonomia mi puoi creare un client per gestire le sessioni attive di claude? mi immagino di non dover più usare 10000 shell ma di avere una pagina con le varie sessioni attive e cliccandoci sopra posso interagire con esse
 
+## Reference
+
+Fix of 2026-11-06 to this analysis. Fix request:
+
+> Sicurezza: il controllo sull'Origin accetta qualsiasi porta di localhost (src/server/local-access-guard.ts accetta http://localhost:<qualsiasi porta> e http://127.0.0.1:<qualsiasi porta>). Una pagina servita da un altro server locale, ad esempio un dev server su localhost:8080, può aprire i WebSocket del client (l'elenco delle sessioni, l'attach a una sessione) e scrivere nei terminali delle sessioni di Claude Code: per i WebSocket il browser non applica CORS, conta solo questo controllo. Correggere: accettare solo l'origine dell'app stessa (la sua porta), più il dev server di Vite in sviluppo. I client che non mandano Origin (l'app desktop, l'hook forwarder) continuano a funzionare come oggi.
+
+Starting point: the local-access requirement aims to let only the user drive the sessions. The Origin check accepts any loopback port, so a page served by another local server can also drive them.
+
+Changes:
+- Non-functional → new "Local access" requirements that limit browser access to the client's own origin.
+- Assumptions, Risks and Out of scope → entries on local access.
+
 ## Summary
 
 A local client that replaces many terminal windows with one page. The page lists the user's Claude Code sessions. The user clicks a session to open it and work with it as in the terminal.
@@ -19,6 +31,7 @@ A local client that replaces many terminal windows with one page. The page lists
 ## Human decisions
 
 - 2026-11-05 → The human asked to show the sessions that run in other shells too. They chose "yes, in this cycle": external sessions are listed, readable live and can be taken over with "Riprendi qui".
+- 2026-11-06 → The Origin request is a fix of this analysis, not an evolution. The orchestrator decided this.
 
 ## Business goal
 
@@ -65,6 +78,17 @@ Session lifecycle
 ### Non-functional
 
 - Access to the client must be limited to the local machine by default, because a session can run commands on it.
+
+Local access
+- The client must accept a browser request only when its Origin is the client's own origin. That origin is a loopback host (`localhost` or `127.0.0.1`) on the port where the client listens.
+- In development only, the client must also accept the Origin of the Vite dev server.
+- The client must reject a loopback Origin on any other port, for example `http://localhost:8080`.
+- The client must reject an Origin with a host that is not loopback, also on the client's port.
+- The client must reject an Origin `null` and a malformed Origin. `null` is not a missing Origin.
+- The client must keep accepting requests without an Origin, as today. The desktop app and the hook forwarder send none.
+- A rejected connection must receive no session data and must not write to any session terminal.
+- The rule must cover every request the access check covers today, HTTP included. A cross-origin POST still runs on the server, even though CORS hides its response.
+- The page opened on the client's port, the desktop app and the hook forwarder must work as before.
 - Opening a session or switching between sessions must feel immediate, at most about one second.
 - The client must stay usable with at least 10 sessions active at the same time.
 - The client must not change the content of the Claude Code session history beyond what Claude Code itself writes.
@@ -80,6 +104,10 @@ Session lifecycle
 - When the client itself stops, its sessions end. The user can resume them later from the history.
 - User interface text is in Italian, the language of the request.
 - "Starting from sdd-init" is an instruction for the workflow, not a product requirement.
+- The allowed port is the port where the client really listens, not a fixed number.
+- The Vite origin uses the configured dev port, on the same loopback hosts.
+- No new loopback names are added, for example `[::1]`. The fix only narrows today's rule.
+- Local programs that are not browsers stay trusted. They send no Origin, and they can already run commands as the user.
 
 ## Constraints
 
@@ -106,6 +134,9 @@ What this means for the request:
 
 - Claude Code can change its behaviour or its session format in a new version. The client can then stop working without warning.
 - A client reachable from the network gives anyone who reaches it command execution on the machine.
+- A page served by another local server can drive the sessions if the Origin check accepts any loopback port. Browsers do not apply CORS to WebSockets.
+- The desktop window may in fact send an Origin. The stricter check would then block it.
+- If development mode is detected wrongly, the Vite origin is also accepted in production.
 - A missed permission request leaves a session blocked for a long time. The "needs input" state exists to prevent this.
 - A wrong state shown in the list (for example "idle" when Claude waits for a permission) breaks the main value of the tool.
 - Interaction from the page that misses terminal features (slash commands, interrupts, long outputs) pushes the user back to the shells.
@@ -125,6 +156,8 @@ Out of scope:
 - Typing into a session that keeps running in another terminal. Only that terminal has its keyboard.
 - Remote access from other machines or from a phone.
 - More than one user, user accounts and authentication.
+- Protection against local programs that are not browsers, such as tokens for local clients.
+- Logs or alerts for rejected connections.
 - Operating system notifications outside the page.
 - Git worktree or branch isolation per session.
 - Token usage and cost reports.

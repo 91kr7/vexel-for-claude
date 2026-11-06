@@ -1,6 +1,6 @@
 ---
 slug: claude_sessions_client
-date: 2026-11-05
+date: 2026-11-06
 status: validated
 ---
 
@@ -13,8 +13,9 @@ status: validated
 | [stop-session](batches/batch-stop-session.md) | Stop a session | REQ-23, REQ-24 | session-list | certified | The user stops an idle session |
 | [resume-session](batches/batch-resume-session.md) | Resume a past session | REQ-13, REQ-25, REQ-26, REQ-27, REQ-28 | session-list | certified | The user resumes a session started in the terminal |
 | [external-sessions](batches/batch-external-sessions.md) | External sessions | REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36 | resume-session | certified | The user sees a session that runs in another terminal |
+| [local-access](batches/batch-local-access.md) | Local access | REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42, REQ-43, REQ-44, REQ-45 | — | certified | The page on the client's port works as before |
 
-Execution order: session-interaction → session-list → stop-session and resume-session. The last two are independent of each other. external-sessions comes after resume-session.
+Execution order: session-interaction → session-list → stop-session and resume-session. The last two are independent of each other. external-sessions comes after resume-session. local-access is the fix of 2026-11-06. It runs alone, because every other batch is certified.
 
 ## Assumptions and decisions
 
@@ -39,6 +40,12 @@ Gatekeeper decisions taken at requirements validation. These are not human decis
   - only `kind: interactive` processes count;
   - the content of the read-only view.
 
+Fix of 2026-11-06 (Local access). The orchestrator decided that the Origin request is a fix of this analysis, as the spec records.
+
+- **The fix changes an existing component.** `src/server/local-access-guard.ts`, built for REQ-9, gets the stricter Origin rule. REQ-9 still holds.
+- **The client's own origin uses the `http` scheme** (REQ-37). The server serves plain HTTP. Gatekeeper decision at requirements validation.
+- **Development is an explicit signal of the `dev` script**, not `NODE_ENV`. Details and the other decisions are in `batch-local-access.md`, "Decisions for this batch".
+
 ## Human decisions
 
 - 2026-11-05 → The client also shows the Claude Code sessions that run in other terminals. This came mid-cycle, after the plan was validated. The spec records it in its "Human decisions" section. It adds REQ-29 to REQ-36.
@@ -50,7 +57,7 @@ None.
 
 ## Coverage check
 
-Each INT is cited as `batch/INT-n`. The batches are abbreviated: `si` = session-interaction, `sl` = session-list, `ss` = stop-session, `rs` = resume-session, `ex` = external-sessions.
+Each INT is cited as `batch/INT-n`. The batches are abbreviated: `si` = session-interaction, `sl` = session-list, `ss` = stop-session, `rs` = resume-session, `ex` = external-sessions, `la` = local-access.
 
 | REQ | Served by | Closes in |
 |-----|-----------|-----------|
@@ -90,6 +97,15 @@ Each INT is cited as `batch/INT-n`. The batches are abbreviated: `si` = session-
 | REQ-34 | ex/INT-7, ex/INT-11 | external-sessions |
 | REQ-35 | ex/INT-13 | external-sessions |
 | REQ-36 | ex/INT-1, ex/INT-6, ex/INT-11 | external-sessions |
+| REQ-37 | la/INT-1, la/INT-3 | local-access |
+| REQ-38 | la/INT-2, la/INT-3, la/INT-4 | local-access |
+| REQ-39 | la/INT-1 | local-access |
+| REQ-40 | la/INT-1 | local-access |
+| REQ-41 | la/INT-1 | local-access |
+| REQ-42 | la/INT-1 | local-access |
+| REQ-43 | la/INT-1 | local-access |
+| REQ-44 | la/INT-1, la/INT-3 | local-access |
+| REQ-45 | la/INT-1, la/INT-3 | local-access |
 
 - Every REQ is served by at least one INT.
 - Every INT serves at least one REQ. The exceptions are two enabling INTs: si/INT-2 (CLI executable from an environment variable, for the tests) and si/INT-12 (`lang="it"` on the page).

@@ -11,7 +11,8 @@ type: configuration
 ## Contract
 
 - listens on `127.0.0.1` only, port from `PORT` (default `3000`).
-- applies LocalAccessGuard to every request.
+- applies LocalAccessGuard to every request, for the port where it listens.
+- development signal → `AI_CLIENT_VITE_DEV_PORT`, a port number. When it holds a valid port (1–65535), the guard also allows the origins of that port. Missing or invalid → no other origin. `NODE_ENV` plays no part.
 - `GET /api/health` → `200`, body `{ status: "ok" }`.
 - at start, writes the HookSettings file for `http://127.0.0.1:<port>`.
 - one shared SessionRegistry that starts the CLI with that settings file.
@@ -40,7 +41,7 @@ type: configuration
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-29`, `plan-claude_sessions_client/REQ-32`, `plan-claude_sessions_client/REQ-33`
+- `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-29`, `plan-claude_sessions_client/REQ-32`, `plan-claude_sessions_client/REQ-33`, `plan-claude_sessions_client/REQ-37`, `plan-claude_sessions_client/REQ-38`, `plan-claude_sessions_client/REQ-44`, `plan-claude_sessions_client/REQ-45`
 - `plan-claude_sessions_client-ui_redesign/REQ-21`
 - `plan-desktop_app/REQ-15`
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-21`

@@ -28,6 +28,13 @@ import { registerStopSessionRoute } from './sessions/stop-session-route.js';
 const HOST = '127.0.0.1';
 const port = Number(process.env.PORT ?? 3000);
 const webRoot = fileURLToPath(new URL('../../dist/web', import.meta.url));
+// Set only by `npm run dev`: a missing or invalid value means production.
+const viteDevPort = parsePort(process.env.AI_CLIENT_VITE_DEV_PORT);
+
+function parsePort(value: string | undefined): number | undefined {
+  const port = Number(value);
+  return value !== undefined && /^\d+$/.test(value) && port >= 1 && port <= 65535 ? port : undefined;
+}
 
 const app = Fastify({ logger: true });
 const settingsPath = await writeHookSettings(`http://${HOST}:${port}`);
@@ -44,7 +51,7 @@ const externalScanner = new ExternalSessionScanner({
 const transcriptReader = new TranscriptReader();
 const attentionMonitor = new AttentionMonitor({ tracker, scanner: externalScanner, registry });
 
-registerLocalAccessGuard(app);
+registerLocalAccessGuard(app, { viteDevPort });
 await app.register(fastifyWebsocket);
 
 app.get('/api/health', async () => ({ status: 'ok' }));
