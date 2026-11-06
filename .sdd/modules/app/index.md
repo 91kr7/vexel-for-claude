@@ -3,7 +3,7 @@
 | Component | Type | Path | Responsibility | Spec |
 |-----------|------|------|----------------|------|
 | Server | configuration | `src/server/main.ts` | Fastify process on 127.0.0.1: guard, routes, static page | `specs/server.md` |
-| LocalAccessGuard | backend service (request hook) | `src/server/local-access-guard.ts` | Rejects HTTP and WebSocket requests whose Host or Origin is not local | `specs/local-access-guard.md` |
+| LocalAccessGuard | backend service (request hook) | `src/server/local-access-guard.ts` | Rejects HTTP and WebSocket requests whose Host is not local or whose Origin is not the client's own (plus Vite in development) | `specs/local-access-guard.md` |
 | AppLayout | UI page | `src/web/AppLayout.tsx` | Full-window frame: top bar, rail, 224 px list panel ("Sessions", needs-input chip, session list), dot-grid main area, fixed snackbar | `specs/app-layout.md` |
 | TopBar | UI component | `src/web/TopBar.tsx` | 48 px bar with the "VX" logo mark, "Vexel for Claude", the theme switch and "New Session" | `specs/top-bar.md` |
 | EmptyState | UI component | `src/web/EmptyState.tsx` | Main area with no open session: full AreaState with "New Session" and "Resume Session" | `specs/empty-state.md` |
