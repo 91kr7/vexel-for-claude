@@ -208,6 +208,7 @@ test.describe('rail and list panel', () => {
 
   // AppLayout rule: the list panel has no "New Session" or "Resume Session" button
   test('the list panel holds no "New Session" or "Resume Session" button and there is no complementary sidebar', async ({ page }) => {
+    await showOnlyOwnSessions(page);
     await page.goto('/');
     await expect(panel(page)).toBeVisible();
     for (const name of ['New Session', 'Resume Session', 'Resume']) await expect(panel(page).getByRole('button', { name, exact: true })).toHaveCount(0);
@@ -294,13 +295,17 @@ test.describe('rail "Sessions" moves the focus to the list', () => {
 
   // AppLayout "Actions": Ctrl+Shift+L follows the same rule, the first entry when the open session has none
   test('Ctrl+Shift+L with no entry for the open session focuses the first entry of the list', async ({ page, request }) => {
-    const events = await showOnlyOwnSessions(page);
-    const opened = await newFolder('removed-open');
-    const openedId = await startViaApi(request, opened);
+    await showOnlyOwnSessions(page);
+    const unlisted = await mkdtemp(path.join(os.tmpdir(), 'ai-client-e2e-frame-unlisted-'));
     await startViaApi(request, await newFolder('still-listed'));
     await page.goto('/');
-    await openFromList(page, opened);
-    events().send(JSON.stringify({ type: 'session-removed', id: openedId }));
+    await expect(entries(page)).toHaveCount(1);
+    await railButton(page, 'New Claude Code Session').click();
+    await page.getByRole('textbox', { name: 'Working Directory Path', exact: true }).fill(unlisted);
+    const started = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/sessions' && r.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Start Session' }).click();
+    createdIds.push(((await (await started).json()) as { id: string }).id);
+    await expect(terminal(page)).toContainText(`CWD:${unlisted}`);
     await expect(entries(page)).toHaveCount(1);
     await page.locator('.xterm-screen').click();
 

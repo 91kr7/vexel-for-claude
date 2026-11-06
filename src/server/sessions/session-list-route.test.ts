@@ -41,7 +41,7 @@ describe('GET /api/sessions', () => {
     expect(response.json()).toEqual([
       { id: 'a', folder: '/projects/alpha', label: 'alpha', state: 'idle', lastActivity },
       { id: 'b', folder: '/projects/beta', label: 'beta', state: 'ended', lastActivity },
-      { id: 'c', folder: '/projects/gamma', label: 'Correggi il bug', state: 'working', lastActivity },
+      { id: 'c', folder: '/projects/gamma', label: 'Correggi il bug', state: 'working', lastActivity, resumable: true },
     ]);
   });
 });
