@@ -1,7 +1,7 @@
 ---
-slug: claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order-desktop_app
+slug: desktop_app
 date: 2026-11-06
-spec: .sdd/analysis/claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order-desktop_app.md
+spec: .sdd/analysis/desktop_app.md
 status: validated
 ---
 

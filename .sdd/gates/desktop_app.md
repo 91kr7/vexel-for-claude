@@ -1,4 +1,4 @@
-# Gates — claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order-desktop_app
+# Gates — desktop_app
 
 | Date | Phase | Gate | Verdict | Reason |
 |------|-------|------|---------|--------|
@@ -11,3 +11,5 @@
 | 2026-11-06 | plan | question planner Q3 | decided | Before the tray batch, close quits the app and leaves the backend running: no session lost |
 | 2026-11-06 | plan | G2 requirements | pass | REQ-1..17 cover the spec; REQ-9 tested as "within 5 s" |
 | 2026-11-06 | plan | G3 coverage | pass | 2 vertical batches, REQ-1..17 covered; window-tray modify targets named by component (created by desktop-window); texts, labels and 15 s limit accepted as planner defaults |
+| 2026-11-06 | dev | entry gate desktop-window | decided | Developer stopped before writing anything; batch set back to `todo` |
+| 2026-11-06 | analysis | question analyst Q1 (revisited) | human decision | Chained slug rejected: renamed to `desktop_app`, branch `feat/desktop_app`; guideline `knowledge-base/entries/short-request-slugs.md`. Q1 should have been escalated, not decided |
