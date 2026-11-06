@@ -30,3 +30,4 @@
 | 2026-11-06 | plan | G2 requirements amendment | pass | REQ-43: backdrop with no blur, matches the analysis; REQ-41 unchanged |
 | 2026-11-06 | plan | G3 coverage amendment | pass | INT-48 drops the blur, acceptance scenario adds smooth scroll of "Riprendi sessione"; coverage unchanged |
 | 2026-11-06 | dev | batch reopened | decided | `studio-dark-restyle` certified → in progress, human asked to reopen it as a fix |
+| 2026-11-06 | dev | G4 studio-dark-restyle fix | pass | Only `.modal-backdrop` blur removed in `src/web/styles.css`, spec `dialog.md` updated; build green, built CSS keeps only the `.vx-glass` blur(14px) |

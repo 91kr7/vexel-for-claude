@@ -1351,7 +1351,6 @@ input {
   justify-content: center;
   padding: 16px;
   background-color: var(--color-backdrop);
-  backdrop-filter: blur(4px);
 }
 
 .warning-backdrop {
