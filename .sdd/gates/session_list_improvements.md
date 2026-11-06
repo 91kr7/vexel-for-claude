@@ -17,3 +17,4 @@
 | 2026-11-06 | test | G5 running-tool round 1 | sent back | 1 red in `running-tool-monitor.test.ts`: tool kept after the Claude session id changes and no transcript exists yet (`#read` returns before recomputing); RunningToolMonitor spec "Transcript of a session" |
 | 2026-11-06 | dev | G4 running-tool fix round 1 | pass | `#read` always recomputes the shown tool; typecheck green |
 | 2026-11-06 | test | G5 running-tool round 2 | pass | Re-run by gatekeeper: 5 batch files 51/51; e2e 4/4 and session-entries 11/11 from round 1 untouched by the fix |
+| 2026-11-06 | dev | G4 rename | pass | Build green (re-run); files map to INT-1..10; name reaches notifications and tray through the label (checked in code, to be tested); accepted: name moves with a new Claude id, 3 old tests count list buttons and must follow REQ-25, fixed e2e names folder |

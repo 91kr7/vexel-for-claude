@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { SessionNameStore } from '../sessions/session-name-store.js';
 import type { SessionRegistry } from '../sessions/session-registry.js';
 import { labelOf, type SessionStateTracker } from '../sessions/session-state-tracker.js';
 import type { ExternalSessionCheck } from './external-session-check.js';
@@ -21,6 +22,7 @@ export interface PastSessionListDependencies {
   externalCheck: Pick<ExternalSessionCheck, 'runningSessionIds'>;
   registry: Pick<SessionRegistry, 'list'>;
   tracker: Pick<SessionStateTracker, 'liveClaudeSessionIds'>;
+  names?: Pick<SessionNameStore, 'get'>;
 }
 
 export function registerPastSessionListRoute(app: FastifyInstance, deps: PastSessionListDependencies): void {
@@ -41,7 +43,7 @@ export function registerPastSessionListRoute(app: FastifyInstance, deps: PastSes
       const entries = groups.get(session.folder) ?? [];
       entries.push({
         id: session.id,
-        label: labelOf(session.firstUserMessage),
+        label: deps.names?.get(session.id) ?? labelOf(session.firstUserMessage),
         lastActivity: session.lastModified.toISOString(),
         runningElsewhere: runningElsewhere.has(session.id),
       });

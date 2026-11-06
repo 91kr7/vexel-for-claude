@@ -16,10 +16,11 @@ type: configuration
 - `GET /api/health` → `200`, body `{ status: "ok" }`.
 - at start, writes the HookSettings file for `http://127.0.0.1:<port>`.
 - one shared SessionRegistry that starts the CLI with that settings file.
-- one shared SessionStateTracker. It tracks every session the registry starts.
-- registers StartSessionRoute, StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute (with the tracker) and FolderRoute.
-- one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute, ResumeSessionRoute and ResumeEndedSessionRoute with them, the registry and the tracker.
-- one ExternalSessionScanner on that ExternalSessionCheck and SessionHistory, with the hosted pids of the registry. It starts with the server.
+- one SessionNameStore, loaded at start from the data folder (`dataDirOf()`: `AI_CLIENT_DATA_DIR`, else `$XDG_DATA_HOME/ai-client`).
+- one shared SessionStateTracker with that name store. It tracks every session the registry starts.
+- registers StartSessionRoute, StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute (with the tracker), RenameSessionRoute (with the tracker, the scanner and the name store) and FolderRoute.
+- one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute (also with the name store), ResumeSessionRoute and ResumeEndedSessionRoute with them, the registry and the tracker.
+- one ExternalSessionScanner on that ExternalSessionCheck and SessionHistory, with the hosted pids of the registry and the name store. It starts with the server.
 - passes the scanner to SessionListRoute and SessionEventsRoute.
 - one AttentionMonitor on the tracker, the scanner and the registry, created before the scanner starts. Registers AttentionRoute with it.
 - one TranscriptReader with the default Claude Code folder. Registers ConversationStreamRoute and ItemContentRoute with it and the scanner.
@@ -35,7 +36,7 @@ type: configuration
 ## Dependencies
 
 - LocalAccessGuard
-- SessionRegistry, SessionStateTracker, HookSettings, StartSessionRoute, StopSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute, ResumeEndedSessionRoute, AttentionMonitor, AttentionRoute, RunningToolMonitor (module sessions)
+- SessionRegistry, SessionStateTracker, SessionNameStore, RenameSessionRoute, HookSettings, StartSessionRoute, StopSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute, ResumeEndedSessionRoute, AttentionMonitor, AttentionRoute, RunningToolMonitor (module sessions)
 - FolderRoute (module folders)
 - SessionHistory, ExternalSessionCheck, PastSessionListRoute, ResumeSessionRoute (module history)
 - ExternalSessionScanner, TranscriptReader, ConversationStreamRoute, ItemContentRoute (module external)
@@ -46,4 +47,4 @@ type: configuration
 - `plan-claude_sessions_client-ui_redesign/REQ-21`
 - `plan-desktop_app/REQ-15`
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-21`
-- `plan-session_list_improvements/REQ-4`, `plan-session_list_improvements/REQ-8`, `plan-session_list_improvements/REQ-14`
+- `plan-session_list_improvements/REQ-4`, `plan-session_list_improvements/REQ-8`, `plan-session_list_improvements/REQ-14`, `plan-session_list_improvements/REQ-25`, `plan-session_list_improvements/REQ-35`

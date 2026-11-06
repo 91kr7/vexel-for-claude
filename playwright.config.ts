@@ -1,3 +1,5 @@
+import os from 'node:os';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './e2e/claude-dir';
@@ -31,6 +33,8 @@ export default defineConfig({
     env: {
       PORT: String(port),
       CLAUDE_CONFIG_DIR: E2E_CLAUDE_DIR,
+      // The session names of the e2e server, never the user's own.
+      AI_CLIENT_DATA_DIR: path.join(os.tmpdir(), 'ai-client-e2e-data'),
       AI_CLIENT_CLAUDE_CLI: fileURLToPath(new URL('./test-support/fake-claude.mjs', import.meta.url)),
     },
     reuseExistingServer: !process.env.CI,

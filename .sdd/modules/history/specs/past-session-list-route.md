@@ -14,7 +14,7 @@ type: REST endpoint
   - group → `{ folder, sessions }`.
   - session → `{ id, label, lastActivity, runningElsewhere }`.
     - `id` → the Claude Code session id (SessionHistory).
-    - `label` → the first user message, cut with the label rule of SessionStateTracker (one space per whitespace run, trimmed, first 80 characters).
+    - `label` → the name of `id` in SessionNameStore when it has one. Else the first user message, cut with the label rule of SessionStateTracker (one space per whitespace run, trimmed, first 80 characters).
     - `lastActivity` → the last change of the session file, ISO-8601 UTC string.
     - `runningElsewhere` → `true` when ExternalSessionCheck lists the id. The hosted pids it gets are those of the registry sessions whose process has not ended.
 
@@ -28,8 +28,9 @@ type: REST endpoint
 ## Dependencies
 
 - SessionHistory, ExternalSessionCheck
-- SessionRegistry, SessionStateTracker (module sessions)
+- SessionRegistry, SessionStateTracker, SessionNameStore (module sessions). The name store is optional: without it, no names.
 
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-26`, `plan-claude_sessions_client/REQ-27`
+- `plan-session_list_improvements/REQ-29`, `plan-session_list_improvements/REQ-30`

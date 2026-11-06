@@ -54,11 +54,20 @@ Hosted needs-input card (look of `#permission-banner`): a block with the class `
 - the card button is described by the needs-input line (`aria-describedby`).
 - the open card has `aria-current="true"` on its button, the accent glow over its background and the 2 px accent bar inside its left edge.
 
+"Rename" (every entry, rows and the needs-input card):
+- a 20 px square icon button (pencil icon, 14 px, `--text-muted` on `--bg-surface-2`, 4 px radius), with the accessible name and the tooltip "Rename". It sits beside the entry button, not inside it, after the EndedEntryActions in the tab order.
+- place → top right of the row, over its state name; top right inside the needs-input card. On an ended hosted row, EndedEntryActions move to its left.
+- hidden (opacity 0) until the pointer is over the entry or the focus inside the entry is visible from the keyboard. Hover → `--bg-surface-3` and `--text-primary`. The focused button shows the focus ring.
+- pressed → the entry shows SessionNameEditor in place of its label (row line 2, or the card label). Only one entry edits at a time. The other parts of the entry stay.
+- during the edit → the entry is no longer a button: a click on it opens nothing and it cannot be dragged. "Rename" is hidden.
+- the edit ends with Enter or Esc → the label comes back and the focus goes to "Rename". It ends with a blur → the label comes back and the focus stays where the user put it.
+
 Actions:
 - click on an entry row → `onOpen(id)`. Ended and external sessions too.
 - click anywhere on the hosted needs-input card → `onOpen(id)`, once.
 - "Reply" → `onOpen(id)`, once.
 - "Resume" and "Dismiss" of an ended hosted entry → EndedEntryActions. A resume calls `onResumed(id)` with the new session id. They do not call `onOpen`.
+- "Rename" → opens the name editor of the entry (above). It does not call `onOpen` or `onReorder`.
 - every entry, row or card, is draggable with the mouse. A click with no drag still opens the session.
 - drag over an entry of the dragged session's own group → the upper half of the entry means "before it", the lower half means "after it".
 - drop on an entry of the own group → `onReorder(id, group, index)` once. `index` is the place the session takes in the group without it:
@@ -86,6 +95,8 @@ Drag feedback (the mock has no drag state):
 - Only `working` entries show a tool line.
 - Only the open session's button has `aria-current="true"`.
 - Only the entries of ended hosted sessions show "Dismiss" or "Resume". Working, needs-input, idle and external entries show neither.
+- Every entry, hosted or external, in any state, has "Rename".
+- Renaming never moves an entry: the order comes from `order` and the last activity, not from the label.
 - The needs-input entries are the most visible of the list: amber, first group.
 - An external entry is told apart without colour: the dashed border, and the "External" chip when it needs input.
 - The state of an entry is readable without colour: its name is always shown.
@@ -97,8 +108,8 @@ Drag feedback (the mock has no drag state):
 
 ## Dependencies
 
-- groupSessions, SessionOrderStore (`SessionOrder`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions
-- AreaState, ThemeTokens, WebEntry (module app)
+- groupSessions, SessionOrderStore (`SessionOrder`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions, SessionNameEditor
+- AreaState, IconSet, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
 
@@ -109,3 +120,4 @@ Drag feedback (the mock has no drag state):
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-10`
 - `plan-session_list_improvements/REQ-1`, `plan-session_list_improvements/REQ-2`, `plan-session_list_improvements/REQ-3`, `plan-session_list_improvements/REQ-13`
 - `plan-session_list_improvements/REQ-14` to `plan-session_list_improvements/REQ-17`, `plan-session_list_improvements/REQ-19`, `plan-session_list_improvements/REQ-22`, `plan-session_list_improvements/REQ-23`
+- `plan-session_list_improvements/REQ-25`, `plan-session_list_improvements/REQ-38`, `plan-session_list_improvements/REQ-39`
