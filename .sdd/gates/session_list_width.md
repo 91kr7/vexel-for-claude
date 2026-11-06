@@ -22,3 +22,5 @@
 | 2026-11-07 | test | G5 header-footer | pass | Re-run by gatekeeper: unit 5 files 70/70, e2e header-footer + font-zoom 14/14; tester full runs unit 1984/1984, browser e2e 439 + 10 red (8 font-zoom outdated then rewritten green, 1 studio-dark flake green alone); only tests and `playwright.config.ts` changed |
 | 2026-11-07 | test | regression light-theme.spec.ts:486 | escalated | Outside the plan's perimeter; fails on `main` too (worktree run), older than this cycle |
 | 2026-11-07 | closing | merge with light-theme.spec.ts:486 red | human decision | Merge anyway; the failure predates this cycle and stays open |
+| 2026-11-07 | analysis (fix header order) | start | human decision | Human asked to reopen the last batch as a fix and to run without stops ("esegui tutto in autonomia"); new branch `fix/session_list_width`, `feat/` already merged |
+| 2026-11-07 | analysis (fix header order) | G1 analysis | pass | ordinary, 153/200 lines; `type: fix` as in the `claude_sessions_client` precedent; pause icon and orange taken as decided; external header unchanged; Electron group included in "tutti i test" |
