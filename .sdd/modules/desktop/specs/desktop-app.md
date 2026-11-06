@@ -15,7 +15,7 @@ type: Electron main process
   - ready → it starts the AttentionClient on the backend origin, then the window loads `<origin>/`, the client page of the backend.
   - failed → the window shows the StartupPage in the error state, with the output lines.
 - a second launch while the app runs → the running app restores, shows and focuses its window, also when the window is hidden. The second launch exits and opens no window.
-- closing the window (the desktop's close shortcut included) → the window hides and the app keeps running, with the backend and its sessions. The page stays loaded.
+- closing the window (the desktop's close shortcut and the red window button included) → the window hides and the app keeps running, with the backend and its sessions. The page stays loaded.
 - "Open Window" in the TrayIcon → the same as a second launch: the window restores, shows and focuses.
 - quit request ("Quit" in the TrayIcon, or any other quit of the app):
   - it runs `confirmQuit` (QuitCheck) with the ready backend, and the native message box as `ask`.
@@ -23,6 +23,10 @@ type: Electron main process
   - `true` → `stopStartedBackend` (BackendLauncher), then the window and the TrayIcon close and the app exits.
   - a quit request while one is already running is ignored.
 - quit during the backend start → no confirmation; the server that the launcher is starting is stopped.
+
+Window buttons:
+
+- after it creates the window, it connects the WindowActions to it, with `ipcMain`. The page closes, minimizes, and maximizes or restores the window through them.
 
 Notifications:
 
@@ -54,11 +58,11 @@ Tray:
 ## Dependencies
 
 - BackendLauncher, StartupPage, AppIcon, TrayIcon, QuitCheck
-- DesktopBridge, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon
+- DesktopBridge, WindowActions, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon
 
 ## Requirements served
 
 - `plan-desktop_app/REQ-1`, `plan-desktop_app/REQ-3`, `plan-desktop_app/REQ-4`, `plan-desktop_app/REQ-6`, `plan-desktop_app/REQ-7`, `plan-desktop_app/REQ-9`, `plan-desktop_app/REQ-11`, `plan-desktop_app/REQ-12`, `plan-desktop_app/REQ-13`, `plan-desktop_app/REQ-14`, `plan-desktop_app/REQ-15`, `plan-desktop_app/REQ-16`, `plan-desktop_app/REQ-17`
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-3`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-25`, `plan-session_notifications/REQ-28`
 - `plan-session_notifications/REQ-30`, `plan-session_notifications/REQ-32`, `plan-session_notifications/REQ-33`, `plan-session_notifications/REQ-34`, `plan-session_notifications/REQ-36`
-- `plan-mac_title_bar/REQ-1`, `plan-mac_title_bar/REQ-2`, `plan-mac_title_bar/REQ-3`, `plan-mac_title_bar/REQ-4`, `plan-mac_title_bar/REQ-5`
+- `plan-mac_title_bar/REQ-1`, `plan-mac_title_bar/REQ-2`, `plan-mac_title_bar/REQ-3`, `plan-mac_title_bar/REQ-4`, `plan-mac_title_bar/REQ-5`, `plan-mac_title_bar/REQ-16`, `plan-mac_title_bar/REQ-17`, `plan-mac_title_bar/REQ-18`, `plan-mac_title_bar/REQ-21`

@@ -9,6 +9,7 @@ import { confirmQuit } from './quit-check.js';
 import { startupPageUrl } from './startup-page.js';
 import { SystemNotifications } from './system-notifications.js';
 import { trayIconFile, trayMenuTemplate, trayTooltip } from './tray-icon.js';
+import { connectWindowActions } from './window-actions.js';
 
 const rootDir = fileURLToPath(new URL('../..', import.meta.url));
 const iconsDir = path.join(rootDir, 'src/desktop/icons');
@@ -115,6 +116,7 @@ async function start(): Promise<void> {
     if (current.isDestroyed() || event.sender !== current.webContents) return;
     if (typeof sessionId === 'string' || sessionId === null) runNotificationCommands(notificationRules.setOpenSession(sessionId));
   });
+  connectWindowActions(current, ipcMain);
   notifications.onClick(openNotifiedSession);
   notifications.onClosed((sessionId) => notificationRules.notificationClosed(sessionId));
   current.on('close', (event) => {

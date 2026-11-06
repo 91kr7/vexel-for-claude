@@ -431,6 +431,46 @@ input {
   gap: 8px;
 }
 
+.window-buttons {
+  -webkit-app-region: no-drag;
+  position: relative;
+  z-index: 120;
+  display: flex;
+  gap: 8px;
+  margin-right: 6px;
+}
+
+.window-button {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  color: var(--window-symbol);
+}
+
+.window-close {
+  background-color: var(--window-close);
+}
+
+.window-minimize {
+  background-color: var(--window-minimize);
+}
+
+.window-maximize {
+  background-color: var(--window-maximize);
+}
+
+.window-button .icon {
+  width: 8px;
+  height: 8px;
+  stroke-width: 3;
+  visibility: hidden;
+}
+
+.window-buttons:hover .icon {
+  visibility: visible;
+}
+
 .logo-mark {
   width: 28px;
   height: 28px;

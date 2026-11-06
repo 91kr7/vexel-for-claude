@@ -1,15 +1,18 @@
 import { isDesktopWindow } from './desktop-bridge';
 import { PlusIcon } from './icons/Icons';
 import { ThemeSwitch } from './ThemeSwitch';
+import { WindowButtons } from './WindowButtons';
 
 interface TopBarProps {
   onNewSession: () => void;
 }
 
 export function TopBar({ onNewSession }: TopBarProps) {
+  const desktop = isDesktopWindow();
   return (
-    <header className={isDesktopWindow() ? 'top-bar top-bar-drag' : 'top-bar'}>
+    <header className={desktop ? 'top-bar top-bar-drag' : 'top-bar'}>
       <div className="top-bar-brand">
+        {desktop && <WindowButtons />}
         <span className="logo-mark" aria-hidden="true">
           VX
         </span>

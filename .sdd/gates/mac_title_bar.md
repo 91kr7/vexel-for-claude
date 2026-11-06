@@ -12,3 +12,5 @@
 | 2026-11-06 | test | G5 title-bar round 1 | sent back | Window opens maximized with `frame: false` (GNOME auto-maximize), DesktopApp spec says 1280 × 800: code defect; Alt test to follow the spec change |
 | 2026-11-06 | dev | G4 title-bar fix rounds 1-2 | pass | Undo GNOME auto-maximize, then keep 1280 × 800 against the restore for 1 s; build green |
 | 2026-11-06 | test | G5 title-bar round 3 | pass | Re-run by gatekeeper: Electron frameless checks 3/3 (1280 × 800 now holds), unit 2 files green; browser e2e 14/14 from round 1 untouched |
+| 2026-11-06 | dev | G4 window-buttons | sent back | Lucide paths copied into `startup-page.ts` not named in `THIRD-PARTY-NOTICES.md` |
+| 2026-11-06 | dev | G4 window-buttons | pass | Build green (re-run); files map to the INTs; accepted: no `Dialog.tsx` change (z-index above backdrops, focus trap unchanged), reuse of `XIcon`, optional window functions on the page side, symbol 52 % black for 3:1; startup page script allowed by hash in its CSP |

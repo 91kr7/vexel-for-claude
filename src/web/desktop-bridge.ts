@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface DesktopBridge {
   reportOpenSession(sessionId: string | null): void;
@@ -26,4 +26,46 @@ export function useDesktopBridge(openSessionId: string | null, onOpenSession: (s
 
 export function isDesktopWindow(): boolean {
   return typeof window !== 'undefined' && window.desktopBridge !== undefined;
+}
+
+// Optional: a bridge without the window functions, like a test fake, keeps the page working.
+export interface DesktopBridge {
+  closeWindow?(): void;
+  minimizeWindow?(): void;
+  toggleMaximizeWindow?(): void;
+  isWindowMaximized?(): Promise<boolean>;
+  onWindowMaximizedChange?(listener: (maximized: boolean) => void): () => void;
+}
+
+export function closeWindow(): void {
+  window.desktopBridge?.closeWindow?.();
+}
+
+export function minimizeWindow(): void {
+  window.desktopBridge?.minimizeWindow?.();
+}
+
+export function toggleMaximizeWindow(): void {
+  window.desktopBridge?.toggleMaximizeWindow?.();
+}
+
+export function useWindowMaximized(): boolean {
+  const [maximized, setMaximized] = useState(false);
+  useEffect(() => {
+    const bridge = window.desktopBridge;
+    let changed = false;
+    let active = true;
+    const unsubscribe = bridge?.onWindowMaximizedChange?.((value) => {
+      changed = true;
+      setMaximized(value);
+    });
+    void bridge?.isWindowMaximized?.().then((value) => {
+      if (active && !changed) setMaximized(value);
+    });
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, []);
+  return maximized;
 }

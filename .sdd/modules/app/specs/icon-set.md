@@ -26,7 +26,9 @@ Components and where the client uses them today:
 - `TriangleAlertIcon` → the amber banner of a WarningDialog (RunningElsewhereWarning)
 - `FolderIcon` → the "Folders" rows of the FolderChooser
 - `SearchIcon` → the search bar of the ResumeDialog
-- `XIcon` → "Clear Search" in the search bar of the ResumeDialog
+- `XIcon` → "Clear Search" in the search bar of the ResumeDialog, the red WindowButtons button
+- `MinusIcon` → the yellow WindowButtons button
+- `Maximize2Icon`, `Minimize2Icon` → the green WindowButtons button, to maximize and to restore
 - `MoonIcon`, `SunIcon` → the ThemeSwitch in the dark and in the light theme
 - `PencilIcon` → "Rename" of a list entry
 - no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
@@ -50,3 +52,4 @@ Components and where the client uses them today:
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-44`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-17`
 - `plan-light_theme/REQ-2`
+- `plan-mac_title_bar/REQ-19`, `plan-mac_title_bar/REQ-21`
