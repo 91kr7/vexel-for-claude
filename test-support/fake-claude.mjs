@@ -5,6 +5,7 @@
 // Every input chunk is echoed as `IN:<hex>`; every line ended by Enter as `LINE:<text>`.
 // Line commands: STREAM (5 chunks, 300 ms apart), ASK (waits for one key, then ANSWER:<key>),
 // COUNT (400 numbered lines, 5 ms apart), LINKS (web addresses and OSC 8 hyperlinks, see printLinks),
+// PASTE (turns bracketed paste mode on, then prints PASTE-ON),
 // /exit (exits with code 0), /crash <code> (exits with that code), /pid (prints PID:<pid>).
 // With `--settings <file>` it runs the file's hooks like Claude Code: UserPromptSubmit for every line
 // not starting with `/` or `HOOK `, plus TURN (Stop after 1.5 s), WORK (tool use, TICK<n> every 250 ms
@@ -93,6 +94,9 @@ function runLine(text) {
     out('PERMISSION?(y/n)');
   } else if (text === 'LINKS') {
     printLinks();
+  } else if (text === 'PASTE') {
+    process.stdout.write('\x1b[?2004h');
+    out('PASTE-ON');
   } else if (text === 'COUNT') {
     let n = 0;
     const timer = setInterval(() => {
