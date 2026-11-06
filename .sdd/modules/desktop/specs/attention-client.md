@@ -22,7 +22,7 @@ type: backend service
 Frames (the shapes of AttentionRoute, module sessions):
 
 - `{ type: "needs-input", sessions: AttentionSession[] }`, with `AttentionSession` = `{ sessionId, folder, label }`, all strings.
-- `{ type: "event", event: AttentionEvent }`, with `AttentionEvent` = `{ id, sessionId, kind: "needs_input", folder, label, waitingTool? }`, all strings.
+- `{ type: "event", event: AttentionEvent }`, with `AttentionEvent` = `{ id, sessionId, kind, folder, label, waitingTool?, excerpt? }`, all strings. `kind` is `"needs_input"` or `"turn_end"`.
 
 ## Rules and invariants
 
@@ -36,4 +36,4 @@ Frames (the shapes of AttentionRoute, module sessions):
 
 ## Requirements served
 
-- `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-2`, `plan-session_notifications/REQ-4`
+- `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-2`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-14`

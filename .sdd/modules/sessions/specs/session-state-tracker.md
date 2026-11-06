@@ -19,9 +19,17 @@ type: backend service
 - `applyHookEvent(id, event) → boolean` → `false` when the id is unknown, `true` otherwise (also when the event changes nothing).
 - `applyUserInput(id, data)` → user input typed in the session (see rules).
 - `get(id) → SessionSummary | undefined`.
+- `claudeSessionId(id) → string | undefined` → the Claude Code session id of the session (rule below). `undefined` when the id is unknown or no Claude Code session id is known yet.
 - `liveClaudeSessionIds() → Set<string>` → the Claude Code session ids of the tracked sessions that have not ended. A session with no known id adds nothing.
 - `list() → SessionSummary[]` → every tracked session, in start order, ended ones included.
-- `onChange(listener) → unsubscribe` → `listener(summary)` after every change.
+- `onChange(listener) → unsubscribe` → `listener(summary, cause)` after every change.
+
+`ChangeCause` → what caused the change:
+
+- `{ type: "track" }` → `track(session)`.
+- `{ type: "hook", hookEventName }` → `applyHookEvent`, with the `hook_event_name` of the event.
+- `{ type: "input" }` → `applyUserInput`.
+- `{ type: "exit" }` → the session process exited.
 
 `SessionSummary` → `{ id, folder, label, state, lastActivity, waitingTool? }`.
 
@@ -70,3 +78,4 @@ any other event or notification_type              → no change at all
 
 - `plan-claude_sessions_client/REQ-12`, `plan-claude_sessions_client/REQ-13`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-20`, `plan-claude_sessions_client/REQ-25`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-22`
+- `plan-session_notifications/REQ-14`, `plan-session_notifications/REQ-15`, `plan-session_notifications/REQ-16`

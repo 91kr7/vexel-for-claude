@@ -17,16 +17,17 @@ type: backend service
   ```
   event.id received before            → []
   else the window has the focus       → []   (the id now counts as received)
-  else                                → [show event]; the session has a notification of kind event.kind
+  else                                → [show event]; the session has one notification, of kind event.kind
   ```
 
-- `receiveNeedsInput(sessions)` → the list replaces the previous one. One `close` for each session that has a `needs_input` notification and is not in the list.
+- `receiveNeedsInput(sessions)` → the list replaces the previous one. One `close` for each session that has a `needs_input` notification and is not in the list. A notification of another kind stays.
 - `setWindowFocused(focused)` → stores the focus. Focused, and the open session has a notification → `[close <open session>]`. Else `[]`.
 - `setOpenSession(sessionId | null)` → stores the open session. The window has the focus, and that session has a notification → `[close <sessionId>]`. Else `[]`.
 
 ## Rules and invariants
 
 - Nothing shows while the window has the focus.
+- A session has at most one notification. A `show` for a session that has one replaces it, whatever the two kinds: the session keeps one notification, of the new kind.
 - The same event id never gives a second `show`.
 - After a `close`, the session has no notification.
 - Notifications on screen stay when the window gets the focus. Only the open session's one closes.
@@ -34,4 +35,4 @@ type: backend service
 
 ## Requirements served
 
-- `plan-session_notifications/REQ-3`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-6`, `plan-session_notifications/REQ-11`, `plan-session_notifications/REQ-12`
+- `plan-session_notifications/REQ-3`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-6`, `plan-session_notifications/REQ-11`, `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-19`

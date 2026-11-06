@@ -17,6 +17,11 @@ export function needsInputBody(waitingTool?: string): string {
   return waitingTool ? `Permission for ${waitingTool}` : 'Needs your input';
 }
 
+export function turnEndBody(excerpt?: string): string {
+  return excerpt || 'Claude finished';
+}
+
 export function notificationTexts(event: AttentionEvent): NotificationText {
-  return { title: notificationTitle(event.folder, event.label), body: needsInputBody(event.waitingTool) };
+  const body = event.kind === 'turn_end' ? turnEndBody(event.excerpt) : needsInputBody(event.waitingTool);
+  return { title: notificationTitle(event.folder, event.label), body };
 }
