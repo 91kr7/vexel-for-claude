@@ -6,7 +6,7 @@ type: backend service
 
 # NotificationTexts
 
-**Purpose** → the English title and body of each notification, as plain text.
+**Purpose** → the English title and body of each notification, also grouped, as plain text.
 
 ## Contract
 
@@ -18,6 +18,9 @@ type: backend service
   - `needs_input` → `needsInputBody(event.waitingTool)`.
   - `turn_end` → `turnEndBody(event.excerpt)`.
   - `session_end` → `sessionEndBody(event.error)`.
+- `groupNotificationTexts(sessions) → { title, body }` → for a grouped notification. `sessions` is a list of `{ folder, label }`, latest event first.
+  - title → `"<N> sessions need your attention"`, where N is the number of sessions.
+  - body → one line per session, in the given order: `notificationTitle(folder, label)`. The lines are joined with `\n`.
 
 ## Rules and invariants
 
@@ -28,3 +31,4 @@ type: backend service
 - `plan-session_notifications/REQ-7`, `plan-session_notifications/REQ-8`, `plan-session_notifications/REQ-9`
 - `plan-session_notifications/REQ-16`, `plan-session_notifications/REQ-17`
 - `plan-session_notifications/REQ-23`
+- `plan-session_notifications/REQ-25`

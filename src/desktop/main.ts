@@ -4,7 +4,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, Tray } from 'electron';
 import { connectAttention } from './attention-client.js';
 import { type LaunchResult, launchBackend, stopStartedBackend } from './backend-launcher.js';
 import { type NotificationCommand, NotificationRules } from './notification-rules.js';
-import { notificationTexts } from './notification-texts.js';
+import { groupNotificationTexts, notificationTexts } from './notification-texts.js';
 import { confirmQuit } from './quit-check.js';
 import { startupPageUrl } from './startup-page.js';
 import { SystemNotifications } from './system-notifications.js';
@@ -34,8 +34,11 @@ function showWindow(): void {
 function runNotificationCommands(commands: NotificationCommand[]): void {
   for (const command of commands) {
     if (command.type === 'show') {
-      const { event } = command;
-      void notifications.show({ sessionId: event.sessionId, kind: event.kind, ...notificationTexts(event) });
+      const { event, replaces } = command;
+      void notifications.show({ sessionId: event.sessionId, replaces, kind: event.kind, ...notificationTexts(event) });
+    } else if (command.type === 'show-group') {
+      const { sessionId, replaces, kind, events } = command;
+      void notifications.show({ sessionId, replaces, kind, ...groupNotificationTexts(events) });
     } else {
       void notifications.close(command.sessionId);
     }
@@ -86,6 +89,7 @@ async function start(): Promise<void> {
     if (typeof sessionId === 'string' || sessionId === null) runNotificationCommands(notificationRules.setOpenSession(sessionId));
   });
   notifications.onClick(openNotifiedSession);
+  notifications.onClosed((sessionId) => notificationRules.notificationClosed(sessionId));
   current.on('close', (event) => {
     if (quitConfirmed) return;
     event.preventDefault();

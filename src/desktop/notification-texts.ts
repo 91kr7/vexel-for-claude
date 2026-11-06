@@ -39,3 +39,10 @@ function bodyOf(event: AttentionEvent): string {
 export function notificationTexts(event: AttentionEvent): NotificationText {
   return { title: notificationTitle(event.folder, event.label), body: bodyOf(event) };
 }
+
+export function groupNotificationTexts(sessions: readonly { folder: string; label: string }[]): NotificationText {
+  return {
+    title: `${sessions.length} sessions need your attention`,
+    body: sessions.map((session) => notificationTitle(session.folder, session.label)).join('\n'),
+  };
+}

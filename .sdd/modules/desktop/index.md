@@ -10,7 +10,7 @@
 | TrayIcon | UI component | `src/desktop/tray-icon.ts` | Tray tooltip and menu "Open Window" and "Quit", wired to the actions of the desktop app | `specs/tray-icon.md` |
 | QuitCheck | backend service | `src/desktop/quit-check.ts` | Counts the busy hosted sessions of a backend the app started and asks "Quit Vexel for Claude?" when there are any | `specs/quit-check.md` |
 | AttentionClient | backend service | `src/desktop/attention-client.ts` | WebSocket to `/api/attention` that passes on events and needs-input lists, and connects again every 2 s after a drop | `specs/attention-client.md` |
-| NotificationRules | backend service | `src/desktop/notification-rules.ts` | Decides which notification to show or close from events, the needs-input list, the window focus and the open session | `specs/notification-rules.md` |
-| NotificationTexts | backend service | `src/desktop/notification-texts.ts` | English title "<folder> · <label>" and body of each notification | `specs/notification-texts.md` |
-| SystemNotifications | backend service | `src/desktop/system-notifications.ts` | Shows, replaces and closes one notification per session over D-Bus `org.freedesktop.Notifications`, and reports clicks | `specs/system-notifications.md` |
+| NotificationRules | backend service | `src/desktop/notification-rules.ts` | Decides which notification to show, group in 5-second bursts or close, from events, the needs-input list, the window focus and the open session | `specs/notification-rules.md` |
+| NotificationTexts | backend service | `src/desktop/notification-texts.ts` | English title "<folder> · <label>" and body of each notification, and the grouped title and body | `specs/notification-texts.md` |
+| SystemNotifications | backend service | `src/desktop/system-notifications.ts` | Shows, replaces and closes one notification per session over D-Bus `org.freedesktop.Notifications`, and reports clicks and closes | `specs/system-notifications.md` |
 | DesktopBridge | Electron preload | `src/desktop/desktop-bridge.cts` | `window.desktopBridge`: the page reports its open session and receives "open this session" | `specs/desktop-bridge.md` |

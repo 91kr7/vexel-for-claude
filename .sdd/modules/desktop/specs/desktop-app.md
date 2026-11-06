@@ -29,7 +29,11 @@ Notifications:
 - one NotificationRules and one SystemNotifications (app name "Vexel for Claude", icon the AppIcon PNG).
 - to the rules go: the events and the lists of the AttentionClient, each change of the window focus, and each open session that the page reports through the DesktopBridge.
 - the window has the focus → it is focused, visible and not minimized. The focus is read again on `focus`, `blur`, `hide` and `minimize` of the window.
-- the commands of the rules go to SystemNotifications: `show` with the kind and the NotificationTexts of the event, `close` with the session.
+- the commands of the rules go to SystemNotifications, with their `replaces`:
+  - `show` → the session, the kind and the NotificationTexts of the event.
+  - `show-group` → the session, the kind and the grouped NotificationTexts of the events.
+  - `close` → the session.
+- a notification that the desktop closes by itself → the rules get `notificationClosed` with its session.
 - a click on a notification → the same as "Open Window", then it sends the session id to the page on `desktop-bridge:open-session`.
 
 ## Rules and invariants
@@ -49,4 +53,4 @@ Notifications:
 ## Requirements served
 
 - `plan-desktop_app/REQ-1`, `plan-desktop_app/REQ-3`, `plan-desktop_app/REQ-4`, `plan-desktop_app/REQ-6`, `plan-desktop_app/REQ-7`, `plan-desktop_app/REQ-9`, `plan-desktop_app/REQ-11`, `plan-desktop_app/REQ-12`, `plan-desktop_app/REQ-13`, `plan-desktop_app/REQ-14`, `plan-desktop_app/REQ-15`, `plan-desktop_app/REQ-16`, `plan-desktop_app/REQ-17`
-- `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-3`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`
+- `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-3`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-25`, `plan-session_notifications/REQ-28`

@@ -9,6 +9,8 @@ export interface NotificationRequest {
   kind: NotificationKind;
   title: string;
   body: string;
+  /** The session whose notification this one replaces in place, when it is not `sessionId`. */
+  replaces?: string;
 }
 
 export interface ServerNotification {
@@ -145,6 +147,7 @@ export class SystemNotifications {
   readonly #connect: () => Promise<NotificationServer>;
   readonly #idsBySession = new Map<string, number>();
   readonly #clickListeners = new Set<(sessionId: string) => void>();
+  readonly #closeListeners = new Set<(sessionId: string) => void>();
   #connection: Promise<Connection> | undefined;
   #queue: Promise<void> = Promise.resolve();
 
@@ -157,8 +160,9 @@ export class SystemNotifications {
   show(request: NotificationRequest): Promise<void> {
     return this.#enqueue(async () => {
       const { server, bodyMarkup } = await this.#server();
+      const replacedSessionId = request.replaces ?? request.sessionId;
       const id = await server.notify({
-        replacesId: this.#idsBySession.get(request.sessionId) ?? 0,
+        replacesId: this.#idsBySession.get(replacedSessionId) ?? 0,
         appName: this.#appName,
         appIcon: this.#iconPath,
         summary: request.title,
@@ -166,6 +170,7 @@ export class SystemNotifications {
         actions: [DEFAULT_ACTION, 'Open'],
         ...LOOK[request.kind],
       });
+      this.#idsBySession.delete(replacedSessionId);
       this.#idsBySession.set(request.sessionId, id);
     });
   }
@@ -183,6 +188,11 @@ export class SystemNotifications {
   onClick(listener: (sessionId: string) => void): () => void {
     this.#clickListeners.add(listener);
     return () => this.#clickListeners.delete(listener);
+  }
+
+  onClosed(listener: (sessionId: string) => void): () => void {
+    this.#closeListeners.add(listener);
+    return () => this.#closeListeners.delete(listener);
   }
 
   #enqueue(operation: () => Promise<void>): Promise<void> {
@@ -208,7 +218,9 @@ export class SystemNotifications {
     });
     server.onNotificationClosed((id) => {
       const sessionId = this.#sessionOf(id);
-      if (sessionId !== undefined) this.#idsBySession.delete(sessionId);
+      if (sessionId === undefined) return;
+      this.#idsBySession.delete(sessionId);
+      for (const listener of this.#closeListeners) listener(sessionId);
     });
     try {
       return { server, bodyMarkup: (await server.capabilities()).includes('body-markup') };
