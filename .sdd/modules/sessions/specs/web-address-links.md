@@ -19,7 +19,7 @@ type: frontend function
 What is an address:
 - it starts with `http://`, `https://`, `HTTP://` or `HTTPS://` and is a valid URL.
 - it ends at the first whitespace, `"` or `'`.
-- closing characters at the end are not part of it: `.`, `,`, `:`, `!`, `?`, `)`, `]`, `}`, `>` and similar.
+- closing characters at the end are not part of it: `.`, `,`, `:`, `!`, `?`, `)`, `]`, `}`, `>`, `` ` ``, `*` and similar. Inside the address they stay (`https://example.com/#!/inbox`).
   - e.g. `see https://example.com/a.` → `https://example.com/a`; `(https://a.io/b)` → `https://a.io/b`.
 
 Rows joined into one address:
@@ -30,7 +30,7 @@ Rows joined into one address:
 
 ## Dependencies
 
-- `@xterm/addon-web-links` (address pattern, joining of the rows, mapping to cells)
+- `@xterm/addon-web-links` (joining of the rows, mapping to cells); the address pattern is the component's own
 
 ## Requirements served
 
