@@ -41,6 +41,17 @@ describe('SessionView', () => {
     if (interrupt) expect(html.indexOf(tag!)).toBeLessThan(html.indexOf(interrupt[0]));
   });
 
+  // plan-terminal_addons/REQ-35, REQ-43: the zoom controls show the page size in every state, after "Search" and before "Interrupt"
+  it.each<SessionState | undefined>(['working', 'needs_input', 'idle', 'ended', undefined])('shows the zoom controls when the state is %s', (state) => {
+    const html = render(state);
+    const group = html.indexOf('aria-label="Terminal text size"');
+    expect(group).toBeGreaterThan(-1);
+    expect(html.indexOf('aria-label="Search"')).toBeLessThan(group);
+    expect(button(html, '12 px')?.[1]).toContain('aria-label="Default text size (12 px)"');
+    const interrupt = button(html, 'Interrupt');
+    if (interrupt) expect(group).toBeLessThan(html.indexOf(interrupt[0]));
+  });
+
   // SessionView: the search box shows only once the search is opened
   it('does not show the search box before the search is opened', () => {
     expect(render('idle')).not.toContain('role="search"');

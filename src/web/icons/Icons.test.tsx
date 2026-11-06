@@ -19,6 +19,7 @@ import {
   LoaderCircleIcon,
   LockIcon,
   LogInIcon,
+  MinusIcon,
   MoonIcon,
   PencilIcon,
   PlusIcon,
@@ -32,6 +33,7 @@ import {
 
 const icons: [string, ComponentType][] = [
   ['PlusIcon', PlusIcon],
+  ['MinusIcon', MinusIcon],
   ['HistoryIcon', HistoryIcon],
   ['CircleStopIcon', CircleStopIcon],
   ['PowerIcon', PowerIcon],
@@ -179,6 +181,11 @@ describe('IconSet', () => {
   // IconSet and plan-terminal_addons/REQ-25: "Previous match" uses Lucide chevron-up
   it('ChevronUpIcon draws the Lucide chevron-up', () => {
     expect(drawnShapes(renderToStaticMarkup(<ChevronUpIcon />))).toEqual(subpathsOf(['m18 15-6-6-6 6']));
+  });
+
+  // IconSet and plan-terminal_addons/REQ-35: "Smaller text" uses Lucide minus
+  it('MinusIcon draws the Lucide minus', () => {
+    expect(drawnShapes(renderToStaticMarkup(<MinusIcon />))).toEqual(subpathsOf(['M5 12h14']));
   });
 
   it('CircleXIcon draws the circle of board "Sessione esterna"', () => {
