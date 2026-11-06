@@ -4,7 +4,9 @@
 |-----------|------|------|----------------|------|
 | Server | configuration | `src/server/main.ts` | Fastify process on 127.0.0.1: guard, routes, static page | `specs/server.md` |
 | LocalAccessGuard | backend service (request hook) | `src/server/local-access-guard.ts` | Rejects HTTP and WebSocket requests whose Host is not local or whose Origin is not the client's own (plus Vite in development) | `specs/local-access-guard.md` |
-| AppLayout | UI page | `src/web/AppLayout.tsx` | Full-window frame: top bar, rail, 224 px list panel ("Sessions", needs-input chip, session list), dot-grid main area, fixed snackbar | `specs/app-layout.md` |
+| AppLayout | UI page | `src/web/AppLayout.tsx` | Full-window frame: top bar, rail, resizable list panel ("Sessions", needs-input chip, session list), dot-grid main area, fixed snackbar | `specs/app-layout.md` |
+| ListWidthStore | frontend service | `src/web/list-width-store.ts` | Width of the list panel: 180 to 480 px, default 224 px, saved in `localStorage`, and the width shown in a window that keeps 700 px for the main area | `specs/list-width-store.md` |
+| ListPanelEdge | UI component | `src/web/ListPanelEdge.tsx` | Separator "Resize Session List" on the right border of the list panel: drag, or Left and Right arrows by 16 px | `specs/list-panel-edge.md` |
 | TopBar | UI component | `src/web/TopBar.tsx` | 48 px bar with the "VX" logo mark, "Vexel for Claude", the theme switch and "New Session"; the window buttons and the window drag area in the desktop window | `specs/top-bar.md` |
 | WindowButtons | UI component | `src/web/WindowButtons.tsx` | Red, yellow and green round buttons that close the window to the tray, minimize it, and maximize or restore it | `specs/window-buttons.md` |
 | EmptyState | UI component | `src/web/EmptyState.tsx` | Main area with no open session: full AreaState with "New Session" and "Resume Session" | `specs/empty-state.md` |

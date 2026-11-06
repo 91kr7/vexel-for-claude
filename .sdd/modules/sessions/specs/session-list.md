@@ -41,6 +41,9 @@ Entry row (every entry but the hosted needs-input card): a button with the class
 - tool line, only for a `working` entry whose summary has `runningTool` → line 3, 2 px below line 2 and 16 px in: "<name>: <argument>", or "<name>" when there is no argument, then "+<others>" when `others` > 0. Mono 10/15 px, weight 400, `--text-muted` (`--text-secondary` when open). The text is cut with an ellipsis; "+<others>" always stays visible. Tooltip: the whole line. No tool line in any other state.
 - a hosted working entry → a ProgressBar 2 px below its last line, 16 px in. An external entry never shows it.
 - folder name and label longer than the row are cut on one line with an ellipsis. A row with its two lines is 48 px high. A tool line makes it taller.
+- at every list panel width from 180 to 480 px, each line stays on one row inside the entry. The context percentage and the cost are never cut. When they still do not fit:
+  - line 2 → after the label, the time is cut with an ellipsis.
+  - line 1 → after the folder name, the state name is cut with an ellipsis.
 
 Entry variants:
 
@@ -110,7 +113,7 @@ Drag feedback (the mock has no drag state):
 ## Assumptions
 
 - Progress bar on hosted entries only (gatekeeper decision of the previous plan).
-- The state name sits on line 1 and the time on line 2, so the folder name keeps more width in the 224 px panel.
+- The state name sits on line 1 and the time on line 2, so the folder name keeps more width in a narrow panel.
 
 ## Dependencies
 
@@ -129,3 +132,4 @@ Drag feedback (the mock has no drag state):
 - `plan-session_list_improvements/REQ-25`, `plan-session_list_improvements/REQ-38`, `plan-session_list_improvements/REQ-39`
 - `plan-session_usage/REQ-1`, `plan-session_usage/REQ-8`, `plan-session_usage/REQ-9`, `plan-session_usage/REQ-10`
 - `plan-session_usage/REQ-22`, `plan-session_usage/REQ-29`, `plan-session_usage/REQ-30`, `plan-session_usage/REQ-33`, `plan-session_usage/REQ-34`
+- `plan-session_list_width/REQ-10`

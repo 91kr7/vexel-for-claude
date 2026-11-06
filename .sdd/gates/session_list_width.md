@@ -13,3 +13,4 @@
 | 2026-11-06 | plan | G2 requirements | pass | REQ-1..28 in 2 features cover the spec; REQ-15 and footer REQs to follow the human decision on Search/zoom |
 | 2026-11-06 | plan | G3 coverage | pass | 2 batches (list-width REQ-1..14, header-footer REQ-15..29), no dependency, modify paths exist; REQ-11 relies on the existing terminal refit; both batches may touch `styles.css`, run in sequence |
 | 2026-11-06 | plan | analysis correction | pass | Human decision on Search/zoom folded into the analysis (header bullet, footer bullet, assumption) |
+| 2026-11-07 | dev | G4 list-width | pass | Build green (re-run); files map to INT-1..5; accepted: INT-5 done in `styles.css` only (time then state name shrink with ellipsis at 180 px, figures never cut); drag and arrows start from the shown width |
