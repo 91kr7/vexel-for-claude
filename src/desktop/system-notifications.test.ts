@@ -344,3 +344,112 @@ describe('SystemNotifications session-end notifications', () => {
     ]);
   });
 });
+
+describe('SystemNotifications.show with replaces', () => {
+  // plan-session_notifications/REQ-26, REQ-29: a grouped notification moves to another session in place
+  it('replaces in place the notification of the session replaces, which then belongs to the new session', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(request('a'));
+    const id = server.lastId();
+    await notifications.show({ ...request('b'), replaces: 'a' });
+    expect(server.notified.map((notification) => notification.replacesId)).toEqual([0, id]);
+
+    await notifications.close('a');
+    expect(server.closedIds).toEqual([]);
+    await notifications.close('b');
+    expect(server.closedIds).toEqual([id]);
+  });
+
+  it('leaves the session replaces with no notification: its next show gets a new one', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(request('a'));
+    await notifications.show({ ...request('b'), replaces: 'a' });
+    await notifications.show(request('a'));
+    expect(server.notified.at(-1)?.replacesId).toBe(0);
+  });
+
+  it('gives a new notification when the session replaces has none', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show({ ...request('b'), replaces: 'a' });
+    expect(server.notified.map((notification) => notification.replacesId)).toEqual([0]);
+  });
+
+  // plan-session_notifications/REQ-27: the urgency follows the kind, in place
+  it('changes urgency and timeout in place with the kind', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(request('a'));
+    const id = server.lastId();
+    await notifications.show({ ...turnEndRequest('b'), replaces: 'a' });
+    await notifications.show({ ...request('a'), replaces: 'b' });
+    expect(server.notified.map(({ replacesId, urgency, expireTimeoutMs }) => [replacesId, urgency, expireTimeoutMs])).toEqual([
+      [0, 'critical', 0],
+      [id, 'normal', -1],
+      [id, 'critical', 0],
+    ]);
+  });
+
+  // plan-session_notifications/REQ-28: a click opens the session of the latest command
+  it('reports a click on the moved notification with its new session', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    const clicks: string[] = [];
+    notifications.onClick((sessionId) => clicks.push(sessionId));
+    await notifications.show(request('a'));
+    const id = server.lastId();
+    await notifications.show({ ...request('b'), replaces: 'a' });
+
+    server.invokeAction(id, 'default');
+    expect(clicks).toEqual(['b']);
+  });
+});
+
+describe('SystemNotifications.onClosed', () => {
+  // plan-session_notifications/REQ-29: the rules learn that a notification closed on the desktop
+  it('reports the session of a notification the server closed', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    const closed: string[] = [];
+    notifications.onClosed((sessionId) => closed.push(sessionId));
+    await notifications.show(request('a'));
+    const idA = server.lastId();
+    await notifications.show(request('b'));
+    const idB = server.lastId();
+
+    server.reportClosed(idB);
+    server.reportClosed(idA);
+    expect(closed).toEqual(['b', 'a']);
+  });
+
+  it('reports the new session of a notification moved with replaces', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    const closed: string[] = [];
+    notifications.onClosed((sessionId) => closed.push(sessionId));
+    await notifications.show(request('a'));
+    await notifications.show({ ...request('b'), replaces: 'a' });
+
+    server.reportClosed(server.lastId());
+    expect(closed).toEqual(['b']);
+  });
+
+  it('does not report a notification closed through close, even when the server then signals it', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    const closed: string[] = [];
+    notifications.onClosed((sessionId) => closed.push(sessionId));
+    await notifications.show(request('a'));
+    const id = server.lastId();
+    await notifications.close('a');
+
+    server.reportClosed(id);
+    server.reportClosed(9999);
+    expect(closed).toEqual([]);
+  });
+
+  it('stops reporting after unsubscribe', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    const closed: string[] = [];
+    const unsubscribe = notifications.onClosed((sessionId) => closed.push(sessionId));
+    await notifications.show(request('a'));
+
+    unsubscribe();
+    server.reportClosed(server.lastId());
+    expect(closed).toEqual([]);
+  });
+});

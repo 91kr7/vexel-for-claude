@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { needsInputBody, notificationTexts, notificationTitle, sessionEndBody, turnEndBody } from './notification-texts.js';
+import { groupNotificationTexts, needsInputBody, notificationTexts, notificationTitle, sessionEndBody, turnEndBody } from './notification-texts.js';
 
 describe('notificationTitle', () => {
   // plan-session_notifications/REQ-7: folder name and label, as the list shows them
@@ -80,5 +80,34 @@ describe('notificationTexts', () => {
     const base = { id: 'ev-3', sessionId: 's1', kind: 'session_end' as const, folder: '/projects/billing', label: 'Review the invoices' };
     expect(notificationTexts({ ...base, error: true })).toEqual({ title: 'billing · Review the invoices', body: 'Session ended with an error' });
     expect(notificationTexts({ ...base, error: false })).toEqual({ title: 'billing · Review the invoices', body: 'Session ended' });
+  });
+});
+
+describe('groupNotificationTexts', () => {
+  // plan-session_notifications/REQ-25: says how many sessions and names them, latest event first
+  it('gives the title "N sessions need your attention" and one "<folder name> · <label>" line per session, in the given order', () => {
+    expect(
+      groupNotificationTexts([
+        { folder: '/projects/billing', label: 'Review the invoices' },
+        { folder: '/home/dev/ai-client/', label: 'Fix the login form' },
+      ]),
+    ).toEqual({ title: '2 sessions need your attention', body: 'billing · Review the invoices\nai-client · Fix the login form' });
+  });
+
+  it('counts every session it is given', () => {
+    const texts = groupNotificationTexts([
+      { folder: '/projects/c', label: 'Third' },
+      { folder: '/projects/b', label: 'Second' },
+      { folder: '/projects/a', label: 'First' },
+    ]);
+    expect(texts).toEqual({ title: '3 sessions need your attention', body: 'c · Third\nb · Second\na · First' });
+  });
+
+  it('is plain text: markup characters are not escaped', () => {
+    const texts = groupNotificationTexts([
+      { folder: '/projects/a&b', label: '<b>Bold</b>' },
+      { folder: '/projects/c', label: 'Plain' },
+    ]);
+    expect(texts.body).toBe('a&b · <b>Bold</b>\nc · Plain');
   });
 });

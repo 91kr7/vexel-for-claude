@@ -252,3 +252,41 @@ describe('SystemNotifications turn-end notifications on the D-Bus notification s
     ]);
   });
 });
+
+describe('SystemNotifications grouped notifications on the D-Bus notification server', () => {
+  // plan-session_notifications/REQ-26, REQ-29
+  it('moves a notification to another session in place with the replaces_id of Notify', async () => {
+    const notifications = new SystemNotifications(APP);
+    await notifications.show(request('a'));
+    const id = fake.nextId;
+    await notifications.show({ ...request('b', 'Claude finished'), kind: 'turn_end', replaces: 'a' });
+    await notifications.close('b');
+
+    expect(fake.notifyCalls.map((call) => [call.replacesId, call.hints.urgency?.value])).toEqual([
+      [0, 2],
+      [id, 1],
+    ]);
+    expect(fake.closeCalls).toEqual([id]);
+  });
+
+  // plan-session_notifications/REQ-29
+  it('reports NotificationClosed to onClosed, but not the signal that follows CloseNotification', async () => {
+    const notifications = new SystemNotifications(APP);
+    const closed: string[] = [];
+    notifications.onClosed((sessionId) => closed.push(sessionId));
+    await notifications.show(request('a'));
+    const idA = fake.nextId;
+    await notifications.show(request('b'));
+    const idB = fake.nextId;
+
+    emitSignal('NotificationClosed', 'uu', [idA, 2]);
+    await waitFor(() => closed.length > 0, 'closed');
+    expect(closed).toEqual(['a']);
+
+    await notifications.close('b');
+    // 3 = closed by a call to CloseNotification.
+    emitSignal('NotificationClosed', 'uu', [idB, 3]);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(closed).toEqual(['a']);
+  });
+});
