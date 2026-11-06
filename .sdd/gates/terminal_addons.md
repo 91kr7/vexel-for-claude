@@ -11,3 +11,5 @@
 | 2026-11-06 | test | question tester Q2 | decided | Spec stays: an address ends only at whitespace or quotes, so a cut at `!` is a code defect |
 | 2026-11-06 | test | question tester Q3 | decided | xterm's dashed rest underline on OSC 8 text accepted: REQ-12 holds (no hover, pointer, tooltip or open) |
 | 2026-11-06 | test | G5 clickable-links round 1 | sent back | 3 red in `web-address-links.test.ts`: range end `{x:0}` on the next row when an address ends on the last column; `!` cuts the address |
+| 2026-11-06 | dev | G4 clickable-links fix round 1 | pass | Own address pattern (ends at whitespace or quotes), range end moved back to the last column; typecheck green |
+| 2026-11-06 | test | G5 clickable-links round 2 | pass | Re-run by gatekeeper: unit 47/47, browser e2e 9/9 on port 3200; Electron check 1/1 from round 1 untouched by the fix |
