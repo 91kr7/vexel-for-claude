@@ -22,21 +22,21 @@ test.afterAll(async () => {
   await chmod(locked, 0o755);
 });
 
-const chooser = (page: Page) => page.getByRole('form', { name: 'Scegli la cartella del progetto' });
-const pathField = (page: Page) => page.getByRole('textbox', { name: 'Cartella del progetto', exact: true });
+const chooser = (page: Page) => page.getByRole('form', { name: 'Choose the Project Folder' });
+const pathField = (page: Page) => page.getByRole('textbox', { name: 'Working Directory Path', exact: true });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const focusTerminal = (page: Page) => page.locator('.xterm-screen').click();
 
 /** Opens the chooser and waits for its initial listing of the home folder. */
 async function openChooser(page: Page): Promise<void> {
-  await page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Nuova sessione' }).click();
+  await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session' }).click();
   await expect(pathField(page)).toHaveValue(os.homedir());
 }
 
 async function startSession(page: Page, folder: string): Promise<void> {
   await openChooser(page);
   await pathField(page).fill(folder);
-  await page.getByRole('button', { name: 'Avvia sessione' }).click();
+  await page.getByRole('button', { name: 'Start Session' }).click();
   await expect(chooser(page)).toBeHidden();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
   await expect(terminal(page)).toContainText('READY');
@@ -51,12 +51,12 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
-// WebEntry: Italian page titled "Vexel for Claude" (plan-claude_sessions_client-ui_redesign-material3_mock/REQ-12)
-test('the page is in Italian and shows no open session', async ({ page }) => {
+// WebEntry: English page titled "Vexel for Claude" (plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-10, REQ-11)
+test('the page is in English and shows no open session', async ({ page }) => {
   await expect(page).toHaveTitle('Vexel for Claude');
-  await expect(page.locator('html')).toHaveAttribute('lang', 'it');
-  await expect(page.getByRole('heading', { level: 1, name: 'Sessioni', exact: true })).toBeVisible();
-  await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('heading', { level: 1, name: 'Sessions', exact: true })).toBeVisible();
+  await expect(page.getByText('No open session.')).toBeVisible();
 });
 
 test('the folder chooser opens on the home folder', async ({ page }) => {
@@ -75,10 +75,10 @@ test('the user browses to a project folder and starts a session in it', async ({
   await expect(pathField(page)).toHaveValue(projectsRoot);
   await expect(chooser(page).getByRole('button', { name: 'project-b', exact: true })).toBeVisible();
   await chooser(page).getByRole('button', { name: 'project-a', exact: true }).click();
-  await page.getByRole('button', { name: 'Avvia sessione' }).click();
+  await page.getByRole('button', { name: 'Start Session' }).click();
 
   await expect(chooser(page)).toBeHidden();
-  await expect(page.getByText('Nessuna sessione aperta.')).toBeHidden();
+  await expect(page.getByText('No open session.')).toBeHidden();
   await expect(terminal(page)).toContainText(`CWD:${projectA}`);
   await expect(terminal(page)).toContainText(/ARGS:\["--settings","[^"]*\/ai-client-hooks-[^"]*\/hook-settings\.json"\]/);
 });
@@ -94,9 +94,9 @@ test('the user sends a message, a slash command and Esc from the keyboard', asyn
   await expect(terminal(page)).toContainText('IN:1b');
 });
 
-test('"Interrompi" sends Esc and gives focus back to the terminal', async ({ page }) => {
+test('"Interrupt" sends Esc and gives focus back to the terminal', async ({ page }) => {
   await startSession(page, projectA);
-  await page.getByRole('button', { name: 'Interrompi' }).click();
+  await page.getByRole('button', { name: 'Interrupt' }).click();
   await expect(terminal(page)).toContainText('IN:1b');
   await page.keyboard.type('z');
   await expect(terminal(page)).toContainText('IN:7a');
@@ -144,13 +144,13 @@ test('the terminal shows the disconnection when the session ends', async ({ page
   await startSession(page, projectA);
   await focusTerminal(page);
   await typeLine(page, '/exit');
-  await expect(terminal(page)).toContainText('[Sessione disconnessa]');
+  await expect(terminal(page)).toContainText('[Session disconnected]');
 });
 
-test('a new session becomes the open one; "Annulla" keeps the open session', async ({ page }) => {
+test('a new session becomes the open one; "Cancel" keeps the open session', async ({ page }) => {
   await startSession(page, projectA);
-  await page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Nuova sessione' }).click();
-  await page.getByRole('button', { name: 'Annulla' }).click();
+  await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session' }).click();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(chooser(page)).toBeHidden();
   await expect(terminal(page)).toContainText(`CWD:${projectA}`);
 
@@ -159,11 +159,11 @@ test('a new session becomes the open one; "Annulla" keeps the open session', asy
 });
 
 test('a path typed right after the chooser opens is the folder of the session', async ({ page }) => {
-  await page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Nuova sessione' }).click();
+  await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session' }).click();
   // A home listing landing inside fill(), between its select-all and its insert, appends the typed path to it.
   await expect(pathField(page)).toHaveValue(os.homedir());
   await pathField(page).fill(projectB);
-  await page.getByRole('button', { name: 'Avvia sessione' }).click();
+  await page.getByRole('button', { name: 'Start Session' }).click();
   await expect(chooser(page)).toBeHidden();
   await expect(terminal(page)).toContainText(`CWD:${projectB}`);
 });
@@ -180,7 +180,7 @@ test('a home listing that ends after the user typed does not replace the typed p
       await route.continue();
     },
   );
-  await page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Nuova sessione' }).click();
+  await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session' }).click();
   await expect.poll(() => homeRequested).toBe(true);
   await pathField(page).fill(projectB);
   const homeListed = page.waitForResponse(
@@ -189,7 +189,7 @@ test('a home listing that ends after the user typed does not replace the typed p
   releaseHome();
   await homeListed;
   await expect(pathField(page)).toHaveValue(projectB);
-  await page.getByRole('button', { name: 'Avvia sessione' }).click();
+  await page.getByRole('button', { name: 'Start Session' }).click();
   await expect(chooser(page)).toBeHidden();
   await expect(terminal(page)).toContainText(`CWD:${projectB}`);
 });
@@ -202,39 +202,39 @@ test.describe('folder chooser errors', () => {
   async function expectErrorAndNoSession(page: Page, message: string): Promise<void> {
     await expect(chooser(page).getByRole('alert')).toHaveText(message);
     await expect(chooser(page)).toBeVisible();
-    await expect(page.getByText('Nessuna sessione aperta.')).toBeAttached();
+    await expect(page.getByText('No open session.')).toBeAttached();
     await expect(terminal(page)).toHaveCount(0);
   }
 
   test('starting in a folder that does not exist', async ({ page }) => {
     await pathField(page).fill(path.join(projectsRoot, 'missing'));
-    await page.getByRole('button', { name: 'Avvia sessione' }).click();
-    await expectErrorAndNoSession(page, 'La cartella non esiste.');
+    await page.getByRole('button', { name: 'Start Session' }).click();
+    await expectErrorAndNoSession(page, 'The folder does not exist.');
   });
 
   test('starting with a relative path', async ({ page }) => {
     await pathField(page).fill('relative/dir');
-    await page.getByRole('button', { name: 'Avvia sessione' }).click();
-    await expectErrorAndNoSession(page, 'Inserisci un percorso assoluto.');
+    await page.getByRole('button', { name: 'Start Session' }).click();
+    await expectErrorAndNoSession(page, 'Enter an absolute path.');
   });
 
   test('browsing a folder that does not exist', async ({ page }) => {
     await pathField(page).fill(path.join(projectsRoot, 'missing'));
     await pathField(page).press('Enter');
-    await expectErrorAndNoSession(page, 'La cartella non esiste.');
+    await expectErrorAndNoSession(page, 'The folder does not exist.');
   });
 
   test('browsing a folder that cannot be read', async ({ page }) => {
     test.skip(process.getuid?.() === 0, 'root reads every folder');
     await pathField(page).fill(locked);
     await pathField(page).press('Enter');
-    await expectErrorAndNoSession(page, 'La cartella non è leggibile.');
+    await expectErrorAndNoSession(page, 'The folder is not readable.');
   });
 
   test('any other failure', async ({ page }) => {
     await page.route('**/api/sessions', (route) => route.abort());
     await pathField(page).fill(projectA);
-    await page.getByRole('button', { name: 'Avvia sessione' }).click();
-    await expectErrorAndNoSession(page, 'Avvio della sessione non riuscito.');
+    await page.getByRole('button', { name: 'Start Session' }).click();
+    await expectErrorAndNoSession(page, 'Could not start the session.');
   });
 });

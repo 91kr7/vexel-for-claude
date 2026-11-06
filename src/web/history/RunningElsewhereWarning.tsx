@@ -9,9 +9,9 @@ export function RunningElsewhereWarning({ onConfirm, onCancel }: RunningElsewher
   return (
     <WarningDialog
       accent="attn"
-      title="Sessione in esecuzione in un terminale"
-      description="Questa sessione è ancora in esecuzione in un altro terminale. Se la riprendi anche qui, le due istanze possono danneggiare la conversazione."
-      primaryLabel="Riprendi comunque"
+      title="Session Running in a Terminal"
+      description="This session is still running in another terminal. If you resume it here too, the two instances can damage the conversation."
+      primaryLabel="Resume Anyway"
       onPrimary={onConfirm}
       onCancel={onCancel}
     />

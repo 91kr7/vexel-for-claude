@@ -13,7 +13,7 @@ export function Spinner() {
   );
 }
 
-export function ProgressIndicator({ label = 'Caricamento…', className }: ProgressIndicatorProps) {
+export function ProgressIndicator({ label = 'Loading…', className }: ProgressIndicatorProps) {
   return (
     <p className={className ? `progress-indicator ${className}` : 'progress-indicator'} role="status">
       <Spinner />

@@ -61,10 +61,10 @@ describe('groupSessions', () => {
       session('hosted-asking', 'needs_input', at(7)),
     ];
     expect(shape(groupSessions(input))).toEqual([
-      ['needs-input', 'Richiedono input', ['hosted-asking', 'ext-asking']],
-      ['running', 'In corso', ['hosted-working', 'hosted-idle']],
-      ['external', 'In altri terminali', ['ext-idle', 'ext-working']],
-      ['ended', 'Terminate', ['ended']],
+      ['needs-input', 'Needs Input', ['hosted-asking', 'ext-asking']],
+      ['running', 'Running', ['hosted-working', 'hosted-idle']],
+      ['external', 'In Other Terminals', ['ext-idle', 'ext-working']],
+      ['ended', 'Ended', ['ended']],
     ]);
   });
 
@@ -72,15 +72,15 @@ describe('groupSessions', () => {
   it('leaves out every group with no session', () => {
     expect(groupSessions([])).toEqual([]);
     expect(shape(groupSessions([session('a', 'working', at(1)), session('b', 'ended', at(2))]))).toEqual([
-      ['running', 'In corso', ['a']],
-      ['ended', 'Terminate', ['b']],
+      ['running', 'Running', ['a']],
+      ['ended', 'Ended', ['b']],
     ]);
-    expect(shape(groupSessions([external('x', 'needs_input', at(1))]))).toEqual([['needs-input', 'Richiedono input', ['x']]]);
+    expect(shape(groupSessions([external('x', 'needs_input', at(1))]))).toEqual([['needs-input', 'Needs Input', ['x']]]);
   });
 
-  // session-order spec: an ended session goes to "Terminate", external or not
-  it('puts an ended external session in "Terminate"', () => {
-    expect(shape(groupSessions([external('x', 'ended', at(1))]))).toEqual([['ended', 'Terminate', ['x']]]);
+  // session-order spec: an ended session goes to "Ended", external or not
+  it('puts an ended external session in "Ended"', () => {
+    expect(shape(groupSessions([external('x', 'ended', at(1))]))).toEqual([['ended', 'Ended', ['x']]]);
   });
 
   // session-order spec: inside each group the most recent lastActivity comes first, equal times keep input order

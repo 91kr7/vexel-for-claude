@@ -10,8 +10,8 @@ export function formatRelativeTime(iso: string, now: Date): string {
   const time = new Date(iso);
   if (Number.isNaN(time.getTime())) return '';
   const elapsed = now.getTime() - time.getTime();
-  if (elapsed < MINUTE_MS) return 'ora';
-  if (elapsed < HOUR_MS) return `${Math.floor(elapsed / MINUTE_MS)} min fa`;
+  if (elapsed < MINUTE_MS) return 'Just now';
+  if (elapsed < HOUR_MS) return `${Math.floor(elapsed / MINUTE_MS)}m ago`;
   if (time.toDateString() === now.toDateString()) return `${twoDigits(time.getHours())}:${twoDigits(time.getMinutes())}`;
   return `${twoDigits(time.getDate())}/${twoDigits(time.getMonth() + 1)}/${time.getFullYear()}`;
 }

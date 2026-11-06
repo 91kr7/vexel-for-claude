@@ -10,10 +10,10 @@ interface ResumeHereButtonProps {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  session_not_found: 'La sessione non esiste più.',
-  folder_not_found: 'La cartella del progetto non esiste.',
+  session_not_found: 'The session no longer exists.',
+  folder_not_found: 'The project folder does not exist.',
 };
-const RESUME_FAILED = 'Ripresa della sessione non riuscita.';
+const RESUME_FAILED = 'Could not resume the session.';
 
 export function ResumeHereButton({ sessionId, onResumed }: ResumeHereButtonProps) {
   const [warning, setWarning] = useState(false);
@@ -43,7 +43,7 @@ export function ResumeHereButton({ sessionId, onResumed }: ResumeHereButtonProps
     <>
       <button type="button" className="button-primary button-bar resume-here-button" disabled={busy} aria-busy={busy || undefined} onClick={() => setWarning(true)}>
         {busy ? <Spinner /> : <LogInIcon />}
-        Riprendi qui
+        Resume Here
       </button>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {warning && (

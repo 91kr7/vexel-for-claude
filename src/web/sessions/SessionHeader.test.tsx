@@ -15,7 +15,7 @@ describe('SessionHeader', () => {
     expect(html).toContain(chip);
     expect(html).toMatch(/<h2[^>]*>\s*negozio\s*<\/h2>/);
     expect(html.indexOf('<h2')).toBeLessThan(html.indexOf(chip));
-    expect(text(html)).toBe('negozio / /home/dev/progetti/negozio Aggiungi il carrello Richiede input Avviso Azione');
+    expect(text(html)).toBe('negozio / /home/dev/progetti/negozio Aggiungi il carrello Needs Input Avviso Azione');
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-30: no project avatar
@@ -51,14 +51,14 @@ describe('SessionHeader', () => {
   it('shows no line chip when the line is empty', () => {
     const html = renderToStaticMarkup(<SessionHeader session={{ ...session, label: '' }} actions={actions} />);
     expect(html).not.toMatch(/class="[^"]*\bmono-chip\b/);
-    expect(text(html)).toBe('negozio / /home/dev/progetti/negozio Richiede input Azione');
+    expect(text(html)).toBe('negozio / /home/dev/progetti/negozio Needs Input Azione');
   });
 
   // SessionHeader "Shows": without a session, only the notice and the actions
   it('without a session shows no h2, path or state pill, but still the notice and the actions', () => {
     const html = renderToStaticMarkup(<SessionHeader actions={actions} notice={<span>Avviso</span>} />);
     expect(html).not.toContain('<h2');
-    expect(html).not.toContain('Richiede input');
+    expect(html).not.toContain('Needs Input');
     expect(text(html)).toBe('Avviso Azione');
   });
 });

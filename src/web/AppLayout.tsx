@@ -53,9 +53,9 @@ export function AppLayout() {
           onResume={() => setResuming(true)}
           newSessionRef={newSessionRef}
         />
-        <section className="list-panel" aria-label="Elenco sessioni" ref={listPanelRef}>
+        <section className="list-panel" aria-label="Session List" ref={listPanelRef}>
           <div className="list-panel-title">
-            <h1 className="section-label">Sessioni</h1>
+            <h1 className="section-label">Sessions</h1>
             <NeedsInputCounter sessions={sessions} />
           </div>
           <SessionList sessions={sessions} status={status} openSessionId={openSessionId} onOpen={openFromList} />

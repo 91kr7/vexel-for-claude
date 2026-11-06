@@ -11,7 +11,7 @@ type: UI component
 ## Contract
 
 - `ProgressIndicator({ label?, className? })` → marks an area whose data loads.
-  - shows a rotating LoaderCircleIcon, then `label`. Default `label` → "Caricamento…".
+  - shows a rotating LoaderCircleIcon, then `label`. Default `label` → "Loading…".
   - role `status`: screen readers read `label`. Its text is exactly `label`.
   - 12/16 px text in `--text-muted`, 14 px icon, 6 px gap.
   - `className` → extra class.
@@ -30,3 +30,4 @@ type: UI component
 ## Requirements served
 
 - `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-31`, `plan-claude_sessions_client-ui_redesign/REQ-1`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`

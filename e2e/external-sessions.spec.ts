@@ -7,7 +7,7 @@ import { type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
 
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
-const RELATIVE_TIME = /^(ora|\d+ min fa)$/;
+const RELATIVE_TIME = /^(Just now|\d+m ago)$/;
 // The scanner reads the sessions folder every 2 seconds.
 const SCAN = { timeout: 10_000 };
 
@@ -31,12 +31,12 @@ test.afterAll(async () => {
   await rm(E2E_CLAUDE_DIR, { recursive: true, force: true });
 });
 
-const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const listEntry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
-const counter = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('status').filter({ hasText: 'richiede input' });
+const counter = (page: Page) => page.getByRole('region', { name: 'Session List' }).getByRole('status').filter({ hasText: /needs? input/ });
 const conversationView = (page: Page) => page.locator('.conversation-view');
 const items = (page: Page) => conversationView(page).getByRole('article');
-const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Sessione in esecuzione in un terminale' });
+const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Session Running in a Terminal' });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const isResumeRequest = (url: string, method: string) => /\/api\/past-sessions\/[^/]+\/resume$/.test(new URL(url).pathname) && method === 'POST';
 
@@ -113,14 +113,14 @@ test('a session that runs in another terminal is listed as external with its fol
   await expect(entry).toBeVisible(SCAN);
   await expect(entry).toContainText(firstMessage.replace(/\s+/g, ' ').trim().slice(0, 80));
   await expect(entry).toContainText('shop');
-  await expect(entry).toContainText('In attesa');
+  await expect(entry).toContainText('Idle');
   await expect(entry.locator('time')).toHaveText(RELATIVE_TIME);
   await expect(entry).toHaveClass(/\bexternal\b/);
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-23, REQ-27: the dashed row with the dot, no avatar
   await expect(entry.locator('.avatar')).toHaveCount(0);
   expect(await entry.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('dashed');
-  await expect(list(page).getByRole('heading', { level: 2, name: 'In altri terminali', exact: true })).toBeVisible();
-  await expect(entry).not.toContainText('Esterna');
+  await expect(list(page).getByRole('heading', { level: 2, name: 'In Other Terminals', exact: true })).toBeVisible();
+  await expect(entry).not.toContainText('External');
 });
 
 // plan-claude_sessions_client/REQ-31, REQ-32, plan-claude_sessions_client-ui_redesign-material3_mock/REQ-17 — scenario "The external state follows the terminal"
@@ -130,15 +130,15 @@ test('the external state follows the terminal without a reload', async ({ page }
 
   await page.goto('/');
   const entry = listEntry(page, folder);
-  await expect(entry).toContainText('In attesa', SCAN);
+  await expect(entry).toContainText('Idle', SCAN);
   await markNoReload(page);
 
   await session.update({ status: 'busy', updatedAt: Date.now() });
-  await expect(entry).toContainText('Lavora', SCAN);
+  await expect(entry).toContainText('Running', SCAN);
   await session.update({ status: 'waiting', updatedAt: Date.now() });
-  await expect(entry).toContainText('Richiede input', SCAN);
+  await expect(entry).toContainText('Needs Input', SCAN);
   await session.update({ status: 'idle', updatedAt: Date.now() });
-  await expect(entry).toContainText('In attesa', SCAN);
+  await expect(entry).toContainText('Idle', SCAN);
   await expectNoReload(page);
 });
 
@@ -149,14 +149,14 @@ test('an external session that waits for a permission answer needs input and is 
 
   await page.goto('/');
   const entry = listEntry(page, folder);
-  await expect(entry).toContainText('Richiede input', SCAN);
+  await expect(entry).toContainText('Needs Input', SCAN);
   await expect(entry).toHaveClass(/\bneeds-input\b/);
-  await expect(entry).toContainText('Esterna');
+  await expect(entry).toContainText('External');
   const needsInputEntries = list(page).locator('.session-entry.needs-input');
   await expect
     .poll(async () => {
       const n = await needsInputEntries.count();
-      return n > 0 && (await counter(page).textContent())?.trim() === `${n} richiede input`;
+      return n > 0 && (await counter(page).textContent())?.trim() === (n === 1 ? '1 needs input' : `${n} need input`);
     })
     .toBe(true);
 });
@@ -198,14 +198,14 @@ test('a click on an external entry shows its conversation read-only, updated liv
 
   // The call and its result are one card.
   await expect(items(page)).toHaveCount(3);
-  await expect(items(page).nth(0)).toHaveAccessibleName('Utente');
+  await expect(items(page).nth(0)).toHaveAccessibleName('You');
   await expect(items(page).nth(0)).toContainText('Elenca i file del progetto');
   await expect(items(page).nth(1)).toHaveAccessibleName('Claude');
   await expect(items(page).nth(1)).toContainText('Li elenco subito.');
   const bash = items(page).nth(2);
-  await expect(bash).toHaveAccessibleName('Strumento: Bash');
+  await expect(bash).toHaveAccessibleName('Tool: Bash');
   await expect(bash).toContainText('ls -la src');
-  await expect(bash).toContainText('Fatto');
+  await expect(bash).toContainText('Completed');
   await expect(bash.locator('pre')).toHaveCount(0);
   await bash.getByRole('button').first().click();
   await expect(bash.locator('pre')).toHaveText('uno\ndue\ntre\nquattro\ncinque\nsei\nsette');
@@ -221,9 +221,9 @@ test('a click on an external entry shows its conversation read-only, updated liv
     ]),
   );
   await expect(items(page)).toHaveCount(5);
-  await expect(items(page).nth(3)).toHaveAccessibleName('Strumento: Read');
+  await expect(items(page).nth(3)).toHaveAccessibleName('Tool: Read');
   await expect(items(page).nth(3)).toContainText('/src/main.ts');
-  await expect(items(page).nth(3)).not.toContainText(/Fatto|Fallito/);
+  await expect(items(page).nth(3)).not.toContainText(/Completed|Error/);
   await expect(items(page).nth(4)).toContainText('Il file principale è main.ts.');
   await expect(items(page).nth(4)).toBeInViewport();
 
@@ -246,17 +246,17 @@ test('an external session with no message yet is labelled with its folder name a
   const entry = listEntry(page, folder);
   await expect(entry).toContainText('fresh-start', SCAN);
   await entry.click();
-  await expect(conversationView(page)).toContainText('Nessun messaggio.');
+  await expect(conversationView(page)).toContainText('No messages.');
 
   await writeTranscript(folder, 'e2e-ext-fresh', [user(folder, 'Il primo messaggio')]);
   await expect(items(page)).toHaveCount(1, SCAN);
   await expect(items(page).first()).toContainText('Il primo messaggio');
-  await expect(conversationView(page)).not.toContainText('Nessun messaggio.');
+  await expect(conversationView(page)).not.toContainText('No messages.');
   await expect(entry).toContainText('Il primo messaggio', SCAN);
 });
 
 // plan-claude_sessions_client/REQ-35 — scenario "The user takes over an external session"
-test('"Riprendi qui" warns first, then resumes the external session in the client terminal', async ({ page }) => {
+test('"Resume Here" warns first, then resumes the external session in the client terminal', async ({ page }) => {
   const folder = await newFolder('takeover');
   await writeTranscript(folder, 'e2e-ext-takeover', [user(folder, 'Riprendimi nel client'), assistant(folder, [{ type: 'text', text: 'Pronto.' }])]);
   await runInTerminal('e2e-ext-takeover', folder);
@@ -269,16 +269,16 @@ test('"Riprendi qui" warns first, then resumes the external session in the clien
   await listEntry(page, folder).click(SCAN);
   await expect(items(page)).toHaveCount(2);
 
-  await page.getByRole('button', { name: 'Riprendi qui' }).click();
+  await page.getByRole('button', { name: 'Resume Here' }).click();
   await expect(warning(page)).toBeVisible();
-  await warning(page).getByRole('button', { name: 'Annulla' }).click();
+  await warning(page).getByRole('button', { name: 'Cancel' }).click();
   await expect(warning(page)).toBeHidden();
   await expect(conversationView(page)).toBeVisible();
   expect(resumeRequests).toEqual([]);
 
-  await page.getByRole('button', { name: 'Riprendi qui' }).click();
+  await page.getByRole('button', { name: 'Resume Here' }).click();
   const resumed = page.waitForResponse((r) => isResumeRequest(r.url(), r.request().method()));
-  await warning(page).getByRole('button', { name: 'Riprendi comunque' }).click();
+  await warning(page).getByRole('button', { name: 'Resume Anyway' }).click();
   const response = await resumed;
   expect(response.status()).toBe(201);
   startedIds.push(((await response.json()) as { id: string }).id);
@@ -292,7 +292,7 @@ test('"Riprendi qui" warns first, then resumes the external session in the clien
 });
 
 // plan-claude_sessions_client/REQ-35: a failed resume shows an error and opens nothing
-test('"Riprendi qui" on a session whose transcript disappeared shows an error and keeps the conversation open', async ({ page }) => {
+test('"Resume Here" on a session whose transcript disappeared shows an error and keeps the conversation open', async ({ page }) => {
   const folder = await newFolder('vanished');
   const transcript = await writeTranscript(folder, 'e2e-ext-vanished', [user(folder, 'Sparirò')]);
   await runInTerminal('e2e-ext-vanished', folder);
@@ -302,9 +302,9 @@ test('"Riprendi qui" on a session whose transcript disappeared shows an error an
   await expect(items(page)).toHaveCount(1);
   await rm(transcript);
 
-  await page.getByRole('button', { name: 'Riprendi qui' }).click();
-  await warning(page).getByRole('button', { name: 'Riprendi comunque' }).click();
-  await expect(page.getByRole('alert')).toHaveText('La sessione non esiste più.');
+  await page.getByRole('button', { name: 'Resume Here' }).click();
+  await warning(page).getByRole('button', { name: 'Resume Anyway' }).click();
+  await expect(page.getByRole('alert')).toHaveText('The session no longer exists.');
   await expect(conversationView(page)).toBeVisible();
   await expect(terminal(page)).toHaveCount(0);
 });

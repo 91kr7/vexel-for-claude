@@ -32,21 +32,21 @@ const byName = (html: string, name: string) => buttons(html).filter((b) => nameO
 const badgeOf = (button: Button) => button.html.match(/<(\w+)([^>]*class="[^"]*\bnav-rail-badge\b[^"]*"[^>]*)>([\s\S]*?)<\/\1>/);
 
 describe('NavigationRail', () => {
-  // NavigationRail "Description": a nav labelled "Navigazione principale"
-  it('is a nav labelled "Navigazione principale"', () => {
-    expect(renderRail(0)).toMatch(/^<nav\b[^>]*aria-label="Navigazione principale"/);
+  // NavigationRail "Description": a nav labelled "Main Navigation"
+  it('is a nav labelled "Main Navigation"', () => {
+    expect(renderRail(0)).toMatch(/^<nav\b[^>]*aria-label="Main Navigation"/);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14, REQ-17: no logo, then "Nuova sessione", "Sessioni" and "Riprendi"
-  it('shows no logo and the buttons "Nuova sessione", "Sessioni" and "Riprendi", in this order', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14, REQ-17: no logo, then "New Claude Code Session", "Sessions" and "Resume"
+  it('shows no logo and the buttons "New Claude Code Session", "Sessions" and "Resume", in this order', () => {
     const html = renderRail(0);
     expect(html).not.toMatch(/role="img"/);
     expect(html).not.toContain('Vexel');
-    expect(buttons(html).map(nameOf)).toEqual(['Nuova sessione', 'Sessioni', 'Riprendi']);
+    expect(buttons(html).map(nameOf)).toEqual(['New Claude Code Session', 'Sessions', 'Resume']);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-17: a divider between "Nuova sessione" and "Sessioni"
-  it('places an element between "Nuova sessione" and "Sessioni"', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-17: a divider between "New Claude Code Session" and "Sessions"
+  it('places an element between "New Claude Code Session" and "Sessions"', () => {
     const html = renderRail(0);
     const between = html.slice(html.indexOf('</button>') + '</button>'.length, html.indexOf('<button', html.indexOf('</button>')));
     expect(between).toMatch(/^<\w+\b[^>]*>/);
@@ -61,18 +61,18 @@ describe('NavigationRail', () => {
     }
   });
 
-  // NavigationRail "Shows": "Sessioni" always has aria-current="page", "Riprendi" has none
-  it.each([0, 4])('marks "Sessioni" as the current page and "Riprendi" not, with %i sessions needing input', (count) => {
+  // NavigationRail "Shows": "Sessions" always has aria-current="page", "Resume" has none
+  it.each([0, 4])('marks "Sessions" as the current page and "Resume" not, with %i sessions needing input', (count) => {
     const html = renderRail(count);
-    expect(byName(html, 'Sessioni')[0]?.attributes).toMatch(/aria-current="page"/);
-    expect(byName(html, 'Riprendi')[0]?.attributes).not.toMatch(/aria-current/);
-    expect(byName(html, 'Nuova sessione')[0]?.attributes).not.toMatch(/aria-current/);
+    expect(byName(html, 'Sessions')[0]?.attributes).toMatch(/aria-current="page"/);
+    expect(byName(html, 'Resume')[0]?.attributes).not.toMatch(/aria-current/);
+    expect(byName(html, 'New Claude Code Session')[0]?.attributes).not.toMatch(/aria-current/);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-9: the badge shows the number on "Sessioni"
-  it.each([1, 3, 12])('shows the badge %i on "Sessioni", hidden from assistive technology', (count) => {
-    const sessions = byName(renderRail(count), 'Sessioni');
-    expect(sessions, 'the accessible name stays "Sessioni"').toHaveLength(1);
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-9: the badge shows the number on "Sessions"
+  it.each([1, 3, 12])('shows the badge %i on "Sessions", hidden from assistive technology', (count) => {
+    const sessions = byName(renderRail(count), 'Sessions');
+    expect(sessions, 'the accessible name stays "Sessions"').toHaveLength(1);
     const badge = badgeOf(sessions[0]!);
     expect(badge).not.toBeNull();
     expect(textOf(badge?.[3] ?? '')).toBe(String(count));
@@ -87,7 +87,7 @@ describe('NavigationRail', () => {
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-18: no visible label; the tooltip holds the name, hidden from assistive technology
-  it.each(['Nuova sessione', 'Sessioni', 'Riprendi'])('"%s" has no visible label and its name in a hidden tooltip', (name) => {
+  it.each(['New Claude Code Session', 'Sessions', 'Resume'])('"%s" has no visible label and its name in a hidden tooltip', (name) => {
     const button = byName(renderRail(0), name)[0];
     expect(button, name).toBeDefined();
     let visible = button?.html ?? '';

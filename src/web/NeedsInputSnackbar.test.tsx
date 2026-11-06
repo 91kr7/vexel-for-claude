@@ -89,16 +89,16 @@ describe('NeedsInputSnackbar', () => {
   const render = (folder: string) =>
     renderToStaticMarkup(<NeedsInputSnackbar session={{ ...session('a', 'needs_input'), folder }} onOpen={() => {}} />);
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-13: "<progetto> richiede il tuo input" with "Apri", as a status
-  it('shows "<progetto> richiede il tuo input" and the button "Apri" in a role="status" box', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-13: "<project> needs your input" with "Open", as a status
+  it('shows "<project> needs your input" and the button "Open" in a role="status" box', () => {
     const html = render('/home/dev/progetti/web-dashboard');
     expect(html).toMatch(/^<\w+[^>]*role="status"/);
     const buttons = [...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/g)].map((m) => textOf(m[1] ?? ''));
-    expect(buttons).toEqual(['Apri']);
-    expect(textOf(html.replace(/<button\b[\s\S]*?<\/button>/g, ''))).toBe('web-dashboard richiede il tuo input');
+    expect(buttons).toEqual(['Open']);
+    expect(textOf(html.replace(/<button\b[\s\S]*?<\/button>/g, ''))).toBe('web-dashboard needs your input');
   });
 
-  // NeedsInputSnackbar "Shows": "<progetto>" is the last segment of the folder, in bold
+  // NeedsInputSnackbar "Shows": "<project>" is the last segment of the folder, in bold
   it('shows only the last folder segment, in bold', () => {
     const html = render('/srv/clienti/billing-api');
     expect(html).toMatch(/<b>billing-api<\/b>/);

@@ -10,7 +10,7 @@ type: UI component
 
 ## Contract
 
-- `ErrorMessage({ children, className? })` → `children` is the Italian text of the failure.
+- `ErrorMessage({ children, className? })` → `children` is the text of the failure.
   - shows CircleXIcon (14 px), then the text (12/16 px), both in `--color-error` (rose-400).
   - role `alert`: screen readers announce it when it appears. Its text is exactly `children`.
   - `className` → extra class.

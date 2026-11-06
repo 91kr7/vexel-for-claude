@@ -14,13 +14,13 @@ Description:
 - a WarningDialog in the `attn` (amber) tone: the text in the amber banner with the triangle icon, and an amber primary action. It opens on top of the page and of other dialogs.
 
 Props:
-- `onConfirm()` → called on "Riprendi comunque".
-- `onCancel()` → called on "Annulla", "[Esc]" and Esc.
+- `onConfirm()` → called on "Resume Anyway".
+- `onCancel()` → called on "Cancel", "[Esc]" and Esc.
 
 Shows:
-- the title "Sessione in esecuzione in un terminale".
-- the text, in the banner, "Questa sessione è ancora in esecuzione in un altro terminale. Se la riprendi anche qui, le due istanze possono danneggiare la conversazione."
-- the buttons "Annulla" (focused) and "Riprendi comunque" (primary action, `.button-attn`).
+- the title "Session Running in a Terminal".
+- the text, in the banner, "This session is still running in another terminal. If you resume it here too, the two instances can damage the conversation."
+- the buttons "Cancel" (focused) and "Resume Anyway" (primary action, `.button-attn`).
 
 ## Rules and invariants
 
@@ -37,3 +37,4 @@ Shows:
 - `plan-claude_sessions_client-ui_redesign/REQ-25`, `plan-claude_sessions_client-ui_redesign/REQ-26`, `plan-claude_sessions_client-ui_redesign/REQ-27`, `plan-claude_sessions_client-ui_redesign/REQ-28`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-50`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-49`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-4`

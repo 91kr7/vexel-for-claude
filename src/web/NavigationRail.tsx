@@ -19,24 +19,24 @@ function Tooltip({ text }: { text: string }) {
 
 export function NavigationRail({ needsInputCount, onNewSession, onShowSessions, onResume, newSessionRef }: NavigationRailProps) {
   return (
-    <nav className="nav-rail" aria-label="Navigazione principale">
-      <button type="button" className="vx-rail-fab" aria-label="Nuova sessione" ref={newSessionRef} onClick={onNewSession}>
+    <nav className="nav-rail" aria-label="Main Navigation">
+      <button type="button" className="vx-rail-fab" aria-label="New Claude Code Session" ref={newSessionRef} onClick={onNewSession}>
         <PlusIcon />
-        <Tooltip text="Nuova sessione" />
+        <Tooltip text="New Claude Code Session" />
       </button>
       <div className="nav-rail-divider" />
-      <button type="button" className="vx-rail-btn active" aria-label="Sessioni" aria-current="page" onClick={onShowSessions}>
+      <button type="button" className="vx-rail-btn active" aria-label="Sessions" aria-current="page" onClick={onShowSessions}>
         <TerminalIcon />
         {needsInputCount > 0 && (
           <span className="nav-rail-badge" aria-hidden="true">
             {needsInputCount}
           </span>
         )}
-        <Tooltip text="Sessioni" />
+        <Tooltip text="Sessions" />
       </button>
-      <button type="button" className="vx-rail-btn" aria-label="Riprendi" onClick={onResume}>
+      <button type="button" className="vx-rail-btn" aria-label="Resume" onClick={onResume}>
         <HistoryIcon />
-        <Tooltip text="Riprendi" />
+        <Tooltip text="Resume" />
       </button>
     </nav>
   );

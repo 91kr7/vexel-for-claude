@@ -9,10 +9,10 @@ export interface SessionGroup {
 }
 
 const GROUPS: readonly { id: SessionGroupId; title: string }[] = [
-  { id: 'needs-input', title: 'Richiedono input' },
-  { id: 'running', title: 'In corso' },
-  { id: 'external', title: 'In altri terminali' },
-  { id: 'ended', title: 'Terminate' },
+  { id: 'needs-input', title: 'Needs Input' },
+  { id: 'running', title: 'Running' },
+  { id: 'external', title: 'In Other Terminals' },
+  { id: 'ended', title: 'Ended' },
 ];
 
 function groupOf(session: SessionSummary): SessionGroupId {

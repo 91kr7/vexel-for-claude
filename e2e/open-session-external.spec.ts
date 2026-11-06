@@ -32,7 +32,7 @@ test.afterAll(async () => {
   await rm(E2E_CLAUDE_DIR, { recursive: true, force: true });
 });
 
-const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const listEntry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const view = (page: Page) => page.locator('.conversation-view');
 const header = (page: Page) => view(page).locator('.session-header');
@@ -121,20 +121,20 @@ test('the external view shows its header, a read-only notice that stays in view,
   await page.goto('/');
   await listEntry(page, folder).click(SCAN);
 
-  // SessionHeader: the h2 is the folder name, then the path and the line "Aperta in un altro terminale".
+  // SessionHeader: the h2 is the folder name, then the path and the line "Open in Another Terminal".
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('negozio');
-  await expect(header(page)).toContainText('In attesa');
+  await expect(header(page)).toContainText('Idle');
   await expect(header(page).getByText(folder, { exact: true })).toBeVisible();
-  await expect(header(page).getByText('Aperta in un altro terminale', { exact: true })).toBeVisible();
-  await expect(header(page).getByRole('button', { name: 'Riprendi qui' })).toBeVisible();
-  const notice = header(page).getByText('Sola lettura', { exact: true });
+  await expect(header(page).getByText('Open in Another Terminal', { exact: true })).toBeVisible();
+  await expect(header(page).getByRole('button', { name: 'Resume Here' })).toBeVisible();
+  const notice = header(page).getByText('Read-only', { exact: true });
   await expect(notice).toBeVisible();
   await expect(items(page).last()).toBeInViewport();
 
   // REQ-20: each kind has its own look, and the text sits in a centred column narrower than the list.
-  const userItem = item(page, 'Utente').first();
+  const userItem = item(page, 'You').first();
   const claudeItem = item(page, 'Claude').first();
-  const toolItem = item(page, 'Strumento: Read');
+  const toolItem = item(page, 'Tool: Read');
   await expect(toolItem).toContainText('/src/cart.ts');
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-39: the tool card has no tool icon
   await expect(toolItem.locator('svg')).toHaveCount(0);
@@ -161,7 +161,7 @@ test('the external view shows its header, a read-only notice that stays in view,
   await expect(listEntry(page, folder)).toHaveCount(0, SCAN);
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('negozio');
   await expect(header(page).getByText(folder, { exact: true })).toBeVisible();
-  await expect(header(page).getByText('Aperta in un altro terminale', { exact: true })).toBeVisible();
+  await expect(header(page).getByText('Open in Another Terminal', { exact: true })).toBeVisible();
   await expect(notice).toBeVisible();
 });
 
@@ -186,12 +186,12 @@ test('tool cards are closed, open to their full input and output on demand and c
   await listEntry(page, folder).click(SCAN);
   // A call and its result are one card.
   await expect(items(page)).toHaveCount(3);
-  const bash = item(page, 'Strumento: Bash');
-  const read = item(page, 'Strumento: Read');
+  const bash = item(page, 'Tool: Bash');
+  const read = item(page, 'Tool: Read');
 
   // Closed: the row shows the one-line summary and the outcome, nothing below it.
   await expect(bash).toContainText(input.command);
-  await expect(bash).toContainText('Fatto');
+  await expect(bash).toContainText('Completed');
   for (const card of [bash, read]) {
     await expect(card.locator('pre')).toHaveCount(0);
     await expect(cardRow(card)).toHaveAttribute('aria-expanded', 'false');
@@ -225,7 +225,7 @@ test('tool cards are closed, open to their full input and output on demand and c
 });
 
 // plan-claude_sessions_client-ui_redesign/REQ-21, plan-claude_sessions_client-ui_redesign/REQ-30: load and failure of the full content
-test('the full content shows "Caricamento…" while it loads, an error when it fails, and loads again on the next expand', async ({ page }) => {
+test('the full content shows "Loading…" while it loads, an error when it fails, and loads again on the next expand', async ({ page }) => {
   const folder = await newFolder('errore');
   await writeTranscript(folder, 'e2e-open-failure', [user(folder, 'Mostra il log'), toolUse(folder, 't1', 'Bash', { command: 'cat log' }), toolResult(folder, 't1', lines(9))]);
   await runInTerminal('e2e-open-failure', folder);
@@ -242,22 +242,22 @@ test('the full content shows "Caricamento…" while it loads, an error when it f
 
   await page.goto('/');
   await listEntry(page, folder).click(SCAN);
-  const card = item(page, 'Strumento: Bash');
-  await expect(card).toContainText('Fatto');
+  const card = item(page, 'Tool: Bash');
+  await expect(card).toContainText('Completed');
   await expect(card.locator('pre')).toHaveCount(0);
 
   // Until the full text is loaded, the block shows the cut text and "…".
   await cardRow(card).click();
-  await expect(card.getByRole('alert')).toHaveText('Impossibile caricare il contenuto completo.');
+  await expect(card.getByRole('alert')).toHaveText('Could not load the full content.');
   await expect(card.locator('pre')).toHaveText(`${lines(5)}\n…`);
   await cardRow(card).click();
-  await expect(card).not.toContainText('Impossibile caricare il contenuto completo.');
+  await expect(card).not.toContainText('Could not load the full content.');
 
   await cardRow(card).click();
-  await expect(card.getByRole('status').filter({ hasText: 'Caricamento…' })).toBeVisible();
+  await expect(card.getByRole('status').filter({ hasText: 'Loading…' })).toBeVisible();
   await expect(card.locator('pre')).toHaveText(lines(9));
-  await expect(card).not.toContainText('Caricamento…');
-  await expect(card).not.toContainText('Impossibile caricare il contenuto completo.');
+  await expect(card).not.toContainText('Loading…');
+  await expect(card).not.toContainText('Could not load the full content.');
   expect(attempts).toBe(2);
 });
 

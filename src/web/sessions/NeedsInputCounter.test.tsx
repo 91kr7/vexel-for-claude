@@ -43,13 +43,13 @@ describe('countNeedsInput', () => {
 });
 
 describe('NeedsInputCounter', () => {
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-21: the chip reads "N richiede input" inside the status element
-  it('shows the chip "N richiede input" inside the role="status" element when N > 0', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-21: the chip reads "N need input" inside the status element
+  it('shows the chip "N need input" inside the role="status" element when N > 0', () => {
     const html = renderCounter(['needs_input', 'working', 'needs_input', 'ended', 'idle']);
     expect(statusElement(html), html).not.toBeNull();
     const chip = chipOf(statusInner(html));
     expect(chip, html).not.toBeNull();
-    expect(textOf(chip?.inner ?? '')).toBe('2 richiede input');
+    expect(textOf(chip?.inner ?? '')).toBe('2 need input');
   });
 
   // NeedsInputCounter "Shows": the pill has the classes of the amber StateBadge chip
@@ -64,7 +64,7 @@ describe('NeedsInputCounter', () => {
     const inner = (chipOf(statusInner(renderCounter(['needs_input', 'idle'])))?.inner ?? '').trim();
     const dot = renderToStaticMarkup(<StateDot state="needs_input" />);
     expect(inner.startsWith(dot), inner).toBe(true);
-    expect(textOf(inner.slice(dot.length))).toBe('1 richiede input');
+    expect(textOf(inner.slice(dot.length))).toBe('1 needs input');
     expect(inner).not.toMatch(/<svg\b/);
   });
 

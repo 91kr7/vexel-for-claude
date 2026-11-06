@@ -10,30 +10,30 @@ const textOfId = (html: string, id: string) =>
 
 describe('FolderChooser', () => {
   // FolderChooser "Description", plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44: title and description, no icon before the title
-  it('is the dialog "Nuova sessione" with its description and no icon before the title', () => {
+  it('is the dialog "New Claude Code Session" with its description and no icon before the title', () => {
     const html = render();
     const dialog = html.match(/<[a-z]+\b[^>]*\srole="dialog"[^>]*>/)?.[0] ?? '';
-    expect(textOfId(html, attr(dialog, 'aria-labelledby') ?? '')).toBe('Nuova sessione');
-    expect(textOfId(html, attr(dialog, 'aria-describedby') ?? '')).toBe('Scegli il progetto in cui avviare Claude Code.');
-    expect(html.slice(0, html.indexOf('Nuova sessione'))).not.toContain('<svg');
+    expect(textOfId(html, attr(dialog, 'aria-labelledby') ?? '')).toBe('New Claude Code Session');
+    expect(textOfId(html, attr(dialog, 'aria-describedby') ?? '')).toBe('Choose the project where Claude Code starts.');
+    expect(html.slice(0, html.indexOf('New Claude Code Session'))).not.toContain('<svg');
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-46: the field "Cartella del progetto", label above, no icon; then "Annulla" and "Avvia sessione"
-  it('has the field "Cartella del progetto" with its label above the input and no icon, and the buttons "Annulla" and "Avvia sessione"', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-46: the field "Working Directory Path", label above, no icon; then "Cancel" and "Start Session"
+  it('has the field "Working Directory Path" with its label above the input and no icon, and the buttons "Cancel" and "Start Session"', () => {
     const html = render();
     const label = html.match(/<label\b[^>]*>([\s\S]*?)<\/label>/)?.[1] ?? '';
-    const name = label.indexOf('Cartella del progetto');
+    const name = label.indexOf('Working Directory Path');
     expect(name).toBeGreaterThanOrEqual(0);
     expect(label.search(/<input\b/)).toBeGreaterThan(name);
     expect(label).not.toContain('<svg');
-    expect(buttonLabels(html).slice(-2)).toEqual(['Annulla', 'Avvia sessione']);
+    expect(buttonLabels(html).slice(-2)).toEqual(['Cancel', 'Start Session']);
   });
 
-  // FolderChooser: before PastSessionListRoute answers, no "Recenti" heading and no group; "Cartelle" is there
-  it('shows no "Recenti" and no radio group before the past sessions load, and shows the heading "Cartelle"', () => {
+  // FolderChooser: before PastSessionListRoute answers, no "Recent" heading and no group; "Folders" is there
+  it('shows no "Recent" and no radio group before the past sessions load, and shows the heading "Folders"', () => {
     const html = render();
-    expect(html).not.toContain('Recenti');
+    expect(html).not.toContain('Recent');
     expect(html).not.toContain('role="radiogroup"');
-    expect(html).toMatch(/>Cartelle</);
+    expect(html).toMatch(/>Folders</);
   });
 });

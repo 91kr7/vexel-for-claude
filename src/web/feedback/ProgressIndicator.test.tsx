@@ -11,10 +11,10 @@ const icon = renderToStaticMarkup(<LoaderCircleIcon />);
 
 describe('ProgressIndicator', () => {
   // plan-claude_sessions_client-ui_redesign/REQ-29, ProgressIndicator: a status whose text is the default label
-  it('is a status whose text is exactly "Caricamento…" by default', () => {
+  it('is a status whose text is exactly "Loading…" by default', () => {
     const html = renderToStaticMarkup(<ProgressIndicator />);
     expect(rootTag(html)).toMatch(/\srole="status"/);
-    expect(textOf(html)).toBe('Caricamento…');
+    expect(textOf(html)).toBe('Loading…');
   });
 
   // ProgressIndicator: the text is exactly the given label
@@ -26,7 +26,7 @@ describe('ProgressIndicator', () => {
   it('shows the loader icon before the label', () => {
     const html = renderToStaticMarkup(<ProgressIndicator />);
     expect(html).toContain(icon);
-    expect(html.indexOf(icon)).toBeLessThan(html.indexOf('Caricamento…'));
+    expect(html.indexOf(icon)).toBeLessThan(html.indexOf('Loading…'));
   });
 
   // ProgressIndicator: className is an extra class

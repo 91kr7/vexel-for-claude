@@ -14,17 +14,17 @@ Shows:
 - one inline SVG with the class `icon`, 16 px unless its container sets another size, drawn in the current text colour.
 
 Components and where the client uses them today:
-- `PlusIcon` → "Nuova sessione", in the top bar, the rail and the EmptyState
-- `HistoryIcon` → "Riprendi sessione" in the EmptyState, "Riprendi" in the rail, the empty state of the ResumeDialog
+- `PlusIcon` → "New Session" in the top bar and the EmptyState, "New Claude Code Session" in the rail
+- `HistoryIcon` → "Resume Session" in the EmptyState, "Resume" in the rail, the empty state of the ResumeDialog
 - `SquareTerminalIcon` → the tile of an empty AreaState
-- `LogInIcon` → "Riprendi qui"
+- `LogInIcon` → "Resume Here"
 - `LoaderCircleIcon`, rotating → the ProgressIndicator and its Spinner
 - `CircleXIcon` → the ErrorMessage and the tile of an error AreaState
-- `TerminalIcon` → "Sessioni" in the rail, the pill "In esecuzione in un terminale" of the ResumeDialog
-- `LockIcon` → the "Sola lettura" chip of the external view
-- `ArrowDownIcon` → the "N nuovi messaggi" button
+- `TerminalIcon` → "Sessions" in the rail, the pill "Running in a terminal" of the ResumeDialog
+- `LockIcon` → the "Read-only" chip of the external view
+- `ArrowDownIcon` → the "N new messages" button
 - `TriangleAlertIcon` → the amber banner of a WarningDialog (RunningElsewhereWarning)
-- `FolderIcon` → the "Cartelle" rows of the FolderChooser
+- `FolderIcon` → the "Folders" rows of the FolderChooser
 - no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `PencilIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
 
 ## Rules and invariants

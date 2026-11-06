@@ -17,7 +17,7 @@ type: UI component
 
 Shows:
 - a `role="status"` element, always present. It holds the pill when N > 0 and nothing when N = 0.
-- the pill → the StateBadge `chip` look in amber: the pulsing amber dot, then "N richiede input".
+- the pill → the StateBadge `chip` look in amber: the pulsing amber dot, then "1 needs input" when N = 1, "N need input" otherwise.
 
 ## Dependencies
 
@@ -28,3 +28,4 @@ Shows:
 - `plan-claude_sessions_client/REQ-17`
 - `plan-claude_sessions_client-ui_redesign/REQ-14`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-21`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`

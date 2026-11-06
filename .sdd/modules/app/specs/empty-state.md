@@ -12,13 +12,13 @@ type: UI component
 
 Shows:
 - an AreaState `full`, kind `empty`, with the terminal tile.
-- the title "Nessuna sessione aperta." and the text "Avvia una nuova sessione o riprendine una passata.".
-- the button "Nuova sessione" with `PlusIcon` → `.button-primary`.
-- the button "Riprendi sessione" with `HistoryIcon` → `.button-neutral`.
+- the title "No open session." and the text "Start a new session or resume a past one.".
+- the button "New Session" with `PlusIcon` → `.button-primary`.
+- the button "Resume Session" with `HistoryIcon` → `.button-neutral`.
 
 Actions:
-- "Nuova sessione" → calls `onNewSession`.
-- "Riprendi sessione" → calls `onResumeSession`.
+- "New Session" → calls `onNewSession`.
+- "Resume Session" → calls `onResumeSession`.
 
 ## Rules and invariants
 
@@ -33,3 +33,4 @@ Actions:
 
 - `plan-claude_sessions_client-ui_redesign/REQ-9`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`

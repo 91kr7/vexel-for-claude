@@ -21,11 +21,11 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
-const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const mainArea = (page: Page) => page.getByRole('main');
 const header = (page: Page) => mainArea(page).locator('.session-header');
-const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminale/ });
+const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
 const terminalBox = (page: Page) => panel(page).locator('.session-terminal');
 const hintRow = (page: Page) => mainArea(page).locator('.session-hint-row');
 // SessionView: the panel sits 16 px from the left, right and top; the hint row under it is 40 px high.
@@ -89,8 +89,8 @@ async function expectHeaderOf(page: Page, folder: string, label: string, state: 
   await expect(header(page)).toContainText(state, ONE_SECOND);
   await expect(header(page).getByText(folder, { exact: true })).toBeVisible(ONE_SECOND);
   await expect(header(page).getByText(label, { exact: true }).last()).toBeVisible(ONE_SECOND);
-  await expect(header(page).getByRole('button', { name: 'Interrompi' })).toBeVisible(ONE_SECOND);
-  await expect(header(page).getByRole('button', { name: 'Termina' })).toBeVisible(ONE_SECOND);
+  await expect(header(page).getByRole('button', { name: 'Interrupt' })).toBeVisible(ONE_SECOND);
+  await expect(header(page).getByRole('button', { name: 'Terminate' })).toBeVisible(ONE_SECOND);
 }
 
 // plan-claude_sessions_client-ui_redesign/REQ-17, REQ-18, REQ-24 — scenario "The user works in a hosted session under its header".
@@ -105,12 +105,12 @@ test('with 10 sessions, opening and switching a hosted session shows its header 
   await expect(list(page).getByRole('button').filter({ has: page.locator(`[title^="${projectsRoot}"]`) })).toHaveCount(10);
 
   await entry(page, first).click();
-  await expectHeaderOf(page, first, path.basename(first), 'In attesa');
+  await expectHeaderOf(page, first, path.basename(first), 'Idle');
   await expect(terminal(page)).toContainText(`CWD:${first}`, ONE_SECOND);
   await expectPanelAndHintFillMainBelowHeader(page);
 
   await entry(page, second).click();
-  await expectHeaderOf(page, second, path.basename(second), 'In attesa');
+  await expectHeaderOf(page, second, path.basename(second), 'Idle');
   await expect(terminal(page)).toContainText(`CWD:${second}`, ONE_SECOND);
   await expect(terminal(page)).not.toContainText(`CWD:${first}`);
 });
@@ -145,7 +145,7 @@ test('a long line is cut with an ellipsis and its full text as tooltip, and the 
   await expect(folderText).toHaveCSS('text-overflow', 'ellipsis');
   expect(await folderText.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
   const head = await box(header(page));
-  for (const name of ['Interrompi', 'Termina']) {
+  for (const name of ['Interrupt', 'Terminate']) {
     const action = await box(header(page).getByRole('button', { name }));
     expect(action.x).toBeGreaterThanOrEqual(head.x);
     expect(action.x + action.width).toBeLessThanOrEqual(head.x + head.width + TOLERANCE);

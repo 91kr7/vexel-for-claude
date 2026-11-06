@@ -50,17 +50,17 @@ test.afterEach(async ({ request }) => {
 });
 
 const topBar = (page: Page) => page.getByRole('banner');
-const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione principale' });
+const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' });
 const railButton = (page: Page, name: string) => rail(page).getByRole('button', { name, exact: true });
-const panel = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const panel = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const mainArea = (page: Page) => page.getByRole('main');
 const entry = (page: Page, folder: string) => panel(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
-const counter = (page: Page) => panel(page).getByRole('status').filter({ hasText: 'richiede input' });
-const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'richiede il tuo input' });
+const counter = (page: Page) => panel(page).getByRole('status').filter({ hasText: /needs? input/ });
+const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'needs your input' });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const subbar = (page: Page) => mainArea(page).locator('header');
-const chooser = (page: Page) => page.getByRole('dialog', { name: 'Nuova sessione' });
-const history = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessione' });
+const chooser = (page: Page) => page.getByRole('dialog', { name: 'New Claude Code Session' });
+const history = (page: Page) => page.getByRole('dialog', { name: 'Resume Session' });
 const button = (scope: Locator, name: string) => scope.getByRole('button', { name, exact: true });
 
 /** Shows in the page only the sessions of this test, plus the given external entries. Returns the conversation socket getter. */
@@ -212,7 +212,7 @@ test.describe('theme and palette', () => {
   // REQ-1, REQ-2 — scenario "The user sees the client in the dark Studio look": dark on a light system
   test('the page is dark on a light system and declares only the dark colour scheme', async ({ page }) => {
     await page.goto('/');
-    await expect(railButton(page, 'Nuova sessione')).toBeVisible();
+    await expect(railButton(page, 'New Claude Code Session')).toBeVisible();
     expect(await effectiveBackground(page.locator('body'))).toBe(CANVAS);
     expect(await style(page.locator('body'), 'color')).toBe(TEXT_PRIMARY);
     expect(await style(page.locator('html'), 'color-scheme')).toBe('dark');
@@ -269,7 +269,7 @@ test.describe('theme and palette', () => {
   // REQ-7: selected text uses the accent at 30 %
   test('selected text has the accent at 30 % as background', async ({ page }) => {
     await page.goto('/');
-    await expect(railButton(page, 'Nuova sessione')).toBeVisible();
+    await expect(railButton(page, 'New Claude Code Session')).toBeVisible();
     expect(await page.locator('body').evaluate((el) => getComputedStyle(el, '::selection').backgroundColor)).toBe('rgba(140, 207, 255, 0.3)');
   });
 
@@ -342,15 +342,15 @@ test.describe('page frame', () => {
     expect(await style(topBar(page), 'border-radius')).toBe('0px');
   });
 
-  // REQ-14, REQ-16, TopBar: logo mark, "Vexel for Claude" and the accent "Nuova sessione", nothing else
-  test('the top bar shows the "VX" mark, "Vexel for Claude" and only the "Nuova sessione" button', async ({ page }) => {
+  // REQ-14, REQ-16, TopBar: logo mark, "Vexel for Claude" and the accent "New Session", nothing else
+  test('the top bar shows the "VX" mark, "Vexel for Claude" and only the "New Session" button', async ({ page }) => {
     await page.goto('/');
     expect(await style(topBar(page), 'background-color')).toBe(SURFACE_2);
     expect(await style(topBar(page), 'border-bottom-color')).toBe(BORDER_SUBTLE);
     await expect(topBar(page)).toContainText('Vexel');
     await expect(topBar(page)).toContainText('for Claude');
     await expect(topBar(page).getByRole('button')).toHaveCount(1);
-    await expect(button(topBar(page), 'Nuova sessione')).toBeVisible();
+    await expect(button(topBar(page), 'New Session')).toBeVisible();
 
     const mark = topBar(page).getByText('VX', { exact: true });
     await expect(mark).toBeVisible();
@@ -370,9 +370,9 @@ test.describe('page frame', () => {
   });
 
   // REQ-14, REQ-52: the top bar button is accent with dark text reaching 4.5:1
-  test('"Nuova sessione" in the top bar is the accent button with canvas text at 4.5:1 or more', async ({ page }) => {
+  test('"New Session" in the top bar is the accent button with canvas text at 4.5:1 or more', async ({ page }) => {
     await page.goto('/');
-    const newSession = button(topBar(page), 'Nuova sessione');
+    const newSession = button(topBar(page), 'New Session');
     const bg = await style(newSession, 'background-color');
     const fg = await style(newSession, 'color');
     expect(bg).toBe(ACCENT);
@@ -382,9 +382,9 @@ test.describe('page frame', () => {
   });
 
   // REQ-15 — scenario "The new-session dialog uses the Studio modal": the top-bar button opens the dialog
-  test('"Nuova sessione" in the top bar opens the new-session dialog', async ({ page }) => {
+  test('"New Session" in the top bar opens the new-session dialog', async ({ page }) => {
     await page.goto('/');
-    await button(topBar(page), 'Nuova sessione').click();
+    await button(topBar(page), 'New Session').click();
     await expect(chooser(page)).toBeVisible();
   });
 
@@ -394,23 +394,23 @@ test.describe('page frame', () => {
     await expect(rail(page)).not.toContainText('Vexel');
     await expect(panel(page)).not.toContainText('Vexel');
     await expect(rail(page).locator('[role="img"]')).toHaveCount(0);
-    await expect(panel(page).getByRole('button', { name: 'Nuova sessione' })).toHaveCount(0);
+    await expect(panel(page).getByRole('button', { name: 'New Session' })).toHaveCount(0);
   });
 
-  // REQ-17, REQ-53: 52 px rail, 34 x 34 px buttons, the accent gradient "Nuova sessione", a divider
-  test('the rail shows "Nuova sessione", a divider, "Sessioni" and "Riprendi", all 34 x 34 px', async ({ page }) => {
+  // REQ-17, REQ-53: 52 px rail, 34 x 34 px buttons, the accent gradient "New Claude Code Session", a divider
+  test('the rail shows "New Claude Code Session", a divider, "Sessions" and "Resume", all 34 x 34 px', async ({ page }) => {
     await page.goto('/');
     await expect(rail(page).getByRole('button')).toHaveCount(3);
-    for (const name of ['Nuova sessione', 'Sessioni', 'Riprendi']) {
+    for (const name of ['New Claude Code Session', 'Sessions', 'Resume']) {
       const b = await box(railButton(page, name));
       expect(b.width, name).toBeCloseTo(34, 0);
       expect(b.height, name).toBeCloseTo(34, 0);
     }
-    const fab = railButton(page, 'Nuova sessione');
+    const fab = railButton(page, 'New Claude Code Session');
     expect(await style(fab, 'background-image')).toMatch(/^linear-gradient\(135deg, rgb\(140, 207, 255\).*rgb\(0, 142, 244\)/);
     expect(await style(fab, 'color')).toBe(CANVAS);
     const fabBox = await box(fab);
-    const sessionsBox = await box(railButton(page, 'Sessioni'));
+    const sessionsBox = await box(railButton(page, 'Sessions'));
     expect(sessionsBox.y - (fabBox.y + fabBox.height), 'room for the divider').toBeGreaterThan(6);
     expect(await style(rail(page), 'background-color')).toBe(SURFACE_1);
   });
@@ -418,8 +418,8 @@ test.describe('page frame', () => {
   // REQ-18 — scenario "The user sees the client in the dark Studio look": tooltip on hover, no label under the buttons
   test('a rail button shows its name in a tooltip on hover and no label under it', async ({ page }) => {
     await page.goto('/');
-    const resume = railButton(page, 'Riprendi');
-    const tooltip = resume.getByText('Riprendi', { exact: true });
+    const resume = railButton(page, 'Resume');
+    const tooltip = resume.getByText('Resume', { exact: true });
     expect(Number(await style(tooltip, 'opacity')), 'hidden before hover').toBe(0);
     await resume.hover();
     await expect.poll(async () => Number(await style(tooltip, 'opacity'))).toBe(1);
@@ -427,31 +427,31 @@ test.describe('page frame', () => {
     const btn = await box(resume);
     expect(tip.x, 'the tooltip sits on the right of the button').toBeGreaterThan(btn.x + btn.width - TOLERANCE);
     expect(await style(tooltip, 'background-color')).toBe(SURFACE_3);
-    for (const name of ['Sessioni', 'Riprendi']) {
+    for (const name of ['Sessions', 'Resume']) {
       const b = await box(railButton(page, name));
       expect(b.height, `${name}: no label under the icon`).toBeCloseTo(34, 0);
     }
   });
 
   // REQ-19: the active destination has accent glow, accent border and the 2.5 px bar on the left
-  test('"Sessioni" has the active style: accent glow, accent border and the 2.5 px accent bar', async ({ page }) => {
+  test('"Sessions" has the active style: accent glow, accent border and the 2.5 px accent bar', async ({ page }) => {
     await page.goto('/');
-    const sessions = railButton(page, 'Sessioni');
+    const sessions = railButton(page, 'Sessions');
     await expect(sessions).toHaveAttribute('aria-current', 'page');
     expect(await style(sessions, 'background-color')).toBe(ACCENT_GLOW);
     expect(await style(sessions, 'border-top-color')).toBe(ACCENT_BORDER);
     expect(await style(sessions, 'color')).toBe(ACCENT);
     expect(await leftBar(sessions, ACCENT, 2.5)).toBe(true);
-    expect(await style(railButton(page, 'Riprendi'), 'background-color')).toBe('rgba(0, 0, 0, 0)');
+    expect(await style(railButton(page, 'Resume'), 'background-color')).toBe('rgba(0, 0, 0, 0)');
   });
 
   // REQ-20, REQ-21 — scenario "The user sees the client in the dark Studio look": small amber badge and the counter pill
-  test('one session needing input gives a small amber "1" on the corner of "Sessioni" and the amber "1 richiede input" pill', async ({ page, request }) => {
+  test('one session needing input gives a small amber "1" on the corner of "Sessions" and the amber "1 needs input" pill', async ({ page, request }) => {
     await showOnly(page);
     const id = await startViaApi(request, await newFolder('needs-badge'));
     await page.goto('/');
     await expect(entry(page, path.join(projectsRoot, 'needs-badge'))).toBeVisible();
-    const sessions = railButton(page, 'Sessioni');
+    const sessions = railButton(page, 'Sessions');
     const badge = sessions.getByText('1', { exact: true });
     await expect(badge).toHaveCount(0);
 
@@ -466,16 +466,16 @@ test.describe('page frame', () => {
     expect(b.x + b.width, 'on the right corner').toBeGreaterThan(s.x + s.width);
     expect(b.y, 'on the top corner').toBeLessThan(s.y);
 
-    await expect(counter(page)).toHaveText('1 richiede input');
+    await expect(counter(page)).toHaveText('1 needs input');
     const pill = counter(page).locator(':scope > *').first();
     expect(await style(pill, 'color')).toBe(AMBER_400);
     expect(await style(pill, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
   });
 
-  // REQ-12, REQ-21: the list title "Sessioni" is a mono uppercase muted label
-  test('the list title "Sessioni" is the mono uppercase muted label', async ({ page }) => {
+  // REQ-12, REQ-21: the list title "Sessions" is a mono uppercase muted label
+  test('the list title "Sessions" is the mono uppercase muted label', async ({ page }) => {
     await page.goto('/');
-    const title = panel(page).getByRole('heading', { level: 1, name: 'Sessioni' });
+    const title = panel(page).getByRole('heading', { level: 1, name: 'Sessions' });
     await expect(title).toBeVisible();
     expect(await style(title, 'text-transform')).toBe('uppercase');
     expect(await px(title, 'font-size')).toBe(10);
@@ -510,7 +510,7 @@ test.describe('session list', () => {
     await askPermission(request, askingId);
     await stopViaApi(request, endedId);
     await page.goto('/');
-    await expect(entry(page, ended)).toContainText('Terminata');
+    await expect(entry(page, ended)).toContainText('Ended');
 
     // REQ-23: dot, folder name, mono details, 6 px radius, no avatar
     const idleRow = entry(page, idle);
@@ -522,7 +522,7 @@ test.describe('session list', () => {
     expect(dotBox.height).toBeCloseTo(8, 0);
     expect(await style(idleDot, 'background-color')).toBe(ZINC_400);
     await expectPulse(idleDot, false);
-    expect(await style(idleRow.getByText('In attesa', { exact: true }), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
+    expect(await style(idleRow.getByText('Idle', { exact: true }), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     expect(await style(idleRow.locator('time'), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
 
     // REQ-23: surface 2 on hover
@@ -539,7 +539,7 @@ test.describe('session list', () => {
     const workingDot = workingRow.locator('[aria-hidden="true"]').first();
     expect(await style(workingDot, 'background-color')).toBe(EMERALD_400);
     await expectPulse(workingDot, true);
-    expect(await style(workingRow.getByText('Lavora', { exact: true }), 'color')).toBe(EMERALD_400);
+    expect(await style(workingRow.getByText('Running', { exact: true }), 'color')).toBe(EMERALD_400);
     const bar = workingRow.locator('.progress-bar');
     await expect(bar).toBeVisible();
     expect(await style(bar, 'background-color')).toBe(EMERALD_500_15);
@@ -557,15 +557,15 @@ test.describe('session list', () => {
     const externalRow = entry(page, external.folder);
     expect(await style(externalRow, 'border-top-style')).toBe('dashed');
 
-    // REQ-28: the needs-input card in the permission-banner look, amber tag and accent "Rispondi"
+    // REQ-28: the needs-input card in the permission-banner look, amber tag and accent "Reply"
     const card = panel(page).locator('li').filter({ has: page.getByTitle(asking, { exact: true }) }).locator(':scope > *').first();
     expect(await style(card, 'background-color')).toBe(SURFACE_2);
     expect(await style(card, 'border-top-color')).toBe(AMBER_500_40);
     expect(await style(card, 'border-top-left-radius')).toBe('12px');
-    const tag = card.getByText('Richiede input', { exact: true });
+    const tag = card.getByText('Needs Input', { exact: true });
     expect(await style(tag, 'text-transform')).toBe('uppercase');
     expect(await style(tag, 'color')).toBe(AMBER_300);
-    const reply = button(card, 'Rispondi');
+    const reply = button(card, 'Reply');
     expect(await style(reply, 'background-color')).toBe(ACCENT);
     expect(await style(reply, 'color')).toBe(CANVAS);
 
@@ -597,7 +597,7 @@ test.describe('session list', () => {
     const folder = await newFolder('reduced-motion');
     await startWorking(request, await startViaApi(request, folder));
     await page.goto('/');
-    await expect(entry(page, folder)).toContainText('Lavora');
+    await expect(entry(page, folder)).toContainText('Running');
     const dot = entry(page, folder).locator('[aria-hidden="true"]').first();
     const animation = await dot.evaluate((el) => {
       const s = getComputedStyle(el);
@@ -607,7 +607,7 @@ test.describe('session list', () => {
   });
 
   // REQ-8: the needs-input dot is amber and pulses (external row, which has the dot)
-  test('an external needs-input row has the pulsing amber dot and the "Esterna" chip', async ({ page }) => {
+  test('an external needs-input row has the pulsing amber dot and the "External" chip', async ({ page }) => {
     const external = { id: 'ext-studio-3', folder: '/srv/esterni/api', label: 'Aggiorna', state: 'needs_input', waitingTool: 'Edit', lastActivity: new Date().toISOString(), external: true };
     await showOnly(page, [external]);
     await page.goto('/');
@@ -616,10 +616,10 @@ test.describe('session list', () => {
     expect(await style(dot, 'background-color')).toBe(AMBER_400);
     await expectPulse(dot, true);
     expect(await style(row, 'border-top-style')).toBe('dashed');
-    const chip = row.getByText('Esterna', { exact: true });
+    const chip = row.getByText('External', { exact: true });
     expect(await style(chip, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
-    await expect(button(row, 'Rispondi')).toHaveCount(0);
-    await expect(row).toContainText('Permesso per Edit');
+    await expect(button(row, 'Reply')).toHaveCount(0);
+    await expect(row).toContainText('Permission for Edit');
   });
 
   // REQ-12: the group titles are mono uppercase muted labels
@@ -659,15 +659,15 @@ test.describe('hosted session view', () => {
     await expect(head.locator('.avatar')).toHaveCount(0);
 
     // REQ-31: the emerald tinted mono pill with its dot
-    const pill = head.getByText('Lavora', { exact: true });
+    const pill = head.getByText('Running', { exact: true });
     await expect(pill).toBeVisible();
     expect(await style(pill, 'background-color')).toBe(EMERALD_500_15);
     expect(await style(pill, 'color')).toBe(EMERALD_400);
     expect(await style(pill, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     await expect(pill.locator('[aria-hidden="true"]')).toHaveCount(1);
 
-    // REQ-32: rose "Interrompi" and "Termina"
-    for (const name of ['Interrompi', 'Termina']) {
+    // REQ-32: rose "Interrupt" and "Terminate"
+    for (const name of ['Interrupt', 'Terminate']) {
       const action = button(head, name);
       expect(await style(action, 'color'), name).toBe(ROSE_400);
       expect(await style(action, 'background-color'), name).toBe(ROSE_500_15);
@@ -676,7 +676,7 @@ test.describe('hosted session view', () => {
     }
 
     // REQ-34: the terminal panel on canvas, subtle border, 8 px radius, 12 px mono
-    const region = page.getByRole('region', { name: 'Terminale di billing-api' });
+    const region = page.getByRole('region', { name: 'Terminal: billing-api' });
     expect(await style(region, 'background-color')).toBe(CANVAS);
     expect(await style(region, 'border-top-color')).toBe(BORDER_SUBTLE);
     expect(await style(region, 'border-top-left-radius')).toBe('8px');
@@ -686,7 +686,7 @@ test.describe('hosted session view', () => {
 
     // REQ-35: the keys in keyboard badges
     const keys = mainArea(page).locator('kbd');
-    await expect(keys).toHaveText(['Ctrl', 'Maiusc', 'L']);
+    await expect(keys).toHaveText(['Ctrl', 'Shift', 'L']);
     for (const key of await keys.all()) {
       expect(await style(key, 'background-color')).toBe(SURFACE_3);
       expect(await px(key, 'font-size')).toBe(10);
@@ -705,7 +705,7 @@ test.describe('hosted session view', () => {
     expect.soft(await style(snackbar(page), 'backdrop-filter')).toBe('blur(14px)');
     expect(await style(snackbar(page), 'border-top-left-radius')).toBe('8px');
     expect(await style(snackbar(page), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
-    expect(await style(button(snackbar(page), 'Apri'), 'color')).toBe(ACCENT);
+    expect(await style(button(snackbar(page), 'Open'), 'color')).toBe(ACCENT);
     expect(await box(region), 'the terminal panel does not resize for the snackbar').toEqual(before);
   });
 
@@ -742,24 +742,24 @@ test.describe('external session view', () => {
         ],
       }),
     );
-    const userMessage = mainArea(page).getByRole('article', { name: 'Utente', exact: true });
+    const userMessage = mainArea(page).getByRole('article', { name: 'You', exact: true });
     const claudeMessage = mainArea(page).getByRole('article', { name: 'Claude', exact: true });
     await expect(userMessage).toContainText('Esegui i test');
 
     // REQ-53: the subbar of the external view is 40 px high too
     expect.soft((await box(subbar(page))).height, 'external subbar height').toBeCloseTo(40, 0);
 
-    // REQ-33: accent "Riprendi qui", neutral mono "Sola lettura"
-    const resume = button(mainArea(page), 'Riprendi qui');
+    // REQ-33: accent "Resume Here", neutral mono "Read-only"
+    const resume = button(mainArea(page), 'Resume Here');
     expect(await style(resume, 'background-color')).toBe(ACCENT);
     expect(await style(resume, 'color')).toBe(CANVAS);
     expect((await box(resume)).height).toBeCloseTo(32, 0);
-    const readOnly = mainArea(page).getByText('Sola lettura', { exact: true });
+    const readOnly = mainArea(page).getByText('Read-only', { exact: true });
     expect(await style(readOnly, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     expect(await effectiveBackground(readOnly)).toBe(SURFACE_2);
 
-    // REQ-36, REQ-38: 24 px square avatars, "T" and the accent "✦"
-    const userAvatar = userMessage.getByText('T', { exact: true });
+    // REQ-36, REQ-38: 24 px square avatars, "U" and the accent "✦"
+    const userAvatar = userMessage.getByText('U', { exact: true });
     const claudeAvatar = claudeMessage.getByText('✦', { exact: true });
     for (const avatar of [userAvatar, claudeAvatar]) {
       const b = await box(avatar);
@@ -772,7 +772,7 @@ test.describe('external session view', () => {
     expect(await style(userAvatar, 'background-color')).toBe(SURFACE_3);
 
     // REQ-36: the name line with the mono time
-    await expect(userMessage.getByText('Tu', { exact: true })).toBeVisible();
+    await expect(userMessage.getByText('You', { exact: true })).toBeVisible();
     await expect(claudeMessage.getByText('Claude', { exact: true })).toBeVisible();
     const time = userMessage.locator('time');
     expect(await style(time, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
@@ -794,7 +794,7 @@ test.describe('external session view', () => {
     await expect(claudeMessage).not.toContainText('`');
 
     // REQ-39: the tool card row, then the open output on canvas
-    const card = mainArea(page).getByRole('article', { name: 'Strumento: Bash' });
+    const card = mainArea(page).getByRole('article', { name: 'Tool: Bash' });
     const toggle = card.getByRole('button').first();
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await expect(card.locator('svg')).toHaveCount(0);
@@ -802,7 +802,7 @@ test.describe('external session view', () => {
     expect(await style(name, 'color')).toBe(ACCENT);
     expect(await style(name, 'background-color')).toBe(SURFACE_3);
     expect(await style(toggle.getByText('npm test', { exact: true }), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
-    const outcome = toggle.getByText(/Fallito/);
+    const outcome = toggle.getByText(/Error/);
     await expect(outcome).toContainText('▾');
     expect(await style(outcome, 'color')).toBe(ROSE_400);
     expect(await style(outcome, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
@@ -816,8 +816,8 @@ test.describe('external session view', () => {
     expect(await style(output, 'color')).toBe(TEXT_SECONDARY);
   });
 
-  // REQ-41: "N nuovi messaggi" is the glass toast
-  test('"N nuovi messaggi" is a glass button in mono', async ({ page }) => {
+  // REQ-41: "N new messages" is the glass toast
+  test('"N new messages" is a glass button in mono', async ({ page }) => {
     const external = { id: 'ext-studio-5', folder: '/srv/esterni/lungo', label: 'Molti messaggi', state: 'idle', lastActivity: new Date().toISOString(), external: true };
     const socket = await showOnly(page, [external]);
     await page.goto('/');
@@ -827,7 +827,7 @@ test.describe('external session view', () => {
     await expect(mainArea(page).getByText('messaggio 40', { exact: true })).toBeVisible();
     await mainArea(page).getByText('messaggio 1', { exact: true }).scrollIntoViewIfNeeded();
     ws.send(JSON.stringify({ type: 'items', items: [{ kind: 'assistant', text: 'nuovo 1' }, { kind: 'assistant', text: 'nuovo 2' }] }));
-    const more = button(mainArea(page), '2 nuovi messaggi');
+    const more = button(mainArea(page), '2 new messages');
     await expect(more).toBeVisible();
     expect(await style(more, 'background-color')).toBe('rgba(24, 24, 31, 0.82)');
     expect.soft(await style(more, 'backdrop-filter')).toBe('blur(14px)');
@@ -842,7 +842,7 @@ test.describe('dialogs', () => {
   // REQ-43, REQ-44, REQ-46, REQ-47 — scenario "The new-session dialog uses the Studio modal"
   test('the new-session dialog has the mock modal: dark backdrop with no blur, header with dot and "[Esc]", mono field, surface-1 footer', async ({ page }) => {
     await page.goto('/');
-    await button(topBar(page), 'Nuova sessione').click();
+    await button(topBar(page), 'New Session').click();
     const dialog = chooser(page);
     await expect(dialog).toBeVisible();
 
@@ -856,8 +856,8 @@ test.describe('dialogs', () => {
     expect((await box(dialog)).width).toBeLessThanOrEqual(448 + TOLERANCE);
 
     // REQ-44: the accent dot, the title and the mono "[Esc]"
-    const title = dialog.getByRole('heading', { name: 'Nuova sessione' });
-    const esc = button(dialog, 'Chiudi (Esc)');
+    const title = dialog.getByRole('heading', { name: 'New Claude Code Session' });
+    const esc = button(dialog, 'Close (Esc)');
     await expect(esc).toHaveText('[Esc]');
     expect(await style(esc, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     expect(await style(esc, 'color')).toBe(TEXT_MUTED);
@@ -873,8 +873,8 @@ test.describe('dialogs', () => {
     expect(await style(title, 'font-weight')).toBe('600');
 
     // REQ-46: the mono label and the field on canvas, accent border on focus
-    const field = dialog.getByRole('textbox', { name: 'Cartella del progetto', exact: true });
-    const label = dialog.getByText('Cartella del progetto', { exact: true });
+    const field = dialog.getByRole('textbox', { name: 'Working Directory Path', exact: true });
+    const label = dialog.getByText('Working Directory Path', { exact: true });
     expect(await px(label, 'font-size')).toBe(11);
     expect(await style(label, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     expect(await style(field, 'background-color')).toBe(CANVAS);
@@ -883,9 +883,9 @@ test.describe('dialogs', () => {
     expect(await style(field, 'border-top-color')).toBe(ACCENT_BORDER);
     expect((await box(label)).y).toBeLessThan((await box(field)).y);
 
-    // REQ-47: surface-1 footer, neutral "Annulla", accent "Avvia sessione"
-    const cancel = button(dialog, 'Annulla');
-    const start = button(dialog, 'Avvia sessione');
+    // REQ-47: surface-1 footer, neutral "Cancel", accent "Start Session"
+    const cancel = button(dialog, 'Cancel');
+    const start = button(dialog, 'Start Session');
     const footer = cancel.locator('xpath=..');
     expect(await style(footer, 'background-color')).toBe(SURFACE_1);
     expect(await style(footer, 'border-top-color')).toBe(BORDER_SUBTLE);
@@ -896,80 +896,80 @@ test.describe('dialogs', () => {
     expect((await box(start)).x).toBeGreaterThan((await box(cancel)).x);
   });
 
-  // REQ-45 — scenario "The new-session dialog uses the Studio modal": "[Esc]" closes as "Annulla", the open session stays
+  // REQ-45 — scenario "The new-session dialog uses the Studio modal": "[Esc]" closes as "Cancel", the open session stays
   test('a click on "[Esc]" closes the new-session dialog and the open session does not change', async ({ page, request }) => {
     await showOnly(page);
     const folder = await newFolder('esc-keeps-open');
     await startViaApi(request, folder);
     await page.goto('/');
     await openFromList(page, folder);
-    await button(topBar(page), 'Nuova sessione').click();
+    await button(topBar(page), 'New Session').click();
     await expect(chooser(page)).toBeVisible();
-    await button(chooser(page), 'Chiudi (Esc)').click();
+    await button(chooser(page), 'Close (Esc)').click();
     await expect(chooser(page)).toHaveCount(0);
     await expect(entry(page, folder)).toHaveAttribute('aria-current', 'true');
     await expect(terminal(page)).toContainText(`CWD:${folder}`);
   });
 
   // REQ-45, Dialog "Keyboard": "[Esc]" is in the focus trap
-  test('Tab from "Avvia sessione" wraps to "[Esc]" inside the dialog', async ({ page }) => {
+  test('Tab from "Start Session" wraps to "[Esc]" inside the dialog', async ({ page }) => {
     await page.goto('/');
-    await button(topBar(page), 'Nuova sessione').click();
+    await button(topBar(page), 'New Session').click();
     const dialog = chooser(page);
-    await button(dialog, 'Avvia sessione').focus();
+    await button(dialog, 'Start Session').focus();
     await page.keyboard.press('Tab');
-    await expect(button(dialog, 'Chiudi (Esc)')).toBeFocused();
+    await expect(button(dialog, 'Close (Esc)')).toBeFocused();
     await page.keyboard.press('Shift+Tab');
-    await expect(button(dialog, 'Avvia sessione')).toBeFocused();
+    await expect(button(dialog, 'Start Session')).toBeFocused();
   });
 
   // REQ-45: "[Esc]" in the resume dialog closes it too
   test('a click on "[Esc]" closes the resume dialog', async ({ page }) => {
     await page.route('**/api/past-sessions', (route) => route.fulfill({ json: [] }));
     await page.goto('/');
-    await railButton(page, 'Riprendi').click();
+    await railButton(page, 'Resume').click();
     await expect(history(page)).toBeVisible();
-    await button(history(page), 'Chiudi (Esc)').click();
+    await button(history(page), 'Close (Esc)').click();
     await expect(history(page)).toHaveCount(0);
   });
 
   // REQ-48 — scenario "The stop confirmation is drawn in rose"
-  test('the stop confirmation shows "Termina" in rose and focuses "Annulla"', async ({ page, request }) => {
+  test('the stop confirmation shows "Terminate" in rose and focuses "Cancel"', async ({ page, request }) => {
     await showOnly(page);
     const folder = await newFolder('stop-rose');
     const id = await startViaApi(request, folder);
     await page.goto('/');
     await openFromList(page, folder);
     await startWorking(request, id);
-    await expect(subbar(page).getByText('Lavora', { exact: true })).toBeVisible();
-    await button(subbar(page), 'Termina').click();
-    const confirm = page.getByRole('alertdialog', { name: 'Terminare la sessione?' });
+    await expect(subbar(page).getByText('Running', { exact: true })).toBeVisible();
+    await button(subbar(page), 'Terminate').click();
+    const confirm = page.getByRole('alertdialog', { name: 'Terminate the Session?' });
     await expect(confirm).toBeVisible();
-    await expect(button(confirm, 'Annulla')).toBeFocused();
-    const primary = button(confirm, 'Termina');
+    await expect(button(confirm, 'Cancel')).toBeFocused();
+    const primary = button(confirm, 'Terminate');
     expect(await style(primary, 'color')).toBe(ROSE_400);
     expect(await style(primary, 'background-color')).toBe(ROSE_500_15);
     await expect(confirm.locator('svg')).toHaveCount(0);
   });
 
   // REQ-49 — scenario "The running-elsewhere warning is drawn in amber"
-  test('"Riprendi qui" opens the warning with the text in an amber banner and "Riprendi comunque" in amber', async ({ page }) => {
+  test('"Resume Here" opens the warning with the text in an amber banner and "Resume Anyway" in amber', async ({ page }) => {
     const external = { id: 'ext-studio-6', folder: '/srv/esterni/ricerca', label: 'Analisi', state: 'idle', lastActivity: new Date().toISOString(), external: true };
     const socket = await showOnly(page, [external]);
     await page.goto('/');
     await entry(page, external.folder).click();
     (await socket()).send(JSON.stringify({ type: 'items', items: [] }));
-    await button(mainArea(page), 'Riprendi qui').click();
-    const warning = page.getByRole('alertdialog', { name: 'Sessione in esecuzione in un terminale' });
+    await button(mainArea(page), 'Resume Here').click();
+    const warning = page.getByRole('alertdialog', { name: 'Session Running in a Terminal' });
     await expect(warning).toBeVisible();
-    const text = warning.getByText(/Questa sessione è ancora in esecuzione/);
+    const text = warning.getByText(/This session is still running/);
     const banner = text.locator('xpath=ancestor::*[contains(@class, "vx-surface-2")][1]');
     expect(await style(banner, 'border-top-color')).toBe(AMBER_500_40);
     expect(await style(banner, 'border-top-left-radius')).toBe('12px');
     expect(await style(banner.locator('svg'), 'color')).toBe(AMBER_400);
-    const primary = button(warning, 'Riprendi comunque');
+    const primary = button(warning, 'Resume Anyway');
     expect(await style(primary, 'color')).toBe(AMBER_400);
-    await expect(button(warning, 'Annulla')).toBeFocused();
+    await expect(button(warning, 'Cancel')).toBeFocused();
   });
 
   // Decisions "Dialog avatars", REQ-12: the dialog rows keep a neutral 24 px avatar, headings are mono labels
@@ -988,7 +988,7 @@ test.describe('dialogs', () => {
       }),
     );
     await page.goto('/');
-    await railButton(page, 'Riprendi').click();
+    await railButton(page, 'Resume').click();
     const dialog = history(page);
     const heading = dialog.getByText('/home/dev/Progetti/Negozio', { exact: true });
     await expect(heading).toBeVisible();
@@ -1001,7 +1001,7 @@ test.describe('dialogs', () => {
     expect(a.width).toBeCloseTo(24, 0);
     expect(await style(avatars.first(), 'background-color')).toBe(SURFACE_3);
     expect(await style(avatars.nth(1), 'background-color')).toBe(SURFACE_3);
-    const running = dialog.getByText('In esecuzione in un terminale', { exact: true });
+    const running = dialog.getByText('Running in a terminal', { exact: true });
     expect(await style(running, 'color')).toBe(AMBER_400);
     expect(await style(running, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
   });
@@ -1021,23 +1021,23 @@ test.describe('area states', () => {
     });
     await page.goto('/');
 
-    const empty = mainArea(page).locator('.vx-surface-1').filter({ hasText: 'Nessuna sessione aperta.' });
+    const empty = mainArea(page).locator('.vx-surface-1').filter({ hasText: 'No open session.' });
     await expect(empty).toBeVisible();
-    await expect(empty).toContainText('Avvia una nuova sessione o riprendine una passata.');
-    const title = empty.getByText('Nessuna sessione aperta.', { exact: true });
+    await expect(empty).toContainText('Start a new session or resume a past one.');
+    const title = empty.getByText('No open session.', { exact: true });
     expect(await px(title, 'font-size')).toBe(24);
     expect(await style(title, 'font-family')).toMatch(/^["']?Roboto Flex["']?/);
     const tile = empty.locator('[aria-hidden="true"]').first();
     const tileBox = await box(tile);
     expect(tileBox.width).toBeCloseTo(48, 0);
     expect(await style(tile.locator('svg'), 'color')).toBe(ACCENT);
-    expect(await style(button(empty, 'Nuova sessione'), 'background-color')).toBe(ACCENT);
-    expect(await style(button(empty, 'Riprendi sessione'), 'background-color')).toBe(SURFACE_2);
+    expect(await style(button(empty, 'New Session'), 'background-color')).toBe(ACCENT);
+    expect(await style(button(empty, 'Resume Session'), 'background-color')).toBe(SURFACE_2);
 
     await expect.poll(() => events !== undefined).toBe(true);
     await events!.close({ code: 1001, reason: 'server stopped' });
     const alert = panel(page).getByRole('alert');
-    await expect(alert).toHaveText('Connessione al server persa. Ricarica la pagina.');
+    await expect(alert).toHaveText('Connection to the server lost. Reload the page.');
     expect(await style(alert, 'background-color')).toBe(SURFACE_1);
     const errorTile = alert.locator('[aria-hidden="true"]').first();
     expect((await box(errorTile)).width).toBeCloseTo(32, 0);
@@ -1045,15 +1045,15 @@ test.describe('area states', () => {
   });
 
   // REQ-50: the list empty state and loading state use the compact block
-  test('"Nessuna sessione." in the list is the compact area-state block', async ({ page }) => {
+  test('"No sessions." in the list is the compact area-state block', async ({ page }) => {
     await page.route(
       (url) => url.pathname === '/api/sessions',
       (route) => (route.request().method() === 'GET' ? route.fulfill({ json: [] }) : route.fallback()),
     );
     await page.goto('/');
-    const block = panel(page).locator('.vx-surface-1').filter({ hasText: 'Nessuna sessione.' });
+    const block = panel(page).locator('.vx-surface-1').filter({ hasText: 'No sessions.' });
     await expect(block).toBeVisible();
-    const title = block.getByText('Nessuna sessione.', { exact: true });
+    const title = block.getByText('No sessions.', { exact: true });
     expect(await px(title, 'font-size')).toBe(12);
     expect((await box(block.locator('[aria-hidden="true"]').first())).width).toBeCloseTo(32, 0);
   });

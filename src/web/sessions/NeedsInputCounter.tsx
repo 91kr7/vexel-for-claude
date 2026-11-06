@@ -16,7 +16,7 @@ export function NeedsInputCounter({ sessions }: NeedsInputCounterProps) {
       {count > 0 && (
         <span className="status-pill state-needs_input needs-input-chip">
           <StateDot state="needs_input" />
-          {count} richiede input
+          {count === 1 ? '1 needs input' : `${count} need input`}
         </span>
       )}
     </span>

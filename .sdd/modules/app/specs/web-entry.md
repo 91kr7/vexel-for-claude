@@ -10,7 +10,7 @@ type: UI entry point
 
 ## Contract
 
-- the page has `lang="it"` and the title "Vexel for Claude".
+- the page has `lang="en"` and the title "Vexel for Claude".
 - the page declares `color-scheme: dark` only, in the meta tag and on `:root`. Scrollbars and native controls are dark, also when the system theme is light.
 - the script renders AppLayout in `#root`, with the global styles.
 - body → `--bg-canvas` background, `--text-primary` text, Roboto Flex 14 px, line height 1.5.
@@ -64,3 +64,4 @@ Client classes built from the mock's parts:
 
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-2`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-10`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-46`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-47`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-52`
 - `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client-ui_redesign/REQ-1`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-10`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-11`

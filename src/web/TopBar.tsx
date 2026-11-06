@@ -18,7 +18,7 @@ export function TopBar({ onNewSession }: TopBarProps) {
       </div>
       <button type="button" className="button-primary button-bar" onClick={onNewSession}>
         <PlusIcon />
-        Nuova sessione
+        New Session
       </button>
     </header>
   );

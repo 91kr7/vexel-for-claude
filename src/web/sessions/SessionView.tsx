@@ -30,7 +30,7 @@ function attachUrl(sessionId: string): string {
 
 function closeMessage(code: number): string | null {
   if (code === SESSION_ENDED) return null;
-  return code === SESSION_NOT_FOUND ? 'La sessione non esiste più.' : 'Connessione alla sessione persa.';
+  return code === SESSION_NOT_FOUND ? 'The session no longer exists.' : 'Connection to the session lost.';
 }
 
 function cssVar(element: Element, name: string): string {
@@ -119,7 +119,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
     socket.addEventListener(
       'close',
       (event: CloseEvent) => {
-        terminal.write('\r\n\x1b[2m[Sessione disconnessa]\x1b[0m\r\n');
+        terminal.write('\r\n\x1b[2m[Session disconnected]\x1b[0m\r\n');
         setLoading(false);
         setConnectionError(closeMessage(event.code));
       },
@@ -168,7 +168,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
                 <span className="stop-glyph" aria-hidden="true">
                   ■
                 </span>
-                Interrompi
+                Interrupt
               </button>
             )}
             <StopSessionButton sessionId={sessionId} state={session?.state} folderName={session && folderNameOf(session.folder)} />
@@ -179,7 +179,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
       <div
         className="session-terminal-panel"
         role="region"
-        aria-label={session ? `Terminale di ${folderNameOf(session.folder)}` : 'Terminale'}
+        aria-label={session ? `Terminal: ${folderNameOf(session.folder)}` : 'Terminal'}
       >
         <div className="session-terminal" ref={containerRef} />
         {loading && (
@@ -190,7 +190,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
       </div>
       <div className="session-hint-row">
         <span className="session-hint">
-          <kbd className="kbd-badge">Ctrl</kbd>+<kbd className="kbd-badge">Maiusc</kbd>+<kbd className="kbd-badge">L</kbd> torna all'elenco
+          <kbd className="kbd-badge">Ctrl</kbd>+<kbd className="kbd-badge">Shift</kbd>+<kbd className="kbd-badge">L</kbd> back to the list
         </span>
       </div>
     </div>

@@ -4,10 +4,10 @@ import type { SessionState } from './live-session-store';
 import { StateBadge, StateDot } from './StateBadge';
 
 const table: [SessionState, string][] = [
-  ['working', 'Lavora'],
-  ['needs_input', 'Richiede input'],
-  ['idle', 'In attesa'],
-  ['ended', 'Terminata'],
+  ['working', 'Running'],
+  ['needs_input', 'Needs Input'],
+  ['idle', 'Idle'],
+  ['ended', 'Ended'],
 ];
 
 const textOf = (html: string) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();

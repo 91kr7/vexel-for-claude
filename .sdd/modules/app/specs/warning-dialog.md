@@ -6,7 +6,7 @@ type: UI component
 
 # WarningDialog
 
-**Purpose** → the Dialog frame for a risky action: focus on "Annulla", and the primary action in rose or amber.
+**Purpose** → the Dialog frame for a risky action: focus on "Cancel", and the primary action in rose or amber.
 
 ## Contract
 
@@ -18,10 +18,10 @@ Shows:
 - role `alertdialog`, `aria-modal="true"`, the Dialog frame with no icon.
 - `error` → the description as in Dialog. The primary action is `.button-danger` (rose, look of `#subbar-stop-btn`).
 - `attn` → the description sits in a banner with the look of `#permission-banner`: `.vx-surface-2`, 1 px amber-500 border at 40 %, 12 px radius, padding 14 px, `shadow-lg`. Inside: the amber-400 triangle icon (16 px), 10 px gap, the text in weight 500 and `--text-primary`. The primary action is `.button-attn` (amber).
-- "Annulla" → `.button-neutral`. While it has the focus, it shows the focus ring, whatever moved the focus there.
+- "Cancel" → `.button-neutral`. While it has the focus, it shows the focus ring, whatever moved the focus there.
 
 Focus:
-- on open → "Annulla". So Enter cancels until the user moves the focus.
+- on open → "Cancel". So Enter cancels until the user moves the focus.
 
 ## Rules and invariants
 
