@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, Menu, Tray } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell, Tray } from 'electron';
 import { type AttentionSession, connectAttention } from './attention-client.js';
 import { type LaunchResult, launchBackend, stopStartedBackend } from './backend-launcher.js';
 import { type NotificationCommand, NotificationRules } from './notification-rules.js';
@@ -30,6 +30,10 @@ function showWindow(): void {
   if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
   mainWindow.focus();
+}
+
+function isWebAddress(address: string): boolean {
+  return URL.canParse(address) && ['http:', 'https:'].includes(new URL(address).protocol);
 }
 
 function runNotificationCommands(commands: NotificationCommand[]): void {
@@ -87,6 +91,10 @@ async function start(): Promise<void> {
     webPreferences: { preload: preloadPath },
   });
   mainWindow = current;
+  current.webContents.setWindowOpenHandler(({ url }) => {
+    if (isWebAddress(url)) void shell.openExternal(url);
+    return { action: 'deny' };
+  });
   const updateWindowFocus = () =>
     runNotificationCommands(
       notificationRules.setWindowFocused(current.isFocused() && current.isVisible() && !current.isMinimized()),

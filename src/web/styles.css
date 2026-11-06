@@ -1153,6 +1153,22 @@ input {
   background-color: var(--bg-surface-2);
 }
 
+.terminal-link-tooltip {
+  position: fixed;
+  z-index: 60;
+  max-width: 480px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface-3);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
 .session-hint-row {
   flex: none;
   height: 40px;

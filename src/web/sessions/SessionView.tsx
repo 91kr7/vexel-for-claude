@@ -1,23 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
-import { Terminal } from '@xterm/xterm';
+import { type IBufferRange, Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { folderNameOf } from './Avatar';
+import { openLink } from './link-opener';
 import { SessionHeader, type SessionHeaderSummary } from './SessionHeader';
 import { StopSessionButton } from './StopSessionButton';
+import { loadWebAddressLinks } from './web-address-links';
 
 const ESCAPE = '\x1b';
 const SESSION_ENDED = 1000;
 const SESSION_NOT_FOUND = 4404;
 const TERMINAL_FONT_SIZE = 12;
 const TERMINAL_LINE_HEIGHT = 1.2;
+const LINK_TOOLTIP_OFFSET = 12;
+const LINK_TOOLTIP_MAX_WIDTH = 480;
 
 interface SessionViewProps {
   sessionId: string;
   session?: SessionHeaderSummary;
   onLeaveTerminal: () => void;
+}
+
+interface LinkTooltip {
+  address: string;
+  left: number;
+  top: number;
 }
 
 const isLeaveTerminalKey = (event: KeyboardEvent) =>
@@ -31,6 +41,28 @@ function attachUrl(sessionId: string): string {
 function closeMessage(code: number): string | null {
   if (code === SESSION_ENDED) return null;
   return code === SESSION_NOT_FOUND ? 'The session no longer exists.' : 'Connection to the session lost.';
+}
+
+function openOnCtrlClick(event: MouseEvent, address: string): void {
+  if (event.ctrlKey) openLink(address);
+}
+
+function rangeText(terminal: Terminal, { start, end }: IBufferRange): string {
+  let text = '';
+  for (let y = start.y; y <= end.y; y++) {
+    const line = terminal.buffer.active.getLine(y - 1);
+    text += line?.translateToString(true, y === start.y ? start.x - 1 : 0, y === end.y ? end.x : undefined) ?? '';
+  }
+  return text;
+}
+
+function tooltipAt(event: MouseEvent, address: string): LinkTooltip {
+  const rightmost = window.innerWidth - LINK_TOOLTIP_MAX_WIDTH - LINK_TOOLTIP_OFFSET;
+  return {
+    address,
+    left: Math.max(LINK_TOOLTIP_OFFSET, Math.min(event.clientX + LINK_TOOLTIP_OFFSET, rightmost)),
+    top: event.clientY + LINK_TOOLTIP_OFFSET,
+  };
 }
 
 function cssVar(element: Element, name: string): string {
@@ -61,6 +93,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
   onLeaveTerminalRef.current = onLeaveTerminal;
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [linkTooltip, setLinkTooltip] = useState<LinkTooltip | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -88,9 +121,17 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
       fontSize: TERMINAL_FONT_SIZE,
       lineHeight: TERMINAL_LINE_HEIGHT,
       theme: terminalTheme(container),
+      linkHandler: {
+        activate: openOnCtrlClick,
+        hover: (event, address, range) => {
+          if (rangeText(terminal, range) !== address) setLinkTooltip(tooltipAt(event, address));
+        },
+        leave: () => setLinkTooltip(null),
+      },
     });
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
+    const webAddressLinks = loadWebAddressLinks(terminal, openOnCtrlClick);
     terminal.open(container);
     fitAddon.fit();
     terminalRef.current = terminal;
@@ -142,8 +183,10 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
       resizeObserver.disconnect();
       inputSubscription.dispose();
       resizeSubscription.dispose();
+      webAddressLinks.dispose();
       socket.close();
       terminal.dispose();
+      setLinkTooltip(null);
       terminalRef.current = null;
       socketRef.current = null;
     };
@@ -188,6 +231,11 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
           </div>
         )}
       </div>
+      {linkTooltip && (
+        <div className="terminal-link-tooltip" role="tooltip" style={{ left: linkTooltip.left, top: linkTooltip.top }}>
+          {linkTooltip.address}
+        </div>
+      )}
       <div className="session-hint-row">
         <span className="session-hint">
           <kbd className="kbd-badge">Ctrl</kbd>+<kbd className="kbd-badge">Shift</kbd>+<kbd className="kbd-badge">L</kbd> back to the list

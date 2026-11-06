@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './e2e/claude-dir';
 
-const port = 3100;
+const port = Number(process.env.E2E_PORT ?? 3100);
 const baseURL = `http://127.0.0.1:${port}`;
 // These specs share the server's fixture Claude Code folder, so they must never run at the same time.
 const claudeDirSpecs = /(resume-session|history-search|external-sessions|session-entries|open-session-external|dialogs|desktop-bridge-external)\.spec\.ts$/;

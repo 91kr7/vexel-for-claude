@@ -29,6 +29,9 @@ Shows:
 - a ProgressIndicator "Loading…" centred over the panel, on surface 2 with an 8 px radius, from the start until the first frame (the snapshot) arrives or the connection closes. A click goes through it to the terminal.
 - the session snapshot, then its live output, from AttachSessionRoute.
 - `[Session disconnected]` in the terminal when the connection closes.
+- links in the terminal → the web addresses of WebAddressLinks and the terminal hyperlinks (OSC 8) with an `http` or `https` address. An OSC 8 hyperlink with another scheme is not a link.
+  - pointer over a link → the link is underlined in its own text colour and the pointer is a hand.
+  - pointer over a hyperlink whose visible text on that row differs from its address → a tooltip (`role="tooltip"`) 12 px right of and below the pointer shows the full address, kept 12 px inside the window's left and right edges. Mono 11 px, `--text-primary` on `--bg-surface-3` with a `--border-strong` border, at most 480 px wide, long addresses break. It does not take the pointer. It hides when the pointer leaves the link and when the session changes.
 - the connection closes, between the header and the panel → an ErrorMessage on surface 1:
   - code `1000` (the session process ended) → no message. The header shows "Ended".
   - code `4404` → "The session no longer exists."
@@ -37,6 +40,8 @@ Shows:
 
 Actions:
 - every key typed in the terminal → sent to the pty as `input`, Esc included. Ctrl+Shift+L is the only exception.
+- Ctrl+click on a link → LinkOpener `openLink` with the full address (a wrapped address included). The session stays on screen.
+- a plain click on a link (no Ctrl) → opens nothing; focus and text selection work as on any other text.
 - Ctrl+Shift+L in the terminal (no Alt, no Meta, either case of L) → `onLeaveTerminal()`. The terminal does not process it, nothing goes to the pty, and the browser default is prevented.
 - "Interrupt" → sends Esc (`\x1b`) as `input`, then gives focus back to the terminal.
 - the panel changes size → the terminal fits it and sends the new `resize`. It also sends a `resize` as soon as it connects.
@@ -52,6 +57,7 @@ Actions:
 ## Dependencies
 
 - AttachSessionRoute
+- WebAddressLinks, LinkOpener
 - SessionHeader, StopSessionButton, Avatar (`folderNameOf`)
 - ProgressIndicator, ErrorMessage, ThemeTokens, WebEntry, BundledFont (module app)
 
@@ -62,3 +68,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-34`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-35`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-light_theme/REQ-12`
+- `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`
