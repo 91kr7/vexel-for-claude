@@ -10,3 +10,5 @@
 | 2026-11-06 | dev | G4 title-bar | pass | Build green (re-run); files map to INT-1..5; accepted: INT-4 as a `.modal` rule in `styles.css` instead of `Dialog.tsx` (smaller change); GNOME double click, edge resize and shadow unverified, left to tests and the human |
 | 2026-11-06 | test | question tester Q1 | decided | Alt menu bar lost without the native frame: accepted, the request removes the native chrome; DesktopApp spec drops "Alt shows it" |
 | 2026-11-06 | test | G5 title-bar round 1 | sent back | Window opens maximized with `frame: false` (GNOME auto-maximize), DesktopApp spec says 1280 × 800: code defect; Alt test to follow the spec change |
+| 2026-11-06 | dev | G4 title-bar fix rounds 1-2 | pass | Undo GNOME auto-maximize, then keep 1280 × 800 against the restore for 1 s; build green |
+| 2026-11-06 | test | G5 title-bar round 3 | pass | Re-run by gatekeeper: Electron frameless checks 3/3 (1280 × 800 now holds), unit 2 files green; browser e2e 14/14 from round 1 untouched |
