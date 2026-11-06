@@ -3,6 +3,7 @@ import { AreaState } from '../feedback/AreaState';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { ArrowDownIcon, LockIcon } from '../icons/Icons';
+import { SessionFooter } from '../sessions/SessionFooter';
 import { SessionHeader, type SessionHeaderSummary } from '../sessions/SessionHeader';
 import { ResumeHereButton } from './ResumeHereButton';
 
@@ -244,7 +245,6 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
     <div className="conversation-view">
       <SessionHeader
         session={session}
-        line="Open in Another Terminal"
         actions={<ResumeHereButton sessionId={sessionId} onResumed={onResumed} />}
         notice={
           <span className="mono-chip vx-surface-2 read-only-chip">
@@ -279,6 +279,7 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
           </button>
         )}
       </div>
+      <SessionFooter session={session} lead="Open in Another Terminal · " />
     </div>
   );
 }

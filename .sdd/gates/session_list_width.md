@@ -17,3 +17,5 @@
 | 2026-11-07 | test | G5 list-width round 1 | sent back | Re-run by gatekeeper green (unit 47, e2e 26 on list-width + layout); REQ-8 app restart untested, batch notes ask for an Electron check; `layout.spec.ts` helper change accepted |
 | 2026-11-07 | test | G5 list-width round 2 | pass | Electron restart check added and re-run by gatekeeper (1/1); `playwright.config.ts` Electron pattern extended, test infra only; no source change |
 | 2026-11-07 | dev | key hint in the footer | human decision | Footer drops the Ctrl+Shift+L hint, shortcut kept; REQ-22 withdrawn; developer, planner and analysis updated; future shortcut system out of scope |
+| 2026-11-07 | dev | G4 header-footer | sent back | Footer cost tooltip "estimate at API list prices" differs from the list entry text the plan cites; align with `SessionList.tsx` "Estimated cost at API list prices" |
+| 2026-11-07 | dev | G4 header-footer | pass | Build green (re-run); files map to INT-1..6; key hint removed per human decision; accepted: optional `line` prop kept on SessionHeader (existing test uses it); old header/hint tests expected to need rewriting |

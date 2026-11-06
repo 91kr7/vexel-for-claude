@@ -6,13 +6,13 @@ type: UI component
 
 # SessionView
 
-**Purpose** → the open hosted session in the main area, as `#screen-session` of `.sdd/mockups/studio-dark/mock.html`: the subbar, the terminal panel and the hint row.
+**Purpose** → the open hosted session in the main area, as `#screen-session` of `.sdd/mockups/studio-dark/mock.html`: the subbar, the terminal panel and the footer.
 
 ## Contract
 
 Description:
-- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with "Search", the TerminalZoomControls, "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the hint row.
-- the panel takes all the height the header and the hint row leave.
+- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with "Search", "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the SessionFooter.
+- the panel takes all the height the header and the footer leave.
 
 Props:
 - `sessionId` → the session to show.
@@ -20,13 +20,14 @@ Props:
   - the terminal never shows output of the previous session after a switch.
   - a new `sessionId` closes the search box, with its text and its count.
 - `onLeaveTerminal()` → called when the user presses Ctrl+Shift+L in the terminal.
-- `session` → `{ folder, label, state }` of the session, optional. It goes to the SessionHeader, and its `state` and folder name to StopSessionButton. A change of `session` does not reconnect the terminal.
+- `session` → `{ folder, label, state, usage? }` of the session, optional. It goes to the SessionHeader and the SessionFooter, and its `state` and folder name to StopSessionButton. A change of `session` does not reconnect the terminal.
 
 Shows:
 - the terminal panel → `role="region"` named "Terminal: <folder name>" ("Terminal" without `session`). 16 px from the left, right and top, 8 px radius, 1 px `--border-subtle` border, `--term-bg` background, padding 12 px. The terminal fills the box inside the padding.
 - the terminal → Roboto Mono at the size of TerminalFontSizeStore (12 px by default), line height 1.2. Background `--term-bg`, default text `--term-fg`, cursor `--term-cursor`, selection `--term-selection`. These tokens have the same dark values in both themes, so the panel stays dark in the light theme. The font is loaded before the terminal opens and fits; if it fails to load, the terminal opens with the next font of `--font-mono`. The ANSI colours that Claude Code writes stay as written.
 - while the terminal or the search box has the keyboard focus, the panel shows the focus ring (`--color-focus-ring`) around its rounded edge.
-- the hint row → 40 px high, padding 0 × 16 px, centred: the keys "Ctrl", "Shift", "L" as `.kbd-badge`, joined by "+", then "back to the list", 11 px in `--text-muted`, 6 px gaps. Always visible, never cut.
+- the SessionFooter with `session` (path and figures). Its end holds the TerminalZoomControls, at the right end.
+- no on-screen hint for Ctrl+Shift+L (human decision, 2026-11-07).
 - a ProgressIndicator "Loading…" centred over the panel, on surface 2 with an 8 px radius, from the start until the first frame (the snapshot) arrives or the connection closes. A click goes through it to the terminal.
 - the session snapshot, then its live output, from AttachSessionRoute.
 - `[Session disconnected]` in the terminal when the connection closes.
@@ -40,7 +41,7 @@ Shows:
 - "Search" → an icon button (search icon, 26 px, `--text-secondary`) with the accessible name "Search" and the tooltip "Search (Ctrl+Shift+F)". It shows in every state, `ended` included, before "Interrupt".
 - the TerminalSearchBox at the top right of the panel, while the search is open. Its count follows the search, also while new output arrives.
 - the search matches → every match on a `--term-match-bg` background. The current match has a 1 px `--term-match-current-border` outline over the selection colour, so it looks different from the others.
-- the TerminalZoomControls → after "Search" and before "Interrupt", in every state, `ended` included. They show the size of TerminalFontSizeStore.
+- the TerminalZoomControls → at the right end of the footer, in every state, `ended` included. They show the size of TerminalFontSizeStore.
 - while files are dragged over the panel, in the desktop app (useDesktopBridge gives a path lookup) and the session is not `ended` (`undefined` included) → the panel shows that it accepts the drop: the `drop-target` class, a 2 px dashed `--accent-primary` outline and an `--accent-primary` border. It goes when the drag leaves the panel or the files are dropped. In the browser client and on an ended session the panel never shows it.
 - after a drop on the panel in the browser client (no path lookup) → the message "Paths can be dropped only in the desktop app." (`role="status"`) at the bottom centre of the panel, for 4 seconds; a new drop starts the 4 seconds again. It does not take the pointer.
 - "Interrupt" → `.button-danger` (rose, look of `#subbar-stop-btn`) with the decorative glyph "■" before the text. Its accessible name is "Interrupt". It shows in every state except `ended`, `undefined` included.
@@ -73,12 +74,12 @@ Actions:
 
 ## Rules and invariants
 
-- Human decision (`plan-claude_sessions_client-ui_redesign/REQ-4`): one key combination moves the focus from the terminal to the sidebar, with an on-screen hint. Claude Code needs Tab, Shift+Tab and Esc, so the terminal keeps them.
+- Human decision (`plan-claude_sessions_client-ui_redesign/REQ-4`): one key combination moves the focus from the terminal to the sidebar. Its on-screen hint was removed by human decision (2026-11-07). Claude Code needs Tab, Shift+Tab and Esc, so the terminal keeps them.
 - No key typed in the search box goes to the pty.
 - Why Ctrl+Shift+L: Claude Code does not use it (Ctrl+L, which it uses to redraw, stays free without Shift). Chromium and Firefox on Linux give it no default action. Ctrl+Shift+E would open the Firefox network monitor. "L" stands for the session list.
-- The hint row has a fixed height. The snackbar is fixed to the window (AppLayout), so it never changes the panel size and never resizes the terminal.
+- The footer has a fixed height of 40 px, the height of the former hint row, so the terminal keeps its number of rows. The snackbar is fixed to the window (AppLayout), so it never changes the panel size and never resizes the terminal.
 - The view does not read the system theme.
-- One size for all terminals: the terminal opens at the current size of TerminalFontSizeStore. The zoom changes only the terminal text: the subbar, the hint row and the rest of the page keep their size.
+- One size for all terminals: the terminal opens at the current size of TerminalFontSizeStore. The zoom changes only the terminal text: the subbar, the footer and the rest of the page keep their size.
 - Removing the view closes its connection. The session keeps running.
 - A browser never gives a page the absolute path of a dropped file, and Electron 45 gives it only through the preload (DesktopBridge `getPathForFile`). So the drop inserts paths only in the desktop app.
 
@@ -88,7 +89,7 @@ Actions:
 - WebAddressLinks, LinkOpener, TerminalSearchBox, TerminalFontSizeStore, TerminalZoomControls, droppedPathsText
 - useDesktopBridge `desktopFilePathLookup` (module app)
 - `@xterm/addon-search`
-- SessionHeader, StopSessionButton, Avatar (`folderNameOf`)
+- SessionHeader, SessionFooter, StopSessionButton, Avatar (`folderNameOf`)
 - ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, WebEntry, BundledFont (module app)
 
 ## Requirements served
@@ -99,3 +100,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-light_theme/REQ-12`
 - `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`, `plan-terminal_addons/REQ-14`, `plan-terminal_addons/REQ-15`, `plan-terminal_addons/REQ-16`, `plan-terminal_addons/REQ-17`, `plan-terminal_addons/REQ-18`, `plan-terminal_addons/REQ-19`, `plan-terminal_addons/REQ-20`, `plan-terminal_addons/REQ-21`, `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-23`, `plan-terminal_addons/REQ-24`, `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-26`, `plan-terminal_addons/REQ-27`, `plan-terminal_addons/REQ-28`, `plan-terminal_addons/REQ-29`, `plan-terminal_addons/REQ-32`, `plan-terminal_addons/REQ-33`, `plan-terminal_addons/REQ-34`, `plan-terminal_addons/REQ-35`, `plan-terminal_addons/REQ-36`, `plan-terminal_addons/REQ-37`, `plan-terminal_addons/REQ-38`, `plan-terminal_addons/REQ-39`, `plan-terminal_addons/REQ-42`, `plan-terminal_addons/REQ-43`, `plan-terminal_addons/REQ-46`, `plan-terminal_addons/REQ-47`, `plan-terminal_addons/REQ-48`, `plan-terminal_addons/REQ-50`, `plan-terminal_addons/REQ-51`, `plan-terminal_addons/REQ-52`, `plan-terminal_addons/REQ-54`
+- `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`

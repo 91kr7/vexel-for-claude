@@ -6,7 +6,7 @@ type: UI component
 
 # TerminalZoomControls
 
-**Purpose** → the three subbar controls of SessionView that make the terminal text smaller, restore its default size, or make it larger.
+**Purpose** → the three footer controls of SessionView that make the terminal text smaller, restore its default size, or make it larger.
 
 ## Contract
 
