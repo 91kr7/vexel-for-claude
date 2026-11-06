@@ -33,10 +33,15 @@ type: backend service
     - `Backend exited with code <n>.` or `Backend exited with signal <name>.`
     - `Backend not ready within <s> seconds.`
     - the system error message when the command cannot start.
+- `stopStartedBackend(killTimeoutMs?) → Promise<void>` → stops the server that `launchBackend` started.
+  - no server started, or it already exited → resolves at once. A reused backend is never stopped.
+  - otherwise it sends `SIGTERM` and resolves when the server exits.
+  - the server still runs after `killTimeoutMs` (default `10000`) → it sends `SIGKILL`, then resolves when the server exits.
+  - it also stops a server that is still starting.
 
 ## Rules and invariants
 
-- The started server is detached from the desktop app. Its output goes to `logFile`, which each start empties. So the server keeps running after the desktop app quits.
+- The started server is detached from the desktop app. Its output goes to `logFile`, which each start empties. It runs until `stopStartedBackend` or until it stops on its own.
 - The launcher never passes another bind address: the server stays on `127.0.0.1` (see Server, module app).
 - A program on the port that does not answer the health check counts as no backend. The started server then cannot bind, exits, and the launch fails.
 
@@ -50,4 +55,4 @@ type: backend service
 
 ## Requirements served
 
-- `plan-desktop_app/REQ-4`, `plan-desktop_app/REQ-5`, `plan-desktop_app/REQ-7`, `plan-desktop_app/REQ-8`, `plan-desktop_app/REQ-9`, `plan-desktop_app/REQ-10`
+- `plan-desktop_app/REQ-4`, `plan-desktop_app/REQ-5`, `plan-desktop_app/REQ-7`, `plan-desktop_app/REQ-8`, `plan-desktop_app/REQ-9`, `plan-desktop_app/REQ-10`, `plan-desktop_app/REQ-15`, `plan-desktop_app/REQ-16`

@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 import { closeSync, mkdirSync, openSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -9,6 +9,9 @@ const DEFAULT_READY_TIMEOUT_MS = 15_000;
 const HEALTH_TIMEOUT_MS = 1_000;
 const POLL_INTERVAL_MS = 100;
 const OUTPUT_LINE_COUNT = 20;
+const DEFAULT_KILL_TIMEOUT_MS = 10_000;
+
+let startedServer: ChildProcess | undefined;
 
 export interface LaunchOptions {
   rootDir: string;
@@ -71,6 +74,12 @@ export async function launchBackend(options: LaunchOptions): Promise<LaunchResul
   });
   closeSync(output);
   child.unref();
+  if (child.pid !== undefined) {
+    startedServer = child;
+    child.once('exit', () => {
+      if (startedServer === child) startedServer = undefined;
+    });
+  }
 
   return new Promise<LaunchResult>((resolve) => {
     let settled = false;
@@ -103,4 +112,14 @@ export async function launchBackend(options: LaunchOptions): Promise<LaunchResul
       }
     })();
   });
+}
+
+export async function stopStartedBackend(killTimeoutMs = DEFAULT_KILL_TIMEOUT_MS): Promise<void> {
+  const child = startedServer;
+  if (!child || child.exitCode !== null || child.signalCode !== null) return;
+  const exited = new Promise<void>((resolve) => child.once('exit', () => resolve()));
+  child.kill('SIGTERM');
+  const killTimer = setTimeout(() => child.kill('SIGKILL'), killTimeoutMs);
+  await exited;
+  clearTimeout(killTimer);
 }

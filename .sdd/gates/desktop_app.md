@@ -18,3 +18,4 @@
 | 2026-11-06 | test | G5 desktop-window round 1 | sent back | 1 red: `menu-entry.test.ts` Exec uses bare `env`, spec requires absolute paths; fix in code (`/usr/bin/env`) |
 | 2026-11-06 | dev | G4 desktop-window fix round 1 | pass | One-line change in `src/desktop/menu-entry.ts`; build green |
 | 2026-11-06 | test | G5 desktop-window round 2 | pass | Re-run by gatekeeper: unit `src/desktop` 49/49, e2e `desktop-window.spec.ts` 9/9; no `.only`/`.skip` |
+| 2026-11-06 | dev | G4 window-tray | pass | Build green (re-run); files map to INT-1..5; divergences accepted: every quit path runs the check (REQ-15/17 on all paths), singular dialog text "Quitting ends it" |
