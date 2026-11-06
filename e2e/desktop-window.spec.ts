@@ -749,7 +749,7 @@ test.describe('Frameless window', () => {
     expect(await healthStatus(port), 'REQ-5: the backend keeps running').toBe(200);
   });
 
-  test('REQ-10, DesktopApp: on the backend error the startup bar is a drag area, and Alt still shows the hidden menu bar', async () => {
+  test('REQ-10, DesktopApp: on the backend error the startup bar is a drag area; no menu bar, also on Alt, and the application menu stays', async () => {
     const holder = http.createServer((_request, response) => response.writeHead(404).end());
     holders.push(holder);
     await new Promise<void>((resolve) => holder.listen(0, '127.0.0.1', resolve));
@@ -759,14 +759,14 @@ test.describe('Frameless window', () => {
     const width = (await window.evaluate(() => innerWidth)) as number;
     for (const x of [1, width / 2, width - 1]) expect(await appRegionAt(window, x, 24), `REQ-10: startup bar at ${x}`).toBe('drag');
 
-    const menuBar = await app.evaluate(async ({ BrowserWindow }) => {
+    const menuBar = await app.evaluate(async ({ BrowserWindow, Menu }) => {
       const current = BrowserWindow.getAllWindows()[0]!;
       const before = current.isMenuBarVisible();
       current.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Alt' });
       current.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Alt' });
       await new Promise((resolve) => setTimeout(resolve, 500));
-      return { before, afterAlt: current.isMenuBarVisible() };
+      return { before, afterAlt: current.isMenuBarVisible(), applicationMenu: Menu.getApplicationMenu() !== null };
     });
-    expect(menuBar, 'DesktopApp: a hidden menu bar that Alt shows').toEqual({ before: false, afterAlt: true });
+    expect(menuBar, 'DesktopApp: no menu bar, also on Alt; the application menu stays').toEqual({ before: false, afterAlt: false, applicationMenu: true });
   });
 });
