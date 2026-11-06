@@ -12,7 +12,7 @@ type: configuration and command
 
 - `menuEntryContent({ repoRoot, electronPath, nodePath }) → string` → a Desktop Entry file:
   - `Type=Application`, `Name=Vexel for Claude`, `Comment=Manage Claude Code sessions`, `Terminal=false`, `Categories=Development;`
-  - `Exec` → runs `electronPath` on `repoRoot`, with `AI_CLIENT_NODE=<nodePath>` in its environment.
+  - `Exec` → runs `electronPath --no-sandbox` on `repoRoot`, with `AI_CLIENT_NODE=<nodePath>` in its environment.
   - `Icon` → the absolute path of the AppIcon SVG in `repoRoot`.
   - `StartupWMClass=ai-client` → the window class Electron takes from the package name, so the desktop groups the window under the entry.
   - arguments with spaces or special characters are quoted as the Desktop Entry specification requires.
@@ -25,6 +25,7 @@ type: configuration and command
 ## Rules and invariants
 
 - `Exec` uses absolute paths only. The desktop session does not need `node` on its `PATH`.
+- `Exec` passes `--no-sandbox`. Ubuntu 24.04 AppArmor blocks the Chromium sandbox of an Electron run from `node_modules`, and Electron aborts at launch from the menu (human decision, 2026-11-06).
 - The entry depends on the repository folder: moving the repository needs a new install.
 
 ## Dependencies

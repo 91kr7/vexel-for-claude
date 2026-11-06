@@ -19,8 +19,11 @@ function execArgument(value: string): string {
   return quoted.replaceAll('\\', '\\\\');
 }
 
+// Ubuntu 24.04 AppArmor blocks the Chromium sandbox of an Electron run from node_modules: it aborts at launch.
+export const ELECTRON_FLAGS = ['--no-sandbox'];
+
 export function menuEntryContent({ repoRoot, electronPath, nodePath }: MenuEntryOptions): string {
-  const exec = ['/usr/bin/env', `AI_CLIENT_NODE=${nodePath}`, electronPath, repoRoot].map(execArgument).join(' ');
+  const exec = ['/usr/bin/env', `AI_CLIENT_NODE=${nodePath}`, electronPath, ...ELECTRON_FLAGS, repoRoot].map(execArgument).join(' ');
   return [
     '[Desktop Entry]',
     'Type=Application',

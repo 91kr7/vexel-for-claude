@@ -123,15 +123,15 @@ describe('menuEntryContent', () => {
 
   it('Exec uses absolute paths only', () => {
     const args = parseExec(parseEntry(menuEntryContent(options)).get('Exec') ?? '');
-    const paths = args.map((arg) => arg.replace(/^AI_CLIENT_NODE=/, ''));
+    const paths = args.map((arg) => arg.replace(/^AI_CLIENT_NODE=/, '')).filter((arg) => !arg.startsWith('--'));
     expect(paths.filter((arg) => !path.isAbsolute(arg))).toEqual([]);
   });
 
-  it('Exec runs Electron on the repository with AI_CLIENT_NODE', async () => {
+  it('Exec runs Electron with --no-sandbox on the repository with AI_CLIENT_NODE', async () => {
     const { electronPath, output } = await fakeElectron(path.join(tmp, 'plain'));
     const exec = parseEntry(menuEntryContent({ ...options, electronPath })).get('Exec') ?? '';
     await runExec(exec);
-    expect((await readFile(output, 'utf8')).split('\n').filter(Boolean)).toEqual([options.nodePath, options.repoRoot]);
+    expect((await readFile(output, 'utf8')).split('\n').filter(Boolean)).toEqual([options.nodePath, '--no-sandbox', options.repoRoot]);
   });
 
   it('Exec quotes paths with spaces and shell special characters', async () => {
@@ -139,14 +139,14 @@ describe('menuEntryContent', () => {
     const special = { repoRoot: `/home/user/my "repo" $HOME \`x\` \\ (a);b&c`, electronPath, nodePath: '/opt/my node/bin/node' };
     const exec = parseEntry(menuEntryContent(special)).get('Exec') ?? '';
     await runExec(exec);
-    expect((await readFile(output, 'utf8')).split('\n').filter(Boolean)).toEqual([special.nodePath, special.repoRoot]);
+    expect((await readFile(output, 'utf8')).split('\n').filter(Boolean)).toEqual([special.nodePath, '--no-sandbox', special.repoRoot]);
   });
 
   it('Exec escapes a literal percent sign', async () => {
     const { electronPath, output } = await fakeElectron(path.join(tmp, 'percent'));
     const withPercent = { ...options, repoRoot: '/home/user/repo 100%', electronPath };
     await runExec(parseEntry(menuEntryContent(withPercent)).get('Exec') ?? '');
-    expect((await readFile(output, 'utf8')).split('\n').filter(Boolean)).toEqual([options.nodePath, withPercent.repoRoot]);
+    expect((await readFile(output, 'utf8')).split('\n').filter(Boolean)).toEqual([options.nodePath, '--no-sandbox', withPercent.repoRoot]);
   });
 });
 
