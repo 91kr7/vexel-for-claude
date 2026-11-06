@@ -3,8 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="light" />
     <title>Vexel for Claude</title>
+    <script>
+      // Marks the saved theme before the first paint; ThemeStore owns the same key.
+      (function () {
+        var theme = 'light';
+        try {
+          var saved = localStorage.getItem('ai-client.theme');
+          if (saved === 'light' || saved === 'dark') theme = saved;
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', theme);
+        document.querySelector('meta[name="color-scheme"]').setAttribute('content', theme);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

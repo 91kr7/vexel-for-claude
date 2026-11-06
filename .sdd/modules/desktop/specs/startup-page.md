@@ -15,7 +15,7 @@ type: UI page
 - `state` → `{ kind: "loading" }` or `{ kind: "error", outputLines: string[] }`.
 
 Description:
-- one centred column on the dark "Studio" background. Title of the document: "Vexel for Claude".
+- one centred column on the light background of the client. Title of the document: "Vexel for Claude".
 
 Shows:
 - loading → "Starting the backend…" with a rotating indicator.
@@ -24,10 +24,11 @@ Shows:
 
 ## Rules and invariants
 
-- English text. Colours from the client's "Studio" theme: canvas `#0b0b0e`, text `#f3f2ee`, error `#fb7185`, indicator in the accent `#8ccfff`.
+- English text. Always the client's light theme, whatever theme the client saved: canvas `#f4f1ea`, text `#1c1917`, error `#9f1239`, indicator in the accent `#0065ae`. The other tones are light ThemeTokens values too. `color-scheme` is `light`.
 - The page loads nothing: no script, no network request (its Content-Security-Policy allows only inline styles).
 - It does not import `src/web`.
 
 ## Requirements served
 
 - `plan-desktop_app/REQ-7`
+- `plan-light_theme/REQ-20`
