@@ -7,7 +7,7 @@ status: validated
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
 | [clickable-links](batches/batch-clickable-links.md) | Clickable links | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | — | certified | The user opens a web address from the terminal with Ctrl+click |
-| [search](batches/batch-search.md) | Search | REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31 | clickable-links | implemented | The user finds a word in the terminal scrollback |
+| [search](batches/batch-search.md) | Search | REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31 | clickable-links | certified | The user finds a word in the terminal scrollback |
 | [font-zoom](batches/batch-font-zoom.md) | Font zoom | REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42, REQ-43, REQ-44, REQ-45 | clickable-links | todo | The user makes the terminal text larger |
 | [file-drop](batches/batch-file-drop.md) | File drop | REQ-46, REQ-47, REQ-48, REQ-49, REQ-50, REQ-51, REQ-52, REQ-53, REQ-54 | clickable-links | todo | The user drops files on the terminal in the desktop app |
 
