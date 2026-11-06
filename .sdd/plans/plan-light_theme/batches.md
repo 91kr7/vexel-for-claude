@@ -7,7 +7,7 @@ status: validated
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
 | [light-theme](batches/batch-light-theme.md) | Light theme | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16 | — | certified | The user switches the client to the light theme |
-| [remembered-theme](batches/batch-remembered-theme.md) | Remembered theme | REQ-17, REQ-18, REQ-19, REQ-20 | light-theme | implemented | The client keeps the dark theme the user chose |
+| [remembered-theme](batches/batch-remembered-theme.md) | Remembered theme | REQ-17, REQ-18, REQ-19, REQ-20 | light-theme | certified | The client keeps the dark theme the user chose |
 
 ## Assumptions and decisions
 
