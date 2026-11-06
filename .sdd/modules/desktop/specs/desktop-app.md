@@ -11,9 +11,14 @@ type: Electron main process
 ## Contract
 
 - launch → it shows the TrayIcon with no session that needs input, and opens one window "Vexel for Claude", 1280 × 800, on the StartupPage in the loading state. The window opens not maximized, also when the desktop maximizes new frameless windows by itself (GNOME `auto-maximize`): the app undoes a maximize it did not ask for in the first 2 s after it creates the window, then keeps 1280 × 800, centred, against the size the desktop restores in the next second. The window has no native frame, so the desktop draws no title bar. It has the AppIcon and the DesktopBridge preload. It shows no menu bar, also on Alt: the application menu stays and its keys keep working.
+- the application menu → the Electron default menu without "Actual Size", "Zoom In" and "Zoom Out". So Ctrl+=, Ctrl++, Ctrl+- and Ctrl+0 never zoom the page and reach the page as plain keys. The other menu items and their keys stay as they are.
 - then it runs `launchBackend` with the repository folder and the log file `backend.log` in the Electron logs folder.
   - ready → it starts the AttentionClient on the backend origin, then the window loads `<origin>/`, the client page of the backend.
   - failed → the window shows the StartupPage in the error state, with the output lines.
+- the page asks to open a new window (`window.open`, a link with a target):
+  - an `http` or `https` address → it opens in the system default browser.
+  - any other address → nothing opens.
+  - in both cases no Electron window opens and the client window stays on its page.
 - a second launch while the app runs → the running app restores, shows and focuses its window, also when the window is hidden. The second launch exits and opens no window.
 - closing the window (the desktop's close shortcut and the red window button included) → the window hides and the app keeps running, with the backend and its sessions. The page stays loaded.
 - "Open Window" in the TrayIcon → the same as a second launch: the window restores, shows and focuses.
@@ -66,3 +71,4 @@ Tray:
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-3`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-25`, `plan-session_notifications/REQ-28`
 - `plan-session_notifications/REQ-30`, `plan-session_notifications/REQ-32`, `plan-session_notifications/REQ-33`, `plan-session_notifications/REQ-34`, `plan-session_notifications/REQ-36`
 - `plan-mac_title_bar/REQ-1`, `plan-mac_title_bar/REQ-2`, `plan-mac_title_bar/REQ-3`, `plan-mac_title_bar/REQ-4`, `plan-mac_title_bar/REQ-5`, `plan-mac_title_bar/REQ-16`, `plan-mac_title_bar/REQ-17`, `plan-mac_title_bar/REQ-18`, `plan-mac_title_bar/REQ-21`
+- `plan-terminal_addons/REQ-9`, `plan-terminal_addons/REQ-11`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-39`

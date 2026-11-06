@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, Menu, Tray } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, shell, Tray } from 'electron';
 import { type AttentionSession, connectAttention } from './attention-client.js';
 import { type LaunchResult, launchBackend, stopStartedBackend } from './backend-launcher.js';
 import { type NotificationCommand, NotificationRules } from './notification-rules.js';
@@ -17,6 +17,7 @@ const iconPath = path.join(iconsDir, 'vexel-for-claude.png');
 const preloadPath = fileURLToPath(new URL('desktop-bridge.cjs', import.meta.url));
 const OPEN_SESSION_CHANGED_CHANNEL = 'desktop-bridge:open-session-changed';
 const OPEN_SESSION_CHANNEL = 'desktop-bridge:open-session';
+const PAGE_ZOOM_ROLES = new Set(['zoomin', 'zoomout', 'resetzoom']);
 
 let mainWindow: BrowserWindow | undefined;
 let tray: Tray | undefined;
@@ -31,6 +32,20 @@ function showWindow(): void {
   if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
   mainWindow.focus();
+}
+
+function isWebAddress(address: string): boolean {
+  return URL.canParse(address) && ['http:', 'https:'].includes(new URL(address).protocol);
+}
+
+// The page takes Ctrl+=, Ctrl++, Ctrl+- and Ctrl+0 for the terminal text, so the menu must not zoom the page.
+function withoutPageZoom(menu: Menu): Menu {
+  const items = menu.items
+    .filter((item) => !PAGE_ZOOM_ROLES.has(item.role?.toLowerCase() ?? ''))
+    .map((item) =>
+      item.submenu ? new MenuItem({ label: item.label, role: item.role, submenu: withoutPageZoom(item.submenu) }) : item,
+    );
+  return Menu.buildFromTemplate(items);
 }
 
 function runNotificationCommands(commands: NotificationCommand[]): void {
@@ -92,6 +107,8 @@ function undoAutoMaximize(window: BrowserWindow): void {
 }
 
 async function start(): Promise<void> {
+  const applicationMenu = Menu.getApplicationMenu();
+  if (applicationMenu) Menu.setApplicationMenu(withoutPageZoom(applicationMenu));
   tray = new Tray(iconPath);
   updateTray([]);
 
@@ -107,6 +124,10 @@ async function start(): Promise<void> {
   });
   mainWindow = current;
   undoAutoMaximize(current);
+  current.webContents.setWindowOpenHandler(({ url }) => {
+    if (isWebAddress(url)) void shell.openExternal(url);
+    return { action: 'deny' };
+  });
   const updateWindowFocus = () =>
     runNotificationCommands(
       notificationRules.setWindowFocused(current.isFocused() && current.isVisible() && !current.isMinimized()),

@@ -1,6 +1,13 @@
 // Tests of plan-mac_title_bar, batches title-bar and window-buttons: useDesktopBridge spec, `isDesktopWindow` (REQ-6, REQ-14) and the window functions (REQ-16, REQ-17, REQ-18, REQ-25).
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { closeWindow, isDesktopWindow, minimizeWindow, toggleMaximizeWindow } from './desktop-bridge';
+import {
+  closeWindow,
+  type DesktopBridge,
+  desktopFilePathLookup,
+  isDesktopWindow,
+  minimizeWindow,
+  toggleMaximizeWindow,
+} from './desktop-bridge';
 
 const bridge = { reportOpenSession: () => {}, onOpenSession: () => () => {} };
 
@@ -50,5 +57,33 @@ describe('window functions', () => {
   it.each(windowFunctions)('%s does nothing with a bridge that has no window functions', (_, call) => {
     vi.stubGlobal('window', { desktopBridge: bridge });
     expect(() => call()).not.toThrow();
+  });
+});
+
+describe('desktopFilePathLookup', () => {
+  // plan-terminal_addons/REQ-46, REQ-54: a browser has no path lookup
+  it('gives null in a browser with no desktop bridge', () => {
+    vi.stubGlobal('window', {});
+    expect(desktopFilePathLookup()).toBeNull();
+  });
+
+  // plan-terminal_addons/REQ-46: with the bridge, the lookup gives the bridge's path, an empty string included
+  it('gives the path that the bridge reads for the file', () => {
+    const paths = new Map([
+      ['shot.png', '/home/me/shot.png'],
+      ['made-by-page', ''],
+    ]);
+    const bridge: DesktopBridge = {
+      reportOpenSession: () => {},
+      onOpenSession: () => () => {},
+      getPathForFile: (file) => paths.get(file.name) ?? 'unexpected',
+    };
+    vi.stubGlobal('window', { desktopBridge: bridge });
+
+    const lookup = desktopFilePathLookup();
+
+    expect(lookup).not.toBeNull();
+    expect(lookup!(new File(['x'], 'shot.png'))).toBe('/home/me/shot.png');
+    expect(lookup!(new File(['x'], 'made-by-page'))).toBe('');
   });
 });

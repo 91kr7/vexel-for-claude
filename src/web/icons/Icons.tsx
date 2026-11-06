@@ -29,6 +29,14 @@ export function PlusIcon() {
   );
 }
 
+export function MinusIcon() {
+  return (
+    <LucideIcon>
+      <path d="M5 12h14" />
+    </LucideIcon>
+  );
+}
+
 export function HistoryIcon() {
   return (
     <LucideIcon>
@@ -195,6 +203,14 @@ export function ChevronDownIcon() {
   );
 }
 
+export function ChevronUpIcon() {
+  return (
+    <LucideIcon>
+      <path d="m18 15-6-6-6 6" />
+    </LucideIcon>
+  );
+}
+
 export function CircleXIcon() {
   return (
     <LucideIcon>
@@ -244,14 +260,6 @@ export function XIcon() {
     <LucideIcon>
       <path d="M18 6 6 18" />
       <path d="m6 6 12 12" />
-    </LucideIcon>
-  );
-}
-
-export function MinusIcon() {
-  return (
-    <LucideIcon>
-      <path d="M5 12h14" />
     </LucideIcon>
   );
 }

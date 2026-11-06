@@ -47,6 +47,7 @@ type: configuration
   - `--color-backdrop` → black at 65 %
 - Terminal tokens, the same in both sets: `--term-bg` `#0b0b0e`, `--term-fg` `#f3f2ee`, `--term-cursor` `#8ccfff`, `--term-selection` `rgba(140, 207, 255, 0.3)`.
 - Window button tokens, the same in both sets: `--window-close` `#ff5f57`, `--window-minimize` `#febc2e`, `--window-maximize` `#28c840`, `--window-symbol` black at 52 %.
+- Terminal search tokens, the same in both sets, in `#RRGGBB` form: `--term-match-bg` `#713f12` (a match), `--term-match-current-bg` `#92400e` and `--term-match-current-border` `#fcd34d` (the current match).
 - Other groups, the same in both sets: `--font-ui` (Roboto Flex), `--font-mono` (Roboto Mono), `--focus-ring-width` and `--focus-ring-offset` (2 px), and the Tailwind shadows `--shadow-sm`, `--shadow`, `--shadow-lg`, `--shadow-2xl`.
 ### Light set
 
@@ -99,6 +100,7 @@ type: configuration
 - Light: the status text tones stay apart from each other: green, brown-orange, crimson and grey.
 - The terminal tokens never change with the theme.
 - `--window-symbol` over each window button colour reaches 3:1 (about 3.1:1 on the red, the lowest). 50 % would give 2.96:1.
+- `--term-fg` reaches 4.5:1 on `--term-match-bg` (about 7.7:1) and on `--term-match-current-bg` (about 6.3:1). `--term-match-current-border` reaches 3:1 on `--term-bg` (about 13.6:1).
 - `--font-ui` and `--font-mono` load the BundledFont files.
 
 ## Dependencies
@@ -111,3 +113,4 @@ type: configuration
 - `plan-claude_sessions_client-ui_redesign/REQ-1`, `plan-claude_sessions_client-ui_redesign/REQ-3`
 - `plan-mac_title_bar/REQ-22`, `plan-mac_title_bar/REQ-26`
 - `plan-light_theme/REQ-6`, `plan-light_theme/REQ-7`, `plan-light_theme/REQ-8`, `plan-light_theme/REQ-9`, `plan-light_theme/REQ-10`, `plan-light_theme/REQ-12`, `plan-light_theme/REQ-13`, `plan-light_theme/REQ-14`, `plan-light_theme/REQ-15`, `plan-light_theme/REQ-16`
+- `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-31`

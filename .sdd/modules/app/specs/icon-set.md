@@ -14,7 +14,8 @@ Shows:
 - one inline SVG with the class `icon`, 16 px unless its container sets another size, drawn in the current text colour.
 
 Components and where the client uses them today:
-- `PlusIcon` → "New Session" in the top bar and the EmptyState, "New Claude Code Session" in the rail
+- `PlusIcon` → "New Session" in the top bar and the EmptyState, "New Claude Code Session" in the rail, "Larger text" in the TerminalZoomControls
+- `MinusIcon` → "Smaller text" in the TerminalZoomControls, the yellow WindowButtons button
 - `HistoryIcon` → "Resume Session" in the EmptyState, "Resume" in the rail, the empty state of the ResumeDialog
 - `SquareTerminalIcon` → the tile of an empty AreaState
 - `LogInIcon` → "Resume Here"
@@ -25,13 +26,13 @@ Components and where the client uses them today:
 - `ArrowDownIcon` → the "N new messages" button
 - `TriangleAlertIcon` → the amber banner of a WarningDialog (RunningElsewhereWarning)
 - `FolderIcon` → the "Folders" rows of the FolderChooser
-- `SearchIcon` → the search bar of the ResumeDialog
-- `XIcon` → "Clear Search" in the search bar of the ResumeDialog, the red WindowButtons button
-- `MinusIcon` → the yellow WindowButtons button
+- `SearchIcon` → the search bar of the ResumeDialog, "Search" in the SessionView subbar, the TerminalSearchBox
+- `XIcon` → "Clear Search" in the search bar of the ResumeDialog, "Close search" in the TerminalSearchBox, the red WindowButtons button
+- `ChevronUpIcon`, `ChevronDownIcon` → "Previous match" and "Next match" in the TerminalSearchBox
 - `Maximize2Icon`, `Minimize2Icon` → the green WindowButtons button, to maximize and to restore
 - `MoonIcon`, `SunIcon` → the ThemeSwitch in the dark and in the light theme
 - `PencilIcon` → "Rename" of a list entry
-- no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
+- no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CirclePauseIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
 
 ## Rules and invariants
 
@@ -53,3 +54,4 @@ Components and where the client uses them today:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-17`
 - `plan-light_theme/REQ-2`
 - `plan-mac_title_bar/REQ-19`, `plan-mac_title_bar/REQ-21`
+- `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-35`

@@ -10,6 +10,7 @@ import {
   CirclePauseIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  ChevronUpIcon,
   CircleStopIcon,
   CircleXIcon,
   FolderIcon,
@@ -19,8 +20,8 @@ import {
   LockIcon,
   Maximize2Icon,
   Minimize2Icon,
-  MinusIcon,
   LogInIcon,
+  MinusIcon,
   MoonIcon,
   PencilIcon,
   PlusIcon,
@@ -34,6 +35,7 @@ import {
 
 const icons: [string, ComponentType][] = [
   ['PlusIcon', PlusIcon],
+  ['MinusIcon', MinusIcon],
   ['HistoryIcon', HistoryIcon],
   ['CircleStopIcon', CircleStopIcon],
   ['PowerIcon', PowerIcon],
@@ -49,6 +51,7 @@ const icons: [string, ComponentType][] = [
   ['WrenchIcon', WrenchIcon],
   ['ChevronRightIcon', ChevronRightIcon],
   ['ChevronDownIcon', ChevronDownIcon],
+  ['ChevronUpIcon', ChevronUpIcon],
   ['PencilIcon', PencilIcon],
   ['CheckIcon', CheckIcon],
   ['ArrowDownIcon', ArrowDownIcon],
@@ -56,7 +59,6 @@ const icons: [string, ComponentType][] = [
   ['FolderPlusIcon', FolderPlusIcon],
   ['SunIcon', SunIcon],
   ['MoonIcon', MoonIcon],
-  ['MinusIcon', MinusIcon],
   ['Maximize2Icon', Maximize2Icon],
   ['Minimize2Icon', Minimize2Icon],
 ];
@@ -178,6 +180,16 @@ describe('IconSet', () => {
     ['PowerIcon', PowerIcon, ['M12 2v10', 'M18.4 6.6a9 9 0 1 1-12.77.04']],
   ])('%s draws the shapes of board "Dialoghi"', (_, Icon, boardPaths) => {
     expect(drawnShapes(renderToStaticMarkup(<Icon />))).toEqual(subpathsOf(boardPaths));
+  });
+
+  // IconSet and plan-terminal_addons/REQ-25: "Previous match" uses Lucide chevron-up
+  it('ChevronUpIcon draws the Lucide chevron-up', () => {
+    expect(drawnShapes(renderToStaticMarkup(<ChevronUpIcon />))).toEqual(subpathsOf(['m18 15-6-6-6 6']));
+  });
+
+  // IconSet and plan-terminal_addons/REQ-35: "Smaller text" uses Lucide minus
+  it('MinusIcon draws the Lucide minus', () => {
+    expect(drawnShapes(renderToStaticMarkup(<MinusIcon />))).toEqual(subpathsOf(['M5 12h14']));
   });
 
   it('CircleXIcon draws the circle of board "Sessione esterna"', () => {
