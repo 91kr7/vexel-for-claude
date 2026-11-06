@@ -9,6 +9,7 @@ export interface AttentionSession {
   sessionId: string;
   folder: string;
   label: string;
+  waitingSince?: string;
 }
 
 export interface AttentionEvent {
@@ -32,6 +33,7 @@ export interface AttentionMonitorSources {
   scanner: Pick<ExternalSessionScanner, 'list' | 'onChange'>;
   turns?: Pick<TurnReader, 'lastTurn'>;
   registry?: { get(sessionId: string): ProcessEnd | undefined };
+  now?: () => Date;
 }
 
 interface ObservedSession {
@@ -39,6 +41,7 @@ interface ObservedSession {
   folder: string;
   label: string;
   state: SessionState;
+  lastActivity: string;
   waitingTool?: string;
 }
 
@@ -52,8 +55,10 @@ export class AttentionMonitor {
   readonly #needsInput = new Map<string, AttentionSession>();
   readonly #eventListeners = new Set<(event: AttentionEvent) => void>();
   readonly #listListeners = new Set<(sessions: AttentionSession[]) => void>();
+  readonly #now: () => Date;
 
-  constructor({ tracker, scanner, turns = new TurnReader(), registry }: AttentionMonitorSources) {
+  constructor({ tracker, scanner, turns = new TurnReader(), registry, now = () => new Date() }: AttentionMonitorSources) {
+    this.#now = now;
     const hostedTurn = (session: ObservedSession) => () => {
       const claudeSessionId = tracker.claudeSessionId?.(session.id);
       return claudeSessionId === undefined ? Promise.resolve(NO_FINAL_RESPONSE) : turns.lastTurn(session.folder, claudeSessionId);
@@ -94,7 +99,7 @@ export class AttentionMonitor {
     this.#states.set(session.id, session.state);
     if (previous !== session.state) this.#turnChecks.delete(session.id);
     const needsInput = session.state === 'needs_input';
-    if (needsInput ? this.#enterList(session) : this.#needsInput.delete(session.id)) this.#notifyList();
+    if (needsInput ? this.#enterList(session, previous === undefined) : this.#needsInput.delete(session.id)) this.#notifyList();
     if (needsInput && previous !== undefined && previous !== 'needs_input') {
       const event = this.#event(session, 'needs_input');
       if (session.waitingTool !== undefined) event.waitingTool = session.waitingTool;
@@ -137,10 +142,11 @@ export class AttentionMonitor {
     if (this.#needsInput.delete(sessionId)) this.#notifyList();
   }
 
-  #enterList(session: ObservedSession): boolean {
+  #enterList(session: ObservedSession, firstSight: boolean): boolean {
     const known = this.#needsInput.get(session.id);
     if (known && known.folder === session.folder && known.label === session.label) return false;
-    this.#needsInput.set(session.id, { sessionId: session.id, folder: session.folder, label: session.label });
+    const waitingSince = known?.waitingSince ?? (firstSight ? session.lastActivity : this.#now().toISOString());
+    this.#needsInput.set(session.id, { sessionId: session.id, folder: session.folder, label: session.label, waitingSince });
     return true;
   }
 

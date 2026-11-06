@@ -10,7 +10,7 @@ type: Electron main process
 
 ## Contract
 
-- launch → it shows the TrayIcon and opens one window "Vexel for Claude", 1280 × 800, on the StartupPage in the loading state. The window has the AppIcon, a hidden menu bar (Alt shows it) and the DesktopBridge preload.
+- launch → it shows the TrayIcon with no session that needs input, and opens one window "Vexel for Claude", 1280 × 800, on the StartupPage in the loading state. The window has the AppIcon, a hidden menu bar (Alt shows it) and the DesktopBridge preload.
 - then it runs `launchBackend` with the repository folder and the log file `backend.log` in the Electron logs folder.
   - ready → it starts the AttentionClient on the backend origin, then the window loads `<origin>/`, the client page of the backend.
   - failed → the window shows the StartupPage in the error state, with the output lines.
@@ -36,6 +36,11 @@ Notifications:
 - a notification that the desktop closes by itself → the rules get `notificationClosed` with its session.
 - a click on a notification → the same as "Open Window", then it sends the session id to the page on `desktop-bridge:open-session`.
 
+Tray:
+
+- each list of the AttentionClient → the TrayIcon gets the icon, the tooltip and the menu of that list. This happens whatever the window focus.
+- a session entry of the tray menu → the same as a click on a notification of that session.
+
 ## Rules and invariants
 
 - One running app per user session.
@@ -48,9 +53,10 @@ Notifications:
 ## Dependencies
 
 - BackendLauncher, StartupPage, AppIcon, TrayIcon, QuitCheck
-- DesktopBridge, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications
+- DesktopBridge, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon
 
 ## Requirements served
 
 - `plan-desktop_app/REQ-1`, `plan-desktop_app/REQ-3`, `plan-desktop_app/REQ-4`, `plan-desktop_app/REQ-6`, `plan-desktop_app/REQ-7`, `plan-desktop_app/REQ-9`, `plan-desktop_app/REQ-11`, `plan-desktop_app/REQ-12`, `plan-desktop_app/REQ-13`, `plan-desktop_app/REQ-14`, `plan-desktop_app/REQ-15`, `plan-desktop_app/REQ-16`, `plan-desktop_app/REQ-17`
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-3`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-25`, `plan-session_notifications/REQ-28`
+- `plan-session_notifications/REQ-30`, `plan-session_notifications/REQ-32`, `plan-session_notifications/REQ-33`, `plan-session_notifications/REQ-34`, `plan-session_notifications/REQ-36`

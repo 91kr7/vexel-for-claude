@@ -10,14 +10,20 @@ type: backend service
 
 ## Contract
 
-- `new AttentionMonitor({ tracker, scanner, turns?, registry? })` → `tracker` is the SessionStateTracker, `scanner` the ExternalSessionScanner. The sessions they list at that moment count as seen. Then it follows their changes.
+- `new AttentionMonitor({ tracker, scanner, turns?, registry?, now? })` → `tracker` is the SessionStateTracker, `scanner` the ExternalSessionScanner. The sessions they list at that moment count as seen. Then it follows their changes.
   - `turns` → the TurnReader. Default: a TurnReader with its defaults.
   - `registry` → the SessionRegistry. It tells how the process of a hosted session ended. Default: none, and then no session-end event.
+  - `now` → the clock of the `waitingSince` times. Default: the system clock.
 - `needsInput() → AttentionSession[]` → the hosted and external sessions in `needs_input`, a copy, in the order they entered that state.
 - `onEvent(listener) → unsubscribe` → `listener(event)` for each event.
 - `onNeedsInputChange(listener) → unsubscribe` → `listener(sessions)` with the new list, after each change of the list.
 
-`AttentionSession` → `{ sessionId, folder, label }`.
+`AttentionSession` → `{ sessionId, folder, label, waitingSince }`:
+
+- `folder`, `label` → the current ones of the session.
+- `waitingSince` → ISO-8601 time when the session started to need input:
+  - the session enters `needs_input` from a known state → `now()` at that change.
+  - the session is in `needs_input` at first sight (at start or later) → its `lastActivity`.
 
 `AttentionEvent` → `{ id, sessionId, kind, folder, label, waitingTool?, excerpt?, error? }`:
 
@@ -71,6 +77,7 @@ exitCode is 0 (the user's exit command)           → no event
 - External sessions never give a session-end event.
 - A session enters the list when its state is `needs_input`, also at first sight. It leaves the list when its state becomes another one (`ended` included) or when the scanner removes it.
 - The list changes when a session enters or leaves it, or when the folder or the label of a session in it changes. Nothing else calls the list listeners.
+- `waitingSince` stays the same while the session stays in the list, also when its folder or label changes. A session that leaves the list and comes back gets a new one.
 - When one change of a session changes the list and gives a `needs_input` or `session_end` event, the list listeners are called first.
 - A session that the scanner removes is forgotten. If it comes back, that is a first sight.
 - It keeps no history of events.
@@ -85,3 +92,4 @@ exitCode is 0 (the user's exit command)           → no event
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-2`, `plan-session_notifications/REQ-5`, `plan-session_notifications/REQ-6`, `plan-session_notifications/REQ-7`, `plan-session_notifications/REQ-8`, `plan-session_notifications/REQ-11`
 - `plan-session_notifications/REQ-14`, `plan-session_notifications/REQ-15`, `plan-session_notifications/REQ-16`, `plan-session_notifications/REQ-17`
 - `plan-session_notifications/REQ-21`, `plan-session_notifications/REQ-22`, `plan-session_notifications/REQ-23`
+- `plan-session_notifications/REQ-33`, `plan-session_notifications/REQ-35`

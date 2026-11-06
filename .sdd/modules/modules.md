@@ -7,4 +7,4 @@
 | folders | Browse and choose the project folder of a new session | `folders/index.md` |
 | history | Past Claude Code sessions of the machine: read the history, detect external terminals, resume | `history/index.md` |
 | external | Claude Code sessions running in other terminals: scan, list entries, read-only conversation, take over | `external/index.md` |
-| desktop | Desktop app: Electron window, backend start or reuse, startup page, icon, application menu entry and system notifications | `desktop/index.md` |
+| desktop | Desktop app: Electron window, backend start or reuse, startup page, icons, application menu entry, system notifications and tray signal | `desktop/index.md` |

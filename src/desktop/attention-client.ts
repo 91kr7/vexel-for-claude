@@ -2,6 +2,7 @@ export interface AttentionSession {
   sessionId: string;
   folder: string;
   label: string;
+  waitingSince?: string;
 }
 
 export interface AttentionEvent {
@@ -35,7 +36,8 @@ function isAttentionSession(value: unknown): value is AttentionSession {
     isRecord(value) &&
     typeof value.sessionId === 'string' &&
     typeof value.folder === 'string' &&
-    typeof value.label === 'string'
+    typeof value.label === 'string' &&
+    (value.waitingSince === undefined || typeof value.waitingSince === 'string')
   );
 }
 

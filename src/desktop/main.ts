@@ -1,17 +1,18 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, dialog, ipcMain, Menu, Tray } from 'electron';
-import { connectAttention } from './attention-client.js';
+import { type AttentionSession, connectAttention } from './attention-client.js';
 import { type LaunchResult, launchBackend, stopStartedBackend } from './backend-launcher.js';
 import { type NotificationCommand, NotificationRules } from './notification-rules.js';
 import { groupNotificationTexts, notificationTexts } from './notification-texts.js';
 import { confirmQuit } from './quit-check.js';
 import { startupPageUrl } from './startup-page.js';
 import { SystemNotifications } from './system-notifications.js';
-import { TRAY_TOOLTIP, trayMenuTemplate } from './tray-icon.js';
+import { trayIconFile, trayMenuTemplate, trayTooltip } from './tray-icon.js';
 
 const rootDir = fileURLToPath(new URL('../..', import.meta.url));
-const iconPath = path.join(rootDir, 'src/desktop/icons/vexel-for-claude.png');
+const iconsDir = path.join(rootDir, 'src/desktop/icons');
+const iconPath = path.join(iconsDir, 'vexel-for-claude.png');
 const preloadPath = fileURLToPath(new URL('desktop-bridge.cjs', import.meta.url));
 const OPEN_SESSION_CHANGED_CHANNEL = 'desktop-bridge:open-session-changed';
 const OPEN_SESSION_CHANNEL = 'desktop-bridge:open-session';
@@ -50,6 +51,14 @@ function openNotifiedSession(sessionId: string): void {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(OPEN_SESSION_CHANNEL, sessionId);
 }
 
+function updateTray(sessions: readonly AttentionSession[]): void {
+  if (!tray || tray.isDestroyed()) return;
+  tray.setImage(path.join(iconsDir, trayIconFile(sessions.length)));
+  tray.setToolTip(trayTooltip(sessions.length));
+  const actions = { openWindow: showWindow, quit: () => app.quit(), openSession: openNotifiedSession };
+  tray.setContextMenu(Menu.buildFromTemplate(trayMenuTemplate(actions, sessions)));
+}
+
 async function requestQuit(): Promise<void> {
   if (quitRunning) return;
   quitRunning = true;
@@ -66,8 +75,7 @@ async function requestQuit(): Promise<void> {
 
 async function start(): Promise<void> {
   tray = new Tray(iconPath);
-  tray.setToolTip(TRAY_TOOLTIP);
-  tray.setContextMenu(Menu.buildFromTemplate(trayMenuTemplate({ openWindow: showWindow, quit: () => app.quit() })));
+  updateTray([]);
 
   const current = new BrowserWindow({
     width: 1280,
@@ -103,7 +111,10 @@ async function start(): Promise<void> {
   if (result.status === 'ready') {
     connectAttention(result.origin, {
       onEvent: (event) => runNotificationCommands(notificationRules.receiveEvent(event)),
-      onNeedsInput: (sessions) => runNotificationCommands(notificationRules.receiveNeedsInput(sessions)),
+      onNeedsInput: (sessions) => {
+        updateTray(sessions);
+        runNotificationCommands(notificationRules.receiveNeedsInput(sessions));
+      },
     });
     await current.loadURL(`${result.origin}/`);
   } else {
