@@ -108,4 +108,53 @@ describe('groupSessions', () => {
     groupSessions(input);
     expect(input.map((s) => s.id)).toEqual(['a', 'b']);
   });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-1: the ordered sessions first, in that order
+  it('lists the sessions of the order first, in that order, whatever their activity', () => {
+    const input = [session('a', 'idle', at(1)), session('b', 'working', at(9)), session('c', 'idle', at(5))];
+    expect(shape(groupSessions(input, { running: ['a', 'c', 'b'] }))).toEqual([['running', 'Running', ['a', 'c', 'b']]]);
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-2, REQ-3: sessions missing from the order go at the end, latest activity first
+  it('puts the sessions missing from the order at the end, latest activity first, equal times in input order', () => {
+    const input = [
+      session('old', 'idle', at(1)),
+      session('tie-b', 'idle', at(6)),
+      session('kept', 'idle', at(2)),
+      session('new', 'working', at(9)),
+      session('tie-a', 'idle', at(6)),
+    ];
+    expect(groupSessions(input, { running: ['kept'] })[0]?.sessions.map((s) => s.id)).toEqual(['kept', 'new', 'tie-b', 'tie-a', 'old']);
+  });
+
+  // session-order spec: an id listed twice counts at its first place
+  it('places an id listed twice at its first place', () => {
+    const input = [session('a', 'idle', at(1)), session('b', 'idle', at(2))];
+    expect(groupSessions(input, { running: ['a', 'b', 'a'] })[0]?.sessions.map((s) => s.id)).toEqual(['a', 'b']);
+  });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-3: an id with no session in that group changes nothing
+  it('ignores ids of the order with no session in that group', () => {
+    const input = [session('a', 'idle', at(1)), session('b', 'needs_input', at(2)), session('c', 'idle', at(3))];
+    expect(shape(groupSessions(input, { running: ['gone', 'b', 'a'], 'needs-input': ['a'] }))).toEqual([
+      ['needs-input', 'Needs Input', ['b']],
+      ['running', 'Running', ['a', 'c']],
+    ]);
+  });
+
+  // session-order spec: each group follows its own list of the order
+  it('applies each group list to its own group only', () => {
+    const input = [external('x', 'idle', at(1)), external('y', 'idle', at(2)), session('e', 'ended', at(3)), session('f', 'ended', at(4))];
+    expect(shape(groupSessions(input, { external: ['x', 'y'], ended: ['e', 'f'] }))).toEqual([
+      ['external', 'In Other Terminals', ['x', 'y']],
+      ['ended', 'Ended', ['e', 'f']],
+    ]);
+  });
+
+  // session-order spec: the order is not changed
+  it('does not change the order it receives', () => {
+    const order = Object.freeze({ running: Object.freeze(['b', 'a']) });
+    groupSessions([session('a', 'idle', at(1)), session('b', 'idle', at(2)), session('c', 'idle', at(3))], order);
+    expect(order).toEqual({ running: ['b', 'a'] });
+  });
 });

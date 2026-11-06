@@ -18,3 +18,5 @@
 | 2026-11-06 | dev | divergence `batch-fixed-order/INT-1` group rule not exported | decided | `nextSessionOrder` reuses `groupSessions`, same rule, no second public function |
 | 2026-11-06 | dev | divergence SessionList `order` optional | decided | Keeps existing callers; no visible change |
 | 2026-11-06 | dev | G4 fixed-order | pass | Build re-run green; diff = 5 INT sources + 4 specs, sessions index, status; no test or plan file |
+| 2026-11-06 | dev | tester change `e2e/session-entries.spec.ts` | pass | Old activity-first assertions replaced by REQ-1, REQ-2; contract change of this plan |
+| 2026-11-06 | dev | G5 fixed-order | pass | Re-run 65/65 unit, 14/14 e2e (`fixed-order`, `session-entries`); no source change, no skip or only; REQ-1..5 tested |

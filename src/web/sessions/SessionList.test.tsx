@@ -109,6 +109,14 @@ describe('SessionList', () => {
     expect(namesIn('Ended')).toEqual(['h-ended', 'e-ended']);
   });
 
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-1: the order prop decides the place inside each group
+  it('lists each group in the given order, not by latest activity', () => {
+    const sessions = [session('a', 'idle', earlier), session('b', 'working', now), session('c', 'idle', fiveMinutesAgo), session('d', 'idle', now)];
+    const html = renderToStaticMarkup(<SessionList sessions={sessions} openSessionId={null} onOpen={() => {}} order={{ running: ['a', 'c', 'b'] }} />);
+    const names = items(groupsOf(html).get('Running') ?? '').map((item) => titled(item, '/home/dev/progetti/[\\w-]+') ?? '?');
+    expect(names).toEqual(['a', 'c', 'b', 'd']);
+  });
+
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-23, REQ-25: dot, folder name, state, then label and time; no avatar
   it('shows the status dot first, then the folder name, the state, the label and the relative time, in this order, with no avatar', () => {
     const [entry] = entries(renderList([{ ...session('web-dashboard', 'idle', fiveMinutesAgo, 'Correggi il login') }]));
