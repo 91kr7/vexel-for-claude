@@ -82,9 +82,16 @@ export function connectAttention(
     current.addEventListener('message', (message) => {
       if (!stopped) dispatch(message.data, handlers);
     });
-    current.addEventListener('close', () => {
-      if (!stopped) retryTimer = setTimeout(connect, retryMs);
-    });
+    let retryScheduled = false;
+    // Node's WebSocket fires only 'error', with no 'close', when the connection is refused.
+    const retry = () => {
+      if (stopped || retryScheduled) return;
+      retryScheduled = true;
+      current.close();
+      retryTimer = setTimeout(connect, retryMs);
+    };
+    current.addEventListener('error', retry);
+    current.addEventListener('close', retry);
   };
   connect();
 
