@@ -16,6 +16,7 @@
     "start": "NODE_ENV=production PORT=4001 tsx src/server/main.ts",
     "test": "vitest run",
     "test:e2e": "playwright test --pass-with-no-tests",
+    "test:e2e:desktop": "E2E_DESKTOP=1 playwright test",
     "build:desktop": "tsc -b tsconfig.desktop.build.json",
     "desktop": "npm run --silent build:desktop && electron .",
     "desktop:install": "npm run --silent build && npm run --silent build:desktop && tsx src/desktop/install-menu-entry.ts"
