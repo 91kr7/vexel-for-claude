@@ -10,3 +10,5 @@
 | 2026-11-06 | plan | planner hidden selection cleared | decided | Follows analysis Assumption "a search never resumes a session by mistake"; for human review |
 | 2026-11-06 | plan | planner texts and bar always visible | decided | Placeholder, accessible names, empty state text; English UI capitals idiom; for human review |
 | 2026-11-06 | plan | G3 coverage | pass | 17 REQ / 8 INT, one batch, paths exist, every REQ in a scenario |
+| 2026-11-06 | dev | divergence search icon source | decided | Lucide path data per IconSet rule; mock `studio-dark` uses Heroicons; position and colour kept |
+| 2026-11-06 | dev | G4 history-search | pass | Build re-run green; diff = 3 INT sources + 2 specs, history index, status; no test or plan file |

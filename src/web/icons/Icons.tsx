@@ -230,6 +230,24 @@ export function ArrowDownIcon() {
   );
 }
 
+export function SearchIcon() {
+  return (
+    <LucideIcon>
+      <path d="m21 21-4.34-4.34" />
+      <circle cx="11" cy="11" r="8" />
+    </LucideIcon>
+  );
+}
+
+export function XIcon() {
+  return (
+    <LucideIcon>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </LucideIcon>
+  );
+}
+
 // Mock artwork, not a Lucide icon: a filled shape.
 export function SparkIcon() {
   return (
