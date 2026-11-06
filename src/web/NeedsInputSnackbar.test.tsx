@@ -105,10 +105,8 @@ describe('NeedsInputSnackbar', () => {
     expect(html).not.toContain('/srv/clienti');
   });
 
-  // NeedsInputSnackbar "Shows": the text and the button carry the board type classes
-  it('uses .body-m for the text and .label-l for "Apri"', () => {
-    const html = render('/p/web-dashboard');
-    expect(html).toMatch(/class="[^"]*\bbody-m\b[^"]*"[^>]*>[\s\S]*web-dashboard/);
-    expect(html).toMatch(/<button\b[^>]*class="[^"]*\blabel-l\b[^"]*"[^>]*>Apri<\/button>/);
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-41: the box is the glass toast
+  it('draws the box with the .vx-glass class', () => {
+    expect(render('/p/web-dashboard')).toMatch(/^<\w+\b[^>]*class="[^"]*\bvx-glass\b/);
   });
 });

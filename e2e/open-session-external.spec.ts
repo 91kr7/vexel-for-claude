@@ -85,11 +85,18 @@ async function box(locator: Locator): Promise<Box> {
 }
 
 /** Background and border of an item: what makes its look. */
-const lookOf = (item: Locator) =>
-  item.evaluate((el) => {
-    const style = getComputedStyle(el);
-    return `${style.backgroundColor}|${style.borderTopStyle} ${style.borderTopWidth}|${style.borderLeftStyle} ${style.borderLeftWidth}`;
-  });
+/** The look of an item: the first painted background from the element holding `text` up to the item, with its border. */
+const lookOf = (item: Locator, text: string) =>
+  item.evaluate((el, wanted) => {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let node: Node | null;
+    while ((node = walker.nextNode()) && !node.textContent?.includes(wanted));
+    for (let at: Element | null = node?.parentElement ?? el; at; at = at === el ? null : at.parentElement) {
+      const style = getComputedStyle(at);
+      if (style.backgroundColor !== 'rgba(0, 0, 0, 0)') return `${style.backgroundColor}|${style.borderTopStyle} ${style.borderTopWidth}`;
+    }
+    return 'none';
+  }, text);
 
 const scrollTop = (page: Page) => scroller(page).evaluate((el) => el.scrollTop);
 const scrollTo = (page: Page, where: 'top' | number) =>
@@ -114,10 +121,11 @@ test('the external view shows its header, a read-only notice that stays in view,
   await page.goto('/');
   await listEntry(page, folder).click(SCAN);
 
-  // SessionHeader: the h2 is the folder name, the line is "Aperta in un altro terminale · <folder>".
+  // SessionHeader: the h2 is the folder name, then the path and the line "Aperta in un altro terminale".
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('negozio');
   await expect(header(page)).toContainText('In attesa');
-  await expect(header(page).getByText(`Aperta in un altro terminale · ${folder}`, { exact: true })).toBeVisible();
+  await expect(header(page).getByText(folder, { exact: true })).toBeVisible();
+  await expect(header(page).getByText('Aperta in un altro terminale', { exact: true })).toBeVisible();
   await expect(header(page).getByRole('button', { name: 'Riprendi qui' })).toBeVisible();
   const notice = header(page).getByText('Sola lettura', { exact: true });
   await expect(notice).toBeVisible();
@@ -128,8 +136,10 @@ test('the external view shows its header, a read-only notice that stays in view,
   const claudeItem = item(page, 'Claude').first();
   const toolItem = item(page, 'Strumento: Read');
   await expect(toolItem).toContainText('/src/cart.ts');
-  await expect(toolItem.locator('svg').first()).toBeAttached();
-  const looks = [await lookOf(userItem), await lookOf(claudeItem), await lookOf(toolItem)];
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-39: the tool card has no tool icon
+  await expect(toolItem.locator('svg')).toHaveCount(0);
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-37, REQ-39: the user text in a surface-2 box, the Claude text bare, the tool card on surface 1
+  const looks = [await lookOf(userItem, 'Sistema il carrello'), await lookOf(claudeItem, 'Controllo il codice.'), await lookOf(toolItem, '/src/cart.ts')];
   expect(new Set(looks).size).toBe(3);
   const listBox = await box(scroller(page));
   const itemBox = await box(claudeItem);
@@ -150,7 +160,8 @@ test('the external view shows its header, a read-only notice that stays in view,
   process.kill('SIGKILL');
   await expect(listEntry(page, folder)).toHaveCount(0, SCAN);
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('negozio');
-  await expect(header(page).getByText(`Aperta in un altro terminale · ${folder}`, { exact: true })).toBeVisible();
+  await expect(header(page).getByText(folder, { exact: true })).toBeVisible();
+  await expect(header(page).getByText('Aperta in un altro terminale', { exact: true })).toBeVisible();
   await expect(notice).toBeVisible();
 });
 

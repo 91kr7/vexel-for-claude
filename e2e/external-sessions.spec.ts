@@ -100,7 +100,7 @@ async function expectNoReload(page: Page): Promise<void> {
   expect(await page.evaluate(() => 'e2eSamePage' in globalThis)).toBe(true);
 }
 
-// plan-claude_sessions_client/REQ-29, REQ-30, REQ-31, plan-claude_sessions_client-ui_redesign-material3_mock/REQ-18, REQ-24 — scenario "The user sees a session that runs in another terminal"
+// plan-claude_sessions_client/REQ-29, REQ-30, REQ-31, plan-claude_sessions_client-ui_redesign-material3_mock/REQ-18 — scenario "The user sees a session that runs in another terminal"
 test('a session that runs in another terminal is listed as external with its folder, first message, state and time', async ({ page }) => {
   const folder = await newFolder('shop');
   const firstMessage = `Aggiorna la pagina del carrello e ${'aggiungi i test '.repeat(6)}`;
@@ -116,7 +116,9 @@ test('a session that runs in another terminal is listed as external with its fol
   await expect(entry).toContainText('In attesa');
   await expect(entry.locator('time')).toHaveText(RELATIVE_TIME);
   await expect(entry).toHaveClass(/\bexternal\b/);
-  await expect(entry.locator('.avatar-external svg')).toBeVisible();
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-23, REQ-27: the dashed row with the dot, no avatar
+  await expect(entry.locator('.avatar')).toHaveCount(0);
+  expect(await entry.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('dashed');
   await expect(list(page).getByRole('heading', { level: 2, name: 'In altri terminali', exact: true })).toBeVisible();
   await expect(entry).not.toContainText('Esterna');
 });

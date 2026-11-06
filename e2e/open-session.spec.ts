@@ -28,9 +28,9 @@ const header = (page: Page) => mainArea(page).locator('.session-header');
 const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminale/ });
 const terminalBox = (page: Page) => panel(page).locator('.session-terminal');
 const hintRow = (page: Page) => mainArea(page).locator('.session-hint-row');
-// SessionView: 12 px gap between header, panel and hint row; the hint row is 48 px high.
-const GAP = 12;
-const HINT_ROW_HEIGHT = 48;
+// SessionView: the panel sits 16 px from the left, right and top; the hint row under it is 40 px high.
+const GAP = 16;
+const HINT_ROW_HEIGHT = 40;
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
 async function makeFolder(name: string): Promise<string> {
@@ -51,12 +51,13 @@ async function box(locator: Locator): Promise<Box> {
   return b!;
 }
 
-/** The box inside the padding: AppLayout gives the main area its own padding. */
+/** The box inside the border and the padding. */
 async function contentBox(locator: Locator): Promise<Box> {
   const b = await box(locator);
   const pad = await locator.evaluate((el) => {
     const s = getComputedStyle(el);
-    return [s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft].map(parseFloat);
+    const inset = (side: 'Top' | 'Right' | 'Bottom' | 'Left') => parseFloat(s[`padding${side}`]) + parseFloat(s[`border${side}Width`]);
+    return [inset('Top'), inset('Right'), inset('Bottom'), inset('Left')];
   });
   const [top, right, bottom, left] = pad as [number, number, number, number];
   return { x: b.x + left, y: b.y + top, width: b.width - left - right, height: b.height - top - bottom };
@@ -70,9 +71,9 @@ async function expectPanelAndHintFillMainBelowHeader(page: Page): Promise<void> 
   const hint = await box(hintRow(page));
   expect(Math.abs(head.y - main.y)).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(term.y - (head.y + head.height + GAP))).toBeLessThanOrEqual(TOLERANCE);
-  expect(Math.abs(term.x - main.x)).toBeLessThanOrEqual(TOLERANCE);
-  expect(Math.abs(term.width - main.width)).toBeLessThanOrEqual(TOLERANCE);
-  expect(Math.abs(hint.y - (term.y + term.height + GAP))).toBeLessThanOrEqual(TOLERANCE);
+  expect(Math.abs(term.x - (main.x + GAP))).toBeLessThanOrEqual(TOLERANCE);
+  expect(Math.abs(term.width - (main.width - 2 * GAP))).toBeLessThanOrEqual(TOLERANCE);
+  expect(Math.abs(hint.y - (term.y + term.height))).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(hint.height - HINT_ROW_HEIGHT)).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(hint.x - main.x)).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(hint.width - main.width)).toBeLessThanOrEqual(TOLERANCE);
@@ -82,11 +83,12 @@ async function expectPanelAndHintFillMainBelowHeader(page: Page): Promise<void> 
   for (const key of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(xterm[key] - inside[key]), key).toBeLessThanOrEqual(TOLERANCE);
 }
 
-/** SessionHeader: the h2 is the folder name and the line is "<label> · <folder>". */
+/** SessionHeader: the h2 is the folder name, then the path and the label line. */
 async function expectHeaderOf(page: Page, folder: string, label: string, state: string): Promise<void> {
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText(path.basename(folder), ONE_SECOND);
   await expect(header(page)).toContainText(state, ONE_SECOND);
-  await expect(header(page).getByText(`${label} · ${folder}`, { exact: true })).toBeVisible(ONE_SECOND);
+  await expect(header(page).getByText(folder, { exact: true })).toBeVisible(ONE_SECOND);
+  await expect(header(page).getByText(label, { exact: true }).last()).toBeVisible(ONE_SECOND);
   await expect(header(page).getByRole('button', { name: 'Interrompi' })).toBeVisible(ONE_SECOND);
   await expect(header(page).getByRole('button', { name: 'Termina' })).toBeVisible(ONE_SECOND);
 }
@@ -138,7 +140,7 @@ test('a long line is cut with an ellipsis and its full text as tooltip, and the 
   await entry(page, folder).click();
   await expect(terminal(page)).toContainText('READY');
 
-  const folderText = header(page).getByTitle(`${path.basename(folder)} · ${folder}`, { exact: true });
+  const folderText = header(page).getByTitle(folder, { exact: true });
   await expect(folderText).toBeVisible();
   await expect(folderText).toHaveCSS('text-overflow', 'ellipsis');
   expect(await folderText.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);

@@ -41,7 +41,7 @@ export function ResumeHereButton({ sessionId, onResumed }: ResumeHereButtonProps
 
   return (
     <>
-      <button type="button" className="btn label-l resume-here-button" disabled={busy} aria-busy={busy || undefined} onClick={() => setWarning(true)}>
+      <button type="button" className="button-primary button-bar resume-here-button" disabled={busy} aria-busy={busy || undefined} onClick={() => setWarning(true)}>
         {busy ? <Spinner /> : <LogInIcon />}
         Riprendi qui
       </button>

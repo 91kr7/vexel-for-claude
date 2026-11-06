@@ -1,4 +1,5 @@
-// e2e of plan-claude_sessions_client-ui_redesign-material3_mock, batch page-frame. The server runs the fake CLI (playwright.config.ts).
+// e2e of plan-claude_sessions_client-ui_redesign-material3_mock, batch page-frame, brought to the Studio frame of plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark.
+// The server runs the fake CLI (playwright.config.ts).
 /// <reference lib="dom" />
 import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
@@ -19,6 +20,7 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
+const topBar = (page: Page) => page.getByRole('banner');
 const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione principale' });
 const railButton = (page: Page, name: string) => rail(page).getByRole('button', { name, exact: true });
 const panel = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
@@ -115,16 +117,17 @@ async function focusedShowsRing(page: Page): Promise<boolean> {
 }
 
 test.describe('rail and list panel', () => {
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-6, REQ-7, REQ-10, REQ-12: scenario "The user starts a new session from the rail"
-  test('at 1440 px the rail shows logo and actions, the panel shows the brand and "Sessioni", and "Nuova sessione" opens the dialog', async ({ page }) => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14, REQ-17: scenario "The user starts a new session from the rail"
+  test('at 1440 px the top bar shows the brand, the rail its actions and no logo, the panel "Sessioni", and "Nuova sessione" opens the dialog', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
 
     await expect(page).toHaveTitle('Vexel for Claude');
-    await expect(rail(page).getByRole('img', { name: 'Vexel' })).toBeVisible();
+    await expect(rail(page).getByRole('img')).toHaveCount(0);
     for (const name of ['Nuova sessione', 'Sessioni', 'Riprendi']) await expect(railButton(page, name)).toBeVisible();
-    await expect(panel(page).getByText('Vexel', { exact: true })).toBeVisible();
-    await expect(panel(page).getByText('for Claude', { exact: true })).toBeVisible();
+    await expect(topBar(page).getByText('Vexel', { exact: true })).toBeVisible();
+    await expect(topBar(page).getByText('for Claude', { exact: true })).toBeVisible();
+    await expect(panel(page).getByText('Vexel', { exact: true })).toHaveCount(0);
     await expect(panel(page).getByRole('heading', { level: 1, name: 'Sessioni', exact: true })).toBeVisible();
 
     await railButton(page, 'Nuova sessione').click();
@@ -138,7 +141,7 @@ test.describe('rail and list panel', () => {
     await expect(history(page)).toBeVisible();
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-6; AppLayout "Description": rail, list panel and main area side by side
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-53; AppLayout "Description": rail, list panel and main area side by side
   test('the rail sits at the left edge, then the list panel, then the main area', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
@@ -146,32 +149,29 @@ test.describe('rail and list panel', () => {
     const panelBox = await box(panel(page));
     const mainBox = await box(mainArea(page));
     expect(railBox.x).toBeCloseTo(0, 0);
-    expect(railBox.width, 'rail width').toBeCloseTo(96, 0);
+    expect(railBox.width, 'rail width').toBeCloseTo(52, 0);
     expect(railBox.x + railBox.width).toBeLessThanOrEqual(panelBox.x + 0.5);
     expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(mainBox.x + 0.5);
-    expect(panelBox.width, 'panel at most 400 px wide').toBeLessThanOrEqual(400.5);
+    expect(panelBox.width, 'panel 224 px wide').toBeCloseTo(224, 0);
     expect(mainBox.x + mainBox.width).toBeCloseTo(1440, 0);
   });
 
-  // NavigationRail "Shows": logo and "Nuova sessione" as the board nav
-  test('the rail logo and the "Nuova sessione" button have the size, radius and colours of the board', async ({ page }) => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-6, REQ-17, NavigationRail "Shows": "Nuova sessione" as `.vx-rail-fab`
+  test('the rail "Nuova sessione" is the 34 px gradient button with the 16 px plus icon in the text-on-accent colour', async ({ page }) => {
     await page.goto('/');
-    const logo = rail(page).getByRole('img', { name: 'Vexel' });
-    const logoBox = await box(logo);
-    expect([logoBox.width, logoBox.height]).toEqual([36, 29]);
-    const fills = await logo.locator('rect').evaluateAll((rects) => rects.map((r) => getComputedStyle(r).fill));
-    const primary = await computedColour(page, 'var(--primary)');
-    const ember = await computedColour(page, 'var(--ember)');
-    expect(fills).toEqual([...Array<string>(6).fill(primary), ember]);
-
     const fab = railButton(page, 'Nuova sessione');
     await page.mouse.move(0, 899);
     const fabBox = await box(fab);
-    expect([fabBox.width, fabBox.height]).toEqual([56, 56]);
-    expect(await style(fab, 'border-radius')).toBe('16px');
-    expect(await style(fab, 'background-color')).toBe(await computedColour(page, 'var(--primary-container)'));
-    expect(await style(fab, 'color')).toBe(await computedColour(page, 'var(--on-primary-container)'));
-    expect(await fab.locator('svg').evaluate((svg) => [svg.getBoundingClientRect().width, svg.getBoundingClientRect().height])).toEqual([24, 24]);
+    expect([fabBox.width, fabBox.height]).toEqual([34, 34]);
+    expect(await style(fab, 'border-radius')).toBe('8px');
+    const accent = await computedColour(page, 'var(--accent-primary)');
+    const deep = await computedColour(page, 'var(--accent-deep)');
+    const gradient = await style(fab, 'background-image');
+    expect(gradient).toContain('linear-gradient(135deg');
+    expect(gradient).toContain(accent);
+    expect(gradient).toContain(deep);
+    expect(await style(fab, 'color')).toBe(await computedColour(page, 'var(--on-accent)'));
+    expect(await fab.locator('svg').evaluate((svg) => [svg.getBoundingClientRect().width, svg.getBoundingClientRect().height])).toEqual([16, 16]);
   });
 
   // NavigationRail "Shows": "Sessioni" is always the current page, "Riprendi" never
@@ -185,23 +185,24 @@ test.describe('rail and list panel', () => {
     await expect(railButton(page, 'Sessioni')).toHaveAttribute('aria-current', 'page');
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-10; AppLayout "Description": the rounded list panel and its head
-  test('the list panel is rounded on the low container surface, with the brand row above the title row', async ({ page }) => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-13, REQ-14, REQ-16; AppLayout and TopBar "Shows": the flat list panel, and the brand in the top bar
+  test('the list panel is flat on surface 1 with the subtle right line, and the top bar shows "Vexel" then "for Claude"', async ({ page }) => {
     await page.goto('/');
-    expect(await style(panel(page), 'border-radius')).toBe('28px');
-    expect(await style(panel(page), 'background-color')).toBe(await computedColour(page, 'var(--sc-low)'));
+    expect(await style(panel(page), 'border-radius')).toBe('0px');
+    expect(await style(panel(page), 'background-color')).toBe(await computedColour(page, 'var(--bg-surface-1)'));
+    expect(await style(panel(page), 'border-right-color')).toBe(await computedColour(page, 'var(--border-subtle)'));
 
-    const brand = panel(page).getByText('Vexel', { exact: true });
-    const forClaude = panel(page).getByText('for Claude', { exact: true });
+    const brand = topBar(page).getByText('Vexel', { exact: true });
+    const forClaude = topBar(page).getByText('for Claude', { exact: true });
     const title = panel(page).getByRole('heading', { level: 1, name: 'Sessioni', exact: true });
-    expect(await style(brand, 'color')).toBe(await computedColour(page, 'var(--primary)'));
-    expect(await style(brand, 'font-size')).toBe('28px');
-    expect(await style(forClaude, 'color')).toBe(await computedColour(page, 'var(--on-surface-variant)'));
+    expect(await style(brand, 'font-size')).toBe('14px');
+    expect(await style(brand, 'font-weight')).toBe('600');
+    expect(await style(forClaude, 'color')).toBe(await computedColour(page, 'var(--text-muted)'));
+    expect(await style(forClaude, 'font-size')).toBe('10px');
     const brandBox = await box(brand);
     const forBox = await box(forClaude);
-    const titleBox = await box(title);
     expect(forBox.x, '"for Claude" follows "Vexel"').toBeGreaterThan(brandBox.x + brandBox.width - 0.5);
-    expect(titleBox.y, 'the title row is below the brand row').toBeGreaterThanOrEqual(brandBox.y + brandBox.height - 0.5);
+    expect((await box(title)).y, 'the title row is below the top bar').toBeGreaterThanOrEqual((await box(topBar(page))).y + 48 - 0.5);
     expect(await title.evaluate((el) => getComputedStyle(el).marginTop + ' ' + getComputedStyle(el).marginBottom)).toBe('0px 0px');
   });
 
@@ -245,19 +246,20 @@ test.describe('needs-input badge and chip', () => {
     await expect(railButton(page, 'Sessioni')).toHaveText('Sessioni');
   });
 
-  // NeedsInputCounter "Shows", NavigationRail "Shows": the chip in the amber container, the badge in the error colours
-  test('the chip uses the amber container colours and the badge the error colours', async ({ page, request }) => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-20, REQ-21: the amber tinted pill with its dot, and the amber badge
+  test('the chip is the amber tinted pill with its dot and the badge is amber-400 with canvas text', async ({ page, request }) => {
     await showOnlyOwnSessions(page);
     await askPermission(request, await startViaApi(request, await newFolder('colours')));
     await page.goto('/');
     await expect(chip(page)).toHaveText('1 richiede input');
 
-    const chipBox = chip(page).locator('.chip');
-    expect(await style(chipBox, 'background-color')).toBe(await computedColour(page, 'var(--attn-container)'));
-    expect(await style(chipBox, 'color')).toBe(await computedColour(page, 'var(--on-attn-container)'));
-    await expect(chipBox.locator('svg')).toHaveCount(1);
-    expect(await style(badge(page), 'background-color')).toBe(await computedColour(page, 'var(--error)'));
-    expect(await style(badge(page), 'color')).toBe(await computedColour(page, 'var(--on-error)'));
+    const pill = chip(page).locator(':scope > *').first();
+    expect(await style(pill, 'background-color')).toBe('rgba(245, 158, 11, 0.15)');
+    expect(await style(pill, 'color')).toBe('rgb(251, 191, 36)');
+    await expect(pill.locator('svg')).toHaveCount(0);
+    await expect(pill.locator('[aria-hidden="true"]')).toHaveCount(1);
+    expect(await style(badge(page), 'background-color')).toBe('rgb(251, 191, 36)');
+    expect(await style(badge(page), 'color')).toBe(await computedColour(page, 'var(--bg-canvas)'));
     await expect(badge(page)).toHaveAttribute('aria-hidden', 'true');
   });
 });
@@ -343,8 +345,8 @@ test.describe('needs-input snackbar', () => {
     await expect(snackbar(page)).toHaveCount(0);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-13; AppLayout "Shows": bottom right of the main area, above the content
-  test('the snackbar sits at the bottom right of the main area, above the open session', async ({ page, request }) => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42; AppLayout "Shows": fixed at the bottom right of the window, above the content
+  test('the snackbar sits 20 px from the bottom right of the window, above the open session', async ({ page, request }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await showOnlyOwnSessions(page);
     const open = await newFolder('place-open');
@@ -356,10 +358,9 @@ test.describe('needs-input snackbar', () => {
     await askPermission(request, waitingId);
     await expect(snackbar(page)).toBeVisible();
 
-    const main = await box(mainArea(page));
     const bar = await box(snackbar(page));
-    expect(main.x + main.width - (bar.x + bar.width), 'gap to the right edge of the main area').toBeCloseTo(24, 0);
-    expect(main.y + main.height - (bar.y + bar.height), 'gap to the bottom edge of the main area').toBeCloseTo(16, 0);
+    expect(1440 - (bar.x + bar.width), 'gap to the right edge of the window').toBeCloseTo(20, 0);
+    expect(900 - (bar.y + bar.height), 'gap to the bottom edge of the window').toBeCloseTo(20, 0);
     const onTop = await snackbar(page).evaluate((el) => {
       const r = el.getBoundingClientRect();
       return el.contains(document.elementFromPoint(r.left + 8, r.top + r.height / 2));
@@ -367,8 +368,8 @@ test.describe('needs-input snackbar', () => {
     expect(onTop, 'nothing covers the snackbar').toBe(true);
   });
 
-  // NeedsInputSnackbar "Shows": the inverse surface box of the board
-  test('the snackbar has the inverse colours and the radius of the board', async ({ page, request }) => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-41, NeedsInputSnackbar "Shows": the glass toast
+  test('the snackbar is the glass toast with mono text and the accent "Apri"', async ({ page, request }) => {
     await showOnlyOwnSessions(page);
     const waitingId = await startViaApi(request, await newFolder('look-waiting'));
     await page.goto('/');
@@ -376,12 +377,14 @@ test.describe('needs-input snackbar', () => {
     await askPermission(request, waitingId);
     await expect(snackbar(page)).toBeVisible();
 
-    expect(await style(snackbar(page), 'background-color')).toBe(await computedColour(page, 'var(--inverse-surface)'));
-    expect(await style(snackbar(page), 'color')).toBe(await computedColour(page, 'var(--inverse-on-surface)'));
-    expect(await style(snackbar(page), 'border-radius')).toBe('4px');
+    expect(await style(snackbar(page), 'background-color')).toBe(await computedColour(page, 'var(--bg-glass)'));
+    expect(await style(snackbar(page), 'color')).toBe(await computedColour(page, 'var(--text-primary)'));
+    expect(await style(snackbar(page), 'border-radius')).toBe('8px');
+    expect(await style(snackbar(page), 'font-size')).toBe('12px');
+    expect(await style(snackbar(page), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
+    await expect(snackbar(page).locator('b')).toHaveText('look-waiting');
     const open = snackbar(page).getByRole('button', { name: 'Apri', exact: true });
-    expect(await style(open, 'color')).toBe(await computedColour(page, 'var(--inverse-primary)'));
-    expect((await box(open)).height).toBeCloseTo(36, 0);
+    expect(await style(open, 'color')).toBe(await computedColour(page, 'var(--accent-primary)'));
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-15: the snackbar hides when that session no longer needs input

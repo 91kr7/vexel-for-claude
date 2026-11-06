@@ -6,43 +6,39 @@ type: UI component
 
 # SessionHeader
 
-**Purpose** → the header of the open session, as the `header` of board "Sessione ospitata": avatar, folder name, state chip, a line of text, and the actions.
+**Purpose** → the 40 px subbar of the open session, as "Session Info Subbar" of `.sdd/mockups/studio-dark/mock.html`: folder name, "/", path, a line chip, the state pill and the actions.
 
 ## Contract
-
-Description:
-- one row that wraps when it does not fit: 16 px gap, centred, padding 8 px 8 px 8 px 4 px, no background and no border. From left: the avatar, the text block, the actions.
-- the text block takes the free width (flex basis 280 px). On top, the name row (10 px gap, it wraps); below it, the line.
 
 Props:
 - `session` → `{ folder, label, state }` of the open session. Optional.
 - `actions` → the buttons of the session.
-- `notice` → extra chips shown after the state chip. Optional.
-- `external` → `true` gives the Avatar its outlined terminal form. Optional.
-- `line` → the text of the line. Optional; default "<label> · <folder>".
+- `notice` → extra chips shown after the state pill. Optional.
+- `line` → the text of the line chip. Optional; default the label.
 
 Shows:
-- with `session`:
-  - the Avatar in its `header` size (48 px) for `folder`, `state` and `external`.
-  - the `h2` with the folder name (the last segment of `folder`), in `.title-l`, no margin.
-  - the StateBadge of `state` in its `chip` variant, then `notice`.
-  - the line, in `.body-m` and `--on-surface-variant`.
-- without `session` → no avatar, `h2`, chip or line. `notice` and `actions` still show.
-- `actions` → in a row with an 8 px gap, after the text block. The row wraps when it does not fit.
+- a `header`, 40 px high (its bottom line included) in every variant, padding 0 × 16 px, `--bg-surface-1`, 1 px `--border-subtle` line below. Two groups at the two ends, 8 px apart, on one row.
+- the left group, 10 px gaps, with `session`:
+  - the `h2` with the folder name (the last segment of `folder`), 12/16 px weight 600.
+  - "/" in `--text-muted`, hidden from assistive technology.
+  - the full folder path, mono 11 px, `--text-secondary`.
+  - the line in a `.mono-chip` on surface 2, in `--text-muted` (look of `#subbar-model`). Not shown when the text is empty.
+- the right group, 8 px gaps → with `session`, the StateBadge `chip`; then `notice`; then `actions`.
+- without `session` → the left group is empty and there is no state pill. `notice` and `actions` still show.
+- no project avatar.
 
 ## Rules and invariants
 
-- The `h2` and the line stay on one row each. Text too long is cut with an ellipsis, and its full text is its tooltip (`title`).
-- The actions are never cut: when the header is too narrow they move to the next row, inside the header.
+- Name, path and line stay on one row each. Text too long is cut with an ellipsis, and its full text is its tooltip (`title`).
+- The actions are never cut and never wrap: when the header is too narrow, the name, path and line of the left group shrink first.
 - The header never shrinks, and it never scrolls with the content below it.
 
 ## Dependencies
 
-- Avatar, StateBadge
+- StateBadge, Avatar (`folderNameOf`)
 - ThemeTokens, WebEntry (module app)
 
 ## Requirements served
 
 - `plan-claude_sessions_client-ui_redesign/REQ-17`
-- `plan-claude_sessions_client-ui_redesign/REQ-1`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-34`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-30`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-31`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-53`

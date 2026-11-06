@@ -6,13 +6,13 @@ type: UI component
 
 # ConversationView
 
-**Purpose** → shows the conversation of an external session read-only, as the `main` of board "Sessione esterna", and keeps it current.
+**Purpose** → shows the conversation of an external session read-only, as `#screen-session` and `#session-stream` of `.sdd/mockups/studio-dark/mock.html`, and keeps it current.
 
 ## Contract
 
 Description:
-- a SessionHeader above a rounded content panel, 12 px apart. Together they fill the open-session area.
-- the panel: radius 28 px, `--sc-low`. Its content scrolls inside it with padding 28 px 24 px 80 px. The entries sit in a centred column of at most 760 px, 16 px apart.
+- the SessionHeader above the content. Together they fill the open-session area, on `--bg-canvas` at 75 % over the dot grid. There is no rounded panel.
+- the content scrolls below the header. The entries sit in a centred column of at most 896 px, with 24 px padding, 16 px apart.
 
 Props:
 - `sessionId` → the id of the external session.
@@ -20,13 +20,16 @@ Props:
 - `onResumed(id)` → called with the id of the hosted session after "Riprendi qui" succeeds.
 
 Shows:
-- the SessionHeader with `session` and `external`: the outlined terminal Avatar, the folder name, the state chip, then the chip "Sola lettura" (lock icon, `.label-l`, 1 px `--outline-variant` border, `--on-surface-variant` text). The line is "Aperta in un altro terminale · <folder>", with the full path. The action is ResumeHereButton.
-- before the first frame of ConversationStreamRoute → a ProgressIndicator "Caricamento…".
-- first frame with no items → "Nessun messaggio."
-- the socket closes before the first frame → an ErrorMessage "Conversazione non disponibile."
+- the SessionHeader with `session`: folder name, path, the line "Aperta in un altro terminale", the state pill, then the chip "Sola lettura" (`.mono-chip` on surface 2, lock icon at 12 px). The action is ResumeHereButton.
+- before the first frame of ConversationStreamRoute → an AreaState `loading` "Caricamento…".
+- first frame with no items → an AreaState `empty` "Nessun messaggio.".
+- the socket closes before the first frame → an AreaState `error` "Conversazione non disponibile." (rose tile).
 - one `article` per entry, in the order received:
-  - `user` item → a bubble on the right (`aria-label` "Utente"): at most 80 % of the column plus its 12 px 16 px padding, radius 20 20 4 20 px, `--primary` with `--on-primary` text. The text in `.body-l`; under it, aligned right, the time in `.body-s` at 80 % opacity. No time when the item has no valid `timestamp`.
-  - `assistant` item → on the left (`aria-label` "Claude"): the ember spark (28 px, `--ember`), 12 px gap, the text in `.body-l` 2 px lower. Text between single backticks on one line shows without the backticks as a mono chip: 14 px, padding 1 px 6 px, radius 6 px, `--sc-high`.
+  - `user` item (`aria-label` "Utente") and `assistant` item (`aria-label` "Claude") → both on the left. A 24 px avatar 2 px lower, 12 px gap, then:
+    - the name line, 8 px gap → "Tu" or "Claude" (12/16 px, weight 600); for a user item with a valid `timestamp`, the time (mono 10 px, `--text-muted`).
+    - the text, 14 px, line height 1.625, `--text-primary`. A user text sits in a `.vx-surface-2` box with 8 px radius and 12 px padding, 4 px under the name line. A Claude text is 10 px under the name line, with no box.
+  - user avatar → the neutral square of Avatar with "T". Claude avatar → a 24 px square, 6 px radius, `--accent-primary` fill, "✦" in mono 11 px and `--on-accent`. Both decorative.
+  - in Claude text, text between single backticks on one line shows without the backticks as a mono chip: 12 px, padding 2 × 6 px, 4 px radius, `--bg-surface-2`, 1 px `--border-subtle`.
   - tool card → see "Tool cards".
 - user and Claude text keeps its line breaks.
 
@@ -38,17 +41,16 @@ same calendar day as now      → "HH:MM"
 any other day                 → "DD/MM/YYYY HH:MM"
 ```
 
-Tool cards:
-- a `tool_call` and the first later `tool_result` whose `toolUseId` equals its `id` form one card, at the place of the call. A `tool_result` with no such call is a card of its own, with the wrench icon and the name "Risultato".
-- the card (`aria-label` "Strumento: <name>"): 40 px from the left, radius 16 px, `--sc-lowest`, 1 px `--outline-variant` border. Two cards in a row are 6 px apart.
-- its row is one button (`aria-expanded`), padding 10 px 12 px 10 px 16 px, 12 px gaps: the tool icon in `--on-surface-variant`, the name in `.label-l`, the summary in mono `.body-m` and `--on-surface-variant` (one line, cut with an ellipsis, full text as tooltip), the outcome chip, the chevron.
-- tool icon: `Bash` → terminal. `Edit`, `Write`, `MultiEdit`, `NotebookEdit` → pencil. Any other → wrench.
-- outcome chip (`.label-m`, 24 px high):
-  - no result yet → no chip.
-  - result with `isError` → "Fallito" with the circle-x icon, `--error-container` / `--on-error-container`.
-  - any other result → "Fatto" with the check icon, `--ok-container` / `--on-ok-container`.
-- closed (default) → chevron right, nothing below the row.
-- open → chevron down. Below the row, one mono `.body-s` block on `--sc`, padding 12 px 16 px 14 px 48 px, 1 px `--outline-variant` line on top. It holds, in this order, separated by an empty line:
+Tool cards (look of the tool card built by `selectSession()`):
+- a `tool_call` and the first later `tool_result` whose `toolUseId` equals its `id` form one card, at the place of the call. A `tool_result` with no such call is a card of its own, named "Risultato".
+- the card (`aria-label` "Strumento: <name>"): 36 px from the left, so it lines up with the message text. `.vx-surface-1`, 8 px radius. Two cards in a row are 8 px apart.
+- its row is one button (`aria-expanded`), padding 6 × 12 px, 8 px gaps, mono 11 px; surface 2 on hover:
+  - the name chip → padding 0 × 6 px, 4 px radius, `--bg-surface-3`, `--accent-primary`, weight 500.
+  - the summary → `--text-primary`, one line cut with an ellipsis, full text as tooltip.
+  - the outcome, 8 px after, mono 10 px: no result yet → "▾" alone in `--text-muted`; result with `isError` → "Fallito ▾" in rose-400; any other result → "Fatto ▾" in emerald-400. "▾" is decorative.
+- no tool icon.
+- closed (default) → "▾" turned to point right, nothing below the row.
+- open → "▾" points down. Below the row, one block on `--bg-canvas` with a 1 px `--border-subtle` line on top, padding 8 × 12 px, mono 12 px (`--term-size`), line height 1.625, `--text-secondary`. It holds, in this order, separated by an empty line:
   - the full input, when the call has `moreInput`. It comes from ItemContentRoute.
   - the output: the full text from ItemContentRoute when the result is `truncated`; otherwise its text. Before the full text is loaded, the cut text and a last line "…".
 - an open card with nothing to show in the block shows no block.
@@ -66,7 +68,7 @@ Scrolling:
 - the first frame always shows the last entry.
 - new entries arrive while the view is at the end → the content scrolls to the last entry.
 - new entries arrive while the user has scrolled up → the view does not move, and N grows by the number of new entries. A result that joins an existing card adds nothing.
-- N > 0 → a button at the bottom centre of the panel, 20 px from its bottom, floating over the content: `.btn` `.label-l`, `--primary-container` / `--on-primary-container`, a light shadow, arrow-down icon. Text "N nuovi messaggi", or "1 nuovo messaggio".
+- N > 0 → a `.vx-glass` button at the bottom centre of the content area, 20 px from its bottom, floating over the content: 8 px radius, padding 8 × 14 px, mono 12 px, arrow-down icon at 14 px. Text "N nuovi messaggi", or "1 nuovo messaggio".
 - click on the button → the content scrolls to the end, the button disappears and N goes back to 0.
 - the user scrolls to the end → the button disappears and N goes back to 0.
 
@@ -74,18 +76,17 @@ Scrolling:
 
 - It has no input field. It sends nothing on the socket.
 - It opens one socket per `sessionId` and closes it on unmount.
-- The header stays in place. Only the panel content scrolls; the panel and the button do not.
+- The header stays in place. Only the content scrolls; the button does not.
 - It requests the full content of a part only when the user opens its card.
-- Only the colour roles of ThemeTokens are used.
 
 ## Dependencies
 
 - ConversationStreamRoute, ItemContentRoute, ResumeHereButton
 - SessionHeader (module sessions)
-- IconSet, ProgressIndicator, ErrorMessage, ThemeTokens, WebEntry (module app)
+- AreaState, IconSet, ProgressIndicator, ErrorMessage, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-33`, `plan-claude_sessions_client/REQ-34`, `plan-claude_sessions_client/REQ-36`
-- `plan-claude_sessions_client-ui_redesign/REQ-17`, `plan-claude_sessions_client-ui_redesign/REQ-19`, `plan-claude_sessions_client-ui_redesign/REQ-20`, `plan-claude_sessions_client-ui_redesign/REQ-21`, `plan-claude_sessions_client-ui_redesign/REQ-22`, `plan-claude_sessions_client-ui_redesign/REQ-23`, `plan-claude_sessions_client-ui_redesign/REQ-24`, `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-35`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-36`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-37`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-38`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-39`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-40`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-41`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-42`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-43`
+- `plan-claude_sessions_client-ui_redesign/REQ-17`, `plan-claude_sessions_client-ui_redesign/REQ-19`, `plan-claude_sessions_client-ui_redesign/REQ-20`, `plan-claude_sessions_client-ui_redesign/REQ-21`, `plan-claude_sessions_client-ui_redesign/REQ-22`, `plan-claude_sessions_client-ui_redesign/REQ-23`, `plan-claude_sessions_client-ui_redesign/REQ-24`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-33`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-36` to `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-41`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50`

@@ -6,46 +6,40 @@ type: UI component
 
 # StateBadge
 
-**Purpose** → the state of one session as icon and Italian name together. Used in the session list and, as a chip, in the SessionHeader.
+**Purpose** → the state of one session as a coloured dot, a mono name or the tinted pill of `#subbar-status-badge` in `.sdd/mockups/studio-dark/mock.html`. Colours as `statusMeta()` of the mock.
 
 ## Contract
 
 Props:
 - `state` → `working`, `needs_input`, `idle` or `ended`.
-- `variant` → `inline` (default) or `chip`.
+- `variant` → `dot`, `inline` (default) or `chip`.
 
-Shows, `variant` `inline`:
-- one inline element with the classes `state-badge`, `label-m` and `state-<state>` (e.g. `state-needs_input`).
-- inside it, a 14 px state icon, a 4 px gap, then the state name. Icon paths and colours are those of board "Voci dell'elenco":
+| `state` | Name | Colour | Dot pulses |
+|---------|------|--------|-----------|
+| `working` | "Lavora" | emerald | yes |
+| `needs_input` | "Richiede input" | amber | yes |
+| `idle` | "In attesa" | zinc | no |
+| `ended` | "Terminata" | zinc | no |
 
-| `state` | Name | Icon | Colour |
-|---------|------|------|--------|
-| `working` | "Lavora" | `LoaderCircleIcon` | `--primary` |
-| `needs_input` | "Richiede input" | `CircleAlertIcon` | the colour of its container, weight 700 |
-| `idle` | "In attesa" | `CirclePauseIcon` | the colour of its container |
-| `ended` | "Terminata" | `CircleMinusIcon` | the colour of its container |
+"Colour" is the 400 tone for the dot and the text, the 500 tone at 15 % for a fill and at 30 % for a border.
 
-Shows, `variant` `chip` (the header chip of board "Sessione ospitata"):
-- one inline element with the classes `chip`, `label-l` and `state-chip`, and no `state-badge` class.
-- the outlined chip: 28 px content height plus a 1 px `--outline-variant` border, padding 0 10 px 0 8 px, 8 px radius, 6 px gap, text in `--on-surface-variant` for every state.
-- inside it, the 16 px icon of the table, then the state name of the table.
-
-- `StateIcon` → the icon of the table alone, for a given `state`.
+Shows:
+- `dot` → a decorative round 8 px dot (`aria-hidden`) in the colour. It pulses as Tailwind `animate-pulse` (opacity to 0.5 and back in 2 s) when the table says so.
+- `inline` → the name alone, mono 10/15 px, in the colour. No dot: the caller shows the dot apart.
+- `chip` → an inline pill: padding 2 × 8 px, 4 px radius, mono 11 px, 6 px gap, 15 % fill, 30 % border, the name in the colour, after a 6 px dot.
+- `StateDot({ state })` → the dot alone, exported.
 
 ## Rules and invariants
 
-- Icon and name always appear together, in the same colour. The name is never cut and never wraps.
-- Each state has its own icon, so two states never look alike without colour.
-- The icon is decorative: the accessible text is the state name.
+- The name is never cut and never wraps.
+- Every variant but `dot` shows the name, so the state is readable without colour. The `dot` variant is used only next to a text that names the state.
+- With `prefers-reduced-motion: reduce` the dot does not pulse.
 
 ## Dependencies
 
-- IconSet (module app)
-- ThemeTokens, WebEntry (module app): the `chip` and type classes
+- ThemeTokens, WebEntry (module app)
 
 ## Requirements served
 
 - `plan-claude_sessions_client-ui_redesign/REQ-12`
-- `plan-claude_sessions_client-ui_redesign/REQ-1`
-- `plan-claude_sessions_client-ui_redesign/REQ-3`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-20`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-28`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-34`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-31`

@@ -1,18 +1,8 @@
-import { type ComponentType, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { AreaState } from '../feedback/AreaState';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
-import {
-  ArrowDownIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  CircleXIcon,
-  LockIcon,
-  PencilIcon,
-  SparkIcon,
-  TerminalIcon,
-  WrenchIcon,
-} from '../icons/Icons';
+import { ArrowDownIcon, LockIcon } from '../icons/Icons';
 import { SessionHeader, type SessionHeaderSummary } from '../sessions/SessionHeader';
 import { ResumeHereButton } from './ResumeHereButton';
 
@@ -39,7 +29,6 @@ interface ConversationViewProps {
 }
 
 const AT_END_TOLERANCE_PX = 8;
-const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
 const INLINE_CODE = /`([^`\n]+)`/;
 
 function conversationUrl(sessionId: string): string {
@@ -91,13 +80,7 @@ function entriesOf(items: ConversationItem[]): Entry[] {
 function withInlineCode(text: string): ReactNode[] {
   return text
     .split(INLINE_CODE)
-    .map((part, index) => (index % 2 === 1 ? <code key={index} className="mono inline-code">{part}</code> : part));
-}
-
-function toolIconOf(name: string | undefined): ComponentType {
-  if (name === 'Bash') return TerminalIcon;
-  if (name !== undefined && EDIT_TOOLS.has(name)) return PencilIcon;
-  return WrenchIcon;
+    .map((part, index) => (index % 2 === 1 ? <code key={index} className="inline-code">{part}</code> : part));
 }
 
 function useFullContent(sessionId: string, ref: ItemRef | undefined, wanted: boolean) {
@@ -120,16 +103,14 @@ function useFullContent(sessionId: string, ref: ItemRef | undefined, wanted: boo
   return { content, retry };
 }
 
-function OutcomeChip({ isError }: { isError: boolean }) {
-  return isError ? (
-    <span className="chip label-m tool-outcome tool-outcome-failed">
-      <CircleXIcon />
-      Fallito
-    </span>
-  ) : (
-    <span className="chip label-m tool-outcome tool-outcome-done">
-      <CheckIcon />
-      Fatto
+function ToolOutcome({ result, open }: { result: ToolResult | undefined; open: boolean }) {
+  const outcome = result === undefined ? undefined : result.isError === true ? 'failed' : 'done';
+  return (
+    <span className={outcome ? `tool-outcome tool-outcome-${outcome}` : 'tool-outcome'}>
+      {outcome === 'failed' ? 'Fallito ' : outcome === 'done' ? 'Fatto ' : ''}
+      <span className={open ? 'tool-chevron' : 'tool-chevron tool-chevron-closed'} aria-hidden="true">
+        ▾
+      </span>
     </span>
   );
 }
@@ -139,7 +120,6 @@ function ToolCard({ sessionId, call, result }: { sessionId: string; call?: ToolC
   const input = useFullContent(sessionId, call?.ref, open && call?.moreInput === true);
   const output = useFullContent(sessionId, result?.ref, open && result?.truncated === true);
   const name = call ? call.name : 'Risultato';
-  const Icon = toolIconOf(call?.name);
 
   const toggle = () => {
     if (!open) {
@@ -158,43 +138,40 @@ function ToolCard({ sessionId, call, result }: { sessionId: string; call?: ToolC
   const states = [input.content.status, output.content.status];
 
   return (
-    <article className="tool-card" aria-label={`Strumento: ${name}`}>
+    <article className="tool-card vx-surface-1" aria-label={`Strumento: ${name}`}>
       <button type="button" className="tool-card-toggle" aria-expanded={open} onClick={toggle}>
-        <Icon />
-        <span className="label-l">{name}</span>
-        <span className="mono body-m tool-card-argument" title={call?.summary}>
+        <span className="tool-card-name">{name}</span>
+        <span className="tool-card-argument" title={call?.summary}>
           {call?.summary}
         </span>
-        {result && <OutcomeChip isError={result.isError === true} />}
-        {open ? <ChevronDownIcon /> : <ChevronRightIcon />}
+        <ToolOutcome result={result} open={open} />
       </button>
-      {open && blocks.length > 0 && <pre className="mono body-s tool-card-output">{blocks.join('\n\n')}</pre>}
-      {open && states.includes('loading') && <ProgressIndicator className="body-s tool-card-state" />}
-      {open && states.includes('failed') && (
-        <ErrorMessage className="body-s tool-card-state">Impossibile caricare il contenuto completo.</ErrorMessage>
-      )}
+      {open && blocks.length > 0 && <pre className="tool-card-output">{blocks.join('\n\n')}</pre>}
+      {open && states.includes('loading') && <ProgressIndicator className="tool-card-state" />}
+      {open && states.includes('failed') && <ErrorMessage className="tool-card-state">Impossibile caricare il contenuto completo.</ErrorMessage>}
     </article>
   );
 }
 
 function MessageBlock({ item }: { item: UserItem | AssistantItem }) {
-  if (item.kind === 'assistant') {
-    return (
-      <article className="claude-message" aria-label="Claude">
-        <SparkIcon />
-        <div className="body-l claude-message-text">{withInlineCode(item.text)}</div>
-      </article>
-    );
-  }
-  const time = item.timestamp === undefined ? '' : formatMessageTime(item.timestamp, new Date());
+  const claude = item.kind === 'assistant';
+  const time = item.kind === 'user' && item.timestamp !== undefined ? formatMessageTime(item.timestamp, new Date()) : '';
   return (
-    <article className="user-bubble" aria-label="Utente">
-      <div className="body-l user-bubble-text">{item.text}</div>
-      {time && (
-        <time className="body-s user-bubble-time" dateTime={item.timestamp}>
-          {time}
-        </time>
-      )}
+    <article className={claude ? 'message message-claude' : 'message message-user'} aria-label={claude ? 'Claude' : 'Utente'}>
+      <span className={claude ? 'message-avatar message-avatar-claude' : 'avatar message-avatar'} aria-hidden="true">
+        {claude ? '✦' : 'T'}
+      </span>
+      <div className="message-body">
+        <div className="message-meta">
+          <span className="message-name">{claude ? 'Claude' : 'Tu'}</span>
+          {time && item.kind === 'user' && (
+            <time className="message-time" dateTime={item.timestamp}>
+              {time}
+            </time>
+          )}
+        </div>
+        <div className={claude ? 'message-text' : 'message-text vx-surface-2'}>{claude ? withInlineCode(item.text) : item.text}</div>
+      </div>
     </article>
   );
 }
@@ -267,11 +244,10 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
     <div className="conversation-view">
       <SessionHeader
         session={session}
-        external
-        line={session && `Aperta in un altro terminale · ${session.folder}`}
+        line="Aperta in un altro terminale"
         actions={<ResumeHereButton sessionId={sessionId} onResumed={onResumed} />}
         notice={
-          <span className="chip label-l read-only-chip">
+          <span className="mono-chip vx-surface-2 read-only-chip">
             <LockIcon />
             Sola lettura
           </span>
@@ -282,11 +258,11 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
           <div className="conversation-column">
             {items === null &&
               (unavailable ? (
-                <ErrorMessage className="conversation-status">Conversazione non disponibile.</ErrorMessage>
+                <AreaState kind="error" title="Conversazione non disponibile." />
               ) : (
-                <ProgressIndicator className="conversation-status" />
+                <AreaState kind="loading" title="Caricamento…" />
               ))}
-            {items?.length === 0 && <p className="empty-state">Nessun messaggio.</p>}
+            {items?.length === 0 && <AreaState kind="empty" title="Nessun messaggio." />}
             {entries.map((entry) =>
               entry.kind === 'tool' ? (
                 <ToolCard key={entry.key} sessionId={sessionId} call={entry.call} result={entry.result} />
@@ -297,7 +273,7 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
           </div>
         </div>
         {unseen > 0 && (
-          <button type="button" className="btn label-l new-messages" onClick={jumpToEnd}>
+          <button type="button" className="vx-glass new-messages" onClick={jumpToEnd}>
             <ArrowDownIcon />
             {unseen === 1 ? '1 nuovo messaggio' : `${unseen} nuovi messaggi`}
           </button>

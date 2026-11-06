@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { WarningDialog } from '../dialogs/WarningDialog';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { Spinner } from '../feedback/ProgressIndicator';
-import { PowerIcon } from '../icons/Icons';
 import type { SessionState } from './live-session-store';
 
 const STILL_WORKING = ' sta ancora lavorando. Il turno in corso verrà interrotto; potrai riprendere la conversazione dalla cronologia.';
@@ -38,18 +37,23 @@ export function StopSessionButton({ sessionId, state, folderName }: StopSessionB
     <>
       <button
         type="button"
-        className="btn label-l stop-session-button"
+        className="button-danger stop-session-button"
         disabled={stopping}
         aria-busy={stopping || undefined}
         onClick={() => (state === 'working' ? setConfirming(true) : void stop())}
       >
-        {stopping ? <Spinner /> : <PowerIcon />}
+        {stopping ? (
+          <Spinner />
+        ) : (
+          <span className="stop-glyph" aria-hidden="true">
+            ■
+          </span>
+        )}
         Termina
       </button>
       {failed && <ErrorMessage>Terminazione della sessione non riuscita.</ErrorMessage>}
       {confirming && (
         <WarningDialog
-          icon={<PowerIcon />}
           title="Terminare la sessione?"
           description={
             <>

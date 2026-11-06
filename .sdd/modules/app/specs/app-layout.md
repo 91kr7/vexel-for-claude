@@ -6,30 +6,26 @@ type: UI page
 
 # AppLayout
 
-**Purpose** → the page: the navigation rail, the list panel and the main area with the open session, as board "Sessione ospitata".
+**Purpose** → the page: top bar, navigation rail, list panel and main area with the open session. It copies "MAIN VEXEL APPLICATION SHELL" of `.sdd/mockups/studio-dark/mock.html`, without the outer margin and the rounded frame.
 
 ## Contract
 
 Description:
-- three columns that fill the window, on `--surface`. There is no separate header bar.
-- the NavigationRail (left, 96 px).
-- the list panel → a `section` with the label "Elenco sessioni". Flex basis 340 px, at most 400 px wide, 12 px margin above and below, padding 20 px 12 px, 28 px radius, `--sc-low` background. One column with a 4 px gap:
-  - the brand row (padding 0 12 px 4 px, aligned on the text baseline, 8 px gap) → "Vexel" (`.brand`, 28/34 px, `--primary`) and "for Claude" (`.label-l`, `--on-surface-variant`).
-  - the title row (padding 0 12 px 12 px, centred, space between) → the `h1` "Sessioni" (`.headline-s`, no margin) on the left, the NeedsInputCounter on the right.
+- the page fills the window edge to edge, on `--bg-surface-1`. From top: the TopBar, then one row with the NavigationRail, the list panel and the main area.
+- the list panel → a `section` with the label "Elenco sessioni". 224 px wide, padding 10 px, `--bg-surface-1`, 1 px `--border-subtle` line on the right. One column with a 10 px gap:
+  - the title row (padding 0 × 6 px, centred, space between) → the `h1` "Sessioni" in `.section-label` on the left, the NeedsInputCounter on the right.
   - the SessionList.
-- the main area (`main`) → takes the rest of the width (flex basis 560 px). One column, 12 px gap, padding 12 px 16 px 16 px 16 px.
+- the main area (`main`) → takes the rest of the width, with the `.vx-dot-grid` background.
 
 Shows:
 - the rail badge, the counter and the list, always, also while a session is open. All follow LiveSessionStore (`useLiveSessions`). The rail badge gets `countNeedsInput` of the list. The list also gets its load status.
 - no open session → the EmptyState in the main area.
 - an open hosted session → its SessionView, with the summary (folder, label, state) of that session from LiveSessionStore. No summary while the store does not list it yet.
 - an open external session → its ConversationView with its summary, in place of the SessionView. It stays open when the entry leaves the list, with the last summary the list gave.
-- the NeedsInputSnackbar of `useNeedsInputSnackbar`, when it gives a session:
-  - an open hosted session → passed to its SessionView, which shows it at the right of the hint row.
-  - otherwise → at the bottom right of the main area: 24 px from its right edge, 16 px from its bottom edge, above the content.
+- the NeedsInputSnackbar of `useNeedsInputSnackbar`, when it gives a session → fixed at the bottom right of the window, whatever the main area shows.
 
 Actions:
-- "Nuova sessione", in the rail or in the EmptyState → opens FolderChooser.
+- "Nuova sessione", in the top bar, in the rail or in the EmptyState → opens FolderChooser.
 - FolderChooser starts a session → the chooser closes and the new session becomes the open one.
 - FolderChooser cancelled → the chooser closes; the open session does not change.
 - "Riprendi" in the rail, or "Riprendi sessione" in the EmptyState → opens ResumeDialog.
@@ -50,13 +46,14 @@ else → "Nuova sessione" in the rail
 
 ## Rules and invariants
 
-- the rail and the head of the list panel stay in place. Only the SessionList scrolls, when its entries do not fit.
-- from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements.
-- the list panel has no "Nuova sessione" or "Riprendi sessione" button.
+- the top bar, the rail and the head of the list panel stay in place. Only the SessionList scrolls, when its entries do not fit.
+- at 1440 × 900 px → top bar 48 px high, rail 52 px wide, list panel 224 px wide.
+- from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements, except the snackbar, which may cover the corner of the main area.
+- the list panel has no brand, no "Nuova sessione" and no "Riprendi sessione" button.
 
 ## Dependencies
 
-- NavigationRail, NeedsInputSnackbar, EmptyState
+- TopBar, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry
 - FolderChooser (module folders)
 - ResumeDialog (module history)
 - SessionView, SessionList, NeedsInputCounter, LiveSessionStore (module sessions)
@@ -65,5 +62,5 @@ else → "Nuova sessione" in the rail
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client/REQ-17`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-33`, `plan-claude_sessions_client/REQ-35`
-- `plan-claude_sessions_client-ui_redesign/REQ-8`, `plan-claude_sessions_client-ui_redesign/REQ-9`, `plan-claude_sessions_client-ui_redesign/REQ-10`, `plan-claude_sessions_client-ui_redesign/REQ-14`, `plan-claude_sessions_client-ui_redesign/REQ-17`, `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-10`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-15`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-33`
+- `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign/REQ-8`, `plan-claude_sessions_client-ui_redesign/REQ-9`, `plan-claude_sessions_client-ui_redesign/REQ-10`, `plan-claude_sessions_client-ui_redesign/REQ-14`, `plan-claude_sessions_client-ui_redesign/REQ-17`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-15`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-21`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-53`

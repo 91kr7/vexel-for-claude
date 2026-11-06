@@ -1,4 +1,4 @@
-// e2e of plan-claude_sessions_client-ui_redesign, batch visual-language.
+// e2e of plan-claude_sessions_client-ui_redesign, batch visual-language, brought to the one dark theme of plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark.
 /// <reference lib="dom" />
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, readdir } from 'node:fs/promises';
@@ -85,35 +85,13 @@ async function resolved(page: Page, css: string): Promise<Rgba> {
   return composite(page, ['#fff', css]);
 }
 
-const textAndStateColours = [
-  '--color-text',
-  '--color-text-muted',
-  '--color-state-needs-input',
-  '--color-state-working',
-  '--color-state-idle',
-  '--color-state-ended',
-  '--color-external',
-  '--color-error',
-  '--color-warning',
-  '--color-success',
-];
-const surfaces = ['--color-surface', '--color-surface-hover', '--color-surface-selected'];
+// Text colours of the client: the mock text tokens, the status colours and the accent (text buttons, chips).
+const textColours = ['--text-primary', '--text-secondary', '--text-muted', '--emerald-400', '--amber-300', '--amber-400', '--rose-400', '--zinc-400', '--accent-primary'];
+const surfaces = ['--bg-canvas', '--bg-surface-1', '--bg-surface-2', '--bg-surface-3'];
 
+/** plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-51, REQ-52: text at 4.5:1, focus ring at 3:1. */
 async function contrastFailures(page: Page): Promise<string[]> {
-  const names = [
-    ...textAndStateColours,
-    '--color-bg',
-    ...surfaces,
-    '--color-state-needs-input-bg',
-    '--color-primary',
-    '--color-primary-hover',
-    '--color-on-primary',
-    '--color-danger',
-    '--color-danger-hover',
-    '--color-on-danger',
-    '--color-focus-ring',
-    '--color-border-strong',
-  ];
+  const names = [...textColours, ...surfaces, '--on-accent', '--accent-deep', '--color-focus-ring', '--amber-500-20', '--rose-500-15'];
   const t = await tokens(page, names);
   for (const n of names) expect(t[n], `token ${n} is defined`).not.toBe('');
   const failures: string[] = [];
@@ -122,50 +100,37 @@ async function contrastFailures(page: Page): Promise<string[]> {
       await composite(page, [...bgLayers.map((b) => t[b]!), t[fg]!]),
       await composite(page, bgLayers.map((b) => t[b]!)),
     );
-    if (ratio < min) failures.push(`${fg} on ${bgLayers.at(-1)}: ${ratio.toFixed(2)} < ${min}`);
+    if (ratio < min) failures.push(`${fg} on ${bgLayers.join(' + ')}: ${ratio.toFixed(2)} < ${min}`);
   };
-  const backgrounds = [['--color-bg'], ...surfaces.map((s) => ['--color-bg', s])];
-  for (const fg of textAndStateColours) for (const bg of backgrounds) await check(fg, bg, 4.5);
-  for (const fg of ['--color-text', '--color-text-muted', '--color-state-needs-input']) {
-    await check(fg, ['--color-bg', '--color-surface', '--color-state-needs-input-bg'], 4.5);
-  }
-  for (const bg of ['--color-primary', '--color-primary-hover']) await check('--color-on-primary', ['--color-bg', bg], 4.5);
-  for (const bg of ['--color-danger', '--color-danger-hover']) await check('--color-on-danger', ['--color-bg', bg], 4.5);
-  for (const fg of ['--color-focus-ring', '--color-border-strong']) {
-    await check(fg, ['--color-bg'], 3);
-    await check(fg, ['--color-bg', '--color-surface'], 3);
-  }
+  for (const fg of textColours) for (const bg of surfaces) await check(fg, [bg], 4.5);
+  await check('--amber-300', ['--bg-surface-2', '--amber-500-20'], 4.5);
+  await check('--rose-400', ['--bg-surface-1', '--rose-500-15'], 4.5);
+  for (const bg of ['--accent-primary', '--accent-deep']) await check('--on-accent', [bg], 4.5);
+  for (const bg of surfaces) await check('--color-focus-ring', [bg], 3);
   return failures;
 }
 
-// plan-claude_sessions_client-ui_redesign/REQ-2
-test('the client is light on a light system and turns dark at once, with no reload, when the system turns dark', async ({ page }) => {
+// plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-1: the client is dark on a light system and stays the same when the system turns dark
+test('the client is dark on a light system and does not change when the system turns dark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Nuova sessione' })).toBeVisible();
-  await page.evaluate(() => ((window as unknown as { noReloadMarker: boolean }).noReloadMarker = true));
 
   const lightBg = await resolved(page, await effectiveBackground(page.locator('body')));
   const lightText = await resolved(page, await page.locator('body').evaluate((b) => getComputedStyle(b).color));
-  expect(luminance(lightBg), 'light page background').toBeGreaterThan(0.5);
-  expect(luminance(lightText), 'light page text').toBeLessThan(0.2);
+  expect(luminance(lightBg), 'dark page background').toBeLessThan(0.05);
+  expect(luminance(lightText), 'light page text').toBeGreaterThan(0.5);
 
   await page.emulateMedia({ colorScheme: 'dark' });
-
-  const darkBg = await resolved(page, await effectiveBackground(page.locator('body')));
-  const darkText = await resolved(page, await page.locator('body').evaluate((b) => getComputedStyle(b).color));
-  expect(luminance(darkBg), 'dark page background').toBeLessThan(0.2);
-  expect(luminance(darkText), 'dark page text').toBeGreaterThan(0.5);
-  expect(await page.evaluate(() => (window as unknown as { noReloadMarker?: boolean }).noReloadMarker), 'no reload').toBe(true);
-
-  await page.emulateMedia({ colorScheme: 'light' });
   expect(await resolved(page, await effectiveBackground(page.locator('body')))).toEqual(lightBg);
+  expect(await resolved(page, await page.locator('body').evaluate((b) => getComputedStyle(b).color))).toEqual(lightText);
 });
 
-// plan-claude_sessions_client-ui_redesign/REQ-2, WebEntry: the page declares color-scheme light dark
-test('the page declares both colour schemes for native controls', async ({ page }) => {
+// plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-2, WebEntry: the page declares color-scheme dark only
+test('the page declares only the dark colour scheme for native controls', async ({ page }) => {
   await page.goto('/');
   const content = await page.locator('meta[name="color-scheme"]').getAttribute('content');
-  expect(content?.split(/\s+/).sort()).toEqual(['dark', 'light']);
+  expect(content?.trim()).toBe('dark');
+  expect(await page.locator('html').evaluate((el) => getComputedStyle(el).colorScheme)).toBe('dark');
 });
 
 // plan-claude_sessions_client-ui_redesign/REQ-2, ThemeTokens and WebEntry: the terminal has the dark --term-bg of the active theme
@@ -186,22 +151,21 @@ test('the terminal of a hosted session is dark in both themes, in the --term-bg 
 });
 
 for (const scheme of ['light', 'dark'] as const) {
-  // ThemeTokens: contrast rules (WCAG 2.2 AA) in each colour set
-  test(`the ${scheme} token set meets the contrast rules`, async ({ page }) => {
+  // ThemeTokens, plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-51, REQ-52: contrast rules (WCAG 2.2 AA), whatever the system theme
+  test(`with a ${scheme} system theme the token set meets the contrast rules`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });
     await page.goto('/');
     expect(await contrastFailures(page)).toEqual([]);
   });
 }
 
-// ThemeTokens: light and dark sets differ in their surface and text colours
-test('the dark set replaces the light surface and text colours', async ({ page }) => {
+// ThemeTokens, plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-1: one set only, the system theme changes no token
+test('the system theme changes no surface or text token', async ({ page }) => {
   await page.goto('/');
-  const names = ['--color-bg', '--color-surface', '--color-text'];
+  const names = [...surfaces, '--text-primary', '--text-muted', '--accent-primary'];
   const light = await tokens(page, names);
   await page.emulateMedia({ colorScheme: 'dark' });
-  const dark = await tokens(page, names);
-  for (const n of names) expect(await resolved(page, dark[n]!), n).not.toEqual(await resolved(page, light[n]!));
+  expect(await tokens(page, names)).toEqual(light);
 });
 
 // plan-claude_sessions_client-ui_redesign/REQ-6
@@ -233,8 +197,8 @@ test('with no internet connection the page and a session load their font and ico
     [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/["']/g, '')),
   );
   expect(new Set(loaded), 'Roboto Flex and Roboto Mono are loaded').toEqual(new Set(['Roboto Flex', 'Roboto Mono']));
-  await expect(page.getByRole('button', { name: 'Nuova sessione', exact: true }).locator('svg.icon')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Interrompi' }).locator('svg.icon')).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('button', { name: 'Nuova sessione', exact: true }).locator('svg.icon')).toBeVisible();
+  await expect(page.getByRole('navigation').getByRole('button', { name: 'Riprendi', exact: true }).locator('svg.icon')).toBeVisible();
 });
 
 // plan-claude_sessions_client-ui_redesign/REQ-6: no style shipped with the client points to another server
@@ -260,33 +224,21 @@ test('the UI uses the bundled Roboto Flex font and the terminal uses Roboto Mono
     return f && { weight: f.weight, display: f.display };
   });
   expect(face).toEqual({ weight: '400 800', display: 'swap' });
-  for (const name of ['Nuova sessione', 'Riprendi']) {
-    const family = await page.getByRole('button', { name, exact: true }).evaluate((el) => getComputedStyle(el).fontFamily);
-    expect(family, name).toMatch(/^["']?Roboto Flex/);
+  for (const button of [page.getByRole('banner').getByRole('button', { name: 'Nuova sessione', exact: true }), page.getByRole('navigation').getByRole('button', { name: 'Riprendi', exact: true })]) {
+    expect(await button.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Roboto Flex/);
   }
   expect(await page.locator('body').evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Roboto Flex/);
   expect(await terminal(page).evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Roboto Mono/);
 });
 
-// IconSet: each button keeps its accessible name and shows one decorative icon sized by --icon-size in its text colour
-test('the rail "Riprendi" and the session toolbar buttons carry decorative icons', async ({ page, request }) => {
+// IconSet, NavigationRail and TopBar: each button keeps its accessible name and shows one decorative icon at its size, in its text colour
+test('the rail "Riprendi" and the top bar "Nuova sessione" carry decorative icons', async ({ page, request }) => {
   await openSession(page, request, 'icons');
-  const iconSize = await page.evaluate(() => {
-    const probe = document.createElement('div');
-    probe.style.width = 'var(--icon-size)';
-    document.body.append(probe);
-    const width = probe.getBoundingClientRect().width;
-    probe.remove();
-    return width;
-  });
-  expect(iconSize).toBe(20);
-
-  const buttons = [
-    page.getByRole('button', { name: 'Riprendi', exact: true }),
-    page.getByRole('button', { name: 'Interrompi', exact: true }),
-    page.getByRole('button', { name: 'Termina', exact: true }),
+  const buttons: [Locator, number][] = [
+    [page.getByRole('navigation').getByRole('button', { name: 'Riprendi', exact: true }), 17],
+    [page.getByRole('banner').getByRole('button', { name: 'Nuova sessione', exact: true }), 14],
   ];
-  for (const button of buttons) {
+  for (const [button, size] of buttons) {
     await expect(button).toHaveCount(1);
     const icon = button.locator('svg');
     await expect(icon).toHaveCount(1);
@@ -294,8 +246,8 @@ test('the rail "Riprendi" and the session toolbar buttons carry decorative icons
     await expect(icon).toHaveAttribute('aria-hidden', 'true');
     await expect(icon).toHaveAttribute('focusable', 'false');
     const box = (await icon.boundingBox())!;
-    expect(box.width).toBeCloseTo(iconSize, 0);
-    expect(box.height).toBeCloseTo(iconSize, 0);
+    expect(box.width).toBeCloseTo(size, 0);
+    expect(box.height).toBeCloseTo(size, 0);
     const [iconColour, textColour] = await Promise.all([
       icon.evaluate((el) => getComputedStyle(el).color),
       button.evaluate((el) => getComputedStyle(el).color),
@@ -304,27 +256,31 @@ test('the rail "Riprendi" and the session toolbar buttons carry decorative icons
   }
 });
 
-// WebEntry: primary buttons take their look from the tokens; others are secondary.
-// StopSessionButton (plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29): "Termina" is the tonal error button.
-test('empty state "Nuova sessione" looks primary, header "Termina" looks danger, "Riprendi sessione" looks secondary', async ({ page, request }) => {
+// WebEntry, plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32, REQ-50: accent, neutral and rose buttons
+test('empty state "Nuova sessione" is the accent button, "Riprendi sessione" the neutral one, and header "Termina" the rose one', async ({ page, request }) => {
   const look = async (button: Locator) => ({
     bg: await resolved(page, await button.evaluate((el) => getComputedStyle(el).backgroundColor)),
     fg: await resolved(page, await button.evaluate((el) => getComputedStyle(el).color)),
   });
   const mainButton = (name: string) => page.getByRole('main').getByRole('button', { name, exact: true });
   await page.goto('/');
-  const t = await tokens(page, ['--color-primary', '--color-on-primary', '--error-container', '--on-error-container']);
+  const t = await tokens(page, ['--accent-primary', '--on-accent', '--bg-surface-2', '--text-primary', '--rose-500-15', '--rose-400']);
   await page.mouse.move(0, 0);
-  const primary = await look(mainButton('Nuova sessione'));
-  expect(primary).toEqual({ bg: await resolved(page, t['--color-primary']!), fg: await resolved(page, t['--color-on-primary']!) });
-  const secondary = await look(mainButton('Riprendi sessione'));
+  expect(await look(mainButton('Nuova sessione'))).toEqual({ bg: await resolved(page, t['--accent-primary']!), fg: await resolved(page, t['--on-accent']!) });
+  expect(await look(mainButton('Riprendi sessione'))).toEqual({ bg: await resolved(page, t['--bg-surface-2']!), fg: await resolved(page, t['--text-primary']!) });
 
   await openSession(page, request, 'button-looks');
   await page.mouse.move(0, 0);
-  const danger = await look(page.getByRole('button', { name: 'Termina', exact: true }));
-  expect(danger).toEqual({ bg: await resolved(page, t['--error-container']!), fg: await resolved(page, t['--on-error-container']!) });
-  expect(secondary.bg).not.toEqual(primary.bg);
-  expect(secondary.bg).not.toEqual(danger.bg);
+  const stop = page.getByRole('main').getByRole('button', { name: 'Termina', exact: true });
+  expect(await stop.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(await page.evaluate((v) => {
+    const probe = document.createElement('div');
+    probe.style.backgroundColor = v;
+    document.body.append(probe);
+    const c = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return c;
+  }, t['--rose-500-15']!));
+  expect((await look(stop)).fg).toEqual(await resolved(page, t['--rose-400']!));
 });
 
 // WebEntry: the element focused from the keyboard shows a ring in --color-focus-ring

@@ -13,7 +13,7 @@ type: UI component
 - `ProgressIndicator({ label?, className? })` → marks an area whose data loads.
   - shows a rotating LoaderCircleIcon, then `label`. Default `label` → "Caricamento…".
   - role `status`: screen readers read `label`. Its text is exactly `label`.
-  - text in `--color-text-muted`.
+  - 12/16 px text in `--text-muted`, 14 px icon, 6 px gap.
   - `className` → extra class.
 - `Spinner()` → the same rotating icon alone, decorative (`aria-hidden`). It marks an action in progress inside its button.
   - a button whose action runs → shows `Spinner` in place of its icon, is disabled and has `aria-busy="true"`. Its text and accessible name do not change.

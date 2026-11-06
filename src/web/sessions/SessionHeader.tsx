@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Avatar, folderNameOf } from './Avatar';
+import { folderNameOf } from './Avatar';
 import type { SessionSummary } from './live-session-store';
 import { StateBadge } from './StateBadge';
 
@@ -9,35 +9,39 @@ interface SessionHeaderProps {
   session?: SessionHeaderSummary;
   actions: ReactNode;
   notice?: ReactNode;
-  external?: boolean;
   line?: string;
 }
 
-export function SessionHeader({ session, actions, notice, external, line }: SessionHeaderProps) {
+export function SessionHeader({ session, actions, notice, line }: SessionHeaderProps) {
   const name = session && folderNameOf(session.folder);
-  const subtitle = session && (line ?? `${session.label} · ${session.folder}`);
+  const subtitle = session && (line ?? session.label);
   return (
     <header className="session-header">
-      {session && <Avatar folder={session.folder} state={session.state} external={external} size="header" />}
       <div className="session-header-info">
-        <div className="session-header-line">
-          {session && (
-            <>
-              <h2 className="session-header-name title-l" title={name}>
-                {name}
-              </h2>
-              <StateBadge state={session.state} variant="chip" />
-            </>
-          )}
-          {notice}
-        </div>
         {session && (
-          <p className="session-header-subtitle body-m" title={subtitle}>
-            {subtitle}
-          </p>
+          <>
+            <h2 className="session-header-name" title={name}>
+              {name}
+            </h2>
+            <span className="session-header-separator" aria-hidden="true">
+              /
+            </span>
+            <span className="session-header-path" title={session.folder}>
+              {session.folder}
+            </span>
+            {subtitle && (
+              <span className="mono-chip vx-surface-2 session-header-subtitle" title={subtitle}>
+                {subtitle}
+              </span>
+            )}
+          </>
         )}
       </div>
-      <div className="session-header-actions">{actions}</div>
+      <div className="session-header-actions">
+        {session && <StateBadge state={session.state} variant="chip" />}
+        {notice}
+        {actions}
+      </div>
     </header>
   );
 }

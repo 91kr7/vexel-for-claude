@@ -6,62 +6,50 @@ type: configuration
 
 # ThemeTokens
 
-**Purpose** → the shared CSS custom properties of the client, in a light and a dark set.
+**Purpose** → the shared CSS custom properties of the client: one dark set, from the `:root` block of `.sdd/mockups/studio-dark/mock.html`, with a light-blue accent.
 
 ## Contract
 
-- The tokens are custom properties on `:root`. Every style of the client takes its values from them.
-- Colour roles → the role names of the `.m3` and `.m3.dark` rules of the four mock boards (`.sdd/mockups/vexel-material3/`):
-  - primary family → `--primary`, `--on-primary`, `--primary-container`, `--on-primary-container`, `--inverse-primary`
-  - neutrals → `--secondary-container`, `--on-secondary-container`, `--surface`, `--on-surface`, `--on-surface-variant`, `--outline`, `--outline-variant`, `--sc-lowest`, `--sc-low`, `--sc`, `--sc-high`, `--sc-highest`, `--dialog`, `--inverse-surface`, `--inverse-on-surface`
-  - terminal → `--term-bg`, `--term-fg`, `--term-dim`
-  - status → `--teal-container`, `--on-teal-container`, `--error`, `--on-error`, `--error-container`, `--on-error-container`, `--attn`, `--attn-container`, `--on-attn-container`, `--ok`, `--ok-container`, `--on-ok-container`, `--ember`
-- Palette swap of the mock:
-  - the primary family is light blue: HSL hue 205° ±2.
-  - the neutrals and the terminal roles are grey: CIELAB a* and b* within ±2.
-  - each swapped colour has the CIELAB L* of the board colour it replaces, within ±2, in both sets.
-  - the status roles have the board values.
-- Other groups:
-  - type → `--font-ui` (Roboto Flex), `--font-mono` (Roboto Mono), `--font-size-{xs,sm,md,lg,xl}`, `--font-weight-{regular,medium,semibold}`, `--line-height`
-  - spacing → `--space-{1,2,3,4,6}`
-  - radii → `--radius-{sm,md,lg,full}`
-  - icon size → `--icon-size` (20 px, as the board `.icon`)
-  - focus ring → `--focus-ring-width`, `--focus-ring-offset`, `--color-focus-ring`
-- Old names, kept until no component uses them, point to the roles:
+- The tokens are custom properties on `:root`. Every style of the client takes its colours from them.
+- One set only. There is no light set and no `prefers-color-scheme` rule. The system theme changes nothing.
+- Mock tokens, with the mock's `:root` values:
 
-| Old name | Role |
-|----------|------|
-| `--color-bg` | `--surface` |
-| `--color-surface` | `--sc-low` |
-| `--color-surface-hover` | `--sc-high` |
-| `--color-surface-selected` | `--secondary-container` |
-| `--color-border` | `--outline-variant` |
-| `--color-border-strong` | `--outline` |
-| `--color-text` | `--on-surface` |
-| `--color-text-muted`, `--color-state-ended`, `--color-external` | `--on-surface-variant` |
-| `--color-primary`, `--color-focus-ring`, `--color-state-working` | `--primary` |
-| `--color-on-primary` | `--on-primary` |
-| `--color-primary-hover` | `--primary` with 8% of `--on-primary` |
-| `--color-danger`, `--color-error` | `--error` |
-| `--color-on-danger` | `--on-error` |
-| `--color-danger-hover` | `--error` with 8% of `--on-error` |
-| `--color-state-needs-input`, `--color-warning` | `--attn` |
-| `--color-state-needs-input-bg` | `--attn-container` |
-| `--color-state-idle`, `--color-success` | `--ok` |
-| `--terminal-background` | `--term-bg` |
+| Token | Value |
+|-------|-------|
+| `--bg-canvas` | `#0b0b0e` |
+| `--bg-surface-1` / `-2` / `-3` | `#121216` / `#18181f` / `#21212b` |
+| `--bg-glass` | `rgba(24, 24, 31, 0.82)` |
+| `--border-subtle` / `--border-strong` | white at 7 % / 13 % |
+| `--specular-top` | white at 8 % |
+| `--text-primary` / `--text-secondary` | `#f3f2ee` / `#a1a0ab` |
+| `--text-muted` | `#898894` (the mock's `#686773`, lightened, see rules) |
+| `--term-size` | `12px` |
 
-- `--color-backdrop` → black at 32 %. `--shadow-modal` → `0 8px 24px`, black at 25 %. Both are the same in the two sets, as board "Dialoghi" draws them.
-- The colour set follows `prefers-color-scheme`. Light is the default. Dark applies when the system asks for dark.
-- A change of the system setting applies at once, with no reload.
+- Accent family (light blue in place of the mock's orange):
+
+| Token | Value |
+|-------|-------|
+| `--accent-primary` | `#8ccfff`, the dark `--primary` of the previous theme |
+| `--accent-secondary` | `#d6eeff`: same HSL hue (205°), CIELAB L* higher by the gap from `#e06d44` to `#f29a76` (about 12.6) |
+| `--accent-deep` | `#008ef4`: same HSL hue and saturation, L* lower by the gap from `#e06d44` to `#9a3412` (about 22.5) |
+| `--accent-glow` / `--accent-border` | `--accent-primary` at 16 % / 42 % |
+| `--accent-selection` | `--accent-primary` at 30 % |
+| `--on-accent` | `--bg-canvas`: text on an accent fill |
+
+- Status colours, Tailwind v3 values: `--emerald-400/500`, `--amber-300/400/500`, `--rose-300/400/500`, `--zinc-400/500`. Tints of the 500 tone: `--emerald-500-15/30`, `--amber-500-15/20/25/30/40`, `--rose-500-15/25/30`, `--zinc-500-15/30` (the suffix is the opacity in %).
+- Names kept because components read them:
+  - `--term-bg` → `--bg-canvas`, `--term-fg` → `--text-primary`
+  - `--color-error` → `--rose-400`
+  - `--color-focus-ring` → `--accent-primary`
+  - `--color-backdrop` → black at 65 %
+- Other groups: `--font-ui` (Roboto Flex), `--font-mono` (Roboto Mono), `--focus-ring-width` and `--focus-ring-offset` (2 px), and the Tailwind shadows `--shadow-sm`, `--shadow`, `--shadow-lg`, `--shadow-2xl`.
+- The Material 3 roles (`--primary`, `--sc-*`, …), the other `--color-*` names and the type, spacing and radius scales no longer exist.
 
 ## Rules and invariants
 
-- No colour token is violet, purple or pink. The board tertiary roles (pink) are not defined: no board uses them.
-- In both sets, every text and state colour reaches 4.5:1 on `--color-bg`, `--color-surface`, `--color-surface-hover` and `--color-surface-selected`.
-- In both sets, `--color-text`, `--color-text-muted` and `--color-state-needs-input` reach 4.5:1 on `--color-state-needs-input-bg`.
-- `--color-on-primary` on `--color-primary` and `--color-on-danger` on `--color-danger`, hover included, reach 4.5:1.
-- `--color-focus-ring` and `--color-border-strong` reach 3:1 on `--color-bg` and `--color-surface`.
-- `--term-bg` is dark grey in both sets, as in the boards. `--term-fg` is the same light grey in both sets.
+- No token is orange, indigo, violet or pink.
+- `--text-primary`, `--text-secondary` and `--text-muted` reach 4.5:1 on canvas and on surfaces 1, 2 and 3. `--text-muted` is the least lightening of the mock value that reaches it on surface 3 (about 4.56:1).
+- `--on-accent` on `--accent-primary` reaches 4.5:1 (about 11.7:1), and on `--accent-deep` too (about 5.8:1).
 - `--font-ui` and `--font-mono` load the BundledFont files.
 
 ## Dependencies
@@ -70,13 +58,5 @@ type: configuration
 
 ## Requirements served
 
-- `plan-claude_sessions_client-ui_redesign/REQ-1`
-- `plan-claude_sessions_client-ui_redesign/REQ-2`
-- `plan-claude_sessions_client-ui_redesign/REQ-3`
-- `plan-claude_sessions_client-ui_redesign/REQ-5`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-1`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-2`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-3`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-4`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-5`
-- `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-51`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-51`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-52`
+- `plan-claude_sessions_client-ui_redesign/REQ-1`, `plan-claude_sessions_client-ui_redesign/REQ-3`

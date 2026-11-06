@@ -9,6 +9,7 @@ import { countNeedsInput, NeedsInputCounter } from './sessions/NeedsInputCounter
 import { SessionList } from './sessions/SessionList';
 import { SessionView } from './sessions/SessionView';
 import { type SessionSummary, useLiveSessions } from './sessions/live-session-store';
+import { TopBar } from './TopBar';
 
 export function AppLayout() {
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
@@ -32,7 +33,6 @@ export function AppLayout() {
     setOpenIsExternal(sessions.find((session) => session.id === sessionId)?.external === true);
   };
 
-  const openHostedView = openSessionId !== null && !openIsExternal;
   const snackbar = snackbarSession && <NeedsInputSnackbar session={snackbarSession} onOpen={openFromList} />;
 
   const focusList = () => {
@@ -44,34 +44,33 @@ export function AppLayout() {
 
   return (
     <div className="app">
-      <NavigationRail
-        needsInputCount={countNeedsInput(sessions)}
-        onNewSession={() => setChoosingFolder(true)}
-        onShowSessions={focusList}
-        onResume={() => setResuming(true)}
-        newSessionRef={newSessionRef}
-      />
-      <section className="list-panel" aria-label="Elenco sessioni" ref={listPanelRef}>
-        <div className="list-panel-brand">
-          <span className="brand list-panel-brand-name">Vexel</span>
-          <span className="label-l list-panel-brand-suffix">for Claude</span>
-        </div>
-        <div className="list-panel-title">
-          <h1 className="headline-s">Sessioni</h1>
-          <NeedsInputCounter sessions={sessions} />
-        </div>
-        <SessionList sessions={sessions} status={status} openSessionId={openSessionId} onOpen={openFromList} />
-      </section>
-      <main className="session-area">
-        {openSessionId && openIsExternal ? (
-          <ConversationView key={openSessionId} sessionId={openSessionId} session={openSummary} onResumed={openHosted} />
-        ) : openSessionId ? (
-          <SessionView key={openSessionId} sessionId={openSessionId} session={openSummary} onLeaveTerminal={focusList} snackbar={snackbar} />
-        ) : (
-          <EmptyState onNewSession={() => setChoosingFolder(true)} onResumeSession={() => setResuming(true)} />
-        )}
-        {!openHostedView && snackbar}
-      </main>
+      <TopBar onNewSession={() => setChoosingFolder(true)} />
+      <div className="app-body">
+        <NavigationRail
+          needsInputCount={countNeedsInput(sessions)}
+          onNewSession={() => setChoosingFolder(true)}
+          onShowSessions={focusList}
+          onResume={() => setResuming(true)}
+          newSessionRef={newSessionRef}
+        />
+        <section className="list-panel" aria-label="Elenco sessioni" ref={listPanelRef}>
+          <div className="list-panel-title">
+            <h1 className="section-label">Sessioni</h1>
+            <NeedsInputCounter sessions={sessions} />
+          </div>
+          <SessionList sessions={sessions} status={status} openSessionId={openSessionId} onOpen={openFromList} />
+        </section>
+        <main className="session-area vx-dot-grid">
+          {openSessionId && openIsExternal ? (
+            <ConversationView key={openSessionId} sessionId={openSessionId} session={openSummary} onResumed={openHosted} />
+          ) : openSessionId ? (
+            <SessionView key={openSessionId} sessionId={openSessionId} session={openSummary} onLeaveTerminal={focusList} />
+          ) : (
+            <EmptyState onNewSession={() => setChoosingFolder(true)} onResumeSession={() => setResuming(true)} />
+          )}
+        </main>
+      </div>
+      {snackbar}
       {choosingFolder && (
         <FolderChooser
           onStarted={(sessionId) => {

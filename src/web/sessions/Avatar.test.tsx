@@ -1,8 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { TerminalIcon } from '../icons/Icons';
-import { Avatar, avatarVariantOf, folderNameOf, initialsOf } from './Avatar';
-import type { SessionState } from './live-session-store';
+import { Avatar, folderNameOf, initialsOf } from './Avatar';
 
 const classesOf = (html: string) => html.match(/^<\w+\b[^>]*\sclass="([^"]*)"/)?.[1]?.split(/\s+/) ?? [];
 const textOf = (html: string) => html.replace(/<[^>]*>/g, '').trim();
@@ -53,64 +51,27 @@ describe('initialsOf', () => {
   });
 });
 
-describe('avatarVariantOf', () => {
-  // Avatar spec: the first matching rule wins, external before needs_input and ended
-  it('gives external whenever the session is external', () => {
-    for (const state of ['working', 'needs_input', 'idle', 'ended'] as SessionState[]) {
-      expect(avatarVariantOf({ folder: '/p/a', state, external: true }), state).toBe('external');
-    }
-  });
-
-  // Avatar spec: amber for needs input, grey for ended
-  it('gives attn for needs_input and ended for ended', () => {
-    expect(avatarVariantOf({ folder: '/p/a', state: 'needs_input' })).toBe('attn');
-    expect(avatarVariantOf({ folder: '/p/a', state: 'ended' })).toBe('ended');
-  });
-
-  // Avatar invariant: the same folder always gets the same primary or teal variant, whatever the other state
-  it('gives a stable primary or teal variant per folder', () => {
-    for (let i = 0; i < 20; i++) {
-      const folder = `/home/u/project-${i}`;
-      const variants = new Set([undefined, 'working', 'idle'].map((state) => avatarVariantOf({ folder, state: state as SessionState | undefined })));
-      expect(variants.size, folder).toBe(1);
-      expect(['primary', 'teal']).toContain([...variants][0]);
-    }
-  });
-
-  // Avatar invariant: both stable variants occur
-  it('uses both primary and teal across folders', () => {
-    const variants = new Set(Array.from({ length: 40 }, (_, i) => avatarVariantOf({ folder: `/home/u/project-${i}` })));
-    expect(variants).toEqual(new Set(['primary', 'teal']));
-  });
-});
-
 describe('Avatar', () => {
-  // Avatar spec: decorative element with the classes avatar, avatar-<size>, avatar-<variant>; list is the default size
-  it.each([
-    [undefined, 'avatar-list'],
-    ['list', 'avatar-list'],
-    ['header', 'avatar-header'],
-    ['dialog', 'avatar-dialog'],
-  ] as const)('size %s has the class %s', (size, sizeClass) => {
-    const html = renderToStaticMarkup(<Avatar folder="/p/web-dashboard" state="needs_input" size={size} />);
+  // Avatar spec: one decorative element with the class avatar
+  it('is one decorative element with the class avatar', () => {
+    const html = renderToStaticMarkup(<Avatar folder="/p/web-dashboard" />);
     expect(html).toMatch(/^<\w+\b[^>]*\saria-hidden="true"/);
-    expect(classesOf(html)).toEqual(expect.arrayContaining(['avatar', sizeClass, 'avatar-attn']));
+    expect(classesOf(html)).toContain('avatar');
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-19: the avatar shows the project initials
+  // Avatar spec: the avatar shows the folder initials
   it('shows the initials of the folder', () => {
-    const html = renderToStaticMarkup(<Avatar folder="/home/u/web-dashboard" state="working" />);
+    const html = renderToStaticMarkup(<Avatar folder="/home/u/web-dashboard" />);
     expect(textOf(html)).toBe('WD');
-    expect(classesOf(html)).toContain(`avatar-${avatarVariantOf({ folder: '/home/u/web-dashboard', state: 'working' })}`);
+    expect(html).not.toMatch(/<svg\b/);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-24: an external avatar shows the terminal icon and no initials
-  it('shows the terminal icon and no initials for an external session', () => {
-    const html = renderToStaticMarkup(<Avatar folder="/home/u/mobile-app" state="working" external />);
-    expect(classesOf(html)).toContain('avatar-external');
-    expect(html.match(/<svg\b/g)).toHaveLength(1);
-    expect(html).toContain(renderToStaticMarkup(<TerminalIcon />).match(/<path\b[^>]*>/)?.[0] ?? '<missing terminal path>');
-    expect(textOf(html)).toBe('');
+  // Avatar invariant: no colour or shape per project
+  it('has the same classes for every folder', () => {
+    const classes = ['/home/u/web-dashboard', '/home/u/billing', '/srv/infra_terraform'].map((folder) =>
+      classesOf(renderToStaticMarkup(<Avatar folder={folder} />)).sort().join(' '),
+    );
+    expect(new Set(classes).size).toBe(1);
   });
 
   // Avatar invariant: the avatar adds nothing to the accessible name of its container

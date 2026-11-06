@@ -5,7 +5,6 @@ import { TriangleAlertIcon } from '../icons/Icons';
 export interface DialogProps {
   title: string;
   description?: ReactNode;
-  icon?: ReactNode;
   children?: ReactNode;
   primaryLabel: string;
   onPrimary: () => void;
@@ -21,10 +20,14 @@ export interface DialogProps {
 
 const FOCUSABLE = 'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])';
 
+function primaryClass(warning: boolean, accent: 'error' | 'attn'): string {
+  if (!warning) return 'button-primary';
+  return accent === 'attn' ? 'button-attn' : 'button-danger';
+}
+
 export function Dialog({
   title,
   description,
-  icon,
   children,
   primaryLabel,
   onPrimary,
@@ -42,6 +45,7 @@ export function Dialog({
   const frameRef = useRef<HTMLDivElement>(null);
   const [previousFocus] = useState(() => (typeof document === 'undefined' ? null : document.activeElement));
   const warning = tone === 'warning';
+  const attnBanner = warning && accent === 'attn';
   const primaryBlocked = primaryDisabled || primaryBusy;
 
   useEffect(() => {
@@ -87,6 +91,12 @@ export function Dialog({
     }
   };
 
+  const descriptionText = description !== undefined && (
+    <p id={descriptionId} className="dialog-description">
+      {description}
+    </p>
+  );
+
   return (
     <div
       className={warning ? 'modal-backdrop warning-backdrop' : 'modal-backdrop'}
@@ -96,7 +106,7 @@ export function Dialog({
     >
       <div
         ref={frameRef}
-        className={['modal', warning ? `dialog-warning dialog-${accent}` : '', className ?? ''].filter(Boolean).join(' ')}
+        className={['modal vx-surface-2', warning ? `dialog-warning dialog-${accent}` : '', className ?? ''].filter(Boolean).join(' ')}
         role={warning ? 'alertdialog' : 'dialog'}
         aria-modal="true"
         aria-labelledby={titleId}
@@ -104,30 +114,34 @@ export function Dialog({
         tabIndex={-1}
         onKeyDown={handleKeyDown}
       >
+        <div className="dialog-header">
+          <span className="dialog-dot" aria-hidden="true" />
+          <h2 id={titleId} className="dialog-title">
+            {title}
+          </h2>
+          <button type="button" className="dialog-esc" aria-label="Chiudi (Esc)" onClick={onCancel}>
+            [Esc]
+          </button>
+        </div>
         <form className="dialog-form" aria-label={formName} onSubmit={(event) => event.preventDefault()}>
-          {warning ? (
-            <span className="dialog-icon-circle">{icon ?? <TriangleAlertIcon />}</span>
-          ) : (
-            icon !== undefined && <span className="dialog-icon">{icon}</span>
-          )}
-          <div className="dialog-heading">
-            <h2 id={titleId} className="headline-s">
-              {title}
-            </h2>
-            {description !== undefined && (
-              <p id={descriptionId} className="body-m dialog-description">
-                {description}
-              </p>
+          <div className="dialog-body">
+            {attnBanner ? (
+              <div className="dialog-banner vx-surface-2">
+                <TriangleAlertIcon />
+                {descriptionText}
+              </div>
+            ) : (
+              descriptionText
             )}
+            {children}
           </div>
-          {children}
           <div className="modal-actions">
-            <button type="button" className="btn label-l dialog-cancel" onClick={onCancel} autoFocus={initialFocus === 'cancel'}>
+            <button type="button" className="button-neutral dialog-cancel" onClick={onCancel} autoFocus={initialFocus === 'cancel'}>
               Annulla
             </button>
             <button
               type="button"
-              className={`btn label-l ${warning ? 'button-danger' : 'button-primary'}`}
+              className={primaryClass(warning, accent)}
               onClick={onPrimary}
               disabled={primaryBlocked}
               aria-busy={primaryBusy || undefined}

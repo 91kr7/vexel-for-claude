@@ -52,11 +52,11 @@ interface NeedsInputSnackbarProps {
 
 export function NeedsInputSnackbar({ session, onOpen }: NeedsInputSnackbarProps) {
   return (
-    <div className="snackbar" role="status">
-      <span className="body-m snackbar-text">
+    <div className="snackbar vx-glass" role="status">
+      <span className="snackbar-text">
         <b>{projectName(session.folder)}</b> richiede il tuo input
       </span>
-      <button type="button" className="snackbar-action label-l" onClick={() => onOpen(session.id)}>
+      <button type="button" className="snackbar-action" onClick={() => onOpen(session.id)}>
         Apri
       </button>
     </div>

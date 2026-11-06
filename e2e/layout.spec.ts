@@ -18,13 +18,34 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
+// The page shows only the sessions of this file: other spec files, and earlier runs on a reused server, add entries.
+test.beforeEach(async ({ page }) => {
+  const own = (session: { folder?: unknown } | undefined) => typeof session?.folder === 'string' && session.folder.startsWith(projectsRoot + path.sep);
+  await page.route(
+    (url) => url.pathname === '/api/sessions',
+    async (route) => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      const response = await route.fetch();
+      await route.fulfill({ response, json: ((await response.json()) as { folder?: unknown }[]).filter(own) });
+    },
+  );
+  await page.routeWebSocket(/\/api\/sessions\/events$/, (ws) => {
+    const server = ws.connectToServer();
+    server.onMessage((message) => {
+      const frame = JSON.parse(String(message)) as { type?: string; session?: { folder?: unknown } };
+      if (frame.type !== 'session' || own(frame.session)) ws.send(message);
+    });
+  });
+});
+
 const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione principale' });
 const panel = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
 const mainArea = (page: Page) => page.getByRole('main');
 const list = (page: Page) => panel(page).locator('.session-list');
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const panelTitle = (page: Page) => panel(page).getByRole('heading', { level: 1, name: 'Sessioni', exact: true });
-const brand = (page: Page) => panel(page).getByText('Vexel', { exact: true });
+const topBar = (page: Page) => page.getByRole('banner');
+const brand = (page: Page) => topBar(page).getByText('Vexel', { exact: true });
 const chooser = (page: Page) => page.getByRole('form', { name: 'Scegli la cartella del progetto' });
 const pathField = (page: Page) => page.getByRole('textbox', { name: 'Cartella del progetto', exact: true });
 const resumeDialog = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessione' });
@@ -81,6 +102,10 @@ function horizontalOverflow(root: Locator): Promise<string[]> {
       if (el.closest('.xterm') && !el.classList.contains('xterm')) continue;
       const r = el.getBoundingClientRect();
       if (r.width === 0 || r.height === 0) continue;
+      // A hidden tooltip (opacity 0) is not visible content; the rail tooltip shows outside the rail by design.
+      let hidden = false;
+      for (let a: Element | null = el; a && a !== rootEl; a = a.parentElement) if (getComputedStyle(a).opacity === '0') hidden = true;
+      if (hidden) continue;
       let left = r.left;
       let right = r.right;
       for (let a = el.parentElement; a && a !== rootEl.parentElement; a = a.parentElement) {
@@ -123,6 +148,7 @@ async function expectPageFits(page: Page, width: number): Promise<void> {
   expect(await horizontalOverflow(mainArea(page)), 'main content inside the main area').toEqual([]);
   const head: Record<string, Locator> = {
     brand: brand(page),
+    'top bar Nuova sessione': button(topBar(page), 'Nuova sessione'),
     title: panelTitle(page),
     'rail Nuova sessione': button(rail(page), 'Nuova sessione'),
     'rail Sessioni': button(rail(page), 'Sessioni'),
@@ -131,7 +157,7 @@ async function expectPageFits(page: Page, width: number): Promise<void> {
   };
   await expectNoOverlap(head);
   // Sessions of other spec files can make the chip appear or vanish at any time: check it only while it is shown.
-  const [chip] = await panel(page).getByRole('status').locator('.chip').all();
+  const [chip] = await panel(page).getByRole('status').filter({ hasText: 'richiede input' }).all();
   const chipBox = chip ? await chip.boundingBox({ timeout: 1000 }).catch(() => null) : null;
   if (chipBox) {
     for (const [name, locator] of Object.entries(head)) {
@@ -180,7 +206,8 @@ test('with no session open the main area shows the empty state with its icon, te
   }
 
   await page.mouse.move(0, 0);
-  const primary = await computedColour(page, 'var(--color-primary)');
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50: "Nuova sessione" is the accent button
+  const primary = await computedColour(page, 'var(--accent-primary)');
   const bg = (l: Locator) => l.evaluate((el) => getComputedStyle(el).backgroundColor);
   expect(await bg(button(mainArea(page), 'Nuova sessione')), '"Nuova sessione" has the primary look').toBe(primary);
   expect(await bg(button(mainArea(page), 'Riprendi sessione')), '"Riprendi sessione" is not primary').not.toBe(primary);
@@ -235,12 +262,14 @@ test('the empty state buttons are reached with Tab and triggered with Enter and 
   await expect(resumeDialog(page)).toBeVisible();
 });
 
-// AppLayout "Description": list panel order, no header bar
-test('the list panel holds the brand, the title "Sessioni" and the counter above the list; there is no header bar', async ({ page }) => {
+// AppLayout "Description", plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14: the brand sits in the top bar; the list panel holds the title "Sessioni" and the counter above the list
+test('the top bar holds the brand above the page; the list panel holds the title "Sessioni" and the counter above the list', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('banner')).toHaveCount(0);
-  const items = [brand(page), panelTitle(page), panel(page).getByRole('status').first(), list(page)];
-  for (const item of [brand(page), panelTitle(page), list(page)]) await expect(item).toBeVisible();
+  await expect(topBar(page)).toHaveCount(1);
+  await expect(brand(page)).toBeVisible();
+  await expect(panel(page).getByText('Vexel')).toHaveCount(0);
+  const items = [panelTitle(page), panel(page).getByRole('status').first(), list(page)];
+  for (const item of [panelTitle(page), list(page)]) await expect(item).toBeVisible();
   await expect(panel(page).getByRole('status')).not.toHaveCount(0);
   await expect(panel(page)).toHaveJSProperty('tagName', 'SECTION');
 
@@ -249,13 +278,13 @@ test('the list panel holds the brand, the title "Sessioni" and the counter above
     (els) => els.every((el, i) => i === 0 || !!(els[i - 1]!.compareDocumentPosition(el!) & Node.DOCUMENT_POSITION_FOLLOWING)),
     handles,
   );
-  expect(inOrder, 'document order brand, title, counter, list').toBe(true);
+  expect(inOrder, 'document order title, counter, list').toBe(true);
 
   const listTop = (await box(list(page))).y;
-  for (const item of [brand(page), panelTitle(page)]) {
-    const b = await box(item);
-    expect(b.y + b.height, 'head items sit above the list').toBeLessThanOrEqual(listTop + 0.5);
-  }
+  const titleBox = await box(panelTitle(page));
+  expect(titleBox.y + titleBox.height, 'the title sits above the list').toBeLessThanOrEqual(listTop + 0.5);
+  const bar = await box(topBar(page));
+  expect(bar.y + bar.height, 'the top bar sits above the list panel').toBeLessThanOrEqual((await box(panel(page))).y + 0.5);
 });
 
 // plan-claude_sessions_client-ui_redesign/REQ-8
@@ -284,8 +313,8 @@ test('the session list and the open session are visible side by side', async ({ 
   await expectNoHorizontalScroll(page);
 });
 
-// AppLayout "Description": the rail keeps 96 px, the list panel at most 400 px, the main area takes the rest of the width
-test('the rail keeps its width, the list panel stays within 400 px and the main area reaches the right edge', async ({ page }) => {
+// plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-17, REQ-53: the rail keeps 52 px, the list panel 224 px, the main area takes the rest of the width
+test('the rail keeps its width, the list panel keeps 224 px and the main area reaches the right edge', async ({ page }) => {
   const mainWidths: number[] = [];
   for (const width of [1280, 3840]) {
     await page.setViewportSize({ width, height: 900 });
@@ -294,12 +323,12 @@ test('the rail keeps its width, the list panel stays within 400 px and the main 
     const railBox = await box(rail(page));
     const side = await box(panel(page));
     const main = await box(mainArea(page));
-    expect(railBox.width, `rail width at ${width} px`).toBeCloseTo(96, 0);
-    expect(side.width, `list panel width at ${width} px`).toBeLessThanOrEqual(400.5);
+    expect(railBox.width, `rail width at ${width} px`).toBeCloseTo(52, 0);
+    expect(side.width, `list panel width at ${width} px`).toBeCloseTo(224, 0);
     expect(main.x + main.width, `main area reaches the right edge at ${width} px`).toBeCloseTo(width, 0);
     mainWidths.push(main.width);
   }
-  expect(mainWidths[1]! - mainWidths[0]!, 'the extra width goes to the main area').toBeGreaterThanOrEqual(3840 - 1280 - 400);
+  expect(mainWidths[1]! - mainWidths[0]!, 'the extra width goes to the main area').toBeCloseTo(3840 - 1280, 0);
 });
 
 // plan-claude_sessions_client-ui_redesign/REQ-10
@@ -336,7 +365,7 @@ for (const width of [1280, 3840]) {
   });
 }
 
-// AppLayout rule: the rail and the head of the list panel stay in place, only the SessionList scrolls
+// AppLayout rule: the top bar, the rail and the head of the list panel stay in place, only the SessionList scrolls
 test('when the entries do not fit, only the list scrolls and the rail and the panel head stay in place', async ({ page, request }) => {
   await page.setViewportSize({ width: 1280, height: 600 });
   for (let i = 0; i < 12; i++) await startViaApi(request, await makeFolder(`scroll-${String(i).padStart(2, '0')}`));
@@ -345,6 +374,7 @@ test('when the entries do not fit, only the list scrolls and the rail and the pa
 
   const top = {
     brand: brand(page),
+    'top bar new': button(topBar(page), 'Nuova sessione'),
     title: panelTitle(page),
     new: button(rail(page), 'Nuova sessione'),
     sessions: button(rail(page), 'Sessioni'),
@@ -368,7 +398,7 @@ test('when the entries do not fit, only the list scrolls and the rail and the pa
     .toBeLessThanOrEqual(600 + 0.5);
 
   const after = await Promise.all(Object.values(top).map(box));
-  expect(after, 'the rail and the panel head do not move').toEqual(before);
+  expect(after, 'the top bar, the rail and the panel head do not move').toEqual(before);
   for (const b of after) expect(b.y, 'top items stay in the window').toBeGreaterThanOrEqual(0);
   expect(await page.evaluate(() => window.scrollY), 'the page itself does not scroll').toBe(0);
 });

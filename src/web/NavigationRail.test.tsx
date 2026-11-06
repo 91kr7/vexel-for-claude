@@ -37,27 +37,19 @@ describe('NavigationRail', () => {
     expect(renderRail(0)).toMatch(/^<nav\b[^>]*aria-label="Navigazione principale"/);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-6: logo, "Nuova sessione", "Sessioni" and "Riprendi", in this order
-  it('shows the logo, then the buttons "Nuova sessione", "Sessioni" and "Riprendi"', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14, REQ-17: no logo, then "Nuova sessione", "Sessioni" and "Riprendi"
+  it('shows no logo and the buttons "Nuova sessione", "Sessioni" and "Riprendi", in this order', () => {
     const html = renderRail(0);
-    const logo = html.search(/<svg\b[^>]*role="img"[^>]*aria-label="Vexel"|<svg\b[^>]*aria-label="Vexel"[^>]*role="img"/);
-    expect(logo, 'the logo is an svg with role="img" and label "Vexel"').toBeGreaterThan(-1);
+    expect(html).not.toMatch(/role="img"/);
+    expect(html).not.toContain('Vexel');
     expect(buttons(html).map(nameOf)).toEqual(['Nuova sessione', 'Sessioni', 'Riprendi']);
-    expect(logo).toBeLessThan(html.indexOf('<button'));
   });
 
-  // NavigationRail "Shows": seven 5 px squares with 1.5 px radius, one of them at the bottom
-  it('draws the logo as seven 5 px squares with one alone at the bottom', () => {
-    const svg = renderRail(0).match(/<svg\b[^>]*aria-label="Vexel"[^>]*>([\s\S]*?)<\/svg>/)?.[1] ?? '';
-    const rects = [...svg.matchAll(/<rect\b([^>]*)>/g)].map((m) => m[1] ?? '');
-    expect(rects).toHaveLength(7);
-    for (const rect of rects) {
-      expect(rect).toMatch(/\swidth="5"/);
-      expect(rect).toMatch(/\sheight="5"/);
-      expect(rect).toMatch(/\srx="1.5"/);
-    }
-    const bottom = rects.at(-1)?.match(/\sy="([\d.]+)"/)?.[1];
-    for (const rect of rects.slice(0, -1)) expect(Number(rect.match(/\sy="([\d.]+)"/)?.[1])).toBeLessThan(Number(bottom));
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-17: a divider between "Nuova sessione" and "Sessioni"
+  it('places an element between "Nuova sessione" and "Sessioni"', () => {
+    const html = renderRail(0);
+    const between = html.slice(html.indexOf('</button>') + '</button>'.length, html.indexOf('<button', html.indexOf('</button>')));
+    expect(between).toMatch(/^<\w+\b[^>]*>/);
   });
 
   // NavigationRail rules: the icons are decorative
@@ -94,11 +86,17 @@ describe('NavigationRail', () => {
     expect(textOf(html)).not.toMatch(/\d/);
   });
 
-  // NavigationRail "Shows": the destinations carry their visible text
-  it('shows the visible texts "Sessioni" and "Riprendi" under their indicators', () => {
-    const html = renderRail(0);
-    expect(textOf(byName(html, 'Sessioni')[0]?.html ?? '')).toBe('Sessioni');
-    expect(textOf(byName(html, 'Riprendi')[0]?.html ?? '')).toBe('Riprendi');
-    expect(textOf(byName(html, 'Nuova sessione')[0]?.html ?? '')).toBe('');
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-18: no visible label; the tooltip holds the name, hidden from assistive technology
+  it.each(['Nuova sessione', 'Sessioni', 'Riprendi'])('"%s" has no visible label and its name in a hidden tooltip', (name) => {
+    const button = byName(renderRail(0), name)[0];
+    expect(button, name).toBeDefined();
+    let visible = button?.html ?? '';
+    for (let previous = ''; previous !== visible; ) {
+      previous = visible;
+      visible = visible.replace(/<(\w+)\b[^>]*aria-hidden="true"[^>]*>(?:(?!<\1\b)[\s\S])*?<\/\1>/, '');
+    }
+    expect(textOf(visible)).toBe('');
+    expect(textOf(button?.html ?? '')).toBe(name);
+    expect(button?.html).toMatch(new RegExp(`<\\w+\\b[^>]*aria-hidden="true"[^>]*>${name}</`));
   });
 });

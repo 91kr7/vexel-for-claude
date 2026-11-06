@@ -6,7 +6,7 @@ type: UI component
 
 # NeedsInputSnackbar
 
-**Purpose** → an in-page alert when a session that is not open starts to need input, with "Apri" to open it. It copies the `role="status"` block of board "Sessione ospitata".
+**Purpose** → an in-page alert when a session that is not open starts to need input, with "Apri" to open it. It copies `#toast-pill` of `.sdd/mockups/studio-dark/mock.html`.
 
 ## Contract
 
@@ -32,9 +32,9 @@ else → null
 - `onOpen(sessionId)` → called by "Apri".
 
 Shows:
-- a `role="status"` box: 16 px gap, padding 6 px 8 px 6 px 16 px, 4 px radius, `--inverse-surface` background, `--inverse-on-surface` text, shadow `0 3px 8px rgba(0,0,0,.2)`.
-- the text "<progetto> richiede il tuo input" (`.body-m`). "<progetto>" is the last segment of the session folder, in bold.
-- the button "Apri" (`.label-l`) → 36 px high, padding 0 12 px, 18 px radius, no border, transparent background, `--inverse-primary` text.
+- a `role="status"` `.vx-glass` box, fixed 20 px from the right and bottom edges of the window, above the page (z-index 50) and below the dialogs. Padding 8 × 14 px, 8 px radius, mono 12/16 px in `--text-primary`, 12 px gap.
+- the text "<progetto> richiede il tuo input". "<progetto>" is the last segment of the session folder, in bold (mono 500).
+- the button "Apri" → a text button, mono 12 px weight 500, `--accent-primary`, underlined on hover.
 
 Actions:
 - "Apri" → `onOpen(session.id)`.
@@ -42,14 +42,16 @@ Actions:
 ## Rules and invariants
 
 - One snackbar at a time. A newer session that starts to need input replaces the one shown.
-- Floating at the bottom right of the main area → the box is never wider than its container minus 48 px. A long folder name wraps.
-- In the hint row of a SessionView → see that spec.
+- The box is never wider than the window minus 40 px. A long folder name wraps.
+- It may cover the corner of the terminal. The terminal does not resize for it.
 
 ## Dependencies
 
 - LiveSessionStore (module sessions): `SessionSummary`, `LoadStatus`
+- WebEntry (`.vx-glass`)
 
 ## Requirements served
 
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-13`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-15`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-41`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42`
