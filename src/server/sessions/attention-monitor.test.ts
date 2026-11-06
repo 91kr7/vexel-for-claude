@@ -1,19 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import type { ExternalSessionChange, ExternalSessionSummary } from '../external/external-session-scanner.js';
 import { type AttentionEvent, type AttentionSession, AttentionMonitor } from './attention-monitor.js';
-import type { SessionState, SessionSummary } from './session-state-tracker.js';
+import type { ChangeCause, SessionState, SessionSummary } from './session-state-tracker.js';
+import type { LastTurn } from './turn-reader.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 class FakeTracker {
   private readonly sessions = new Map<string, SessionSummary>();
-  private readonly listeners = new Set<(summary: SessionSummary) => void>();
+  private readonly listeners = new Set<(summary: SessionSummary, cause?: ChangeCause) => void>();
+  readonly claudeIds = new Map<string, string>();
 
   list(): SessionSummary[] {
     return [...this.sessions.values()];
   }
 
-  onChange(listener: (summary: SessionSummary) => void): () => void {
+  claudeSessionId(id: string): string | undefined {
+    return this.claudeIds.get(id);
+  }
+
+  onChange(listener: (summary: SessionSummary, cause?: ChangeCause) => void): () => void {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
@@ -26,9 +32,9 @@ class FakeTracker {
   }
 
   /** Stores the summary and notifies it, as the tracker does after every change. */
-  set(summary: SessionSummary): void {
+  set(summary: SessionSummary, cause?: ChangeCause): void {
     this.sessions.set(summary.id, summary);
-    for (const listener of this.listeners) listener(summary);
+    for (const listener of this.listeners) listener(summary, cause);
   }
 }
 
@@ -85,18 +91,36 @@ const external = (
   ...extra,
 });
 
+/** Transcript reads that the test finishes: each read waits until the test resolves or rejects it. */
+class FakeTurns {
+  readonly reads: { folder: string; claudeSessionId: string; resolve(turn: LastTurn): void; reject(error: Error): void }[] = [];
+
+  lastTurn(folder: string, claudeSessionId: string): Promise<LastTurn> {
+    return new Promise((resolve, reject) => this.reads.push({ folder, claudeSessionId, resolve, reject }));
+  }
+
+  read(index = 0) {
+    const read = this.reads[index];
+    if (!read) throw new Error(`no transcript read #${index}`);
+    return read;
+  }
+}
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
 function setup() {
   const tracker = new FakeTracker();
   const scanner = new FakeScanner();
+  const turns = new FakeTurns();
   const start = () => {
-    const monitor = new AttentionMonitor({ tracker, scanner });
+    const monitor = new AttentionMonitor({ tracker, scanner, turns });
     const events: AttentionEvent[] = [];
     const lists: AttentionSession[][] = [];
     monitor.onEvent((event) => events.push(event));
     monitor.onNeedsInputChange((sessions) => lists.push(sessions));
     return { monitor, events, lists };
   };
-  return { tracker, scanner, start };
+  return { tracker, scanner, turns, start };
 }
 
 describe('AttentionMonitor events', () => {
@@ -265,9 +289,9 @@ describe('AttentionMonitor events', () => {
   });
 
   it('stops calling an event listener after unsubscribe', () => {
-    const { tracker, scanner } = setup();
+    const { tracker, scanner, turns } = setup();
     tracker.seed(hosted('h1', 'working'));
-    const monitor = new AttentionMonitor({ tracker, scanner });
+    const monitor = new AttentionMonitor({ tracker, scanner, turns });
     const events: AttentionEvent[] = [];
     const unsubscribe = monitor.onEvent((event) => events.push(event));
 
@@ -400,9 +424,9 @@ describe('AttentionMonitor needs-input list', () => {
   });
 
   it('calls the list listeners before the event listeners when one change does both', () => {
-    const { tracker, scanner } = setup();
+    const { tracker, scanner, turns } = setup();
     tracker.seed(hosted('h1', 'working'));
-    const monitor = new AttentionMonitor({ tracker, scanner });
+    const monitor = new AttentionMonitor({ tracker, scanner, turns });
     const calls: string[] = [];
     monitor.onEvent(() => calls.push('event'));
     monitor.onNeedsInputChange(() => calls.push('list'));
@@ -413,9 +437,9 @@ describe('AttentionMonitor needs-input list', () => {
   });
 
   it('stops calling a list listener after unsubscribe', () => {
-    const { tracker, scanner } = setup();
+    const { tracker, scanner, turns } = setup();
     tracker.seed(hosted('h1', 'working'));
-    const monitor = new AttentionMonitor({ tracker, scanner });
+    const monitor = new AttentionMonitor({ tracker, scanner, turns });
     const lists: AttentionSession[][] = [];
     const unsubscribe = monitor.onNeedsInputChange((sessions) => lists.push(sessions));
 
@@ -423,5 +447,275 @@ describe('AttentionMonitor needs-input list', () => {
     tracker.set(hosted('h1', 'needs_input'));
 
     expect(lists).toEqual([]);
+  });
+});
+
+const STOP: ChangeCause = { type: 'hook', hookEventName: 'Stop' };
+
+describe('AttentionMonitor turn-end events of hosted sessions', () => {
+  // plan-session_notifications/REQ-14, REQ-16
+  it('gives one turn_end event after the transcript read, with the plain excerpt of the final response', async () => {
+    const { tracker, turns, start } = setup();
+    tracker.seed(hosted('h1', 'working'));
+    tracker.claudeIds.set('h1', 'claude-1');
+    const { events, lists } = start();
+
+    tracker.set(hosted('h1', 'idle'), STOP);
+    expect(events).toEqual([]);
+    expect(turns.reads.map((read) => [read.folder, read.claudeSessionId])).toEqual([['/projects/ai-client', 'claude-1']]);
+
+    turns.read().resolve({ interrupted: false, finalResponse: '**Done.** The tests pass.' });
+    await settle();
+
+    expect(events).toEqual([
+      {
+        id: expect.stringMatching(UUID),
+        sessionId: 'h1',
+        kind: 'turn_end',
+        folder: '/projects/ai-client',
+        label: 'Fix the login form',
+        excerpt: 'Done. The tests pass.',
+      },
+    ]);
+    expect(lists).toEqual([]);
+  });
+
+  // plan-session_notifications/REQ-17
+  it('reads nothing and gives an event with no excerpt when no Claude Code session id is known', async () => {
+    const { tracker, turns, start } = setup();
+    tracker.seed(hosted('h1', 'working'));
+    const { events } = start();
+
+    tracker.set(hosted('h1', 'idle'), STOP);
+    await settle();
+
+    expect(turns.reads).toEqual([]);
+    expect(events).toEqual([expect.objectContaining({ sessionId: 'h1', kind: 'turn_end' })]);
+    expect(events[0]).not.toHaveProperty('excerpt');
+  });
+
+  // plan-session_notifications/REQ-15
+  it('gives no event when the transcript shows an interrupt', async () => {
+    const { tracker, turns, start } = setup();
+    tracker.seed(hosted('h1', 'working'));
+    tracker.claudeIds.set('h1', 'claude-1');
+    const { events } = start();
+
+    tracker.set(hosted('h1', 'idle'), STOP);
+    turns.read().resolve({ interrupted: true });
+    await settle();
+
+    expect(events).toEqual([]);
+  });
+
+  // plan-session_notifications/REQ-15: Esc or Ctrl+C in the session
+  it('gives no event when the session becomes idle by user input', async () => {
+    const { tracker, turns, start } = setup();
+    tracker.seed(hosted('h1', 'working'));
+    tracker.claudeIds.set('h1', 'claude-1');
+    const { events } = start();
+
+    tracker.set(hosted('h1', 'idle'), { type: 'input' });
+    for (const read of turns.reads) read.resolve({ interrupted: false, finalResponse: 'Partial answer.' });
+    await settle();
+
+    expect(events).toEqual([]);
+  });
+
+  it('gives no event when the session becomes idle by the idle_prompt notification', async () => {
+    const { tracker, turns, start } = setup();
+    tracker.seed(hosted('h1', 'working'));
+    tracker.claudeIds.set('h1', 'claude-1');
+    const { events } = start();
+
+    tracker.set(hosted('h1', 'idle'), { type: 'hook', hookEventName: 'Notification' });
+    for (const read of turns.reads) read.resolve({ interrupted: false, finalResponse: 'Answer.' });
+    await settle();
+
+    expect(events).toEqual([]);
+  });
+
+  it('gives no event for a Stop when the session was not working, nor when it ends', async () => {
+    const { tracker, turns, start } = setup();
+    tracker.seed(hosted('h1', 'needs_input'));
+    tracker.seed(hosted('h2', 'idle'));
+    tracker.seed(hosted('h3', 'working'));
+    for (const id of ['h1', 'h2', 'h3']) tracker.claudeIds.set(id, `claude-${id}`);
+    const { events } = start();
+
+    tracker.set(hosted('h1', 'idle'), STOP);
+    tracker.set(hosted('h2', 'idle'), STOP);
+    tracker.set(hosted('h3', 'ended'), { type: 'exit' });
+    tracker.set(hosted('h4', 'idle'), STOP);
+    for (const read of turns.reads) read.resolve({ interrupted: false, finalResponse: 'Answer.' });
+    await settle();
+
+    expect(events).toEqual([]);
+  });
+
+  // plan-session_notifications/REQ-6
+  it('gives one event for one turn end, also when a second Stop keeps the session idle', async () => {
+    const { tracker, turns, start } = setup();
+    tracker.seed(hosted('h1', 'working'));
+    tracker.claudeIds.set('h1', 'claude-1');
+    const { events } = start();
+
+    tracker.set(hosted('h1', 'idle'), STOP);
+    tracker.set(hosted('h1', 'idle', { lastActivity: '2026-11-06T10:05:00.000Z' }), STOP);
+    for (const read of turns.reads) read.resolve({ interrupted: false, finalResponse: 'Answer.' });
+    await settle();
+
+    expect(events).toHaveLength(1);
+  });
+
+  it('gives no event when the session works again while the transcript is read', async () => {
+    const { tracker, turns, start } = setup();
+    tracker.seed(hosted('h1', 'working'));
+    tracker.claudeIds.set('h1', 'claude-1');
+    const { events } = start();
+
+    tracker.set(hosted('h1', 'idle'), STOP);
+    tracker.set(hosted('h1', 'working'), { type: 'hook', hookEventName: 'UserPromptSubmit' });
+    turns.read().resolve({ interrupted: false, finalResponse: 'Answer.' });
+    await settle();
+
+    expect(events).toEqual([]);
+  });
+});
+
+describe('AttentionMonitor turn-end events of external sessions', () => {
+  // plan-session_notifications/REQ-14, REQ-16: the transcript of an external session is its own session id
+  it('reads the transcript of the session id and gives one turn_end event with the plain excerpt', async () => {
+    const { scanner, turns, start } = setup();
+    scanner.seed(external('e1', 'working'));
+    const { events } = start();
+
+    scanner.set(external('e1', 'idle'));
+    expect(events).toEqual([]);
+    expect(turns.reads.map((read) => [read.folder, read.claudeSessionId])).toEqual([['/projects/billing', 'e1']]);
+
+    turns.read().resolve({ interrupted: false, finalResponse: `# Summary\n\n${'word '.repeat(40)}` });
+    await settle();
+
+    expect(events).toEqual([
+      {
+        id: expect.stringMatching(UUID),
+        sessionId: 'e1',
+        kind: 'turn_end',
+        folder: '/projects/billing',
+        label: 'Review the invoices',
+        excerpt: `Summary ${'word '.repeat(40)}`.slice(0, 99) + '…',
+      },
+    ]);
+  });
+
+  // plan-session_notifications/REQ-15
+  it('gives no event when the transcript shows an interrupt', async () => {
+    const { scanner, turns, start } = setup();
+    scanner.seed(external('e1', 'working'));
+    const { events } = start();
+
+    scanner.set(external('e1', 'idle'));
+    turns.read().resolve({ interrupted: true });
+    await settle();
+
+    expect(events).toEqual([]);
+  });
+
+  // plan-session_notifications/REQ-17
+  it('gives an event with no excerpt when the turn has no final response', async () => {
+    const { scanner, turns, start } = setup();
+    scanner.seed(external('e1', 'working'));
+    const { events } = start();
+
+    scanner.set(external('e1', 'idle'));
+    turns.read().resolve({ interrupted: false });
+    await settle();
+
+    expect(events).toEqual([expect.objectContaining({ sessionId: 'e1', kind: 'turn_end' })]);
+    expect(events[0]).not.toHaveProperty('excerpt');
+  });
+
+  // plan-session_notifications/REQ-17
+  it('gives an event with no excerpt when the final response has no plain text', async () => {
+    const { scanner, turns, start } = setup();
+    scanner.seed(external('e1', 'working'));
+    const { events } = start();
+
+    scanner.set(external('e1', 'idle'));
+    turns.read().resolve({ interrupted: false, finalResponse: '```\n```' });
+    await settle();
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).not.toHaveProperty('excerpt');
+  });
+
+  it('gives an event with no excerpt when the transcript read fails', async () => {
+    const { scanner, turns, start } = setup();
+    scanner.seed(external('e1', 'working'));
+    const { events } = start();
+
+    scanner.set(external('e1', 'idle'));
+    turns.read().reject(new Error('EACCES'));
+    await settle();
+
+    expect(events).toEqual([expect.objectContaining({ sessionId: 'e1', kind: 'turn_end' })]);
+    expect(events[0]).not.toHaveProperty('excerpt');
+  });
+
+  it('gives no event when the session changes state while the transcript is read', async () => {
+    const { scanner, turns, start } = setup();
+    scanner.seed(external('e1', 'working'));
+    scanner.seed(external('e2', 'working'));
+    const { events } = start();
+
+    scanner.set(external('e1', 'idle'));
+    scanner.set(external('e2', 'idle'));
+    scanner.set(external('e1', 'working'));
+    scanner.set(external('e2', 'needs_input'));
+    turns.read(0).resolve({ interrupted: false, finalResponse: 'Answer.' });
+    turns.read(1).resolve({ interrupted: false, finalResponse: 'Answer.' });
+    await settle();
+
+    expect(events.filter((event) => event.kind === 'turn_end')).toEqual([]);
+  });
+
+  it('gives no event when the scanner removes the session while the transcript is read', async () => {
+    const { scanner, turns, start } = setup();
+    scanner.seed(external('e1', 'working'));
+    const { events } = start();
+
+    scanner.set(external('e1', 'idle'));
+    scanner.remove('e1');
+    turns.read().resolve({ interrupted: false, finalResponse: 'Answer.' });
+    await settle();
+
+    expect(events).toEqual([]);
+  });
+
+  // plan-session_notifications/REQ-7: folder and label at the time of the state change
+  it('keeps the folder and the label of the state change when only the label changes during the read', async () => {
+    const { scanner, turns, start } = setup();
+    scanner.seed(external('e1', 'working'));
+    const { events } = start();
+
+    scanner.set(external('e1', 'idle'));
+    scanner.set(external('e1', 'idle', { label: 'A later label', lastActivity: '2026-11-06T10:05:00.000Z' }));
+    turns.read().resolve({ interrupted: false, finalResponse: 'Answer.' });
+    await settle();
+
+    expect(events).toEqual([expect.objectContaining({ sessionId: 'e1', kind: 'turn_end', label: 'Review the invoices', excerpt: 'Answer.' })]);
+  });
+
+  // plan-session_notifications/REQ-5
+  it('gives no event for an external session first seen idle', async () => {
+    const { scanner, turns, start } = setup();
+    const { events } = start();
+
+    scanner.set(external('e1', 'idle'));
+    for (const read of turns.reads) read.resolve({ interrupted: false, finalResponse: 'Answer.' });
+    await settle();
+
+    expect(events).toEqual([]);
   });
 });

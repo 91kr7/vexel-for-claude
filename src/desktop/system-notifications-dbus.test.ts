@@ -225,3 +225,30 @@ describe('SystemNotifications on the D-Bus notification server', () => {
     }
   });
 });
+
+describe('SystemNotifications turn-end notifications on the D-Bus notification server', () => {
+  // plan-session_notifications/REQ-18: urgency normal as the byte hint 1, expire timeout -1
+  it('sends Notify with normal urgency and the server default timeout', async () => {
+    const notifications = new SystemNotifications(APP);
+    await notifications.show({ ...request('a', 'Done. The tests pass.'), kind: 'turn_end' });
+
+    expect(fake.notifyCalls).toHaveLength(1);
+    const call = fake.notifyCalls[0]!;
+    expect(call).toMatchObject({ replacesId: 0, body: 'Done. The tests pass.', actions: ['default', 'Open'], expireTimeout: -1 });
+    expect(call.hints.urgency?.signature).toBe('y');
+    expect(call.hints.urgency?.value).toBe(1);
+  });
+
+  // plan-session_notifications/REQ-19
+  it('replaces the needs-input notification of a session in place with the turn-end one', async () => {
+    const notifications = new SystemNotifications(APP);
+    await notifications.show(request('a'));
+    const id = fake.nextId;
+    await notifications.show({ ...request('a', 'Claude finished'), kind: 'turn_end' });
+
+    expect(fake.notifyCalls.map((call) => [call.replacesId, call.hints.urgency?.value])).toEqual([
+      [0, 2],
+      [id, 1],
+    ]);
+  });
+});

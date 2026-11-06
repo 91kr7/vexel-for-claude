@@ -1,4 +1,4 @@
-// e2e of plan-session_notifications, batch needs-input-notification: "open this session" on an external session, with a fake bridge injected in the page.
+// e2e of plan-session_notifications, batches needs-input-notification and turn-end-notification: "open this session" on an external session, with a fake bridge injected in the page.
 import { type ChildProcess, spawn } from 'node:child_process';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -27,13 +27,13 @@ test.afterAll(async () => {
 });
 
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
-const entry = (page: Page) => list(page).getByRole('button').filter({ has: page.getByTitle(FOLDER, { exact: true }) });
+const entry = (page: Page, folder = FOLDER) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const header = (page: Page) => page.getByRole('main').locator('.session-header');
 
 type BridgeProbe = { reports: (string | null)[]; open(sessionId: string): void };
 
-// plan-session_notifications/REQ-13, scenario "A click on the notification opens the session" (page side)
-test('"open this session" from the desktop app opens a listed external session, as a list click does', async ({ page }) => {
+/** A fake desktop bridge: it records the open sessions the page reports, and `e2eBridge.open` sends "open this session". */
+async function installFakeBridge(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const listeners = new Set<(sessionId: string) => void>();
     const reports: (string | null)[] = [];
@@ -57,12 +57,56 @@ test('"open this session" from the desktop app opens a listed external session, 
       },
     });
   });
+}
+
+const openFromDesktop = (page: Page, sessionId: string) =>
+  page.evaluate((id) => (window as unknown as { e2eBridge: BridgeProbe }).e2eBridge.open(id), sessionId);
+const reports = (page: Page) => page.evaluate(() => [...(window as unknown as { e2eBridge: BridgeProbe }).e2eBridge.reports]);
+
+// plan-session_notifications/REQ-13, scenario "A click on the notification opens the session" (page side)
+test('"open this session" from the desktop app opens a listed external session, as a list click does', async ({ page }) => {
+  await installFakeBridge(page);
   await page.goto('/');
   await expect(entry(page)).toBeVisible({ timeout: 10_000 });
 
-  await page.evaluate((id) => (window as unknown as { e2eBridge: BridgeProbe }).e2eBridge.open(id), SESSION_ID);
+  await openFromDesktop(page, SESSION_ID);
 
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('billing');
   await expect(header(page).getByText('Read-only', { exact: true })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => [...(window as unknown as { e2eBridge: BridgeProbe }).e2eBridge.reports])).toEqual([null, SESSION_ID]);
+  await expect.poll(() => reports(page)).toEqual([null, SESSION_ID]);
+});
+
+// plan-session_notifications/REQ-20, scenario "A click on a gone session only shows the window" (page side)
+test('"open this session" for an external session that left the list opens nothing', async ({ page }) => {
+  const goneId = 'e2e-bridge-external-gone';
+  const goneFolder = '/tmp/ai-client-e2e-bridge-external/closed-terminal';
+  const goneProcess = spawn('sleep', ['300'], { stdio: 'ignore' });
+  const goneFile = path.join(E2E_CLAUDE_DIR, 'sessions', `${goneProcess.pid}.json`);
+  try {
+    await writeFile(
+      goneFile,
+      JSON.stringify({ pid: goneProcess.pid, sessionId: goneId, cwd: goneFolder, kind: 'interactive', status: 'idle', updatedAt: Date.now() }),
+    );
+    await installFakeBridge(page);
+    await page.goto('/');
+    await expect(entry(page, goneFolder)).toBeVisible({ timeout: 10_000 });
+
+    // The user closes that terminal: the session leaves the list.
+    goneProcess.kill('SIGKILL');
+    await expect(entry(page, goneFolder)).toHaveCount(0, { timeout: 10_000 });
+
+    await openFromDesktop(page, goneId);
+    await page.waitForTimeout(300);
+    await expect(header(page)).toHaveCount(0);
+
+    await entry(page).click();
+    await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('billing');
+    await openFromDesktop(page, goneId);
+    await page.waitForTimeout(300);
+    await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('billing');
+    expect(await reports(page)).toEqual([null, SESSION_ID]);
+  } finally {
+    goneProcess.kill('SIGKILL');
+    await rm(goneFile, { force: true });
+  }
 });

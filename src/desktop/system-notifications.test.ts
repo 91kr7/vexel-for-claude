@@ -253,3 +253,59 @@ describe('SystemNotifications failures', () => {
     await expect(notifications.close('a')).resolves.toBeUndefined();
   });
 });
+
+const turnEndRequest = (sessionId: string, body = 'Done. The tests pass.') => ({ ...request(sessionId, body), kind: 'turn_end' as const });
+
+describe('SystemNotifications turn-end notifications', () => {
+  // plan-session_notifications/REQ-18: normal urgency, the server's usual timeout
+  it('sends a turn-end notification with normal urgency and expire timeout -1', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(turnEndRequest('a'));
+    expect(server.notified).toEqual([
+      {
+        replacesId: 0,
+        appName: 'Vexel for Claude',
+        appIcon: '/opt/vexel/icons/vexel-for-claude.png',
+        summary: 'a · Fix the login form',
+        body: 'Done. The tests pass.',
+        actions: ['default', 'Open'],
+        urgency: 'normal',
+        expireTimeoutMs: -1,
+      },
+    ]);
+  });
+
+  // plan-session_notifications/REQ-19
+  it('replaces in place, with the same id, a notification of the session of another kind', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(request('a'));
+    const id = server.lastId();
+    await notifications.show(turnEndRequest('a'));
+    await notifications.show(request('a', 'Permission for Edit'));
+
+    expect(server.notified.map(({ replacesId, urgency, expireTimeoutMs }) => [replacesId, urgency, expireTimeoutMs])).toEqual([
+      [0, 'critical', 0],
+      [id, 'normal', -1],
+      [id, 'critical', 0],
+    ]);
+  });
+
+  // plan-session_notifications/REQ-18: once the desktop hides it, the session has no notification
+  it('gives a new notification after the server closes the turn-end one', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(turnEndRequest('a'));
+    server.reportClosed(server.lastId());
+    await notifications.show(request('a'));
+    expect(server.notified.map((notification) => notification.replacesId)).toEqual([0, 0]);
+  });
+
+  // plan-session_notifications/REQ-20: a click on a turn-end notification reaches the desktop app with its session
+  it('reports the session of a clicked turn-end notification', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    const clicked: string[] = [];
+    notifications.onClick((sessionId) => clicked.push(sessionId));
+    await notifications.show(turnEndRequest('gone'));
+    server.invokeAction(server.lastId(), 'default');
+    expect(clicked).toEqual(['gone']);
+  });
+});

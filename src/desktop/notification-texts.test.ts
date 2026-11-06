@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { needsInputBody, notificationTexts, notificationTitle } from './notification-texts.js';
+import { needsInputBody, notificationTexts, notificationTitle, turnEndBody } from './notification-texts.js';
 
 describe('notificationTitle', () => {
   // plan-session_notifications/REQ-7: folder name and label, as the list shows them
@@ -34,11 +34,31 @@ describe('needsInputBody', () => {
   });
 });
 
+describe('turnEndBody', () => {
+  // plan-session_notifications/REQ-16
+  it('is the excerpt when there is one', () => {
+    expect(turnEndBody('Done. The tests pass.')).toBe('Done. The tests pass.');
+  });
+
+  // plan-session_notifications/REQ-17
+  it('is "Claude finished" when the excerpt is missing or empty', () => {
+    expect(turnEndBody()).toBe('Claude finished');
+    expect(turnEndBody('')).toBe('Claude finished');
+  });
+});
+
 describe('notificationTexts', () => {
   // plan-session_notifications/REQ-7, REQ-8, REQ-9
   it('gives the title and the needs-input body of an event', () => {
     const base = { id: 'ev-1', sessionId: 's1', kind: 'needs_input' as const, folder: '/projects/billing', label: 'Review the invoices' };
     expect(notificationTexts({ ...base, waitingTool: 'Edit' })).toEqual({ title: 'billing · Review the invoices', body: 'Permission for Edit' });
     expect(notificationTexts(base)).toEqual({ title: 'billing · Review the invoices', body: 'Needs your input' });
+  });
+
+  // plan-session_notifications/REQ-7, REQ-16, REQ-17
+  it('gives the title and the turn-end body of an event', () => {
+    const base = { id: 'ev-2', sessionId: 's1', kind: 'turn_end' as const, folder: '/projects/billing', label: 'Review the invoices' };
+    expect(notificationTexts({ ...base, excerpt: 'Done. The tests pass.' })).toEqual({ title: 'billing · Review the invoices', body: 'Done. The tests pass.' });
+    expect(notificationTexts(base)).toEqual({ title: 'billing · Review the invoices', body: 'Claude finished' });
   });
 });

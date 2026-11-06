@@ -363,3 +363,41 @@ describe('connectAttention with the real backend', () => {
     expect(calls.filter(([kind]) => kind === 'list').at(-1)?.[1]).toEqual([{ sessionId: id, folder, label: 'Fix the login form' }]);
   }, 40_000);
 });
+
+describe('connectAttention turn-end events', () => {
+  const { waitingTool: _tool, ...needsInputWithNoTool } = event;
+  const finished: AttentionEvent = { ...needsInputWithNoTool, id: 'ev-turn', kind: 'turn_end', excerpt: 'Done. The tests pass.' };
+
+  // plan-session_notifications/REQ-14, REQ-16, REQ-17
+  it('passes on turn_end events, with or without an excerpt', async () => {
+    const { server, origin } = await backend();
+    const { calls, handlers } = recorder();
+    connect(origin, handlers);
+    await waitFor(() => server.connections.length === 1, 'connection');
+
+    const { excerpt: _excerpt, ...finishedWithNoExcerpt } = finished;
+    server.send({ type: 'event', event: finished });
+    server.send({ type: 'event', event: { ...finishedWithNoExcerpt, id: 'ev-turn-2' } });
+    await waitFor(() => calls.length >= 2, 'two events');
+
+    expect(calls).toEqual([
+      ['event', finished],
+      ['event', { ...finishedWithNoExcerpt, id: 'ev-turn-2' }],
+    ]);
+  });
+
+  it('ignores an event with an unknown kind or an excerpt that is not a string', async () => {
+    const { server, origin } = await backend();
+    const { calls, handlers } = recorder();
+    connect(origin, handlers);
+    await waitFor(() => server.connections.length === 1, 'connection');
+
+    server.send({ type: 'event', event: { ...finished, kind: 'session_end' } });
+    server.send({ type: 'event', event: { ...finished, excerpt: 42 } });
+    server.send({ type: 'needs-input', sessions: [session] });
+    await waitFor(() => calls.length >= 1, 'the valid frame');
+    await delay(100);
+
+    expect(calls).toEqual([['list', [session]]]);
+  });
+});

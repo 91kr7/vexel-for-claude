@@ -1,11 +1,11 @@
-// REQ tests of plan-session_notifications, batch needs-input-notification, against the real server process.
+// REQ tests of plan-session_notifications, batches needs-input-notification and turn-end-notification, against the real server process.
 import { type ChildProcess, spawn } from 'node:child_process';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { FAKE_CLI, type WsClient, connectWs, delay, tempDir, waitFor } from './test-support.js';
+import { FAKE_CLI, type WsClient, connectWs, delay, tempDir, waitFor, writeHistorySession } from './test-support.js';
 
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -32,6 +32,7 @@ interface AttentionEvent {
   folder: string;
   label: string;
   waitingTool?: string;
+  excerpt?: string;
 }
 interface AttentionSession {
   sessionId: string;
@@ -272,5 +273,143 @@ describe('plan-session_notifications external sessions', { timeout: TEST_TIMEOUT
     await session.write('waiting');
     await delay(ONE_SCAN);
     expect(eventsOf(client, 'ext-already')).toEqual([]);
+  });
+});
+
+// Batch turn-end-notification.
+
+/** Writes the transcript of a Claude Code session where TranscriptReader looks first for `cwd`. */
+const writeTranscript = (cwd: string, claudeSessionId: string, entries: object[]) =>
+  writeHistorySession(claudeDir, cwd.replace(/[^A-Za-z0-9]/g, '-'), claudeSessionId, entries);
+const jsonLine = (entry: object) => `${JSON.stringify(entry)}\n`;
+const userLine = (text: string) => ({ type: 'user', message: { role: 'user', content: text } });
+const claudeLine = (text: string) => ({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text }] } });
+const toolCallLine = { type: 'assistant', message: { role: 'assistant', content: [{ type: 'tool_use', id: 'tu-1', name: 'Bash', input: { command: 'npm test' } }] } };
+const toolResultLine = { type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'tu-1', content: '12 passed' }] } };
+const interruptLine = { type: 'user', message: { role: 'user', content: [{ type: 'text', text: '[Request interrupted by user for tool use]' }] } };
+const turnEndsOf = (client: WsClient, sessionId: string) => eventsOf(client, sessionId).filter((event) => event.kind === 'turn_end');
+// Longer than one read, the second read after 1 second, and a margin.
+const NO_EVENT_WAIT = 2000;
+
+async function hostedTurn(name: string, claudeSessionId: string, transcript: object[]) {
+  const { id, folder } = await startSession(name);
+  await hook(id, { hook_event_name: 'UserPromptSubmit', prompt: 'Run the tests', session_id: claudeSessionId });
+  const file = await writeTranscript(folder, claudeSessionId, transcript);
+  return { id, folder, file };
+}
+
+describe('plan-session_notifications/REQ-14, REQ-16, REQ-2 a turn of a hosted session ends', { timeout: TEST_TIMEOUT }, () => {
+  it('gives one turn_end event within 5 seconds, with the start of the final response as plain text', async () => {
+    const client = await attention();
+    const { id, folder } = await hostedTurn('turn-end', 'claude-turn-end', [userLine('Run the tests'), claudeLine('**Done.** The tests pass.')]);
+
+    const changedAt = Date.now();
+    await stopTurn(id);
+    await waitFor(() => turnEndsOf(client, id).length >= 1, 'turn-end event', FIVE_SECONDS);
+    expect(Date.now() - changedAt).toBeLessThan(FIVE_SECONDS);
+
+    expect(eventsOf(client, id)).toEqual([
+      { id: expect.stringMatching(UUID), sessionId: id, kind: 'turn_end', folder, label: 'Run the tests', excerpt: 'Done. The tests pass.' },
+    ]);
+  });
+
+  it('REQ-2: gives the final response written just after the Stop, still within 5 seconds', async () => {
+    const client = await attention();
+    const { id, file } = await hostedTurn('late-reply', 'claude-late-reply', [userLine('Run the tests'), toolCallLine, toolResultLine]);
+
+    const changedAt = Date.now();
+    await stopTurn(id);
+    await delay(300);
+    await appendFile(file, jsonLine(claudeLine('All 12 tests pass.')));
+    await waitFor(() => turnEndsOf(client, id).length >= 1, 'turn-end event', FIVE_SECONDS);
+    expect(Date.now() - changedAt).toBeLessThan(FIVE_SECONDS);
+    expect(turnEndsOf(client, id)[0]?.excerpt).toBe('All 12 tests pass.');
+  });
+
+  it('REQ-16: cuts a long final response to 100 characters', async () => {
+    const client = await attention();
+    const { id } = await hostedTurn('long-reply', 'claude-long-reply', [userLine('Explain'), claudeLine(`- ${'All good. '.repeat(20)}`)]);
+
+    await stopTurn(id);
+    await waitFor(() => turnEndsOf(client, id).length >= 1, 'turn-end event', FIVE_SECONDS);
+    const excerpt = turnEndsOf(client, id)[0]?.excerpt ?? '';
+    expect([...excerpt]).toHaveLength(100);
+    expect(excerpt).toBe(`${'All good. '.repeat(10).slice(0, 99)}…`);
+  });
+});
+
+describe('plan-session_notifications/REQ-17 a hosted turn with no final text', { timeout: TEST_TIMEOUT }, () => {
+  it('gives a turn_end event with no excerpt, within 5 seconds', async () => {
+    const client = await attention();
+    const { id } = await hostedTurn('no-text', 'claude-no-text', [userLine('Run the tests'), toolCallLine]);
+
+    const changedAt = Date.now();
+    await stopTurn(id);
+    await waitFor(() => turnEndsOf(client, id).length >= 1, 'turn-end event', FIVE_SECONDS);
+    expect(Date.now() - changedAt).toBeLessThan(FIVE_SECONDS);
+    expect(turnEndsOf(client, id)[0]).not.toHaveProperty('excerpt');
+  });
+});
+
+describe('plan-session_notifications/REQ-15 an interrupted turn of a hosted session', { timeout: TEST_TIMEOUT }, () => {
+  it('gives no event when the user presses Esc in its terminal', async () => {
+    const client = await attention();
+    const { id } = await hostedTurn('interrupted', 'claude-interrupted', [userLine('Run the tests'), toolCallLine]);
+    const terminal = connectWs(`ws://127.0.0.1:${port}/api/sessions/${id}/attach`);
+    clients.push(terminal);
+    await waitFor(() => terminal.frames.length >= 1, 'terminal snapshot');
+
+    terminal.send({ type: 'input', data: '\x1b' });
+    await expect.poll(() => externalState(id), { timeout: FIVE_SECONDS }).toBe('idle');
+    // The transcript ends on a tool call: only the cause of the change (user input) keeps this silent.
+    await delay(NO_EVENT_WAIT);
+
+    expect(eventsOf(client, id)).toEqual([]);
+  });
+});
+
+describe('plan-session_notifications turn end of external sessions', { timeout: TEST_TIMEOUT }, () => {
+  it('REQ-14, REQ-16, REQ-2: an external session that goes from working to idle gives one turn_end event within 5 seconds', async () => {
+    const client = await attention();
+    const cwd = path.join(projectsRoot, 'invoices');
+    await writeTranscript(cwd, 'ext-turn', [userLine('Update the invoices'), claudeLine('**Updated** 3 invoices.')]);
+    const session = await externalSession('ext-turn', cwd, 'busy');
+    await expect.poll(() => externalState('ext-turn'), { timeout: 10_000 }).toBe('working');
+
+    const changedAt = Date.now();
+    await session.write('idle');
+    await waitFor(() => turnEndsOf(client, 'ext-turn').length >= 1, 'external turn-end event', FIVE_SECONDS);
+    expect(Date.now() - changedAt).toBeLessThan(FIVE_SECONDS);
+    expect(eventsOf(client, 'ext-turn')).toEqual([
+      expect.objectContaining({ id: expect.stringMatching(UUID), sessionId: 'ext-turn', kind: 'turn_end', folder: cwd, excerpt: 'Updated 3 invoices.' }),
+    ]);
+  });
+
+  it('REQ-15: an external turn that ends with the interrupt marker gives no event', async () => {
+    const client = await attention();
+    const cwd = path.join(projectsRoot, 'esc');
+    await writeTranscript(cwd, 'ext-esc', [userLine('Refactor'), toolCallLine, interruptLine]);
+    const session = await externalSession('ext-esc', cwd, 'busy');
+    await expect.poll(() => externalState('ext-esc'), { timeout: 10_000 }).toBe('working');
+
+    await session.write('idle');
+    await expect.poll(() => externalState('ext-esc'), { timeout: FIVE_SECONDS }).toBe('idle');
+    await delay(NO_EVENT_WAIT);
+
+    expect(eventsOf(client, 'ext-esc')).toEqual([]);
+  });
+
+  it('REQ-17: an external turn that ends with a tool call gives an event with no excerpt, within 5 seconds', async () => {
+    const client = await attention();
+    const cwd = path.join(projectsRoot, 'tool-end');
+    await writeTranscript(cwd, 'ext-tool', [userLine('Run the tests'), toolCallLine]);
+    const session = await externalSession('ext-tool', cwd, 'busy');
+    await expect.poll(() => externalState('ext-tool'), { timeout: 10_000 }).toBe('working');
+
+    const changedAt = Date.now();
+    await session.write('idle');
+    await waitFor(() => turnEndsOf(client, 'ext-tool').length >= 1, 'external turn-end event', FIVE_SECONDS);
+    expect(Date.now() - changedAt).toBeLessThan(FIVE_SECONDS);
+    expect(turnEndsOf(client, 'ext-tool')[0]).not.toHaveProperty('excerpt');
   });
 });

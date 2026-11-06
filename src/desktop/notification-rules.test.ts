@@ -156,3 +156,50 @@ describe('NotificationRules.setOpenSession', () => {
     expect(rules.setOpenSession('a')).toEqual([]);
   });
 });
+
+const turnEnd = (sessionId: string): AttentionEvent => ({ ...event(sessionId), kind: 'turn_end', excerpt: 'Done.' });
+
+describe('NotificationRules with turn-end events', () => {
+  // plan-session_notifications/REQ-14
+  it('shows a turn-end event while the window does not have the focus', () => {
+    const rules = new NotificationRules();
+    const received = turnEnd('a');
+    expect(rules.receiveEvent(received)).toEqual([show(received)]);
+  });
+
+  // plan-session_notifications/REQ-11, REQ-18: only needs-input notifications follow the needs-input list
+  it('keeps a turn-end notification when the needs-input list does not have its session', () => {
+    const rules = new NotificationRules();
+    rules.receiveEvent(turnEnd('a'));
+    expect(rules.receiveNeedsInput([])).toEqual([]);
+  });
+
+  // plan-session_notifications/REQ-19
+  it('a needs-input event replaces the turn-end notification: the session then has one notification, of kind needs_input', () => {
+    const rules = new NotificationRules();
+    rules.receiveEvent(turnEnd('a'));
+    const asking = event('a');
+    expect(rules.receiveEvent(asking)).toEqual([show(asking)]);
+    expect(rules.receiveNeedsInput(listed('a'))).toEqual([]);
+    expect(rules.receiveNeedsInput([])).toEqual([close('a')]);
+    expect(rules.receiveNeedsInput([])).toEqual([]);
+  });
+
+  // plan-session_notifications/REQ-19
+  it('a turn-end event replaces the needs-input notification: a list without the session then closes nothing', () => {
+    const rules = new NotificationRules();
+    rules.receiveEvent(event('a'));
+    rules.receiveNeedsInput(listed('a'));
+    const finished = turnEnd('a');
+    expect(rules.receiveEvent(finished)).toEqual([show(finished)]);
+    expect(rules.receiveNeedsInput([])).toEqual([]);
+  });
+
+  // plan-session_notifications/REQ-12
+  it('closes the turn-end notification of the open session when the window gets the focus', () => {
+    const rules = new NotificationRules();
+    rules.receiveEvent(turnEnd('a'));
+    rules.setOpenSession('a');
+    expect(rules.setWindowFocused(true)).toEqual([close('a')]);
+  });
+});
