@@ -247,8 +247,8 @@ const header = (page: Page) => page.getByRole('main').locator('.session-header')
 test.describe('Needs-input notification in the desktop app', () => {
   test.describe.configure({ timeout: 90_000 });
 
-  // plan-session_notifications/REQ-12, REQ-13: the preload gives the page the bridge and nothing else
-  test('the window page gets window.desktopBridge with its two functions, and no Node access', async () => {
+  // plan-session_notifications/REQ-12, REQ-13; DesktopBridge "Contract": the bridge functions and nothing else
+  test('the window page gets window.desktopBridge with its functions, and no Node access', async () => {
     const { window } = await readyDesktop();
     const page = await window.evaluate(() => {
       const bridge = (window as unknown as { desktopBridge?: Record<string, unknown> }).desktopBridge;
@@ -259,7 +259,17 @@ test.describe('Needs-input notification in the desktop app', () => {
         process: typeof (globalThis as { process?: unknown }).process,
       };
     });
-    expect(page).toEqual({ keys: ['onOpenSession', 'reportOpenSession'], types: ['function', 'function'], require: 'undefined', process: 'undefined' });
+    const keys = [
+      'closeWindow',
+      'getPathForFile',
+      'isWindowMaximized',
+      'minimizeWindow',
+      'onOpenSession',
+      'onWindowMaximizedChange',
+      'reportOpenSession',
+      'toggleMaximizeWindow',
+    ];
+    expect(page).toEqual({ keys, types: Array<string>(keys.length).fill('function'), require: 'undefined', process: 'undefined' });
   });
 
   // Scenarios "A waiting session alerts the user while the window is closed" and "A click on the notification opens the session"

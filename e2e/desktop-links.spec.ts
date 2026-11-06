@@ -146,6 +146,10 @@ test.describe('Desktop links', () => {
     await expect(terminal(page)).toContainText('LINKS-DONE');
 
     const point = await cell(page, 'WEB:', 12);
+    // The click above left the pointer on the WEB row before the row was printed, and xterm keeps the links it found for the
+    // row under the pointer until the pointer changes row: the pointer comes from the bottom corner, which holds no link.
+    const screen = (await page.locator('.xterm-screen').boundingBox())!;
+    await page.mouse.move(screen.x + screen.width - 5, screen.y + screen.height - 5);
     await page.mouse.move(point.x, point.y);
     await expect.poll(() => cursorOf(page, point)).toBe('pointer');
     await page.keyboard.down('Control');

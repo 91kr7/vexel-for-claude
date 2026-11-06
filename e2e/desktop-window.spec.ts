@@ -22,6 +22,8 @@ const LOADING = 'Starting the backend…';
 const ERROR = 'The backend could not start.';
 
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
+// The arguments of the menu entry (MenuEntry `Exec`): without `--no-sandbox`, Ubuntu's AppArmor makes Electron abort at launch.
+const SECOND_LAUNCH_ARGS = ['--no-sandbox', '.'];
 
 // Cleanup registry, emptied after each test.
 const apps: ElectronApplication[] = [];
@@ -420,7 +422,7 @@ test.describe('Desktop window', () => {
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.minimize());
     await expect.poll(async () => (await windowState(app))[0]?.minimized).toBe(true);
 
-    const second = spawn(electronBinary, ['.'], { cwd: repoRoot, env, stdio: 'ignore' });
+    const second = spawn(electronBinary, SECOND_LAUNCH_ARGS, { cwd: repoRoot, env, stdio: 'ignore' });
     children.push(second);
     const exitCode = await new Promise<number | null>((resolve) => second.once('exit', (code) => resolve(code)));
     expect(exitCode).not.toBeNull();
@@ -507,7 +509,7 @@ test.describe('Window and tray', () => {
     await closeWindow(app);
     await expect.poll(async () => (await windowState(app)).map((state) => state.visible)).toEqual([false]);
 
-    const second = spawn(electronBinary, ['.'], { cwd: repoRoot, env, stdio: 'ignore' });
+    const second = spawn(electronBinary, SECOND_LAUNCH_ARGS, { cwd: repoRoot, env, stdio: 'ignore' });
     children.push(second);
     const exitCode = await new Promise<number | null>((resolve) => second.once('exit', (code) => resolve(code)));
     expect(exitCode).not.toBeNull();

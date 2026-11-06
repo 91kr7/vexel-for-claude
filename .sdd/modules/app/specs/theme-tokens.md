@@ -92,7 +92,7 @@ type: configuration
 
 ## Rules and invariants
 
-- No token is orange, indigo, violet or pink.
+- No accent token is orange, indigo, violet or pink, as the old mock's accents were. The amber and brown tokens of warnings, needs input and terminal search highlights are allowed.
 - In each set, `--text-primary`, `--text-secondary` and `--text-muted` reach 4.5:1 on canvas and on surfaces 1, 2 and 3.
 - Dark `--text-muted` is the least lightening of the mock value that reaches it on surface 3 (about 4.56:1). Light `--text-muted` is the least darkening, same HSL hue and saturation (about 4.51:1).
 - Dark: `--on-accent` on `--accent-primary` reaches 4.5:1 (about 11.7:1), and on `--accent-deep` too (about 5.8:1).
