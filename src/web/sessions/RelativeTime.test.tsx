@@ -14,21 +14,21 @@ describe('formatRelativeTime', () => {
     expect(formatRelativeTime('', now)).toBe('');
   });
 
-  // batch decision "Times", relative-time spec: "ora" under one minute, future included
-  it.each([0, 1, 59])('gives "ora" %i s ago', (seconds) => {
-    expect(formatRelativeTime(ago(seconds * SECOND), now)).toBe('ora');
+  // batch decision "Times", relative-time spec: "Just now" under one minute, future included
+  it.each([0, 1, 59])('gives "Just now" %i s ago', (seconds) => {
+    expect(formatRelativeTime(ago(seconds * SECOND), now)).toBe('Just now');
   });
 
-  // relative-time spec: a time in the future gives "ora"
-  it('gives "ora" for a time in the future', () => {
-    expect(formatRelativeTime(new Date(now.getTime() + 10 * MINUTE).toISOString(), now)).toBe('ora');
+  // relative-time spec: a time in the future gives "Just now"
+  it('gives "Just now" for a time in the future', () => {
+    expect(formatRelativeTime(new Date(now.getTime() + 10 * MINUTE).toISOString(), now)).toBe('Just now');
   });
 
-  // batch decision "Times", relative-time spec: "N min fa" under one hour, N = whole minutes
+  // batch decision "Times", relative-time spec: "Nm ago" under one hour, N = whole minutes
   it.each([
-    [60 * SECOND, '1 min fa'],
-    [2 * MINUTE + 59 * SECOND, '2 min fa'],
-    [59 * MINUTE + 59 * SECOND, '59 min fa'],
+    [60 * SECOND, '1m ago'],
+    [2 * MINUTE + 59 * SECOND, '2m ago'],
+    [59 * MINUTE + 59 * SECOND, '59m ago'],
   ])('gives the whole minutes for %i ms ago', (ms, text) => {
     expect(formatRelativeTime(ago(ms), now)).toBe(text);
   });
@@ -45,10 +45,10 @@ describe('formatRelativeTime', () => {
     expect(formatRelativeTime(new Date(2025, 0, 7, 9, 0, 0).toISOString(), now)).toBe('07/01/2025');
   });
 
-  // relative-time spec: the "N min fa" rule comes before the day rule, across midnight too
+  // relative-time spec: the "Nm ago" rule comes before the day rule, across midnight too
   it('gives minutes rather than the date for a time 10 minutes before midnight', () => {
     const justAfterMidnight = new Date(2026, 10, 6, 0, 5, 0);
-    expect(formatRelativeTime(new Date(2026, 10, 5, 23, 55, 0).toISOString(), justAfterMidnight)).toBe('10 min fa');
+    expect(formatRelativeTime(new Date(2026, 10, 5, 23, 55, 0).toISOString(), justAfterMidnight)).toBe('10m ago');
   });
 });
 
@@ -57,6 +57,6 @@ describe('RelativeTime', () => {
   it('renders a time element with dateTime and the class given', () => {
     const iso = new Date(Date.now() - 5 * MINUTE).toISOString();
     const html = renderToStaticMarkup(<RelativeTime iso={iso} className="body-s" />);
-    expect(html).toMatch(new RegExp(`^<time\\b(?=[^>]*\\sdateTime="${iso}")(?=[^>]*\\sclass="body-s")[^>]*>5 min fa</time>$`, 'i'));
+    expect(html).toMatch(new RegExp(`^<time\\b(?=[^>]*\\sdateTime="${iso}")(?=[^>]*\\sclass="body-s")[^>]*>5m ago</time>$`, 'i'));
   });
 });

@@ -22,15 +22,15 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
-const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const mainArea = (page: Page) => page.getByRole('main');
 const header = (page: Page) => mainArea(page).locator('header');
-const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminale/ });
+const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
 const hintRow = (page: Page) => mainArea(page).locator('.session-hint-row');
 const hint = (page: Page) => hintRow(page).locator('span').filter({ has: page.locator('kbd') });
 const statePill = (page: Page, name: string) => header(page).getByText(name, { exact: true });
-const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'richiede il tuo input' });
+const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'needs your input' });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const terminalInput = (page: Page) => page.locator('.xterm-helper-textarea');
 const button = (page: Page, name: string) => header(page).getByRole('button', { name, exact: true });
@@ -178,17 +178,17 @@ for (const colorScheme of ['light', 'dark'] as const) {
       expect((await box(pathText)).x).toBeGreaterThan((await box(separator)).x);
       expect((await box(line)).x).toBeGreaterThan((await box(pathText)).x);
 
-      // the zinc pill of "In attesa": its dot, then its name
-      const pill = statePill(page, 'In attesa');
+      // the zinc pill of "Idle": its dot, then its name
+      const pill = statePill(page, 'Idle');
       expect(await styles(pill, ['background-color', 'color', 'font-size', 'border-top-left-radius'])).toEqual({
         'background-color': 'rgba(113, 113, 122, 0.15)', color: 'rgb(161, 161, 170)', 'font-size': '11px', 'border-top-left-radius': '4px',
       });
       expect(await style(pill, 'font-family')).toMatch(mono);
       await expect(pill.locator('[aria-hidden="true"]')).toHaveCount(1);
 
-      // actions: rose "Interrompi" then "Termina", 8 px apart, at the right edge inside the padding
-      const interrupt = button(page, 'Interrompi');
-      const stop = button(page, 'Termina');
+      // actions: rose "Interrupt" then "Terminate", 8 px apart, at the right edge inside the padding
+      const interrupt = button(page, 'Interrupt');
+      const stop = button(page, 'Terminate');
       const interruptBox = await box(interrupt);
       const stopBox = await box(stop);
       near(stopBox.x, interruptBox.x + interruptBox.width + 8, 'gap between the actions');
@@ -206,7 +206,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
       // the terminal panel: canvas, subtle border, 8 px radius, padding 12, 16 px from the left, right and top
       const term = panel(page);
-      await expect(term).toHaveAccessibleName('Terminale di billing-api');
+      await expect(term).toHaveAccessibleName('Terminal: billing-api');
       expect(await styles(term, ['border-top-left-radius', 'background-color', 'border-top-width', 'border-top-color', 'padding-top', 'padding-left'])).toEqual({
         'border-top-left-radius': '8px', 'background-color': await colour('--bg-canvas'), 'border-top-width': '1px', 'border-top-color': await colour('--border-subtle'),
         'padding-top': '12px', 'padding-left': '12px',
@@ -227,10 +227,10 @@ for (const colorScheme of ['light', 'dark'] as const) {
       expect(await styles(row, ['padding-left', 'padding-right'])).toEqual({ 'padding-left': '16px', 'padding-right': '16px' });
 
       const hintText = hint(page);
-      expect((await hintText.innerText()).replace(/\s+/g, ' ').replace(/ ?\+ ?/g, '+').trim()).toBe("Ctrl+Maiusc+L torna all'elenco");
+      expect((await hintText.innerText()).replace(/\s+/g, ' ').replace(/ ?\+ ?/g, '+').trim()).toBe("Ctrl+Shift+L back to the list");
       expect(await styles(hintText, ['font-size', 'color'])).toEqual({ 'font-size': '11px', color: await colour('--text-muted') });
       const keys = hintText.locator('kbd');
-      await expect(keys).toHaveText(['Ctrl', 'Maiusc', 'L']);
+      await expect(keys).toHaveText(['Ctrl', 'Shift', 'L']);
       for (const key of await keys.all()) {
         expect(await styles(key, [
           'font-size', 'padding-top', 'padding-right', 'border-top-left-radius', 'background-color', 'border-top-color', 'color',
@@ -245,7 +245,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 }
 
 // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-30 — scenario "The user interrupts Claude's turn from the header"
-test('"Interrompi" on a working session sends Esc to the terminal and gives it the focus', async ({ page, request }) => {
+test('"Interrupt" on a working session sends Esc to the terminal and gives it the focus', async ({ page, request }) => {
   const folder = await newFolder('turno-in-corso');
   await startViaApi(request, folder);
   await page.goto('/');
@@ -253,10 +253,10 @@ test('"Interrompi" on a working session sends Esc to the terminal and gives it t
   await page.locator('.xterm-screen').click();
   await page.keyboard.type('WORK');
   await page.keyboard.press('Enter');
-  await expect(statePill(page, 'Lavora')).toBeVisible();
+  await expect(statePill(page, 'Running')).toBeVisible();
   await expect(terminal(page)).toContainText('TICK1');
 
-  await button(page, 'Interrompi').click();
+  await button(page, 'Interrupt').click();
 
   await expect(terminal(page)).toContainText('IN:1b');
   await expect(terminalInput(page)).toBeFocused();
@@ -265,21 +265,21 @@ test('"Interrompi" on a working session sends Esc to the terminal and gives it t
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-31 — scenario "The user sees no stop actions on an ended session"
-test('a session whose process has ended shows its header without "Interrompi" and "Termina"', async ({ page, request }) => {
+test('a session whose process has ended shows its header without "Interrupt" and "Terminate"', async ({ page, request }) => {
   const folder = await newFolder('finita');
   await startViaApi(request, folder);
   await page.goto('/');
   await openFromList(page, folder);
-  await expect(button(page, 'Interrompi')).toBeVisible();
-  await expect(button(page, 'Termina')).toBeVisible();
+  await expect(button(page, 'Interrupt')).toBeVisible();
+  await expect(button(page, 'Terminate')).toBeVisible();
   await page.locator('.xterm-screen').click();
   await page.keyboard.type('/exit');
   await page.keyboard.press('Enter');
 
-  await expect(statePill(page, 'Terminata')).toBeVisible();
+  await expect(statePill(page, 'Ended')).toBeVisible();
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('finita');
-  await expect(header(page).getByRole('button', { name: 'Interrompi' })).toHaveCount(0);
-  await expect(header(page).getByRole('button', { name: 'Termina' })).toHaveCount(0);
+  await expect(header(page).getByRole('button', { name: 'Interrupt' })).toHaveCount(0);
+  await expect(header(page).getByRole('button', { name: 'Terminate' })).toHaveCount(0);
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-32; SessionView: the panel shows the focus ring while the terminal has the focus

@@ -15,12 +15,12 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
-const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
-const stopButton = (page: Page) => page.getByRole('button', { name: 'Termina', exact: true }).first();
+const stopButton = (page: Page) => page.getByRole('button', { name: 'Terminate', exact: true }).first();
 const confirmation = (page: Page) =>
-  page.getByRole('alertdialog').or(page.getByRole('dialog')).filter({ hasText: 'Terminare la sessione?' });
+  page.getByRole('alertdialog').or(page.getByRole('dialog')).filter({ hasText: 'Terminate the Session?' });
 
 async function newFolder(name: string): Promise<string> {
   const folder = path.join(projectsRoot, name);
@@ -67,55 +67,55 @@ async function lastTick(page: Page): Promise<number> {
 // plan-claude_sessions_client/REQ-23
 test('the user stops an idle session', async ({ page, request }) => {
   const { id, folder } = await openSession(page, request, 'idle');
-  await expect(entry(page, folder)).toContainText('In attesa');
+  await expect(entry(page, folder)).toContainText('Idle');
   const stops = recordStopRequests(page, id);
 
   await stopButton(page).click();
 
   await expect(confirmation(page)).toHaveCount(0);
-  await expect(entry(page, folder)).toContainText('Terminata');
+  await expect(entry(page, folder)).toContainText('Ended');
   expect(stops.map((r) => [r.method(), r.postData()])).toEqual([['POST', null]]);
-  await expect(page.getByRole('button', { name: 'Termina', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Terminate', exact: true })).toHaveCount(0);
   // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-31
-  await expect(page.getByRole('button', { name: 'Interrompi' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Interrupt' })).toHaveCount(0);
 });
 
 // plan-claude_sessions_client/REQ-23
 test('a session that needs input stops at once', async ({ page, request }) => {
   const { id, folder } = await openSession(page, request, 'needs-input');
   await typeLine(page, 'PERM');
-  await expect(entry(page, folder)).toContainText('Richiede input');
+  await expect(entry(page, folder)).toContainText('Needs Input');
   const stops = recordStopRequests(page, id);
 
   await stopButton(page).click();
 
   await expect(confirmation(page)).toHaveCount(0);
-  await expect(entry(page, folder)).toContainText('Terminata');
+  await expect(entry(page, folder)).toContainText('Ended');
   expect(stops).toHaveLength(1);
 });
 
 // plan-claude_sessions_client/REQ-24
-test('stopping a working session asks for confirmation; "Annulla" keeps it working', async ({ page, request }) => {
+test('stopping a working session asks for confirmation; "Cancel" keeps it working', async ({ page, request }) => {
   const { id, folder } = await openSession(page, request, 'working-cancel');
   await typeLine(page, 'WORK');
-  await expect(entry(page, folder)).toContainText('Lavora');
+  await expect(entry(page, folder)).toContainText('Running');
   const stops = recordStopRequests(page, id);
 
   await stopButton(page).click();
 
   await expect(confirmation(page)).toBeVisible();
-  await expect(confirmation(page).getByRole('button', { name: 'Annulla' })).toBeFocused();
-  await expect(confirmation(page).getByRole('button', { name: 'Termina', exact: true })).toBeVisible();
+  await expect(confirmation(page).getByRole('button', { name: 'Cancel' })).toBeFocused();
+  await expect(confirmation(page).getByRole('button', { name: 'Terminate', exact: true })).toBeVisible();
   await page.waitForTimeout(500);
   expect(stops, 'no stop request before the confirmation').toHaveLength(0);
 
-  await confirmation(page).getByRole('button', { name: 'Annulla' }).click();
+  await confirmation(page).getByRole('button', { name: 'Cancel' }).click();
 
   await expect(confirmation(page)).toHaveCount(0);
   const tick = await lastTick(page);
   await expect.poll(() => lastTick(page)).toBeGreaterThan(tick + 2);
-  await expect(entry(page, folder)).toContainText('Lavora');
-  expect(stops, 'no stop request after "Annulla"').toHaveLength(0);
+  await expect(entry(page, folder)).toContainText('Running');
+  expect(stops, 'no stop request after "Cancel"').toHaveLength(0);
   await expect(stopButton(page)).toBeVisible();
 });
 
@@ -123,31 +123,31 @@ test('stopping a working session asks for confirmation; "Annulla" keeps it worki
 test('confirming the stop of a working session ends it', async ({ page, request }) => {
   const { id, folder } = await openSession(page, request, 'working-confirm');
   await typeLine(page, 'WORK');
-  await expect(entry(page, folder)).toContainText('Lavora');
+  await expect(entry(page, folder)).toContainText('Running');
   const stops = recordStopRequests(page, id);
 
   await stopButton(page).click();
-  await confirmation(page).getByRole('button', { name: 'Termina', exact: true }).click();
+  await confirmation(page).getByRole('button', { name: 'Terminate', exact: true }).click();
 
   await expect(confirmation(page)).toHaveCount(0);
-  await expect(entry(page, folder)).toContainText('Terminata');
+  await expect(entry(page, folder)).toContainText('Ended');
   expect(stops.map((r) => [r.method(), r.postData()])).toEqual([['POST', null]]);
-  await expect(page.getByRole('button', { name: 'Termina', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Terminate', exact: true })).toHaveCount(0);
 });
 
 // plan-claude_sessions_client/REQ-24, StopSessionButton: the button disappears also while the confirmation is open
 test('the confirmation disappears when the session ends meanwhile', async ({ page, request }) => {
   const { id, folder } = await openSession(page, request, 'ends-while-confirming');
   await typeLine(page, 'WORK');
-  await expect(entry(page, folder)).toContainText('Lavora');
+  await expect(entry(page, folder)).toContainText('Running');
   await stopButton(page).click();
   await expect(confirmation(page)).toBeVisible();
 
   expect((await request.post(`/api/sessions/${id}/stop`)).status()).toBe(202);
 
-  await expect(entry(page, folder)).toContainText('Terminata');
+  await expect(entry(page, folder)).toContainText('Ended');
   await expect(confirmation(page)).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Termina', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Terminate', exact: true })).toHaveCount(0);
 });
 
 // plan-claude_sessions_client/REQ-23, plan-claude_sessions_client-ui_redesign/REQ-30: a failed stop only shows its error
@@ -163,10 +163,10 @@ test('a failed stop request shows its error and changes nothing else', async ({ 
 
   await expect(stopButton(page)).toBeVisible();
   await expect(confirmation(page)).toHaveCount(0);
-  await expect(page.getByRole('alert')).toHaveText(['Terminazione della sessione non riuscita.']);
+  await expect(page.getByRole('alert')).toHaveText(['Could not terminate the session.']);
   await expect(stopButton(page)).toBeEnabled();
   expect(await entry(page, folder).innerText()).toBe(entryBefore);
-  await expect(terminal(page)).not.toContainText('[Sessione disconnessa]');
+  await expect(terminal(page)).not.toContainText('[Session disconnected]');
 });
 
 // plan-claude_sessions_client/REQ-23, SessionView: a change of state does not reconnect the terminal
@@ -182,10 +182,10 @@ test('a state change of the open session keeps its terminal connection', async (
   await expect(terminal(page)).toContainText('READY');
 
   await typeLine(page, 'TURN');
-  await expect(entry(page, folder)).toContainText('Lavora');
+  await expect(entry(page, folder)).toContainText('Running');
   await expect(terminal(page)).toContainText('TURN-DONE');
-  await expect(entry(page, folder)).toContainText('In attesa');
+  await expect(entry(page, folder)).toContainText('Idle');
 
   expect(attaches).toHaveLength(1);
-  await expect(terminal(page)).not.toContainText('[Sessione disconnessa]');
+  await expect(terminal(page)).not.toContainText('[Session disconnected]');
 });

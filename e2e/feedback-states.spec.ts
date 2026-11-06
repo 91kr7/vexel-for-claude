@@ -22,20 +22,20 @@ test.afterAll(async () => {
   await rm(projectsRoot, { recursive: true, force: true });
 });
 
-const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione principale' });
+const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' });
 const mainArea = (page: Page) => page.getByRole('main');
-const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, text: string) => list(page).getByRole('button').filter({ has: page.getByTitle(text, { exact: true }) });
 const header = (page: Page) => mainArea(page).locator('.session-header');
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const button = (scope: Locator, name: string) => scope.getByRole('button', { name, exact: true });
-const loading = (scope: Locator) => scope.getByRole('status').filter({ hasText: 'Caricamento…' });
-const chooser = (page: Page) => page.getByRole('dialog', { name: 'Nuova sessione' });
-const pathField = (page: Page) => page.getByRole('textbox', { name: 'Cartella del progetto', exact: true });
-const history = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessione' });
-const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Sessione in esecuzione in un terminale' });
+const loading = (scope: Locator) => scope.getByRole('status').filter({ hasText: 'Loading…' });
+const chooser = (page: Page) => page.getByRole('dialog', { name: 'New Claude Code Session' });
+const pathField = (page: Page) => page.getByRole('textbox', { name: 'Working Directory Path', exact: true });
+const history = (page: Page) => page.getByRole('dialog', { name: 'Resume Session' });
+const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Session Running in a Terminal' });
 
-const LOST_SERVER = 'Connessione al server persa. Ricarica la pagina.';
+const LOST_SERVER = 'Connection to the server lost. Reload the page.';
 const ATTACH = /\/api\/sessions\/[^/]+\/attach$/;
 const EVENTS = /\/api\/sessions\/events$/;
 const CONVERSATION = /\/api\/external-sessions\/[^/]+\/conversation$/;
@@ -197,7 +197,7 @@ async function pressUntilFocused(page: Page, target: Locator, key: 'Tab' | 'Shif
 const terminalHasFocus = (page: Page) => page.evaluate(() => document.activeElement?.classList.contains('xterm-helper-textarea') ?? false);
 
 async function openChooser(page: Page): Promise<void> {
-  await button(rail(page), 'Nuova sessione').click();
+  await button(rail(page), 'New Claude Code Session').click();
   await expect(chooser(page)).toBeVisible();
   await expect(pathField(page)).toHaveValue(os.homedir());
 }
@@ -234,8 +234,8 @@ async function withExternalEntry(page: Page, onConversation: (ws: WebSocketRoute
 }
 
 test.describe('session list', () => {
-  // plan-claude_sessions_client-ui_redesign/REQ-29, SessionList: "Caricamento…" in place of "Nessuna sessione." until the list arrives
-  test('while the list loads it shows "Caricamento…", not "Nessuna sessione.", until the list arrives', async ({ page, request }) => {
+  // plan-claude_sessions_client-ui_redesign/REQ-29, SessionList: "Loading…" in place of "No sessions." until the list arrives
+  test('while the list loads it shows "Loading…", not "No sessions.", until the list arrives', async ({ page, request }) => {
     const folder = await newFolder('slow-list');
     await startViaApi(request, folder);
     const held = await hold(page, '**/api/sessions', 'GET');
@@ -243,7 +243,7 @@ test.describe('session list', () => {
     await page.goto('/');
 
     await expect(loading(list(page))).toBeVisible();
-    await expect(list(page)).not.toContainText('Nessuna sessione.');
+    await expect(list(page)).not.toContainText('No sessions.');
     await expect(list(page).getByRole('button')).toHaveCount(0);
 
     held.release();
@@ -272,13 +272,13 @@ test.describe('session list', () => {
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-30, SessionList: the list request fails
-  test('when the list does not load the list shows the error and no "Nessuna sessione."', async ({ page }) => {
+  test('when the list does not load the list shows the error and no "No sessions."', async ({ page }) => {
     await page.route('**/api/sessions', (route) => (route.request().method() === 'GET' ? fail(500)(route) : route.fallback()));
 
     await page.goto('/');
 
     await expect(list(page).getByRole('alert')).toHaveText(LOST_SERVER);
-    await expect(list(page)).not.toContainText('Nessuna sessione.');
+    await expect(list(page)).not.toContainText('No sessions.');
     await expect(loading(list(page))).toHaveCount(0);
   });
 
@@ -299,8 +299,8 @@ test.describe('session list', () => {
 });
 
 test.describe('open session', () => {
-  // plan-claude_sessions_client-ui_redesign/REQ-29, SessionView: "Caricamento…" over the terminal until the first frame; clicks go through it
-  test('the terminal shows "Caricamento…" until the snapshot arrives, and a click on it reaches the terminal', async ({ page, request }) => {
+  // plan-claude_sessions_client-ui_redesign/REQ-29, SessionView: "Loading…" over the terminal until the first frame; clicks go through it
+  test('the terminal shows "Loading…" until the snapshot arrives, and a click on it reaches the terminal', async ({ page, request }) => {
     const folder = await newFolder('slow-attach');
     await startViaApi(request, folder);
     const heldFrames: (string | Buffer)[] = [];
@@ -331,9 +331,9 @@ test.describe('open session', () => {
   });
 
   for (const [code, message] of [
-    [4404, 'La sessione non esiste più.'],
-    [1011, 'Connessione alla sessione persa.'],
-    [1001, 'Connessione alla sessione persa.'],
+    [4404, 'The session no longer exists.'],
+    [1011, 'Connection to the session lost.'],
+    [1001, 'Connection to the session lost.'],
   ] as const) {
     // plan-claude_sessions_client-ui_redesign/REQ-30, SessionView: an error between the header and the terminal when the connection closes
     test(`a connection closed with code ${code} shows "${message}" between the header and the terminal`, async ({ page, request }) => {
@@ -353,7 +353,7 @@ test.describe('open session', () => {
 
       const alert = mainArea(page).getByRole('alert');
       await expect(alert).toHaveText(message);
-      await expect(terminal(page)).toContainText('[Sessione disconnessa]');
+      await expect(terminal(page)).toContainText('[Session disconnected]');
       await expect(loading(mainArea(page))).toHaveCount(0);
       const [headerBox, alertBox, terminalBox] = await Promise.all([header(page).boundingBox(), alert.boundingBox(), page.locator('.xterm').boundingBox()]);
       expect(alertBox!.y, 'the error is below the header').toBeGreaterThanOrEqual(headerBox!.y + headerBox!.height - 1);
@@ -362,7 +362,7 @@ test.describe('open session', () => {
   }
 
   // plan-claude_sessions_client-ui_redesign/REQ-30, SessionView: a connection closed before the first frame stops the loading too
-  test('a connection that closes before the snapshot shows its error in place of "Caricamento…"', async ({ page, request }) => {
+  test('a connection that closes before the snapshot shows its error in place of "Loading…"', async ({ page, request }) => {
     const folder = await newFolder('closed-before-snapshot');
     await startViaApi(request, folder);
     await page.routeWebSocket(ATTACH, (ws) => {
@@ -371,19 +371,19 @@ test.describe('open session', () => {
     await page.goto('/');
     await entry(page, folder).click();
 
-    await expect(mainArea(page).getByRole('alert')).toHaveText('La sessione non esiste più.');
+    await expect(mainArea(page).getByRole('alert')).toHaveText('The session no longer exists.');
     await expect(loading(mainArea(page))).toHaveCount(0);
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-32, SessionView: a session whose process ends shows "Terminata" and no error
-  test('a session that ends by itself shows "Terminata" and no error message', async ({ page, request }) => {
+  // plan-claude_sessions_client-ui_redesign/REQ-32, SessionView: a session whose process ends shows "Ended" and no error
+  test('a session that ends by itself shows "Ended" and no error message', async ({ page, request }) => {
     const { folder } = await openSession(page, request, 'ends-by-itself');
     await page.locator('.xterm-screen').click();
     await page.keyboard.type('/exit');
     await page.keyboard.press('Enter');
 
-    await expect(header(page)).toContainText('Terminata');
-    await expect(entry(page, folder)).toContainText('Terminata');
+    await expect(header(page)).toContainText('Ended');
+    await expect(entry(page, folder)).toContainText('Ended');
     await page.waitForTimeout(500);
     await expect(mainArea(page).getByRole('alert')).toHaveCount(0);
   });
@@ -393,8 +393,8 @@ test.describe('open session', () => {
     const { folder } = await openSession(page, request, 'leave-terminal');
     // The hint sits in the hint row under the terminal panel, with the keys as kbd.
     const hint = mainArea(page).locator('.session-hint-row').locator('span').filter({ has: page.locator('kbd') });
-    await expect(hint.locator('kbd')).toHaveText(['Ctrl', 'Maiusc', 'L']);
-    expect((await hint.innerText()).replace(/\s+/g, ' ').replace(/ ?\+ ?/g, '+').trim()).toBe("Ctrl+Maiusc+L torna all'elenco");
+    await expect(hint.locator('kbd')).toHaveText(['Ctrl', 'Shift', 'L']);
+    expect((await hint.innerText()).replace(/\s+/g, ' ').replace(/ ?\+ ?/g, '+').trim()).toBe("Ctrl+Shift+L back to the list");
     await page.locator('.xterm-screen').click();
     await expect.poll(() => terminalHasFocus(page)).toBe(true);
 
@@ -412,8 +412,8 @@ test.describe('open session', () => {
     await expect.poll(() => terminalHasFocus(page)).toBe(true);
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-4, AppLayout: with no list entry the focus goes to "Nuova sessione" in the rail
-  test('Ctrl+Shift+L with an empty list moves the focus to "Nuova sessione" in the rail', async ({ page, request }) => {
+  // plan-claude_sessions_client-ui_redesign/REQ-4, AppLayout: with no list entry the focus goes to "New Claude Code Session" in the rail
+  test('Ctrl+Shift+L with an empty list moves the focus to "New Claude Code Session" in the rail', async ({ page, request }) => {
     const folder = await newFolder('leave-without-entry');
     const id = await startViaApi(request, folder);
     await page.route(
@@ -441,7 +441,7 @@ test.describe('open session', () => {
 
     await page.keyboard.press('Control+Shift+L');
 
-    await expect(button(rail(page), 'Nuova sessione')).toBeFocused();
+    await expect(button(rail(page), 'New Claude Code Session')).toBeFocused();
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-5, SessionView: the terminal area shows the focus ring only while it has the focus
@@ -468,58 +468,58 @@ test.describe('open session', () => {
 
 test.describe('stop', () => {
   // plan-claude_sessions_client-ui_redesign/REQ-31, REQ-32: the human acceptance scenario of the stop
-  test('"Termina" shows the stop in progress, then the header shows "Terminata" and "Termina" is gone', async ({ page, request }) => {
+  test('"Terminate" shows the stop in progress, then the header shows "Ended" and "Terminate" is gone', async ({ page, request }) => {
     const { id, folder } = await openSession(page, request, 'stop-progress');
-    await expect(entry(page, folder)).toContainText('In attesa');
+    await expect(entry(page, folder)).toContainText('Idle');
     const held = await hold(page, `**/api/sessions/${id}/stop`, 'POST');
 
-    await button(header(page), 'Termina').click();
+    await button(header(page), 'Terminate').click();
 
     await expect.poll(held.seen).toBe(1);
-    await isBusy(button(header(page), 'Termina'));
+    await isBusy(button(header(page), 'Terminate'));
 
     held.release();
 
-    await expect(header(page)).toContainText('Terminata');
-    await expect(button(page.locator('body'), 'Termina')).toHaveCount(0);
+    await expect(header(page)).toContainText('Ended');
+    await expect(button(page.locator('body'), 'Terminate')).toHaveCount(0);
   });
 
   // StopSessionButton: busy stays after a 2xx answer until the state is ended
-  test('"Termina" stays busy after the server accepts the stop, until the session has ended', async ({ page, request }) => {
+  test('"Terminate" stays busy after the server accepts the stop, until the session has ended', async ({ page, request }) => {
     const { id } = await openSession(page, request, 'stop-accepted');
     await page.route(`**/api/sessions/${id}/stop`, (route) => route.fulfill({ status: 202, body: '' }));
 
-    await button(header(page), 'Termina').click();
+    await button(header(page), 'Terminate').click();
     await page.waitForTimeout(800);
 
-    await isBusy(button(header(page), 'Termina'));
-    await expect(header(page)).not.toContainText('Terminata');
+    await isBusy(button(header(page), 'Terminate'));
+    await expect(header(page)).not.toContainText('Ended');
 
     await page.unroute(`**/api/sessions/${id}/stop`);
     expect((await request.post(`/api/sessions/${id}/stop`)).status()).toBe(202);
 
-    await expect(header(page)).toContainText('Terminata');
-    await expect(button(page.locator('body'), 'Termina')).toHaveCount(0);
+    await expect(header(page)).toContainText('Ended');
+    await expect(button(page.locator('body'), 'Terminate')).toHaveCount(0);
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-30, REQ-32, StopSessionButton: a failed stop, then the next request hides its message
-  test('a failed stop shows its error next to an enabled "Termina", and the next stop request hides it', async ({ page, request }) => {
+  test('a failed stop shows its error next to an enabled "Terminate", and the next stop request hides it', async ({ page, request }) => {
     const { id } = await openSession(page, request, 'stop-failed');
     await page.route(`**/api/sessions/${id}/stop`, fail(500));
 
-    await button(header(page), 'Termina').click();
+    await button(header(page), 'Terminate').click();
 
-    await expect(header(page).getByRole('alert')).toHaveText('Terminazione della sessione non riuscita.');
-    await isNotBusy(button(header(page), 'Termina'));
+    await expect(header(page).getByRole('alert')).toHaveText('Could not terminate the session.');
+    await isNotBusy(button(header(page), 'Terminate'));
 
     await page.unroute(`**/api/sessions/${id}/stop`);
     const held = await hold(page, `**/api/sessions/${id}/stop`, 'POST');
-    await button(header(page), 'Termina').click();
+    await button(header(page), 'Terminate').click();
     await expect.poll(held.seen).toBe(1);
 
     await expect(mainArea(page).getByRole('alert')).toHaveCount(0);
     held.release();
-    await expect(header(page)).toContainText('Terminata');
+    await expect(header(page)).toContainText('Ended');
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-30, StopSessionButton: a network error is a failed stop
@@ -527,36 +527,36 @@ test.describe('stop', () => {
     const { id } = await openSession(page, request, 'stop-network');
     await page.route(`**/api/sessions/${id}/stop`, (route) => route.abort());
 
-    await button(header(page), 'Termina').click();
+    await button(header(page), 'Terminate').click();
 
-    await expect(header(page).getByRole('alert')).toHaveText('Terminazione della sessione non riuscita.');
-    await isNotBusy(button(header(page), 'Termina'));
+    await expect(header(page).getByRole('alert')).toHaveText('Could not terminate the session.');
+    await isNotBusy(button(header(page), 'Terminate'));
   });
 });
 
 test.describe('folder chooser', () => {
   // plan-claude_sessions_client-ui_redesign/REQ-30, REQ-32: the human acceptance scenario of a failed start
-  test('a start in a folder that does not exist keeps the chooser open with "La cartella non esiste." in the error look', async ({ page }) => {
+  test('a start in a folder that does not exist keeps the chooser open with "The folder does not exist." in the error look', async ({ page }) => {
     await page.goto('/');
     await openChooser(page);
     await pathField(page).fill(path.join(projectsRoot, 'missing'));
 
-    await button(chooser(page), 'Avvia sessione').click();
+    await button(chooser(page), 'Start Session').click();
 
     const alert = chooser(page).getByRole('alert');
-    await expect(alert).toHaveText('La cartella non esiste.');
+    await expect(alert).toHaveText('The folder does not exist.');
     await expect(chooser(page)).toBeVisible();
     await expect(alert.locator('svg')).toHaveCount(1);
     await expectLook(page, alert, '--color-error', '--color-error');
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-29, FolderChooser: "Caricamento…" under the list on every listing
-  test('every folder listing shows "Caricamento…" under the list until it arrives', async ({ page }) => {
+  // plan-claude_sessions_client-ui_redesign/REQ-29, FolderChooser: "Loading…" under the list on every listing
+  test('every folder listing shows "Loading…" under the list until it arrives', async ({ page }) => {
     const root = await newFolder('listing/root');
     await newFolder('listing/root/sub');
     await page.goto('/');
     const first = await hold(page, '**/api/folders**', 'GET');
-    await button(rail(page), 'Nuova sessione').click();
+    await button(rail(page), 'New Claude Code Session').click();
     await expect(loading(chooser(page))).toBeVisible();
     first.release();
     await expect(pathField(page)).toHaveValue(os.homedir());
@@ -577,34 +577,34 @@ test.describe('folder chooser', () => {
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-30, FolderChooser: any other listing failure
-  test('a listing that fails for another reason shows "Lettura della cartella non riuscita."', async ({ page }) => {
+  test('a listing that fails for another reason shows "Could not read the folder."', async ({ page }) => {
     await page.route('**/api/folders**', fail(500));
     await page.goto('/');
 
-    await button(rail(page), 'Nuova sessione').click();
+    await button(rail(page), 'New Claude Code Session').click();
 
-    await expect(chooser(page).getByRole('alert')).toHaveText('Lettura della cartella non riuscita.');
+    await expect(chooser(page).getByRole('alert')).toHaveText('Could not read the folder.');
     await expect(chooser(page)).toBeVisible();
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-31, REQ-32, FolderChooser: the start in progress, then its failure
-  test('"Avvia sessione" is busy while the start runs; a failed start shows "Avvio della sessione non riuscito." and enables it again', async ({ page }) => {
+  test('"Start Session" is busy while the start runs; a failed start shows "Could not start the session." and enables it again', async ({ page }) => {
     const folder = await newFolder('start-busy');
     await page.goto('/');
     await openChooser(page);
     await listFolder(page, folder);
     const held = await hold(page, '**/api/sessions', 'POST');
 
-    await button(chooser(page), 'Avvia sessione').click();
+    await button(chooser(page), 'Start Session').click();
 
     await expect.poll(held.seen).toBe(1);
-    await isBusy(button(chooser(page), 'Avvia sessione'));
+    await isBusy(button(chooser(page), 'Start Session'));
     await expect(chooser(page).getByRole('alert')).toHaveCount(0);
 
     held.release(fail(500));
 
-    await expect(chooser(page).getByRole('alert')).toHaveText('Avvio della sessione non riuscito.');
-    await isNotBusy(button(chooser(page), 'Avvia sessione'));
+    await expect(chooser(page).getByRole('alert')).toHaveText('Could not start the session.');
+    await isNotBusy(button(chooser(page), 'Start Session'));
     await expect(chooser(page)).toBeVisible();
     await expect(terminal(page)).toHaveCount(0);
   });
@@ -627,54 +627,54 @@ test.describe('folder chooser', () => {
 });
 
 test.describe('resume history', () => {
-  // plan-claude_sessions_client-ui_redesign/REQ-29, ResumeDialog: "Caricamento…" while the past sessions load
-  test('shows "Caricamento…" while the past sessions load', async ({ page }) => {
+  // plan-claude_sessions_client-ui_redesign/REQ-29, ResumeDialog: "Loading…" while the past sessions load
+  test('shows "Loading…" while the past sessions load', async ({ page }) => {
     const held = await hold(page, '**/api/past-sessions', 'GET');
     await page.goto('/');
 
-    await button(rail(page), 'Riprendi').click();
+    await button(rail(page), 'Resume').click();
 
     await expect(loading(history(page))).toBeVisible();
     held.release((route) => route.fulfill({ json: [] }));
-    await expect(history(page)).toContainText('Nessuna sessione da riprendere.');
+    await expect(history(page)).toContainText('No sessions to resume.');
     await expect(loading(history(page))).toHaveCount(0);
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-30, ResumeDialog: any other failure of the loading
-  test('a list that does not load shows "Caricamento delle sessioni passate non riuscito."', async ({ page }) => {
+  test('a list that does not load shows "Could not load the past sessions."', async ({ page }) => {
     await page.route('**/api/past-sessions', fail(500));
     await page.goto('/');
 
-    await button(rail(page), 'Riprendi').click();
+    await button(rail(page), 'Resume').click();
 
-    await expect(history(page).getByRole('alert')).toHaveText('Caricamento delle sessioni passate non riuscito.');
+    await expect(history(page).getByRole('alert')).toHaveText('Could not load the past sessions.');
     await expect(loading(history(page))).toHaveCount(0);
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-31, REQ-32, ResumeDialog: the resume in progress, then its failure
-  test('"Riprendi" is busy while the resume runs; a failed resume shows "Ripresa della sessione non riuscita."', async ({ page }) => {
+  test('"Resume" is busy while the resume runs; a failed resume shows "Could not resume the session."', async ({ page }) => {
     await page.route('**/api/past-sessions', (route) => route.fulfill({ json: pastSessions }));
     await page.goto('/');
-    await button(rail(page), 'Riprendi').click();
+    await button(rail(page), 'Resume').click();
     await history(page).getByRole('radio', { name: 'Prima sessione passata', exact: true }).click();
     const held = await hold(page, '**/api/past-sessions/*/resume', 'POST');
 
-    await button(history(page), 'Riprendi').click();
+    await button(history(page), 'Resume').click();
 
     await expect.poll(held.seen).toBe(1);
-    await isBusy(button(history(page), 'Riprendi'));
+    await isBusy(button(history(page), 'Resume'));
 
     held.release(fail(500));
 
-    await expect(history(page).getByRole('alert')).toHaveText('Ripresa della sessione non riuscita.');
+    await expect(history(page).getByRole('alert')).toHaveText('Could not resume the session.');
     await expect(history(page)).toBeVisible();
-    await isNotBusy(button(history(page), 'Riprendi'));
+    await isNotBusy(button(history(page), 'Resume'));
   });
 });
 
 test.describe('external session', () => {
-  // plan-claude_sessions_client-ui_redesign/REQ-29, ConversationView: "Caricamento…" before the first frame
-  test('the conversation shows "Caricamento…" until its first frame', async ({ page }) => {
+  // plan-claude_sessions_client-ui_redesign/REQ-29, ConversationView: "Loading…" before the first frame
+  test('the conversation shows "Loading…" until its first frame', async ({ page }) => {
     let conversation: WebSocketRoute | undefined;
     await withExternalEntry(page, (ws) => (conversation = ws));
     await page.goto('/');
@@ -683,43 +683,43 @@ test.describe('external session', () => {
     await expect(loading(mainArea(page))).toBeVisible();
     conversation!.send(JSON.stringify({ type: 'items', items: [] }));
 
-    await expect(mainArea(page)).toContainText('Nessun messaggio.');
+    await expect(mainArea(page)).toContainText('No messages.');
     await expect(loading(mainArea(page))).toHaveCount(0);
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-30, ConversationView: the socket closes before the first frame
-  test('a conversation that closes before its first frame shows "Conversazione non disponibile."', async ({ page }) => {
+  test('a conversation that closes before its first frame shows "Conversation not available."', async ({ page }) => {
     await withExternalEntry(page, (ws) => void setTimeout(() => void ws.close({ code: 4404 }), 300));
     await page.goto('/');
 
     await entry(page, externalEntry.label).click();
 
-    await expect(mainArea(page).getByRole('alert')).toHaveText('Conversazione non disponibile.');
+    await expect(mainArea(page).getByRole('alert')).toHaveText('Conversation not available.');
     await expect(loading(mainArea(page))).toHaveCount(0);
   });
 
   for (const [status, error, message] of [
-    [500, 'internal', 'Ripresa della sessione non riuscita.'],
-    [404, 'session_not_found', 'La sessione non esiste più.'],
+    [500, 'internal', 'Could not resume the session.'],
+    [404, 'session_not_found', 'The session no longer exists.'],
   ] as const) {
     // plan-claude_sessions_client-ui_redesign/REQ-30, REQ-31, REQ-32, ResumeHereButton: progress, then the failure message
-    test(`"Riprendi qui" is busy while the resume runs; a ${status} ${error} shows "${message}"`, async ({ page }) => {
+    test(`"Resume Here" is busy while the resume runs; a ${status} ${error} shows "${message}"`, async ({ page }) => {
       await withExternalEntry(page, (ws) => ws.send(JSON.stringify({ type: 'items', items: [] })));
       await page.goto('/');
       await entry(page, externalEntry.label).click();
-      await expect(mainArea(page)).toContainText('Nessun messaggio.');
+      await expect(mainArea(page)).toContainText('No messages.');
       const held = await hold(page, `**/api/past-sessions/${externalEntry.id}/resume`, 'POST');
 
-      await button(mainArea(page), 'Riprendi qui').click();
-      await button(warning(page), 'Riprendi comunque').click();
+      await button(mainArea(page), 'Resume Here').click();
+      await button(warning(page), 'Resume Anyway').click();
 
       await expect.poll(held.seen).toBe(1);
-      await isBusy(button(mainArea(page), 'Riprendi qui'));
+      await isBusy(button(mainArea(page), 'Resume Here'));
 
       held.release(fail(status, error));
 
       await expect(mainArea(page).getByRole('alert')).toHaveText(message);
-      await isNotBusy(button(mainArea(page), 'Riprendi qui'));
+      await isNotBusy(button(mainArea(page), 'Resume Here'));
     });
   }
 });
@@ -749,7 +749,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expectLook(page, list(page).getByRole('alert'), '--color-error');
 
       await page.route('**/api/past-sessions', fail(500));
-      await button(rail(page), 'Riprendi').click();
+      await button(rail(page), 'Resume').click();
       await expect(history(page).getByRole('alert')).toBeVisible();
       await expectLook(page, history(page).getByRole('alert'), '--color-error', '--color-error');
     });
@@ -778,15 +778,15 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/');
       await expect(loading(list(page))).toHaveCount(0);
 
-      await pressUntilFocused(page, button(rail(page), 'Nuova sessione'));
-      await expectFocusMarked(page, '"Nuova sessione"');
+      await pressUntilFocused(page, button(rail(page), 'New Claude Code Session'));
+      await expectFocusMarked(page, '"New Claude Code Session"');
       await page.keyboard.press('Enter');
       await expect(pathField(page)).toBeFocused();
       await expectFieldOutlined(page);
       await page.keyboard.press('Escape');
       await expect(chooser(page)).toHaveCount(0);
-      await expect(button(rail(page), 'Nuova sessione')).toBeFocused();
-      await expectFocusMarked(page, '"Nuova sessione" after Esc');
+      await expect(button(rail(page), 'New Claude Code Session')).toBeFocused();
+      await expectFocusMarked(page, '"New Claude Code Session" after Esc');
 
       await page.keyboard.press('Enter');
       await expect(pathField(page)).toBeFocused();
@@ -795,13 +795,13 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.keyboard.press('Enter');
       await expect(pathField(page)).toHaveValue(folder);
       await expect(loading(chooser(page))).toHaveCount(0);
-      await pressUntilFocused(page, button(chooser(page), 'Avvia sessione'));
-      await expectFocusMarked(page, '"Avvia sessione"');
+      await pressUntilFocused(page, button(chooser(page), 'Start Session'));
+      await expectFocusMarked(page, '"Start Session"');
       const started = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/sessions' && r.request().method() === 'POST');
       await page.keyboard.press('Enter');
       createdIds.push(((await (await started).json()) as { id: string }).id);
       await expect(terminal(page)).toContainText('READY');
-      await expect(entry(page, folder)).toContainText('In attesa');
+      await expect(entry(page, folder)).toContainText('Idle');
 
       await pressUntilFocused(page, page.locator('.xterm-helper-textarea'));
       await expectFocusMarked(page, 'the terminal');
@@ -809,23 +809,23 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(entry(page, folder)).toBeFocused();
       await expectFocusMarked(page, 'the open entry');
 
-      await pressUntilFocused(page, button(header(page), 'Interrompi'));
-      await expectFocusMarked(page, '"Interrompi"');
-      await pressUntilFocused(page, button(header(page), 'Termina'));
-      await expectFocusMarked(page, '"Termina"');
+      await pressUntilFocused(page, button(header(page), 'Interrupt'));
+      await expectFocusMarked(page, '"Interrupt"');
+      await pressUntilFocused(page, button(header(page), 'Terminate'));
+      await expectFocusMarked(page, '"Terminate"');
       await page.keyboard.press('Enter');
-      await expect(header(page)).toContainText('Terminata');
+      await expect(header(page)).toContainText('Ended');
 
-      await pressUntilFocused(page, button(rail(page), 'Riprendi'), 'Shift+Tab');
-      await expectFocusMarked(page, '"Riprendi"');
+      await pressUntilFocused(page, button(rail(page), 'Resume'), 'Shift+Tab');
+      await expectFocusMarked(page, '"Resume"');
       await page.keyboard.press('Enter');
-      await expect(history(page)).toContainText('Nessuna sessione da riprendere.');
+      await expect(history(page)).toContainText('No sessions to resume.');
       await expect.poll(() => history(page).evaluate((el) => el.contains(document.activeElement))).toBe(true);
-      await pressUntilFocused(page, button(history(page), 'Annulla'));
-      await expectFocusMarked(page, '"Annulla" in the resume history');
+      await pressUntilFocused(page, button(history(page), 'Cancel'));
+      await expectFocusMarked(page, '"Cancel" in the resume history');
       await page.keyboard.press('Escape');
       await expect(history(page)).toHaveCount(0);
-      await expect(button(rail(page), 'Riprendi')).toBeFocused();
+      await expect(button(rail(page), 'Resume')).toBeFocused();
     });
   });
 }

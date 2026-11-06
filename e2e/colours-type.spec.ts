@@ -23,7 +23,7 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
-const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const mainArea = (page: Page) => page.getByRole('main');
@@ -176,13 +176,13 @@ for (const scheme of ['light', 'dark'] as const) {
     });
 
     // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-1, REQ-5 (human acceptance: light-blue accent, near-black page)
-    test('"Nuova sessione" is light blue and the page is the near-black canvas', async ({ page }) => {
+    test('"New Session" is light blue and the page is the near-black canvas', async ({ page }) => {
       await page.goto('/');
-      const button = emptyButton(page, 'Nuova sessione');
+      const button = emptyButton(page, 'New Session');
       await expect(button).toBeVisible();
       await page.mouse.move(0, 0);
       const accent = await resolved(page, await button.evaluate((el) => getComputedStyle(el).backgroundColor));
-      expect(hueDistance(hsl(accent).h, 205), `"Nuova sessione" hue ${hsl(accent).h}`).toBeLessThanOrEqual(2);
+      expect(hueDistance(hsl(accent).h, 205), `"New Session" hue ${hsl(accent).h}`).toBeLessThanOrEqual(2);
       const surface = await resolved(page, await effectiveBackground(page.locator('body')));
       expect(luminance(surface), 'near-black canvas').toBeLessThan(0.01);
     });
@@ -292,15 +292,15 @@ test('the font licence and the third-party notices cover Roboto Flex and Roboto 
 // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-10: UI text in Roboto Flex
 test('the UI text is in Roboto Flex', async ({ page }) => {
   await page.goto('/');
-  await expect(emptyButton(page, 'Nuova sessione')).toBeVisible();
+  await expect(emptyButton(page, 'New Session')).toBeVisible();
   const family = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontFamily);
   expect(await family(page.locator('body'))).toMatch(/^["']?Roboto Flex["']?,/);
-  for (const name of ['Sessioni', 'Riprendi']) {
-    const railButton = page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name, exact: true });
+  for (const name of ['Sessions', 'Resume']) {
+    const railButton = page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name, exact: true });
     expect(await family(railButton), name).toMatch(/^["']?Roboto Flex["']?,/);
   }
-  expect(await family(page.getByText('Nessuna sessione aperta.'))).toMatch(/^["']?Roboto Flex["']?,/);
-  expect(await family(emptyButton(page, 'Riprendi sessione'))).toMatch(/^["']?Roboto Flex["']?,/);
+  expect(await family(page.getByText('No open session.'))).toMatch(/^["']?Roboto Flex["']?,/);
+  expect(await family(emptyButton(page, 'Resume Session'))).toMatch(/^["']?Roboto Flex["']?,/);
 });
 
 // WebEntry "Rules": the Material 3 type classes, `.brand`, `.btn`, `.chip` and `.mono` no longer exist
@@ -324,8 +324,8 @@ test('no stylesheet defines the Material 3 type classes, .brand, .btn, .chip or 
 // EmptyState "Shows", AreaState `full`: tile, Roboto Flex 24/32 title, 12/16 secondary text, the accent and the neutral buttons
 test('the empty state is the full area-state block with the accent and the neutral buttons', async ({ page }) => {
   await page.goto('/');
-  const title = mainArea(page).getByText('Nessuna sessione aperta.', { exact: true });
-  const hint = mainArea(page).getByText('Avvia una nuova sessione o riprendine una passata.', { exact: true });
+  const title = mainArea(page).getByText('No open session.', { exact: true });
+  const hint = mainArea(page).getByText('Start a new session or resume a past one.', { exact: true });
   await expect(title).toBeVisible();
   await page.mouse.move(0, 0);
   const t = await tokens(page, ['--accent-primary', '--on-accent', '--bg-surface-1', '--bg-surface-2', '--text-primary', '--text-secondary']);
@@ -352,8 +352,8 @@ test('the empty state is the full area-state block with the accent and the neutr
   expect([iconBox.width, iconBox.height]).toEqual([24, 24]);
   expect(await rgb(await style(icon, 'color')), 'icon in the accent').toEqual(await rgb(t['--accent-primary']!));
 
-  const filled = emptyButton(page, 'Nuova sessione');
-  const neutral = emptyButton(page, 'Riprendi sessione');
+  const filled = emptyButton(page, 'New Session');
+  const neutral = emptyButton(page, 'Resume Session');
   for (const b of [filled, neutral]) {
     expect([await cssPx(b, 'padding-top'), await cssPx(b, 'padding-left'), await cssPx(b, 'border-top-left-radius'), await cssPx(b, 'font-size')]).toEqual([8, 16, 8, 12]);
   }
@@ -366,7 +366,7 @@ test('the empty state is the full area-state block with the accent and the neutr
 // WebEntry `.button-neutral`: on hover, surface 3 and the strong border
 test('the neutral empty state button takes surface 3 and the strong border on hover', async ({ page }) => {
   await page.goto('/');
-  const b = emptyButton(page, 'Riprendi sessione');
+  const b = emptyButton(page, 'Resume Session');
   await expect(b).toBeVisible();
   const t = await tokens(page, ['--bg-surface-3', '--border-strong']);
   await b.hover();
@@ -429,5 +429,5 @@ test('the open terminal takes --term-bg and --term-fg, and a system theme change
 
   expect(sockets, 'no reconnect').toBe(opened);
   await expect(terminal(page)).toContainText('READY');
-  await expect(terminal(page)).not.toContainText('[Sessione disconnessa]');
+  await expect(terminal(page)).not.toContainText('[Session disconnected]');
 });

@@ -22,12 +22,12 @@ describe('WarningDialog', () => {
     expect(html).not.toContain('role="dialog"');
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-48: "[Esc]", "Annulla" neutral, then the rose primary action
-  it('error (default) → "[Esc]", "Annulla" as .button-neutral and the primary action as .button-danger', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-48: "[Esc]", "Cancel" neutral, then the rose primary action
+  it('error (default) → "[Esc]", "Cancel" as .button-neutral and the primary action as .button-danger', () => {
     const [esc, cancel, primary, ...rest] = buttons(render());
     expect(rest).toEqual([]);
     expect(esc?.label).toBe('[Esc]');
-    expect(cancel?.label).toBe('Annulla');
+    expect(cancel?.label).toBe('Cancel');
     expect(classes(cancel?.attrs ?? '')).toContain('button-neutral');
     expect(primary?.label).toBe('Procedi');
     expect(classes(primary?.attrs ?? '')).toContain('button-danger');

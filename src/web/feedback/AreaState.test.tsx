@@ -29,7 +29,7 @@ describe('AreaState', () => {
   // AreaState "Shows": the text is the title, then the optional text; the tile adds none
   it('has the title, then the text, as its only text', () => {
     expect(textOf(renderToStaticMarkup(<AreaState kind="error" title="Errore." text="Riprova." />))).toBe('Errore. Riprova.');
-    expect(textOf(renderToStaticMarkup(<AreaState kind="loading" title="Caricamento…" />))).toBe('Caricamento…');
+    expect(textOf(renderToStaticMarkup(<AreaState kind="loading" title="Loading…" />))).toBe('Loading…');
   });
 
   // AreaState "Shows": the tile is decorative and comes first

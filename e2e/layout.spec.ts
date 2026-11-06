@@ -38,21 +38,21 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione principale' });
-const panel = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' });
+const panel = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const mainArea = (page: Page) => page.getByRole('main');
 const list = (page: Page) => panel(page).locator('.session-list');
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
-const panelTitle = (page: Page) => panel(page).getByRole('heading', { level: 1, name: 'Sessioni', exact: true });
+const panelTitle = (page: Page) => panel(page).getByRole('heading', { level: 1, name: 'Sessions', exact: true });
 const topBar = (page: Page) => page.getByRole('banner');
 const brand = (page: Page) => topBar(page).getByText('Vexel', { exact: true });
-const chooser = (page: Page) => page.getByRole('form', { name: 'Scegli la cartella del progetto' });
-const pathField = (page: Page) => page.getByRole('textbox', { name: 'Cartella del progetto', exact: true });
-const resumeDialog = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessione' });
+const chooser = (page: Page) => page.getByRole('form', { name: 'Choose the Project Folder' });
+const pathField = (page: Page) => page.getByRole('textbox', { name: 'Working Directory Path', exact: true });
+const resumeDialog = (page: Page) => page.getByRole('dialog', { name: 'Resume Session' });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const button = (scope: Locator, name: string) => scope.getByRole('button', { name, exact: true });
-const emptyTitle = (page: Page) => mainArea(page).getByText('Nessuna sessione aperta.', { exact: true });
-const emptyHint = (page: Page) => mainArea(page).getByText('Avvia una nuova sessione o riprendine una passata.', { exact: true });
+const emptyTitle = (page: Page) => mainArea(page).getByText('No open session.', { exact: true });
+const emptyHint = (page: Page) => mainArea(page).getByText('Start a new session or resume a past one.', { exact: true });
 
 async function makeFolder(name: string): Promise<string> {
   const folder = path.join(projectsRoot, name);
@@ -148,16 +148,16 @@ async function expectPageFits(page: Page, width: number): Promise<void> {
   expect(await horizontalOverflow(mainArea(page)), 'main content inside the main area').toEqual([]);
   const head: Record<string, Locator> = {
     brand: brand(page),
-    'top bar Nuova sessione': button(topBar(page), 'Nuova sessione'),
+    'top bar New Session': button(topBar(page), 'New Session'),
     title: panelTitle(page),
-    'rail Nuova sessione': button(rail(page), 'Nuova sessione'),
-    'rail Sessioni': button(rail(page), 'Sessioni'),
-    'rail Riprendi': button(rail(page), 'Riprendi'),
+    'rail New Claude Code Session': button(rail(page), 'New Claude Code Session'),
+    'rail Sessions': button(rail(page), 'Sessions'),
+    'rail Resume': button(rail(page), 'Resume'),
     list: list(page),
   };
   await expectNoOverlap(head);
   // Sessions of other spec files can make the chip appear or vanish at any time: check it only while it is shown.
-  const [chip] = await panel(page).getByRole('status').filter({ hasText: 'richiede input' }).all();
+  const [chip] = await panel(page).getByRole('status').filter({ hasText: /needs? input/ }).all();
   const chipBox = chip ? await chip.boundingBox({ timeout: 1000 }).catch(() => null) : null;
   if (chipBox) {
     for (const [name, locator] of Object.entries(head)) {
@@ -198,7 +198,7 @@ test('with no session open the main area shows the empty state with its icon, te
   await expect(decorative).toBeVisible();
   await expect(decorative).toHaveAttribute('aria-hidden', 'true');
 
-  for (const name of ['Nuova sessione', 'Riprendi sessione']) {
+  for (const name of ['New Session', 'Resume Session']) {
     const action = button(mainArea(page), name);
     await expect(action).toBeVisible();
     await expect(action.locator('svg.icon')).toHaveCount(1);
@@ -206,30 +206,30 @@ test('with no session open the main area shows the empty state with its icon, te
   }
 
   await page.mouse.move(0, 0);
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50: "Nuova sessione" is the accent button
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50: "New Session" is the accent button
   const primary = await computedColour(page, 'var(--accent-primary)');
   const bg = (l: Locator) => l.evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(await bg(button(mainArea(page), 'Nuova sessione')), '"Nuova sessione" has the primary look').toBe(primary);
-  expect(await bg(button(mainArea(page), 'Riprendi sessione')), '"Riprendi sessione" is not primary').not.toBe(primary);
+  expect(await bg(button(mainArea(page), 'New Session')), '"New Session" has the primary look').toBe(primary);
+  expect(await bg(button(mainArea(page), 'Resume Session')), '"Resume Session" is not primary').not.toBe(primary);
 });
 
-// plan-claude_sessions_client-ui_redesign/REQ-9, REQ-1; AppLayout: "Nuova sessione" in the EmptyState opens FolderChooser
-test('"Nuova sessione" in the empty state opens the folder chooser and the started session becomes the open one', async ({ page }) => {
+// plan-claude_sessions_client-ui_redesign/REQ-9, REQ-1; AppLayout: "New Session" in the EmptyState opens FolderChooser
+test('"New Session" in the empty state opens the folder chooser and the started session becomes the open one', async ({ page }) => {
   const folder = await makeFolder('from-empty-state');
   await page.goto('/');
 
-  await button(mainArea(page), 'Nuova sessione').click();
+  await button(mainArea(page), 'New Session').click();
   await expect(chooser(page)).toBeVisible();
   await expect(pathField(page)).toHaveValue(os.homedir());
-  await page.getByRole('button', { name: 'Annulla' }).click();
+  await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(chooser(page)).toBeHidden();
   await expect(emptyTitle(page)).toBeVisible();
 
-  await button(mainArea(page), 'Nuova sessione').click();
+  await button(mainArea(page), 'New Session').click();
   await expect(pathField(page)).toHaveValue(os.homedir());
   await pathField(page).fill(folder);
   const started = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/sessions' && r.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Avvia sessione' }).click();
+  await page.getByRole('button', { name: 'Start Session' }).click();
   createdIds.push(((await (await started).json()) as { id: string }).id);
   await expect(chooser(page)).toBeHidden();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
@@ -237,12 +237,12 @@ test('"Nuova sessione" in the empty state opens the folder chooser and the start
   await expect(entry(page, folder)).toHaveAttribute('aria-current', 'true');
 });
 
-// plan-claude_sessions_client-ui_redesign/REQ-9, REQ-4; AppLayout: "Riprendi sessione" in the EmptyState opens ResumeDialog
-test('"Riprendi sessione" in the empty state opens the resume dialog; "Annulla" brings the empty state back', async ({ page }) => {
+// plan-claude_sessions_client-ui_redesign/REQ-9, REQ-4; AppLayout: "Resume Session" in the EmptyState opens ResumeDialog
+test('"Resume Session" in the empty state opens the resume dialog; "Cancel" brings the empty state back', async ({ page }) => {
   await page.goto('/');
-  await button(mainArea(page), 'Riprendi sessione').click();
+  await button(mainArea(page), 'Resume Session').click();
   await expect(resumeDialog(page)).toBeVisible();
-  await resumeDialog(page).getByRole('button', { name: 'Annulla', exact: true }).click();
+  await resumeDialog(page).getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(resumeDialog(page)).toBeHidden();
   await expect(emptyTitle(page)).toBeVisible();
 });
@@ -251,19 +251,19 @@ test('"Riprendi sessione" in the empty state opens the resume dialog; "Annulla" 
 test('the empty state buttons are reached with Tab and triggered with Enter and Space', async ({ page }) => {
   await page.goto('/');
   await expect(emptyTitle(page)).toBeVisible();
-  await tabTo(page, button(mainArea(page), 'Nuova sessione'));
+  await tabTo(page, button(mainArea(page), 'New Session'));
   await page.keyboard.press('Enter');
   await expect(chooser(page)).toBeVisible();
 
   await page.goto('/');
   await expect(emptyTitle(page)).toBeVisible();
-  await tabTo(page, button(mainArea(page), 'Riprendi sessione'));
+  await tabTo(page, button(mainArea(page), 'Resume Session'));
   await page.keyboard.press('Space');
   await expect(resumeDialog(page)).toBeVisible();
 });
 
-// AppLayout "Description", plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14: the brand sits in the top bar; the list panel holds the title "Sessioni" and the counter above the list
-test('the top bar holds the brand above the page; the list panel holds the title "Sessioni" and the counter above the list', async ({ page }) => {
+// AppLayout "Description", plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14: the brand sits in the top bar; the list panel holds the title "Sessions" and the counter above the list
+test('the top bar holds the brand above the page; the list panel holds the title "Sessions" and the counter above the list', async ({ page }) => {
   await page.goto('/');
   await expect(topBar(page)).toHaveCount(1);
   await expect(brand(page)).toBeVisible();
@@ -342,8 +342,8 @@ for (const width of [1280, 3840]) {
       icon: mainArea(page).locator('svg.icon:not(button svg)'),
       title: emptyTitle(page),
       hint: emptyHint(page),
-      'Nuova sessione': button(mainArea(page), 'Nuova sessione'),
-      'Riprendi sessione': button(mainArea(page), 'Riprendi sessione'),
+      'New Session': button(mainArea(page), 'New Session'),
+      'Resume Session': button(mainArea(page), 'Resume Session'),
     });
   });
 
@@ -355,8 +355,8 @@ for (const width of [1280, 3840]) {
     await openFromList(page, folder);
     await expectPageFits(page, width);
     await expectNoOverlap({
-      Interrompi: button(mainArea(page), 'Interrompi'),
-      Termina: button(mainArea(page), 'Termina'),
+      Interrupt: button(mainArea(page), 'Interrupt'),
+      Terminate: button(mainArea(page), 'Terminate'),
       terminal: mainArea(page).locator('.xterm'),
     });
     const side = await box(panel(page));
@@ -374,11 +374,11 @@ test('when the entries do not fit, only the list scrolls and the rail and the pa
 
   const top = {
     brand: brand(page),
-    'top bar new': button(topBar(page), 'Nuova sessione'),
+    'top bar new': button(topBar(page), 'New Session'),
     title: panelTitle(page),
-    new: button(rail(page), 'Nuova sessione'),
-    sessions: button(rail(page), 'Sessioni'),
-    resume: button(rail(page), 'Riprendi'),
+    new: button(rail(page), 'New Claude Code Session'),
+    sessions: button(rail(page), 'Sessions'),
+    resume: button(rail(page), 'Resume'),
   };
   const before = await Promise.all(Object.values(top).map(box));
   const lastEntry = list(page).getByRole('button').last();

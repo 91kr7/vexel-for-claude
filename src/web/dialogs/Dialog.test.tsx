@@ -33,16 +33,16 @@ describe('Dialog', () => {
     expect(html).not.toContain('role="alertdialog"');
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44, plan-claude_sessions_client-ui_redesign/REQ-25: "[Esc]" in the header, then "Annulla" and the primary action
-  it('has "[Esc]" in the header, then "Annulla" and the primary action', () => {
-    expect(buttons(render()).map((b) => b.label)).toEqual(['[Esc]', 'Annulla', 'Conferma']);
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44, plan-claude_sessions_client-ui_redesign/REQ-25: "[Esc]" in the header, then "Cancel" and the primary action
+  it('has "[Esc]" in the header, then "Cancel" and the primary action', () => {
+    expect(buttons(render()).map((b) => b.label)).toEqual(['[Esc]', 'Cancel', 'Conferma']);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44, Dialog "Actions": the "[Esc]" button is named "Chiudi (Esc)" and sits after the title
-  it('names "[Esc]" "Chiudi (Esc)" and places it after the title', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44, Dialog "Actions": the "[Esc]" button is named "Close (Esc)" and sits after the title
+  it('names "[Esc]" "Close (Esc)" and places it after the title', () => {
     const html = render();
     const esc = button(html, '[Esc]');
-    expect(attr(esc?.attrs ?? '', 'aria-label')).toBe('Chiudi (Esc)');
+    expect(attr(esc?.attrs ?? '', 'aria-label')).toBe('Close (Esc)');
     expect(attr(esc?.attrs ?? '', 'type')).toBe('button');
     expect(html.indexOf('[Esc]')).toBeGreaterThan(html.indexOf('Titolo'));
   });
@@ -54,12 +54,12 @@ describe('Dialog', () => {
     expect(head).not.toContain('<svg');
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-47: "Annulla" neutral, primary action accent
-  it('styles "Annulla" as .button-neutral and the primary action as .button-primary', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-47: "Cancel" neutral, primary action accent
+  it('styles "Cancel" as .button-neutral and the primary action as .button-primary', () => {
     const html = render();
     expect(classes(button(html, 'Conferma')?.attrs ?? '')).toContain('button-primary');
-    expect(classes(button(html, 'Annulla')?.attrs ?? '')).toContain('button-neutral');
-    expect(classes(button(html, 'Annulla')?.attrs ?? '')).not.toContain('button-primary');
+    expect(classes(button(html, 'Cancel')?.attrs ?? '')).toContain('button-neutral');
+    expect(classes(button(html, 'Cancel')?.attrs ?? '')).not.toContain('button-primary');
   });
 
   // Dialog: the content sits between the title and the action row
@@ -67,7 +67,7 @@ describe('Dialog', () => {
     const html = render();
     const title = html.indexOf('Titolo');
     const content = html.indexOf('Contenuto');
-    const cancel = html.indexOf('Annulla');
+    const cancel = html.indexOf('Cancel');
     expect(title).toBeGreaterThanOrEqual(0);
     expect(content).toBeGreaterThan(title);
     expect(cancel).toBeGreaterThan(content);
@@ -83,10 +83,10 @@ describe('Dialog', () => {
 
   // Dialog: the description accepts markup, and its whole text is the accessible description
   it('keeps markup in the description and describes the dialog with its text', () => {
-    const html = render({ description: <><b>billing-api</b> sta ancora lavorando.</> });
-    expect(html).toContain('<b>billing-api</b> sta ancora lavorando.');
+    const html = render({ description: <><b>billing-api</b> is still working.</> });
+    expect(html).toContain('<b>billing-api</b> is still working.');
     const describedBy = attr(roleTag(html, 'dialog'), 'aria-describedby');
-    expect(textOfId(html, describedBy ?? '')).toBe('billing-api sta ancora lavorando.');
+    expect(textOfId(html, describedBy ?? '')).toBe('billing-api is still working.');
   });
 
   // Dialog "Shows": the description sits at the top of the body, before the content
@@ -112,10 +112,10 @@ describe('Dialog', () => {
     [true, true],
     [false, false],
     [undefined, false],
-  ])('primaryDisabled=%s → primary disabled: %s, "Annulla" enabled', (primaryDisabled, disabled) => {
+  ])('primaryDisabled=%s → primary disabled: %s, "Cancel" enabled', (primaryDisabled, disabled) => {
     const html = render(primaryDisabled === undefined ? {} : { primaryDisabled });
     expect(/\sdisabled(?:=""|\s|$)/.test(button(html, 'Conferma')?.attrs ?? '')).toBe(disabled);
-    expect(button(html, 'Annulla')?.attrs).not.toMatch(/\sdisabled\b/);
+    expect(button(html, 'Cancel')?.attrs).not.toMatch(/\sdisabled\b/);
   });
 
   // Dialog: formName is the accessible name of the form that holds the body and the footer
@@ -125,7 +125,7 @@ describe('Dialog', () => {
     expect(form).not.toBeNull();
     expect(form?.[0]).toMatch(/^<form\b[^>]*\saria-label="Modulo del dialogo"/);
     expect(form?.[1]).toContain('Contenuto');
-    expect(form?.[1]).toContain('Annulla');
+    expect(form?.[1]).toContain('Cancel');
     expect(form?.[1]).toContain('Conferma');
   });
 

@@ -35,7 +35,7 @@ test.afterAll(async () => {
 });
 
 const mainArea = (page: Page) => page.getByRole('main');
-const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const view = (page: Page) => page.locator('.conversation-view');
 const header = (page: Page) => view(page).locator('.session-header');
@@ -43,8 +43,8 @@ const scroller = (page: Page) => view(page).locator('.conversation-items');
 const articles = (page: Page) => view(page).getByRole('article');
 const article = (page: Page, name: string) => view(page).getByRole('article', { name, exact: true });
 const toggle = (card: Locator) => card.getByRole('button').first();
-const newMessages = (page: Page) => view(page).getByRole('button', { name: /^(?:1 nuovo messaggio|\d+ nuovi messaggi)$/ });
-const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'richiede il tuo input' });
+const newMessages = (page: Page) => view(page).getByRole('button', { name: /^(?:1 new message|\d+ new messages)$/ });
+const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'needs your input' });
 
 const todayAt = (time: string) => `${new Date().toISOString().slice(0, 10)}T${time}:00.000Z`;
 const lines = (count: number, prefix = 'riga') => Array.from({ length: count }, (_, i) => `${prefix} ${i + 1}`).join('\n');
@@ -186,18 +186,18 @@ test.describe('Studio layout', () => {
     near(mainBox.x, 52 + 224, 'main left');
     near(mainBox.width, 1440 - 52 - 224, 'main width');
 
-    // the subbar: across the main area, 40 px high, the "Riprendi qui" button at its right
+    // the subbar: across the main area, 40 px high, the "Resume Here" button at its right
     const headBox = await box(header(page));
     near(headBox.x, mainBox.x, 'header left');
     near(headBox.y, mainBox.y, 'header top');
     near(headBox.width, mainBox.width, 'header width');
     near(headBox.height, 40, 'header height');
-    const resume = header(page).getByRole('button', { name: 'Riprendi qui', exact: true });
+    const resume = header(page).getByRole('button', { name: 'Resume Here', exact: true });
     const resumeBox = await box(resume);
-    near(resumeBox.height, 32, '"Riprendi qui" height');
+    near(resumeBox.height, 32, '"Resume Here" height');
     expect.soft(await paths(resume.locator('svg'))).toEqual(LOG_IN);
-    near((await box(resume.locator('svg'))).width, 14, '"Riprendi qui" icon width');
-    const lock = header(page).getByText('Sola lettura', { exact: true }).locator('svg');
+    near((await box(resume.locator('svg'))).width, 14, '"Resume Here" icon width');
+    const lock = header(page).getByText('Read-only', { exact: true }).locator('svg');
     expect.soft(await paths(lock)).toEqual(LOCK);
     near((await box(lock)).width, 12, 'lock icon width');
     expect(resumeBox.x + resumeBox.width).toBeLessThanOrEqual(headBox.x + headBox.width);
@@ -216,14 +216,14 @@ test.describe('Studio layout', () => {
     near(second.y, first.y + first.height + 16, 'entries 16 px apart');
 
     // messages on the left with their 24 px avatar; the tool card lines up with the message text (36 px in)
-    const userBox = await box(article(page, 'Utente'));
+    const userBox = await box(article(page, 'You'));
     const claudeBox = await box(article(page, 'Claude').first());
     near(userBox.x, claudeBox.x, 'user and Claude messages both on the left');
-    const card = await box(article(page, 'Strumento: Edit'));
+    const card = await box(article(page, 'Tool: Edit'));
     near(card.x, claudeBox.x + 36, 'tool card 36 px from the left of the column');
-    const cards = article(page, 'Strumento: Bash');
+    const cards = article(page, 'Tool: Bash');
     const bashFirst = await box(cards.first());
-    const editBox = await box(article(page, 'Strumento: Edit'));
+    const editBox = await box(article(page, 'Tool: Edit'));
     expect(editBox.y).toBeGreaterThan(bashFirst.y);
   });
 });
@@ -250,20 +250,20 @@ test('a call and its result form one card with its name chip and outcome, and no
   ]);
 
   await expect(articles(page)).toHaveCount(7);
-  const names = ['Read', 'Bash', 'Write', 'MultiEdit', 'NotebookEdit', 'Grep', 'Risultato'];
-  for (const [index, name] of names.entries()) await expect(articles(page).nth(index)).toHaveAccessibleName(`Strumento: ${name}`);
-  const card = (name: string) => article(page, `Strumento: ${name}`);
+  const names = ['Read', 'Bash', 'Write', 'MultiEdit', 'NotebookEdit', 'Grep', 'Result'];
+  for (const [index, name] of names.entries()) await expect(articles(page).nth(index)).toHaveAccessibleName(`Tool: ${name}`);
+  const card = (name: string) => article(page, `Tool: ${name}`);
   // no tool icon: the name chip identifies the tool
   for (const name of names) await expect(toggle(card(name)).locator('svg'), name).toHaveCount(0);
   for (const name of names) await expect(toggle(card(name)).getByText(name, { exact: true })).toBeVisible();
 
-  // outcome: "Fatto ▾" once the result arrived, "▾" alone before
-  await expect(toggle(card('Read'))).toContainText('Fatto ▾');
+  // outcome: "Completed ▾" once the result arrived, "▾" alone before
+  await expect(toggle(card('Read'))).toContainText('Completed ▾');
   for (const name of ['Bash', 'Write', 'MultiEdit', 'NotebookEdit', 'Grep']) {
-    await expect(toggle(card(name))).not.toContainText(/Fatto|Fallito/);
+    await expect(toggle(card(name))).not.toContainText(/Completed|Error/);
     await expect(toggle(card(name))).toContainText('▾');
   }
-  await expect(card('Risultato')).toContainText('Risultato');
+  await expect(card('Result')).toContainText('Result');
 
   // all closed; the summary stays on one line, cut, with the full text as tooltip
   for (const article of await articles(page).all()) {
@@ -278,23 +278,23 @@ test('a call and its result form one card with its name chip and outcome, and no
   // opening a call with more input loads the input only: there is no result yet
   await toggle(card('Bash')).click();
   await expect(toggle(card('Bash'))).toHaveAttribute('aria-expanded', 'true');
-  await expect(card('Bash').getByRole('status').filter({ hasText: 'Caricamento…' })).toBeVisible();
+  await expect(card('Bash').getByRole('status').filter({ hasText: 'Loading…' })).toBeVisible();
   await expect(card('Bash').locator('pre')).toHaveText(input);
   await expect(card('Bash').getByRole('status')).toHaveCount(0);
   expect(requested).toEqual([10]);
   await toggle(card('Bash')).click();
   await expect(card('Bash').locator('pre')).toHaveCount(0);
 
-  // a cut, failed result joins the card in a later frame: still one card, now red "Fallito"
+  // a cut, failed result joins the card in a later frame: still one card, now red "Error"
   send(socket, [result('b1', lines(5), { truncated: true, isError: true, ...ref(20) })]);
-  await expect(toggle(card('Bash'))).toContainText('Fallito ▾');
+  await expect(toggle(card('Bash'))).toContainText('Error ▾');
   await expect(articles(page)).toHaveCount(7);
   expect(requested).toEqual([10]);
 
   // opening it loads only the full output; the cut text and "…" show until then
   await toggle(card('Bash')).click();
   await expect(card('Bash').locator('pre')).toHaveText(`${input}\n\n${lines(5)}\n…`);
-  await expect(card('Bash').getByRole('status').filter({ hasText: 'Caricamento…' })).toBeVisible();
+  await expect(card('Bash').getByRole('status').filter({ hasText: 'Loading…' })).toBeVisible();
   await expect(card('Bash').locator('pre')).toHaveText(`${input}\n\n${lines(9)}`);
   expect(requested).toEqual([10, 20]);
 
@@ -310,8 +310,8 @@ test('a call and its result form one card with its name chip and outcome, and no
   await toggle(card('Write')).click();
   await expect(toggle(card('Write'))).toHaveAttribute('aria-expanded', 'true');
   await expect(card('Write').locator('pre')).toHaveCount(0);
-  await toggle(card('Risultato')).click();
-  await expect(card('Risultato').locator('pre')).toHaveText('senza chiamata');
+  await toggle(card('Result')).click();
+  await expect(card('Result').locator('pre')).toHaveText('senza chiamata');
   expect(requested).toEqual([10, 20]);
 
   // a card that is open when its cut result arrives loads the full output at once
@@ -321,7 +321,7 @@ test('a call and its result form one card with its name chip and outcome, and no
   await expect(card('Glob').locator('pre')).toHaveCount(0);
   send(socket, [result('gl1', lines(5, 'glob'), { truncated: true, ...ref(30) })]);
   await expect(card('Glob').locator('pre')).toHaveText(lines(7, 'glob'));
-  await expect(toggle(card('Glob'))).toContainText('Fatto');
+  await expect(toggle(card('Glob'))).toContainText('Completed');
   expect(requested).toEqual([10, 20, 30]);
 });
 
@@ -345,13 +345,13 @@ test.describe('message details', () => {
       claude('Un apice `aperto\nchiuso` su due righe'),
     ]);
 
-    // The text of a message, without its avatar ("T" or "✦") and its name line ("Tu" or "Claude", then the time).
+    // The text of a message, without its avatar ("U" or "✦") and its name line ("You" or "Claude", then the time).
     const textOf = async (message: Locator) =>
       (await message.innerText())
         .trim()
-        .replace(/^(?:T|✦)\s*/, '')
-        .replace(/^(?:Tu|Claude)\s*(?:(?:\d\d\/\d\d\/\d{4} )?\d\d:\d\d)?\s*/, '');
-    const bubbles = article(page, 'Utente');
+        .replace(/^(?:U|✦)\s*/, '')
+        .replace(/^(?:You|Claude)\s*(?:(?:\d\d\/\d\d\/\d{4} )?\d\d:\d\d)?\s*/, '');
+    const bubbles = article(page, 'You');
     await expect(bubbles).toHaveCount(4);
     await expect(bubbles.nth(0)).toContainText(`${day}/${month}/${year} 08:05`);
     for (const index of [1, 2]) await expect(bubbles.nth(index)).not.toContainText(/\d\d:\d\d/);
@@ -372,7 +372,7 @@ test.describe('message details', () => {
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-41, REQ-42, REQ-43 — scenario "The user jumps to new messages"
-test('new items while the user reads earlier content show "N nuovi messaggi" at the bottom centre; a click scrolls to the end', async ({ page }) => {
+test('new items while the user reads earlier content show "N new messages" at the bottom centre; a click scrolls to the end', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const folder = await newFolder('nuovi');
   const connection = await showSessions(page, [externalEntry('new-1', folder, 'Nuovi messaggi')]);
@@ -389,12 +389,12 @@ test('new items while the user reads earlier content show "N nuovi messaggi" at 
   const lastBox = await box(articles(page).last());
   near(lastBox.y + lastBox.height, panelBox.y + panelBox.height - 24, 'last entry 24 px above the content bottom');
 
-  // scrolled up: two new messages do not move the view and show "2 nuovi messaggi"
+  // scrolled up: two new messages do not move the view and show "2 new messages"
   await scrollTo(page, 'top');
   send(socket, [claude('Nuovo uno'), user('Nuovo due')]);
   await expect(articles(page)).toHaveCount(42);
   const button = newMessages(page);
-  await expect(button).toHaveText('2 nuovi messaggi');
+  await expect(button).toHaveText('2 new messages');
   expect(await scroller(page).evaluate((el) => el.scrollTop)).toBe(0);
   await expect(articles(page).last()).not.toBeInViewport();
 
@@ -416,16 +416,16 @@ test('new items while the user reads earlier content show "N nuovi messaggi" at 
 
   // a tool card counts as one; its result joining it adds nothing
   send(socket, [call('c9', 'Bash', 'npm test', ref(1))]);
-  await expect(button).toHaveText('3 nuovi messaggi');
+  await expect(button).toHaveText('3 new messages');
   send(socket, [result('c9', 'ok', ref(2))]);
-  await expect(toggle(article(page, 'Strumento: Bash'))).toContainText('Fatto');
-  await expect(button).toHaveText('3 nuovi messaggi');
+  await expect(toggle(article(page, 'Tool: Bash'))).toContainText('Completed');
+  await expect(button).toHaveText('3 new messages');
   await expect(articles(page)).toHaveCount(43);
 
   // the click scrolls to the end and hides the button
   await button.click();
   await expect(button).toHaveCount(0);
-  await expect(article(page, 'Strumento: Bash')).toBeInViewport();
+  await expect(article(page, 'Tool: Bash')).toBeInViewport();
   await expect.poll(() => atEnd(page)).toBe(true);
 
   // at the end, new content follows and shows no button
@@ -438,12 +438,12 @@ test('new items while the user reads earlier content show "N nuovi messaggi" at 
   // one new message: singular text; scrolling to the end hides the button and resets N
   await scrollTo(page, 'top');
   send(socket, [claude('Un altro')]);
-  await expect(button).toHaveText('1 nuovo messaggio');
+  await expect(button).toHaveText('1 new message');
   await scrollTo(page, 'end');
   await expect(button).toHaveCount(0);
   await scrollTo(page, 'top');
   send(socket, [claude('Ancora uno')]);
-  await expect(button).toHaveText('1 nuovo messaggio');
+  await expect(button).toHaveText('1 new message');
 });
 
 async function startViaApi(request: APIRequestContext, folder: string): Promise<string> {
@@ -467,7 +467,7 @@ test('with an external session open, the needs-input snackbar sits 20 px from th
 
   const response = await request.post(`/api/sessions/${waitingId}/hook-events`, { data: { hook_event_name: 'PermissionRequest', tool_name: 'Bash' } });
   expect(response.status()).toBe(204);
-  await expect(snackbar(page)).toHaveText(/attende-input richiede il tuo input/);
+  await expect(snackbar(page)).toHaveText(/attende-input needs your input/);
 
   const bar = await box(snackbar(page));
   near(1440 - (bar.x + bar.width), 20, 'gap to the right edge of the window');

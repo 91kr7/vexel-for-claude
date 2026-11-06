@@ -36,12 +36,12 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
-const counter = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('status').filter({ hasText: 'richiede input' });
+const counter = (page: Page) => page.getByRole('region', { name: 'Session List' }).getByRole('status').filter({ hasText: /needs? input/ });
 const terminal = (page: Page) => page.locator('.xterm-rows');
-const pathField = (page: Page) => page.getByRole('textbox', { name: 'Cartella del progetto', exact: true });
-const RELATIVE_TIME = /^(ora|\d+ min fa)$/;
+const pathField = (page: Page) => page.getByRole('textbox', { name: 'Working Directory Path', exact: true });
+const RELATIVE_TIME = /^(Just now|\d+m ago)$/;
 
 async function newFolder(name: string): Promise<string> {
   const folder = path.join(projectsRoot, name);
@@ -63,11 +63,11 @@ async function postHook(request: APIRequestContext, id: string, event: Record<st
 }
 
 async function startViaUi(page: Page, folder: string): Promise<string> {
-  await page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Nuova sessione' }).click();
+  await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session' }).click();
   await expect(pathField(page)).toHaveValue(os.homedir());
   await pathField(page).fill(folder);
   const started = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/sessions' && r.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Avvia sessione' }).click();
+  await page.getByRole('button', { name: 'Start Session' }).click();
   const { id } = (await (await started).json()) as { id: string };
   createdIds.push(id);
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
@@ -101,21 +101,21 @@ test('the user sees which session needs input', async ({ page, request }) => {
   await page.goto('/');
 
   for (const [folder, label, state] of [
-    [busy, 'Analizza i log del server', 'Lavora'],
-    [calm, 'calm', 'In attesa'],
-    [asks, 'Elimina la cartella build', 'Richiede input'],
+    [busy, 'Analizza i log del server', 'Running'],
+    [calm, 'calm', 'Idle'],
+    [asks, 'Elimina la cartella build', 'Needs Input'],
   ]) {
     await expect(entry(page, folder)).toContainText(path.basename(folder));
     await expect(entry(page, folder)).toContainText(label);
     await expect(entry(page, folder)).toContainText(state);
   }
   for (const folder of [busy, calm]) await expect(entry(page, folder).locator('time')).toHaveText(RELATIVE_TIME);
-  await expect(entry(page, asks)).toHaveAccessibleDescription(/^Permesso per Bash · (ora|\d+ min fa)$/);
+  await expect(entry(page, asks)).toHaveAccessibleDescription(/^Permission for Bash · (Just now|\d+m ago)$/);
   await expect(list(page).getByRole('button').first().getByTitle(asks, { exact: true })).toBeVisible();
   await expect(entry(page, asks)).toHaveClass(/\bneeds-input\b/);
   await expect(entry(page, busy)).not.toHaveClass(/\bneeds-input\b/);
   await expect(entry(page, calm)).not.toHaveClass(/\bneeds-input\b/);
-  await expect(counter(page)).toHaveText('1 richiede input');
+  await expect(counter(page)).toHaveText('1 needs input');
 });
 
 // plan-claude_sessions_client/REQ-14, REQ-15
@@ -123,13 +123,13 @@ test('the list follows the state without a reload', async ({ page }) => {
   await page.goto('/');
   const folder = await newFolder('live');
   await startViaUi(page, folder);
-  await expect(entry(page, folder)).toContainText('In attesa');
+  await expect(entry(page, folder)).toContainText('Idle');
   await page.evaluate(() => ((globalThis as unknown as { notReloaded: boolean }).notReloaded = true));
 
   await typeLine(page, 'TURN');
-  await expect(entry(page, folder)).toContainText('Lavora');
+  await expect(entry(page, folder)).toContainText('Running');
   await expect(terminal(page)).toContainText('TURN-DONE');
-  await expect(entry(page, folder)).toContainText('In attesa');
+  await expect(entry(page, folder)).toContainText('Idle');
 
   expect(await page.evaluate(() => (globalThis as unknown as { notReloaded?: boolean }).notReloaded)).toBe(true);
 });
@@ -142,13 +142,13 @@ test('the counter follows a permission request without a reload', async ({ page 
   await startViaUi(page, folder);
 
   await typeLine(page, 'PERM');
-  await expect(entry(page, folder)).toContainText('Richiede input');
+  await expect(entry(page, folder)).toContainText('Needs Input');
   await expect(entry(page, folder)).toHaveClass(/\bneeds-input\b/);
-  await expect(counter(page)).toHaveText('1 richiede input');
+  await expect(counter(page)).toHaveText('1 needs input');
 
   await page.keyboard.type('y');
   await expect(terminal(page)).toContainText('ANSWER:y');
-  await expect(entry(page, folder)).toContainText('In attesa');
+  await expect(entry(page, folder)).toContainText('Idle');
   await expect(counter(page)).toHaveCount(0);
 });
 
@@ -164,7 +164,7 @@ test('the user switches between sessions', async ({ page }) => {
   await startViaUi(page, folderB);
   await typeLine(page, 'PERM');
   await expect(terminal(page)).toContainText('PERMISSION?(y/n)');
-  await expect(entry(page, folderB)).toContainText('Richiede input');
+  await expect(entry(page, folderB)).toContainText('Needs Input');
 
   await entry(page, folderA).click();
   await expect(terminal(page)).toContainText(`CWD:${folderA}`, { timeout: 1000 });
@@ -179,13 +179,13 @@ test('the user switches between sessions', async ({ page }) => {
   await expect(terminal(page)).toContainText('PERMISSION?(y/n)', { timeout: 1000 });
   await expect(terminal(page)).not.toContainText(`CWD:${folderA}`);
   await expect(terminal(page)).not.toContainText('TICK');
-  await expect(counter(page)).toHaveText('1 richiede input');
+  await expect(counter(page)).toHaveText('1 needs input');
   await page.waitForTimeout(1000);
 
   await entry(page, folderA).click();
   await expect(terminal(page)).toContainText(`CWD:${folderA}`, { timeout: 1000 });
   await expect.poll(() => lastTick(page)).toBeGreaterThan(tickBeforeLeaving + 2);
-  await expect(entry(page, folderA)).toContainText('Lavora');
+  await expect(entry(page, folderA)).toContainText('Running');
 
   await entry(page, folderB).click();
   await expect(terminal(page)).toContainText('PERMISSION?(y/n)', { timeout: 1000 });
@@ -200,12 +200,12 @@ test('sessions survive a page reload', async ({ page }) => {
   const folder = await newFolder('reload');
   await startViaUi(page, folder);
   await typeLine(page, 'WORK');
-  await expect(entry(page, folder)).toContainText('Lavora');
+  await expect(entry(page, folder)).toContainText('Running');
   await expect(terminal(page)).toContainText('TICK2');
 
   await page.reload();
-  await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
-  await expect(entry(page, folder)).toContainText('Lavora');
+  await expect(page.getByText('No open session.')).toBeVisible();
+  await expect(entry(page, folder)).toContainText('Running');
   await entry(page, folder).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
   await expect(terminal(page)).toContainText('LINE:WORK');
@@ -230,7 +230,7 @@ test('ten sessions at once', async ({ page, request }) => {
   for (const folder of folders) {
     await entry(page, folder).scrollIntoViewIfNeeded();
     await expect(entry(page, folder)).toBeVisible();
-    await expect(entry(page, folder)).toContainText('Lavora');
+    await expect(entry(page, folder)).toContainText('Running');
   }
   const scrolls = await list(page).locator('.session-list').evaluate((el) => el.scrollHeight > el.clientHeight);
   expect(scrolls, 'the list scrolls when its entries do not fit').toBe(true);
@@ -252,10 +252,10 @@ test('an ended session stays in the list', async ({ page }) => {
   const folder = await newFolder('ended');
   await startViaUi(page, folder);
   await typeLine(page, '/exit');
-  await expect(entry(page, folder)).toContainText('Terminata');
+  await expect(entry(page, folder)).toContainText('Ended');
 
   await page.reload();
-  await expect(entry(page, folder)).toContainText('Terminata');
+  await expect(entry(page, folder)).toContainText('Ended');
   await entry(page, folder).click();
   await expect(terminal(page)).toContainText('BYE');
 });

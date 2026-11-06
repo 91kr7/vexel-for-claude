@@ -25,14 +25,14 @@ test.afterAll(async () => {
   await rm(E2E_CLAUDE_DIR, { recursive: true, force: true });
 });
 
-const dialog = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessione' });
-const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Sessione in esecuzione in un terminale' });
+const dialog = (page: Page) => page.getByRole('dialog', { name: 'Resume Session' });
+const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Session Running in a Terminal' });
 const pastEntry = (page: Page, folder: string, label: string) =>
   dialog(page).getByRole('region', { name: folder }).getByRole('radio', { name: label, exact: true });
-const resumeButton = (page: Page) => dialog(page).getByRole('button', { name: 'Riprendi', exact: true });
+const resumeButton = (page: Page) => dialog(page).getByRole('button', { name: 'Resume', exact: true });
 /** The list entry of the session in `folder` with `label`: the folder path keeps out the sessions of earlier runs on a reused server. */
 const listEntry = (page: Page, folder: string, label: string) =>
-  page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('button').filter({ hasText: label }).filter({ has: page.getByTitle(folder, { exact: true }) });
+  page.getByRole('region', { name: 'Session List' }).getByRole('button').filter({ hasText: label }).filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const isResumeRequest = (url: string, method: string) => /\/api\/past-sessions\/[^/]+\/resume$/.test(new URL(url).pathname) && method === 'POST';
 
@@ -66,9 +66,9 @@ async function runInTerminal(sessionId: string): Promise<void> {
 }
 
 async function openDialog(page: Page): Promise<void> {
-  await page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Riprendi', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'Resume', exact: true }).click();
   await expect(dialog(page)).toBeVisible();
-  await expect(dialog(page)).not.toContainText('Caricamento…');
+  await expect(dialog(page)).not.toContainText('Loading…');
 }
 
 async function choose(page: Page, folder: string, label: string): Promise<string> {
@@ -83,13 +83,26 @@ async function choose(page: Page, folder: string, label: string): Promise<string
 }
 
 // plan-claude_sessions_client/REQ-25
-test('with no past session the dialog says so, and "Annulla" closes it', async ({ page }) => {
+test('with no past session the dialog says so, and "Cancel" closes it', async ({ page }) => {
   await page.goto('/');
   await openDialog(page);
-  await expect(dialog(page)).toContainText('Nessuna sessione da riprendere.');
-  await dialog(page).getByRole('button', { name: 'Annulla' }).click();
+  await expect(dialog(page)).toContainText('No sessions to resume.');
+  await dialog(page).getByRole('button', { name: 'Cancel' }).click();
   await expect(dialog(page)).toBeHidden();
-  await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
+  await expect(page.getByText('No open session.')).toBeVisible();
+});
+
+// plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-7, REQ-8: day before month, 24-hour clock, no AM/PM
+test('a past session shows its date as DD/MM/YYYY HH:MM:SS with the 24-hour clock', async ({ page }) => {
+  const folder = await newFolder('dated');
+  const file = await pastSession('e2e-dated', folder, 'Dated session', new Date(2026, 2, 4, 15, 7, 9));
+
+  await page.goto('/');
+  await openDialog(page);
+  const row = dialog(page).getByRole('region', { name: folder });
+  await expect(row).toContainText('04/03/2026 15:07:09');
+  await expect(row).not.toContainText(/\b(?:AM|PM)\b/i);
+  await rm(file);
 });
 
 // plan-claude_sessions_client/REQ-13, REQ-25, REQ-26 — scenario "The user resumes a session started in the terminal"
@@ -121,7 +134,7 @@ test('the user resumes a session started in the terminal, chosen under its folde
 });
 
 // plan-claude_sessions_client/REQ-27 — scenario "The session still runs in a terminal"
-test('a session still running in a terminal resumes only after "Riprendi comunque"', async ({ page }) => {
+test('a session still running in a terminal resumes only after "Resume Anyway"', async ({ page }) => {
   const api = await newFolder('api');
   await pastSession('e2e-running', api, 'Rifattorizza il router', new Date('2026-10-26T10:00:00Z'));
   await runInTerminal('e2e-running');
@@ -133,15 +146,15 @@ test('a session still running in a terminal resumes only after "Riprendi comunqu
   await page.goto('/');
   await openDialog(page);
   const entry = pastEntry(page, api, 'Rifattorizza il router');
-  await expect(entry).toHaveAccessibleDescription(/In esecuzione in un terminale/);
-  await expect(dialog(page).getByText('In esecuzione in un terminale', { exact: true })).toBeVisible();
+  await expect(entry).toHaveAccessibleDescription(/Running in a terminal/);
+  await expect(dialog(page).getByText('Running in a terminal', { exact: true })).toBeVisible();
 
   await entry.click();
   await resumeButton(page).click();
   await expect(warning(page)).toBeVisible();
-  await expect(warning(page)).toContainText('le due istanze possono danneggiare la conversazione');
-  await expect(warning(page).getByRole('button', { name: 'Annulla' })).toBeFocused();
-  await warning(page).getByRole('button', { name: 'Annulla' }).click();
+  await expect(warning(page)).toContainText('the two instances can damage the conversation');
+  await expect(warning(page).getByRole('button', { name: 'Cancel' })).toBeFocused();
+  await warning(page).getByRole('button', { name: 'Cancel' }).click();
   await expect(warning(page)).toBeHidden();
   await expect(dialog(page)).toBeVisible();
   expect(resumeRequests).toEqual([]);
@@ -149,7 +162,7 @@ test('a session still running in a terminal resumes only after "Riprendi comunqu
   await entry.click();
   await resumeButton(page).click();
   const resumed = page.waitForResponse((r) => isResumeRequest(r.url(), r.request().method()));
-  await warning(page).getByRole('button', { name: 'Riprendi comunque' }).click();
+  await warning(page).getByRole('button', { name: 'Resume Anyway' }).click();
   const response = await resumed;
   expect(response.status()).toBe(201);
   startedIds.push(((await response.json()) as { id: string }).id);
@@ -173,10 +186,10 @@ test('a session or a folder that disappeared after the dialog opened shows an er
 
   await pastEntry(page, docs, 'Sessione cancellata').click();
   await resumeButton(page).click();
-  await expect(dialog(page).getByRole('alert')).toHaveText('La sessione non esiste più.');
+  await expect(dialog(page).getByRole('alert')).toHaveText('The session no longer exists.');
   await pastEntry(page, tools, 'Cartella cancellata').click();
   await resumeButton(page).click();
-  await expect(dialog(page).getByRole('alert')).toHaveText('La cartella del progetto non esiste.');
+  await expect(dialog(page).getByRole('alert')).toHaveText('The project folder does not exist.');
   await expect(dialog(page)).toBeVisible();
-  await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
+  await expect(page.getByText('No open session.')).toBeVisible();
 });

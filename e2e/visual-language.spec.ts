@@ -22,7 +22,7 @@ test.afterEach(async ({ request }) => {
   for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
 });
 
-const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
@@ -113,7 +113,7 @@ async function contrastFailures(page: Page): Promise<string[]> {
 // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-1: the client is dark on a light system and stays the same when the system turns dark
 test('the client is dark on a light system and does not change when the system turns dark', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Nuova sessione' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session' })).toBeVisible();
 
   const lightBg = await resolved(page, await effectiveBackground(page.locator('body')));
   const lightText = await resolved(page, await page.locator('body').evaluate((b) => getComputedStyle(b).color));
@@ -197,8 +197,8 @@ test('with no internet connection the page and a session load their font and ico
     [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/["']/g, '')),
   );
   expect(new Set(loaded), 'Roboto Flex and Roboto Mono are loaded').toEqual(new Set(['Roboto Flex', 'Roboto Mono']));
-  await expect(page.getByRole('banner').getByRole('button', { name: 'Nuova sessione', exact: true }).locator('svg.icon')).toBeVisible();
-  await expect(page.getByRole('navigation').getByRole('button', { name: 'Riprendi', exact: true }).locator('svg.icon')).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('button', { name: 'New Session', exact: true }).locator('svg.icon')).toBeVisible();
+  await expect(page.getByRole('navigation').getByRole('button', { name: 'Resume', exact: true }).locator('svg.icon')).toBeVisible();
 });
 
 // plan-claude_sessions_client-ui_redesign/REQ-6: no style shipped with the client points to another server
@@ -224,7 +224,7 @@ test('the UI uses the bundled Roboto Flex font and the terminal uses Roboto Mono
     return f && { weight: f.weight, display: f.display };
   });
   expect(face).toEqual({ weight: '400 800', display: 'swap' });
-  for (const button of [page.getByRole('banner').getByRole('button', { name: 'Nuova sessione', exact: true }), page.getByRole('navigation').getByRole('button', { name: 'Riprendi', exact: true })]) {
+  for (const button of [page.getByRole('banner').getByRole('button', { name: 'New Session', exact: true }), page.getByRole('navigation').getByRole('button', { name: 'Resume', exact: true })]) {
     expect(await button.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Roboto Flex/);
   }
   expect(await page.locator('body').evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Roboto Flex/);
@@ -232,11 +232,11 @@ test('the UI uses the bundled Roboto Flex font and the terminal uses Roboto Mono
 });
 
 // IconSet, NavigationRail and TopBar: each button keeps its accessible name and shows one decorative icon at its size, in its text colour
-test('the rail "Riprendi" and the top bar "Nuova sessione" carry decorative icons', async ({ page, request }) => {
+test('the rail "Resume" and the top bar "New Session" carry decorative icons', async ({ page, request }) => {
   await openSession(page, request, 'icons');
   const buttons: [Locator, number][] = [
-    [page.getByRole('navigation').getByRole('button', { name: 'Riprendi', exact: true }), 17],
-    [page.getByRole('banner').getByRole('button', { name: 'Nuova sessione', exact: true }), 14],
+    [page.getByRole('navigation').getByRole('button', { name: 'Resume', exact: true }), 17],
+    [page.getByRole('banner').getByRole('button', { name: 'New Session', exact: true }), 14],
   ];
   for (const [button, size] of buttons) {
     await expect(button).toHaveCount(1);
@@ -257,7 +257,7 @@ test('the rail "Riprendi" and the top bar "Nuova sessione" carry decorative icon
 });
 
 // WebEntry, plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32, REQ-50: accent, neutral and rose buttons
-test('empty state "Nuova sessione" is the accent button, "Riprendi sessione" the neutral one, and header "Termina" the rose one', async ({ page, request }) => {
+test('empty state "New Session" is the accent button, "Resume Session" the neutral one, and header "Terminate" the rose one', async ({ page, request }) => {
   const look = async (button: Locator) => ({
     bg: await resolved(page, await button.evaluate((el) => getComputedStyle(el).backgroundColor)),
     fg: await resolved(page, await button.evaluate((el) => getComputedStyle(el).color)),
@@ -266,12 +266,12 @@ test('empty state "Nuova sessione" is the accent button, "Riprendi sessione" the
   await page.goto('/');
   const t = await tokens(page, ['--accent-primary', '--on-accent', '--bg-surface-2', '--text-primary', '--rose-500-15', '--rose-400']);
   await page.mouse.move(0, 0);
-  expect(await look(mainButton('Nuova sessione'))).toEqual({ bg: await resolved(page, t['--accent-primary']!), fg: await resolved(page, t['--on-accent']!) });
-  expect(await look(mainButton('Riprendi sessione'))).toEqual({ bg: await resolved(page, t['--bg-surface-2']!), fg: await resolved(page, t['--text-primary']!) });
+  expect(await look(mainButton('New Session'))).toEqual({ bg: await resolved(page, t['--accent-primary']!), fg: await resolved(page, t['--on-accent']!) });
+  expect(await look(mainButton('Resume Session'))).toEqual({ bg: await resolved(page, t['--bg-surface-2']!), fg: await resolved(page, t['--text-primary']!) });
 
   await openSession(page, request, 'button-looks');
   await page.mouse.move(0, 0);
-  const stop = page.getByRole('main').getByRole('button', { name: 'Termina', exact: true });
+  const stop = page.getByRole('main').getByRole('button', { name: 'Terminate', exact: true });
   expect(await stop.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(await page.evaluate((v) => {
     const probe = document.createElement('div');
     probe.style.backgroundColor = v;
@@ -286,7 +286,7 @@ test('empty state "Nuova sessione" is the accent button, "Riprendi sessione" the
 // WebEntry: the element focused from the keyboard shows a ring in --color-focus-ring
 test('a button focused from the keyboard shows the focus ring colour', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name: 'Nuova sessione' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session' })).toBeVisible();
   const ring = await resolved(page, (await tokens(page, ['--color-focus-ring']))['--color-focus-ring']!);
 
   let focusedTag = '';

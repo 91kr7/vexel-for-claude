@@ -8,20 +8,20 @@ const buttons = (html: string) =>
 
 describe('ResumeDialog', () => {
   // plan-claude_sessions_client/REQ-25: before the past sessions arrive
-  it('opens as a modal titled "Riprendi sessione", shows "Caricamento…" and the button "Annulla"', () => {
+  it('opens as a modal titled "Resume Session", shows "Loading…" and the button "Cancel"', () => {
     const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
     expect(html).toContain('role="dialog"');
     expect(html).toContain('aria-modal="true"');
-    expect(html).toContain('Riprendi sessione');
-    expect(html).toContain('Caricamento…');
-    expect(html).toMatch(/<button[^>]*>Annulla<\/button>/);
+    expect(html).toContain('Resume Session');
+    expect(html).toContain('Loading…');
+    expect(html).toMatch(/<button[^>]*>Cancel<\/button>/);
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-25: "Annulla" and the primary "Riprendi", disabled while no entry is selected
-  it('has "Annulla" and the primary action "Riprendi", disabled on open', () => {
+  // plan-claude_sessions_client-ui_redesign/REQ-25: "Cancel" and the primary "Resume", disabled while no entry is selected
+  it('has "Cancel" and the primary action "Resume", disabled on open', () => {
     const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
     const actions = buttons(html);
-    expect(actions.map((b) => b.label)).toEqual(['[Esc]', 'Annulla', 'Riprendi']);
+    expect(actions.map((b) => b.label)).toEqual(['[Esc]', 'Cancel', 'Resume']);
     const primary = actions[2]?.attrs ?? '';
     expect(primary).toMatch(/\sclass="(?:[^"]*\s)?button-primary(?:\s[^"]*)?"/);
     expect(primary).toMatch(/\sdisabled(?:=""|\s|$)/);
@@ -30,14 +30,14 @@ describe('ResumeDialog', () => {
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44, ResumeDialog: no icon before the title and no description
   it('shows no icon before the title and has no accessible description', () => {
     const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
-    expect(html.slice(0, html.indexOf('Riprendi sessione'))).not.toContain('<svg');
+    expect(html.slice(0, html.indexOf('Resume Session'))).not.toContain('<svg');
     expect(html.match(/<[a-z]+\b[^>]*\srole="dialog"[^>]*>/)?.[0]).not.toContain('aria-describedby');
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50, ResumeDialog: the list loads behind a compact AreaState
-  it('shows the compact AreaState "Caricamento…" while the past sessions load', () => {
+  it('shows the compact AreaState "Loading…" while the past sessions load', () => {
     const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
-    expect(html).toContain(renderToStaticMarkup(<AreaState kind="loading" size="compact" title="Caricamento…" />));
+    expect(html).toContain(renderToStaticMarkup(<AreaState kind="loading" size="compact" title="Loading…" />));
     expect(html).not.toContain('role="alert"');
   });
 });

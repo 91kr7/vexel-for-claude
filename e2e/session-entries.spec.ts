@@ -11,7 +11,7 @@ import { E2E_CLAUDE_DIR } from './claude-dir';
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 // The external scanner reads the sessions folder every 2 seconds.
 const SCAN = { timeout: 10_000 };
-const GROUPS = ['Richiedono input', 'In corso', 'In altri terminali', 'Terminate'];
+const GROUPS = ['Needs Input', 'Running', 'In Other Terminals', 'Ended'];
 
 let projectsRoot: string;
 /** Folder of the current test: ended sessions of earlier tests stay on the server and must not show. */
@@ -38,9 +38,9 @@ test.afterEach(async ({ request }) => {
   }
 });
 
-const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione principale' });
+const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' });
 const mainArea = (page: Page) => page.getByRole('main');
-const list = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const byFolder = (page: Page, folder: string) => page.getByTitle(folder, { exact: true });
 /** The entry button of a session: a row, or the top button of the hosted needs-input card. */
 const entry = (page: Page, folder: string) => list(page).locator('.session-entry').filter({ has: byFolder(page, folder) });
@@ -51,7 +51,7 @@ const heading = (page: Page, title: string) => list(page).getByRole('heading', {
 const groupItems = (page: Page, title: string) => heading(page, title).locator('xpath=following::ul[1]/li');
 const badge = (target: Locator) => target.locator('.state-badge');
 const avatar = (target: Locator) => target.locator('.avatar');
-const counter = (page: Page) => list(page).getByRole('status').filter({ hasText: 'richiede input' });
+const counter = (page: Page) => list(page).getByRole('status').filter({ hasText: /needs? input/ });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
 /** Shows in the page only the sessions of this file: other spec files start sessions on the same server at the same time. */
@@ -231,7 +231,7 @@ const hasLeftBar = (target: Locator, colour: string) =>
   }, colour);
 
 // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-16, REQ-17, REQ-22, REQ-23, plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-28 — scenario "The user answers a waiting session from its card"
-test('the user answers a waiting session from its amber card with "Rispondi"', async ({ page, request }) => {
+test('the user answers a waiting session from its amber card with "Reply"', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const web = await newFolder('web-dashboard');
   const billing = await newFolder('billing-api');
@@ -242,23 +242,23 @@ test('the user answers a waiting session from its amber card with "Rispondi"', a
   await postHook(request, webId, { hook_event_name: 'UserPromptSubmit', prompt: 'rimuovi le dipendenze inutilizzate' });
   await postHook(request, webId, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
 
-  await expect(headings(page)).toHaveText(['Richiedono input', 'In corso']);
-  await expect(groupItems(page, 'Richiedono input')).toHaveCount(1);
-  await expect(groupItems(page, 'Richiedono input').locator('.session-card').filter({ has: byFolder(page, web) })).toBeVisible();
-  await expect(groupItems(page, 'In corso').filter({ has: byFolder(page, billing) })).toHaveCount(1);
+  await expect(headings(page)).toHaveText(['Needs Input', 'Running']);
+  await expect(groupItems(page, 'Needs Input')).toHaveCount(1);
+  await expect(groupItems(page, 'Needs Input').locator('.session-card').filter({ has: byFolder(page, web) })).toBeVisible();
+  await expect(groupItems(page, 'Running').filter({ has: byFolder(page, billing) })).toHaveCount(1);
 
   const webCard = card(page, web);
   await expect(avatar(webCard)).toHaveCount(0);
   await expect(entry(page, web)).toContainText('web-dashboard');
   await expect(entry(page, web)).toContainText('rimuovi le dipendenze inutilizzate');
-  await expect(webCard.getByText('Richiede input', { exact: true })).toBeVisible();
-  await expect(entry(page, web)).toHaveAccessibleDescription('Permesso per Bash · ora');
+  await expect(webCard.getByText('Needs Input', { exact: true })).toBeVisible();
+  await expect(entry(page, web)).toHaveAccessibleDescription('Permission for Bash · Just now');
   const toolWeight = Number((await styleOf(webCard.getByText('Bash', { exact: true }))).fontWeight);
-  const lineWeight = Number((await styleOf(webCard.getByText(/^Permesso per/))).fontWeight);
+  const lineWeight = Number((await styleOf(webCard.getByText(/^Permission for/))).fontWeight);
   expect(toolWeight, 'tool name in bold').toBeGreaterThan(lineWeight);
   await expect(terminal(page)).toContainText(`CWD:${billing}`);
 
-  await webCard.getByRole('button', { name: 'Rispondi', exact: true }).click();
+  await webCard.getByRole('button', { name: 'Reply', exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${web}`);
   await expect(entry(page, web)).toHaveAttribute('aria-current', 'true');
   await expect(entry(page, billing)).not.toHaveAttribute('aria-current', /.*/);
@@ -275,7 +275,7 @@ test('a click on the needs-input line of the card opens the session', async ({ p
   await openFromList(page, other);
   await postHook(request, asksId, { hook_event_name: 'PermissionRequest', tool_name: 'Write' });
 
-  const line = await card(page, asks).getByText('Permesso per').boundingBox();
+  const line = await card(page, asks).getByText('Permission for').boundingBox();
   await page.mouse.click(line!.x + line!.width / 2, line!.y + line!.height / 2);
   await expect(terminal(page)).toContainText(`CWD:${asks}`);
   await expect(entry(page, asks)).toHaveAttribute('aria-current', 'true');
@@ -294,14 +294,14 @@ test('the needs-input line names the waiting tool, or shows the label when no to
   await postHook(request, elicitedId, { hook_event_name: 'UserPromptSubmit', prompt: 'Scegli il database' });
   await postHook(request, elicitedId, { hook_event_name: 'Notification', notification_type: 'elicitation_dialog' });
 
-  await expect(entry(page, prompted)).toHaveAccessibleDescription('Permesso per Edit · ora');
-  await expect(entry(page, elicited)).toHaveAccessibleDescription('Scegli il database · ora');
-  await expect(card(page, elicited)).not.toContainText('Permesso per');
+  await expect(entry(page, prompted)).toHaveAccessibleDescription('Permission for Edit · Just now');
+  await expect(entry(page, elicited)).toHaveAccessibleDescription('Scegli il database · Just now');
+  await expect(card(page, elicited)).not.toContainText('Permission for');
 
   await postHook(request, promptedId, { hook_event_name: 'PostToolUse', tool_name: 'Edit' });
   await expect(card(page, prompted)).toHaveCount(0);
-  await expect(groupItems(page, 'In corso').filter({ has: byFolder(page, prompted) })).toHaveCount(1);
-  await expect(item(page, prompted)).not.toContainText('Permesso per');
+  await expect(groupItems(page, 'Running').filter({ has: byFolder(page, prompted) })).toHaveCount(1);
+  await expect(item(page, prompted)).not.toContainText('Permission for');
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-16, REQ-17, REQ-18: the groups in order, empty ones hidden, latest activity first
@@ -315,14 +315,14 @@ test('sessions sit in their groups, in order, latest activity first, and an empt
   const outsideWaiting = await newFolder('grp-outside-waiting');
   const olderId = await startViaApi(request, older);
   await page.goto('/');
-  await expect(headings(page)).toHaveText(['In corso']);
+  await expect(headings(page)).toHaveText(['Running']);
 
   const newerId = await startViaApi(request, newer);
-  await postHook(request, newerId, { hook_event_name: 'UserPromptSubmit', prompt: 'Lavora' });
-  await expect(groupItems(page, 'In corso')).toHaveCount(2);
-  await expect(groupItems(page, 'In corso').first()).toContainText('grp-newer');
-  await postHook(request, olderId, { hook_event_name: 'UserPromptSubmit', prompt: 'Riprendi' });
-  await expect(groupItems(page, 'In corso').first()).toContainText('grp-older');
+  await postHook(request, newerId, { hook_event_name: 'UserPromptSubmit', prompt: 'Running' });
+  await expect(groupItems(page, 'Running')).toHaveCount(2);
+  await expect(groupItems(page, 'Running').first()).toContainText('grp-newer');
+  await postHook(request, olderId, { hook_event_name: 'UserPromptSubmit', prompt: 'Resume' });
+  await expect(groupItems(page, 'Running').first()).toContainText('grp-older');
 
   const askingId = await startViaApi(request, asking);
   await postHook(request, askingId, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
@@ -331,19 +331,19 @@ test('sessions sit in their groups, in order, latest activity first, and an empt
   await runInTerminal('e2e-groups-waiting', outsideWaiting, 'waiting');
 
   await expect(headings(page)).toHaveText(GROUPS, SCAN);
-  await expect(groupItems(page, 'Richiedono input').filter({ has: byFolder(page, asking) })).toHaveCount(1);
-  await expect(groupItems(page, 'Richiedono input').filter({ has: byFolder(page, outsideWaiting) })).toHaveCount(1);
-  await expect(groupItems(page, 'Richiedono input')).toHaveCount(2);
-  await expect(groupItems(page, 'In corso')).toHaveCount(2);
-  await expect(groupItems(page, 'In altri terminali')).toHaveCount(1);
-  await expect(groupItems(page, 'In altri terminali').filter({ has: byFolder(page, outsideBusy) })).toHaveCount(1);
-  await expect(groupItems(page, 'Terminate')).toHaveCount(1);
-  await expect(groupItems(page, 'Terminate').filter({ has: byFolder(page, ended) })).toHaveCount(1);
-  await expect(badge(item(page, ended))).toHaveText('Terminata');
+  await expect(groupItems(page, 'Needs Input').filter({ has: byFolder(page, asking) })).toHaveCount(1);
+  await expect(groupItems(page, 'Needs Input').filter({ has: byFolder(page, outsideWaiting) })).toHaveCount(1);
+  await expect(groupItems(page, 'Needs Input')).toHaveCount(2);
+  await expect(groupItems(page, 'Running')).toHaveCount(2);
+  await expect(groupItems(page, 'In Other Terminals')).toHaveCount(1);
+  await expect(groupItems(page, 'In Other Terminals').filter({ has: byFolder(page, outsideBusy) })).toHaveCount(1);
+  await expect(groupItems(page, 'Ended')).toHaveCount(1);
+  await expect(groupItems(page, 'Ended').filter({ has: byFolder(page, ended) })).toHaveCount(1);
+  await expect(badge(item(page, ended))).toHaveText('Ended');
 
   await postHook(request, askingId, { hook_event_name: 'PostToolUse', tool_name: 'Bash' });
-  await expect(groupItems(page, 'Richiedono input')).toHaveCount(1);
-  await expect(groupItems(page, 'In corso')).toHaveCount(3);
+  await expect(groupItems(page, 'Needs Input')).toHaveCount(1);
+  await expect(groupItems(page, 'Running')).toHaveCount(3);
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12: every group title is the mono uppercase muted label
   await pointerAway(page);
@@ -375,22 +375,22 @@ test('working, external, ended and open entries have their Studio row variants w
   await expect(entry(page, outside)).toBeVisible(SCAN);
   await openFromList(page, open);
 
-  await expect(headings(page)).toHaveText(['In corso', 'In altri terminali', 'Terminate']);
-  await expect(groupItems(page, 'In corso').filter({ has: byFolder(page, working) })).toHaveCount(1);
-  await expect(groupItems(page, 'In corso').filter({ has: byFolder(page, open) })).toHaveCount(1);
-  await expect(groupItems(page, 'In altri terminali').filter({ has: byFolder(page, outside) })).toHaveCount(1);
-  await expect(groupItems(page, 'Terminate').filter({ has: byFolder(page, ended) })).toHaveCount(1);
+  await expect(headings(page)).toHaveText(['Running', 'In Other Terminals', 'Ended']);
+  await expect(groupItems(page, 'Running').filter({ has: byFolder(page, working) })).toHaveCount(1);
+  await expect(groupItems(page, 'Running').filter({ has: byFolder(page, open) })).toHaveCount(1);
+  await expect(groupItems(page, 'In Other Terminals').filter({ has: byFolder(page, outside) })).toHaveCount(1);
+  await expect(groupItems(page, 'Ended').filter({ has: byFolder(page, ended) })).toHaveCount(1);
 
   for (const [folder, state] of [
-    [working, 'Lavora'],
-    [open, 'In attesa'],
-    [ended, 'Terminata'],
-    [outside, 'Lavora'],
+    [working, 'Running'],
+    [open, 'Idle'],
+    [ended, 'Ended'],
+    [outside, 'Running'],
   ] as const) {
     await expect(badge(entry(page, folder)), folder).toHaveText(state);
-    await expect(entry(page, folder).locator('time'), folder).toHaveText(/^(ora|\d+ min fa)$/);
+    await expect(entry(page, folder).locator('time'), folder).toHaveText(/^(Just now|\d+m ago)$/);
   }
-  await expect(entry(page, outside)).not.toContainText('Esterna');
+  await expect(entry(page, outside)).not.toContainText('External');
 
   const bar = entry(page, working).locator('.progress-bar');
   await expect(bar).toBeVisible();
@@ -459,27 +459,27 @@ test('working, external, ended and open entries have their Studio row variants w
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-17, REQ-25 — scenario "The user sees an external session that waits for input"
-test('an external session that waits for input is the amber row with "Esterna" under "Richiedono input", with no "Rispondi"', async ({ page, request }) => {
+test('an external session that waits for input is the amber row with "External" under "Needs Input", with no "Reply"', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const outside = await newFolder('mobile-app');
   await runInTerminal('e2e-entries-waiting', outside, 'waiting');
   await page.goto('/');
   await expect(entry(page, outside)).toBeVisible(SCAN);
 
-  await expect(headings(page)).toHaveText(['Richiedono input']);
+  await expect(headings(page)).toHaveText(['Needs Input']);
   const row = entry(page, outside);
-  await expect(groupItems(page, 'Richiedono input').filter({ has: byFolder(page, outside) })).toHaveCount(1);
+  await expect(groupItems(page, 'Needs Input').filter({ has: byFolder(page, outside) })).toHaveCount(1);
   await expect(card(page, outside)).toHaveCount(0);
-  await expect(item(page, outside).getByRole('button', { name: 'Rispondi' })).toHaveCount(0);
+  await expect(item(page, outside).getByRole('button', { name: 'Reply' })).toHaveCount(0);
   await expect(item(page, outside).getByRole('button')).toHaveCount(1);
-  await expect(badge(row)).toHaveText('Richiede input');
-  await expect(counter(page)).toHaveText('1 richiede input');
+  await expect(badge(row)).toHaveText('Needs Input');
+  await expect(counter(page)).toHaveText('1 needs input');
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-27: the "Esterna" mono chip after the folder name, the dashed row, the amber dot
-  const tag = row.getByText('Esterna', { exact: true });
-  await expect(tag).toHaveText('Esterna');
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-27: the "External" mono chip after the folder name, the dashed row, the amber dot
+  const tag = row.getByText('External', { exact: true });
+  await expect(tag).toHaveText('External');
   const [titleBox, tagBox] = [await row.getByTitle(outside, { exact: true }).boundingBox(), await tag.boundingBox()];
-  expect(tagBox!.x, '"Esterna" after the folder name').toBeGreaterThanOrEqual(titleBox!.x + titleBox!.width - 0.5);
+  expect(tagBox!.x, '"External" after the folder name').toBeGreaterThanOrEqual(titleBox!.x + titleBox!.width - 0.5);
 
   await pointerAway(page);
   for (const scheme of ['light', 'dark'] as const) {
@@ -492,7 +492,7 @@ test('an external session that waits for input is the amber row with "Esterna" u
     expect((await styleOf(dot(row))).backgroundColor, `${scheme}: amber dot`).toBe('rgb(251, 191, 36)');
     expect(await dot(row).evaluate((el) => getComputedStyle(el).animationName), `${scheme}: pulsing dot`).not.toBe('none');
     const tagStyle = await styleOf(tag);
-    expect({ radius: tagStyle.borderRadius, background: tagStyle.backgroundColor, color: tagStyle.color, size: tagStyle.fontSize }, `${scheme}: "Esterna" chip`).toEqual({
+    expect({ radius: tagStyle.borderRadius, background: tagStyle.backgroundColor, color: tagStyle.color, size: tagStyle.fontSize }, `${scheme}: "External" chip`).toEqual({
       radius: '4px',
       background: await t('--bg-surface-2'),
       color: await t('--text-secondary'),
@@ -514,7 +514,7 @@ test('the hosted needs-input card has the permission-banner look whatever the sy
   await postHook(request, asksId, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
   const webCard = card(page, asks);
   await expect(webCard).toBeVisible();
-  const reply = webCard.getByRole('button', { name: 'Rispondi', exact: true });
+  const reply = webCard.getByRole('button', { name: 'Reply', exact: true });
 
   await pointerAway(page);
   for (const scheme of ['light', 'dark'] as const) {
@@ -531,7 +531,7 @@ test('the hosted needs-input card has the permission-banner look whatever the sy
       padding: ['14px', '14px', '14px', '14px'],
     });
     await expect(avatar(webCard)).toHaveCount(0);
-    const tag = await styleOf(webCard.getByText('Richiede input', { exact: true }));
+    const tag = await styleOf(webCard.getByText('Needs Input', { exact: true }));
     expect({ color: tag.color, background: tag.backgroundColor, size: tag.fontSize, radius: tag.borderRadius }, `${scheme}: amber tag`).toEqual({
       color: 'rgb(252, 211, 77)',
       background: 'rgba(245, 158, 11, 0.2)',
@@ -539,12 +539,12 @@ test('the hosted needs-input card has the permission-banner look whatever the sy
       radius: '4px',
     });
     const r = await styleOf(reply);
-    expect({ background: r.backgroundColor, color: r.color, padding: [r.paddingLeft, r.paddingRight] }, `${scheme}: accent "Rispondi"`).toEqual({
+    expect({ background: r.backgroundColor, color: r.color, padding: [r.paddingLeft, r.paddingRight] }, `${scheme}: accent "Reply"`).toEqual({
       background: await t('--accent-primary'),
       color: await t('--bg-canvas'),
       padding: ['14px', '14px'],
     });
-    const line = webCard.getByText(/^Permesso per/);
+    const line = webCard.getByText(/^Permission for/);
     const l = await styleOf(line);
     expect({ size: l.fontSize, color: l.color, background: l.backgroundColor }, `${scheme}: #perm-cmd line`).toEqual({
       size: '12px',
@@ -567,16 +567,16 @@ test('the hosted needs-input card has the permission-banner look whatever the sy
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-19; RelativeTime: the time text refreshes every 30 s with no new data
-test('the time of the last activity reads "ora", then "1 min fa" a minute later with no new data', async ({ page, request }) => {
+test('the time of the last activity reads "Just now", then "1m ago" a minute later with no new data', async ({ page, request }) => {
   await page.clock.install();
   await showOnlyOwnSessions(page);
   const folder = await newFolder('time-refresh');
   await startViaApi(request, folder);
   await page.goto('/');
   const time = entry(page, folder).locator('time');
-  await expect(time).toHaveText('ora');
+  await expect(time).toHaveText('Just now');
   await page.clock.fastForward('01:05');
-  await expect(time).toHaveText('1 min fa');
+  await expect(time).toHaveText('1m ago');
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-21; ProgressBar: with reduced motion the indicator stays still at the start of the track
@@ -585,7 +585,7 @@ test('with reduced motion the progress indicator stays still at the start of the
   await showOnlyOwnSessions(page);
   const folder = await newFolder('still-bar');
   const id = await startViaApi(request, folder);
-  await postHook(request, id, { hook_event_name: 'UserPromptSubmit', prompt: 'Lavora' });
+  await postHook(request, id, { hook_event_name: 'UserPromptSubmit', prompt: 'Running' });
   await page.goto('/');
   const bar = entry(page, folder).locator('.progress-bar');
   await expect(bar).toBeVisible();
@@ -613,7 +613,7 @@ test('a long folder name and a long label are cut on one line with an ellipsis, 
   await postHook(request, longId, { hook_event_name: 'Stop' });
   await page.goto('/');
   await expect(entry(page, long)).toBeVisible();
-  await expect(badge(entry(page, long))).toHaveText('In attesa');
+  await expect(badge(entry(page, long))).toHaveText('Idle');
   const longLabel = await labelOf(request, longId);
   expect(longLabel.length, 'fixture label is long').toBeGreaterThan(60);
 
@@ -651,20 +651,20 @@ test('the counter is hidden at 0, shows the amber pill with its dot above 0, and
   const loaded = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/sessions' && r.request().method() === 'GET');
   await page.goto('/');
   await loaded;
-  await expect(list(page).getByRole('status').filter({ hasText: 'Caricamento' })).toHaveCount(0);
+  await expect(list(page).getByRole('status').filter({ hasText: 'Loading' })).toHaveCount(0);
   await expect(counter(page)).toHaveCount(0);
   await expect(list(page).getByRole('status').locator('svg')).toHaveCount(0);
 
   const folder = await newFolder('counter');
   const id = await startViaApi(request, folder);
   await postHook(request, id, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
-  await expect(counter(page)).toHaveText('1 richiede input');
+  await expect(counter(page)).toHaveText('1 needs input');
   const chip = counter(page).locator(':scope > *').first();
   const pillDot = chip.locator('[aria-hidden="true"]').first();
   await expect(pillDot).toBeVisible();
   const dotBeforeText = await chip.evaluate((el) => {
     const mark = el.querySelector('[aria-hidden="true"]')!.getBoundingClientRect();
-    const text = [...el.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && /richiede input/.test(n.textContent ?? ''));
+    const text = [...el.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && /needs? input/.test(n.textContent ?? ''));
     const range = document.createRange();
     range.selectNodeContents(text!);
     return mark.right <= range.getBoundingClientRect().left + 0.5;
@@ -679,17 +679,17 @@ test('the counter is hidden at 0, shows the amber pill with its dot above 0, and
   expect(style.font).toMatch(MONO);
   expect(await pillDot.evaluate((el) => getComputedStyle(el).animationName), 'the dot pulses').not.toBe('none');
 
-  await rail(page).getByRole('button', { name: 'Nuova sessione', exact: true }).click();
-  await expect(page.getByRole('form', { name: 'Scegli la cartella del progetto' })).toBeVisible();
+  await rail(page).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
+  await expect(page.getByRole('form', { name: 'Choose the Project Folder' })).toBeVisible();
   await expect(counter(page), 'visible with the folder chooser').toBeInViewport();
-  await page.getByRole('button', { name: 'Annulla' }).click();
-  await rail(page).getByRole('button', { name: 'Riprendi', exact: true }).click();
-  const resume = page.getByRole('dialog', { name: 'Riprendi sessione' });
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await rail(page).getByRole('button', { name: 'Resume', exact: true }).click();
+  const resume = page.getByRole('dialog', { name: 'Resume Session' });
   await expect(resume).toBeVisible();
   await expect(counter(page), 'visible with the resume dialog').toBeInViewport();
-  await resume.getByRole('button', { name: 'Annulla', exact: true }).click();
+  await resume.getByRole('button', { name: 'Cancel', exact: true }).click();
 
   await openFromList(page, folder);
   await expect(counter(page), 'visible with an open session').toBeInViewport();
-  await expect(counter(page)).toHaveText('1 richiede input');
+  await expect(counter(page)).toHaveText('1 needs input');
 });

@@ -26,16 +26,16 @@ test.afterAll(async () => {
   await rm(projectsRoot, { recursive: true, force: true });
 });
 
-const railButton = (page: Page, name: string) => page.getByRole('navigation', { name: 'Navigazione principale' }).getByRole('button', { name, exact: true });
-const chooser = (page: Page) => page.getByRole('dialog', { name: 'Nuova sessione' });
-const pathField = (page: Page) => page.getByRole('textbox', { name: 'Cartella del progetto', exact: true });
-const history = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessione' });
-const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Sessione in esecuzione in un terminale' });
-const confirmation = (page: Page) => page.getByRole('alertdialog', { name: 'Terminare la sessione?' });
+const railButton = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name, exact: true });
+const chooser = (page: Page) => page.getByRole('dialog', { name: 'New Claude Code Session' });
+const pathField = (page: Page) => page.getByRole('textbox', { name: 'Working Directory Path', exact: true });
+const history = (page: Page) => page.getByRole('dialog', { name: 'Resume Session' });
+const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Session Running in a Terminal' });
+const confirmation = (page: Page) => page.getByRole('alertdialog', { name: 'Terminate the Session?' });
 const action = (dialog: Locator, name: string) => dialog.getByRole('button', { name, exact: true });
 const pastEntry = (page: Page, folder: string, label: string) =>
   history(page).getByRole('region', { name: folder }).getByRole('radio', { name: label, exact: true });
-const listEntry = (page: Page, folder: string) => page.getByRole('region', { name: 'Elenco sessioni' }).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
+const listEntry = (page: Page, folder: string) => page.getByRole('region', { name: 'Session List' }).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
 const isStartRequest = (url: string, method: string) => new URL(url).pathname === '/api/sessions' && method === 'POST';
@@ -58,7 +58,7 @@ const paint = (element: Locator) =>
 /** Primary and cancel action paint, measured with the mouse away from both buttons. */
 async function actionPaints(page: Page, dialog: Locator, primary: string): Promise<{ primary: string; cancel: string }> {
   await page.mouse.move(0, 0);
-  return { primary: await paint(action(dialog, primary)), cancel: await paint(action(dialog, 'Annulla')) };
+  return { primary: await paint(action(dialog, primary)), cancel: await paint(action(dialog, 'Cancel')) };
 }
 
 async function newFolder(name: string): Promise<string> {
@@ -69,7 +69,7 @@ async function newFolder(name: string): Promise<string> {
 
 /** Opens the chooser and waits for its initial listing of the home folder. */
 async function openChooser(page: Page): Promise<void> {
-  await railButton(page, 'Nuova sessione').click();
+  await railButton(page, 'New Claude Code Session').click();
   await expect(chooser(page)).toBeVisible();
   await expect(pathField(page)).toHaveValue(os.homedir());
 }
@@ -97,9 +97,9 @@ async function runInTerminal(sessionId: string): Promise<void> {
 }
 
 async function openHistory(page: Page): Promise<void> {
-  await railButton(page, 'Riprendi').click();
+  await railButton(page, 'Resume').click();
   await expect(history(page)).toBeVisible();
-  await expect(history(page)).not.toContainText('Caricamento…');
+  await expect(history(page)).not.toContainText('Loading…');
 }
 
 async function openWorkingSession(page: Page, request: APIRequestContext, name: string): Promise<{ id: string; folder: string }> {
@@ -114,7 +114,7 @@ async function openWorkingSession(page: Page, request: APIRequestContext, name: 
   await page.locator('.xterm-screen').click();
   await page.keyboard.type('WORK');
   await page.keyboard.press('Enter');
-  await expect(listEntry(page, folder)).toContainText('Lavora');
+  await expect(listEntry(page, folder)).toContainText('Running');
   return { id, folder };
 }
 
@@ -125,15 +125,15 @@ async function lastTick(page: Page): Promise<number> {
 
 test.describe('folder chooser', () => {
   // plan-claude_sessions_client-ui_redesign/REQ-25
-  test('has the primary action "Avvia sessione", which looks different from "Annulla", and the path field has the focus', async ({ page }) => {
+  test('has the primary action "Start Session", which looks different from "Cancel", and the path field has the focus', async ({ page }) => {
     await page.goto('/');
     await openChooser(page);
 
-    await expect(chooser(page).getByRole('form', { name: 'Scegli la cartella del progetto' })).toBeVisible();
-    await expect(action(chooser(page), 'Annulla')).toBeVisible();
-    await expect(action(chooser(page), 'Avvia sessione')).toBeEnabled();
+    await expect(chooser(page).getByRole('form', { name: 'Choose the Project Folder' })).toBeVisible();
+    await expect(action(chooser(page), 'Cancel')).toBeVisible();
+    await expect(action(chooser(page), 'Start Session')).toBeEnabled();
     await expect(pathField(page)).toBeFocused();
-    const paints = await actionPaints(page, chooser(page), 'Avvia sessione');
+    const paints = await actionPaints(page, chooser(page), 'Start Session');
     expect(paints.primary, 'the primary action looks different').not.toBe(paints.cancel);
   });
 
@@ -163,8 +163,8 @@ test.describe('folder chooser', () => {
     expect(starts).toHaveLength(1);
   });
 
-  // FolderChooser: "Avvia sessione" is disabled while the start request runs, so Enter starts one session only
-  test('while the start request runs, "Avvia sessione" is disabled and Enter starts nothing more', async ({ page }) => {
+  // FolderChooser: "Start Session" is disabled while the start request runs, so Enter starts one session only
+  test('while the start request runs, "Start Session" is disabled and Enter starts nothing more', async ({ page }) => {
     const folder = await newFolder('held-start');
     const starts = record(page, isStartRequest);
     let release: () => void = () => {};
@@ -182,7 +182,7 @@ test.describe('folder chooser', () => {
 
     await pathField(page).press('Enter');
     await expect.poll(() => starts.length).toBe(1);
-    await expect(action(chooser(page), 'Avvia sessione')).toBeDisabled();
+    await expect(action(chooser(page), 'Start Session')).toBeDisabled();
     await pathField(page).press('Enter');
     await page.waitForTimeout(300);
     expect(starts).toHaveLength(1);
@@ -196,7 +196,7 @@ test.describe('folder chooser', () => {
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-27, Dialog: the focus goes back where it was
-  test('Esc closes the chooser with no effect and gives the focus back to "Nuova sessione"', async ({ page }) => {
+  test('Esc closes the chooser with no effect and gives the focus back to "New Claude Code Session"', async ({ page }) => {
     const starts = record(page, isStartRequest);
     await page.goto('/');
     await openChooser(page);
@@ -204,22 +204,22 @@ test.describe('folder chooser', () => {
     await page.keyboard.press('Escape');
 
     await expect(chooser(page)).toBeHidden();
-    await expect(railButton(page, 'Nuova sessione')).toBeFocused();
-    await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
+    await expect(railButton(page, 'New Claude Code Session')).toBeFocused();
+    await expect(page.getByText('No open session.')).toBeVisible();
     expect(starts).toEqual([]);
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-26: with the focus on another button, Enter acts on that button
-  test('Enter with the focus on "Annulla" cancels', async ({ page }) => {
+  test('Enter with the focus on "Cancel" cancels', async ({ page }) => {
     const starts = record(page, isStartRequest);
     await page.goto('/');
     await openChooser(page);
 
-    await action(chooser(page), 'Annulla').focus();
+    await action(chooser(page), 'Cancel').focus();
     await page.keyboard.press('Enter');
 
     await expect(chooser(page)).toBeHidden();
-    await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
+    await expect(page.getByText('No open session.')).toBeVisible();
     expect(starts).toEqual([]);
   });
 
@@ -228,12 +228,12 @@ test.describe('folder chooser', () => {
     await page.goto('/');
     await openChooser(page);
 
-    await action(chooser(page), 'Avvia sessione').focus();
+    await action(chooser(page), 'Start Session').focus();
     await page.keyboard.press('Tab');
     expect(await holdsFocus(chooser(page)), 'Tab from the last action wraps inside').toBe(true);
-    await expect(action(chooser(page), 'Avvia sessione')).not.toBeFocused();
+    await expect(action(chooser(page), 'Start Session')).not.toBeFocused();
     await page.keyboard.press('Shift+Tab');
-    await expect(action(chooser(page), 'Avvia sessione')).toBeFocused();
+    await expect(action(chooser(page), 'Start Session')).toBeFocused();
 
     for (let i = 0; i < 12; i += 1) {
       await page.keyboard.press('Shift+Tab');
@@ -270,15 +270,15 @@ test.describe('resume history', () => {
     const second = pastEntry(page, folder, 'Seconda sessione');
 
     await expect(history(page).getByRole('radio', { checked: true })).toHaveCount(0);
-    await expect(action(history(page), 'Riprendi')).toBeDisabled();
+    await expect(action(history(page), 'Resume')).toBeDisabled();
     expect(await holdsFocus(history(page)), 'the dialog holds the focus on open').toBe(true);
     await page.keyboard.press('Enter');
 
     await first.click();
     await expect(first).toBeChecked();
     await expect(second).not.toBeChecked();
-    await expect(action(history(page), 'Riprendi')).toBeEnabled();
-    const paints = await actionPaints(page, history(page), 'Riprendi');
+    await expect(action(history(page), 'Resume')).toBeEnabled();
+    const paints = await actionPaints(page, history(page), 'Resume');
     expect(paints.primary, 'the primary action looks different').not.toBe(paints.cancel);
 
     await second.focus();
@@ -318,8 +318,8 @@ test.describe('resume history', () => {
     await page.keyboard.press('Escape');
 
     await expect(history(page)).toBeHidden();
-    await expect(railButton(page, 'Riprendi')).toBeFocused();
-    await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
+    await expect(railButton(page, 'Resume')).toBeFocused();
+    await expect(page.getByText('No open session.')).toBeVisible();
     expect(resumes).toEqual([]);
   });
 
@@ -332,13 +332,13 @@ test.describe('resume history', () => {
     await page.goto('/');
     await openHistory(page);
     await pastEntry(page, folder, 'Sessione nel terminale').click();
-    const historyLook = await actionPaints(page, history(page), 'Riprendi');
+    const historyLook = await actionPaints(page, history(page), 'Resume');
 
-    await action(history(page), 'Riprendi').click();
+    await action(history(page), 'Resume').click();
 
     await expect(warning(page)).toBeVisible();
-    await expect(action(warning(page), 'Annulla')).toBeFocused();
-    await expect(action(warning(page), 'Riprendi comunque')).toBeVisible();
+    await expect(action(warning(page), 'Cancel')).toBeFocused();
+    await expect(action(warning(page), 'Resume Anyway')).toBeVisible();
     const box = await warning(page).boundingBox();
     expect(box).not.toBeNull();
     const onTop = await warning(page).evaluate(
@@ -346,8 +346,8 @@ test.describe('resume history', () => {
       { x: (box?.x ?? 0) + (box?.width ?? 0) / 2, y: (box?.y ?? 0) + (box?.height ?? 0) / 2 },
     );
     expect(onTop, 'the warning is above the resume history').toBe(true);
-    const warningPaints = await actionPaints(page, warning(page), 'Riprendi comunque');
-    expect(warningPaints.primary, 'the primary action looks different from "Annulla"').not.toBe(warningPaints.cancel);
+    const warningPaints = await actionPaints(page, warning(page), 'Resume Anyway');
+    expect(warningPaints.primary, 'the primary action looks different from "Cancel"').not.toBe(warningPaints.cancel);
     expect(warningPaints.primary, 'the primary action looks different from a normal dialog').not.toBe(historyLook.primary);
 
     await page.keyboard.press('Escape');
@@ -358,37 +358,37 @@ test.describe('resume history', () => {
     await page.waitForTimeout(300);
     expect(resumes, 'Esc resumes nothing').toEqual([]);
 
-    await action(history(page), 'Riprendi').click();
-    await expect(action(warning(page), 'Annulla')).toBeFocused();
+    await action(history(page), 'Resume').click();
+    await expect(action(warning(page), 'Cancel')).toBeFocused();
     await page.keyboard.press('Enter');
 
     await expect(warning(page)).toBeHidden();
     await expect(history(page)).toBeVisible();
     await page.waitForTimeout(300);
-    expect(resumes, 'Enter on "Annulla" resumes nothing').toEqual([]);
-    await expect(page.getByText('Nessuna sessione aperta.')).toBeVisible();
+    expect(resumes, 'Enter on "Cancel" resumes nothing').toEqual([]);
+    await expect(page.getByText('No open session.')).toBeVisible();
   });
 });
 
 test.describe('stop confirmation', () => {
   // plan-claude_sessions_client-ui_redesign/REQ-25, REQ-26, REQ-28 — scenario "The user sees that stopping a working session is risky"
-  test('looks different from the folder chooser, has the focus on "Annulla", and Enter keeps the session working', async ({ page, request }) => {
+  test('looks different from the folder chooser, has the focus on "Cancel", and Enter keeps the session working', async ({ page, request }) => {
     const { id, folder } = await openWorkingSession(page, request, 'stop-enter');
     const stops = record(page, (url, method) => new URL(url).pathname === `/api/sessions/${id}/stop` && method === 'POST');
     await openChooser(page);
-    const chooserLook = await actionPaints(page, chooser(page), 'Avvia sessione');
+    const chooserLook = await actionPaints(page, chooser(page), 'Start Session');
     await page.keyboard.press('Escape');
     await expect(chooser(page)).toBeHidden();
 
-    await page.getByRole('button', { name: 'Termina', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Terminate', exact: true }).first().click();
 
     await expect(confirmation(page)).toBeVisible();
     await expect(confirmation(page)).toContainText(
-      'stop-enter sta ancora lavorando. Il turno in corso verrà interrotto; potrai riprendere la conversazione dalla cronologia.',
+      'stop-enter is still working. The current turn will be interrupted. You can resume the conversation from the history.',
     );
-    await expect(action(confirmation(page), 'Annulla')).toBeFocused();
-    const paints = await actionPaints(page, confirmation(page), 'Termina');
-    expect(paints.primary, 'the primary action looks different from "Annulla"').not.toBe(paints.cancel);
+    await expect(action(confirmation(page), 'Cancel')).toBeFocused();
+    const paints = await actionPaints(page, confirmation(page), 'Terminate');
+    expect(paints.primary, 'the primary action looks different from "Cancel"').not.toBe(paints.cancel);
     expect(paints.primary, 'the primary action looks different from the folder chooser one').not.toBe(chooserLook.primary);
 
     await page.keyboard.press('Enter');
@@ -396,7 +396,7 @@ test.describe('stop confirmation', () => {
     await expect(confirmation(page)).toBeHidden();
     const tick = await lastTick(page);
     await expect.poll(() => lastTick(page)).toBeGreaterThan(tick + 2);
-    await expect(listEntry(page, folder)).toContainText('Lavora');
+    await expect(listEntry(page, folder)).toContainText('Running');
     expect(stops).toEqual([]);
   });
 
@@ -404,30 +404,30 @@ test.describe('stop confirmation', () => {
   test('Esc closes the confirmation with no stop request', async ({ page, request }) => {
     const { id, folder } = await openWorkingSession(page, request, 'stop-esc');
     const stops = record(page, (url, method) => new URL(url).pathname === `/api/sessions/${id}/stop` && method === 'POST');
-    await page.getByRole('button', { name: 'Termina', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Terminate', exact: true }).first().click();
     await expect(confirmation(page)).toBeVisible();
 
     await page.keyboard.press('Escape');
 
     await expect(confirmation(page)).toBeHidden();
     await page.waitForTimeout(500);
-    await expect(listEntry(page, folder)).toContainText('Lavora');
+    await expect(listEntry(page, folder)).toContainText('Running');
     expect(stops).toEqual([]);
   });
 
-  // plan-claude_sessions_client-ui_redesign/REQ-26: once the focus moves to "Termina", Enter stops the session
-  test('Tab to "Termina" and Enter stop the session', async ({ page, request }) => {
+  // plan-claude_sessions_client-ui_redesign/REQ-26: once the focus moves to "Terminate", Enter stops the session
+  test('Tab to "Terminate" and Enter stop the session', async ({ page, request }) => {
     const { id, folder } = await openWorkingSession(page, request, 'stop-tab-enter');
     const stops = record(page, (url, method) => new URL(url).pathname === `/api/sessions/${id}/stop` && method === 'POST');
-    await page.getByRole('button', { name: 'Termina', exact: true }).first().click();
-    await expect(action(confirmation(page), 'Annulla')).toBeFocused();
+    await page.getByRole('button', { name: 'Terminate', exact: true }).first().click();
+    await expect(action(confirmation(page), 'Cancel')).toBeFocused();
 
     await page.keyboard.press('Tab');
-    await expect(action(confirmation(page), 'Termina')).toBeFocused();
+    await expect(action(confirmation(page), 'Terminate')).toBeFocused();
     await page.keyboard.press('Enter');
 
     await expect(confirmation(page)).toBeHidden();
-    await expect(listEntry(page, folder)).toContainText('Terminata');
+    await expect(listEntry(page, folder)).toContainText('Ended');
     expect(stops).toHaveLength(1);
   });
 });

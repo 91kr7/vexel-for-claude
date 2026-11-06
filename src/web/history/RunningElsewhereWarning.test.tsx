@@ -7,29 +7,29 @@ const buttonLabels = (html: string) => [...html.matchAll(/<button[^>]*>([\s\S]*?
 
 describe('RunningElsewhereWarning', () => {
   // plan-claude_sessions_client/REQ-27
-  it('is a modal alert dialog with the title, the risk text and the buttons "Annulla" and "Riprendi comunque"', () => {
+  it('is a modal alert dialog with the title, the risk text and the buttons "Cancel" and "Resume Anyway"', () => {
     const html = renderToStaticMarkup(<RunningElsewhereWarning onConfirm={() => {}} onCancel={() => {}} />);
     expect(html).toContain('role="alertdialog"');
     expect(html).toContain('aria-modal="true"');
-    expect(html).toContain('Sessione in esecuzione in un terminale');
+    expect(html).toContain('Session Running in a Terminal');
     expect(html).toContain(
-      'Questa sessione è ancora in esecuzione in un altro terminale. Se la riprendi anche qui, le due istanze possono danneggiare la conversazione.',
+      'This session is still running in another terminal. If you resume it here too, the two instances can damage the conversation.',
     );
-    expect(buttonLabels(html)).toEqual(['[Esc]', 'Annulla', 'Riprendi comunque']);
+    expect(buttonLabels(html)).toEqual(['[Esc]', 'Cancel', 'Resume Anyway']);
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-49: the triangle sits in the banner, after the title and before the text
   it('shows TriangleAlertIcon after the title and before the risk text', () => {
     const html = renderToStaticMarkup(<RunningElsewhereWarning onConfirm={() => {}} onCancel={() => {}} />);
     const icon = html.indexOf(renderToStaticMarkup(<TriangleAlertIcon />));
-    expect(icon).toBeGreaterThan(html.indexOf('Sessione in esecuzione in un terminale'));
-    expect(icon).toBeLessThan(html.indexOf('Questa sessione è ancora'));
+    expect(icon).toBeGreaterThan(html.indexOf('Session Running in a Terminal'));
+    expect(icon).toBeLessThan(html.indexOf('This session is still'));
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-49: "Riprendi comunque" is the amber primary action
-  it('styles "Riprendi comunque" as the .button-attn primary action', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-49: "Resume Anyway" is the amber primary action
+  it('styles "Resume Anyway" as the .button-attn primary action', () => {
     const html = renderToStaticMarkup(<RunningElsewhereWarning onConfirm={() => {}} onCancel={() => {}} />);
-    const primary = html.match(/<button([^>]*)>(?:(?!<\/button>)[\s\S])*Riprendi comunque/)?.[1] ?? '';
+    const primary = html.match(/<button([^>]*)>(?:(?!<\/button>)[\s\S])*Resume Anyway/)?.[1] ?? '';
     expect(primary).toMatch(/\sclass="(?:[^"]*\s)?button-attn(?:\s[^"]*)?"/);
   });
 });

@@ -11,9 +11,9 @@ const icon = renderToStaticMarkup(<CircleXIcon />);
 describe('ErrorMessage', () => {
   // plan-claude_sessions_client-ui_redesign/REQ-30, ErrorMessage: an alert whose text is exactly the message
   it('is an alert whose text is exactly its message', () => {
-    const html = renderToStaticMarkup(<ErrorMessage>La cartella non esiste.</ErrorMessage>);
+    const html = renderToStaticMarkup(<ErrorMessage>The folder does not exist.</ErrorMessage>);
     expect(rootTag(html)).toMatch(/\srole="alert"/);
-    expect(textOf(html)).toBe('La cartella non esiste.');
+    expect(textOf(html)).toBe('The folder does not exist.');
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-1, ErrorMessage: a decorative circle-x icon before the text

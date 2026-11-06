@@ -21,18 +21,18 @@ test.afterEach(async ({ request }) => {
 });
 
 const topBar = (page: Page) => page.getByRole('banner');
-const rail = (page: Page) => page.getByRole('navigation', { name: 'Navigazione principale' });
+const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' });
 const railButton = (page: Page, name: string) => rail(page).getByRole('button', { name, exact: true });
-const panel = (page: Page) => page.getByRole('region', { name: 'Elenco sessioni' });
+const panel = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const mainArea = (page: Page) => page.getByRole('main');
 const entries = (page: Page) => panel(page).getByRole('button');
 const entry = (page: Page, folder: string) => entries(page).filter({ has: page.getByTitle(folder, { exact: true }) });
-const chip = (page: Page) => panel(page).getByRole('status').filter({ hasText: 'richiede input' });
-const badge = (page: Page) => railButton(page, 'Sessioni').locator('.nav-rail-badge');
-const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'richiede il tuo input' });
+const chip = (page: Page) => panel(page).getByRole('status').filter({ hasText: /needs? input/ });
+const badge = (page: Page) => railButton(page, 'Sessions').locator('.nav-rail-badge');
+const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'needs your input' });
 const terminal = (page: Page) => page.locator('.xterm-rows');
-const chooser = (page: Page) => page.getByRole('dialog', { name: 'Nuova sessione' });
-const history = (page: Page) => page.getByRole('dialog', { name: 'Riprendi sessione' });
+const chooser = (page: Page) => page.getByRole('dialog', { name: 'New Claude Code Session' });
+const history = (page: Page) => page.getByRole('dialog', { name: 'Resume Session' });
 
 /** Shows in the page only the sessions of this test: other tests start sessions on the same server at the same time. */
 async function showOnlyOwnSessions(page: Page): Promise<() => WebSocketRoute> {
@@ -118,26 +118,26 @@ async function focusedShowsRing(page: Page): Promise<boolean> {
 
 test.describe('rail and list panel', () => {
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14, REQ-17: scenario "The user starts a new session from the rail"
-  test('at 1440 px the top bar shows the brand, the rail its actions and no logo, the panel "Sessioni", and "Nuova sessione" opens the dialog', async ({ page }) => {
+  test('at 1440 px the top bar shows the brand, the rail its actions and no logo, the panel "Sessions", and "New Claude Code Session" opens the dialog', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
 
     await expect(page).toHaveTitle('Vexel for Claude');
     await expect(rail(page).getByRole('img')).toHaveCount(0);
-    for (const name of ['Nuova sessione', 'Sessioni', 'Riprendi']) await expect(railButton(page, name)).toBeVisible();
+    for (const name of ['New Claude Code Session', 'Sessions', 'Resume']) await expect(railButton(page, name)).toBeVisible();
     await expect(topBar(page).getByText('Vexel', { exact: true })).toBeVisible();
     await expect(topBar(page).getByText('for Claude', { exact: true })).toBeVisible();
     await expect(panel(page).getByText('Vexel', { exact: true })).toHaveCount(0);
-    await expect(panel(page).getByRole('heading', { level: 1, name: 'Sessioni', exact: true })).toBeVisible();
+    await expect(panel(page).getByRole('heading', { level: 1, name: 'Sessions', exact: true })).toBeVisible();
 
-    await railButton(page, 'Nuova sessione').click();
+    await railButton(page, 'New Claude Code Session').click();
     await expect(chooser(page)).toBeVisible();
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-8: scenario "The user opens the resume history from the rail"
-  test('"Riprendi" in the rail opens the resume history', async ({ page }) => {
+  test('"Resume" in the rail opens the resume history', async ({ page }) => {
     await page.goto('/');
-    await railButton(page, 'Riprendi').click();
+    await railButton(page, 'Resume').click();
     await expect(history(page)).toBeVisible();
   });
 
@@ -156,10 +156,10 @@ test.describe('rail and list panel', () => {
     expect(mainBox.x + mainBox.width).toBeCloseTo(1440, 0);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-6, REQ-17, NavigationRail "Shows": "Nuova sessione" as `.vx-rail-fab`
-  test('the rail "Nuova sessione" is the 34 px gradient button with the 16 px plus icon in the text-on-accent colour', async ({ page }) => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-6, REQ-17, NavigationRail "Shows": "New Claude Code Session" as `.vx-rail-fab`
+  test('the rail "New Claude Code Session" is the 34 px gradient button with the 16 px plus icon in the text-on-accent colour', async ({ page }) => {
     await page.goto('/');
-    const fab = railButton(page, 'Nuova sessione');
+    const fab = railButton(page, 'New Claude Code Session');
     await page.mouse.move(0, 899);
     const fabBox = await box(fab);
     expect([fabBox.width, fabBox.height]).toEqual([34, 34]);
@@ -174,15 +174,15 @@ test.describe('rail and list panel', () => {
     expect(await fab.locator('svg').evaluate((svg) => [svg.getBoundingClientRect().width, svg.getBoundingClientRect().height])).toEqual([16, 16]);
   });
 
-  // NavigationRail "Shows": "Sessioni" is always the current page, "Riprendi" never
-  test('"Sessioni" carries aria-current="page" and "Riprendi" does not', async ({ page }) => {
+  // NavigationRail "Shows": "Sessions" is always the current page, "Resume" never
+  test('"Sessions" carries aria-current="page" and "Resume" does not', async ({ page }) => {
     await page.goto('/');
-    await expect(railButton(page, 'Sessioni')).toHaveAttribute('aria-current', 'page');
-    await expect(railButton(page, 'Riprendi')).not.toHaveAttribute('aria-current');
-    await railButton(page, 'Riprendi').click();
+    await expect(railButton(page, 'Sessions')).toHaveAttribute('aria-current', 'page');
+    await expect(railButton(page, 'Resume')).not.toHaveAttribute('aria-current');
+    await railButton(page, 'Resume').click();
     await expect(history(page)).toBeVisible();
-    await history(page).getByRole('button', { name: 'Annulla', exact: true }).click();
-    await expect(railButton(page, 'Sessioni')).toHaveAttribute('aria-current', 'page');
+    await history(page).getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(railButton(page, 'Sessions')).toHaveAttribute('aria-current', 'page');
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-13, REQ-14, REQ-16; AppLayout and TopBar "Shows": the flat list panel, and the brand in the top bar
@@ -194,7 +194,7 @@ test.describe('rail and list panel', () => {
 
     const brand = topBar(page).getByText('Vexel', { exact: true });
     const forClaude = topBar(page).getByText('for Claude', { exact: true });
-    const title = panel(page).getByRole('heading', { level: 1, name: 'Sessioni', exact: true });
+    const title = panel(page).getByRole('heading', { level: 1, name: 'Sessions', exact: true });
     expect(await style(brand, 'font-size')).toBe('14px');
     expect(await style(brand, 'font-weight')).toBe('600');
     expect(await style(forClaude, 'color')).toBe(await computedColour(page, 'var(--text-muted)'));
@@ -206,11 +206,11 @@ test.describe('rail and list panel', () => {
     expect(await title.evaluate((el) => getComputedStyle(el).marginTop + ' ' + getComputedStyle(el).marginBottom)).toBe('0px 0px');
   });
 
-  // AppLayout rule: the list panel has no "Nuova sessione" or "Riprendi sessione" button
-  test('the list panel holds no "Nuova sessione" or "Riprendi sessione" button and there is no complementary sidebar', async ({ page }) => {
+  // AppLayout rule: the list panel has no "New Session" or "Resume Session" button
+  test('the list panel holds no "New Session" or "Resume Session" button and there is no complementary sidebar', async ({ page }) => {
     await page.goto('/');
     await expect(panel(page)).toBeVisible();
-    for (const name of ['Nuova sessione', 'Riprendi sessione', 'Riprendi']) await expect(panel(page).getByRole('button', { name, exact: true })).toHaveCount(0);
+    for (const name of ['New Session', 'Resume Session', 'Resume']) await expect(panel(page).getByRole('button', { name, exact: true })).toHaveCount(0);
     await expect(page.getByRole('complementary')).toHaveCount(0);
   });
 });
@@ -226,24 +226,24 @@ test.describe('needs-input badge and chip', () => {
 
     await expect(chip(page)).toHaveCount(0);
     await expect(badge(page)).toHaveCount(0);
-    await expect(railButton(page, 'Sessioni')).toHaveText('Sessioni');
+    await expect(railButton(page, 'Sessions')).toHaveText('Sessions');
     await expect(panel(page).getByRole('status')).toHaveCount(1);
 
     await askPermission(request, first);
-    await expect(chip(page)).toHaveText('1 richiede input');
+    await expect(chip(page)).toHaveText('1 needs input');
     await expect(badge(page)).toHaveText('1');
     await askPermission(request, second);
-    await expect(chip(page)).toHaveText('2 richiede input');
+    await expect(chip(page)).toHaveText('2 need input');
     await expect(badge(page)).toHaveText('2');
-    await expect(railButton(page, 'Sessioni'), 'the badge does not change the accessible name').toHaveCount(1);
+    await expect(railButton(page, 'Sessions'), 'the badge does not change the accessible name').toHaveCount(1);
 
     await finishTurn(request, first);
-    await expect(chip(page)).toHaveText('1 richiede input');
+    await expect(chip(page)).toHaveText('1 needs input');
     await expect(badge(page)).toHaveText('1');
     await finishTurn(request, second);
     await expect(chip(page)).toHaveCount(0);
     await expect(badge(page)).toHaveCount(0);
-    await expect(railButton(page, 'Sessioni')).toHaveText('Sessioni');
+    await expect(railButton(page, 'Sessions')).toHaveText('Sessions');
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-20, REQ-21: the amber tinted pill with its dot, and the amber badge
@@ -251,7 +251,7 @@ test.describe('needs-input badge and chip', () => {
     await showOnlyOwnSessions(page);
     await askPermission(request, await startViaApi(request, await newFolder('colours')));
     await page.goto('/');
-    await expect(chip(page)).toHaveText('1 richiede input');
+    await expect(chip(page)).toHaveText('1 needs input');
 
     const pill = chip(page).locator(':scope > *').first();
     expect(await style(pill, 'background-color')).toBe('rgba(245, 158, 11, 0.15)');
@@ -264,9 +264,9 @@ test.describe('needs-input badge and chip', () => {
   });
 });
 
-test.describe('rail "Sessioni" moves the focus to the list', () => {
+test.describe('rail "Sessions" moves the focus to the list', () => {
   // AppLayout "Actions": the open session's entry gets the focus
-  test('with a session open, "Sessioni" focuses its entry and shows the focus ring', async ({ page, request }) => {
+  test('with a session open, "Sessions" focuses its entry and shows the focus ring', async ({ page, request }) => {
     await showOnlyOwnSessions(page);
     const other = await newFolder('focus-other');
     const opened = await newFolder('focus-open');
@@ -275,20 +275,20 @@ test.describe('rail "Sessioni" moves the focus to the list', () => {
     await page.goto('/');
     await openFromList(page, opened);
 
-    await railButton(page, 'Sessioni').click();
+    await railButton(page, 'Sessions').click();
     await expect(entry(page, opened)).toBeFocused();
     await expect.poll(() => focusedShowsRing(page), 'the focused entry shows the focus ring').toBe(true);
   });
 
   // AppLayout "Actions": no open session, the first enabled entry gets the focus
-  test('with no session open, "Sessioni" focuses the first entry of the list', async ({ page, request }) => {
+  test('with no session open, "Sessions" focuses the first entry of the list', async ({ page, request }) => {
     await showOnlyOwnSessions(page);
     await startViaApi(request, await newFolder('first-a'));
     await startViaApi(request, await newFolder('first-b'));
     await page.goto('/');
     await expect(entries(page)).toHaveCount(2);
 
-    await railButton(page, 'Sessioni').click();
+    await railButton(page, 'Sessions').click();
     await expect(entries(page).first()).toBeFocused();
   });
 
@@ -309,20 +309,20 @@ test.describe('rail "Sessioni" moves the focus to the list', () => {
     await expect(entries(page).first()).toBeFocused();
   });
 
-  // AppLayout "Actions": with no list entry the focus goes to "Nuova sessione" in the rail
-  test('with an empty list, "Sessioni" focuses "Nuova sessione" in the rail', async ({ page }) => {
+  // AppLayout "Actions": with no list entry the focus goes to "New Claude Code Session" in the rail
+  test('with an empty list, "Sessions" focuses "New Claude Code Session" in the rail', async ({ page }) => {
     await showOnlyOwnSessions(page);
     await page.goto('/');
-    await expect(panel(page).getByText('Nessuna sessione.')).toBeVisible();
+    await expect(panel(page).getByText('No sessions.')).toBeVisible();
 
-    await railButton(page, 'Sessioni').click();
-    await expect(railButton(page, 'Nuova sessione')).toBeFocused();
+    await railButton(page, 'Sessions').click();
+    await expect(railButton(page, 'New Claude Code Session')).toBeFocused();
   });
 });
 
 test.describe('needs-input snackbar', () => {
   // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-9, REQ-11, REQ-13, REQ-14, REQ-15: scenario "The user opens a waiting session from the snackbar"
-  test('a waiting session shows the snackbar, and "Apri" opens it and hides the snackbar', async ({ page, request }) => {
+  test('a waiting session shows the snackbar, and "Open" opens it and hides the snackbar', async ({ page, request }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await showOnlyOwnSessions(page);
     const billing = await newFolder('billing-api');
@@ -334,12 +334,12 @@ test.describe('needs-input snackbar', () => {
     await expect(snackbar(page)).toHaveCount(0);
 
     await askPermission(request, dashboardId);
-    await expect(snackbar(page)).toHaveText(/^\s*web-dashboard richiede il tuo input\s*Apri\s*$/);
+    await expect(snackbar(page)).toHaveText(/^\s*web-dashboard needs your input\s*Open\s*$/);
     await expect(snackbar(page).locator('b, strong').filter({ hasText: 'web-dashboard' })).toHaveCount(1);
     await expect(badge(page)).toHaveText('1');
-    await expect(chip(page)).toHaveText('1 richiede input');
+    await expect(chip(page)).toHaveText('1 needs input');
 
-    await snackbar(page).getByRole('button', { name: 'Apri', exact: true }).click();
+    await snackbar(page).getByRole('button', { name: 'Open', exact: true }).click();
     await expect(terminal(page)).toContainText(`CWD:${dashboard}`);
     await expect(entry(page, dashboard)).toHaveAttribute('aria-current', 'true');
     await expect(snackbar(page)).toHaveCount(0);
@@ -369,7 +369,7 @@ test.describe('needs-input snackbar', () => {
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-41, NeedsInputSnackbar "Shows": the glass toast
-  test('the snackbar is the glass toast with mono text and the accent "Apri"', async ({ page, request }) => {
+  test('the snackbar is the glass toast with mono text and the accent "Open"', async ({ page, request }) => {
     await showOnlyOwnSessions(page);
     const waitingId = await startViaApi(request, await newFolder('look-waiting'));
     await page.goto('/');
@@ -383,7 +383,7 @@ test.describe('needs-input snackbar', () => {
     expect(await style(snackbar(page), 'font-size')).toBe('12px');
     expect(await style(snackbar(page), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     await expect(snackbar(page).locator('b')).toHaveText('look-waiting');
-    const open = snackbar(page).getByRole('button', { name: 'Apri', exact: true });
+    const open = snackbar(page).getByRole('button', { name: 'Open', exact: true });
     expect(await style(open, 'color')).toBe(await computedColour(page, 'var(--accent-primary)'));
   });
 
@@ -394,7 +394,7 @@ test.describe('needs-input snackbar', () => {
     await page.goto('/');
     await expect(entries(page)).toHaveCount(1);
     await askPermission(request, waitingId);
-    await expect(snackbar(page)).toHaveText(/stops-asking richiede il tuo input/);
+    await expect(snackbar(page)).toHaveText(/stops-asking needs your input/);
 
     await finishTurn(request, waitingId);
     await expect(snackbar(page)).toHaveCount(0);
@@ -423,8 +423,8 @@ test.describe('needs-input snackbar', () => {
     await openFromList(page, folder);
 
     await askPermission(request, id);
-    await expect(chip(page)).toHaveText('1 richiede input');
-    await expect(entry(page, folder)).toContainText('Richiede input');
+    await expect(chip(page)).toHaveText('1 needs input');
+    await expect(entry(page, folder)).toContainText('Needs Input');
     await expect(snackbar(page)).toHaveCount(0);
   });
 
@@ -434,13 +434,13 @@ test.describe('needs-input snackbar', () => {
     const id = await startViaApi(request, await newFolder('asked-before-load'));
     await askPermission(request, id);
     await page.goto('/');
-    await expect(chip(page)).toHaveText('1 richiede input');
+    await expect(chip(page)).toHaveText('1 needs input');
     await expect(snackbar(page)).toHaveCount(0);
 
     await finishTurn(request, id);
     await expect(chip(page)).toHaveCount(0);
     await askPermission(request, id);
-    await expect(snackbar(page)).toHaveText(/asked-before-load richiede il tuo input/);
+    await expect(snackbar(page)).toHaveText(/asked-before-load needs your input/);
   });
 
   // NeedsInputSnackbar rule: one snackbar at a time, the newer session replaces the one shown
@@ -452,10 +452,10 @@ test.describe('needs-input snackbar', () => {
     await expect(entries(page)).toHaveCount(2);
 
     await askPermission(request, firstId);
-    await expect(snackbar(page)).toHaveText(/asks-first richiede il tuo input/);
+    await expect(snackbar(page)).toHaveText(/asks-first needs your input/);
     await askPermission(request, secondId);
-    await expect(snackbar(page)).toHaveText(/asks-second richiede il tuo input/);
+    await expect(snackbar(page)).toHaveText(/asks-second needs your input/);
     await expect(snackbar(page)).toHaveCount(1);
-    await expect(chip(page)).toHaveText('2 richiede input');
+    await expect(chip(page)).toHaveText('2 need input');
   });
 });
