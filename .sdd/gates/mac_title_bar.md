@@ -4,3 +4,6 @@
 |------|-------|------|---------|--------|
 | 2026-11-06 | analysis | question analyst Q1 | decided | Evolution: a window without the native bar was never specified; `light_theme.md` line 79 left it out |
 | 2026-11-06 | analysis | G1 analysis | pass | ordinary, 101/200 lines; derived additions accepted: buttons and drag in every window state, empty drag area at every width, clicks on controls never drag, browser unchanged |
+| 2026-11-06 | plan | question planner Q1 | decided | No added window border: the spec lists it only as a risk; to check by hand on GNOME |
+| 2026-11-06 | plan | G2 requirements | pass | REQ-1..28 in 2 features (title bar, window buttons) cover the spec |
+| 2026-11-06 | plan | G3 coverage | pass | 2 batches, REQ-1..28 covered, all modify paths exist; startup page stays light (no access to the saved theme) accepted; double click left to the desktop's title bar action via the drag region |
