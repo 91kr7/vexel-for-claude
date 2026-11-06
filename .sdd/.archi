@@ -108,7 +108,7 @@ The e2e run builds the app and starts it on port 3100. A server already listenin
 - **No linter or formatter.** Not requested.
 - **Playwright browser.** Chromium headless shell installed (v1248) in `~/.cache/ms-playwright`.
 - **node-pty.** Version 1.1.0 installs and loads on Node 22 in this machine.
-- **Electron sandbox.** It starts from `node_modules` on this machine (Ubuntu 24.04, X11), so no `--no-sandbox` flag.
+- **Electron sandbox.** Ubuntu 24.04 AppArmor (`kernel.apparmor_restrict_unprivileged_userns = 1`) blocks the Chromium sandbox of an Electron run from `node_modules`: launched from the menu it aborts ("SUID sandbox helper … not configured correctly"). The menu entry and `npm run desktop` pass `--no-sandbox` (human decision, 2026-11-06). A shell inside the IntelliJ snap hides the problem: its AppArmor profile is in complain mode.
 - **Desktop port.** The desktop app looks for the backend on `PORT`, default 4001, the port of `npm start`. It starts the server on that port when none answers. Gatekeeper decision, 2026-11-06.
 - **Node for the desktop app.** The desktop session has no nvm `PATH`. The menu entry passes the absolute Node path in `AI_CLIENT_NODE`. `npm run desktop` uses `node` from the shell.
 - **Menu entry folder.** `npm run desktop:install` writes to `AI_CLIENT_APPLICATIONS_DIR` when set, else to `$XDG_DATA_HOME/applications` (default `~/.local/share/applications`).
