@@ -89,8 +89,9 @@ Generated output, not versioned: `dist/web/` (frontend build), `dist/desktop/` (
 | Install the menu entry | `npm run desktop:install` | — |
 | Unit tests | `npm test` | `npx vitest run --reporter=dot` |
 | One unit test file | `npx vitest run <path>` | `npx vitest run --reporter=dot <path>` |
-| e2e tests | `npm run test:e2e` | `npx playwright test --pass-with-no-tests --reporter=dot` |
+| e2e tests (browser only, never Electron) | `npm run test:e2e` | `npx playwright test --pass-with-no-tests --reporter=dot` |
 | One e2e file | `npx playwright test <path>` | `npx playwright test --reporter=dot <path>` |
+| e2e desktop (Electron, opens windows on the display, 1 worker) | `npm run test:e2e:desktop` | `E2E_DESKTOP=1 npx playwright test --reporter=dot` |
 | Install e2e browser | `npx playwright install chromium` | — |
 
 The e2e run builds the app and starts it on port 3100. A server already listening there is reused outside CI.

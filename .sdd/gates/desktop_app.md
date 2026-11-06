@@ -19,3 +19,6 @@
 | 2026-11-06 | dev | G4 desktop-window fix round 1 | pass | One-line change in `src/desktop/menu-entry.ts`; build green |
 | 2026-11-06 | test | G5 desktop-window round 2 | pass | Re-run by gatekeeper: unit `src/desktop` 49/49, e2e `desktop-window.spec.ts` 9/9; no `.only`/`.skip` |
 | 2026-11-06 | dev | G4 window-tray | pass | Build green (re-run); files map to INT-1..5; divergences accepted: every quit path runs the check (REQ-15/17 on all paths), singular dialog text "Quitting ends it" |
+| 2026-11-06 | test | stale e2e server on 3100 | human decision | Leftover server (15 h, old code) would be reused by the full e2e; stopped with the human yes; 4001 untouched |
+| 2026-11-06 | test | Electron e2e grouping | human decision | Electron specs in a separate Playwright project + `test:e2e:desktop`; default e2e browser only; KB `electron-e2e-separate`; tester allowed to edit `playwright.config.ts` and the `package.json` script |
+| 2026-11-06 | test | G5 window-tray | pass | Unit batch files 77/77 (re-run); full unit 860, default e2e 275, Electron group 16 (tester, last batch; Electron not re-run to spare the user's display); conditional tray skip accepted, tray host present so tests ran; REQ-6 focus flake noted |
