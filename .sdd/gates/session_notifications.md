@@ -20,3 +20,5 @@
 | 2026-11-06 | test | G5 needs-input-notification round 2 | pass | Re-run by gatekeeper: batch unit and API files 157/157; browser e2e 81/81 and Electron 20/20 from round 1 untouched by the fix (Electron not re-run to spare the user's display) |
 | 2026-11-06 | dev | G4 turn-end-notification | pass | Build green (re-run); files map to INT-1..7; divergences accepted: AttentionClient accepts `turn_end` (needed for REQ-14), monitor's own tracker type with optional cause, INT-6 spec only, default TurnReader keeps `src/server/main.ts` unchanged |
 | 2026-11-06 | test | G5 turn-end-notification round 1 | sent back | 1 red in `turn-reader.test.ts`: a line that starts exactly 128 KiB before the end is dropped (`tailLines` always drops the first line when `start > 0`); spec `sessions/turn-reader.md` |
+| 2026-11-06 | dev | G4 turn-end-notification fix round 1 | pass | Tail read starts one byte earlier in `src/server/sessions/turn-reader.ts`; typecheck green |
+| 2026-11-06 | test | G5 turn-end-notification round 2 | pass | Re-run by gatekeeper: batch and touched-component files 238/238; browser e2e 4/4 from round 1 untouched by the fix; no Electron run needed |
