@@ -1,4 +1,5 @@
 import path from 'node:path';
+import type { SessionNameStore } from './session-name-store.js';
 
 export type SessionState = 'working' | 'needs_input' | 'idle' | 'ended';
 
@@ -9,6 +10,7 @@ export interface SessionSummary {
   state: SessionState;
   lastActivity: string;
   waitingTool?: string;
+  resumable?: true;
 }
 
 export interface TrackedSession {
@@ -28,15 +30,18 @@ export interface HookEvent {
 
 export interface SessionStateTrackerOptions {
   now?: () => Date;
+  names?: Pick<SessionNameStore, 'get' | 'move' | 'onChange'>;
 }
 
 export type ChangeCause =
   | { type: 'track' }
   | { type: 'hook'; hookEventName: string }
   | { type: 'input' }
-  | { type: 'exit' };
+  | { type: 'exit' }
+  | { type: 'name' };
 
 type ChangeListener = (summary: SessionSummary, cause: ChangeCause) => void;
+type RemoveListener = (sessionId: string) => void;
 
 const LABEL_LENGTH = 80;
 const ESCAPE = '\x1b';
@@ -45,6 +50,7 @@ const ASK_USER_QUESTION = 'AskUserQuestion';
 
 interface Entry {
   summary: SessionSummary;
+  defaultLabel: string;
   labelFromPrompt: boolean;
   claudeSessionId: string | undefined;
   lastPreToolUse?: string;
@@ -82,28 +88,41 @@ export function labelOf(prompt: unknown): string {
 
 export class SessionStateTracker {
   readonly #now: () => Date;
+  readonly #names: SessionStateTrackerOptions['names'];
   readonly #entries = new Map<string, Entry>();
   readonly #listeners = new Set<ChangeListener>();
+  readonly #removeListeners = new Set<RemoveListener>();
 
   constructor(options: SessionStateTrackerOptions = {}) {
     this.#now = options.now ?? (() => new Date());
+    this.#names = options.names;
+    this.#names?.onChange((key) => {
+      for (const entry of this.#entries.values()) {
+        if (this.#nameKey(entry) === key && this.#refreshLabel(entry)) this.#notify(entry.summary, { type: 'name' });
+      }
+    });
   }
 
   track(session: TrackedSession): void {
     const resumedLabel = labelOf(session.resumedFrom?.firstUserMessage);
+    const defaultLabel = resumedLabel || path.basename(session.cwd) || session.cwd;
     const summary: SessionSummary = {
       id: session.id,
       folder: session.cwd,
-      label: resumedLabel || path.basename(session.cwd) || session.cwd,
+      label: defaultLabel,
       state: 'idle',
       lastActivity: this.#now().toISOString(),
     };
-    this.#entries.set(session.id, {
+    if (session.resumedFrom?.sessionId) summary.resumable = true;
+    const entry: Entry = {
       summary,
+      defaultLabel,
       labelFromPrompt: resumedLabel !== '',
       claudeSessionId: session.resumedFrom?.sessionId,
-    });
-    this.#notify(summary, { type: 'track' });
+    };
+    this.#refreshLabel(entry);
+    this.#entries.set(session.id, entry);
+    this.#notify(entry.summary, { type: 'track' });
     session.onExit(() =>
       this.#update(session.id, { state: 'ended', lastActivity: this.#now().toISOString() }, { type: 'exit' }),
     );
@@ -113,7 +132,7 @@ export class SessionStateTracker {
     const entry = this.#entries.get(sessionId);
     if (!entry) return false;
     if (entry.summary.state !== 'ended' && typeof event.session_id === 'string' && event.session_id !== '') {
-      entry.claudeSessionId = event.session_id;
+      this.#setClaudeSessionId(entry, event.session_id);
     }
     const state = stateOf(event);
     if (entry.summary.state === 'ended' || state === undefined) return true;
@@ -127,10 +146,12 @@ export class SessionStateTracker {
     } else if (event.hook_event_name === 'Notification' && event.notification_type === 'permission_prompt') {
       changes.waitingTool = entry.summary.waitingTool ?? entry.lastPreToolUse;
     }
+    if (event.hook_event_name === 'UserPromptSubmit') changes.resumable = true;
     if (event.hook_event_name === 'UserPromptSubmit' && !entry.labelFromPrompt) {
       const label = labelOf(event.prompt);
       if (label !== '') {
-        changes.label = label;
+        entry.defaultLabel = label;
+        changes.label = this.#labelOf(entry);
         entry.labelFromPrompt = true;
       }
     }
@@ -170,9 +191,44 @@ export class SessionStateTracker {
     return [...this.#entries.values()].map((entry) => ({ ...entry.summary }));
   }
 
+  dismiss(sessionId: string): boolean {
+    if (this.#entries.get(sessionId)?.summary.state !== 'ended') return false;
+    this.#entries.delete(sessionId);
+    for (const listener of this.#removeListeners) listener(sessionId);
+    return true;
+  }
+
   onChange(listener: ChangeListener): () => void {
     this.#listeners.add(listener);
     return () => this.#listeners.delete(listener);
+  }
+
+  onRemove(listener: RemoveListener): () => void {
+    this.#removeListeners.add(listener);
+    return () => this.#removeListeners.delete(listener);
+  }
+
+  #nameKey(entry: Entry): string {
+    return entry.claudeSessionId ?? entry.summary.id;
+  }
+
+  #labelOf(entry: Entry): string {
+    return this.#names?.get(this.#nameKey(entry)) ?? entry.defaultLabel;
+  }
+
+  #refreshLabel(entry: Entry): boolean {
+    const label = this.#labelOf(entry);
+    if (label === entry.summary.label) return false;
+    entry.summary = { ...entry.summary, label };
+    return true;
+  }
+
+  #setClaudeSessionId(entry: Entry, claudeSessionId: string): void {
+    const previousKey = this.#nameKey(entry);
+    entry.claudeSessionId = claudeSessionId;
+    if (previousKey === claudeSessionId) return;
+    void this.#names?.move(previousKey, claudeSessionId).catch(() => undefined);
+    if (this.#refreshLabel(entry)) this.#notify(entry.summary, { type: 'name' });
   }
 
   #update(sessionId: string, changes: Partial<SessionSummary>, cause: ChangeCause): void {

@@ -472,7 +472,9 @@ test('an external session that waits for input is the amber row with "External" 
   await expect(groupItems(page, 'Needs Input').filter({ has: byFolder(page, outside) })).toHaveCount(1);
   await expect(card(page, outside)).toHaveCount(0);
   await expect(item(page, outside).getByRole('button', { name: 'Reply' })).toHaveCount(0);
-  await expect(item(page, outside).getByRole('button')).toHaveCount(1);
+  // plan-session_list_improvements/REQ-25: the entry button and "Rename"
+  await expect(item(page, outside).getByRole('button')).toHaveCount(2);
+  await expect(item(page, outside).getByRole('button', { name: 'Rename', exact: true })).toHaveCount(1);
   await expect(badge(row)).toHaveText('Needs Input');
   await expect(counter(page)).toHaveText('1 needs input');
 

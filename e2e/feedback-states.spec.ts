@@ -413,29 +413,28 @@ test.describe('open session', () => {
   });
 
   // plan-claude_sessions_client-ui_redesign/REQ-4, AppLayout: with no list entry the focus goes to "New Claude Code Session" in the rail
-  test('Ctrl+Shift+L with an empty list moves the focus to "New Claude Code Session" in the rail', async ({ page, request }) => {
+  test('Ctrl+Shift+L with an empty list moves the focus to "New Claude Code Session" in the rail', async ({ page }) => {
+    // The open session is never listed: since plan-session_list_improvements/REQ-7 a session that leaves the list closes.
     const folder = await newFolder('leave-without-entry');
-    const id = await startViaApi(request, folder);
     await page.route(
       (url) => url.pathname === '/api/sessions',
       async (route) => {
         if (route.request().method() !== 'GET') return route.fallback();
-        const response = await route.fetch();
-        await route.fulfill({ response, json: ((await response.json()) as { id: string }[]).filter((s) => s.id === id) });
+        await route.fulfill({ response: await route.fetch(), json: [] });
       },
     );
-    let events: WebSocketRoute | undefined;
     await page.routeWebSocket(EVENTS, (ws) => {
-      events = ws;
       ws.connectToServer().onMessage((message) => {
-        const frame = JSON.parse(String(message)) as { type?: string; session?: { id?: string } };
-        if (frame.type !== 'session' || frame.session?.id === id) ws.send(message);
+        if ((JSON.parse(String(message)) as { type?: string }).type !== 'session') ws.send(message);
       });
     });
     await page.goto('/');
-    await entry(page, folder).click();
+    await button(rail(page), 'New Claude Code Session').click();
+    await pathField(page).fill(folder);
+    const started = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/sessions' && r.request().method() === 'POST');
+    await button(chooser(page), 'Start Session').click();
+    createdIds.push(((await (await started).json()) as { id: string }).id);
     await expect(terminal(page)).toContainText('READY');
-    events!.send(JSON.stringify({ type: 'session-removed', id }));
     await expect(list(page).getByRole('button')).toHaveCount(0);
     await page.locator('.xterm-screen').click();
 
