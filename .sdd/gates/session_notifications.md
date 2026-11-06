@@ -14,3 +14,4 @@
 | 2026-11-06 | plan | question planner Q5 | decided | Replace in place: Electron `Notification` if it can, else one pure-JS D-Bus client package recorded in `.archi`; no hand-driven `gdbus`. Grouping needs true replacement |
 | 2026-11-06 | plan | question planner Q6 | decided | Notification, tooltip and menu texts as proposed; wording of the list card and page counter |
 | 2026-11-06 | plan | G3 coverage | pass | 5 vertical batches, REQ-1..37 covered, no cycle; later modify targets named by component (created by batch 1), as accepted in `desktop_app` |
+| 2026-11-06 | dev | G4 needs-input-notification | pass | Build green (re-run); files map to INT-1..15; dependency `@jellybrick/dbus-next` per Q5 (8 transitive packages, no install script); divergences accepted: replace in place done early (needed for REQ-11), escaping in SystemNotifications only with `body-markup`, route `/api/attention` |

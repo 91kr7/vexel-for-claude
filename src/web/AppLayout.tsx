@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useDesktopBridge } from './desktop-bridge';
 import { EmptyState } from './EmptyState';
 import { ConversationView } from './external/ConversationView';
 import { FolderChooser } from './folders/FolderChooser';
@@ -34,6 +35,9 @@ export function AppLayout() {
     setOpenSessionId(sessionId);
     setOpenIsExternal(sessions.find((session) => session.id === sessionId)?.external === true);
   };
+  useDesktopBridge(openSessionId, (sessionId) => {
+    if (sessions.some((session) => session.id === sessionId)) openFromList(sessionId);
+  });
 
   const snackbar = snackbarSession && <NeedsInputSnackbar session={snackbarSession} onOpen={openFromList} />;
 

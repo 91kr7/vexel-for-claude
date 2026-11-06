@@ -9,6 +9,7 @@
 | EmptyState | UI component | `src/web/EmptyState.tsx` | Main area with no open session: full AreaState with "New Session" and "Resume Session" | `specs/empty-state.md` |
 | NavigationRail | UI component | `src/web/NavigationRail.tsx` | 52 px rail: "New Claude Code Session", "Sessions" with the amber badge, "Resume", hover tooltips | `specs/navigation-rail.md` |
 | NeedsInputSnackbar | UI component | `src/web/NeedsInputSnackbar.tsx` | Glass toast "<project> needs your input" with "Open", and the rule that picks its session | `specs/needs-input-snackbar.md` |
+| useDesktopBridge | frontend hook | `src/web/desktop-bridge.ts` | Page side of the desktop bridge: reports the open session and passes on "open this session"; nothing in a browser | `specs/use-desktop-bridge.md` |
 | WebEntry | UI entry point | `src/web/index.html`, `src/web/main.tsx`, `src/web/styles.css` | English page that marks the saved theme (light by default) before the first paint and mounts AppLayout, with `color-scheme` following the theme, with the global styles, the mock classes and the button, label and field classes | `specs/web-entry.md` |
 | ThemeTokens | configuration | `src/web/theme/tokens.css` | The mock's dark and editorial-light tokens with the light-blue accent, status colours, fixed terminal colours, shadows and focus ring | `specs/theme-tokens.md` |
 | ThemeStore | frontend service | `src/web/theme/theme-store.ts` | Active theme of the page, started from the page mark, its `data-theme` mark on the root, and the toggle that saves it in `localStorage` | `specs/theme-store.md` |

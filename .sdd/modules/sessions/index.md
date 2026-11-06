@@ -15,6 +15,8 @@
 | HookEventRoute | REST endpoint | `src/server/sessions/hook-event-route.ts` | `POST /api/sessions/:id/hook-events`: passes a hook event to the tracker | `specs/hook-event-route.md` |
 | SessionListRoute | REST endpoint | `src/server/sessions/session-list-route.ts` | `GET /api/sessions`: the hosted and external sessions with their summary | `specs/session-list-route.md` |
 | SessionEventsRoute | REST endpoint (WebSocket) | `src/server/sessions/session-events-route.ts` | `GET /api/sessions/events`: pushes each session change to the pages | `specs/session-events-route.md` |
+| AttentionMonitor | backend service | `src/server/sessions/attention-monitor.ts` | Events when a hosted or external session enters `needs_input`, and the list of the sessions that need input | `specs/attention-monitor.md` |
+| AttentionRoute | REST endpoint (WebSocket) | `src/server/sessions/attention-route.ts` | `GET /api/attention`: the needs-input list on connect and on each change, and each new event | `specs/attention-route.md` |
 | groupSessions, orderSessions | frontend function | `src/web/sessions/session-order.ts` | The four list groups in order; inside each, the given order, then latest activity first | `specs/session-order.md` |
 | nextSessionOrder | frontend function | `src/web/sessions/next-session-order.ts` | New order of each group from the previous order and the current sessions | `specs/next-session-order.md` |
 | SessionOrderStore | frontend service | `src/web/sessions/session-order-store.ts` | Order of the sessions inside each group, kept current, moved by the user and saved in `localStorage` | `specs/session-order-store.md` |

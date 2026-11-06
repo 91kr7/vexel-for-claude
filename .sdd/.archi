@@ -38,6 +38,7 @@ A local web application for the developer's own Linux machine. One browser page 
     │   └── main.tsx         React root, renders a placeholder title
     └── desktop/
         ├── main.ts          Electron main process (package.json "main" points to its build)
+        ├── desktop-bridge.cts  preload of the window, emitted as CommonJS (`dist/desktop/desktop-bridge.cjs`)
         └── icons/           app icon, SVG and 256 px PNG
 ```
 
@@ -56,6 +57,7 @@ Generated output, not versioned: `dist/web/` (frontend build), `dist/desktop/` (
 | react, react-dom | runtime | UI |
 | @xterm/xterm, @xterm/addon-fit | runtime | Terminal view and resize to container |
 | @xterm/headless, @xterm/addon-serialize | runtime | Server-side terminal mirror per session and its serialized snapshot |
+| @jellybrick/dbus-next | runtime | D-Bus client of the desktop app for the system notifications (assumption "Notification mechanism"). Pure JavaScript, no native build |
 | typescript | dev | Typecheck (`tsc -b`, no emit) |
 | vite, @vitejs/plugin-react | dev | Frontend dev server and bundle |
 | vitest | dev | Unit and integration tests |
@@ -68,6 +70,7 @@ Generated output, not versioned: `dist/web/` (frontend build), `dist/desktop/` (
 - Backend code lives in `src/server/`, frontend code in `src/web/`. They do not import each other.
 - Desktop code lives in `src/desktop/`. It imports neither `src/server` nor `src/web`. It starts the server as a separate process with the system Node and loads the page over HTTP.
 - Desktop imports use the `.js` extension, as in the server.
+- The window preload is a `.cts` file. `tsc` emits it as CommonJS, because Electron runs a sandboxed preload as a script. It can `require` only `electron`, so it imports no local module.
 - Server imports use the `.js` extension (NodeNext ESM resolution).
 - File names are kebab-case. React component files are PascalCase (`SessionList.tsx`).
 - Unit tests sit next to the code: `<name>.test.ts` / `<name>.test.tsx`.
@@ -109,6 +112,7 @@ The e2e run builds the app and starts it on port 3100. A server already listenin
 - **Playwright browser.** Chromium headless shell installed (v1248) in `~/.cache/ms-playwright`.
 - **node-pty.** Version 1.1.0 installs and loads on Node 22 in this machine.
 - **Electron sandbox.** Ubuntu 24.04 AppArmor (`kernel.apparmor_restrict_unprivileged_userns = 1`) blocks the Chromium sandbox of an Electron run from `node_modules`: launched from the menu it aborts ("SUID sandbox helper … not configured correctly"). The menu entry and `npm run desktop` pass `--no-sandbox` (human decision, 2026-11-06). A shell inside the IntelliJ snap hides the problem: its AppArmor profile is in complain mode.
+- **Notification mechanism.** The desktop app talks to `org.freedesktop.Notifications` over the D-Bus session bus: `Notify` with `replaces_id`, `CloseNotification`, and the signals `ActionInvoked` and `NotificationClosed`. Electron's `Notification` cannot replace a notification in place on Linux: `show()` closes it and creates a new one, and Electron 45 does not load `notify_notification_update`. Checked on 2026-11-06.
 - **Desktop port.** The desktop app looks for the backend on `PORT`, default 4001, the port of `npm start`. It starts the server on that port when none answers. Gatekeeper decision, 2026-11-06.
 - **Node for the desktop app.** The desktop session has no nvm `PATH`. The menu entry passes the absolute Node path in `AI_CLIENT_NODE`. `npm run desktop` uses `node` from the shell.
 - **Menu entry folder.** `npm run desktop:install` writes to `AI_CLIENT_APPLICATIONS_DIR` when set, else to `$XDG_DATA_HOME/applications` (default `~/.local/share/applications`).

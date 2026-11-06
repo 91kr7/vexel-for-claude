@@ -10,9 +10,9 @@ type: Electron main process
 
 ## Contract
 
-- launch → it shows the TrayIcon and opens one window "Vexel for Claude", 1280 × 800, on the StartupPage in the loading state. The window has the AppIcon and a hidden menu bar (Alt shows it).
+- launch → it shows the TrayIcon and opens one window "Vexel for Claude", 1280 × 800, on the StartupPage in the loading state. The window has the AppIcon, a hidden menu bar (Alt shows it) and the DesktopBridge preload.
 - then it runs `launchBackend` with the repository folder and the log file `backend.log` in the Electron logs folder.
-  - ready → the window loads `<origin>/`, the client page of the backend.
+  - ready → it starts the AttentionClient on the backend origin, then the window loads `<origin>/`, the client page of the backend.
   - failed → the window shows the StartupPage in the error state, with the output lines.
 - a second launch while the app runs → the running app restores, shows and focuses its window, also when the window is hidden. The second launch exits and opens no window.
 - closing the window → the window hides and the app keeps running, with the backend and its sessions. The page stays loaded.
@@ -24,10 +24,19 @@ type: Electron main process
   - a quit request while one is already running is ignored.
 - quit during the backend start → no confirmation; the server that the launcher is starting is stopped.
 
+Notifications:
+
+- one NotificationRules and one SystemNotifications (app name "Vexel for Claude", icon the AppIcon PNG).
+- to the rules go: the events and the lists of the AttentionClient, each change of the window focus, and each open session that the page reports through the DesktopBridge.
+- the window has the focus → it is focused, visible and not minimized. The focus is read again on `focus`, `blur`, `hide` and `minimize` of the window.
+- the commands of the rules go to SystemNotifications: `show` with the kind and the NotificationTexts of the event, `close` with the session.
+- a click on a notification → the same as "Open Window", then it sends the session id to the page on `desktop-bridge:open-session`.
+
 ## Rules and invariants
 
 - One running app per user session.
-- The page in the window has no Node access (Electron defaults: context isolation, sandbox).
+- The page in the window has no Node access (Electron defaults: context isolation, sandbox). It gets only the DesktopBridge.
+- An open-session report from another web contents than the window's is ignored.
 - The backend runs outside Electron, with the system Node. node-pty therefore keeps its Node build.
 - A backend that the app did not start keeps running after the app quits, with its sessions.
 - The app quits only from a quit request, never because its window closes.
@@ -35,7 +44,9 @@ type: Electron main process
 ## Dependencies
 
 - BackendLauncher, StartupPage, AppIcon, TrayIcon, QuitCheck
+- DesktopBridge, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications
 
 ## Requirements served
 
 - `plan-desktop_app/REQ-1`, `plan-desktop_app/REQ-3`, `plan-desktop_app/REQ-4`, `plan-desktop_app/REQ-6`, `plan-desktop_app/REQ-7`, `plan-desktop_app/REQ-9`, `plan-desktop_app/REQ-11`, `plan-desktop_app/REQ-12`, `plan-desktop_app/REQ-13`, `plan-desktop_app/REQ-14`, `plan-desktop_app/REQ-15`, `plan-desktop_app/REQ-16`, `plan-desktop_app/REQ-17`
+- `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-3`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`
