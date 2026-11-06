@@ -22,6 +22,7 @@ type: configuration
 - passes the scanner to SessionListRoute and SessionEventsRoute.
 - one TranscriptReader with the default Claude Code folder. Registers ConversationStreamRoute and ItemContentRoute with it and the scanner.
 - serves the files of `dist/web` when the folder exists.
+- on `SIGTERM` or `SIGINT` → it stops every running session of the SessionRegistry and waits for their exit, then closes the server and exits with code `0`. A second signal during this stop changes nothing.
 
 ## Rules and invariants
 
@@ -40,3 +41,4 @@ type: configuration
 
 - `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-29`, `plan-claude_sessions_client/REQ-32`, `plan-claude_sessions_client/REQ-33`
 - `plan-claude_sessions_client-ui_redesign/REQ-21`
+- `plan-desktop_app/REQ-15`

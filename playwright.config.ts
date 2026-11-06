@@ -6,15 +6,20 @@ const port = 3100;
 const baseURL = `http://127.0.0.1:${port}`;
 // These specs share the server's fixture Claude Code folder, so they must never run at the same time.
 const claudeDirSpecs = /(resume-session|history-search|external-sessions|session-entries|open-session-external|dialogs)\.spec\.ts$/;
+// Specs that launch Electron open windows on the user's display: only `npm run test:e2e:desktop` runs them (E2E_DESKTOP=1).
+const electronSpecs = /desktop-window\.spec\.ts$/;
+const electron = process.env.E2E_DESKTOP === '1';
 
 export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
   use: { baseURL },
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: claudeDirSpecs },
-    { name: 'chromium-claude-dir', use: { ...devices['Desktop Chrome'] }, testMatch: claudeDirSpecs, workers: 1 },
-  ],
+  projects: electron
+    ? [{ name: 'electron', use: { ...devices['Desktop Chrome'] }, testMatch: electronSpecs, workers: 1 }]
+    : [
+        { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: [claudeDirSpecs, electronSpecs] },
+        { name: 'chromium-claude-dir', use: { ...devices['Desktop Chrome'] }, testMatch: claudeDirSpecs, workers: 1 },
+      ],
   webServer: {
     // Not `npm start`: its fixed PORT would override the e2e port.
     command: 'npm run --silent build && NODE_ENV=production npx tsx src/server/main.ts',

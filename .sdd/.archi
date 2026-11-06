@@ -13,6 +13,7 @@ A local web application for the developer's own Linux machine. One browser page 
 | Package manager | npm 10.9.9, single package, no workspaces, ESM (`"type": "module"`) |
 | Backend | Fastify 5 + @fastify/websocket + @fastify/static, node-pty, run with `tsx` |
 | Frontend | React 18 + Vite 8, @xterm/xterm 6 + @xterm/addon-fit, plain CSS |
+| Desktop | Electron 45 main process, compiled by `tsc` to `dist/desktop` |
 | Tests | Vitest 5 (unit/integration), Playwright 1.64 with chromium (e2e) |
 
 ## Structure
@@ -24,18 +25,23 @@ A local web application for the developer's own Linux machine. One browser page 
 ├── tsconfig.server.json     src/server (NodeNext resolution, Node types)
 ├── tsconfig.web.json        src/web (bundler resolution, DOM, react-jsx)
 ├── tsconfig.node.json       root config files (vite, vitest, playwright)
+├── tsconfig.desktop.json    src/desktop (NodeNext resolution, Node and Electron types)
+├── tsconfig.desktop.build.json  emits src/desktop to dist/desktop, without the tests
 ├── vite.config.ts           root src/web, output dist/web, dev proxy /api -> server
 ├── vitest.config.ts         tests in src/**/*.test.{ts,tsx}
 ├── playwright.config.ts     tests in e2e/, builds and starts the app on port 3100
 ├── .gitignore
 └── src/
     ├── server/main.ts       Fastify app: GET /api/health, serves dist/web if it exists
-    └── web/
-        ├── index.html       Vite entry page
-        └── main.tsx         React root, renders a placeholder title
+    ├── web/
+    │   ├── index.html       Vite entry page
+    │   └── main.tsx         React root, renders a placeholder title
+    └── desktop/
+        ├── main.ts          Electron main process (package.json "main" points to its build)
+        └── icons/           app icon, SVG and 256 px PNG
 ```
 
-Generated output, not versioned: `dist/web/` (frontend build), `test-results/`, `playwright-report/`.
+Generated output, not versioned: `dist/web/` (frontend build), `dist/desktop/` (desktop build), `test-results/`, `playwright-report/`.
 
 ## Dependencies
 
@@ -46,6 +52,7 @@ Generated output, not versioned: `dist/web/` (frontend build), `test-results/`, 
 | @fastify/static | runtime | Serves the built frontend from `dist/web` |
 | node-pty | runtime | Pseudo-terminals for the CLI sessions (native build) |
 | tsx | runtime | Runs the TypeScript server in `dev` and `start` |
+| electron | runtime | Desktop window; the app runs it from the repository |
 | react, react-dom | runtime | UI |
 | @xterm/xterm, @xterm/addon-fit | runtime | Terminal view and resize to container |
 | @xterm/headless, @xterm/addon-serialize | runtime | Server-side terminal mirror per session and its serialized snapshot |
@@ -59,6 +66,8 @@ Generated output, not versioned: `dist/web/` (frontend build), `test-results/`, 
 ## Conventions
 
 - Backend code lives in `src/server/`, frontend code in `src/web/`. They do not import each other.
+- Desktop code lives in `src/desktop/`. It imports neither `src/server` nor `src/web`. It starts the server as a separate process with the system Node and loads the page over HTTP.
+- Desktop imports use the `.js` extension, as in the server.
 - Server imports use the `.js` extension (NodeNext ESM resolution).
 - File names are kebab-case. React component files are PascalCase (`SessionList.tsx`).
 - Unit tests sit next to the code: `<name>.test.ts` / `<name>.test.tsx`.
@@ -74,11 +83,15 @@ Generated output, not versioned: `dist/web/` (frontend build), `test-results/`, 
 | Dev (server :3000 + Vite :5173) | `npm run dev` | — |
 | Typecheck only | `npx tsc -b` | same (silent on success) |
 | Build | `npm run build` | `npx tsc -b && npx vite build --logLevel warn` |
-| Start built app (:3000) | `npm start` | `npm run --silent start` |
+| Start built app (:4001) | `npm start` | `npm run --silent start` |
+| Build the desktop app | `npm run build:desktop` | `npm run --silent build:desktop` |
+| Launch the desktop app | `npm run desktop` | — |
+| Install the menu entry | `npm run desktop:install` | — |
 | Unit tests | `npm test` | `npx vitest run --reporter=dot` |
 | One unit test file | `npx vitest run <path>` | `npx vitest run --reporter=dot <path>` |
-| e2e tests | `npm run test:e2e` | `npx playwright test --pass-with-no-tests --reporter=dot` |
+| e2e tests (browser only, never Electron) | `npm run test:e2e` | `npx playwright test --pass-with-no-tests --reporter=dot` |
 | One e2e file | `npx playwright test <path>` | `npx playwright test --reporter=dot <path>` |
+| e2e desktop (Electron, opens windows on the display, 1 worker) | `npm run test:e2e:desktop` | `E2E_DESKTOP=1 npx playwright test --reporter=dot` |
 | Install e2e browser | `npx playwright install chromium` | — |
 
 The e2e run builds the app and starts it on port 3100. A server already listening there is reused outside CI.
@@ -95,3 +108,8 @@ The e2e run builds the app and starts it on port 3100. A server already listenin
 - **No linter or formatter.** Not requested.
 - **Playwright browser.** Chromium headless shell installed (v1248) in `~/.cache/ms-playwright`.
 - **node-pty.** Version 1.1.0 installs and loads on Node 22 in this machine.
+- **Electron sandbox.** It starts from `node_modules` on this machine (Ubuntu 24.04, X11), so no `--no-sandbox` flag.
+- **Desktop port.** The desktop app looks for the backend on `PORT`, default 4001, the port of `npm start`. It starts the server on that port when none answers. Gatekeeper decision, 2026-11-06.
+- **Node for the desktop app.** The desktop session has no nvm `PATH`. The menu entry passes the absolute Node path in `AI_CLIENT_NODE`. `npm run desktop` uses `node` from the shell.
+- **Menu entry folder.** `npm run desktop:install` writes to `AI_CLIENT_APPLICATIONS_DIR` when set, else to `$XDG_DATA_HOME/applications` (default `~/.local/share/applications`).
+- **`NODE_ENV=production` in the shell** makes npm skip dev dependencies. Install with `npm install --include=dev`.

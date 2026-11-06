@@ -64,3 +64,25 @@ if (existsSync(webRoot)) {
 
 externalScanner.start();
 await app.listen({ host: HOST, port });
+
+async function stopServer(): Promise<void> {
+  const running = registry.list().filter((session) => !session.exited);
+  await Promise.all(
+    running.map(
+      (session) =>
+        new Promise<void>((resolve) => {
+          session.onExit(resolve);
+          session.stop();
+        }),
+    ),
+  );
+  await app.close();
+  process.exit(0);
+}
+
+let stopping: Promise<void> | undefined;
+for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+  process.on(signal, () => {
+    stopping ??= stopServer();
+  });
+}
