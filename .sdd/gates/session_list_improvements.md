@@ -12,3 +12,4 @@
 | 2026-11-06 | plan | question planner Q4 | decided | REQ-26: stop confirmation shows the folder, not the label, so it does not change |
 | 2026-11-06 | plan | G3 coverage | pass | 3 vertical batches, REQ-1..39 covered, all modify paths exist; one enabling INT (e2e names folder); Resume of an ended session via a new route that removes the old entry |
 | 2026-11-06 | dev | G4 dismiss-resume | pass | Build green (re-run); files map to INT-1..10; divergences accepted: `dismiss` returns a boolean, resume of a non-ended session → 409 `not_ended`, no Claude id → 404, `resumable` type in LiveSessionStore, styles; 1 old list-route test expects no `resumable` |
+| 2026-11-06 | test | G5 dismiss-resume | pass | Re-run by gatekeeper: 7 files 73/73; tester 226 + 109 unit, 86 e2e; page-frame setup changed to follow REQ-7 (open session leaving the list closes); fixed-order flake 1/3 under 6 workers, passed 5/5 alone |
