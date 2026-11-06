@@ -14,3 +14,5 @@
 | 2026-11-06 | plan | G3 coverage | pass | 2 batches (list-width REQ-1..14, header-footer REQ-15..29), no dependency, modify paths exist; REQ-11 relies on the existing terminal refit; both batches may touch `styles.css`, run in sequence |
 | 2026-11-06 | plan | analysis correction | pass | Human decision on Search/zoom folded into the analysis (header bullet, footer bullet, assumption) |
 | 2026-11-07 | dev | G4 list-width | pass | Build green (re-run); files map to INT-1..5; accepted: INT-5 done in `styles.css` only (time then state name shrink with ellipsis at 180 px, figures never cut); drag and arrows start from the shown width |
+| 2026-11-07 | test | G5 list-width round 1 | sent back | Re-run by gatekeeper green (unit 47, e2e 26 on list-width + layout); REQ-8 app restart untested, batch notes ask for an Electron check; `layout.spec.ts` helper change accepted |
+| 2026-11-07 | test | G5 list-width round 2 | pass | Electron restart check added and re-run by gatekeeper (1/1); `playwright.config.ts` Electron pattern extended, test infra only; no source change |
