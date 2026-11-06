@@ -227,7 +227,7 @@ test('one session needing input reads "1 needs input"', async ({ page, request }
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1, REQ-2, REQ-3, REQ-4, REQ-9, REQ-14, REQ-15: the open session and its stop confirmation
-test('an open working session shows "Interrupt", "Terminate", the English hint and an English stop confirmation', async ({ page, request }) => {
+test('an open working session shows "Interrupt", "Terminate", no key hint and an English stop confirmation', async ({ page, request }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await showOnlyOwnSessions(page);
   const folder = await newFolder('billing-api');
@@ -241,8 +241,9 @@ test('an open working session shows "Interrupt", "Terminate", the English hint a
   await expect(main.getByRole('button', { name: 'Interrupt', exact: true })).toBeVisible();
   const terminate = main.getByRole('button', { name: 'Terminate', exact: true });
   await expect(terminate).toBeVisible();
-  await expect(main.locator('.kbd-badge')).toHaveText(['Ctrl', 'Shift', 'L']);
-  await expect(main).toContainText('back to the list');
+  // plan-session_list_width, assumption "Key hint": the hint of Ctrl+Shift+L is gone.
+  await expect(main.locator('kbd')).toHaveCount(0);
+  await expect(main).not.toContainText('back to the list');
   await expectNoItalian(page, 'in the open session');
 
   await terminate.click();

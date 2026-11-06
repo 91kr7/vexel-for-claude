@@ -1,5 +1,5 @@
-// e2e of plan-claude_sessions_client-ui_redesign-material3_mock, batch hosted-session, brought to the Studio subbar, terminal panel and hint row
-// of plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark.
+// e2e of plan-claude_sessions_client-ui_redesign-material3_mock, batch hosted-session, brought to the Studio subbar and terminal panel
+// of plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark, and to the footer of plan-session_list_width.
 import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -27,8 +27,8 @@ const entry = (page: Page, folder: string) => list(page).getByRole('button').fil
 const mainArea = (page: Page) => page.getByRole('main');
 const header = (page: Page) => mainArea(page).locator('header');
 const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
-const hintRow = (page: Page) => mainArea(page).locator('.session-hint-row');
-const hint = (page: Page) => hintRow(page).locator('span').filter({ has: page.locator('kbd') });
+const footer = (page: Page) => mainArea(page).locator('footer');
+const zoomControls = (page: Page) => page.getByRole('group', { name: 'Terminal text size' });
 const statePill = (page: Page, name: string) => header(page).getByText(name, { exact: true });
 const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'needs your input' });
 const terminal = (page: Page) => page.locator('.xterm-rows');
@@ -132,8 +132,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
   test.describe(`Studio hosted session, ${colorScheme} system theme`, () => {
     test.use({ colorScheme, viewport: { width: 1440, height: 900 } });
 
-    // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-30, REQ-31, REQ-32, REQ-34, REQ-35, REQ-53 — scenario "The open hosted session uses the Studio subbar and terminal"
-    test('at 1440 x 900 the subbar, the terminal panel and the hint row have the Studio layout', async ({ page, request }) => {
+    // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-30, REQ-31, REQ-32, REQ-34, REQ-53,
+    // plan-session_list_width/REQ-15, REQ-19, REQ-20, REQ-28, REQ-29 — the Studio subbar, the terminal panel and the footer
+    test('at 1440 x 900 the subbar, the terminal panel and the footer have the Studio layout', async ({ page, request }) => {
       await showOnlyOwnSessions(page);
       const folder = await startBillingApi(request);
       await page.goto('/');
@@ -156,27 +157,24 @@ for (const colorScheme of ['light', 'dark'] as const) {
       expect(headBox.height, 'header height').toBeCloseTo(40, 0);
       await expect(head.locator('.avatar')).toHaveCount(0);
 
-      // name, "/", mono path, the label chip
+      // name, then the label chip; no "/", no path, no figures
       const title = head.getByRole('heading', { level: 2 });
       await expect(title).toHaveText('billing-api');
       expect(await styles(title, ['font-size', 'font-weight', 'margin-top', 'margin-bottom'])).toEqual({
         'font-size': '12px', 'font-weight': '600', 'margin-top': '0px', 'margin-bottom': '0px',
       });
-      const separator = head.getByText('/', { exact: true });
-      await expect(separator).toHaveAttribute('aria-hidden', 'true');
-      expect(await style(separator, 'color')).toBe(await colour('--text-muted'));
-      const pathText = head.getByText(folder, { exact: true });
-      expect(await styles(pathText, ['font-size', 'color'])).toEqual({ 'font-size': '11px', color: await colour('--text-secondary') });
-      expect(await style(pathText, 'font-family')).toMatch(mono);
-      const line = head.getByText(LABEL, { exact: true });
-      expect(await styles(line, ['color', 'background-color', 'white-space', 'text-overflow'])).toEqual({
-        color: await colour('--text-muted'), 'background-color': await colour('--bg-surface-2'), 'white-space': 'nowrap', 'text-overflow': 'ellipsis',
+      await expect(head.getByText('/', { exact: true })).toHaveCount(0);
+      await expect(head).not.toContainText(folder);
+      const line = head.locator('.mono-chip').filter({ hasText: LABEL });
+      await expect(line).toHaveCount(1);
+      expect(await styles(line, ['color', 'background-color', 'white-space'])).toEqual({
+        color: await colour('--text-muted'), 'background-color': await colour('--bg-surface-2'), 'white-space': 'nowrap',
       });
       expect(await style(line, 'font-family')).toMatch(mono);
-      const titleBox = await box(title);
-      expect((await box(separator)).x).toBeGreaterThan(titleBox.x);
-      expect((await box(pathText)).x).toBeGreaterThan((await box(separator)).x);
-      expect((await box(line)).x).toBeGreaterThan((await box(pathText)).x);
+      expect((await box(line)).x).toBeGreaterThan((await box(title)).x);
+      await expect(head.getByRole('button')).toHaveText(['', /Interrupt/, /Terminate/]);
+      await expect(head.getByRole('button').first()).toHaveAccessibleName('Search');
+      await expect(head.getByRole('group', { name: 'Terminal text size' })).toHaveCount(0);
 
       // the zinc pill of "Idle": its dot, then its name
       const pill = statePill(page, 'Idle');
@@ -216,30 +214,30 @@ for (const colorScheme of ['light', 'dark'] as const) {
       near(termBox.x, main.x + 16, 'panel left');
       near(termBox.width, main.width - 32, 'panel width');
 
-      // the hint row: 40 px, padding 0 16, under the panel, down to the bottom of the main area
-      const row = hintRow(page);
+      // the footer: 40 px, padding 0 16, surface 1, subtle line above, under the panel, down to the bottom of the main area
+      const row = footer(page);
       const rowBox = await box(row);
-      near(rowBox.y, termBox.y + termBox.height, 'hint row top');
-      near(rowBox.height, 40, 'hint row height');
-      near(rowBox.y + rowBox.height, main.y + main.height, 'hint row bottom');
-      near(rowBox.x, main.x, 'hint row left');
-      near(rowBox.width, main.width, 'hint row width');
-      expect(await styles(row, ['padding-left', 'padding-right'])).toEqual({ 'padding-left': '16px', 'padding-right': '16px' });
+      near(rowBox.y, termBox.y + termBox.height, 'footer top');
+      near(rowBox.height, 40, 'footer height');
+      near(rowBox.y + rowBox.height, main.y + main.height, 'footer bottom');
+      near(rowBox.x, main.x, 'footer left');
+      near(rowBox.width, main.width, 'footer width');
+      expect(await styles(row, ['padding-left', 'padding-right', 'background-color', 'border-top-width', 'border-top-color'])).toEqual({
+        'padding-left': '16px', 'padding-right': '16px', 'background-color': await colour('--bg-surface-1'),
+        'border-top-width': '1px', 'border-top-color': await colour('--border-subtle'),
+      });
 
-      const hintText = hint(page);
-      expect((await hintText.innerText()).replace(/\s+/g, ' ').replace(/ ?\+ ?/g, '+').trim()).toBe("Ctrl+Shift+L back to the list");
-      expect(await styles(hintText, ['font-size', 'color'])).toEqual({ 'font-size': '11px', color: await colour('--text-muted') });
-      const keys = hintText.locator('kbd');
-      await expect(keys).toHaveText(['Ctrl', 'Shift', 'L']);
-      for (const key of await keys.all()) {
-        expect(await styles(key, [
-          'font-size', 'padding-top', 'padding-right', 'border-top-left-radius', 'background-color', 'border-top-color', 'color',
-        ])).toEqual({
-          'font-size': '10px', 'padding-top': '1px', 'padding-right': '5px', 'border-top-left-radius': '4px',
-          'background-color': await colour('--bg-surface-3'), 'border-top-color': await colour('--border-subtle'), color: await colour('--text-muted'),
-        });
-        expect(await style(key, 'font-family')).toMatch(mono);
-      }
+      // the path in mono 11 px, then the zoom controls at the right end; no key hint
+      const pathText = row.getByText(folder, { exact: true });
+      expect(await styles(pathText, ['font-size', 'color'])).toEqual({ 'font-size': '11px', color: await colour('--text-secondary') });
+      expect(await style(pathText, 'font-family')).toMatch(mono);
+      const zoom = row.getByRole('group', { name: 'Terminal text size' });
+      const zoomBox = await box(zoom);
+      near(zoomBox.x + zoomBox.width, rowBox.x + rowBox.width - 16, 'zoom controls at the right end');
+      expect((await box(pathText)).x).toBeLessThan(zoomBox.x);
+      await expect(row.locator('kbd')).toHaveCount(0);
+      await expect(row).not.toContainText('Ctrl');
+      await expect(page.getByText('back to the list')).toHaveCount(0);
     });
   });
 }
@@ -298,8 +296,9 @@ test('the terminal panel shows the focus ring only while the terminal has the ke
   await expect.poll(() => showsRing(page, panel(page))).toBe(false);
 });
 
-// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-33, plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42: the hinted key works, and the snackbar never resizes the panel
-test('the hint key moves the focus to the list, and the snackbar outside the hint row does not change the panel size', async ({ page, request }) => {
+// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-33, plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42,
+// plan-session_list_width/REQ-28: Ctrl+Shift+L works with no hint, and the snackbar never resizes the panel
+test('Ctrl+Shift+L moves the focus to the list, and the snackbar outside the footer does not change the panel size', async ({ page, request }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await showOnlyOwnSessions(page);
   const folder = await newFolder('suggerimento');
@@ -307,14 +306,15 @@ test('the hint key moves the focus to the list, and the snackbar outside the hin
   const waitingId = await startViaApi(request, await newFolder('attende-input'));
   await page.goto('/');
   await openFromList(page, folder);
-  await expect(hint(page)).toBeVisible();
+  await expect(footer(page)).toBeVisible();
+  await expect(footer(page)).not.toContainText('Ctrl');
   const before = await box(panel(page));
-  near((await box(hintRow(page))).height, 40, 'hint row height without snackbar');
+  near((await box(footer(page))).height, 40, 'footer height without snackbar');
 
   await postHook(request, waitingId, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
   await expect(snackbar(page)).toBeVisible();
-  await expect(hintRow(page).getByRole('status')).toHaveCount(0);
-  near((await box(hintRow(page))).height, 40, 'hint row height with snackbar');
+  await expect(footer(page).getByRole('status')).toHaveCount(0);
+  near((await box(footer(page))).height, 40, 'footer height with snackbar');
   expect(await box(panel(page))).toEqual(before);
 
   await page.locator('.xterm-screen').click();
@@ -322,8 +322,8 @@ test('the hint key moves the focus to the list, and the snackbar outside the hin
   await expect(entry(page, folder)).toBeFocused();
 });
 
-// NeedsInputSnackbar "Rules": at 1280 px a long folder name wraps inside the window minus 40 px, and the hint stays whole
-test('at 1280 px a long snackbar wraps within the window minus 40 px, and the hint stays whole', async ({ page, request }) => {
+// NeedsInputSnackbar "Rules": at 1280 px a long folder name wraps inside the window minus 40 px; SessionFooter: the end is never cut
+test('at 1280 px a long snackbar wraps within the window minus 40 px, and the footer controls stay whole', async ({ page, request }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await showOnlyOwnSessions(page);
   const folder = await newFolder('stretta');
@@ -334,9 +334,11 @@ test('at 1280 px a long snackbar wraps within the window minus 40 px, and the hi
   await postHook(request, waitingId, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
   await expect(snackbar(page)).toBeVisible();
 
-  const rowBox = await box(hintRow(page));
-  near(rowBox.height, 40, 'hint row height');
-  expect(await hint(page).evaluate((el) => el.scrollWidth <= el.clientWidth), 'hint not cut').toBe(true);
+  const rowBox = await box(footer(page));
+  near(rowBox.height, 40, 'footer height');
+  const zoomBox = await box(zoomControls(page));
+  expect(zoomBox.x + zoomBox.width, 'zoom controls inside the footer').toBeLessThanOrEqual(rowBox.x + rowBox.width + TOLERANCE);
+  expect(await zoomControls(page).evaluate((el) => el.scrollWidth <= el.clientWidth), 'zoom controls not cut').toBe(true);
   const barBox = await box(snackbar(page));
   expect(barBox.width).toBeLessThanOrEqual(1280 - 40 + TOLERANCE);
   expect(barBox.x).toBeGreaterThanOrEqual(20 - TOLERANCE);
@@ -356,7 +358,7 @@ test('with no session open the snackbar sits 20 px from the bottom right of the 
   await postHook(request, waitingId, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
   await expect(snackbar(page)).toBeVisible();
 
-  await expect(hintRow(page)).toHaveCount(0);
+  await expect(footer(page)).toHaveCount(0);
   const bar = await box(snackbar(page));
   near(1440 - (bar.x + bar.width), 20, 'gap to the right edge of the window');
   near(900 - (bar.y + bar.height), 20, 'gap to the bottom edge of the window');

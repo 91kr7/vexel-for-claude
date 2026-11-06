@@ -10,6 +10,7 @@ import { SearchIcon } from '../icons/Icons';
 import { folderNameOf } from './Avatar';
 import { droppedPathsText } from './dropped-paths-text';
 import { openLink } from './link-opener';
+import { SessionFooter } from './SessionFooter';
 import { SessionHeader, type SessionHeaderSummary } from './SessionHeader';
 import { StopSessionButton } from './StopSessionButton';
 import { pageTerminalFontSizeStore, type TerminalFontSizeStore, useTerminalFontSize } from './terminal-font-size-store';
@@ -352,12 +353,6 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
             <button type="button" className="session-search-button" aria-label="Search" title="Search (Ctrl+Shift+F)" onClick={openSearch}>
               <SearchIcon />
             </button>
-            <TerminalZoomControls
-              size={fontSize}
-              onSmaller={() => fontSizeStore.smaller()}
-              onReset={() => fontSizeStore.reset()}
-              onLarger={() => fontSizeStore.larger()}
-            />
             {session?.state !== 'ended' && (
               <button type="button" className="button-danger session-interrupt" onClick={interrupt}>
                 <span className="stop-glyph" aria-hidden="true">
@@ -407,11 +402,17 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
           {linkTooltip.address}
         </div>
       )}
-      <div className="session-hint-row">
-        <span className="session-hint">
-          <kbd className="kbd-badge">Ctrl</kbd>+<kbd className="kbd-badge">Shift</kbd>+<kbd className="kbd-badge">L</kbd> back to the list
-        </span>
-      </div>
+      <SessionFooter
+        session={session}
+        end={
+          <TerminalZoomControls
+            size={fontSize}
+            onSmaller={() => fontSizeStore.smaller()}
+            onReset={() => fontSizeStore.reset()}
+            onLarger={() => fontSizeStore.larger()}
+          />
+        }
+      />
     </div>
   );
 }

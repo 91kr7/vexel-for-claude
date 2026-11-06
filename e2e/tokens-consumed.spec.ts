@@ -27,7 +27,8 @@ test.afterAll(async () => {
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).locator('.session-entry').filter({ has: page.getByTitle(folder, { exact: true }) });
 const header = (page: Page) => page.locator('.session-header');
-const chip = (page: Page) => header(page).locator('.session-header-tokens');
+const footer = (page: Page) => page.locator('.session-footer');
+const chip = (page: Page) => footer(page).locator('.session-figure-tokens');
 const popover = (page: Page) => page.getByRole('tooltip');
 /** The chip text: the popover text sits inside the chip, so only the start is matched. */
 const chipShows = (shown: string) => new RegExp(`^\\s*${shown.replace('.', '\\.')} tokens`);
@@ -108,8 +109,8 @@ async function hostedWith(request: APIRequestContext, name: string, ...entries: 
 }
 
 test.describe('Tokens consumed', () => {
-  // plan-session_usage/REQ-13, REQ-14, REQ-20 — scenario "The header shows the tokens of the session"
-  test('the header shows the tokens of the session, subagent included, with the four parts on hover and focus', async ({ page, request }) => {
+  // plan-session_usage/REQ-13, REQ-14, REQ-20, plan-session_list_width/REQ-20, REQ-23 — the tokens of the session in the footer
+  test('the footer shows the tokens of the session, subagent included, with the four parts on hover and focus', async ({ page, request }) => {
     const { folder, subagent } = await hostedWith(
       request,
       'header',
@@ -131,11 +132,11 @@ test.describe('Tokens consumed', () => {
     const popoverId = await popover(page).getAttribute('id');
     expect(popoverId).toBeTruthy();
     await expect(chip(page)).toHaveAttribute('aria-describedby', popoverId!);
-    const headerBox = await header(page).boundingBox();
-    expect(headerBox!.height, 'the header stays 40 px with the popover open').toBeLessThanOrEqual(40.5);
+    const footerBox = await footer(page).boundingBox();
+    expect(footerBox!.height, 'the footer stays 40 px with the popover open').toBeLessThanOrEqual(40.5);
     const chipBox = await chip(page).boundingBox();
     const popoverBox = await popover(page).boundingBox();
-    expect(popoverBox!.y, 'the popover sits under the chip').toBeGreaterThanOrEqual(chipBox!.y + chipBox!.height - 0.5);
+    expect(popoverBox!.y + popoverBox!.height, 'the popover sits above the chip').toBeLessThanOrEqual(chipBox!.y + 0.5);
     expect(Math.abs(popoverBox!.x + popoverBox!.width - (chipBox!.x + chipBox!.width)), 'aligned to the right edge of the chip').toBeLessThanOrEqual(1);
 
     await page.mouse.move(0, 0);
@@ -204,24 +205,24 @@ test.describe('Tokens consumed', () => {
     const after = await transcript(folder, cleared);
     await hookEvent(request, id, { hook_event_name: 'UserPromptSubmit', prompt: '/clear', session_id: cleared });
     await expect(chip(page)).toHaveCount(0, WITHIN_2_S);
-    await expect(header(page)).not.toContainText(/\d[kM]? tokens/);
+    await expect(footer(page)).not.toContainText(/\d[kM]? tokens/);
 
     await after.write(userText('Hello'), response({ input: 300, output: 700, cacheWrite: 500, cacheRead: 500 }));
     await expect(chip(page)).toHaveText(chipShows('2k'), WITHIN_2_S);
   });
 
-  // plan-session_usage/REQ-18: before the first response there is no tokens chip, never "0 tokens"
+  // plan-session_usage/REQ-18, plan-session_list_width/REQ-26: before the first response there is no tokens chip, never "0 tokens"
   test('no tokens before the first response', async ({ page, request }) => {
     const { folder } = await hostedWith(request, 'fresh');
     await page.goto('/');
     await entry(page, folder).click();
-    await expect(header(page)).toBeVisible();
+    await expect(footer(page)).toBeVisible();
     await page.waitForTimeout(1_500);
     await expect(chip(page)).toHaveCount(0);
-    await expect(header(page)).not.toContainText(/\d[kM]? tokens/);
+    await expect(footer(page)).not.toContainText(/\d[kM]? tokens/);
   });
 
-  // plan-session_usage/REQ-19 — scenario "An ended session keeps its tokens"
+  // plan-session_usage/REQ-19, plan-session_list_width/REQ-27 — scenario "An ended session keeps its tokens"
   test('an ended session keeps its tokens', async ({ page, request }) => {
     const { id, folder } = await hostedWith(request, 'ended', response({ input: 5_000, output: 10_000, cacheWrite: 10_000, cacheRead: 20_000 }));
     await page.goto('/');

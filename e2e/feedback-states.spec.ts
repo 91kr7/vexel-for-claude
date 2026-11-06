@@ -391,10 +391,8 @@ test.describe('open session', () => {
   // plan-claude_sessions_client-ui_redesign/REQ-4, SessionView: Ctrl+Shift+L leaves the terminal for the open entry; Ctrl+L stays in the terminal
   test('Ctrl+Shift+L moves the focus to the open entry and sends nothing; Ctrl+L still reaches the session', async ({ page, request }) => {
     const { folder } = await openSession(page, request, 'leave-terminal');
-    // The hint sits in the hint row under the terminal panel, with the keys as kbd.
-    const hint = mainArea(page).locator('.session-hint-row').locator('span').filter({ has: page.locator('kbd') });
-    await expect(hint.locator('kbd')).toHaveText(['Ctrl', 'Shift', 'L']);
-    expect((await hint.innerText()).replace(/\s+/g, ' ').replace(/ ?\+ ?/g, '+').trim()).toBe("Ctrl+Shift+L back to the list");
+    // The key has no on-screen hint since plan-session_list_width (assumption "Key hint").
+    await expect(mainArea(page).locator('kbd')).toHaveCount(0);
     await page.locator('.xterm-screen').click();
     await expect.poll(() => terminalHasFocus(page)).toBe(true);
 

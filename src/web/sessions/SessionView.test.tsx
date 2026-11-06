@@ -3,12 +3,18 @@ import { describe, expect, it } from 'vitest';
 import type { SessionState } from './live-session-store';
 import { SessionView } from './SessionView';
 
-const text = (html: string) => html.replace(/<[^>]*>/g, ' ').replace(/&#x27;/g, "'").replace(/\s+/g, ' ').trim();
+/** The visible text: the tokens tooltip shows only on hover or focus. */
+const text = (html: string) =>
+  html.replace(/<span[^>]*role="tooltip"[^>]*>(<span[^>]*>(<span[^>]*>[^<]*<\/span>)*<\/span>)*<\/span>/g, '').replace(/<[^>]*>/g, ' ').replace(/&#x27;/g, "'").replace(/\s+/g, ' ').trim();
 const classesOf = (tag: string) => tag.match(/\sclass="([^"]*)"/)?.[1]?.split(/\s+/) ?? [];
-const sessionIn = (state: SessionState) => ({ folder: '/home/dev/progetti/billing-api', label: 'Etichetta', state });
+const FOLDER = '/home/dev/progetti/billing-api';
+const usage = { context: { used: 45_200, window: 200_000 }, tokens: { input: 1_000, output: 2_000, cacheWrite: 3_000, cacheRead: 4_000 }, cost: { usd: 1.27, incomplete: false } };
+const sessionIn = (state: SessionState) => ({ folder: FOLDER, label: 'Etichetta', state, usage });
 const render = (state?: SessionState) =>
   renderToStaticMarkup(<SessionView sessionId="s1" session={state ? sessionIn(state) : undefined} onLeaveTerminal={() => {}} />);
 const button = (html: string, name: string) => html.match(new RegExp(`<button\\b([^>]*)>((?:(?!</button>)[\\s\\S])*${name}\\s*)</button>`));
+const partOf = (html: string, tag: 'header' | 'footer') => html.match(new RegExp(`<${tag}\\b[\\s\\S]*</${tag}>`))?.[0] ?? '';
+const accessibleNames = (html: string) => [...html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)].map((m) => m[1]?.match(/\saria-label="([^"]*)"/)?.[1] ?? text(m[2]!).replace(/^■ /, ''));
 
 describe('SessionView', () => {
   // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29, REQ-31: "Interrupt" shows in every state except ended, unknown state included
@@ -41,15 +47,29 @@ describe('SessionView', () => {
     if (interrupt) expect(html.indexOf(tag!)).toBeLessThan(html.indexOf(interrupt[0]));
   });
 
-  // plan-terminal_addons/REQ-35, REQ-43: the zoom controls show the page size in every state, after "Search" and before "Interrupt"
-  it.each<SessionState | undefined>(['working', 'needs_input', 'idle', 'ended', undefined])('shows the zoom controls when the state is %s', (state) => {
+  // plan-session_list_width/REQ-15: the header actions are "Search", "Interrupt" and "Terminate", in this order
+  it('shows only "Search", "Interrupt" and "Terminate" as header actions', () => {
+    expect(accessibleNames(partOf(render('idle'), 'header'))).toEqual(['Search', 'Interrupt', 'Terminate']);
+  });
+
+  // plan-terminal_addons/REQ-35, REQ-43, plan-session_list_width/REQ-29: the zoom controls show the page size in every state, at the end of the footer
+  it.each<SessionState | undefined>(['working', 'needs_input', 'idle', 'ended', undefined])('shows the zoom controls at the end of the footer when the state is %s', (state) => {
     const html = render(state);
-    const group = html.indexOf('aria-label="Terminal text size"');
-    expect(group).toBeGreaterThan(-1);
-    expect(html.indexOf('aria-label="Search"')).toBeLessThan(group);
-    expect(button(html, '12 px')?.[1]).toContain('aria-label="Default text size (12 px)"');
-    const interrupt = button(html, 'Interrupt');
-    if (interrupt) expect(group).toBeLessThan(html.indexOf(interrupt[0]));
+    const footer = partOf(html, 'footer');
+    expect(partOf(html, 'header')).not.toContain('aria-label="Terminal text size"');
+    expect(footer).toContain('aria-label="Terminal text size"');
+    expect(button(footer, '12 px')?.[1]).toContain('aria-label="Default text size (12 px)"');
+    expect(accessibleNames(footer).slice(-3)).toEqual(['Smaller text', 'Default text size (12 px)', 'Larger text']);
+    expect(text(footer)).toMatch(/12 px$/);
+  });
+
+  // plan-session_list_width/REQ-19, REQ-20: the footer under the panel shows the path and the figures; the header shows neither
+  it('shows the path and the figures of the session in the footer, after the terminal panel', () => {
+    const html = render('idle');
+    const footer = partOf(html, 'footer');
+    expect(html.indexOf('role="region"')).toBeLessThan(html.indexOf('<footer'));
+    expect(text(footer)).toMatch(new RegExp(`^${FOLDER} Context 45\\.2k / 200k · 23% 10k tokens \\$1\\.27 `));
+    expect(text(partOf(html, 'header'))).not.toMatch(new RegExp(`${FOLDER}|Context|tokens|\\$`));
   });
 
   // SessionView: the search box shows only once the search is opened
@@ -63,18 +83,15 @@ describe('SessionView', () => {
     expect(render()).toMatch(/<[a-z]+\b(?=[^>]*\srole="region")(?=[^>]*\saria-label="Terminal")[^>]*>/);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-35: the hint with the keys in .kbd-badge, after the panel
-  it('shows the hint "Ctrl+Shift+L back to the list" with three .kbd-badge keys, after the terminal panel', () => {
+  // plan-session_list_width, assumption "Key hint": no on-screen hint for Ctrl+Shift+L
+  it('shows no key hint', () => {
     const html = render('idle');
-    const keys = [...html.matchAll(/<kbd\b([^>]*)>([^<]*)<\/kbd>/g)];
-    expect(keys.map((k) => k[2])).toEqual(['Ctrl', 'Shift', 'L']);
-    for (const key of keys) expect(classesOf(`<kbd${key[1]}>`)).toContain('kbd-badge');
-    expect(text(html)).toContain("Ctrl + Shift + L back to the list");
-    expect(html.indexOf('role="region"')).toBeLessThan(html.indexOf('<kbd'));
+    expect(html).not.toContain('<kbd');
+    expect(text(html)).not.toContain('back to the list');
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42: the view holds no snackbar slot; the hint ends the view
-  it('ends with the hint', () => {
-    expect(text(render('idle'))).toMatch(/back to the list$/);
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42: the view holds no snackbar slot; the footer ends the view
+  it('ends with the footer', () => {
+    expect(render('idle')).toMatch(/<\/footer>(<\/\w+>)*$/);
   });
 });

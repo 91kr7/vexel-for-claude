@@ -11,16 +11,17 @@ type: UI component
 ## Contract
 
 Description:
-- the SessionHeader above the content. Together they fill the open-session area, on `--bg-canvas` at 75 % over the dot grid. There is no rounded panel.
-- the content scrolls below the header. The entries sit in a centred column of at most 896 px, with 24 px padding, 16 px apart.
+- the SessionHeader above the content and the SessionFooter below it. Together they fill the open-session area, on `--bg-canvas` at 75 % over the dot grid. There is no rounded panel.
+- the content scrolls between the header and the footer. The entries sit in a centred column of at most 896 px, with 24 px padding, 16 px apart.
 
 Props:
 - `sessionId` → the id of the external session.
-- `session` → `{ folder, label, state }` for the header. Optional.
+- `session` → `{ folder, label, state, usage? }` for the header and the footer. Optional.
 - `onResumed(id)` → called with the id of the hosted session after "Resume Here" succeeds.
 
 Shows:
-- the SessionHeader with `session`: folder name, path, the line "Open in Another Terminal", the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The action is ResumeHereButton.
+- the SessionHeader with `session`: folder name, the label or name as its line, the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The action is ResumeHereButton.
+- the SessionFooter with `session` and the lead text "Open in Another Terminal · ": the lead, the path, then the figures. No end items.
 - before the first frame of ConversationStreamRoute → an AreaState `loading` "Loading…".
 - first frame with no items → an AreaState `empty` "No messages.".
 - the socket closes before the first frame → an AreaState `error` "Conversation not available." (rose tile).
@@ -76,13 +77,13 @@ Scrolling:
 
 - It has no input field. It sends nothing on the socket.
 - It opens one socket per `sessionId` and closes it on unmount.
-- The header stays in place. Only the content scrolls; the button does not.
+- The header and the footer stay in place. Only the content scrolls; the button does not.
 - It requests the full content of a part only when the user opens its card.
 
 ## Dependencies
 
 - ConversationStreamRoute, ItemContentRoute, ResumeHereButton
-- SessionHeader (module sessions)
+- SessionHeader, SessionFooter (module sessions)
 - AreaState, IconSet, ProgressIndicator, ErrorMessage, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
@@ -91,3 +92,4 @@ Scrolling:
 - `plan-claude_sessions_client-ui_redesign/REQ-17`, `plan-claude_sessions_client-ui_redesign/REQ-19`, `plan-claude_sessions_client-ui_redesign/REQ-20`, `plan-claude_sessions_client-ui_redesign/REQ-21`, `plan-claude_sessions_client-ui_redesign/REQ-22`, `plan-claude_sessions_client-ui_redesign/REQ-23`, `plan-claude_sessions_client-ui_redesign/REQ-24`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-33`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-36` to `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-41`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-16`
+- `plan-session_list_width/REQ-16`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-21`

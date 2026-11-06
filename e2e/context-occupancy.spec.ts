@@ -35,7 +35,8 @@ test.afterAll(async () => {
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).locator('.session-entry').filter({ has: page.getByTitle(folder, { exact: true }) });
 const percent = (target: Locator) => target.locator('.session-entry-context');
-const chip = (page: Page) => page.locator('.session-header .session-header-context');
+const footer = (page: Page) => page.locator('.session-footer');
+const chip = (page: Page) => footer(page).locator('.session-figure-context');
 const chipValue = (page: Page) => chip(page).locator('span').last();
 
 let nextKey = 0;
@@ -116,7 +117,7 @@ const colourOf = (page: Page, variable: string) =>
   }, variable);
 
 test.describe('Context occupancy', () => {
-  // plan-session_usage/REQ-1, REQ-2, REQ-3, REQ-11: "23%" in the entry, "Context 45.2k / 200k · 23%" in the header
+  // plan-session_usage/REQ-1, REQ-2, REQ-3, REQ-11, plan-session_list_width/REQ-20: "23%" in the entry, "Context 45.2k / 200k · 23%" in the footer
   test('a session shows how full its context is', async ({ page, request }) => {
     const { folder } = await hostedWith(request, 'shows', response(45_200));
     await page.goto('/');
@@ -145,7 +146,7 @@ test.describe('Context occupancy', () => {
     await expect(percent(row)).toHaveText('45%', WITHIN_2_S);
   });
 
-  // plan-session_usage/REQ-8: amber from 70 %, rose from 90 %, in the entry and in the header
+  // plan-session_usage/REQ-8, plan-session_list_width/REQ-24: amber from 70 %, rose from 90 %, in the entry and in the footer
   test('a full context stands out', async ({ page, request }) => {
     const warning = await hostedWith(request, 'warning', response(150_000));
     const error = await hostedWith(request, 'error', response(184_000));
@@ -198,7 +199,7 @@ test.describe('Context occupancy', () => {
     await expect(chip(page)).toHaveText(/^Context\s*30k \/ 200k · 15%$/, WITHIN_2_S);
   });
 
-  // plan-session_usage/REQ-9: before the first response, no percentage and no "0%"
+  // plan-session_usage/REQ-9, plan-session_list_width/REQ-26: before the first response, no percentage and no "0%"
   test('no figures before the first response', async ({ page, request }) => {
     const { folder, write } = await hostedWith(request, 'fresh');
     await write(userText('Explain the code'));
@@ -206,15 +207,15 @@ test.describe('Context occupancy', () => {
     const row = entry(page, folder);
     await expect(row).toBeVisible();
     await row.click();
-    await expect(page.locator('.session-header')).toBeVisible();
+    await expect(footer(page)).toBeVisible();
     await page.waitForTimeout(1_500);
     await expect(percent(row)).toHaveCount(0);
     await expect(chip(page)).toHaveCount(0);
     await expect(row).not.toContainText('0%');
-    await expect(page.locator('.session-header')).not.toContainText('0%');
+    await expect(footer(page)).not.toContainText('0%');
   });
 
-  // plan-session_usage/REQ-10: an ended session keeps its last context occupancy, in the entry and in the header
+  // plan-session_usage/REQ-10, plan-session_list_width/REQ-27: an ended session keeps its last context occupancy, in the entry and in the footer
   test('an ended session keeps its figures', async ({ page, request }) => {
     const { id, folder } = await hostedWith(request, 'ended', response(80_000));
     await page.goto('/');

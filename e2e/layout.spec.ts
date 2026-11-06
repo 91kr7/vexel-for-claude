@@ -102,6 +102,8 @@ function horizontalOverflow(root: Locator): Promise<string[]> {
       if (el.closest('.xterm') && !el.classList.contains('xterm')) continue;
       const r = el.getBoundingClientRect();
       if (r.width === 0 || r.height === 0) continue;
+      // The list panel edge is a transparent strip centred on the panel border by design (ListPanelEdge spec).
+      if (el.matches('[role="separator"][aria-label="Resize Session List"]')) continue;
       // A hidden tooltip (opacity 0) is not visible content; the rail tooltip shows outside the rail by design.
       let hidden = false;
       for (let a: Element | null = el; a && a !== rootEl; a = a.parentElement) if (getComputedStyle(a).opacity === '0') hidden = true;

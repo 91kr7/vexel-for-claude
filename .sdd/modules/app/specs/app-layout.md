@@ -12,9 +12,11 @@ type: UI page
 
 Description:
 - the page fills the window edge to edge, on `--bg-surface-1`. From top: the TopBar, then one row with the NavigationRail, the list panel and the main area.
-- the list panel → a `section` with the label "Session List". 224 px wide, padding 10 px, `--bg-surface-1`, 1 px `--border-subtle` line on the right. One column with a 10 px gap:
+- the list panel → a `section` with the label "Session List". Padding 10 px, `--bg-surface-1`, 1 px `--border-subtle` line on the right. One column with a 10 px gap:
   - the title row (padding 0 × 6 px, centred, space between) → the `h1` "Sessions" in `.section-label` on the left, the NeedsInputCounter on the right.
   - the SessionList.
+- the list panel width → `shownListWidth` of the ListWidthStore width and the window width: the stored width, narrowed so that the main area keeps 700 px, never under 180 px. A window resize computes it again; the stored width does not change.
+- the ListPanelEdge on the right border of the list panel, after the list in the Tab order → it gets the shown width and `listWidthLimit` of the window width. A drag move calls the store `preview`; the end of a drag and an arrow key call `commit`.
 - the main area (`main`) → takes the rest of the width, with the `.vx-dot-grid` background.
 
 Shows:
@@ -51,13 +53,14 @@ else → "New Claude Code Session" in the rail
 ## Rules and invariants
 
 - the top bar, the rail and the head of the list panel stay in place. Only the SessionList scrolls, when its entries do not fit.
-- at 1440 × 900 px → top bar 48 px high, rail 52 px wide, list panel 224 px wide.
+- at 1440 × 900 px with no saved width → top bar 48 px high, rail 52 px wide, list panel 224 px wide.
+- the first frame already shows the stored width: no jump at start or after a reload.
 - from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements, except the snackbar, which may cover the corner of the main area.
 - the list panel has no brand, no "New Session" and no "Resume Session" button.
 
 ## Dependencies
 
-- TopBar, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge
+- TopBar, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
 - FolderChooser (module folders)
 - ResumeDialog (module history)
 - SessionView, SessionList, NeedsInputCounter, LiveSessionStore, SessionOrderStore (module sessions)
@@ -72,3 +75,4 @@ else → "New Claude Code Session" in the rail
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-9`
 - `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-20`
 - `plan-session_list_improvements/REQ-7`, `plan-session_list_improvements/REQ-10`
+- `plan-session_list_width/REQ-3`, `plan-session_list_width/REQ-4`, `plan-session_list_width/REQ-5`, `plan-session_list_width/REQ-6`, `plan-session_list_width/REQ-9`, `plan-session_list_width/REQ-11`

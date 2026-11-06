@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useDesktopBridge } from './desktop-bridge';
 import { EmptyState } from './EmptyState';
 import { ConversationView } from './external/ConversationView';
 import { FolderChooser } from './folders/FolderChooser';
 import { ResumeDialog } from './history/ResumeDialog';
+import { ListPanelEdge } from './ListPanelEdge';
+import { listWidthLimit, pageListWidthStore, shownListWidth, useListWidth } from './list-width-store';
 import { NavigationRail } from './NavigationRail';
 import { NeedsInputSnackbar, useNeedsInputSnackbar } from './NeedsInputSnackbar';
 import { countNeedsInput, NeedsInputCounter } from './sessions/NeedsInputCounter';
@@ -12,6 +14,33 @@ import { SessionView } from './sessions/SessionView';
 import { type SessionSummary, useLiveSessions } from './sessions/live-session-store';
 import { useSessionOrder } from './sessions/session-order-store';
 import { TopBar } from './TopBar';
+
+function subscribeToWindowResize(listener: () => void): () => void {
+  window.addEventListener('resize', listener);
+  return () => window.removeEventListener('resize', listener);
+}
+
+function useWindowWidth(): number {
+  return useSyncExternalStore(subscribeToWindowResize, () => window.innerWidth, () => Number.POSITIVE_INFINITY);
+}
+
+function ListPanel({ panelRef, children }: { panelRef: RefObject<HTMLElement>; children: ReactNode }) {
+  const store = pageListWidthStore();
+  const width = useListWidth(store);
+  const windowWidth = useWindowWidth();
+  const shownWidth = shownListWidth(width, windowWidth);
+  return (
+    <section className="list-panel" aria-label="Session List" ref={panelRef} style={{ width: shownWidth }}>
+      {children}
+      <ListPanelEdge
+        width={shownWidth}
+        maxWidth={listWidthLimit(windowWidth)}
+        onPreview={(next) => store.preview(next)}
+        onCommit={(next) => store.commit(next)}
+      />
+    </section>
+  );
+}
 
 export function AppLayout() {
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
@@ -63,7 +92,7 @@ export function AppLayout() {
           onResume={() => setResuming(true)}
           newSessionRef={newSessionRef}
         />
-        <section className="list-panel" aria-label="Session List" ref={listPanelRef}>
+        <ListPanel panelRef={listPanelRef}>
           <div className="list-panel-title">
             <h1 className="section-label">Sessions</h1>
             <NeedsInputCounter sessions={sessions} />
@@ -77,7 +106,7 @@ export function AppLayout() {
             openSessionId={openSessionId}
             onOpen={openFromList}
           />
-        </section>
+        </ListPanel>
         <main className="session-area vx-dot-grid">
           {openSessionId && openIsExternal ? (
             <ConversationView key={openSessionId} sessionId={openSessionId} session={openSummary} onResumed={openHosted} />
