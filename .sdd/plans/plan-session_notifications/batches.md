@@ -6,7 +6,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [needs-input-notification](batches/batch-needs-input-notification.md) | Needs-input notification | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | — | implemented | A waiting session alerts the user while the window is closed |
+| [needs-input-notification](batches/batch-needs-input-notification.md) | Needs-input notification | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | — | certified | A waiting session alerts the user while the window is closed |
 | [turn-end-notification](batches/batch-turn-end-notification.md) | Turn-end notification | REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20 | needs-input-notification | todo | A finished turn shows the start of Claude's answer |
 | [session-end-notification](batches/batch-session-end-notification.md) | Session-end notification | REQ-21, REQ-22, REQ-23, REQ-24 | needs-input-notification, turn-end-notification | todo | A hosted session that dies says so |
 | [grouped-notifications](batches/batch-grouped-notifications.md) | Grouped notifications | REQ-25, REQ-26, REQ-27, REQ-28, REQ-29 | turn-end-notification, session-end-notification | todo | A burst of events gives one notification |
