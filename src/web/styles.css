@@ -122,7 +122,6 @@ input {
 .vx-glass {
   background-color: var(--bg-glass);
   backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--border-strong);
   box-shadow: inset 0 1px 0 0 var(--specular-top), 0 12px 32px -8px rgba(0, 0, 0, 0.35);
 }
@@ -853,7 +852,7 @@ input {
 }
 
 .session-entry .progress-bar {
-  margin: 2px 0 0 16px;
+  margin-left: 16px;
 }
 
 .progress-bar {
@@ -993,10 +992,9 @@ input {
 
 .session-header {
   flex: none;
-  min-height: 40px;
-  padding: 4px 16px;
+  height: 40px;
+  padding: 0 16px;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -1045,8 +1043,8 @@ input {
 }
 
 .session-header-actions {
+  flex: none;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
@@ -1354,7 +1352,6 @@ input {
   padding: 16px;
   background-color: var(--color-backdrop);
   backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
 }
 
 .warning-backdrop {

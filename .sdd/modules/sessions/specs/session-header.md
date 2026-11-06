@@ -17,7 +17,7 @@ Props:
 - `line` → the text of the line chip. Optional; default the label.
 
 Shows:
-- a `header`, at least 40 px high, padding 4 × 16 px, `--bg-surface-1`, 1 px `--border-subtle` line below. Two groups at the two ends, 8 px apart; the row wraps when it does not fit.
+- a `header`, 40 px high (its bottom line included) in every variant, padding 0 × 16 px, `--bg-surface-1`, 1 px `--border-subtle` line below. Two groups at the two ends, 8 px apart, on one row.
 - the left group, 10 px gaps, with `session`:
   - the `h2` with the folder name (the last segment of `folder`), 12/16 px weight 600.
   - "/" in `--text-muted`, hidden from assistive technology.
@@ -30,7 +30,7 @@ Shows:
 ## Rules and invariants
 
 - Name, path and line stay on one row each. Text too long is cut with an ellipsis, and its full text is its tooltip (`title`).
-- The actions are never cut: when the header is too narrow they move to the next row, inside the header.
+- The actions are never cut and never wrap: when the header is too narrow, the name, path and line of the left group shrink first.
 - The header never shrinks, and it never scrolls with the content below it.
 
 ## Dependencies
