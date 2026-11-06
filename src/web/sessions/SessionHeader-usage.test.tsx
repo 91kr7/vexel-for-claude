@@ -16,7 +16,16 @@ const render = (usage?: SessionUsage) => renderToStaticMarkup(<SessionHeader ses
 
 /** The context chip: the `.mono-chip` element that holds "Context". */
 function chipOf(html: string): string | undefined {
-  const start = html.search(/<span[^>]*class="[^"]*\bmono-chip\b[^"]*"[^>]*>\s*(<span[^>]*>)?\s*Context\b/);
+  return elementAt(html, html.search(/<span[^>]*class="[^"]*\bmono-chip\b[^"]*"[^>]*>\s*(<span[^>]*>)?\s*Context\b/));
+}
+
+/** The tokens chip: the `.mono-chip` element whose text starts with "<count> tokens". */
+function tokensChipOf(html: string): string | undefined {
+  return elementAt(html, html.search(/<span[^>]*class="[^"]*\bmono-chip\b[^"]*"[^>]*>\s*(<span[^>]*>)?\s*[\d.]+[kM]? tokens\b/));
+}
+
+/** The whole `span` element that starts at `start`. */
+function elementAt(html: string, start: number): string | undefined {
   if (start < 0) return undefined;
   let depth = 0;
   const pattern = /<(\/?)span\b[^>]*>/g;
@@ -75,5 +84,47 @@ describe('SessionHeader, context chip', () => {
     expect(chipOf(html)).toBeUndefined();
     expect(text(html)).not.toContain('Context');
     expect(text(html)).not.toMatch(/\b0%/);
+  });
+});
+
+describe('SessionHeader, tokens chip', () => {
+  const tokens = (input: number, output: number, cacheWrite: number, cacheRead: number) => ({ input, output, cacheWrite, cacheRead });
+
+  // plan-session_usage/REQ-13, REQ-11: the total of the four parts, in short form, followed by "tokens"
+  it.each([
+    [tokens(12_000, 38_000, 250_000, 1_000_000), '1.3M tokens'],
+    [tokens(200, 15_000, 10_000, 20_000), '45.2k tokens'],
+    [tokens(100, 200, 300, 350), '950 tokens'],
+  ])('shows %o as "%s"', (totals, shown) => {
+    const chip = tokensChipOf(render({ tokens: totals }));
+    expect(chip).toBeDefined();
+    expect(text(chip!).startsWith(shown)).toBe(true);
+  });
+
+  // SessionHeader spec: the tokens chip is focusable with the keyboard
+  it('makes the chip focusable', () => {
+    const chip = tokensChipOf(render({ tokens: tokens(1, 2, 3, 4) }))!;
+    expect(chip.slice(0, chip.indexOf('>'))).toMatch(/\stabindex="0"/);
+  });
+
+  // SessionHeader spec: context chip, then tokens chip, then the state pill
+  it('puts the tokens chip after the context chip and before the state pill', () => {
+    const html = render({ context: { used: 45_200, window: 200_000 }, tokens: tokens(1, 2, 3, 4) });
+    const pill = renderToStaticMarkup(<StateBadge state="idle" variant="chip" />);
+    const context = html.indexOf(chipOf(html)!);
+    const chip = html.indexOf(tokensChipOf(html)!);
+    expect(context).toBeLessThan(chip);
+    expect(chip).toBeLessThan(html.indexOf(pill));
+  });
+
+  // plan-session_usage/REQ-18: no usage.tokens → no chip, never "0 tokens"
+  it.each([
+    ['no usage', undefined],
+    ['usage with no tokens', {}],
+    ['usage with only the context', { context: { used: 45_200, window: 200_000 } }],
+  ])('shows no tokens chip with %s', (_name, usage) => {
+    const html = render(usage);
+    expect(tokensChipOf(html)).toBeUndefined();
+    expect(text(html)).not.toMatch(/\btokens\b/);
   });
 });
