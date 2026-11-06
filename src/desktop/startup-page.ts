@@ -1,26 +1,26 @@
 export type StartupState = { kind: 'loading' } | { kind: 'error'; outputLines: readonly string[] };
 
 const STYLE = `
-  :root { color-scheme: dark; }
+  :root { color-scheme: light; }
   html, body { height: 100%; margin: 0; }
   body {
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
     padding: 32px; box-sizing: border-box;
-    background: #0b0b0e; color: #f3f2ee;
+    background: #f4f1ea; color: #1c1917;
     font: 14px/20px 'Roboto Flex', Roboto, system-ui, sans-serif;
   }
   .spinner {
     width: 24px; height: 24px; border-radius: 50%;
-    border: 3px solid #21212b; border-top-color: #8ccfff;
+    border: 3px solid #e4ded2; border-top-color: #0065ae;
     animation: spin 0.9s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .message { margin: 0; color: #a1a0ab; }
-  .error { margin: 0; color: #fb7185; font-weight: 600; }
+  .message { margin: 0; color: #57534e; }
+  .error { margin: 0; color: #9f1239; font-weight: 600; }
   .output {
     margin: 0; max-width: min(960px, 100%); max-height: 60vh; overflow: auto;
-    padding: 12px 16px; border: 1px solid #21212b; border-radius: 8px; background: #121216;
-    color: #898894; font: 12px/18px 'Roboto Mono', ui-monospace, monospace; white-space: pre-wrap;
+    padding: 12px 16px; border: 1px solid #e4ded2; border-radius: 8px; background: #fcfaf5;
+    color: #67625c; font: 12px/18px 'Roboto Mono', ui-monospace, monospace; white-space: pre-wrap;
   }
 `;
 

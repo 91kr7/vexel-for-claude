@@ -12,7 +12,7 @@
   --specular-top: rgba(255, 255, 255, 0.08);
   --text-primary: #f3f2ee;
   --text-secondary: #a1a0ab;
-  /* Mock #686773, lightened to reach 4.5:1 on surface 3 (REQ-51). */
+  /* Mock #686773, lightened to reach 4.5:1 on surface 3. */
   --text-muted: #898894;
   --term-size: 12px;
 
@@ -47,8 +47,10 @@
   --zinc-500-15: rgba(113, 113, 122, 0.15);
   --zinc-500-30: rgba(113, 113, 122, 0.3);
 
-  --term-bg: var(--bg-canvas);
-  --term-fg: var(--text-primary);
+  --term-bg: #0b0b0e;
+  --term-fg: #f3f2ee;
+  --term-cursor: #8ccfff;
+  --term-selection: rgba(140, 207, 255, 0.3);
   --color-error: var(--rose-400);
   --color-focus-ring: var(--accent-primary);
   --color-backdrop: rgba(0, 0, 0, 0.65);
@@ -60,4 +62,34 @@
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+:root[data-theme='light'] {
+  --bg-canvas: #f4f1ea;
+  --bg-surface-1: #fcfaf5;
+  --bg-surface-2: #efeae0;
+  --bg-surface-3: #e4ded2;
+  --bg-glass: rgba(252, 250, 245, 0.86);
+  --border-subtle: rgba(28, 25, 23, 0.08);
+  --border-strong: rgba(28, 25, 23, 0.15);
+  --specular-top: rgba(255, 255, 255, 0.75);
+  --text-primary: #1c1917;
+  --text-secondary: #57534e;
+  /* Mock #8a847c, darkened to reach 4.5:1 on surface 3. */
+  --text-muted: #67625c;
+
+  --accent-primary: #0065ae;
+  --accent-secondary: #004c82;
+  --accent-glow: rgba(0, 101, 174, 0.12);
+  --accent-border: rgba(0, 101, 174, 0.35);
+  --accent-deep: #004577;
+  --accent-selection: rgba(0, 101, 174, 0.3);
+  --on-accent: #ffffff;
+
+  --emerald-400: #065f46;
+  --amber-300: #92400e;
+  --amber-400: #92400e;
+  --rose-300: #9f1239;
+  --rose-400: #9f1239;
+  --zinc-400: #52525b;
 }

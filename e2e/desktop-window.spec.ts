@@ -1,4 +1,4 @@
-// e2e of plan-desktop_app, batches desktop-window and window-tray. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
+// e2e of plan-desktop_app, batches desktop-window and window-tray, and of plan-light_theme, batch remembered-theme. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -15,6 +15,9 @@ import { startupPageUrl } from '../src/desktop/startup-page.js';
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
 const fakeClaude = fileURLToPath(new URL('../test-support/fake-claude.mjs', import.meta.url));
+const LIGHT_CANVAS = 'rgb(244, 241, 234)';
+// Canvas, text, accent and error of the dark theme: the startup page never shows them (plan-light_theme/REQ-20).
+const DARK_ONLY = ['rgb(11, 11, 14)', 'rgb(243, 242, 238)', 'rgb(140, 207, 255)', 'rgb(251, 113, 133)'];
 const LOADING = 'Starting the backend…';
 const ERROR = 'The backend could not start.';
 
@@ -271,7 +274,8 @@ function buildDesktop(): void {
 }
 
 test.describe('StartupPage in the browser', () => {
-  test('loading state: waiting text, rotating accent indicator, Studio colours', async ({ page }) => {
+  // plan-light_theme/REQ-20: always the light colours
+  test('loading state: waiting text, rotating accent indicator, light colours', async ({ page }) => {
     await page.goto(startupPageUrl({ kind: 'loading' }));
     await expect(page).toHaveTitle('Vexel for Claude');
     await expect(page.getByText(LOADING, { exact: true })).toBeVisible();
@@ -282,11 +286,14 @@ test.describe('StartupPage in the browser', () => {
         const s = getComputedStyle(element);
         return [s.color, s.backgroundColor, s.borderTopColor, s.borderRightColor, s.borderBottomColor, s.borderLeftColor];
       });
-      return { canvas, text: getComputedStyle(document.body).color, colours, animations: document.getAnimations().length };
+      const scheme = getComputedStyle(document.documentElement).colorScheme;
+      return { canvas, text: getComputedStyle(document.body).color, colours, scheme, animations: document.getAnimations().length };
     });
-    expect(style.canvas).toContain('rgb(11, 11, 14)');
-    expect(style.text).toBe('rgb(243, 242, 238)');
-    expect(style.colours).toContain('rgb(140, 207, 255)');
+    expect(style.canvas).toContain(LIGHT_CANVAS);
+    expect(style.text).toBe('rgb(28, 25, 23)');
+    expect(style.colours).toContain('rgb(0, 101, 174)');
+    expect(style.scheme).toBe('light');
+    expect(style.colours.filter((colour) => DARK_ONLY.includes(colour)), 'no colour of the dark theme').toEqual([]);
     expect(style.animations).toBeGreaterThan(0);
   });
 
@@ -296,7 +303,8 @@ test.describe('StartupPage in the browser', () => {
     await expect(page.getByText(LOADING)).toHaveCount(0);
     const title = page.getByText(ERROR, { exact: true });
     await expect(title).toBeVisible();
-    await expect(title).toHaveCSS('color', 'rgb(251, 113, 133)');
+    await expect(title).toHaveCSS('color', 'rgb(159, 18, 57)');
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(LIGHT_CANVAS);
     const block = page.getByText(lines[0]!);
     await expect(block).toBeVisible();
     expect(await block.evaluate((element) => getComputedStyle(element).fontFamily)).toMatch(/mono/i);
@@ -625,5 +633,57 @@ test.describe('Window and tray', () => {
     await new Promise((resolve) => setTimeout(resolve, 5000));
     expect(await healthStatus(port)).toBeUndefined();
     expect(listenerPids(port)).toEqual([]);
+  });
+});
+
+// plan-light_theme, batch remembered-theme — scenario "The desktop app keeps its own choice, with a light startup page"
+test.describe('Remembered theme in the desktop app', () => {
+  test.describe.configure({ timeout: 120_000 });
+
+  test.beforeAll(buildDesktop);
+
+  test('REQ-17, REQ-19, REQ-20: dark chosen in the window survives a restart; the startup page stays light; the browser client stays light', async ({ page }) => {
+    const port = await freePort();
+    const env = await desktopEnv(port);
+    const first = await launchDesktop(env);
+    const firstWindow = await first.firstWindow();
+    await expect(list(firstWindow)).toBeVisible({ timeout: 20_000 });
+    const themeSwitch = firstWindow.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true });
+    await expect(themeSwitch, 'REQ-19: a new profile starts light').toHaveAttribute('aria-pressed', 'false');
+    await expect(firstWindow.locator('html')).toHaveAttribute('data-theme', 'light');
+    await themeSwitch.click();
+    await expect(firstWindow.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await quitDesktop(first);
+    await expect.poll(() => healthStatus(port), { timeout: 15_000 }).toBeUndefined();
+
+    const slowNode = path.join(env.HOME!, 'slow-node');
+    await writeFile(slowNode, `#!/bin/sh\nsleep 3\nexec '${process.execPath}' "$@"\n`);
+    await chmod(slowNode, 0o755);
+    const second = await launchDesktop({ ...env, AI_CLIENT_NODE: slowNode });
+    const client = await second.firstWindow();
+    await client.addInitScript(() => {
+      const marks: (string | null)[] = [];
+      (window as unknown as { themeMarks: (string | null)[] }).themeMarks = marks;
+      new MutationObserver(() => marks.push(document.documentElement.getAttribute('data-theme'))).observe(document, {
+        attributes: true,
+        attributeFilter: ['data-theme'],
+        subtree: true,
+      });
+    });
+    await expect(client.getByText(LOADING, { exact: true })).toBeVisible();
+    const startup = await client.evaluate(() => ({
+      canvas: getComputedStyle(document.body).backgroundColor,
+      scheme: getComputedStyle(document.documentElement).colorScheme,
+    }));
+    expect(startup, 'REQ-20: light startup page with dark chosen').toEqual({ canvas: LIGHT_CANVAS, scheme: 'light' });
+
+    await expect(list(client)).toBeVisible({ timeout: 20_000 });
+    await expect(client.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    const marks = await client.evaluate(() => [...new Set((window as unknown as { themeMarks: (string | null)[] }).themeMarks)]);
+    expect(marks, 'REQ-18: the client page only ever carries the dark mark').toEqual(['dark']);
+
+    await page.goto(`http://127.0.0.1:${port}/`);
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true })).toHaveAttribute('aria-pressed', 'false');
+    expect(await page.locator('html').getAttribute('data-theme'), 'the browser keeps its own choice').toBe('light');
   });
 });

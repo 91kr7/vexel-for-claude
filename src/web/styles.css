@@ -11,6 +11,10 @@
   color-scheme: dark;
 }
 
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
 html,
 body,
 #root {
@@ -452,6 +456,26 @@ input {
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--text-muted);
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theme-switch {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+}
+
+.theme-switch:hover {
+  background-color: var(--bg-surface-3);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 .app-body {

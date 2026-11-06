@@ -342,14 +342,15 @@ test.describe('page frame', () => {
     expect(await style(topBar(page), 'border-radius')).toBe('0px');
   });
 
-  // REQ-14, REQ-16, TopBar: logo mark, "Vexel for Claude" and the accent "New Session", nothing else
-  test('the top bar shows the "VX" mark, "Vexel for Claude" and only the "New Session" button', async ({ page }) => {
+  // REQ-14, REQ-16, TopBar: logo mark, "Vexel for Claude", the theme switch and the accent "New Session", nothing else
+  test('the top bar shows the "VX" mark, "Vexel for Claude" and only the theme switch and "New Session"', async ({ page }) => {
     await page.goto('/');
     expect(await style(topBar(page), 'background-color')).toBe(SURFACE_2);
     expect(await style(topBar(page), 'border-bottom-color')).toBe(BORDER_SUBTLE);
     await expect(topBar(page)).toContainText('Vexel');
     await expect(topBar(page)).toContainText('for Claude');
-    await expect(topBar(page).getByRole('button')).toHaveCount(1);
+    await expect(topBar(page).getByRole('button')).toHaveCount(2);
+    await expect(button(topBar(page), 'Dark theme')).toBeVisible();
     await expect(button(topBar(page), 'New Session')).toBeVisible();
 
     const mark = topBar(page).getByText('VX', { exact: true });

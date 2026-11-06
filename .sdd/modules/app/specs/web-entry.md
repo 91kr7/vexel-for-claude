@@ -11,7 +11,12 @@ type: UI entry point
 ## Contract
 
 - the page has `lang="en"` and the title "Vexel for Claude".
-- the page declares `color-scheme: dark` only, in the meta tag and on `:root`. Scrollbars and native controls are dark, also when the system theme is light.
+- `color-scheme` on `:root` follows the active theme: `dark` in the dark theme, `light` when the root carries `data-theme="light"`. Scrollbars and native controls render in the active theme, whatever the system theme.
+- before the first paint, an inline script in the head, before the styles, reads `localStorage` key `ai-client.theme` (ThemeStore `THEME_KEY`):
+  - value `dark` or `light` → that theme.
+  - anything else, missing, or storage not reachable → `light`.
+  - effect: `data-theme` on the root and the `color-scheme` meta both carry that theme. The page never paints the other theme first.
+- the `color-scheme` meta is `light` in the HTML file. It only applies before the styles load: the `:root` value overrides it.
 - the script renders AppLayout in `#root`, with the global styles.
 - body → `--bg-canvas` background, `--text-primary` text, Roboto Flex 14 px, line height 1.5.
 - selected text → `--accent-selection` background.
@@ -58,10 +63,12 @@ Client classes built from the mock's parts:
 
 - AppLayout
 - ThemeTokens
+- ThemeStore (takes over the first mark)
 - BundledFont
 
 ## Requirements served
 
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-2`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-10`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-46`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-47`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-52`
 - `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client-ui_redesign/REQ-1`
+- `plan-light_theme/REQ-11`, `plan-light_theme/REQ-13`, `plan-light_theme/REQ-18`, `plan-light_theme/REQ-19`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-10`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-11`
