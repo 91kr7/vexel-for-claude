@@ -15,3 +15,5 @@
 | 2026-11-06 | test | G5 dismiss-resume | pass | Re-run by gatekeeper: 7 files 73/73; tester 226 + 109 unit, 86 e2e; page-frame setup changed to follow REQ-7 (open session leaving the list closes); fixed-order flake 1/3 under 6 workers, passed 5/5 alone |
 | 2026-11-06 | dev | G4 running-tool | pass | Build green (re-run); files map to INT-1..8; REQ-24 assumption checked on real transcripts; divergences accepted: raw input via `readItem` for the last open call, `runningTool` type in LiveSessionStore; external tool may lag > 2 s right after the scan turns it working (risk noted) |
 | 2026-11-06 | test | G5 running-tool round 1 | sent back | 1 red in `running-tool-monitor.test.ts`: tool kept after the Claude session id changes and no transcript exists yet (`#read` returns before recomputing); RunningToolMonitor spec "Transcript of a session" |
+| 2026-11-06 | dev | G4 running-tool fix round 1 | pass | `#read` always recomputes the shown tool; typecheck green |
+| 2026-11-06 | test | G5 running-tool round 2 | pass | Re-run by gatekeeper: 5 batch files 51/51; e2e 4/4 and session-entries 11/11 from round 1 untouched by the fix |
