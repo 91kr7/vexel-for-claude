@@ -83,3 +83,98 @@ describe('ResponseLedger', () => {
     expect(ledger.totals()).toEqual({ input: 5, output: 60, cacheWrite: 100, cacheRead: 1_000 });
   });
 });
+
+const priced = (key: string, model: string, input: number, output: number, sidechain = false): ModelResponse => ({
+  key,
+  model,
+  input,
+  output,
+  cacheWrite: 0,
+  cacheRead: 0,
+  sidechain,
+});
+
+describe('ResponseLedger, estimated cost', () => {
+  // plan-session_usage/REQ-33: no record → no cost, never $0
+  it('gives no cost before the first response', () => {
+    expect(new ResponseLedger().cost()).toBeUndefined();
+  });
+
+  // plan-session_usage/REQ-24, REQ-25: the sum of the cost of every response at the prices of its own model, sidechain included
+  it('sums the costs of the responses at the prices of their models', () => {
+    const ledger = new ResponseLedger();
+    ledger.add(priced('msg_1', 'claude-opus-5-5', 1_000, 2_000));
+    ledger.add(priced('msg_2', 'claude-sonnet-5-5', 10_000, 1_000, true));
+    const cost = ledger.cost();
+    expect(cost).toEqual({ usd: expect.any(Number), incomplete: false });
+    expect(cost!.usd).toBeCloseTo((1_000 * 4 + 2_000 * 20 + 10_000 * 2 + 1_000 * 10) / 1_000_000, 12);
+  });
+
+  // plan-session_usage/REQ-30, REQ-31: an unknown price marks the cost incomplete; its tokens still count
+  it('marks the cost incomplete and keeps the known sum when a model has no price', () => {
+    const ledger = new ResponseLedger();
+    ledger.add(priced('msg_1', 'claude-opus-5-5', 1_000, 2_000));
+    ledger.add(priced('msg_2', 'claude-unknown-9', 50_000, 3_000));
+    expect(ledger.cost()).toEqual({ usd: expect.closeTo(0.044, 12), incomplete: true });
+    expect(ledger.totals()).toEqual({ input: 51_000, output: 5_000, cacheWrite: 0, cacheRead: 0 });
+  });
+
+  // plan-session_usage/REQ-30: only unknown prices → no usd, incomplete
+  it('gives no usd when no response has a known price', () => {
+    const ledger = new ResponseLedger();
+    ledger.add(priced('msg_1', 'claude-unknown-9', 1_000, 2_000));
+    ledger.add(priced('msg_2', '', 1_000, 2_000));
+    const cost = ledger.cost();
+    expect(cost).toEqual({ incomplete: true });
+    expect(cost).not.toHaveProperty('usd');
+    expect(ledger.totals()).toEqual({ input: 2_000, output: 4_000, cacheWrite: 0, cacheRead: 0 });
+  });
+
+  // ResponseLedger spec: a known model with no tokens costs 0, and the cost is complete
+  it('gives usd 0 for a known model with no tokens', () => {
+    const ledger = new ResponseLedger();
+    ledger.add(priced('msg_1', 'claude-opus-5-5', 0, 0));
+    expect(ledger.cost()).toEqual({ usd: 0, incomplete: false });
+  });
+
+  // plan-session_usage/REQ-24, ResponseLedger spec: a replaced record replaces its cost; a line with less output changes nothing
+  it('replaces the cost of a replaced record', () => {
+    const ledger = new ResponseLedger();
+    ledger.add(priced('msg_1', 'claude-opus-5-5', 1_000, 10));
+    ledger.add(priced('msg_2', 'claude-opus-5-5', 1_000, 0));
+    ledger.add(priced('msg_1', 'claude-opus-5-5', 1_000, 2_000));
+    expect(ledger.cost()!.usd).toBeCloseTo((2_000 * 4 + 2_000 * 20) / 1_000_000, 12);
+    ledger.add(priced('msg_1', 'claude-opus-5-5', 1_000, 5));
+    expect(ledger.cost()!.usd).toBeCloseTo((2_000 * 4 + 2_000 * 20) / 1_000_000, 12);
+    ledger.add(priced('msg_1', 'claude-opus-5-5', 1_000, 2_000, true));
+    expect(ledger.cost()!.usd).toBeCloseTo((2_000 * 4 + 2_000 * 20) / 1_000_000, 12);
+  });
+
+  // ResponseLedger spec: a replaced record takes its unknown cost out, so the mark goes away
+  it('clears the incomplete mark when the only unknown record is replaced by a priced one', () => {
+    const ledger = new ResponseLedger();
+    ledger.add(priced('msg_1', 'claude-opus-5-5', 1_000, 2_000));
+    ledger.add(priced('msg_2', 'claude-unknown-9', 1_000, 10));
+    expect(ledger.cost()!.incomplete).toBe(true);
+    ledger.add(priced('msg_2', 'claude-opus-5-5', 1_000, 2_000));
+    expect(ledger.cost()).toEqual({ usd: expect.closeTo(0.088, 12), incomplete: false });
+  });
+
+  // ResponseLedger spec: a replaced record takes its known cost out, so an all-unknown ledger has no usd
+  it('drops the usd when the only priced record is replaced by an unknown one', () => {
+    const ledger = new ResponseLedger();
+    ledger.add(priced('msg_1', 'claude-opus-5-5', 1_000, 10));
+    ledger.add(priced('msg_1', 'claude-unknown-9', 1_000, 20));
+    expect(ledger.cost()).toEqual({ incomplete: true });
+  });
+
+  // ResponseLedger spec: cost() gives a copy
+  it('gives a copy of the cost', () => {
+    const ledger = new ResponseLedger();
+    ledger.add(priced('msg_1', 'claude-opus-5-5', 1_000, 2_000));
+    const cost = ledger.cost()!;
+    cost.usd = 99;
+    cost.incomplete = true;
+    expect(ledger.cost()).toEqual({ usd: expect.closeTo(0.044, 12), incomplete: false });
+  });
+});

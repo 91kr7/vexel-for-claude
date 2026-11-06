@@ -105,10 +105,12 @@ describe('plan-session_usage context occupancy at the REST API', () => {
     expect(listed['hosted-1']?.usage).toEqual({
       context: { used: 45_200, window: 200_000 },
       tokens: { input: 200, output: 1_234, cacheWrite: 15_000, cacheRead: 30_000 },
+      cost: { usd: expect.closeTo(0.002_812, 9), incomplete: false },
     });
     expect(listed[external.id]?.usage).toEqual({
       context: { used: 300_000, window: 1_000_000 },
       tokens: { input: 100_000, output: 1_234, cacheWrite: 100_000, cacheRead: 100_000 },
+      cost: { usd: expect.closeTo(0.120_585, 9), incomplete: false },
     });
   });
 
@@ -127,7 +129,7 @@ describe('plan-session_usage context occupancy at the REST API', () => {
     await waitFor(() => frameWith() !== undefined, 'usage frame', 2_000);
     expect(frameWith()).toEqual({
       type: 'session',
-      session: { ...external, usage: { context: { used: 20_000, window: 200_000 }, tokens: { input: 35_000, output: 3 * 1_234, cacheWrite: 0, cacheRead: 0 } } },
+      session: { ...external, usage: { context: { used: 20_000, window: 200_000 }, tokens: { input: 35_000, output: 3 * 1_234, cacheWrite: 0, cacheRead: 0 }, cost: { usd: expect.closeTo(0.005_351, 9), incomplete: false } } },
     });
   });
 
@@ -142,7 +144,7 @@ describe('plan-session_usage context occupancy at the REST API', () => {
 
     await append(transcriptOf(external.folder, external.id), lines(response(80_000, 0, 0), { type: 'system', subtype: 'compact_boundary' }));
     await new Promise((resolve) => setTimeout(resolve, 1_500));
-    expect((await sessions())[external.id]?.usage).toEqual({ tokens: { input: 80_000, output: 1_234, cacheWrite: 0, cacheRead: 0 } });
+    expect((await sessions())[external.id]?.usage).toEqual({ tokens: { input: 80_000, output: 1_234, cacheWrite: 0, cacheRead: 0 }, cost: { usd: expect.closeTo(0.008_617, 9), incomplete: false } });
   });
 });
 
@@ -220,5 +222,110 @@ describe('plan-session_usage tokens consumed at the REST API', () => {
     exitHosted();
     await new Promise((resolve) => setTimeout(resolve, 1_200));
     expect(await sessions()).toMatchObject({ 'hosted-1': { state: 'ended', usage: { tokens: { input: 2_005, output: 36, cacheWrite: 20, cacheRead: 200 } } } });
+  });
+});
+
+interface Counts {
+  input?: number;
+  output?: number;
+  cacheWrite?: number;
+  cacheRead?: number;
+  /** usage.cache_creation, the split of the cache write by duration. */
+  creation?: { ephemeral_5m_input_tokens?: number; ephemeral_1h_input_tokens?: number };
+}
+/** One line of a response of `model`; lines with the same key are content blocks of one response. */
+const answer = (key: string, model: string, counts: Counts, sidechain = false): Entry => ({
+  type: 'assistant',
+  uuid: `${key}-${counts.output ?? 0}`,
+  isSidechain: sidechain,
+  message: {
+    id: key,
+    model,
+    usage: {
+      input_tokens: counts.input ?? 0,
+      output_tokens: counts.output ?? 0,
+      cache_creation_input_tokens: counts.cacheWrite ?? 0,
+      cache_read_input_tokens: counts.cacheRead ?? 0,
+      ...(counts.creation ? { cache_creation: counts.creation } : {}),
+    },
+  },
+});
+const MTOK = 1_000_000;
+const usageOf = async (id: string) => (await sessions())[id]?.usage as { tokens?: Record<string, number>; cost?: { usd?: number; incomplete: boolean } } | undefined;
+
+describe('plan-session_usage estimated cost at the REST API', () => {
+  // plan-session_usage/REQ-22, REQ-23, REQ-24, REQ-25, REQ-33: hosted and external entries carry the cost of main and subagent responses, each once; none before the first response
+  it('lists the cost of hosted and external sessions, subagents included, each response once', async () => {
+    const hostedFile = transcriptOf('/projects/hosted', 'claude-hosted');
+    const externalFile = transcriptOf(external.folder, external.id);
+    await append(hostedFile, lines({ type: 'user', message: { role: 'user', content: 'hi' } }));
+    await new Promise((resolve) => setTimeout(resolve, 1_200));
+    expect((await sessions())['hosted-1']).not.toHaveProperty('usage');
+    expect((await sessions())[external.id]).not.toHaveProperty('usage');
+
+    await append(hostedFile, lines(answer('msg_h', 'claude-opus-5-5', { input: 1_000, output: 10 }), answer('msg_h', 'claude-opus-5-5', { input: 1_000, output: 2_000 })));
+    await append(subagentFileOf(hostedFile, 'agent-a1.jsonl'), lines(answer('msg_s', 'claude-sonnet-5-5', { input: 3_000, output: 500 }, true)));
+    await append(externalFile, lines(answer('msg_e', 'claude-sonnet-5-5-20261001', { input: 10_000, output: 1_000, cacheRead: 100_000 })));
+    await waitFor(() => monitor.get('hosted-1')?.tokens?.input === 4_000 && monitor.get(external.id) !== undefined, 'monitor read', 2_500);
+
+    expect((await usageOf('hosted-1'))?.cost).toEqual({ usd: expect.closeTo((1_000 * 4 + 2_000 * 20 + 3_000 * 2 + 500 * 10) / MTOK, 12), incomplete: false });
+    expect((await usageOf(external.id))?.cost).toEqual({ usd: expect.closeTo((10_000 * 2 + 1_000 * 10 + 100_000 * 0.1) / MTOK, 12), incomplete: false });
+  });
+
+  // plan-session_usage/REQ-26, REQ-27, REQ-28: 1-hour cache write, cache write with no duration, and a long Haiku 5.5 prompt
+  it('prices the 1-hour cache write, a cache write with no duration as 5-minute, and a long Haiku 5.5 prompt at its higher tier', async () => {
+    const file = transcriptOf(external.folder, external.id);
+    await append(
+      file,
+      lines(
+        answer('msg_1h', 'claude-opus-5-5', { input: 100, output: 200, cacheWrite: 10_000, creation: { ephemeral_5m_input_tokens: 0, ephemeral_1h_input_tokens: 10_000 } }),
+        answer('msg_nodur', 'claude-opus-5-5', { input: 100, output: 200, cacheWrite: 10_000 }),
+        answer('msg_long', 'claude-haiku-5-5', { input: 50_000, output: 1_000, cacheRead: 60_000 }),
+      ),
+    );
+    await waitFor(() => monitor.get(external.id)?.tokens?.input === 50_200, 'monitor read', 2_500);
+    const oneHour = (100 * 4 + 200 * 20 + 10_000 * 8) / MTOK;
+    const fiveMinutes = (100 * 4 + 200 * 20 + 10_000 * 5) / MTOK;
+    const longHaiku = (50_000 * 0.5 + 1_000 * 2.5 + 60_000 * 0.05) / MTOK;
+    expect((await usageOf(external.id))?.cost).toEqual({ usd: expect.closeTo(oneHour + fiveMinutes + longHaiku, 12), incomplete: false });
+  });
+
+  // plan-session_usage/REQ-30, REQ-31: an unknown model marks the cost incomplete and still counts in the tokens; only unknown models → no usd
+  it('marks the cost incomplete for a model with no known price, and gives no usd when no price is known', async () => {
+    await append(transcriptOf('/projects/hosted', 'claude-hosted'), lines(answer('msg_known', 'claude-opus-5-5', { input: 1_000, output: 2_000 }), answer('msg_unknown', 'claude-unknown-9', { input: 7_000, output: 3_000 })));
+    await append(transcriptOf(external.folder, external.id), lines(answer('msg_only', 'claude-unknown-9', { input: 500, output: 600 })));
+    await waitFor(() => monitor.get('hosted-1')?.tokens?.input === 8_000 && monitor.get(external.id) !== undefined, 'monitor read', 2_500);
+
+    const hosted = await usageOf('hosted-1');
+    expect(hosted?.tokens).toEqual({ input: 8_000, output: 5_000, cacheWrite: 0, cacheRead: 0 });
+    expect(hosted?.cost).toEqual({ usd: expect.closeTo(0.044, 12), incomplete: true });
+    const only = await usageOf(external.id);
+    expect(only?.tokens).toEqual({ input: 500, output: 600, cacheWrite: 0, cacheRead: 0 });
+    expect(only?.cost).toEqual({ incomplete: true });
+  });
+
+  // plan-session_usage/REQ-35: a new response reaches the page within 2 seconds as a session frame with the new cost
+  it('pushes a session frame with the new cost within 2 seconds of a new response', async () => {
+    const file = transcriptOf('/projects/hosted', 'claude-hosted');
+    await append(file, lines(answer('msg_1', 'claude-opus-5-5', { input: 1_000, output: 2_000 })));
+    await waitFor(() => monitor.get('hosted-1') !== undefined, 'first value', 2_500);
+    const address = app.server.address();
+    if (address === null || typeof address === 'string') throw new Error('no port');
+    client = connectWs(`ws://127.0.0.1:${address.port}/api/sessions/events`);
+    await new Promise<void>((resolve) => client!.socket.once('open', () => resolve()));
+
+    await append(subagentFileOf(file, 'agent-a1.jsonl'), lines(answer('msg_2', 'claude-opus-5-5', { input: 1_000, output: 2_000 }, true)));
+    const frameWith = () => client!.frames.map((frame) => JSON.parse(frame)).find((frame) => frame.session?.usage?.tokens?.input === 2_000);
+    await waitFor(() => frameWith() !== undefined, 'cost frame', 2_000);
+    expect(frameWith().session).toMatchObject({ id: 'hosted-1', usage: { cost: { usd: expect.closeTo(0.088, 12), incomplete: false } } });
+  });
+
+  // plan-session_usage/REQ-34: an ended session keeps its cost
+  it('keeps the cost of an ended session', async () => {
+    await append(transcriptOf('/projects/hosted', 'claude-hosted'), lines(answer('msg_1', 'claude-opus-5-5', { input: 1_000, output: 2_000 })));
+    await waitFor(() => monitor.get('hosted-1') !== undefined, 'first value', 2_500);
+    exitHosted();
+    await new Promise((resolve) => setTimeout(resolve, 1_200));
+    expect(await sessions()).toMatchObject({ 'hosted-1': { state: 'ended', usage: { cost: { usd: expect.closeTo(0.044, 12), incomplete: false } } } });
   });
 });

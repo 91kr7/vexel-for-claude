@@ -30,6 +30,8 @@ const lines = (...entries: Entry[]) => entries.map((entry) => `${JSON.stringify(
 const context = (used: number, window = 200_000) => ({ used, window });
 /** The token totals of responses made by `response()`, whose output is always 777. */
 const tokens = (responses: number, input: number, cacheWrite = 0, cacheRead = 0) => ({ input, output: 777 * responses, cacheWrite, cacheRead });
+/** The cost of responses of a priced model: its amount is checked by the estimated-cost tests. */
+const priced = { usd: expect.any(Number), incomplete: false };
 
 class FakeScanner {
   readonly sessions = new Map<string, ExternalSessionSummary>();
@@ -146,7 +148,7 @@ describe('UsageMonitor, context of a session', () => {
     newMonitor();
     await append(file, lines(userText('a'), response(200, 15_000, 30_000)));
     await monitor!.poll();
-    const usage = { context: context(45_200), tokens: tokens(1, 200, 15_000, 30_000) };
+    const usage = { context: context(45_200), tokens: tokens(1, 200, 15_000, 30_000), cost: priced };
     expect(monitor!.get(id)).toEqual(usage);
     expect(changesOf(id)).toEqual([usage]);
   });
@@ -183,8 +185,8 @@ describe('UsageMonitor, context of a session', () => {
     newMonitor();
     await monitor!.poll();
     for (const id of [empty.id, noClaudeId.id, noFile.id, 'unknown']) expect(monitor!.get(id), id).toBeUndefined();
-    expect(monitor!.get(sidechainOnly.id), 'tokens only, no context').toEqual({ tokens: tokens(1, 9_000) });
-    expect(changes).toEqual([[sidechainOnly.id, { tokens: tokens(1, 9_000) }]]);
+    expect(monitor!.get(sidechainOnly.id), 'tokens only, no context').toEqual({ tokens: tokens(1, 9_000), cost: priced });
+    expect(changes).toEqual([[sidechainOnly.id, { tokens: tokens(1, 9_000), cost: priced }]]);
   });
 
   // UsageMonitor spec: no file found yet → the next poll tries again
@@ -205,13 +207,13 @@ describe('UsageMonitor, context of a session', () => {
     await monitor!.poll();
     await append(file, lines(response(4_000, 0, 0, { sidechain: true })));
     await monitor!.poll();
-    expect(monitor!.get(id)).toEqual({ context: context(80_000), tokens: tokens(2, 84_000) });
+    expect(monitor!.get(id)).toEqual({ context: context(80_000), tokens: tokens(2, 84_000), cost: priced });
     await append(file, lines(compaction));
     await monitor!.poll();
-    expect(monitor!.get(id), 'no context after a compaction, the tokens stay').toEqual({ tokens: tokens(2, 84_000) });
+    expect(monitor!.get(id), 'no context after a compaction, the tokens stay').toEqual({ tokens: tokens(2, 84_000), cost: priced });
     await append(file, lines(response(15_000)));
     await monitor!.poll();
-    expect(monitor!.get(id)).toEqual({ context: context(15_000), tokens: tokens(3, 99_000) });
+    expect(monitor!.get(id)).toEqual({ context: context(15_000), tokens: tokens(3, 99_000), cost: priced });
     expect(contextChangesOf(id)).toEqual([context(80_000), context(80_000), undefined, context(15_000)]);
   });
 
@@ -224,7 +226,7 @@ describe('UsageMonitor, context of a session', () => {
     await monitor!.poll();
     await append(file, lines(userText('again')));
     await monitor!.poll();
-    expect(changesOf(id)).toEqual([{ context: context(50_000), tokens: tokens(1, 50_000) }]);
+    expect(changesOf(id)).toEqual([{ context: context(50_000), tokens: tokens(1, 50_000), cost: priced }]);
   });
 });
 
@@ -238,7 +240,7 @@ describe('UsageMonitor, session lifecycle', () => {
     exits.get(id)!();
     expect(tracker.get(id)?.state).toBe('ended');
     await monitor!.poll();
-    expect(monitor!.get(id)).toEqual({ context: context(80_000), tokens: tokens(1, 80_000) });
+    expect(monitor!.get(id)).toEqual({ context: context(80_000), tokens: tokens(1, 80_000), cost: priced });
 
     const before = changes.length;
     expect(tracker.dismiss(id)).toBe(true);
@@ -291,7 +293,7 @@ describe('UsageMonitor, reading', () => {
     const filler = Array.from({ length: 40 }, (_, n) => response(n + 1, 0, 0, { sidechain: true }));
     await append(file, lines(response(60_000), ...filler, response(70_000)));
     await monitor!.poll();
-    expect(monitor!.get(id), 'the old value until the end of the file').toEqual({ context: context(10_000), tokens: tokens(1, 10_000) });
+    expect(monitor!.get(id), 'the old value until the end of the file').toEqual({ context: context(10_000), tokens: tokens(1, 10_000), cost: priced });
 
     let polls = 1;
     while (monitor!.get(id)?.context?.used !== 70_000) {
@@ -325,9 +327,9 @@ describe('UsageMonitor, reading', () => {
     await append(file, lines(response(41_000)));
     counting.failNext = true;
     await monitor!.poll();
-    expect(monitor!.get(id)).toEqual({ context: context(40_000), tokens: tokens(1, 40_000) });
+    expect(monitor!.get(id)).toEqual({ context: context(40_000), tokens: tokens(1, 40_000), cost: priced });
     await monitor!.poll();
-    expect(monitor!.get(id)).toEqual({ context: context(41_000), tokens: tokens(2, 81_000) });
+    expect(monitor!.get(id)).toEqual({ context: context(41_000), tokens: tokens(2, 81_000), cost: priced });
   });
 
   // UsageMonitor spec: get reads only values in memory
@@ -426,7 +428,7 @@ describe('UsageMonitor, tokens consumed', () => {
     await append(subagentFile(file, 'agent-a1.meta.json'), JSON.stringify(response(9_999_999)));
     newMonitor();
     await monitor!.poll();
-    expect(monitor!.get(id)).toEqual({ context: context(10_000), tokens: tokens(5, 311_570, 2_080, 3_090) });
+    expect(monitor!.get(id)).toEqual({ context: context(10_000), tokens: tokens(5, 311_570, 2_080, 3_090), cost: priced });
   });
 
   // plan-session_usage/REQ-15: one response on several lines counts once with its final output, in the main transcript and in a subagent file
@@ -473,11 +475,11 @@ describe('UsageMonitor, tokens consumed', () => {
 
     await append(subagentFile(file, 'agent-a1.jsonl'), lines(response(200, 0, 0, { sidechain: true }), response(30, 0, 0, { sidechain: true })));
     await monitor!.poll();
-    expect(monitor!.get(id)).toEqual({ context: context(1_000), tokens: tokens(3, 1_230) });
+    expect(monitor!.get(id)).toEqual({ context: context(1_000), tokens: tokens(3, 1_230), cost: priced });
 
     await append(subagentFile(file, 'agent-a1.jsonl'), lines(response(4, 0, 0, { sidechain: true })));
     await monitor!.poll();
-    expect(monitor!.get(id)).toEqual({ context: context(1_000), tokens: tokens(4, 1_234) });
+    expect(monitor!.get(id)).toEqual({ context: context(1_000), tokens: tokens(4, 1_234), cost: priced });
     expect(changesOf(id).map((usage) => usage?.tokens?.input)).toEqual([1_000, 1_230, 1_234]);
   });
 
@@ -498,7 +500,7 @@ describe('UsageMonitor, tokens consumed', () => {
     expect(monitor!.get(resumed)?.tokens).toEqual(tokens(3, 11_700));
     await append(before.file, lines(response(8_000)));
     await monitor!.poll();
-    expect(monitor!.get(resumed)).toEqual({ context: context(8_000), tokens: tokens(4, 19_700) });
+    expect(monitor!.get(resumed)).toEqual({ context: context(8_000), tokens: tokens(4, 19_700), cost: priced });
   });
 
   // plan-session_usage/REQ-17: a new Claude Code session id (/clear) drops the old tokens; the new count starts from zero
@@ -518,7 +520,7 @@ describe('UsageMonitor, tokens consumed', () => {
     await append(file, lines(response(99_000)));
     await append(transcriptOf(folder, 'claude-after-clear'), lines(userText('hi'), response(2_000)));
     await monitor!.poll();
-    expect(monitor!.get(id)).toEqual({ context: context(2_000), tokens: tokens(1, 2_000) });
+    expect(monitor!.get(id)).toEqual({ context: context(2_000), tokens: tokens(1, 2_000), cost: priced });
   });
 
   // plan-session_usage/REQ-18: lines with no readable usage give no tokens, not zeros
@@ -544,7 +546,7 @@ describe('UsageMonitor, tokens consumed', () => {
     exits.get(id)!();
     await monitor!.poll();
     await monitor!.poll();
-    expect(monitor!.get(id)).toEqual({ context: context(3_000), tokens: tokens(2, 3_040) });
+    expect(monitor!.get(id)).toEqual({ context: context(3_000), tokens: tokens(2, 3_040), cost: priced });
   });
 
   // plan-session_usage/REQ-20: with the default interval a new subagent response shows within 2 seconds
@@ -606,7 +608,57 @@ describe('UsageMonitor, reading the subagent files', () => {
     }
     expect(polls, 'over several polls').toBeGreaterThan(2);
     const all = 1_000 + (30 * 31) / 2 + 15;
-    expect(monitor!.get(id)).toEqual({ context: context(1_000), tokens: tokens(36, all) });
+    expect(monitor!.get(id)).toEqual({ context: context(1_000), tokens: tokens(36, all), cost: priced });
     expect(changesOf(id)).toEqual([monitor!.get(id)]);
+  });
+});
+
+describe('UsageMonitor, estimated cost', () => {
+  // plan-session_usage/REQ-22, REQ-24, REQ-25: the cost of the main and subagent responses, each at the prices of its model
+  it('gives the cost of the main and subagent responses of a hosted session', async () => {
+    const { id, file } = hosted();
+    await append(file, lines(userText('a'), response(1_000, 0, 0, { model: 'claude-opus-5-5' })));
+    await append(subagentFile(file, 'agent-a1.jsonl'), lines(response(2_000, 0, 0, { model: 'claude-sonnet-5-5', sidechain: true })));
+    newMonitor();
+    await monitor!.poll();
+    expect(monitor!.get(id)?.cost).toEqual({ usd: expect.closeTo((1_000 * 4 + 777 * 20 + 2_000 * 2 + 777 * 10) / 1_000_000, 12), incomplete: false });
+  });
+
+  // plan-session_usage/REQ-30, REQ-31: an unknown model marks the cost incomplete; its tokens still count
+  it('marks the cost of an external session incomplete when a model has no price', async () => {
+    const { id, file } = external();
+    await append(file, lines(response(1_000, 0, 0, { model: 'claude-opus-5-5' })));
+    newMonitor();
+    await monitor!.poll();
+    await append(file, lines(response(5_000, 0, 0, { model: 'claude-unknown-9' })));
+    await monitor!.poll();
+    expect(monitor!.get(id)).toEqual({
+      context: context(5_000),
+      tokens: tokens(2, 6_000),
+      cost: { usd: expect.closeTo((1_000 * 4 + 777 * 20) / 1_000_000, 12), incomplete: true },
+    });
+    expect(changesOf(id).map((usage) => usage?.cost?.incomplete)).toEqual([false, true]);
+  });
+
+  // plan-session_usage/REQ-30: only unknown models → a cost with no usd, still present next to the tokens
+  it('gives a cost with no usd when every model has no price', async () => {
+    const { id, file } = external();
+    await append(file, lines(response(5_000, 0, 0, { model: 'claude-unknown-9' })));
+    newMonitor();
+    await monitor!.poll();
+    expect(monitor!.get(id)).toEqual({ context: context(5_000), tokens: tokens(1, 5_000), cost: { incomplete: true } });
+  });
+
+  // plan-session_usage/REQ-34: an ended session keeps its last cost
+  it('keeps the cost of an ended session', async () => {
+    const { id, file } = hosted();
+    await append(file, lines(response(1_000, 0, 0, { model: 'claude-opus-5-5' })));
+    newMonitor();
+    await monitor!.poll();
+    const before = monitor!.get(id)?.cost;
+    exits.get(id)!();
+    await monitor!.poll();
+    expect(before?.usd).toBeCloseTo((1_000 * 4 + 777 * 20) / 1_000_000, 12);
+    expect(monitor!.get(id)?.cost).toEqual(before);
   });
 });

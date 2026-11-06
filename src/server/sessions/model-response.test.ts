@@ -19,6 +19,8 @@ describe('modelResponseOf', () => {
       input: 10,
       output: 20,
       cacheWrite: 30,
+      cacheWrite5m: 30,
+      cacheWrite1h: 0,
       cacheRead: 40,
       sidechain: false,
     });
@@ -74,5 +76,35 @@ describe('modelResponseOf', () => {
   it('gives the same result for the same line', () => {
     const entry = assistant({});
     expect(modelResponseOf(entry)).toEqual(modelResponseOf(structuredClone(entry)));
+  });
+});
+
+describe('modelResponseOf, cache write split', () => {
+  const withCreation = (cacheWrite: number, cacheCreation: unknown) =>
+    modelResponseOf(assistant({ usage: { ...usage, cache_creation_input_tokens: cacheWrite, cache_creation: cacheCreation } }));
+  const splitOf = (response: ReturnType<typeof modelResponseOf>) => [response?.cacheWrite, response?.cacheWrite5m, response?.cacheWrite1h];
+
+  // plan-session_usage/REQ-26: the 5-minute and 1-hour cache write tokens come from usage.cache_creation
+  it('takes the split from usage.cache_creation when it matches the cache write', () => {
+    expect(splitOf(withCreation(1_000, { ephemeral_5m_input_tokens: 300, ephemeral_1h_input_tokens: 700 }))).toEqual([1_000, 300, 700]);
+    expect(splitOf(withCreation(500, { ephemeral_5m_input_tokens: 0, ephemeral_1h_input_tokens: 500 }))).toEqual([500, 0, 500]);
+  });
+
+  // plan-session_usage/REQ-27: no split, or a split that does not match → all 5-minute
+  it.each<[string, unknown]>([
+    ['no cache_creation', undefined],
+    ['cache_creation not an object', 'ephemeral'],
+    ['a split that does not add up', { ephemeral_5m_input_tokens: 100, ephemeral_1h_input_tokens: 200 }],
+    ['a split with only the 1-hour part, too small', { ephemeral_1h_input_tokens: 400 }],
+  ])('counts every cache write token as 5-minute with %s', (_, cacheCreation) => {
+    expect(splitOf(withCreation(1_000, cacheCreation))).toEqual([1_000, 1_000, 0]);
+  });
+
+  // modelResponseOf spec: cacheWrite5m + cacheWrite1h = cacheWrite, always
+  it('keeps the two parts equal to the cache write', () => {
+    for (const cacheCreation of [undefined, { ephemeral_5m_input_tokens: 10, ephemeral_1h_input_tokens: 20 }, { ephemeral_5m_input_tokens: 1 }]) {
+      const response = withCreation(30, cacheCreation);
+      expect(response!.cacheWrite5m! + response!.cacheWrite1h!).toBe(response!.cacheWrite);
+    }
   });
 });

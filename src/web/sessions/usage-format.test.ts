@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { percentOf, shortTokens, usageLevelOf } from './usage-format';
+import { costText, INCOMPLETE_COST_TEXT, percentOf, shortTokens, usageLevelOf } from './usage-format';
 
 describe('shortTokens', () => {
   // plan-session_usage/REQ-11: below 1,000 the plain number
@@ -55,5 +55,34 @@ describe('usageLevelOf', () => {
     [100, 'error'],
   ])('gives %d%% the level %s', (percent, level) => {
     expect(usageLevelOf(percent)).toBe(level);
+  });
+});
+
+describe('costText', () => {
+  // plan-session_usage/REQ-32: two decimals with "$"
+  it.each([
+    [0.01, '$0.01'],
+    [0.85, '$0.85'],
+    [1.27, '$1.27'],
+    [1.266, '$1.27'],
+    [12, '$12.00'],
+    [1234.5, '$1234.50'],
+  ])('gives %d the text %s', (usd, text) => {
+    expect(costText(usd)).toBe(text);
+  });
+
+  // plan-session_usage/REQ-32: below one cent, 0 included
+  it.each([0, 0.0001, 0.0099])('gives %d the text "<$0.01"', (usd) => {
+    expect(costText(usd)).toBe('<$0.01');
+  });
+
+  // plan-session_usage/REQ-30: no known price at all → "—"
+  it('gives "—" when there is no usd', () => {
+    expect(costText(undefined)).toBe('—');
+  });
+
+  // usage-format spec: the text of the "incomplete" mark
+  it('names the incomplete mark', () => {
+    expect(INCOMPLETE_COST_TEXT).toBe('Incomplete: the price of a model is unknown');
   });
 });
