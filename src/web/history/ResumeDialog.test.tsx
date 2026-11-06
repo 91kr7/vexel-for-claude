@@ -40,4 +40,14 @@ describe('ResumeDialog', () => {
     expect(html).toContain(renderToStaticMarkup(<AreaState kind="loading" size="compact" title="Loading…" />));
     expect(html).not.toContain('role="alert"');
   });
+
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-1, REQ-11, REQ-13, ResumeDialog: the bar shows also while the list loads
+  it('shows the empty search bar above the list while the past sessions load, with no "Clear Search"', () => {
+    const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
+    const bar = html.match(/<input\b[^>]*\saria-label="Search Past Sessions"[^>]*>/)?.[0] ?? '';
+    expect(bar).toContain('placeholder="Search by label or folder"');
+    expect(bar).toContain('value=""');
+    expect(html.indexOf(bar)).toBeLessThan(html.indexOf('Loading…'));
+    expect(html).not.toContain('Clear Search');
+  });
 });
