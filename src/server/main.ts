@@ -29,6 +29,7 @@ import { SessionRegistry } from './sessions/session-registry.js';
 import { SessionStateTracker } from './sessions/session-state-tracker.js';
 import { registerStartSessionRoute } from './sessions/start-session-route.js';
 import { registerStopSessionRoute } from './sessions/stop-session-route.js';
+import { UsageMonitor } from './sessions/usage-monitor.js';
 
 const HOST = '127.0.0.1';
 const port = Number(process.env.PORT ?? 3000);
@@ -58,6 +59,7 @@ const externalScanner = new ExternalSessionScanner({
 const transcriptReader = new TranscriptReader();
 const attentionMonitor = new AttentionMonitor({ tracker, scanner: externalScanner, registry });
 const runningToolMonitor = new RunningToolMonitor({ tracker, scanner: externalScanner, reader: transcriptReader });
+const usageMonitor = new UsageMonitor({ tracker, scanner: externalScanner, reader: transcriptReader });
 
 registerLocalAccessGuard(app, { viteDevPort });
 await app.register(fastifyWebsocket);
@@ -69,8 +71,8 @@ registerDismissSessionRoute(app, tracker);
 registerRenameSessionRoute(app, { tracker, scanner: externalScanner, names });
 registerResumeEndedSessionRoute(app, { tracker, history, registry, externalCheck });
 registerAttachSessionRoute(app, registry, tracker);
-registerSessionListRoute(app, tracker, externalScanner, runningToolMonitor);
-registerSessionEventsRoute(app, tracker, externalScanner, runningToolMonitor);
+registerSessionListRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor);
+registerSessionEventsRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor);
 registerHookEventRoute(app, tracker);
 registerFolderRoute(app);
 registerPastSessionListRoute(app, { history, externalCheck, registry, tracker, names });
@@ -86,10 +88,12 @@ if (existsSync(webRoot)) {
 
 externalScanner.start();
 runningToolMonitor.start();
+usageMonitor.start();
 await app.listen({ host: HOST, port });
 
 async function stopServer(): Promise<void> {
   runningToolMonitor.stop();
+  usageMonitor.stop();
   const running = registry.list().filter((session) => !session.exited);
   await Promise.all(
     running.map(

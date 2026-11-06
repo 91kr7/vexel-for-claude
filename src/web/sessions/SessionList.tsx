@@ -3,12 +3,13 @@ import { AreaState } from '../feedback/AreaState';
 import { PencilIcon } from '../icons/Icons';
 import { folderNameOf } from './Avatar';
 import { EndedEntryActions } from './EndedEntryActions';
-import type { LoadStatus, RunningTool, SessionSummary } from './live-session-store';
+import type { ContextOccupancy, LoadStatus, RunningTool, SessionSummary, SessionUsage } from './live-session-store';
 import { ProgressBar } from './ProgressBar';
 import { RelativeTime } from './RelativeTime';
 import { type NameEditorEnd, SessionNameEditor } from './SessionNameEditor';
 import { groupSessions, type SessionGroupId, type SessionOrder } from './session-order';
 import { StateBadge } from './StateBadge';
+import { costText, INCOMPLETE_COST_TEXT, percentOf, usageLevelOf } from './usage-format';
 
 function entryClass(session: SessionSummary): string {
   const classes = ['session-entry'];
@@ -46,6 +47,27 @@ function ToolLine({ tool }: { tool: RunningTool }) {
   );
 }
 
+function ContextPercent({ context }: { context?: ContextOccupancy }) {
+  if (!context) return null;
+  const percent = percentOf(context);
+  return <span className={`session-entry-context usage-${usageLevelOf(percent)}`}>{`${percent}%`}</span>;
+}
+
+function EntryCost({ usage }: { usage?: SessionUsage }) {
+  if (!usage?.cost) return null;
+  return (
+    <span className="session-entry-cost">
+      {usage.context && <span aria-hidden="true">· </span>}
+      <span title="Estimated cost at API list prices">{costText(usage.cost.usd)}</span>
+      {usage.cost.incomplete && (
+        <span className="usage-incomplete" role="img" aria-label={INCOMPLETE_COST_TEXT} title={INCOMPLETE_COST_TEXT}>
+          *
+        </span>
+      )}
+    </span>
+  );
+}
+
 interface EntryProps {
   session: SessionSummary;
   open: boolean;
@@ -69,6 +91,8 @@ function EntryRow({ session, open, onOpen, editor }: EntryProps) {
             {externalNeedsInput ? <PermissionText session={session} /> : session.label}
           </span>
         )}
+        <ContextPercent context={session.usage?.context} />
+        <EntryCost usage={session.usage} />
         <RelativeTime className="session-entry-time" iso={session.lastActivity} />
       </span>
       {session.state === 'working' && session.runningTool && <ToolLine tool={session.runningTool} />}
@@ -97,11 +121,15 @@ function NeedsInputCard({ session, open, onOpen, editor }: EntryProps) {
         <span className="perm-tag">Needs Input</span>
         <EntryTitle session={session} />
       </span>
-      {editor ?? (
-        <span className="session-entry-label" title={session.label}>
-          {session.label}
-        </span>
-      )}
+      <span className="session-entry-line">
+        {editor ?? (
+          <span className="session-entry-label" title={session.label}>
+            {session.label}
+          </span>
+        )}
+        <ContextPercent context={session.usage?.context} />
+        <EntryCost usage={session.usage} />
+      </span>
     </>
   );
   return (
