@@ -1,6 +1,6 @@
 ---
 slug: claude_sessions_client
-date: 2026-11-05
+date: 2026-11-06
 spec: .sdd/analysis/claude_sessions_client.md
 status: validated
 ---
@@ -73,3 +73,19 @@ The Claude Code sessions that run in other terminals of the same machine, seen f
 | REQ-34 | The conversation of an open external session updates live while the session runs. |
 | REQ-35 | An external session offers a "Riprendi qui" action that resumes it in the client, with the warning of REQ-27. |
 | REQ-36 | The client writes nothing to an external session. |
+
+## Feature: Local access
+
+Fix of 2026-11-06. Only pages served by the client itself can drive the sessions from a browser.
+
+| ID | Requirement |
+|----|-------------|
+| REQ-37 | The client accepts a browser request whose Origin is its own origin: `http://localhost` or `http://127.0.0.1` on the port where the client listens. |
+| REQ-38 | In development only, the client also accepts the Origin of the Vite dev server. |
+| REQ-39 | The client rejects a loopback Origin on any other port, for example `http://localhost:8080`. |
+| REQ-40 | The client rejects an Origin whose host is not loopback, also on the client's port. |
+| REQ-41 | The client rejects the Origin `null` and a malformed Origin. |
+| REQ-42 | The client accepts a request without an Origin, as before the fix. |
+| REQ-43 | A rejected connection receives no session data and writes nothing to any session terminal. |
+| REQ-44 | The Origin rule applies to every request that the access check covers before the fix, HTTP requests included. |
+| REQ-45 | The page opened on the client's port, the desktop app and the hook forwarder work as before the fix. |

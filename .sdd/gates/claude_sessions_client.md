@@ -47,3 +47,5 @@
 | 2026-11-05 | close | merge | pass | All 5 batches certified; merged into main with --no-ff |
 | 2026-11-06 | analysis (fix strict origin) | question analyst Q1 | decided | Fix, not evolution: request "Correggere"; local-access NFR aims to let only the user drive sessions |
 | 2026-11-06 | analysis (fix strict origin) | G1 analysis | pass | Minimal edit, +37 lines; `<qualsiasi porta>` is raw request text, not a placeholder |
+| 2026-11-06 | plan (fix strict origin) | G2 requirements | pass | REQ-37..45 mirror the "Local access" bullets; `http` scheme in REQ-37 accepted as assumption |
+| 2026-11-06 | plan (fix strict origin) | G3 coverage | pass | One batch `local-access`, REQ-37..45 covered, 3 existing modify paths + `package.json`; dev signal from the `dev` script, not `NODE_ENV` |
