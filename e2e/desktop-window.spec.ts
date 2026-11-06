@@ -1,4 +1,4 @@
-// e2e of plan-desktop_app, batches desktop-window and window-tray, and of plan-light_theme, batch remembered-theme. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
+// e2e of plan-desktop_app, batches desktop-window and window-tray, of plan-light_theme, batch remembered-theme, and of plan-mac_title_bar, batch title-bar. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -685,5 +685,88 @@ test.describe('Remembered theme in the desktop app', () => {
     await page.goto(`http://127.0.0.1:${port}/`);
     await expect(page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true })).toHaveAttribute('aria-pressed', 'false');
     expect(await page.locator('html').getAttribute('data-theme'), 'the browser keeps its own choice').toBe('light');
+  });
+});
+
+/** The window area at a point: the last element, in document order, that declares a drag value over the point wins. */
+const appRegionAt = (page: Page, x: number, y: number) =>
+  page.evaluate(
+    ([px, py]) => {
+      let region = 'none';
+      for (const element of document.querySelectorAll('*')) {
+        const value = getComputedStyle(element).getPropertyValue('-webkit-app-region');
+        const box = element.getBoundingClientRect();
+        if ((value === 'drag' || value === 'no-drag') && px >= box.left && px < box.right && py >= box.top && py < box.bottom) region = value;
+      }
+      return region;
+    },
+    [x, y] as const,
+  );
+
+// plan-mac_title_bar, batch title-bar. The window manager's drag, double click, edge resize and shortcuts are checked by hand.
+test.describe('Frameless window', () => {
+  test.describe.configure({ timeout: 90_000 });
+
+  test.beforeAll(buildDesktop);
+
+  test('REQ-1, REQ-2, REQ-3, REQ-5, REQ-6, REQ-8, REQ-10: no native frame, drag areas on the startup page and the top bar, close to the tray', async () => {
+    const port = await freePort();
+    const env = await desktopEnv(port);
+    const slowNode = path.join(env.HOME!, 'slow-node');
+    await writeFile(slowNode, `#!/bin/sh\nsleep 3\nexec '${process.execPath}' "$@"\n`);
+    await chmod(slowNode, 0o755);
+    const app = await launchDesktop({ ...env, AI_CLIENT_NODE: slowNode });
+    const window = await app.firstWindow();
+
+    await expect(window.getByText(LOADING, { exact: true })).toBeVisible();
+    const width = (await window.evaluate(() => innerWidth)) as number;
+    for (const x of [1, width / 2, width - 1]) expect(await appRegionAt(window, x, 24), `REQ-10: startup bar at ${x}`).toBe('drag');
+
+    await expect(list(window)).toBeVisible({ timeout: 20_000 });
+    const banner = window.getByRole('banner');
+    const brand = (await banner.getByText('Vexel', { exact: true }).boundingBox())!;
+    expect(await appRegionAt(window, brand.x + brand.width / 2, brand.y + brand.height / 2), 'REQ-6: the brand').toBe('drag');
+    const newSession = (await banner.getByRole('button', { name: 'New Session', exact: true }).boundingBox())!;
+    expect(await appRegionAt(window, newSession.x + newSession.width / 2, newSession.y + newSession.height / 2), 'REQ-8: "New Session"').toBe('no-drag');
+
+    const native = await app.evaluate(({ BrowserWindow }) => {
+      const current = BrowserWindow.getAllWindows()[0]!;
+      const handle = current.getNativeWindowHandle();
+      return { xid: handle.length >= 8 ? Number(handle.readBigUInt64LE()) : handle.readUInt32LE(), resizable: current.isResizable(), title: current.getTitle() };
+    });
+    expect(native.resizable, 'REQ-2').toBe(true);
+    expect(native.title, 'REQ-3').toBe('Vexel for Claude');
+    const xprop = execFileSync('xprop', ['-id', String(native.xid), '_MOTIF_WM_HINTS', '_NET_WM_NAME'], { encoding: 'utf8' });
+    const hints = xprop.match(/_MOTIF_WM_HINTS\(_MOTIF_WM_HINTS\) = (.*)/)?.[1]?.split(',').map((value) => Number(value.trim()));
+    expect(hints, `REQ-1: the window asks for no decorations\n${xprop}`).toBeDefined();
+    expect(hints![0]! & 2, 'REQ-1: the decorations field is set').toBe(2);
+    expect(hints![2], 'REQ-1: no decorations').toBe(0);
+    expect(xprop, 'REQ-3: the name the task switcher reads').toContain('_NET_WM_NAME(UTF8_STRING) = "Vexel for Claude"');
+
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.close());
+    await expect.poll(async () => (await windowState(app)).map((state) => state.visible), { message: 'REQ-5: the window hides' }).toEqual([false]);
+    expect(app.process().exitCode, 'REQ-5: the app keeps running').toBeNull();
+    expect(await healthStatus(port), 'REQ-5: the backend keeps running').toBe(200);
+  });
+
+  test('REQ-10, DesktopApp: on the backend error the startup bar is a drag area, and Alt still shows the hidden menu bar', async () => {
+    const holder = http.createServer((_request, response) => response.writeHead(404).end());
+    holders.push(holder);
+    await new Promise<void>((resolve) => holder.listen(0, '127.0.0.1', resolve));
+    const app = await launchDesktop(await desktopEnv((holder.address() as net.AddressInfo).port));
+    const window = await app.firstWindow();
+    await expect(window.getByText(ERROR, { exact: true })).toBeVisible({ timeout: 30_000 });
+    const width = (await window.evaluate(() => innerWidth)) as number;
+    for (const x of [1, width / 2, width - 1]) expect(await appRegionAt(window, x, 24), `REQ-10: startup bar at ${x}`).toBe('drag');
+
+    const menuBar = await app.evaluate(async ({ BrowserWindow }) => {
+      const current = BrowserWindow.getAllWindows()[0]!;
+      const before = current.isMenuBarVisible();
+      current.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Alt' });
+      current.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Alt' });
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return { before, afterAlt: current.isMenuBarVisible() };
+    });
+    expect(menuBar, 'DesktopApp: a hidden menu bar that Alt shows').toEqual({ before: false, afterAlt: true });
   });
 });
