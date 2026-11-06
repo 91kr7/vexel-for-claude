@@ -18,12 +18,14 @@ Props:
 - `openSessionId` → the session shown in the open-session area, or `null`.
 - `onOpen(id)` → opens a session.
 - `status` → the load status from LiveSessionStore: `loading`, `ready` or `error`. Default `ready`.
+- `order` → the order of the sessions inside each group, from SessionOrderStore. Default: no order, so each group is in latest-activity order.
+- `onReorder(sessionId, groupId, index)` → moves a session to place `index` (0-based) of its group, as SessionOrderStore `move`. Optional.
 
 Shows:
 - `loading` → a compact AreaState `loading` "Loading…" in place of the entries.
 - `error` → a compact AreaState `error` "Connection to the server lost. Reload the page." (rose tile) above the entries. The entries already received stay.
 - `ready`, no session → a compact AreaState `empty` "No sessions.". With `error` and no session, only the error block shows.
-- the groups of `groupSessions`, in its order. Each group is a level-2 heading with the group title in `.section-label` (all muted, padding 0 × 6 px), 4 px above a list with one item per session. Rows are 2 px apart.
+- the groups of `groupSessions` with `order`, in its order. Each group is a level-2 heading with the group title in `.section-label` (all muted, padding 0 × 6 px), 4 px above a list with one item per session. Rows are 2 px apart.
 
 Entry row (every entry but the hosted needs-input card): a button with the class `session-entry`, the `.vx-session-row` look.
 - padding 6 × 8 px, 6 px radius, 12/18 px text in `--text-secondary`. Hover → `--bg-surface-2` and `--text-primary`.
@@ -53,6 +55,26 @@ Actions:
 - click on an entry row → `onOpen(id)`. Ended and external sessions too.
 - click anywhere on the hosted needs-input card → `onOpen(id)`, once.
 - "Reply" → `onOpen(id)`, once.
+- every entry, row or card, is draggable with the mouse. A click with no drag still opens the session.
+- drag over an entry of the dragged session's own group → the upper half of the entry means "before it", the lower half means "after it".
+- drop on an entry of the own group → `onReorder(id, group, index)` once. `index` is the place the session takes in the group without it:
+
+```
+slot  = index of the entry under the pointer, +1 on its lower half
+index = slot - 1  if slot is after the session's current place
+        slot      otherwise
+```
+
+  A drop on the session's own entry, or on the half next to it, gives its current place.
+- drop elsewhere inside the own group (its heading, the gaps between its entries) → the landing place of the line shown, if one shows.
+- drop anywhere else (another group, the gap between groups, outside the list) → no `onReorder`.
+- the own group is the group of the session when the drag started. If a live update moves the session to another group during the drag, the drag ends for the list: the line and the dimming disappear, also if the session later comes back, and the drop calls no `onReorder`.
+
+Drag feedback (the mock has no drag state):
+- while the pointer is over an entry of the own group → a 2 px `--accent-primary` line, as wide as the entries, in the 2 px gap at the landing place: above the entry for "before", below it for "after".
+- the dragged entry → dimmed to 40 % opacity while it is in the own group.
+- no line over another group, over the gap between groups, or outside the list.
+- drop, end of the drag, or the session leaving its own group → the line and the dimming disappear.
 
 ## Rules and invariants
 
@@ -69,7 +91,7 @@ Actions:
 
 ## Dependencies
 
-- groupSessions, StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`)
+- groupSessions, SessionOrderStore (`SessionOrder`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`)
 - AreaState, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
@@ -78,3 +100,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign/REQ-11`, `plan-claude_sessions_client-ui_redesign/REQ-12`, `plan-claude_sessions_client-ui_redesign/REQ-13`, `plan-claude_sessions_client-ui_redesign/REQ-15`, `plan-claude_sessions_client-ui_redesign/REQ-16`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-23` to `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-10`

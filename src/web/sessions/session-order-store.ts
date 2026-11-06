@@ -1,0 +1,79 @@
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import type { LoadStatus, SessionSummary } from './live-session-store';
+import { nextSessionOrder } from './next-session-order';
+import type { SessionGroupId, SessionOrder } from './session-order';
+
+export const SESSION_ORDER_KEY = 'ai-client.session-order';
+
+const GROUP_IDS: readonly string[] = ['needs-input', 'running', 'external', 'ended'] satisfies SessionGroupId[];
+
+type OrderStorage = Pick<Storage, 'getItem' | 'setItem'>;
+
+function isSessionOrder(value: unknown): value is SessionOrder {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  return Object.entries(value).every(
+    ([groupId, ids]) => GROUP_IDS.includes(groupId) && Array.isArray(ids) && ids.every((id) => typeof id === 'string'),
+  );
+}
+
+function readOrder(storage: OrderStorage): SessionOrder {
+  try {
+    const value: unknown = JSON.parse(storage.getItem(SESSION_ORDER_KEY) ?? '{}');
+    return isSessionOrder(value) ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+export class SessionOrderStore {
+  readonly #storage: OrderStorage;
+  readonly #listeners = new Set<() => void>();
+  #order: SessionOrder;
+
+  constructor(storage: OrderStorage) {
+    this.#storage = storage;
+    this.#order = readOrder(storage);
+  }
+
+  update(sessions: readonly SessionSummary[], status: LoadStatus): void {
+    if (status !== 'ready') return;
+    this.#apply(nextSessionOrder(this.#order, sessions));
+  }
+
+  move(sessionId: string, groupId: SessionGroupId, index: number): void {
+    const ids = this.#order[groupId];
+    if (!ids?.includes(sessionId)) return;
+    const moved = ids.filter((id) => id !== sessionId);
+    moved.splice(Math.max(0, Math.min(index, moved.length)), 0, sessionId);
+    this.#apply({ ...this.#order, [groupId]: moved });
+  }
+
+  #apply(next: SessionOrder): void {
+    const serialized = JSON.stringify(next);
+    if (serialized === JSON.stringify(this.#order)) return;
+    this.#order = next;
+    try {
+      this.#storage.setItem(SESSION_ORDER_KEY, serialized);
+    } catch {
+      // The order still applies to this page when the browser refuses to store it.
+    }
+    for (const listener of this.#listeners) listener();
+  }
+
+  subscribe = (listener: () => void): (() => void) => {
+    this.#listeners.add(listener);
+    return () => this.#listeners.delete(listener);
+  };
+
+  getSnapshot = (): SessionOrder => this.#order;
+}
+
+export type MoveSession = (sessionId: string, groupId: SessionGroupId, index: number) => void;
+
+export function useSessionOrder(sessions: readonly SessionSummary[], status: LoadStatus): { order: SessionOrder; move: MoveSession } {
+  const [store] = useState(() => new SessionOrderStore(window.localStorage));
+  useEffect(() => store.update(sessions, status), [store, sessions, status]);
+  const order = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const move = useCallback<MoveSession>((sessionId, groupId, index) => store.move(sessionId, groupId, index), [store]);
+  return { order, move };
+}

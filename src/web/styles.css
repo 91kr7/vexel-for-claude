@@ -750,6 +750,34 @@ input {
   list-style: none;
 }
 
+.session-list li {
+  position: relative;
+}
+
+.session-list li.dragging {
+  opacity: 0.4;
+}
+
+.session-list li.drop-before::before,
+.session-list li.drop-after::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 1px;
+  background-color: var(--accent-primary);
+  pointer-events: none;
+}
+
+.session-list li.drop-before::before {
+  top: -2px;
+}
+
+.session-list li.drop-after::after {
+  bottom: -2px;
+}
+
 .session-entry {
   width: 100%;
   display: flex;

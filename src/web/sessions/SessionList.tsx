@@ -1,10 +1,10 @@
-import { useId } from 'react';
+import { type DragEvent, useEffect, useId, useState } from 'react';
 import { AreaState } from '../feedback/AreaState';
 import { folderNameOf } from './Avatar';
 import type { LoadStatus, SessionSummary } from './live-session-store';
 import { ProgressBar } from './ProgressBar';
 import { RelativeTime } from './RelativeTime';
-import { groupSessions } from './session-order';
+import { groupSessions, type SessionGroupId, type SessionOrder } from './session-order';
 import { StateBadge } from './StateBadge';
 
 function entryClass(session: SessionSummary): string {
@@ -95,25 +95,92 @@ interface SessionListProps {
   openSessionId: string | null;
   onOpen: (sessionId: string) => void;
   status?: LoadStatus;
+  order?: SessionOrder;
+  onReorder?: (sessionId: string, groupId: SessionGroupId, index: number) => void;
 }
 
-export function SessionList({ sessions, openSessionId, onOpen, status = 'ready' }: SessionListProps) {
+interface DragState {
+  sessionId: string;
+  groupId: SessionGroupId;
+  slot: number | null;
+}
+
+export function SessionList({ sessions, openSessionId, onOpen, status = 'ready', order, onReorder }: SessionListProps) {
+  const [drag, setDrag] = useState<DragState | null>(null);
+  const groups = groupSessions(sessions, order);
+  const draggedGroup = drag && groups.find((group) => group.id === drag.groupId && group.sessions.some((session) => session.id === drag.sessionId));
+
+  useEffect(() => {
+    if (drag && !draggedGroup) setDrag(null);
+  }, [drag, draggedGroup]);
+
+  const endDrag = () => setDrag(null);
+  const setSlot = (slot: number | null) => setDrag((current) => (current && current.slot !== slot ? { ...current, slot } : current));
+  const dragOverEntry = (event: DragEvent<HTMLLIElement>, entryIndex: number) => {
+    const box = event.currentTarget.getBoundingClientRect();
+    setSlot(event.clientY < box.top + box.height / 2 ? entryIndex : entryIndex + 1);
+  };
+  const drop = (event: DragEvent) => {
+    if (!drag) return;
+    event.preventDefault();
+    endDrag();
+    if (!draggedGroup || drag.slot === null) return;
+    const currentIndex = draggedGroup.sessions.findIndex((session) => session.id === drag.sessionId);
+    onReorder?.(drag.sessionId, draggedGroup.id, drag.slot > currentIndex ? drag.slot - 1 : drag.slot);
+  };
+
   return (
-    <div className="session-list">
+    <div
+      className="session-list"
+      onDragOver={(event) => {
+        if (!drag) return;
+        event.preventDefault();
+        setSlot(null);
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSlot(null);
+      }}
+      onDrop={drop}
+      onDragEnd={endDrag}
+    >
       {status === 'error' && <AreaState kind="error" size="compact" title="Connection to the server lost. Reload the page." />}
       {status === 'loading' ? (
         <AreaState kind="loading" size="compact" title="Loading…" />
       ) : sessions.length === 0 ? (
         status === 'ready' && <AreaState kind="empty" size="compact" title="No sessions." />
       ) : (
-        groupSessions(sessions).map((group) => (
-          <div key={group.id} className="session-group">
+        groups.map((group) => (
+          <div
+            key={group.id}
+            className="session-group"
+            onDragOver={(event) => {
+              if (draggedGroup !== group) return;
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+          >
             <h2 className={`section-label session-group-heading session-group-${group.id}`}>{group.title}</h2>
             <ul>
-              {group.sessions.map((session) => {
+              {group.sessions.map((session, entryIndex) => {
                 const Entry = session.state === 'needs_input' && !session.external ? NeedsInputCard : EntryRow;
+                const inDraggedGroup = draggedGroup === group;
+                const classes = [
+                  inDraggedGroup && session.id === drag?.sessionId && 'dragging',
+                  inDraggedGroup && drag?.slot === entryIndex && 'drop-before',
+                  inDraggedGroup && drag?.slot === entryIndex + 1 && entryIndex === group.sessions.length - 1 && 'drop-after',
+                ].filter(Boolean);
                 return (
-                  <li key={session.id}>
+                  <li
+                    key={session.id}
+                    className={classes.length > 0 ? classes.join(' ') : undefined}
+                    draggable
+                    onDragStart={(event) => {
+                      event.dataTransfer.effectAllowed = 'move';
+                      event.dataTransfer.setData('text/plain', session.id);
+                      setDrag({ sessionId: session.id, groupId: group.id, slot: null });
+                    }}
+                    onDragOver={inDraggedGroup ? (event) => dragOverEntry(event, entryIndex) : undefined}
+                  >
                     <Entry session={session} open={session.id === openSessionId} onOpen={onOpen} />
                   </li>
                 );

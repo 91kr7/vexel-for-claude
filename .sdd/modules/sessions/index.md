@@ -15,9 +15,11 @@
 | HookEventRoute | REST endpoint | `src/server/sessions/hook-event-route.ts` | `POST /api/sessions/:id/hook-events`: passes a hook event to the tracker | `specs/hook-event-route.md` |
 | SessionListRoute | REST endpoint | `src/server/sessions/session-list-route.ts` | `GET /api/sessions`: the hosted and external sessions with their summary | `specs/session-list-route.md` |
 | SessionEventsRoute | REST endpoint (WebSocket) | `src/server/sessions/session-events-route.ts` | `GET /api/sessions/events`: pushes each session change to the pages | `specs/session-events-route.md` |
-| groupSessions, orderSessions | frontend function | `src/web/sessions/session-order.ts` | The four list groups in order, latest activity first inside each | `specs/session-order.md` |
+| groupSessions, orderSessions | frontend function | `src/web/sessions/session-order.ts` | The four list groups in order; inside each, the given order, then latest activity first | `specs/session-order.md` |
+| nextSessionOrder | frontend function | `src/web/sessions/next-session-order.ts` | New order of each group from the previous order and the current sessions | `specs/next-session-order.md` |
+| SessionOrderStore | frontend service | `src/web/sessions/session-order-store.ts` | Order of the sessions inside each group, kept current, moved by the user and saved in `localStorage` | `specs/session-order-store.md` |
 | LiveSessionStore | frontend service | `src/web/sessions/live-session-store.ts` | Session list in the page and its load status, loaded once and kept current by events | `specs/live-session-store.md` |
-| SessionList | UI component | `src/web/sessions/SessionList.tsx` | Grouped compact session rows with status dots, the amber needs-input card with "Reply"; a click opens a session | `specs/session-list.md` |
+| SessionList | UI component | `src/web/sessions/SessionList.tsx` | Grouped compact session rows with status dots, the amber needs-input card with "Reply"; a click opens a session, a drag moves it inside its group | `specs/session-list.md` |
 | NeedsInputCounter | UI component | `src/web/sessions/NeedsInputCounter.tsx` | Amber pill "N need input" ("1 needs input") of the list panel, hidden at zero, and the count for the rail badge | `specs/needs-input-counter.md` |
 | StateBadge | UI component | `src/web/sessions/StateBadge.tsx` | State of a session as a pulsing dot, a mono name or the tinted pill, in the status colours | `specs/state-badge.md` |
 | Avatar | UI component | `src/web/sessions/Avatar.tsx` | Neutral 24 px square with the folder initials, and the folder-name helpers | `specs/avatar.md` |

@@ -304,8 +304,8 @@ test('the needs-input line names the waiting tool, or shows the label when no to
   await expect(item(page, prompted)).not.toContainText('Permission for');
 });
 
-// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-16, REQ-17, REQ-18: the groups in order, empty ones hidden, latest activity first
-test('sessions sit in their groups, in order, latest activity first, and an empty group is hidden', async ({ page, request }) => {
+// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-16, REQ-17, REQ-18 and plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-1, REQ-2
+test('sessions sit in their groups, in order, keep their place, and an empty group is hidden', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const older = await newFolder('grp-older');
   const newer = await newFolder('grp-newer');
@@ -320,8 +320,9 @@ test('sessions sit in their groups, in order, latest activity first, and an empt
   const newerId = await startViaApi(request, newer);
   await postHook(request, newerId, { hook_event_name: 'UserPromptSubmit', prompt: 'Running' });
   await expect(groupItems(page, 'Running')).toHaveCount(2);
-  await expect(groupItems(page, 'Running').first()).toContainText('grp-newer');
+  await expect(groupItems(page, 'Running').last()).toContainText('grp-newer');
   await postHook(request, olderId, { hook_event_name: 'UserPromptSubmit', prompt: 'Resume' });
+  await expect(badge(item(page, older))).toHaveText('Running');
   await expect(groupItems(page, 'Running').first()).toContainText('grp-older');
 
   const askingId = await startViaApi(request, asking);
