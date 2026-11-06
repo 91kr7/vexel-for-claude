@@ -20,9 +20,10 @@ type: backend service
 - `poll() → Promise<void>` → one read of each session: the new complete lines of its main transcript, then of each of its subagent files (`subagentFilesOf`, new files included), at most `maxBytesPerPoll` bytes in all (`readEntriesFrom`). The context rule `contextAfter` runs on the main lines only. Every response line, main and subagent, goes to the ResponseLedger of the session.
 - `start()` → one `poll()` now, then one `poll()` `intervalMs` after the end of the previous one. A second `start()` changes nothing.
 - `stop()` → no more reads.
-- `get(id) → SessionUsage | undefined` → `{ context?, tokens? }`:
+- `get(id) → SessionUsage | undefined` → `{ context?, tokens?, cost? }`:
   - `context` → `{ used, window }`, when the session has a context occupancy.
   - `tokens` → `{ input, output, cacheWrite, cacheRead }`, the ledger totals, when the ledger has a response.
+  - `cost` → `{ usd?, incomplete }`, the ledger cost. Present whenever `tokens` is present, absent otherwise.
   - `undefined` when the session has neither, or when the id is unknown.
 - `onChange(listener) → unsubscribe` → `listener(id, usage | undefined)` after each change of `get(id)`. No call when a poll gives the same value.
 
@@ -51,9 +52,9 @@ a poll reaches the end of every file → the value is published (get, onChange)
 
 ## Rules and invariants
 
-- It reads every session, in any state. An ended session keeps its last value until it leaves the tracker.
+- It reads every session, in any state. An ended session keeps its last value, cost included, until it leaves the tracker.
 - A removed session (tracker removal, scanner removal) has no value. The removal gives no `onChange` call.
-- A new response, of the main conversation or of a subagent, shows in `get` within one interval after its line reaches its file, unless more than `maxBytesPerPoll` bytes came after the previous poll.
+- A new response, of the main conversation or of a subagent, shows in `get` (tokens and cost) within one interval after its line reaches its file, unless more than `maxBytesPerPoll` bytes came after the previous poll.
 - `get` reads only values in memory. No file read runs on the path of a request.
 - A large transcript is read over several polls. Until the last one, `get` keeps the value it had before.
 - A resumed session keeps its Claude Code session id and its transcript file, so its responses from before the resume count.
@@ -70,3 +71,4 @@ a poll reaches the end of every file → the value is published (get, onChange)
 
 - `plan-session_usage/REQ-1`, `plan-session_usage/REQ-2`, `plan-session_usage/REQ-9`, `plan-session_usage/REQ-10`, `plan-session_usage/REQ-12`
 - `plan-session_usage/REQ-14`, `plan-session_usage/REQ-15`, `plan-session_usage/REQ-16`, `plan-session_usage/REQ-17`, `plan-session_usage/REQ-18`, `plan-session_usage/REQ-19`, `plan-session_usage/REQ-20`, `plan-session_usage/REQ-21`
+- `plan-session_usage/REQ-22`, `plan-session_usage/REQ-23`, `plan-session_usage/REQ-33`, `plan-session_usage/REQ-34`, `plan-session_usage/REQ-35`

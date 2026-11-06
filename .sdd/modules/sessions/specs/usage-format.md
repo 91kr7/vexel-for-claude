@@ -1,12 +1,12 @@
 ---
 module: sessions
-component: shortTokens, percentOf, usageLevelOf
+component: shortTokens, percentOf, usageLevelOf, costText
 type: frontend function
 ---
 
 # Usage format
 
-**Purpose** → the page text of the usage figures: the short form of a token count, the context percentage and its level.
+**Purpose** → the page text of the usage figures: the short form of a token count, the context percentage and its level, the estimated cost.
 
 ## Contract
 
@@ -29,10 +29,20 @@ percent >= 70 → warning
 otherwise     → normal
 ```
 
+- `costText(usd) → string` → `usd` is the `usd` of `usage.cost`, possibly absent.
+
+```
+usd absent  → "—"
+usd < 0.01  → "<$0.01" (0 included)
+otherwise   → "$" and two decimals, e.g. "$1.27", "$12.00", "$1234.50"
+```
+
+- `INCOMPLETE_COST_TEXT` → "Incomplete: the price of a model is unknown", the tooltip and accessible name of the "incomplete" mark.
+
 ## Rules and invariants
 
 - Pure: same input, same result.
 
 ## Requirements served
 
-- `plan-session_usage/REQ-2`, `plan-session_usage/REQ-8`, `plan-session_usage/REQ-11`
+- `plan-session_usage/REQ-2`, `plan-session_usage/REQ-8`, `plan-session_usage/REQ-11`, `plan-session_usage/REQ-30`, `plan-session_usage/REQ-32`

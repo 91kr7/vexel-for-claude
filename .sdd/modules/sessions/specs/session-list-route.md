@@ -16,7 +16,7 @@ type: REST endpoint
   - the hosted sessions: `{ id, folder, label, state, lastActivity, waitingTool?, resumable? }` (SessionSummary of SessionStateTracker), in start order;
   - then the current external sessions: `{ id, folder, label, state, lastActivity, external: true }` (ExternalSessionScanner `list()`).
   - each entry, hosted or external, also has `runningTool` when RunningToolMonitor `get(id)` gives one.
-  - each entry, hosted or external, in any state, also has `usage` (`{ context?: { used, window } }`) when UsageMonitor `get(id)` gives one.
+  - each entry, hosted or external, in any state, also has `usage` (`{ context?, tokens?, cost? }`) when UsageMonitor `get(id)` gives one.
 
 ## Rules and invariants
 

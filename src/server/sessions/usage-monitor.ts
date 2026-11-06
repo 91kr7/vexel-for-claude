@@ -2,12 +2,13 @@ import type { ExternalSessionScanner } from '../external/external-session-scanne
 import { type TranscriptReader, subagentFilesOf } from '../external/transcript-reader.js';
 import { type ContextOccupancy, contextAfter } from './context-occupancy.js';
 import { modelResponseOf } from './model-response.js';
-import { ResponseLedger, type TokenTotals } from './response-ledger.js';
+import { type CostTotal, ResponseLedger, type TokenTotals } from './response-ledger.js';
 import type { SessionStateTracker } from './session-state-tracker.js';
 
 export interface SessionUsage {
   context?: ContextOccupancy;
   tokens?: TokenTotals;
+  cost?: CostTotal;
 }
 
 export interface UsageMonitorSources {
@@ -47,14 +48,22 @@ const sameTokens = (a: TokenTotals | undefined, b: TokenTotals | undefined) =>
   a === b ||
   (a !== undefined && b !== undefined && a.input === b.input && a.output === b.output && a.cacheWrite === b.cacheWrite && a.cacheRead === b.cacheRead);
 
-const sameUsage = (a: SessionUsage | undefined, b: SessionUsage | undefined) => sameContext(a?.context, b?.context) && sameTokens(a?.tokens, b?.tokens);
+const sameCost = (a: CostTotal | undefined, b: CostTotal | undefined) =>
+  a === b || (a !== undefined && b !== undefined && a.usd === b.usd && a.incomplete === b.incomplete);
 
-function usageOf(context: ContextOccupancy | undefined, tokens: TokenTotals | undefined): SessionUsage | undefined {
+const sameUsage = (a: SessionUsage | undefined, b: SessionUsage | undefined) =>
+  sameContext(a?.context, b?.context) && sameTokens(a?.tokens, b?.tokens) && sameCost(a?.cost, b?.cost);
+
+function usageOf(context: ContextOccupancy | undefined, tokens: TokenTotals | undefined, cost: CostTotal | undefined): SessionUsage | undefined {
   if (!context && !tokens) return undefined;
-  return { ...(context && { context: { ...context } }), ...(tokens && { tokens: { ...tokens } }) };
+  return {
+    ...(context && { context: { ...context } }),
+    ...(tokens && { tokens: { ...tokens } }),
+    ...(tokens && cost && { cost: { ...cost } }),
+  };
 }
 
-const copyOf = (usage: SessionUsage | undefined) => usage && usageOf(usage.context, usage.tokens);
+const copyOf = (usage: SessionUsage | undefined) => usage && usageOf(usage.context, usage.tokens, usage.cost);
 
 export class UsageMonitor {
   readonly #tracker: UsageMonitorSources['tracker'];
@@ -141,7 +150,7 @@ export class UsageMonitor {
       transcript.reading = false;
     }
     if (this.#sessions.get(session.id) !== session || session.transcript !== transcript) return;
-    this.#setUsage(session, usageOf(transcript.context, transcript.ledger.totals()));
+    this.#setUsage(session, usageOf(transcript.context, transcript.ledger.totals(), transcript.ledger.cost()));
   }
 
   /** Reads the main file, then the subagent files, within one byte budget. True when every file reached its end. */

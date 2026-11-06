@@ -20,9 +20,15 @@ export interface TokenTotals {
   cacheRead: number;
 }
 
+export interface CostTotal {
+  usd?: number;
+  incomplete: boolean;
+}
+
 export interface SessionUsage {
   context?: ContextOccupancy;
   tokens?: TokenTotals;
+  cost?: CostTotal;
 }
 
 export interface SessionSummary {
