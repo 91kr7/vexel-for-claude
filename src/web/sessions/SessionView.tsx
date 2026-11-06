@@ -41,9 +41,9 @@ function terminalTheme(element: Element) {
   return {
     background: cssVar(element, '--term-bg'),
     foreground: cssVar(element, '--term-fg'),
-    cursor: cssVar(element, '--accent-primary'),
+    cursor: cssVar(element, '--term-cursor'),
     cursorAccent: cssVar(element, '--term-bg'),
-    selectionBackground: cssVar(element, '--accent-selection'),
+    selectionBackground: cssVar(element, '--term-selection'),
   };
 }
 

@@ -1,4 +1,5 @@
 import { PlusIcon } from './icons/Icons';
+import { ThemeSwitch } from './ThemeSwitch';
 
 interface TopBarProps {
   onNewSession: () => void;
@@ -16,10 +17,13 @@ export function TopBar({ onNewSession }: TopBarProps) {
           <span className="top-bar-suffix">for Claude</span>
         </span>
       </div>
-      <button type="button" className="button-primary button-bar" onClick={onNewSession}>
-        <PlusIcon />
-        New Session
-      </button>
+      <div className="top-bar-actions">
+        <ThemeSwitch />
+        <button type="button" className="button-primary button-bar" onClick={onNewSession}>
+          <PlusIcon />
+          New Session
+        </button>
+      </div>
     </header>
   );
 }

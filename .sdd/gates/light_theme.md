@@ -12,3 +12,4 @@
 | 2026-11-06 | plan | question planner Q2 | human decision | Switch = single sun/moon icon button, right of the top bar before the new-session button |
 | 2026-11-06 | plan | G2 requirements | pass | REQ-1..19 cover the spec; REQ-19 and the startup page changed by the human decisions above |
 | 2026-11-06 | plan | G3 coverage | pass | 2 vertical batches, REQ-1..20 covered; modify paths exist; remembered-theme INT-2 targets the store by component (created by light-theme); planner defaults accepted: same token names with darker light tones, switch name "Dark theme" + aria-pressed, inline head script (no CSP) |
+| 2026-11-06 | dev | G4 light-theme | pass | Build green (re-run); files map to INT-1..11, no new dependency; divergences accepted: `index.html` meta left dark (INT-7 via `styles.css`, revisit in remembered-theme), status tones also pass on their tints, `e2e/studio-dark.spec.ts:352` one-button check to update by the tester |
