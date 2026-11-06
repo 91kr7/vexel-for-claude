@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import type { LoadStatus, SessionSummary } from './live-session-store';
 import { nextSessionOrder } from './next-session-order';
 import type { SessionGroupId, SessionOrder } from './session-order';
@@ -37,7 +37,18 @@ export class SessionOrderStore {
 
   update(sessions: readonly SessionSummary[], status: LoadStatus): void {
     if (status !== 'ready') return;
-    const next = nextSessionOrder(this.#order, sessions);
+    this.#apply(nextSessionOrder(this.#order, sessions));
+  }
+
+  move(sessionId: string, groupId: SessionGroupId, index: number): void {
+    const ids = this.#order[groupId];
+    if (!ids?.includes(sessionId)) return;
+    const moved = ids.filter((id) => id !== sessionId);
+    moved.splice(Math.max(0, Math.min(index, moved.length)), 0, sessionId);
+    this.#apply({ ...this.#order, [groupId]: moved });
+  }
+
+  #apply(next: SessionOrder): void {
     const serialized = JSON.stringify(next);
     if (serialized === JSON.stringify(this.#order)) return;
     this.#order = next;
@@ -57,8 +68,12 @@ export class SessionOrderStore {
   getSnapshot = (): SessionOrder => this.#order;
 }
 
-export function useSessionOrder(sessions: readonly SessionSummary[], status: LoadStatus): SessionOrder {
+export type MoveSession = (sessionId: string, groupId: SessionGroupId, index: number) => void;
+
+export function useSessionOrder(sessions: readonly SessionSummary[], status: LoadStatus): { order: SessionOrder; move: MoveSession } {
   const [store] = useState(() => new SessionOrderStore(window.localStorage));
   useEffect(() => store.update(sessions, status), [store, sessions, status]);
-  return useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const order = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const move = useCallback<MoveSession>((sessionId, groupId, index) => store.move(sessionId, groupId, index), [store]);
+  return { order, move };
 }

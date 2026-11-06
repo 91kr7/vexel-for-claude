@@ -20,7 +20,7 @@ export function AppLayout() {
   const listPanelRef = useRef<HTMLElement>(null);
   const newSessionRef = useRef<HTMLButtonElement>(null);
   const { sessions, status } = useLiveSessions();
-  const sessionOrder = useSessionOrder(sessions, status);
+  const { order: sessionOrder, move: moveSession } = useSessionOrder(sessions, status);
   const snackbarSession = useNeedsInputSnackbar(sessions, status, openSessionId);
   const lastOpenSummary = useRef<SessionSummary | undefined>(undefined);
   const listedSummary = sessions.find((session) => session.id === openSessionId);
@@ -60,7 +60,14 @@ export function AppLayout() {
             <h1 className="section-label">Sessions</h1>
             <NeedsInputCounter sessions={sessions} />
           </div>
-          <SessionList sessions={sessions} status={status} order={sessionOrder} openSessionId={openSessionId} onOpen={openFromList} />
+          <SessionList
+            sessions={sessions}
+            status={status}
+            order={sessionOrder}
+            onReorder={moveSession}
+            openSessionId={openSessionId}
+            onOpen={openFromList}
+          />
         </section>
         <main className="session-area vx-dot-grid">
           {openSessionId && openIsExternal ? (
