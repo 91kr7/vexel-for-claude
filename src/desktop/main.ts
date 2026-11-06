@@ -75,8 +75,15 @@ async function requestQuit(): Promise<void> {
 
 // Mutter's auto-maximize maximizes a frameless window when it maps; the window opens at its own size.
 function undoAutoMaximize(window: BrowserWindow): void {
+  const keepStartSize = () => {
+    const [width, height] = window.getSize();
+    if (window.isMaximized() || (width === 1280 && height === 800)) return;
+    window.setSize(1280, 800);
+    window.center();
+  };
   const undo = () => {
-    window.once('unmaximize', () => window.setSize(1280, 800));
+    window.on('resize', keepStartSize);
+    setTimeout(() => window.off('resize', keepStartSize), 1000);
     window.unmaximize();
   };
   window.once('maximize', undo);

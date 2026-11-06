@@ -10,7 +10,7 @@ type: Electron main process
 
 ## Contract
 
-- launch → it shows the TrayIcon with no session that needs input, and opens one window "Vexel for Claude", 1280 × 800, on the StartupPage in the loading state. The window opens not maximized, also when the desktop maximizes new frameless windows by itself (GNOME `auto-maximize`): the app undoes a maximize it did not ask for in the first 2 s after it creates the window. The window has no native frame, so the desktop draws no title bar. It has the AppIcon and the DesktopBridge preload. It shows no menu bar, also on Alt: the application menu stays and its keys keep working.
+- launch → it shows the TrayIcon with no session that needs input, and opens one window "Vexel for Claude", 1280 × 800, on the StartupPage in the loading state. The window opens not maximized, also when the desktop maximizes new frameless windows by itself (GNOME `auto-maximize`): the app undoes a maximize it did not ask for in the first 2 s after it creates the window, then keeps 1280 × 800, centred, against the size the desktop restores in the next second. The window has no native frame, so the desktop draws no title bar. It has the AppIcon and the DesktopBridge preload. It shows no menu bar, also on Alt: the application menu stays and its keys keep working.
 - then it runs `launchBackend` with the repository folder and the log file `backend.log` in the Electron logs folder.
   - ready → it starts the AttentionClient on the backend origin, then the window loads `<origin>/`, the client page of the backend.
   - failed → the window shows the StartupPage in the error state, with the output lines.
