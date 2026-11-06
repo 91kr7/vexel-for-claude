@@ -6,7 +6,7 @@ type: backend service
 
 # TranscriptReader
 
-**Purpose** → finds the transcript of a Claude Code session and turns its lines into the items of the read-only conversation view. It also reads the full content of one tool item.
+**Purpose** → finds the transcript of a Claude Code session and of its subagents, and turns its lines into the items of the read-only conversation view. It also reads the full content of one tool item.
 
 ## Contract
 
@@ -29,6 +29,7 @@ type: backend service
   - `tool_call` → its whole `input` as JSON indented by 2 spaces. No `input` → `""`.
   - `tool_result` → its whole text, by the "Tool result text" rule below, with no cut.
   - `undefined` when: `ref.offset` is not the start of a complete line; the line is not valid JSON; the block is not a `tool_use` of an `assistant` line or a `tool_result` of a `user` line; the line is a sidechain or meta entry; the file cannot be read.
+- `subagentFilesOf(file) → Promise<string[]>` (exported function) → the `.jsonl` files of the folder `<file without ".jsonl">/subagents/`, sorted by name. Other files there (for example `*.meta.json`) and sub-folders are left out. No folder, or a folder that cannot be read → `[]`.
 - `itemsOf(entry, lineOffset?) → ConversationItem[]` (exported function) → the items of one parsed transcript line.
   - with `lineOffset` → each tool item carries `ref: { offset: lineOffset, block }`. Without it → no `ref`.
 - `mainArgumentOf(input) → string | undefined` (exported function) → the main argument of a tool input, by the "Main argument" rule below. The text is returned as it is: no trim, no cut.
@@ -112,4 +113,4 @@ not an object)                                             → moreInput: true
 - `plan-claude_sessions_client-ui_redesign/REQ-21`, `plan-claude_sessions_client-ui_redesign/REQ-24`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-36`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-39`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-40`
 - `plan-session_list_improvements/REQ-15`, `plan-session_list_improvements/REQ-16`
-- `plan-session_usage/REQ-3`, `plan-session_usage/REQ-21`
+- `plan-session_usage/REQ-3`, `plan-session_usage/REQ-14`, `plan-session_usage/REQ-21`

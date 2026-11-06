@@ -1,10 +1,13 @@
 import type { ExternalSessionScanner } from '../external/external-session-scanner.js';
-import type { TranscriptReader } from '../external/transcript-reader.js';
+import { type TranscriptReader, subagentFilesOf } from '../external/transcript-reader.js';
 import { type ContextOccupancy, contextAfter } from './context-occupancy.js';
+import { modelResponseOf } from './model-response.js';
+import { ResponseLedger, type TokenTotals } from './response-ledger.js';
 import type { SessionStateTracker } from './session-state-tracker.js';
 
 export interface SessionUsage {
   context?: ContextOccupancy;
+  tokens?: TokenTotals;
 }
 
 export interface UsageMonitorSources {
@@ -20,8 +23,9 @@ export type UsageListener = (sessionId: string, usage: SessionUsage | undefined)
 interface Transcript {
   claudeSessionId: string;
   file?: string;
-  offset: number;
+  offsets: Map<string, number>;
   context?: ContextOccupancy;
+  ledger: ResponseLedger;
   reading: boolean;
 }
 
@@ -30,7 +34,7 @@ interface WatchedSession {
   hosted: boolean;
   folder: string;
   transcript?: Transcript;
-  context?: ContextOccupancy;
+  usage?: SessionUsage;
 }
 
 const DEFAULT_INTERVAL_MS = 1000;
@@ -39,7 +43,18 @@ const DEFAULT_MAX_BYTES_PER_POLL = 4 * 1024 * 1024;
 const sameContext = (a: ContextOccupancy | undefined, b: ContextOccupancy | undefined) =>
   a === b || (a !== undefined && b !== undefined && a.used === b.used && a.window === b.window);
 
-const usageOf = (context: ContextOccupancy | undefined): SessionUsage | undefined => context && { context: { ...context } };
+const sameTokens = (a: TokenTotals | undefined, b: TokenTotals | undefined) =>
+  a === b ||
+  (a !== undefined && b !== undefined && a.input === b.input && a.output === b.output && a.cacheWrite === b.cacheWrite && a.cacheRead === b.cacheRead);
+
+const sameUsage = (a: SessionUsage | undefined, b: SessionUsage | undefined) => sameContext(a?.context, b?.context) && sameTokens(a?.tokens, b?.tokens);
+
+function usageOf(context: ContextOccupancy | undefined, tokens: TokenTotals | undefined): SessionUsage | undefined {
+  if (!context && !tokens) return undefined;
+  return { ...(context && { context: { ...context } }), ...(tokens && { tokens: { ...tokens } }) };
+}
+
+const copyOf = (usage: SessionUsage | undefined) => usage && usageOf(usage.context, usage.tokens);
 
 export class UsageMonitor {
   readonly #tracker: UsageMonitorSources['tracker'];
@@ -82,7 +97,7 @@ export class UsageMonitor {
   }
 
   get(sessionId: string): SessionUsage | undefined {
-    return usageOf(this.#sessions.get(sessionId)?.context);
+    return copyOf(this.#sessions.get(sessionId)?.usage);
   }
 
   onChange(listener: UsageListener): () => void {
@@ -106,8 +121,9 @@ export class UsageMonitor {
   #transcriptOf(session: WatchedSession): Transcript | undefined {
     const claudeSessionId = session.hosted ? this.#tracker.claudeSessionId(session.id) : session.id;
     if (session.transcript?.claudeSessionId === claudeSessionId) return session.transcript;
-    session.transcript = claudeSessionId === undefined ? undefined : { claudeSessionId, offset: 0, reading: false };
-    this.#setContext(session, undefined);
+    session.transcript =
+      claudeSessionId === undefined ? undefined : { claudeSessionId, offsets: new Map(), ledger: new ResponseLedger(), reading: false };
+    this.#setUsage(session, undefined);
     return session.transcript;
   }
 
@@ -118,22 +134,38 @@ export class UsageMonitor {
     try {
       transcript.file ??= await this.#reader.locate(session.folder, transcript.claudeSessionId);
       if (transcript.file === undefined) return;
-      const { entries, offset, more } = await this.#reader.readEntriesFrom(transcript.file, transcript.offset, this.#maxBytesPerPoll);
-      transcript.offset = offset;
-      transcript.context = contextAfter(transcript.context, entries);
-      if (more) return;
+      if (!(await this.#readFiles(transcript, transcript.file))) return;
     } catch {
       return;
     } finally {
       transcript.reading = false;
     }
     if (this.#sessions.get(session.id) !== session || session.transcript !== transcript) return;
-    this.#setContext(session, transcript.context);
+    this.#setUsage(session, usageOf(transcript.context, transcript.ledger.totals()));
   }
 
-  #setContext(session: WatchedSession, context: ContextOccupancy | undefined): void {
-    if (sameContext(session.context, context)) return;
-    session.context = context;
-    for (const listener of this.#listeners) listener(session.id, usageOf(context));
+  /** Reads the main file, then the subagent files, within one byte budget. True when every file reached its end. */
+  async #readFiles(transcript: Transcript, main: string): Promise<boolean> {
+    let budget = this.#maxBytesPerPoll;
+    for (const file of [main, ...(await subagentFilesOf(main))]) {
+      if (budget <= 0) return false;
+      const start = transcript.offsets.get(file) ?? 0;
+      const { entries, offset, more } = await this.#reader.readEntriesFrom(file, start, budget);
+      transcript.offsets.set(file, offset);
+      budget -= offset - start;
+      if (file === main) transcript.context = contextAfter(transcript.context, entries);
+      for (const entry of entries) {
+        const response = modelResponseOf(entry);
+        if (response) transcript.ledger.add(response);
+      }
+      if (more) return false;
+    }
+    return true;
+  }
+
+  #setUsage(session: WatchedSession, usage: SessionUsage | undefined): void {
+    if (sameUsage(session.usage, usage)) return;
+    session.usage = usage;
+    for (const listener of this.#listeners) listener(session.id, copyOf(usage));
   }
 }

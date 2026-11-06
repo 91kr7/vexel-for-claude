@@ -13,8 +13,16 @@ export interface ContextOccupancy {
   window: number;
 }
 
+export interface TokenTotals {
+  input: number;
+  output: number;
+  cacheWrite: number;
+  cacheRead: number;
+}
+
 export interface SessionUsage {
   context?: ContextOccupancy;
+  tokens?: TokenTotals;
 }
 
 export interface SessionSummary {

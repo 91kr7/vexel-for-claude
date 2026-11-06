@@ -214,6 +214,15 @@ async function readLineAt(handle: FileHandle, offset: number): Promise<string | 
 
 const isFile = (file: string) => stat(file).then((stats) => stats.isFile(), () => false);
 
+export async function subagentFilesOf(file: string): Promise<string[]> {
+  const folder = path.join(file.replace(/\.jsonl$/, ''), 'subagents');
+  const children = await readdir(folder, { withFileTypes: true }).catch(() => []);
+  return children
+    .filter((child) => child.isFile() && child.name.endsWith('.jsonl'))
+    .map((child) => path.join(folder, child.name))
+    .sort();
+}
+
 export class TranscriptReader {
   readonly #projectsDir: string;
 

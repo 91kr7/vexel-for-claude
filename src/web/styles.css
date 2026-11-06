@@ -1264,6 +1264,45 @@ input {
   gap: 8px;
 }
 
+.session-header-tokens {
+  position: relative;
+  cursor: default;
+}
+
+.session-header-tokens-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background-color: var(--bg-surface-3);
+  color: var(--text-primary);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.session-header-tokens:hover .session-header-tokens-popover,
+.session-header-tokens:focus .session-header-tokens-popover {
+  visibility: visible;
+  opacity: 1;
+}
+
+.session-header-tokens-part {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.session-header-tokens-label {
+  color: var(--text-muted);
+}
+
 .stop-glyph {
   font-size: 11px;
 }

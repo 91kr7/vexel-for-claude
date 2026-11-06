@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useId } from 'react';
 import { folderNameOf } from './Avatar';
-import type { ContextOccupancy, SessionSummary } from './live-session-store';
+import type { ContextOccupancy, SessionSummary, TokenTotals } from './live-session-store';
 import { StateBadge } from './StateBadge';
 import { percentOf, shortTokens, usageLevelOf } from './usage-format';
 
@@ -13,6 +13,31 @@ function ContextChip({ context }: { context: ContextOccupancy }) {
       <span className="session-header-context-label">Context</span>
       <span className={`usage-${usageLevelOf(percent)}`}>
         {`${shortTokens(context.used)} / ${shortTokens(context.window)} · ${percent}%`}
+      </span>
+    </span>
+  );
+}
+
+const TOKEN_PARTS: [label: string, part: keyof TokenTotals][] = [
+  ['Input', 'input'],
+  ['Output', 'output'],
+  ['Cache write', 'cacheWrite'],
+  ['Cache read', 'cacheRead'],
+];
+
+function TokensChip({ tokens }: { tokens: TokenTotals }) {
+  const popoverId = useId();
+  const total = tokens.input + tokens.output + tokens.cacheWrite + tokens.cacheRead;
+  return (
+    <span className="mono-chip vx-surface-2 session-header-tokens" tabIndex={0} aria-describedby={popoverId}>
+      {`${shortTokens(total)} tokens`}
+      <span className="session-header-tokens-popover" id={popoverId} role="tooltip">
+        {TOKEN_PARTS.map(([label, part]) => (
+          <span className="session-header-tokens-part" key={part}>
+            <span className="session-header-tokens-label">{label}</span>
+            <span>{shortTokens(tokens[part])}</span>
+          </span>
+        ))}
       </span>
     </span>
   );
@@ -52,6 +77,7 @@ export function SessionHeader({ session, actions, notice, line }: SessionHeaderP
       </div>
       <div className="session-header-actions">
         {session?.usage?.context && <ContextChip context={session.usage.context} />}
+        {session?.usage?.tokens && <TokensChip tokens={session.usage.tokens} />}
         {session && <StateBadge state={session.state} variant="chip" />}
         {notice}
         {actions}

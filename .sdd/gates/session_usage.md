@@ -13,3 +13,4 @@
 | 2026-11-06 | dev | question developer Q1 | decided | Window table keeps only models seen at 1M on this machine (opus-5-5, sonnet-5-5); others default 200k with the REQ-5 fallback |
 | 2026-11-06 | dev | G4 context-occupancy | pass | Build green (re-run); files map to INT-1..13; accepted: `more` flag on chunked reads (no climbing percentages at start), oversize line read whole, routes return summary copies |
 | 2026-11-06 | test | G5 context-occupancy | pass | Re-run by gatekeeper: 5 batch files 50/50; tester 383 unit on 29 files (changed files and direct users), 29 e2e |
+| 2026-11-06 | dev | G4 tokens-consumed | pass | Build green (re-run); files map to INT-1..7; three transcript facts checked read-only on real data; accepted: `subagentFilesOf` as module function, value held until subagent files are read; usage-monitor and usage-api tests must include `tokens` (INT-5) |
