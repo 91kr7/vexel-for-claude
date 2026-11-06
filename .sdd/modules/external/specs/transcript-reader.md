@@ -6,7 +6,7 @@ type: backend service
 
 # TranscriptReader
 
-**Purpose** → finds the transcript of a Claude Code session and turns its lines into the items of the read-only conversation view. It also reads the full content of one tool item.
+**Purpose** → finds the transcript of a Claude Code session and of its subagents, and turns its lines into the items of the read-only conversation view. It also reads the full content of one tool item.
 
 ## Contract
 
@@ -20,10 +20,16 @@ type: backend service
   - the returned `offset` is the byte after the last complete line read (a line ends with `\n`). A partial last line is read by a later call.
   - a file shorter than `offset`, or a file that cannot be read → no items, same `offset`.
   - each `tool_call` and `tool_result` item carries its `ref`.
+- `readEntriesFrom(file, offset, maxBytes?) → Promise<{ entries, offset, more }>` → the parsed lines after byte `offset`, with no conversion to items.
+  - `entries` → one per complete line that is valid JSON and a JSON object (not an array), in file order. Any other line gives nothing.
+  - `offset` → the same rule as `readFrom`. A file shorter than `offset`, or a file that cannot be read → no entries, same `offset`, `more` false.
+  - `maxBytes` → the call reads at most this many bytes after `offset`. Default: no limit. A single line longer than `maxBytes` is read whole, so the reading always moves on.
+  - `more` → `true` when the call stopped at `maxBytes` and the file has more bytes after the returned `offset`. `false` when the call reached the end of the file (a partial last line included).
 - `readItem(file, ref) → Promise<string | undefined>` → the full content of the item that `ref` points to.
   - `tool_call` → its whole `input` as JSON indented by 2 spaces. No `input` → `""`.
   - `tool_result` → its whole text, by the "Tool result text" rule below, with no cut.
   - `undefined` when: `ref.offset` is not the start of a complete line; the line is not valid JSON; the block is not a `tool_use` of an `assistant` line or a `tool_result` of a `user` line; the line is a sidechain or meta entry; the file cannot be read.
+- `subagentFilesOf(file) → Promise<string[]>` (exported function) → the `.jsonl` files of the folder `<file without ".jsonl">/subagents/`, sorted by name. Other files there (for example `*.meta.json`) and sub-folders are left out. No folder, or a folder that cannot be read → `[]`.
 - `itemsOf(entry, lineOffset?) → ConversationItem[]` (exported function) → the items of one parsed transcript line.
   - with `lineOffset` → each tool item carries `ref: { offset: lineOffset, block }`. Without it → no `ref`.
 - `mainArgumentOf(input) → string | undefined` (exported function) → the main argument of a tool input, by the "Main argument" rule below. The text is returned as it is: no trim, no cut.
@@ -107,3 +113,4 @@ not an object)                                             → moreInput: true
 - `plan-claude_sessions_client-ui_redesign/REQ-21`, `plan-claude_sessions_client-ui_redesign/REQ-24`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-36`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-39`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-40`
 - `plan-session_list_improvements/REQ-15`, `plan-session_list_improvements/REQ-16`
+- `plan-session_usage/REQ-3`, `plan-session_usage/REQ-14`, `plan-session_usage/REQ-21`

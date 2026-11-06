@@ -8,6 +8,29 @@ export interface RunningTool {
   others: number;
 }
 
+export interface ContextOccupancy {
+  used: number;
+  window: number;
+}
+
+export interface TokenTotals {
+  input: number;
+  output: number;
+  cacheWrite: number;
+  cacheRead: number;
+}
+
+export interface CostTotal {
+  usd?: number;
+  incomplete: boolean;
+}
+
+export interface SessionUsage {
+  context?: ContextOccupancy;
+  tokens?: TokenTotals;
+  cost?: CostTotal;
+}
+
 export interface SessionSummary {
   id: string;
   folder: string;
@@ -18,6 +41,7 @@ export interface SessionSummary {
   waitingTool?: string;
   resumable?: true;
   runningTool?: RunningTool;
+  usage?: SessionUsage;
 }
 
 export type LoadStatus = 'loading' | 'ready' | 'error';

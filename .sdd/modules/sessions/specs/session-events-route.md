@@ -11,12 +11,15 @@ type: REST endpoint (WebSocket)
 ## Contract
 
 - `registerSessionEventsRoute(app, tracker, external?, runningTools?)` → `external` is the ExternalSessionScanner. Without it, only hosted changes are sent. `runningTools` is the RunningToolMonitor. Without it, no frame has `runningTool`.
+- `registerSessionEventsRoute(app, tracker, external?, runningTools?, usageMonitor?)` → `usageMonitor` is the UsageMonitor. Without it, no frame has `usage`.
 - `GET /api/sessions/events` → WebSocket.
   - server → client: one JSON text frame per SessionStateTracker change: `{ "type": "session", "session": <SessionSummary> }`. A new session is a change too.
   - server → client: one JSON text frame per SessionStateTracker removal (`dismiss`): `{ "type": "session-removed", "id" }`.
   - server → client: one JSON text frame per ExternalSessionScanner change: `{ "type": "session", "session": <ExternalSessionSummary> }` for an addition or a change, `{ "type": "session-removed", "id" }` for a removal.
   - each `session` frame carries `runningTool` in its session when RunningToolMonitor `get(id)` gives one at send time.
-  - server → client: one JSON text frame per RunningToolMonitor change: `{ "type": "session", "session" }` with the current summary of that session (tracker `get`, else scanner `get`) and its current `runningTool`. No frame when neither knows the id.
+  - each `session` frame carries `usage` in its session when UsageMonitor `get(id)` gives one at send time.
+  - server → client: one JSON text frame per RunningToolMonitor change: `{ "type": "session", "session" }` with the current summary of that session (tracker `get`, else scanner `get`) and its current `runningTool` and `usage`. No frame when neither knows the id.
+  - server → client: one JSON text frame per UsageMonitor change, built the same way.
   - client → server: frames are ignored.
   - nothing is sent on connect. The page loads the current list from SessionListRoute.
 
@@ -29,10 +32,11 @@ type: REST endpoint (WebSocket)
 
 - SessionStateTracker
 - ExternalSessionScanner (module external)
-- RunningToolMonitor
+- RunningToolMonitor, UsageMonitor
 
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-15`, `plan-claude_sessions_client/REQ-32`
 - `plan-session_list_improvements/REQ-4`
 - `plan-session_list_improvements/REQ-14`, `plan-session_list_improvements/REQ-24`
+- `plan-session_usage/REQ-1`, `plan-session_usage/REQ-12`

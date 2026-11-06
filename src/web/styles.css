@@ -910,11 +910,60 @@ input {
   white-space: nowrap;
 }
 
+.session-entry-context {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 15px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .session-entry.ended[aria-current='true'],
 .session-entry[aria-current='true'] .session-entry-label,
 .session-entry[aria-current='true'] .session-entry-tool,
 .session-entry[aria-current='true'] .session-entry-time {
   color: var(--text-secondary);
+}
+
+.session-entry-cost {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 15px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.session-entry-context + .session-entry-time,
+.session-entry-cost + .session-entry-time {
+  margin-left: -2px;
+}
+
+.session-entry-context + .session-entry-cost {
+  margin-left: -4px;
+}
+
+.usage-incomplete {
+  color: var(--amber-400);
+  cursor: help;
+}
+
+.session-entry[aria-current='true'] .session-entry-context.usage-normal,
+.session-card.open .session-entry-context.usage-normal,
+.session-entry[aria-current='true'] .session-entry-cost,
+.session-card.open .session-entry-cost {
+  color: var(--text-secondary);
+}
+
+.session-entry-context.usage-warning,
+.session-header-context .usage-warning {
+  color: var(--amber-400);
+}
+
+.session-entry-context.usage-error,
+.session-header-context .usage-error {
+  color: var(--rose-400);
 }
 
 .session-entry .session-entry-label.session-entry-permission {
@@ -1225,11 +1274,55 @@ input {
   color: var(--text-muted);
 }
 
+.session-header-context-label,
+.session-header-cost-label {
+  color: var(--text-muted);
+}
+
 .session-header-actions {
   flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.session-header-tokens {
+  position: relative;
+  cursor: default;
+}
+
+.session-header-tokens-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background-color: var(--bg-surface-3);
+  color: var(--text-primary);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.session-header-tokens:hover .session-header-tokens-popover,
+.session-header-tokens:focus .session-header-tokens-popover {
+  visibility: visible;
+  opacity: 1;
+}
+
+.session-header-tokens-part {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.session-header-tokens-label {
+  color: var(--text-muted);
 }
 
 .stop-glyph {
