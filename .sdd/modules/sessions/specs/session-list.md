@@ -32,8 +32,9 @@ Entry row (every entry but the hosted needs-input card): a button with the class
 - padding 6 × 8 px, 6 px radius, 12/18 px text in `--text-secondary`. Hover → `--bg-surface-2` and `--text-primary`.
 - line 1, 8 px gaps → the StateBadge `dot` (8 px), the folder name (`folderNameOf`, tooltip: the full folder path), then on the right the StateBadge `inline` (mono 10 px in the state colour).
 - line 2, 2 px below and 16 px in from the left → the label (11/16 px, `--text-muted`, tooltip: the full label), then on the right the RelativeTime of the last activity (mono 10 px, `--text-muted`).
-- a hosted working entry → a ProgressBar 2 px below line 2, 16 px in. An external entry never shows it.
-- folder name and label longer than the row are cut on one line with an ellipsis. A row with its two lines is 48 px high.
+- tool line, only for a `working` entry whose summary has `runningTool` → line 3, 2 px below line 2 and 16 px in: "<name>: <argument>", or "<name>" when there is no argument, then "+<others>" when `others` > 0. Mono 10/15 px, weight 400, `--text-muted` (`--text-secondary` when open). The text is cut with an ellipsis; "+<others>" always stays visible. Tooltip: the whole line. No tool line in any other state.
+- a hosted working entry → a ProgressBar 2 px below its last line, 16 px in. An external entry never shows it.
+- folder name and label longer than the row are cut on one line with an ellipsis. A row with its two lines is 48 px high. A tool line makes it taller.
 
 Entry variants:
 
@@ -82,6 +83,7 @@ Drag feedback (the mock has no drag state):
 ## Rules and invariants
 
 - No entry text wraps.
+- Only `working` entries show a tool line.
 - Only the open session's button has `aria-current="true"`.
 - Only the entries of ended hosted sessions show "Dismiss" or "Resume". Working, needs-input, idle and external entries show neither.
 - The needs-input entries are the most visible of the list: amber, first group.
@@ -106,3 +108,4 @@ Drag feedback (the mock has no drag state):
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-10`
 - `plan-session_list_improvements/REQ-1`, `plan-session_list_improvements/REQ-2`, `plan-session_list_improvements/REQ-3`, `plan-session_list_improvements/REQ-13`
+- `plan-session_list_improvements/REQ-14` to `plan-session_list_improvements/REQ-17`, `plan-session_list_improvements/REQ-19`, `plan-session_list_improvements/REQ-22`, `plan-session_list_improvements/REQ-23`

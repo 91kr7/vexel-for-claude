@@ -2,6 +2,12 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 
 export type SessionState = 'working' | 'needs_input' | 'idle' | 'ended';
 
+export interface RunningTool {
+  name: string;
+  argument?: string;
+  others: number;
+}
+
 export interface SessionSummary {
   id: string;
   folder: string;
@@ -11,6 +17,7 @@ export interface SessionSummary {
   external?: true;
   waitingTool?: string;
   resumable?: true;
+  runningTool?: RunningTool;
 }
 
 export type LoadStatus = 'loading' | 'ready' | 'error';

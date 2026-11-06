@@ -20,6 +20,7 @@ import { registerDismissSessionRoute } from './sessions/dismiss-session-route.js
 import { registerHookEventRoute } from './sessions/hook-event-route.js';
 import { writeHookSettings } from './sessions/hook-settings.js';
 import { registerResumeEndedSessionRoute } from './sessions/resume-ended-session-route.js';
+import { RunningToolMonitor } from './sessions/running-tool-monitor.js';
 import { registerSessionEventsRoute } from './sessions/session-events-route.js';
 import { registerSessionListRoute } from './sessions/session-list-route.js';
 import { SessionRegistry } from './sessions/session-registry.js';
@@ -52,6 +53,7 @@ const externalScanner = new ExternalSessionScanner({
 });
 const transcriptReader = new TranscriptReader();
 const attentionMonitor = new AttentionMonitor({ tracker, scanner: externalScanner, registry });
+const runningToolMonitor = new RunningToolMonitor({ tracker, scanner: externalScanner, reader: transcriptReader });
 
 registerLocalAccessGuard(app, { viteDevPort });
 await app.register(fastifyWebsocket);
@@ -62,8 +64,8 @@ registerStopSessionRoute(app, registry);
 registerDismissSessionRoute(app, tracker);
 registerResumeEndedSessionRoute(app, { tracker, history, registry, externalCheck });
 registerAttachSessionRoute(app, registry, tracker);
-registerSessionListRoute(app, tracker, externalScanner);
-registerSessionEventsRoute(app, tracker, externalScanner);
+registerSessionListRoute(app, tracker, externalScanner, runningToolMonitor);
+registerSessionEventsRoute(app, tracker, externalScanner, runningToolMonitor);
 registerHookEventRoute(app, tracker);
 registerFolderRoute(app);
 registerPastSessionListRoute(app, { history, externalCheck, registry, tracker });
@@ -78,9 +80,11 @@ if (existsSync(webRoot)) {
 }
 
 externalScanner.start();
+runningToolMonitor.start();
 await app.listen({ host: HOST, port });
 
 async function stopServer(): Promise<void> {
+  runningToolMonitor.stop();
   const running = registry.list().filter((session) => !session.exited);
   await Promise.all(
     running.map(

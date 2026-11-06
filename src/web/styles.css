@@ -874,6 +874,28 @@ input {
   color: var(--text-muted);
 }
 
+.session-entry-tool {
+  gap: 4px;
+  padding-left: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 15px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.session-entry-tool-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-entry-tool-others {
+  flex: none;
+}
+
 .session-entry-permission b,
 .session-card-line b {
   font-weight: 500;
@@ -890,6 +912,7 @@ input {
 
 .session-entry.ended[aria-current='true'],
 .session-entry[aria-current='true'] .session-entry-label,
+.session-entry[aria-current='true'] .session-entry-tool,
 .session-entry[aria-current='true'] .session-entry-time {
   color: var(--text-secondary);
 }

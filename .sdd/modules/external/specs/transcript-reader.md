@@ -26,6 +26,7 @@ type: backend service
   - `undefined` when: `ref.offset` is not the start of a complete line; the line is not valid JSON; the block is not a `tool_use` of an `assistant` line or a `tool_result` of a `user` line; the line is a sidechain or meta entry; the file cannot be read.
 - `itemsOf(entry, lineOffset?) → ConversationItem[]` (exported function) → the items of one parsed transcript line.
   - with `lineOffset` → each tool item carries `ref: { offset: lineOffset, block }`. Without it → no `ref`.
+- `mainArgumentOf(input) → string | undefined` (exported function) → the main argument of a tool input, by the "Main argument" rule below. The text is returned as it is: no trim, no cut.
 
 `ConversationItem`:
 
@@ -62,12 +63,20 @@ content an array                    → the "text" of its blocks with type "text
 then: trailing whitespace removed; more than 5 lines → first 5 lines, truncated = true
 ```
 
+Main argument:
+
+```
+input an object (an array too) → the first string among input.command, input.file_path, input.path,
+                                 input.pattern, input.url, input.query, input.description, input.prompt
+                                 else the first string value of input
+                                 else none
+anything else (no input, null, a string, a number) → none
+```
+
 Tool call summary:
 
 ```
-value = the first string among input.command, input.file_path, input.path, input.pattern,
-        input.url, input.query, input.description, input.prompt
-        else the first string value of input
+value = the main argument
         else JSON of input ("" when there is no input)
 summary = value with whitespace collapsed to one space, trimmed, cut to 120 characters
           plus "…" when it was longer
@@ -97,3 +106,4 @@ not an object)                                             → moreInput: true
 - `plan-claude_sessions_client/REQ-33`, `plan-claude_sessions_client/REQ-36`
 - `plan-claude_sessions_client-ui_redesign/REQ-21`, `plan-claude_sessions_client-ui_redesign/REQ-24`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-36`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-39`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-40`
+- `plan-session_list_improvements/REQ-15`, `plan-session_list_improvements/REQ-16`

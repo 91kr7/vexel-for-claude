@@ -2,7 +2,7 @@ import { type DragEvent, useEffect, useId, useState } from 'react';
 import { AreaState } from '../feedback/AreaState';
 import { folderNameOf } from './Avatar';
 import { EndedEntryActions } from './EndedEntryActions';
-import type { LoadStatus, SessionSummary } from './live-session-store';
+import type { LoadStatus, RunningTool, SessionSummary } from './live-session-store';
 import { ProgressBar } from './ProgressBar';
 import { RelativeTime } from './RelativeTime';
 import { groupSessions, type SessionGroupId, type SessionOrder } from './session-order';
@@ -33,6 +33,17 @@ function EntryTitle({ session }: { session: SessionSummary }) {
   );
 }
 
+function ToolLine({ tool }: { tool: RunningTool }) {
+  const text = tool.argument === undefined ? tool.name : `${tool.name}: ${tool.argument}`;
+  const others = tool.others > 0 ? `+${tool.others}` : undefined;
+  return (
+    <span className="session-entry-line session-entry-tool" title={others ? `${text} ${others}` : text}>
+      <span className="session-entry-tool-text">{text}</span>
+      {others && <span className="session-entry-tool-others">{others}</span>}
+    </span>
+  );
+}
+
 interface EntryProps {
   session: SessionSummary;
   open: boolean;
@@ -55,6 +66,7 @@ function EntryRow({ session, open, onOpen }: EntryProps) {
         </span>
         <RelativeTime className="session-entry-time" iso={session.lastActivity} />
       </span>
+      {session.state === 'working' && session.runningTool && <ToolLine tool={session.runningTool} />}
       {session.state === 'working' && !session.external && <ProgressBar />}
     </button>
   );

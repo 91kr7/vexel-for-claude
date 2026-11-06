@@ -62,16 +62,15 @@ function toolResultItem(block: Block): ConversationItem {
   };
 }
 
+export function mainArgumentOf(input: unknown): string | undefined {
+  if (typeof input !== 'object' || input === null) return undefined;
+  const record = input as Record<string, unknown>;
+  const preferred = SUMMARY_KEYS.map((key) => record[key]).find((item) => typeof item === 'string');
+  return (preferred ?? Object.values(record).find((item) => typeof item === 'string')) as string | undefined;
+}
+
 function summaryOf(input: unknown): string {
-  let value = '';
-  if (typeof input === 'object' && input !== null) {
-    const record = input as Record<string, unknown>;
-    const preferred = SUMMARY_KEYS.map((key) => record[key]).find((item) => typeof item === 'string');
-    const anyString = Object.values(record).find((item) => typeof item === 'string');
-    value = (preferred ?? anyString ?? JSON.stringify(input)) as string;
-  } else if (input !== undefined) {
-    value = JSON.stringify(input);
-  }
+  const value = mainArgumentOf(input) ?? (input === undefined ? '' : JSON.stringify(input));
   const line = Array.from(value.replace(/\s+/g, ' ').trim());
   return line.length > SUMMARY_LENGTH ? `${line.slice(0, SUMMARY_LENGTH).join('')}…` : line.join('');
 }
