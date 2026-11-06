@@ -24,7 +24,8 @@ Changes:
 - The user can change the width of the list panel. 224 px becomes the default width.
 - The client remembers the chosen width across reloads and restarts.
 - The session header keeps only the session identity, its state and its actions.
-- The path and the usage figures move to a footer bar under the session. On hosted sessions this bar also holds the key hint.
+- The path and the usage figures move to a footer bar under the session.
+- The key hint under the terminal goes away. The key keeps working.
 - The four token parts move from the visible text to a tooltip.
 - Every other requirement of the references stays true.
 
@@ -60,7 +61,7 @@ Footer bar
 - Every open session, hosted or external, must show a one-line footer bar under its terminal or conversation.
 - The footer must show the folder path, the context occupancy, the total tokens and the estimated cost.
 - On an external session, the footer must keep the text that says the session is open in another terminal, before the path.
-- On a hosted session, the footer must also show the key that moves the focus from the terminal to the list, as the hint does today.
+- The footer must not show the key that moves the focus from the terminal to the list. That key must keep working.
 - On a hosted session, the terminal text size controls must show at the right end of the footer.
 - The four token parts (input, output, cache write, cache read) must show in a tooltip on the token total, on hover and on keyboard focus.
 - The context occupancy must keep its 70% and 90% highlights in the footer.
@@ -83,12 +84,13 @@ Text
 - The 180-480 px limits keep entries readable and the main area usable. The orchestrator decided this.
 - The 700 px floor holds at the 1280 px minimum window width: 1280 − 52 − 480 leaves about 750 px.
 - The client remembers the width where the user chose it, like the theme ([light_theme.md](light_theme.md), line 62) and the terminal font size ([terminal_addons.md](terminal_addons.md), line 95). The desktop app and a browser can each keep their own width.
-- "Rooter" means the footer bar with the key hint under the terminal. It is the hint bar of the Studio reference (line 88).
+- "Rooter" means the bar under the terminal that shows the key hint today. It is the hint bar of the Studio reference (line 88).
 - The header keeps what tells the user which session this is and what they can do with it. The path and the figures describe the session, so they move to the footer.
 - The footer follows Claude Code's own status line, which shows context and cost under the prompt ([status line](https://code.claude.com/docs/en/statusline)).
 - External sessions get the same footer, so both session views place the same information in the same spot.
 - The four token parts go into a tooltip, because the human asked for less text on one line. No figure is lost.
 - The terminal search stays in the header and the text size controls go to the right end of the footer. The human decided this on 2026-11-06: "lo zoom mettilo in basso a destra mentre il search va bene in alto".
+- The key hint goes away. The human decided this on 2026-11-07: "nel footer mi aggiungi anche di togliere l'indicazione della shortcut per tornare al menù? è totalmente inutile e magari ti farò implementare in futuro un sistema di shortcut".
 
 ## Risks
 
@@ -110,3 +112,4 @@ Out of scope:
 - New figures or new actions in the header or the footer.
 - Any change to how the usage figures are computed.
 - A footer that the user can configure.
+- A system of keyboard shortcuts.

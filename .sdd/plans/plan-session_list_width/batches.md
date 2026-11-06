@@ -9,7 +9,7 @@ Requirements → `requirements.md`. Batch files → `batches/`.
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
 | list-width | Resizable list panel | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14 | — | certified | The user makes the list wider and finds the same width after a reload |
-| header-footer | Lighter header and footer bar | REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29 | — | todo | The user reads the session details in the footer of a hosted session |
+| header-footer | Lighter header and footer bar | REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29 | — | in progress | The user reads the session details in the footer of a hosted session |
 
 Execution order: list-width, then header-footer. The two batches do not depend on each other. Both may touch `src/web/styles.css`, so they run in this order.
 
@@ -24,10 +24,11 @@ Execution order: list-width, then header-footer. The two batches do not depend o
 ## Departures
 
 - **"Search" in the header and the text size controls in the footer (REQ-15, REQ-29).** This departs from the spec. It is a human decision: see `requirements.md`, assumption "Search and text size controls". The spec must be corrected: line 54 of `.sdd/analysis/session_list_width.md` must add "Search" to the hosted header, and the "Footer bar" section must add the text size controls.
+- **No key hint in the footer (REQ-22, withdrawn).** This departs from the spec. It is a human decision: see `requirements.md`, assumption "Key hint". The spec must be corrected: in `.sdd/analysis/session_list_width.md`, remove the key hint from "Changes" (line 27) and from the "Footer bar" requirements (line 63).
 
 ## Coverage check
 
-Every REQ → at least one INT. Every REQ closes in the batch that serves it. No REQ spans two batches.
+Every REQ → at least one INT. Every REQ closes in the batch that serves it. No REQ spans two batches. REQ-22 is withdrawn, so no INT serves it.
 
 | REQ | Batch | INT |
 |-----|-------|-----|
@@ -52,7 +53,6 @@ Every REQ → at least one INT. Every REQ closes in the batch that serves it. No
 | REQ-19 | header-footer | INT-1, INT-5, INT-6 |
 | REQ-20 | header-footer | INT-2, INT-5, INT-6 |
 | REQ-21 | header-footer | INT-1, INT-6 |
-| REQ-22 | header-footer | INT-1, INT-5 |
 | REQ-23 | header-footer | INT-2 |
 | REQ-24 | header-footer | INT-2 |
 | REQ-25 | header-footer | INT-1 |

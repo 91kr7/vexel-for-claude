@@ -16,3 +16,4 @@
 | 2026-11-07 | dev | G4 list-width | pass | Build green (re-run); files map to INT-1..5; accepted: INT-5 done in `styles.css` only (time then state name shrink with ellipsis at 180 px, figures never cut); drag and arrows start from the shown width |
 | 2026-11-07 | test | G5 list-width round 1 | sent back | Re-run by gatekeeper green (unit 47, e2e 26 on list-width + layout); REQ-8 app restart untested, batch notes ask for an Electron check; `layout.spec.ts` helper change accepted |
 | 2026-11-07 | test | G5 list-width round 2 | pass | Electron restart check added and re-run by gatekeeper (1/1); `playwright.config.ts` Electron pattern extended, test infra only; no source change |
+| 2026-11-07 | dev | key hint in the footer | human decision | Footer drops the Ctrl+Shift+L hint, shortcut kept; REQ-22 withdrawn; developer, planner and analysis updated; future shortcut system out of scope |

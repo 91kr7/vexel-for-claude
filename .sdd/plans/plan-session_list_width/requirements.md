@@ -46,7 +46,7 @@ Words used below:
 | REQ-19 | Every open session, hosted or external, shows a footer under its terminal or conversation. |
 | REQ-20 | The footer shows the folder path, the context occupancy, the total tokens and the estimated cost. |
 | REQ-21 | On an external session, the footer shows the text that says the session is open in another terminal, before the path. |
-| REQ-22 | On a hosted session, the footer shows the key that moves the focus from the terminal to the list. |
+| REQ-22 | Withdrawn, human decision (2026-11-07): see assumption "Key hint". Was: ~~On a hosted session, the footer shows the key that moves the focus from the terminal to the list.~~ |
 | REQ-23 | The four token parts (input, output, cache write, cache read) show in a tooltip on the token total, on hover and on keyboard focus. |
 | REQ-24 | In the footer, the context occupancy stands out from 70% and stands out more from 90%. |
 | REQ-25 | A path that does not fit in the footer is cut with an ellipsis, and the full path shows on hover. |
@@ -63,7 +63,8 @@ Words used below:
 - **Where it is saved (REQ-8).** In `localStorage`, like the theme and the terminal text size. The desktop app and each browser keep their own width.
 - **Cost label (REQ-20).** The footer shows the cost amount and its "incomplete" mark. The label "estimate at API list prices" becomes the tooltip of the cost, as in the list entry (`plan-session_usage`, "Label of the cost"). As text, the label does not fit on one line at 700 px.
 - **Text of an external session (REQ-21).** It keeps today's words "Open in Another Terminal", then " · " and the path.
-- **Footer layout (REQ-20 to REQ-22, REQ-29).** The path, or the external text and the path, is on the left and shrinks first. The figures follow. On a hosted session the key hint comes next, and the text size controls are at the right end. The figures, the key hint and the text size controls are never cut.
+- **Footer layout (REQ-20, REQ-21, REQ-29).** The path, or the external text and the path, is on the left and shrinks first. The figures follow. On a hosted session the text size controls are at the right end. The figures and the text size controls are never cut.
+- **Key hint (REQ-22).** Departing from the spec, human decision (2026-11-07): "nel footer mi aggiungi anche di togliere l'indicazione della shortcut per tornare al menù? è totalmente inutile e magari ti farò implementare in futuro un sistema di shortcut". The footer shows no key hint. Ctrl+Shift+L in the terminal still moves the focus to the list.
 - **Search and text size controls (REQ-15, REQ-29).** Departing from the spec, human decision (2026-11-06): "lo zoom mettilo in basso a destra mentre il search va bene in alto". The spec lists the header items as "only ..." and leaves out "Search" and the text size controls. "Search" stays in the header. The text size controls move to the footer.
 - **Footer height (REQ-28).** 40 px, the height of today's hint row.
 
@@ -78,5 +79,5 @@ These are not REQs. They apply to every REQ above.
 - Every requirement of the earlier plans of this client stays true, except what this plan changes:
   - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-53` → 224 px is now the default width of the list panel, not a fixed width.
   - `plan-session_usage/REQ-2`, `plan-session_usage/REQ-8`, `plan-session_usage/REQ-13`, `plan-session_usage/REQ-23`, `plan-session_usage/REQ-29` → the figures, their highlights and the cost label move from the header to the footer. The four token parts move to a tooltip.
-  - The hint row under the terminal becomes part of the footer.
+  - `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-33`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-35` → the hint row under the terminal goes, and the footer takes its place. The Ctrl+Shift+L key stays, with no on-screen hint.
   - `plan-terminal_addons`, assumption "Position of the controls" → the text size controls of `plan-terminal_addons/REQ-35` move from the header to the footer.
