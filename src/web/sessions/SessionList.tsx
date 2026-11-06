@@ -4,7 +4,7 @@ import { folderNameOf } from './Avatar';
 import type { LoadStatus, SessionSummary } from './live-session-store';
 import { ProgressBar } from './ProgressBar';
 import { RelativeTime } from './RelativeTime';
-import { groupSessions } from './session-order';
+import { groupSessions, type SessionOrder } from './session-order';
 import { StateBadge } from './StateBadge';
 
 function entryClass(session: SessionSummary): string {
@@ -95,9 +95,10 @@ interface SessionListProps {
   openSessionId: string | null;
   onOpen: (sessionId: string) => void;
   status?: LoadStatus;
+  order?: SessionOrder;
 }
 
-export function SessionList({ sessions, openSessionId, onOpen, status = 'ready' }: SessionListProps) {
+export function SessionList({ sessions, openSessionId, onOpen, status = 'ready', order }: SessionListProps) {
   return (
     <div className="session-list">
       {status === 'error' && <AreaState kind="error" size="compact" title="Connection to the server lost. Reload the page." />}
@@ -106,7 +107,7 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready' 
       ) : sessions.length === 0 ? (
         status === 'ready' && <AreaState kind="empty" size="compact" title="No sessions." />
       ) : (
-        groupSessions(sessions).map((group) => (
+        groupSessions(sessions, order).map((group) => (
           <div key={group.id} className="session-group">
             <h2 className={`section-label session-group-heading session-group-${group.id}`}>{group.title}</h2>
             <ul>

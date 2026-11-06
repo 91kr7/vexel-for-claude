@@ -6,7 +6,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [fixed-order](batches/batch-fixed-order.md) | Fixed order | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5 | — | todo | Sessions keep their place while they work |
+| [fixed-order](batches/batch-fixed-order.md) | Fixed order | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5 | — | implemented | Sessions keep their place while they work |
 | [drag-reorder](batches/batch-drag-reorder.md) | Reorder by drag and drop | REQ-6, REQ-7, REQ-8, REQ-9, REQ-10 | fixed-order | todo | The user moves a session with drag and drop |
 
 Execution order: `fixed-order`, then `drag-reorder`.

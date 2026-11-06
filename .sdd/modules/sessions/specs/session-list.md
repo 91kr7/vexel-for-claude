@@ -18,12 +18,13 @@ Props:
 - `openSessionId` → the session shown in the open-session area, or `null`.
 - `onOpen(id)` → opens a session.
 - `status` → the load status from LiveSessionStore: `loading`, `ready` or `error`. Default `ready`.
+- `order` → the order of the sessions inside each group, from SessionOrderStore. Default: no order, so each group is in latest-activity order.
 
 Shows:
 - `loading` → a compact AreaState `loading` "Loading…" in place of the entries.
 - `error` → a compact AreaState `error` "Connection to the server lost. Reload the page." (rose tile) above the entries. The entries already received stay.
 - `ready`, no session → a compact AreaState `empty` "No sessions.". With `error` and no session, only the error block shows.
-- the groups of `groupSessions`, in its order. Each group is a level-2 heading with the group title in `.section-label` (all muted, padding 0 × 6 px), 4 px above a list with one item per session. Rows are 2 px apart.
+- the groups of `groupSessions` with `order`, in its order. Each group is a level-2 heading with the group title in `.section-label` (all muted, padding 0 × 6 px), 4 px above a list with one item per session. Rows are 2 px apart.
 
 Entry row (every entry but the hosted needs-input card): a button with the class `session-entry`, the `.vx-session-row` look.
 - padding 6 × 8 px, 6 px radius, 12/18 px text in `--text-secondary`. Hover → `--bg-surface-2` and `--text-primary`.
@@ -69,7 +70,7 @@ Actions:
 
 ## Dependencies
 
-- groupSessions, StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`)
+- groupSessions, SessionOrderStore (`SessionOrder`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`)
 - AreaState, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
@@ -78,3 +79,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign/REQ-11`, `plan-claude_sessions_client-ui_redesign/REQ-12`, `plan-claude_sessions_client-ui_redesign/REQ-13`, `plan-claude_sessions_client-ui_redesign/REQ-15`, `plan-claude_sessions_client-ui_redesign/REQ-16`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-23` to `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order/REQ-1`

@@ -15,3 +15,6 @@
 | 2026-11-06 | plan | G2 requirements | pass | 10 REQ cover the analysis; REQ-8 from Risks; REQ-9 kept apart from REQ-5 as the distinct after-drag path |
 | 2026-11-06 | plan | question planner "Resume Here" new entry | decided | Not a departure: Resume Here always moves external → running, and the analysis Assumptions already put a session that changes group at the end |
 | 2026-11-06 | plan | G3 coverage | pass | 10 REQ / 10 INT, two batches by feature, paths exist; `batch-drag-reorder/INT-1` path deferred to the store `batch-fixed-order/INT-3` creates; every REQ in a scenario |
+| 2026-11-06 | dev | divergence `batch-fixed-order/INT-1` group rule not exported | decided | `nextSessionOrder` reuses `groupSessions`, same rule, no second public function |
+| 2026-11-06 | dev | divergence SessionList `order` optional | decided | Keeps existing callers; no visible change |
+| 2026-11-06 | dev | G4 fixed-order | pass | Build re-run green; diff = 5 INT sources + 4 specs, sessions index, status; no test or plan file |

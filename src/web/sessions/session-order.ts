@@ -8,6 +8,8 @@ export interface SessionGroup {
   sessions: SessionSummary[];
 }
 
+export type SessionOrder = Partial<Record<SessionGroupId, readonly string[]>>;
+
 const GROUPS: readonly { id: SessionGroupId; title: string }[] = [
   { id: 'needs-input', title: 'Needs Input' },
   { id: 'running', title: 'Running' },
@@ -28,9 +30,15 @@ export function orderSessions(sessions: readonly SessionSummary[]): SessionSumma
   });
 }
 
-export function groupSessions(sessions: readonly SessionSummary[]): SessionGroup[] {
-  const ordered = orderSessions(sessions);
-  return GROUPS.map(({ id, title }) => ({ id, title, sessions: ordered.filter((session) => groupOf(session) === id) })).filter(
-    (group) => group.sessions.length > 0,
-  );
+export function groupSessions(sessions: readonly SessionSummary[], order: SessionOrder = {}): SessionGroup[] {
+  const latestFirst = [...sessions].sort((a, b) => Date.parse(b.lastActivity) - Date.parse(a.lastActivity));
+  return GROUPS.map(({ id, title }) => {
+    const position = new Map<string, number>();
+    (order[id] ?? []).forEach((sessionId, index) => {
+      if (!position.has(sessionId)) position.set(sessionId, index);
+    });
+    const rank = (session: SessionSummary) => position.get(session.id) ?? Number.MAX_SAFE_INTEGER;
+    const members = latestFirst.filter((session) => groupOf(session) === id).sort((a, b) => rank(a) - rank(b));
+    return { id, title, sessions: members };
+  }).filter((group) => group.sessions.length > 0);
 }

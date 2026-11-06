@@ -9,6 +9,7 @@ import { countNeedsInput, NeedsInputCounter } from './sessions/NeedsInputCounter
 import { SessionList } from './sessions/SessionList';
 import { SessionView } from './sessions/SessionView';
 import { type SessionSummary, useLiveSessions } from './sessions/live-session-store';
+import { useSessionOrder } from './sessions/session-order-store';
 import { TopBar } from './TopBar';
 
 export function AppLayout() {
@@ -19,6 +20,7 @@ export function AppLayout() {
   const listPanelRef = useRef<HTMLElement>(null);
   const newSessionRef = useRef<HTMLButtonElement>(null);
   const { sessions, status } = useLiveSessions();
+  const sessionOrder = useSessionOrder(sessions, status);
   const snackbarSession = useNeedsInputSnackbar(sessions, status, openSessionId);
   const lastOpenSummary = useRef<SessionSummary | undefined>(undefined);
   const listedSummary = sessions.find((session) => session.id === openSessionId);
@@ -58,7 +60,7 @@ export function AppLayout() {
             <h1 className="section-label">Sessions</h1>
             <NeedsInputCounter sessions={sessions} />
           </div>
-          <SessionList sessions={sessions} status={status} openSessionId={openSessionId} onOpen={openFromList} />
+          <SessionList sessions={sessions} status={status} order={sessionOrder} openSessionId={openSessionId} onOpen={openFromList} />
         </section>
         <main className="session-area vx-dot-grid">
           {openSessionId && openIsExternal ? (
