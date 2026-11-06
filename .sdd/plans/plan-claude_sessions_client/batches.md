@@ -13,7 +13,7 @@ status: validated
 | [stop-session](batches/batch-stop-session.md) | Stop a session | REQ-23, REQ-24 | session-list | certified | The user stops an idle session |
 | [resume-session](batches/batch-resume-session.md) | Resume a past session | REQ-13, REQ-25, REQ-26, REQ-27, REQ-28 | session-list | certified | The user resumes a session started in the terminal |
 | [external-sessions](batches/batch-external-sessions.md) | External sessions | REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36 | resume-session | certified | The user sees a session that runs in another terminal |
-| [local-access](batches/batch-local-access.md) | Local access | REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42, REQ-43, REQ-44, REQ-45 | — | implemented | The page on the client's port works as before |
+| [local-access](batches/batch-local-access.md) | Local access | REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42, REQ-43, REQ-44, REQ-45 | — | certified | The page on the client's port works as before |
 
 Execution order: session-interaction → session-list → stop-session and resume-session. The last two are independent of each other. external-sessions comes after resume-session. local-access is the fix of 2026-11-06. It runs alone, because every other batch is certified.
 
