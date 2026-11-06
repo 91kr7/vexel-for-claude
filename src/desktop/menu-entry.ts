@@ -20,7 +20,7 @@ function execArgument(value: string): string {
 }
 
 export function menuEntryContent({ repoRoot, electronPath, nodePath }: MenuEntryOptions): string {
-  const exec = ['env', `AI_CLIENT_NODE=${nodePath}`, electronPath, repoRoot].map(execArgument).join(' ');
+  const exec = ['/usr/bin/env', `AI_CLIENT_NODE=${nodePath}`, electronPath, repoRoot].map(execArgument).join(' ');
   return [
     '[Desktop Entry]',
     'Type=Application',
