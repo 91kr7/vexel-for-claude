@@ -23,3 +23,7 @@
 | 2026-11-06 | test | G5 studio-dark-restyle round 3 | pass | Two spec files re-run by gatekeeper, 23 green; no source change since the closing full run |
 | 2026-11-06 | closing | stale e2e server | escalated | Orphan e2e server on port 3100 (PID 2058924) from the interrupted M3 run; stopping it was denied by the permission classifier; left to the human |
 | 2026-11-06 | closing | merge into main | pass | The only batch certified |
+| 2026-11-06 | fix reopen | slow scroll "Riprendi sessione" | human decision | Cause: full-screen `backdrop-filter: blur(4px)` on `.modal-backdrop`; human chose to drop it from every dialog, toast glass (REQ-41) kept, batch reopened as a fix |
+| 2026-11-06 | fix reopen | branch already merged | human decision | Human asked to reopen the batch; work resumes on the same branch |
+| 2026-11-06 | fix reopen | foreign change package.json | human decision | Left in the working tree, never committed |
+| 2026-11-06 | analysis | G1 analysis correction | pass | Dialogs line: backdrop with no blur; decision line under Constraints |

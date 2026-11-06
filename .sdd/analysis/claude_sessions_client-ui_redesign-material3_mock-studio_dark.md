@@ -93,7 +93,7 @@ Session view
 - The snackbar and the "N nuovi messaggi" button must use the mock's glass toast. The snackbar sits at the bottom right of the window.
 
 Dialogs
-- Every dialog must use the mock's modal: black backdrop at 65 % with blur, surface 2, strong border, 12 px radius, then header, body and footer.
+- Every dialog must use the mock's modal: black backdrop at 65 % with no blur, surface 2, strong border, 12 px radius, then header, body and footer.
 - The header must show the accent dot, the title, and a mono "[Esc]" control that closes the dialog like "Annulla".
 - Field labels must be 11 px mono. Fields sit on the canvas colour and take the accent border on focus.
 - The footer must sit on surface 1, with "Annulla" as a neutral button and the main action as an accent button.
@@ -128,6 +128,7 @@ Dialogs
 - The mock file must be committed unchanged and stay in the repository.
 - The client must ship its own Roboto Flex and Roboto Mono and contact no outside server. The mock's Tailwind CDN and Google Fonts links must not be copied.
 - The work is delivered in a single batch, by the human's decision.
+- The dialog backdrop departs from the mock and has no blur, by the human's decision of 2026-11-06. The blur made the dialogs scroll slowly.
 - The restyle must not remove any feature of the reference, nor any terminal feature of hosted sessions.
 
 ## Risks
