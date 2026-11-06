@@ -1,0 +1,44 @@
+import { describe, expect, it } from 'vitest';
+import { needsInputBody, notificationTexts, notificationTitle } from './notification-texts.js';
+
+describe('notificationTitle', () => {
+  // plan-session_notifications/REQ-7: folder name and label, as the list shows them
+  it('is "<folder name> · <label>"', () => {
+    expect(notificationTitle('/home/dev/projects/ai-client', 'Fix the login form')).toBe('ai-client · Fix the login form');
+  });
+
+  it('takes the last non-empty segment of the folder', () => {
+    expect(notificationTitle('/home/dev/projects/ai-client/', 'Label')).toBe('ai-client · Label');
+    expect(notificationTitle('ai-client', 'Label')).toBe('ai-client · Label');
+  });
+
+  it('uses the folder itself when it has no non-empty segment', () => {
+    expect(notificationTitle('/', 'Label')).toBe('/ · Label');
+  });
+});
+
+describe('needsInputBody', () => {
+  // plan-session_notifications/REQ-8: wording of the needs-input card
+  it('is "Permission for <tool>" when the waiting tool is known', () => {
+    expect(needsInputBody('Bash')).toBe('Permission for Bash');
+  });
+
+  // plan-session_notifications/REQ-9
+  it('is "Needs your input" when the waiting tool is unknown or empty', () => {
+    expect(needsInputBody()).toBe('Needs your input');
+    expect(needsInputBody('')).toBe('Needs your input');
+  });
+
+  it('is plain text: markup characters are not escaped', () => {
+    expect(needsInputBody('mcp__<b>&co')).toBe('Permission for mcp__<b>&co');
+  });
+});
+
+describe('notificationTexts', () => {
+  // plan-session_notifications/REQ-7, REQ-8, REQ-9
+  it('gives the title and the needs-input body of an event', () => {
+    const base = { id: 'ev-1', sessionId: 's1', kind: 'needs_input' as const, folder: '/projects/billing', label: 'Review the invoices' };
+    expect(notificationTexts({ ...base, waitingTool: 'Edit' })).toEqual({ title: 'billing · Review the invoices', body: 'Permission for Edit' });
+    expect(notificationTexts(base)).toEqual({ title: 'billing · Review the invoices', body: 'Needs your input' });
+  });
+});
