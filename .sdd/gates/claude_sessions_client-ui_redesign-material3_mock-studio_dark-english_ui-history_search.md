@@ -12,3 +12,7 @@
 | 2026-11-06 | plan | G3 coverage | pass | 17 REQ / 8 INT, one batch, paths exist, every REQ in a scenario |
 | 2026-11-06 | dev | divergence search icon source | decided | Lucide path data per IconSet rule; mock `studio-dark` uses Heroicons; position and colour kept |
 | 2026-11-06 | dev | G4 history-search | pass | Build re-run green; diff = 3 INT sources + 2 specs, history index, status; no test or plan file |
+| 2026-11-06 | dev | closing run breadth | human decision | No complete e2e suite; batch e2e files + `e2e/dialogs.spec.ts`; whole unit suite kept |
+| 2026-11-06 | dev | tester change `playwright.config.ts` | pass | Test infrastructure: new spec joins the one-worker fixture pattern; no source change |
+| 2026-11-06 | dev | unit suite intermittent failure | pass | 1 unknown failure in tester run 1 of 6; next 5 runs and gatekeeper re-run 732/732 |
+| 2026-11-06 | dev | G5 history-search | pass | Re-run 31/31 e2e (`history-search`, `dialogs`), 732/732 unit; no skip or only; REQ-1..17 tested |

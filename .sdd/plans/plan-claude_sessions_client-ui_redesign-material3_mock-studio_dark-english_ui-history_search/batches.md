@@ -6,7 +6,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [history-search](batches/batch-history-search.md) | Search in the session history | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17 | — | implemented | The user finds past sessions by typing part of their label |
+| [history-search](batches/batch-history-search.md) | Search in the session history | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17 | — | certified | The user finds past sessions by typing part of their label |
 
 ## Assumptions and decisions
 
