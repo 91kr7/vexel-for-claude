@@ -40,9 +40,9 @@ const percent = (target: Locator) => target.locator('.session-entry-context');
 /** The amount in a list entry: the element with the estimate tooltip. */
 const amount = (target: Locator) => target.getByTitle(COST_TOOLTIP, { exact: true });
 const mark = (target: Locator) => target.getByRole('img', { name: INCOMPLETE });
-const header = (page: Page) => page.locator('.session-header');
-const costChip = (page: Page) => header(page).locator('.mono-chip').filter({ hasText: 'estimate at API list prices' });
-const tokensChip = (page: Page) => header(page).locator('.session-header-tokens');
+const footer = (page: Page) => page.locator('.session-footer');
+const costChip = (page: Page) => footer(page).locator('.session-figure-cost');
+const tokensChip = (page: Page) => footer(page).locator('.session-figure-tokens');
 
 let nextKey = 0;
 interface Counts {
@@ -143,8 +143,8 @@ const colourOf = (page: Page, variable: string) =>
 
 // Expected amounts use the price-list spec table. claude-opus-5-5 and claude-sonnet-5-5 have a 1M window: 50,000 used tokens read "5%".
 test.describe('Estimated cost', () => {
-  // plan-session_usage/REQ-22, REQ-23, REQ-24, REQ-25, REQ-29, REQ-32, REQ-35 — scenario "Every session shows its estimated cost"
-  test('hosted and external sessions show their cost in the entry and the header, and update within 2 seconds', async ({ page, request }) => {
+  // plan-session_usage/REQ-22, REQ-23, REQ-24, REQ-25, REQ-29, REQ-32, REQ-35, plan-session_list_width/REQ-20 — every session shows its estimated cost
+  test('hosted and external sessions show their cost in the entry and the footer, and update within 2 seconds', async ({ page, request }) => {
     const hosted = await hostedWith(request, 'hosted', response('claude-opus-5-5', { input: 50_000, output: 20_000 }));
     await hosted.subagent('agent-a1.jsonl')(response('claude-opus-5-5', { input: 10_000, output: 5_000 }, { sidechain: true }));
     const externalFolder = await newFolder('external');
@@ -172,17 +172,18 @@ test.describe('Estimated cost', () => {
     await expect(hostedRow).toContainText(/5%\s*·\s*\$0\.74/);
 
     await hostedRow.click();
-    await expect(costChip(page)).toHaveText(/^\s*\$0\.74\s*·\s*estimate at API list prices\s*$/);
+    await expect(costChip(page)).toHaveText(/^\s*\$0\.74\s*$/);
+    await expect(costChip(page).getByTitle(COST_TOOLTIP, { exact: true })).toHaveText('$0.74');
     await expect(costChip(page)).toBeVisible();
 
     await hosted.write(userText('And the tests?'), response('claude-opus-5-5', { input: 100_000, output: 10_000 }));
     await expect(amount(hostedRow), '+$0.60').toHaveText('$1.34', WITHIN_2_S);
-    await expect(costChip(page)).toHaveText(/^\s*\$1\.34\s*·\s*estimate at API list prices\s*$/);
+    await expect(costChip(page)).toHaveText(/^\s*\$1\.34\s*$/);
     await external.write(userText('And now?'), response('claude-sonnet-5-5', { input: 40_000, output: 20_000 }));
     await expect(amount(externalRow), '+$0.28').toHaveText('$0.42', WITHIN_2_S);
 
     await externalRow.click();
-    await expect(costChip(page)).toHaveText(/^\s*\$0\.42\s*·\s*estimate at API list prices\s*$/);
+    await expect(costChip(page)).toHaveText(/^\s*\$0\.42\s*$/);
   });
 
   // plan-session_usage/REQ-26, REQ-27, REQ-28 — scenario "Cache and tiered prices"
@@ -197,7 +198,7 @@ test.describe('Estimated cost', () => {
     await page.goto('/');
     await expect(amount(entry(page, folder)), '1h $0.80 + 5m $0.50 + long Haiku $0.10').toHaveText('$1.40');
     await entry(page, folder).click();
-    await expect(costChip(page)).toHaveText(/^\s*\$1\.40\s*·/);
+    await expect(costChip(page)).toHaveText(/^\s*\$1\.40\s*$/);
   });
 
   // plan-session_usage/REQ-30, REQ-31 — scenario "A model with no known price"
@@ -217,7 +218,7 @@ test.describe('Estimated cost', () => {
     await expect(mark(row)).toHaveCSS('color', amber);
 
     await row.click();
-    await expect(costChip(page)).toHaveText(/^\s*\$0\.60\s*incomplete\s*·\s*estimate at API list prices\s*$/);
+    await expect(costChip(page)).toHaveText(/^\s*\$0\.60\s*incomplete\s*$/);
     await expect(mark(costChip(page))).toHaveText('incomplete');
     await expect(mark(costChip(page))).toHaveAttribute('title', INCOMPLETE);
     await expect(mark(costChip(page))).toHaveCSS('color', amber);
@@ -232,11 +233,11 @@ test.describe('Estimated cost', () => {
     await expect(amount(row)).toHaveText('—');
     await expect(mark(row)).toBeVisible();
     await row.click();
-    await expect(costChip(page)).toHaveText(/^\s*—\s*incomplete\s*·\s*estimate at API list prices\s*$/);
+    await expect(costChip(page)).toHaveText(/^\s*—\s*incomplete\s*$/);
     await expect(mark(costChip(page))).toBeVisible();
   });
 
-  // plan-session_usage/REQ-32, REQ-33 — scenario "Small and missing costs"
+  // plan-session_usage/REQ-32, REQ-33, plan-session_list_width/REQ-26 — scenario "Small and missing costs"
   test('no cost before the first answer, and "<$0.01" for a tiny one', async ({ page, request }) => {
     const fresh = await hostedWith(request, 'fresh');
     const tiny = await hostedWith(request, 'tiny', response('claude-opus-5-5', { input: 100, output: 10 }));
@@ -246,18 +247,18 @@ test.describe('Estimated cost', () => {
     await expect(amount(entry(page, fresh.folder))).toHaveCount(0);
     await expect(entry(page, fresh.folder)).not.toContainText('$');
     await entry(page, fresh.folder).click();
-    await expect(header(page)).toBeVisible();
+    await expect(footer(page)).toBeVisible();
     await expect(costChip(page)).toHaveCount(0);
-    await expect(header(page)).not.toContainText('$');
+    await expect(footer(page)).not.toContainText('$');
   });
 
-  // plan-session_usage/REQ-34 — scenario "An ended session keeps its cost"
+  // plan-session_usage/REQ-34, plan-session_list_width/REQ-27 — scenario "An ended session keeps its cost"
   test('an ended session keeps its cost', async ({ page, request }) => {
     const { id, folder } = await hostedWith(request, 'ended', response('claude-opus-5-5', { input: 50_000, output: 32_500 }));
     await page.goto('/');
     await expect(amount(entry(page, folder)), '50,000 × $4 + 32,500 × $20').toHaveText('$0.85');
     await entry(page, folder).click();
-    await expect(costChip(page)).toHaveText(/^\s*\$0\.85\s*·/);
+    await expect(costChip(page)).toHaveText(/^\s*\$0\.85\s*$/);
 
     expect((await request.post(`/api/sessions/${id}/stop`)).ok()).toBe(true);
     const endedGroup = list(page).locator('.session-group').filter({ has: page.locator('.session-group-ended') });
@@ -265,6 +266,6 @@ test.describe('Estimated cost', () => {
     await expect(endedRow).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(1_500);
     await expect(amount(endedRow)).toHaveText('$0.85');
-    await expect(costChip(page)).toHaveText(/^\s*\$0\.85\s*·/);
+    await expect(costChip(page)).toHaveText(/^\s*\$0\.85\s*$/);
   });
 });

@@ -36,6 +36,8 @@ const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const listEntry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const view = (page: Page) => page.locator('.conversation-view');
 const header = (page: Page) => view(page).locator('.session-header');
+const footer = (page: Page) => view(page).locator('.session-footer');
+const footerPlace = (page: Page, folder: string) => footer(page).getByTitle(folder, { exact: true });
 const scroller = (page: Page) => view(page).locator('.conversation-items');
 const items = (page: Page) => view(page).getByRole('article');
 const item = (page: Page, name: string) => view(page).getByRole('article', { name, exact: true });
@@ -105,8 +107,8 @@ const scrollTo = (page: Page, where: 'top' | number) =>
     return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   }, where);
 
-// plan-claude_sessions_client-ui_redesign/REQ-17, REQ-19, REQ-20 — scenario "The user reads an external session"
-test('the external view shows its header, a read-only notice that stays in view, and one look per item kind', async ({ page }) => {
+// plan-claude_sessions_client-ui_redesign/REQ-17, REQ-19, REQ-20, plan-session_list_width/REQ-16, REQ-19, REQ-21 — scenario "The user reads an external session"
+test('the external view shows its header and footer, a read-only notice that stays in view, and one look per item kind', async ({ page }) => {
   const folder = await newFolder('negozio');
   await writeTranscript(folder, 'e2e-open-read', [
     user(folder, 'Sistema il carrello del negozio'),
@@ -121,12 +123,14 @@ test('the external view shows its header, a read-only notice that stays in view,
   await page.goto('/');
   await listEntry(page, folder).click(SCAN);
 
-  // SessionHeader: the h2 is the folder name, then the path and the line "Open in Another Terminal".
+  // SessionHeader: the h2 is the folder name, then the label line; the path and "Open in Another Terminal" are in the footer.
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('negozio');
   await expect(header(page)).toContainText('Idle');
-  await expect(header(page).getByText(folder, { exact: true })).toBeVisible();
-  await expect(header(page).getByText('Open in Another Terminal', { exact: true })).toBeVisible();
+  await expect(header(page)).not.toContainText(folder);
+  await expect(header(page)).not.toContainText('Open in Another Terminal');
   await expect(header(page).getByRole('button', { name: 'Resume Here' })).toBeVisible();
+  await expect(footerPlace(page, folder)).toHaveText(`Open in Another Terminal · ${folder}`);
+  await expect(footerPlace(page, folder)).toBeVisible();
   const notice = header(page).getByText('Read-only', { exact: true });
   await expect(notice).toBeVisible();
   await expect(items(page).last()).toBeInViewport();
@@ -149,19 +153,20 @@ test('the external view shows its header, a read-only notice that stays in view,
   // The scrollbar may take some width on the right.
   expect(Math.abs(leftGap - rightGap)).toBeLessThanOrEqual(20);
 
-  // REQ-19: the header and its notice stay in place while the list scrolls.
+  // REQ-19: the header, its notice and the footer stay in place while the list scrolls.
   const headerBefore = await box(header(page));
+  const footerBefore = await box(footer(page));
   await scrollTo(page, 'top');
   await expect(items(page).first()).toBeInViewport();
   await expect(notice).toBeInViewport();
   expect(await box(header(page))).toEqual(headerBefore);
+  expect(await box(footer(page))).toEqual(footerBefore);
 
   // The header keeps the last known data after the entry leaves the list.
   process.kill('SIGKILL');
   await expect(listEntry(page, folder)).toHaveCount(0, SCAN);
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('negozio');
-  await expect(header(page).getByText(folder, { exact: true })).toBeVisible();
-  await expect(header(page).getByText('Open in Another Terminal', { exact: true })).toBeVisible();
+  await expect(footerPlace(page, folder)).toHaveText(`Open in Another Terminal · ${folder}`);
   await expect(notice).toBeVisible();
 });
 

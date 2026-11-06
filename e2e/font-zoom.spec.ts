@@ -25,7 +25,8 @@ const subbar = (page: Page) => mainArea(page).locator('header');
 const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const terminalInput = (page: Page) => page.locator('.xterm-helper-textarea');
-const zoomGroup = (page: Page) => subbar(page).getByRole('group', { name: 'Terminal text size' });
+// plan-session_list_width/REQ-29: the controls sit at the right end of the footer.
+const zoomGroup = (page: Page) => mainArea(page).locator('footer').getByRole('group', { name: 'Terminal text size' });
 const smallerButton = (page: Page) => zoomGroup(page).getByRole('button', { name: 'Smaller text', exact: true });
 const defaultButton = (page: Page) => zoomGroup(page).getByRole('button', { name: /^Default text size \(\d+ px\)$/ });
 const largerButton = (page: Page) => zoomGroup(page).getByRole('button', { name: 'Larger text', exact: true });
@@ -252,9 +253,9 @@ test('REQ-35, REQ-40, REQ-41, REQ-45: the controls work with Tab and Enter, show
   await focusedSession(page, request);
   await expectSize(page, 31);
 
-  await subbar(page).getByRole('button', { name: 'Search', exact: true }).focus();
-  for (const control of [smallerButton, defaultButton, largerButton]) {
-    await page.keyboard.press('Tab');
+  await defaultButton(page).focus();
+  for (const [key, control] of [['Shift+Tab', smallerButton], ['Tab', defaultButton], ['Tab', largerButton]] as const) {
+    await page.keyboard.press(key);
     await expect(control(page)).toBeFocused();
     await expect.poll(() => showsRing(page, control(page))).toBe(true);
   }

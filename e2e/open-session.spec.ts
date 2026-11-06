@@ -27,10 +27,10 @@ const mainArea = (page: Page) => page.getByRole('main');
 const header = (page: Page) => mainArea(page).locator('.session-header');
 const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
 const terminalBox = (page: Page) => panel(page).locator('.session-terminal');
-const hintRow = (page: Page) => mainArea(page).locator('.session-hint-row');
-// SessionView: the panel sits 16 px from the left, right and top; the hint row under it is 40 px high.
+const footer = (page: Page) => mainArea(page).locator('.session-footer');
+// SessionView: the panel sits 16 px from the left, right and top; the footer under it is 40 px high.
 const GAP = 16;
-const HINT_ROW_HEIGHT = 40;
+const FOOTER_HEIGHT = 40;
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
 async function makeFolder(name: string): Promise<string> {
@@ -63,31 +63,32 @@ async function contentBox(locator: Locator): Promise<Box> {
   return { x: b.x + left, y: b.y + top, width: b.width - left - right, height: b.height - top - bottom };
 }
 
-/** The panel and the hint row fill the main area below the header, and the terminal fills the panel inside its padding. */
-async function expectPanelAndHintFillMainBelowHeader(page: Page): Promise<void> {
+/** The panel and the footer fill the main area below the header, and the terminal fills the panel inside its padding. */
+async function expectPanelAndFooterFillMainBelowHeader(page: Page): Promise<void> {
   const main = await contentBox(mainArea(page));
   const head = await box(header(page));
   const term = await box(panel(page));
-  const hint = await box(hintRow(page));
+  const foot = await box(footer(page));
   expect(Math.abs(head.y - main.y)).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(term.y - (head.y + head.height + GAP))).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(term.x - (main.x + GAP))).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(term.width - (main.width - 2 * GAP))).toBeLessThanOrEqual(TOLERANCE);
-  expect(Math.abs(hint.y - (term.y + term.height))).toBeLessThanOrEqual(TOLERANCE);
-  expect(Math.abs(hint.height - HINT_ROW_HEIGHT)).toBeLessThanOrEqual(TOLERANCE);
-  expect(Math.abs(hint.x - main.x)).toBeLessThanOrEqual(TOLERANCE);
-  expect(Math.abs(hint.width - main.width)).toBeLessThanOrEqual(TOLERANCE);
-  expect(Math.abs(hint.y + hint.height - (main.y + main.height))).toBeLessThanOrEqual(TOLERANCE);
+  expect(Math.abs(foot.y - (term.y + term.height))).toBeLessThanOrEqual(TOLERANCE);
+  expect(Math.abs(foot.height - FOOTER_HEIGHT)).toBeLessThanOrEqual(TOLERANCE);
+  expect(Math.abs(foot.x - main.x)).toBeLessThanOrEqual(TOLERANCE);
+  expect(Math.abs(foot.width - main.width)).toBeLessThanOrEqual(TOLERANCE);
+  expect(Math.abs(foot.y + foot.height - (main.y + main.height))).toBeLessThanOrEqual(TOLERANCE);
   const inside = await contentBox(panel(page));
   const xterm = await box(terminalBox(page));
   for (const key of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(xterm[key] - inside[key]), key).toBeLessThanOrEqual(TOLERANCE);
 }
 
-/** SessionHeader: the h2 is the folder name, then the path and the label line. */
+/** SessionHeader: the h2 is the folder name, then the label line; the path is in the footer. */
 async function expectHeaderOf(page: Page, folder: string, label: string, state: string): Promise<void> {
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText(path.basename(folder), ONE_SECOND);
   await expect(header(page)).toContainText(state, ONE_SECOND);
-  await expect(header(page).getByText(folder, { exact: true })).toBeVisible(ONE_SECOND);
+  await expect(header(page)).not.toContainText(folder);
+  await expect(footer(page).getByText(folder, { exact: true })).toBeVisible(ONE_SECOND);
   await expect(header(page).getByText(label, { exact: true }).last()).toBeVisible(ONE_SECOND);
   await expect(header(page).getByRole('button', { name: 'Interrupt' })).toBeVisible(ONE_SECOND);
   await expect(header(page).getByRole('button', { name: 'Terminate' })).toBeVisible(ONE_SECOND);
@@ -107,7 +108,7 @@ test('with 10 sessions, opening and switching a hosted session shows its header 
   await entry(page, first).click();
   await expectHeaderOf(page, first, path.basename(first), 'Idle');
   await expect(terminal(page)).toContainText(`CWD:${first}`, ONE_SECOND);
-  await expectPanelAndHintFillMainBelowHeader(page);
+  await expectPanelAndFooterFillMainBelowHeader(page);
 
   await entry(page, second).click();
   await expectHeaderOf(page, second, path.basename(second), 'Idle');
@@ -115,24 +116,24 @@ test('with 10 sessions, opening and switching a hosted session shows its header 
   await expect(terminal(page)).not.toContainText(`CWD:${first}`);
 });
 
-// plan-claude_sessions_client-ui_redesign/REQ-18 (batch hosted-session decision: panel and hint row fill the area)
-test('the terminal panel and the hint row fill the main area below the header after the window changes size', async ({ page, request }) => {
+// plan-claude_sessions_client-ui_redesign/REQ-18, plan-session_list_width/REQ-28: the panel and the 40 px footer fill the area
+test('the terminal panel and the footer fill the main area below the header after the window changes size', async ({ page, request }) => {
   const folder = await makeFolder('ridimensiona');
   await startViaApi(request, folder);
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto('/');
   await entry(page, folder).click();
   await expect(terminal(page)).toContainText('READY');
-  await expectPanelAndHintFillMainBelowHeader(page);
+  await expectPanelAndFooterFillMainBelowHeader(page);
   const rowsBefore = await terminal(page).locator(':scope > div').count();
 
   await page.setViewportSize({ width: 1000, height: 600 });
   await expect.poll(async () => terminal(page).locator(':scope > div').count()).toBeLessThan(rowsBefore);
-  await expectPanelAndHintFillMainBelowHeader(page);
+  await expectPanelAndFooterFillMainBelowHeader(page);
 });
 
-// plan-claude_sessions_client-ui_redesign/REQ-17: long text is cut, the actions stay in the header
-test('a long line is cut with an ellipsis and its full text as tooltip, and the actions stay visible', async ({ page, request }) => {
+// plan-claude_sessions_client-ui_redesign/REQ-17, plan-session_list_width/REQ-25: a long path is cut in the footer, the actions stay in the header
+test('a long path is cut with an ellipsis and its full text as tooltip, and the actions stay visible', async ({ page, request }) => {
   const folder = await makeFolder(path.join(...Array.from({ length: 6 }, (_, i) => `una-cartella-dal-nome-molto-lungo-${i}`)));
   await startViaApi(request, folder);
   await page.setViewportSize({ width: 1000, height: 700 });
@@ -140,7 +141,7 @@ test('a long line is cut with an ellipsis and its full text as tooltip, and the 
   await entry(page, folder).click();
   await expect(terminal(page)).toContainText('READY');
 
-  const folderText = header(page).getByTitle(folder, { exact: true });
+  const folderText = footer(page).getByTitle(folder, { exact: true });
   await expect(folderText).toBeVisible();
   await expect(folderText).toHaveCSS('text-overflow', 'ellipsis');
   expect(await folderText.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);

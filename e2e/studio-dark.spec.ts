@@ -640,7 +640,7 @@ test.describe('session list', () => {
 // ---------------------------------------------------------------------------------------------------------------------
 test.describe('hosted session view', () => {
   // REQ-30, REQ-31, REQ-32, REQ-34, REQ-35, REQ-42 — scenario "The open hosted session uses the Studio subbar and terminal"
-  test('the open working session has the 40 px subbar, the 12 px terminal on canvas and the key badges; the snackbar sits at the bottom right', async ({ page, request }) => {
+  test('the open working session has the 40 px subbar, the 12 px terminal on canvas and no key badges; the snackbar sits at the bottom right', async ({ page, request }) => {
     await showOnly(page);
     const open = await newFolder('billing-api');
     const other = await newFolder('web-dashboard');
@@ -650,12 +650,12 @@ test.describe('hosted session view', () => {
     await openFromList(page, open);
     await startWorking(request, openId);
 
-    // REQ-30, REQ-53: 40 px subbar with name, "/", mono path, pill and actions, no avatar
+    // REQ-30, REQ-53, plan-session_list_width/REQ-15, REQ-20: 40 px subbar with name, pill and actions, no avatar; the mono path is in the footer
     const head = subbar(page);
     await expect(head.getByRole('heading', { level: 2, name: 'billing-api' })).toBeVisible();
     expect((await box(head)).height).toBeCloseTo(40, 0);
-    await expect(head).toContainText('/');
-    const pathText = head.getByText(open, { exact: true });
+    await expect(head).not.toContainText(open);
+    const pathText = mainArea(page).locator('footer').getByText(open, { exact: true });
     expect(await style(pathText, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     await expect(head.locator('.avatar')).toHaveCount(0);
 
@@ -685,14 +685,8 @@ test.describe('hosted session view', () => {
     expect(await px(terminal(page), 'font-size')).toBe(12);
     expect(await style(terminal(page), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
 
-    // REQ-35: the keys in keyboard badges
-    const keys = mainArea(page).locator('kbd');
-    await expect(keys).toHaveText(['Ctrl', 'Shift', 'L']);
-    for (const key of await keys.all()) {
-      expect(await style(key, 'background-color')).toBe(SURFACE_3);
-      expect(await px(key, 'font-size')).toBe(10);
-      expect(await style(key, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
-    }
+    // plan-session_list_width, assumption "Key hint": no keyboard badges under the terminal
+    await expect(mainArea(page).locator('kbd')).toHaveCount(0);
 
     // REQ-42, REQ-41: the snackbar is the glass toast, fixed 20 px from the bottom right corner of the window
     const before = await box(region);
@@ -710,16 +704,14 @@ test.describe('hosted session view', () => {
     expect(await box(region), 'the terminal panel does not resize for the snackbar').toEqual(before);
   });
 
-  // REQ-35, SessionView "Shows": the hint row is 40 px high
-  test('the hint row under the terminal is 40 px high', async ({ page, request }) => {
+  // plan-session_list_width/REQ-28: the footer under the terminal, in place of the hint row, is 40 px high
+  test('the footer under the terminal is 40 px high', async ({ page, request }) => {
     await showOnly(page);
-    const folder = await newFolder('hint-row');
+    const folder = await newFolder('footer-row');
     await startViaApi(request, folder);
     await page.goto('/');
     await openFromList(page, folder);
-    const hint = mainArea(page).locator('kbd').first().locator('xpath=..');
-    const row = (await hint.evaluate((el) => (el.getBoundingClientRect().height < 40 ? 'parent' : 'self'))) === 'parent' ? hint.locator('xpath=..') : hint;
-    expect((await box(row)).height).toBeCloseTo(40, 0);
+    expect((await box(mainArea(page).locator('footer'))).height).toBeCloseTo(40, 0);
   });
 });
 
