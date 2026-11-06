@@ -11,17 +11,17 @@ export function EmptyState({ onNewSession, onResumeSession }: EmptyStateProps) {
     <AreaState
       kind="empty"
       className="app-empty-state"
-      title="Nessuna sessione aperta."
-      text="Avvia una nuova sessione o riprendine una passata."
+      title="No open session."
+      text="Start a new session or resume a past one."
       actions={
         <>
           <button type="button" className="button-primary" onClick={onNewSession}>
             <PlusIcon />
-            Nuova sessione
+            New Session
           </button>
           <button type="button" className="button-neutral" onClick={onResumeSession}>
             <HistoryIcon />
-            Riprendi sessione
+            Resume Session
           </button>
         </>
       }

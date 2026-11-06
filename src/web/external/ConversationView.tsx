@@ -107,7 +107,7 @@ function ToolOutcome({ result, open }: { result: ToolResult | undefined; open: b
   const outcome = result === undefined ? undefined : result.isError === true ? 'failed' : 'done';
   return (
     <span className={outcome ? `tool-outcome tool-outcome-${outcome}` : 'tool-outcome'}>
-      {outcome === 'failed' ? 'Fallito ' : outcome === 'done' ? 'Fatto ' : ''}
+      {outcome === 'failed' ? 'Error ' : outcome === 'done' ? 'Completed ' : ''}
       <span className={open ? 'tool-chevron' : 'tool-chevron tool-chevron-closed'} aria-hidden="true">
         ▾
       </span>
@@ -119,7 +119,7 @@ function ToolCard({ sessionId, call, result }: { sessionId: string; call?: ToolC
   const [open, setOpen] = useState(false);
   const input = useFullContent(sessionId, call?.ref, open && call?.moreInput === true);
   const output = useFullContent(sessionId, result?.ref, open && result?.truncated === true);
-  const name = call ? call.name : 'Risultato';
+  const name = call ? call.name : 'Result';
 
   const toggle = () => {
     if (!open) {
@@ -138,7 +138,7 @@ function ToolCard({ sessionId, call, result }: { sessionId: string; call?: ToolC
   const states = [input.content.status, output.content.status];
 
   return (
-    <article className="tool-card vx-surface-1" aria-label={`Strumento: ${name}`}>
+    <article className="tool-card vx-surface-1" aria-label={`Tool: ${name}`}>
       <button type="button" className="tool-card-toggle" aria-expanded={open} onClick={toggle}>
         <span className="tool-card-name">{name}</span>
         <span className="tool-card-argument" title={call?.summary}>
@@ -148,7 +148,7 @@ function ToolCard({ sessionId, call, result }: { sessionId: string; call?: ToolC
       </button>
       {open && blocks.length > 0 && <pre className="tool-card-output">{blocks.join('\n\n')}</pre>}
       {open && states.includes('loading') && <ProgressIndicator className="tool-card-state" />}
-      {open && states.includes('failed') && <ErrorMessage className="tool-card-state">Impossibile caricare il contenuto completo.</ErrorMessage>}
+      {open && states.includes('failed') && <ErrorMessage className="tool-card-state">Could not load the full content.</ErrorMessage>}
     </article>
   );
 }
@@ -157,13 +157,13 @@ function MessageBlock({ item }: { item: UserItem | AssistantItem }) {
   const claude = item.kind === 'assistant';
   const time = item.kind === 'user' && item.timestamp !== undefined ? formatMessageTime(item.timestamp, new Date()) : '';
   return (
-    <article className={claude ? 'message message-claude' : 'message message-user'} aria-label={claude ? 'Claude' : 'Utente'}>
+    <article className={claude ? 'message message-claude' : 'message message-user'} aria-label={claude ? 'Claude' : 'You'}>
       <span className={claude ? 'message-avatar message-avatar-claude' : 'avatar message-avatar'} aria-hidden="true">
-        {claude ? '✦' : 'T'}
+        {claude ? '✦' : 'U'}
       </span>
       <div className="message-body">
         <div className="message-meta">
-          <span className="message-name">{claude ? 'Claude' : 'Tu'}</span>
+          <span className="message-name">{claude ? 'Claude' : 'You'}</span>
           {time && item.kind === 'user' && (
             <time className="message-time" dateTime={item.timestamp}>
               {time}
@@ -244,12 +244,12 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
     <div className="conversation-view">
       <SessionHeader
         session={session}
-        line="Aperta in un altro terminale"
+        line="Open in Another Terminal"
         actions={<ResumeHereButton sessionId={sessionId} onResumed={onResumed} />}
         notice={
           <span className="mono-chip vx-surface-2 read-only-chip">
             <LockIcon />
-            Sola lettura
+            Read-only
           </span>
         }
       />
@@ -258,11 +258,11 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
           <div className="conversation-column">
             {items === null &&
               (unavailable ? (
-                <AreaState kind="error" title="Conversazione non disponibile." />
+                <AreaState kind="error" title="Conversation not available." />
               ) : (
-                <AreaState kind="loading" title="Caricamento…" />
+                <AreaState kind="loading" title="Loading…" />
               ))}
-            {items?.length === 0 && <AreaState kind="empty" title="Nessun messaggio." />}
+            {items?.length === 0 && <AreaState kind="empty" title="No messages." />}
             {entries.map((entry) =>
               entry.kind === 'tool' ? (
                 <ToolCard key={entry.key} sessionId={sessionId} call={entry.call} result={entry.result} />
@@ -275,7 +275,7 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
         {unseen > 0 && (
           <button type="button" className="vx-glass new-messages" onClick={jumpToEnd}>
             <ArrowDownIcon />
-            {unseen === 1 ? '1 nuovo messaggio' : `${unseen} nuovi messaggi`}
+            {unseen === 1 ? '1 new message' : `${unseen} new messages`}
           </button>
         )}
       </div>

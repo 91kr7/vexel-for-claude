@@ -24,11 +24,11 @@ interface ResumeDialogProps {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  session_not_found: 'La sessione non esiste più.',
-  folder_not_found: 'La cartella del progetto non esiste.',
+  session_not_found: 'The session no longer exists.',
+  folder_not_found: 'The project folder does not exist.',
 };
-const LOAD_FAILED = 'Caricamento delle sessioni passate non riuscito.';
-const RESUME_FAILED = 'Ripresa della sessione non riuscita.';
+const LOAD_FAILED = 'Could not load the past sessions.';
+const RESUME_FAILED = 'Could not resume the session.';
 
 async function errorMessage(response: Response): Promise<string> {
   const body = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -37,7 +37,7 @@ async function errorMessage(response: Response): Promise<string> {
 
 function formatDate(iso: string): string {
   const time = new Date(iso);
-  return `${time.toLocaleDateString('it-IT')} ${time.toLocaleTimeString('it-IT')}`;
+  return `${time.toLocaleDateString('en-GB')} ${time.toLocaleTimeString('en-GB')}`;
 }
 
 export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
@@ -90,9 +90,9 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
   return (
     <>
       <Dialog
-        title="Riprendi sessione"
+        title="Resume Session"
         className="resume-dialog"
-        primaryLabel="Riprendi"
+        primaryLabel="Resume"
         onPrimary={() => {
           if (selected !== null) choose(selected);
         }}
@@ -103,10 +103,10 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
         <div
           className="dialog-scroll"
           role={groups?.length ? 'radiogroup' : undefined}
-          aria-label={groups?.length ? 'Sessioni passate' : undefined}
+          aria-label={groups?.length ? 'Past Sessions' : undefined}
         >
-          {groups === null && error === null && <AreaState kind="loading" size="compact" title="Caricamento…" />}
-          {groups?.length === 0 && <AreaState kind="empty" size="compact" icon={<HistoryIcon />} title="Nessuna sessione da riprendere." />}
+          {groups === null && error === null && <AreaState kind="loading" size="compact" title="Loading…" />}
+          {groups?.length === 0 && <AreaState kind="empty" size="compact" icon={<HistoryIcon />} title="No sessions to resume." />}
           {groups?.map((group) => (
             <section key={group.folder} className="past-session-group" aria-label={group.folder}>
               <h3 className="section-label section-label-path dialog-section-heading">{group.folder}</h3>
@@ -127,7 +127,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
                         {session.runningElsewhere && (
                           <span id={`${id}-running`} className="status-pill state-needs_input past-session-running">
                             <TerminalIcon />
-                            In esecuzione in un terminale
+                            Running in a terminal
                           </span>
                         )}
                       </span>

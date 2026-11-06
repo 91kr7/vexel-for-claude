@@ -54,10 +54,10 @@ export function NeedsInputSnackbar({ session, onOpen }: NeedsInputSnackbarProps)
   return (
     <div className="snackbar vx-glass" role="status">
       <span className="snackbar-text">
-        <b>{projectName(session.folder)}</b> richiede il tuo input
+        <b>{projectName(session.folder)}</b> needs your input
       </span>
       <button type="button" className="snackbar-action" onClick={() => onOpen(session.id)}>
-        Apri
+        Open
       </button>
     </div>
   );

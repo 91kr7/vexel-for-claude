@@ -15,10 +15,10 @@ type: frontend function
 
     | `id` | `title` | Sessions |
     |------|---------|----------|
-    | `needs-input` | "Richiedono input" | state `needs_input`, hosted or external |
-    | `running` | "In corso" | hosted, state `working` or `idle` |
-    | `external` | "In altri terminali" | external, state `working` or `idle` |
-    | `ended` | "Terminate" | state `ended` |
+    | `needs-input` | "Needs Input" | state `needs_input`, hosted or external |
+    | `running` | "Running" | hosted, state `working` or `idle` |
+    | `external` | "In Other Terminals" | external, state `working` or `idle` |
+    | `ended` | "Ended" | state `ended` |
 
   - a group with no session is left out.
   - inside each group, the most recent `lastActivity` comes first. Equal times keep their input order.
@@ -36,3 +36,4 @@ type: frontend function
 
 - `plan-claude_sessions_client/REQ-16`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-16`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-17`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-18`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`

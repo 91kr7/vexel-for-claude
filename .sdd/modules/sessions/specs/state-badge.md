@@ -16,10 +16,10 @@ Props:
 
 | `state` | Name | Colour | Dot pulses |
 |---------|------|--------|-----------|
-| `working` | "Lavora" | emerald | yes |
-| `needs_input` | "Richiede input" | amber | yes |
-| `idle` | "In attesa" | zinc | no |
-| `ended` | "Terminata" | zinc | no |
+| `working` | "Running" | emerald | yes |
+| `needs_input` | "Needs Input" | amber | yes |
+| `idle` | "Idle" | zinc | no |
+| `ended` | "Ended" | zinc | no |
 
 "Colour" is the 400 tone for the dot and the text, the 500 tone at 15 % for a fill and at 30 % for a border.
 
@@ -43,3 +43,4 @@ Shows:
 
 - `plan-claude_sessions_client-ui_redesign/REQ-12`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-31`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-2`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`

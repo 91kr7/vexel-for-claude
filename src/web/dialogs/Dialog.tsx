@@ -119,7 +119,7 @@ export function Dialog({
           <h2 id={titleId} className="dialog-title">
             {title}
           </h2>
-          <button type="button" className="dialog-esc" aria-label="Chiudi (Esc)" onClick={onCancel}>
+          <button type="button" className="dialog-esc" aria-label="Close (Esc)" onClick={onCancel}>
             [Esc]
           </button>
         </div>
@@ -137,7 +137,7 @@ export function Dialog({
           </div>
           <div className="modal-actions">
             <button type="button" className="button-neutral dialog-cancel" onClick={onCancel} autoFocus={initialFocus === 'cancel'}>
-              Annulla
+              Cancel
             </button>
             <button
               type="button"

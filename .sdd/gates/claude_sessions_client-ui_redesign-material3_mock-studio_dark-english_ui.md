@@ -15,3 +15,6 @@
 | 2026-11-06 | plan | mock texts not used | decided | "Orchestrated Sessions" dropped for REQ-15 fit; Stop/Interrupt, Permission Required, empty state are different elements; for human review |
 | 2026-11-06 | plan | `.archi` GUI language line | decided | Updated by the `english-ui` developer; batch decision, no INT |
 | 2026-11-06 | plan | G3 coverage | pass | 16 REQ / 26 INT, one batch, paths exist, every REQ in a scenario |
+| 2026-11-06 | dev | divergence INT-18, INT-14, INT-16, INT-26 | decided | No code needed: loading text from ProgressIndicator default (INT-8), accessible names are the visible text, no Italian left |
+| 2026-11-06 | dev | divergence resume dialog date | decided | `en-GB` locale keeps the it-IT shape: day first, 24-hour, seconds (REQ-8) |
+| 2026-11-06 | dev | G4 english-ui | pass | Build re-run green; diff = 20 INT sources + specs, indexes, `.archi`; no test or plan file; no Italian left in `src/web` |

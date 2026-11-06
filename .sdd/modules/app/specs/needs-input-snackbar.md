@@ -6,7 +6,7 @@ type: UI component
 
 # NeedsInputSnackbar
 
-**Purpose** → an in-page alert when a session that is not open starts to need input, with "Apri" to open it. It copies `#toast-pill` of `.sdd/mockups/studio-dark/mock.html`.
+**Purpose** → an in-page alert when a session that is not open starts to need input, with "Open" to open it. It copies `#toast-pill` of `.sdd/mockups/studio-dark/mock.html`.
 
 ## Contract
 
@@ -29,15 +29,15 @@ else → null
 
 `NeedsInputSnackbar` props:
 - `session` → the session to show.
-- `onOpen(sessionId)` → called by "Apri".
+- `onOpen(sessionId)` → called by "Open".
 
 Shows:
 - a `role="status"` `.vx-glass` box, fixed 20 px from the right and bottom edges of the window, above the page (z-index 50) and below the dialogs. Padding 8 × 14 px, 8 px radius, mono 12/16 px in `--text-primary`, 12 px gap.
-- the text "<progetto> richiede il tuo input". "<progetto>" is the last segment of the session folder, in bold (mono 500).
-- the button "Apri" → a text button, mono 12 px weight 500, `--accent-primary`, underlined on hover.
+- the text "<project> needs your input". "<project>" is the last segment of the session folder, in bold (mono 500).
+- the button "Open" → a text button, mono 12 px weight 500, `--accent-primary`, underlined on hover.
 
 Actions:
-- "Apri" → `onOpen(session.id)`.
+- "Open" → `onOpen(session.id)`.
 
 ## Rules and invariants
 
@@ -55,3 +55,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-13`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-15`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-41`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`

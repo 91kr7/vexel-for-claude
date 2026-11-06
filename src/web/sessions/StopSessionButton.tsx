@@ -4,7 +4,7 @@ import { ErrorMessage } from '../feedback/ErrorMessage';
 import { Spinner } from '../feedback/ProgressIndicator';
 import type { SessionState } from './live-session-store';
 
-const STILL_WORKING = ' sta ancora lavorando. Il turno in corso verrà interrotto; potrai riprendere la conversazione dalla cronologia.';
+const STILL_WORKING = ' is still working. The current turn will be interrupted. You can resume the conversation from the history.';
 
 interface StopSessionButtonProps {
   sessionId: string;
@@ -49,19 +49,19 @@ export function StopSessionButton({ sessionId, state, folderName }: StopSessionB
             ■
           </span>
         )}
-        Termina
+        Terminate
       </button>
-      {failed && <ErrorMessage>Terminazione della sessione non riuscita.</ErrorMessage>}
+      {failed && <ErrorMessage>Could not terminate the session.</ErrorMessage>}
       {confirming && (
         <WarningDialog
-          title="Terminare la sessione?"
+          title="Terminate the Session?"
           description={
             <>
-              {folderName ? <b>{folderName}</b> : 'La sessione'}
+              {folderName ? <b>{folderName}</b> : 'The session'}
               {STILL_WORKING}
             </>
           }
-          primaryLabel="Termina"
+          primaryLabel="Terminate"
           onPrimary={() => void stop()}
           onCancel={() => setConfirming(false)}
         />

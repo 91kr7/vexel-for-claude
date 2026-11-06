@@ -7,9 +7,9 @@
 | StartSessionRoute | REST endpoint | `src/server/sessions/start-session-route.ts` | `POST /api/sessions`: starts a session in an existing folder | `specs/start-session-route.md` |
 | StopSessionRoute | REST endpoint | `src/server/sessions/stop-session-route.ts` | `POST /api/sessions/:id/stop`: stops the CLI process, SIGTERM then SIGKILL | `specs/stop-session-route.md` |
 | AttachSessionRoute | REST endpoint (WebSocket) | `src/server/sessions/attach-session-route.ts` | `GET /api/sessions/:id/attach`: snapshot, live output, input and resize | `specs/attach-session-route.md` |
-| SessionView | UI component | `src/web/sessions/SessionView.tsx` | Open hosted session: 40 px subbar with "Interrompi" and "Termina", xterm.js terminal on the canvas panel, Ctrl+Shift+L hint with key badges | `specs/session-view.md` |
+| SessionView | UI component | `src/web/sessions/SessionView.tsx` | Open hosted session: 40 px subbar with "Interrupt" and "Terminate", xterm.js terminal on the canvas panel, Ctrl+Shift+L hint with key badges | `specs/session-view.md` |
 | SessionHeader | UI component | `src/web/sessions/SessionHeader.tsx` | 40 px subbar of the open session: folder name, "/", path, line chip, state pill, actions | `specs/session-header.md` |
-| StopSessionButton | UI component | `src/web/sessions/StopSessionButton.tsx` | Rose "Termina" button of the open session, with confirmation when working | `specs/stop-session-button.md` |
+| StopSessionButton | UI component | `src/web/sessions/StopSessionButton.tsx` | Rose "Terminate" button of the open session, with confirmation when working | `specs/stop-session-button.md` |
 | HookSettings | configuration | `src/server/sessions/hook-settings.ts`, `src/server/sessions/hook-forwarder.mjs` | Claude Code settings file whose hooks post each event to the server | `specs/hook-settings.md` |
 | SessionStateTracker | backend service | `src/server/sessions/session-state-tracker.ts` | State, label, last activity, waiting tool and Claude Code session id of each session, with change listeners | `specs/session-state-tracker.md` |
 | HookEventRoute | REST endpoint | `src/server/sessions/hook-event-route.ts` | `POST /api/sessions/:id/hook-events`: passes a hook event to the tracker | `specs/hook-event-route.md` |
@@ -17,9 +17,9 @@
 | SessionEventsRoute | REST endpoint (WebSocket) | `src/server/sessions/session-events-route.ts` | `GET /api/sessions/events`: pushes each session change to the pages | `specs/session-events-route.md` |
 | groupSessions, orderSessions | frontend function | `src/web/sessions/session-order.ts` | The four list groups in order, latest activity first inside each | `specs/session-order.md` |
 | LiveSessionStore | frontend service | `src/web/sessions/live-session-store.ts` | Session list in the page and its load status, loaded once and kept current by events | `specs/live-session-store.md` |
-| SessionList | UI component | `src/web/sessions/SessionList.tsx` | Grouped compact session rows with status dots, the amber needs-input card with "Rispondi"; a click opens a session | `specs/session-list.md` |
-| NeedsInputCounter | UI component | `src/web/sessions/NeedsInputCounter.tsx` | Amber pill "N richiede input" of the list panel, hidden at zero, and the count for the rail badge | `specs/needs-input-counter.md` |
+| SessionList | UI component | `src/web/sessions/SessionList.tsx` | Grouped compact session rows with status dots, the amber needs-input card with "Reply"; a click opens a session | `specs/session-list.md` |
+| NeedsInputCounter | UI component | `src/web/sessions/NeedsInputCounter.tsx` | Amber pill "N need input" ("1 needs input") of the list panel, hidden at zero, and the count for the rail badge | `specs/needs-input-counter.md` |
 | StateBadge | UI component | `src/web/sessions/StateBadge.tsx` | State of a session as a pulsing dot, a mono name or the tinted pill, in the status colours | `specs/state-badge.md` |
 | Avatar | UI component | `src/web/sessions/Avatar.tsx` | Neutral 24 px square with the folder initials, and the folder-name helpers | `specs/avatar.md` |
-| RelativeTime | UI component | `src/web/sessions/RelativeTime.tsx` | "ora", "N min fa", `HH:MM` or date of a last activity, refreshed every 30 s | `specs/relative-time.md` |
+| RelativeTime | UI component | `src/web/sessions/RelativeTime.tsx` | "Just now", "Nm ago", `HH:MM` or date of a last activity, refreshed every 30 s | `specs/relative-time.md` |
 | ProgressBar | UI component | `src/web/sessions/ProgressBar.tsx` | Thin emerald indeterminate bar of a working entry | `specs/progress-bar.md` |

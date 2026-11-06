@@ -19,7 +19,7 @@ function PermissionText({ session }: { session: SessionSummary }) {
   if (session.waitingTool === undefined) return <>{session.label}</>;
   return (
     <>
-      Permesso per <b>{session.waitingTool}</b>
+      Permission for <b>{session.waitingTool}</b>
     </>
   );
 }
@@ -45,7 +45,7 @@ function EntryRow({ session, open, onOpen }: EntryProps) {
       <span className="session-entry-line">
         <StateBadge state={session.state} variant="dot" />
         <EntryTitle session={session} />
-        {externalNeedsInput && <span className="mono-chip vx-surface-2 session-external">Esterna</span>}
+        {externalNeedsInput && <span className="mono-chip vx-surface-2 session-external">External</span>}
         <StateBadge state={session.state} />
       </span>
       <span className="session-entry-line session-entry-detail">
@@ -71,7 +71,7 @@ function NeedsInputCard({ session, open, onOpen }: EntryProps) {
         onClick={() => onOpen(session.id)}
       >
         <span className="session-entry-line">
-          <span className="perm-tag">Richiede input</span>
+          <span className="perm-tag">Needs Input</span>
           <EntryTitle session={session} />
         </span>
         <span className="session-entry-label" title={session.label}>
@@ -83,7 +83,7 @@ function NeedsInputCard({ session, open, onOpen }: EntryProps) {
       </span>
       <div className="session-card-actions">
         <button type="button" className="button-primary session-card-reply" onClick={() => onOpen(session.id)}>
-          Rispondi
+          Reply
         </button>
       </div>
     </div>
@@ -100,11 +100,11 @@ interface SessionListProps {
 export function SessionList({ sessions, openSessionId, onOpen, status = 'ready' }: SessionListProps) {
   return (
     <div className="session-list">
-      {status === 'error' && <AreaState kind="error" size="compact" title="Connessione al server persa. Ricarica la pagina." />}
+      {status === 'error' && <AreaState kind="error" size="compact" title="Connection to the server lost. Reload the page." />}
       {status === 'loading' ? (
-        <AreaState kind="loading" size="compact" title="Caricamento…" />
+        <AreaState kind="loading" size="compact" title="Loading…" />
       ) : sessions.length === 0 ? (
-        status === 'ready' && <AreaState kind="empty" size="compact" title="Nessuna sessione." />
+        status === 'ready' && <AreaState kind="empty" size="compact" title="No sessions." />
       ) : (
         groupSessions(sessions).map((group) => (
           <div key={group.id} className="session-group">

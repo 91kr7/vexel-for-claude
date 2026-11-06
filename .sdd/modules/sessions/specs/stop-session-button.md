@@ -6,7 +6,7 @@ type: UI component
 
 # StopSessionButton
 
-**Purpose** → the "Termina" button of the open session, with its confirmation.
+**Purpose** → the "Terminate" button of the open session, with its confirmation.
 
 ## Contract
 
@@ -17,16 +17,16 @@ Props:
 
 Shows:
 - `state` is `ended` → nothing. The button disappears also while the confirmation is open.
-- any other `state`, `undefined` included → the button "Termina": `.button-danger` (rose, look of `#subbar-stop-btn`) with the decorative glyph "■" before the text. Its accessible name is "Termina".
-- while the stop runs → "Termina" shows the Spinner (ProgressIndicator) in place of "■", is disabled and has `aria-busy="true"`. It stays so after a `2xx` answer, until `state` becomes `ended` and the button disappears.
-- a failed stop → the button is enabled again, and an ErrorMessage "Terminazione della sessione non riuscita." shows next to it. The next stop request hides the message.
+- any other `state`, `undefined` included → the button "Terminate": `.button-danger` (rose, look of `#subbar-stop-btn`) with the decorative glyph "■" before the text. Its accessible name is "Terminate".
+- while the stop runs → "Terminate" shows the Spinner (ProgressIndicator) in place of "■", is disabled and has `aria-busy="true"`. It stays so after a `2xx` answer, until `state` becomes `ended` and the button disappears.
+- a failed stop → the button is enabled again, and an ErrorMessage "Could not terminate the session." shows next to it. The next stop request hides the message.
 
 Actions:
-- "Termina", `state` is `working` → opens a WarningDialog in the `error` tone (rose primary action), the title "Terminare la sessione?", the buttons "Annulla" (focused) and "Termina" (primary action). No request yet.
-  - its text → "**<folderName>** sta ancora lavorando. Il turno in corso verrà interrotto; potrai riprendere la conversazione dalla cronologia." The folder name is bold, in `--text-primary`. Without `folderName` the text starts with "La sessione", not bold.
-  - "Annulla" or Esc → the dialog closes. No request.
-  - "Termina" → the dialog closes and the stop request leaves.
-- "Termina", any other `state` → the stop request leaves at once.
+- "Terminate", `state` is `working` → opens a WarningDialog in the `error` tone (rose primary action), the title "Terminate the Session?", the buttons "Cancel" (focused) and "Terminate" (primary action). No request yet.
+  - its text → "**<folderName>** is still working. The current turn will be interrupted. You can resume the conversation from the history." The folder name is bold, in `--text-primary`. Without `folderName` the text starts with "The session", not bold.
+  - "Cancel" or Esc → the dialog closes. No request.
+  - "Terminate" → the dialog closes and the stop request leaves.
+- "Terminate", any other `state` → the stop request leaves at once.
 - stop request → `POST /api/sessions/:id/stop`, no body. A network error or a non-`2xx` answer is a failed stop.
 
 ## Dependencies
@@ -41,3 +41,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-29`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-31`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-34`
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-47`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-48`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-52`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-48`
+- `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`

@@ -17,12 +17,12 @@ interface FolderChooserProps {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  folder_not_found: 'La cartella non esiste.',
-  invalid_path: 'Inserisci un percorso assoluto.',
-  folder_not_readable: 'La cartella non è leggibile.',
+  folder_not_found: 'The folder does not exist.',
+  invalid_path: 'Enter an absolute path.',
+  folder_not_readable: 'The folder is not readable.',
 };
-const LISTING_FAILED = 'Lettura della cartella non riuscita.';
-const START_FAILED = 'Avvio della sessione non riuscito.';
+const LISTING_FAILED = 'Could not read the folder.';
+const START_FAILED = 'Could not start the session.';
 
 async function errorMessage(response: Response, fallback: string): Promise<string> {
   const body = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -154,17 +154,17 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
 
   return (
     <Dialog
-      title="Nuova sessione"
-      description="Scegli il progetto in cui avviare Claude Code."
-      formName="Scegli la cartella del progetto"
+      title="New Claude Code Session"
+      description="Choose the project where Claude Code starts."
+      formName="Choose the Project Folder"
       className="folder-chooser"
-      primaryLabel="Avvia sessione"
+      primaryLabel="Start Session"
       onPrimary={() => void start()}
       primaryBusy={busy}
       onCancel={onCancel}
     >
       <label className="field">
-        <span className="field-label">Cartella del progetto</span>
+        <span className="field-label">Working Directory Path</span>
         <input
           className="field-input"
           type="text"
@@ -186,8 +186,8 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
       <div className="dialog-scroll">
         {recentFolders.length > 0 && (
           <>
-            <p className="section-label dialog-section-heading">Recenti</p>
-            <div className="dialog-rows" role="radiogroup" aria-label="Progetti recenti">
+            <p className="section-label dialog-section-heading">Recent</p>
+            <div className="dialog-rows" role="radiogroup" aria-label="Recent Projects">
               {recentFolders.map((folder, index) => {
                 const checked = pathInput.trim() === folder;
                 const id = `${rowId}-recent-${index}`;
@@ -217,7 +217,7 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
             </div>
           </>
         )}
-        <p className="section-label dialog-section-heading">Cartelle</p>
+        <p className="section-label dialog-section-heading">Folders</p>
         <ul className="dialog-rows folder-list" ref={listRef}>
           {listing?.parent != null && (
             <FolderRow id={`${rowId}-parent`} name=".." path={listing.parent} onOpen={() => void browse(listing.parent ?? undefined)} />

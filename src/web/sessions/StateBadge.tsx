@@ -1,10 +1,10 @@
 import type { SessionState } from './live-session-store';
 
 const STATE_NAMES: Record<SessionState, string> = {
-  working: 'Lavora',
-  needs_input: 'Richiede input',
-  idle: 'In attesa',
-  ended: 'Terminata',
+  working: 'Running',
+  needs_input: 'Needs Input',
+  idle: 'Idle',
+  ended: 'Ended',
 };
 
 export function StateDot({ state }: { state: SessionState }) {

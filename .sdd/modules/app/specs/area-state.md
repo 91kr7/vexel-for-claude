@@ -12,7 +12,7 @@ type: UI component
 
 Props:
 - `kind` → `empty`, `loading` or `error`.
-- `title` → the Italian text of the state.
+- `title` → the text of the state.
 - `text` → optional second text.
 - `icon` → optional icon of the tile. Default: SquareTerminalIcon (`empty`), the rotating Spinner (`loading`), CircleXIcon (`error`).
 - `size` → `full` (default) or `compact`.
