@@ -840,7 +840,7 @@ test.describe('external session view', () => {
 // ---------------------------------------------------------------------------------------------------------------------
 test.describe('dialogs', () => {
   // REQ-43, REQ-44, REQ-46, REQ-47 — scenario "The new-session dialog uses the Studio modal"
-  test('the new-session dialog has the mock modal: blurred backdrop, header with dot and "[Esc]", mono field, surface-1 footer', async ({ page }) => {
+  test('the new-session dialog has the mock modal: dark backdrop with no blur, header with dot and "[Esc]", mono field, surface-1 footer', async ({ page }) => {
     await page.goto('/');
     await button(topBar(page), 'Nuova sessione').click();
     const dialog = chooser(page);
@@ -849,7 +849,7 @@ test.describe('dialogs', () => {
     // REQ-43: backdrop and frame
     const backdrop = dialog.locator('xpath=..');
     expect(await style(backdrop, 'background-color')).toBe('rgba(0, 0, 0, 0.65)');
-    expect.soft(await style(backdrop, 'backdrop-filter')).toBe('blur(4px)');
+    expect(await style(backdrop, 'backdrop-filter')).toBe('none');
     expect(await style(dialog, 'background-color')).toBe(SURFACE_2);
     expect(await style(dialog, 'border-top-color')).toBe(BORDER_STRONG);
     expect(await style(dialog, 'border-top-left-radius')).toBe('12px');

@@ -31,3 +31,6 @@
 | 2026-11-06 | plan | G3 coverage amendment | pass | INT-48 drops the blur, acceptance scenario adds smooth scroll of "Riprendi sessione"; coverage unchanged |
 | 2026-11-06 | dev | batch reopened | decided | `studio-dark-restyle` certified → in progress, human asked to reopen it as a fix |
 | 2026-11-06 | dev | G4 studio-dark-restyle fix | pass | Only `.modal-backdrop` blur removed in `src/web/styles.css`, spec `dialog.md` updated; build green, built CSS keeps only the `.vx-glass` blur(14px) |
+| 2026-11-06 | test | G5 studio-dark-restyle fix | pass | `e2e/studio-dark.spec.ts` expects backdrop-filter `none` (REQ-43); gatekeeper re-run 37/37; unit 701 green; e2e 237/238 |
+| 2026-11-06 | test | red e2e outside perimeter | human decision | `e2e/open-session-external.spec.ts:301` (1 s limit, earlier plan REQ-24) red against the orphan server on 3100 with 158 leftover sessions; human accepted it and asked to merge |
+| 2026-11-06 | closing | merge into main | pass | The only batch certified again |
