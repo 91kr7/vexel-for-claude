@@ -1,4 +1,4 @@
-// e2e of plan-desktop_app, batches desktop-window and window-tray, of plan-light_theme, batch remembered-theme, and of plan-mac_title_bar, batch title-bar. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
+// e2e of plan-desktop_app, batches desktop-window and window-tray, of plan-light_theme, batch remembered-theme, and of plan-mac_title_bar, batches title-bar and window-buttons. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -768,5 +768,72 @@ test.describe('Frameless window', () => {
       return { before, afterAlt: current.isMenuBarVisible(), applicationMenu: Menu.getApplicationMenu() !== null };
     });
     expect(menuBar, 'DesktopApp: no menu bar, also on Alt; the application menu stays').toEqual({ before: false, afterAlt: false, applicationMenu: true });
+  });
+});
+
+// plan-mac_title_bar, batch window-buttons: the buttons drive the real window. Their look and hover are checked in e2e/window-buttons.spec.ts.
+test.describe('Window buttons', () => {
+  test.describe.configure({ timeout: 90_000 });
+
+  test.beforeAll(buildDesktop);
+
+  const isMaximized = (app: ElectronApplication) => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isMaximized());
+  const isMinimized = async (app: ElectronApplication) => (await windowState(app))[0]?.minimized;
+  const restoreFromMinimized = (app: ElectronApplication) => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.restore());
+
+  test('REQ-16, REQ-17, REQ-18, REQ-21: green maximizes and restores, yellow minimizes, red hides the window to the tray with a working session', async () => {
+    const port = await freePort();
+    const env = await desktopEnv(port);
+    const app = await launchDesktop(env);
+    const window = await app.firstWindow();
+    await expect(list(window)).toBeVisible({ timeout: 20_000 });
+    const id = await startSession(port, path.join(env.HOME!, 'project-red-button'));
+    await makeWorking(port, id);
+    const bar = window.getByRole('banner');
+
+    await bar.getByRole('button', { name: 'Maximize', exact: true }).click();
+    await expect.poll(() => isMaximized(app), { message: 'REQ-18: the window maximizes' }).toBe(true);
+    await expect(bar.getByRole('button', { name: 'Restore', exact: true }), 'REQ-21: the green button now restores').toBeVisible();
+    await bar.getByRole('button', { name: 'Restore', exact: true }).click();
+    await expect.poll(() => isMaximized(app), { message: 'REQ-18: the window restores' }).toBe(false);
+    await expect(bar.getByRole('button', { name: 'Maximize', exact: true })).toBeVisible();
+
+    await bar.getByRole('button', { name: 'Minimize', exact: true }).click();
+    await expect.poll(() => isMinimized(app), { message: 'REQ-17: the window minimizes' }).toBe(true);
+    await restoreFromMinimized(app);
+    await expect.poll(() => isMinimized(app)).toBe(false);
+
+    await bar.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect.poll(async () => (await windowState(app)).map((state) => state.visible), { message: 'REQ-16: the window hides' }).toEqual([false]);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    expect(app.process().exitCode, 'REQ-16: the app keeps running').toBeNull();
+    expect(app.process().signalCode).toBeNull();
+    if (hasTrayHost()) expect(trayItemOf(app.process().pid!), 'REQ-16: the tray icon stays').toBeDefined();
+    expect(await healthStatus(port), 'REQ-16: the backend keeps running').toBe(200);
+    expect(await sessionState(port, id), 'REQ-16: the session keeps working').toBe('working');
+  });
+
+  test('REQ-23: on the backend error message the bridge is there and the buttons maximize, minimize and close the window', async () => {
+    const holder = http.createServer((_request, response) => response.writeHead(404).end());
+    holders.push(holder);
+    await new Promise<void>((resolve) => holder.listen(0, '127.0.0.1', resolve));
+    const app = await launchDesktop(await desktopEnv((holder.address() as net.AddressInfo).port));
+    const window = await app.firstWindow();
+    await expect(window.getByText(ERROR, { exact: true })).toBeVisible({ timeout: 30_000 });
+
+    await window.getByRole('button', { name: 'Maximize', exact: true }).click();
+    await expect.poll(() => isMaximized(app), { message: 'the window maximizes' }).toBe(true);
+    await expect(window.getByRole('button', { name: 'Restore', exact: true }), 'REQ-21 on the startup page').toBeVisible();
+    await window.getByRole('button', { name: 'Restore', exact: true }).click();
+    await expect.poll(() => isMaximized(app), { message: 'the window restores' }).toBe(false);
+
+    await window.getByRole('button', { name: 'Minimize', exact: true }).click();
+    await expect.poll(() => isMinimized(app), { message: 'the window minimizes' }).toBe(true);
+    await restoreFromMinimized(app);
+    await expect.poll(() => isMinimized(app)).toBe(false);
+
+    await window.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect.poll(async () => (await windowState(app)).map((state) => state.visible), { message: 'the window hides' }).toEqual([false]);
+    expect(app.process().exitCode, 'the app keeps running').toBeNull();
   });
 });

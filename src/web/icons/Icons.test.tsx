@@ -17,6 +17,9 @@ import {
   HistoryIcon,
   LoaderCircleIcon,
   LockIcon,
+  Maximize2Icon,
+  Minimize2Icon,
+  MinusIcon,
   LogInIcon,
   MoonIcon,
   PencilIcon,
@@ -53,6 +56,9 @@ const icons: [string, ComponentType][] = [
   ['FolderPlusIcon', FolderPlusIcon],
   ['SunIcon', SunIcon],
   ['MoonIcon', MoonIcon],
+  ['MinusIcon', MinusIcon],
+  ['Maximize2Icon', Maximize2Icon],
+  ['Minimize2Icon', Minimize2Icon],
 ];
 
 const FOLDER = 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z';

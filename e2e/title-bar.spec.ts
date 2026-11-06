@@ -1,4 +1,4 @@
-// e2e of plan-mac_title_bar, batch title-bar, in the browser: the drag areas of the TopBar, the Dialog and the StartupPage.
+// e2e of plan-mac_title_bar, batches title-bar and window-buttons, in the browser: the drag areas of the TopBar, the Dialog and the StartupPage.
 // A fake `window.desktopBridge` makes the page behave as in the desktop window. The window manager's drag and double click
 // are not observable here: the tests check the `-webkit-app-region` areas that Electron hands to it.
 import { type Page, expect, test } from '@playwright/test';
@@ -195,9 +195,9 @@ test('in the browser no element of the page is a drag area', async ({ page }) =>
 });
 
 test.describe('StartupPage title bar', () => {
-  // REQ-10, StartupPage "Shows": an empty 48 px bar across the top, all of it a drag area, in the light top bar colours
+  // REQ-10, REQ-23, StartupPage "Shows": a 48 px bar across the top with only the window buttons, a drag area elsewhere, in the light top bar colours
   for (const state of [{ kind: 'loading' as const }, { kind: 'error' as const, outputLines: ['first line', 'Backend exited with code 1.'] }]) {
-    test(`${state.kind} state: an empty light 48 px bar across the top, all of it a drag area`, async ({ page }) => {
+    test(`${state.kind} state: a light 48 px bar across the top with only the window buttons, a drag area elsewhere`, async ({ page }) => {
       for (const width of [1280, 420]) {
         await page.setViewportSize({ width, height: 700 });
         await page.goto(startupPageUrl(state));
@@ -213,14 +213,14 @@ test.describe('StartupPage title bar', () => {
           return {
             box: [box.left, box.top, box.width, box.height],
             text: element.textContent,
-            children: element.children.length,
+            controls: [...element.querySelectorAll('button, a, input, [tabindex]')].map((control) => control.getAttribute('aria-label')),
             background: s.backgroundColor,
             border: [s.borderBottomWidth, s.borderBottomStyle, s.borderBottomColor],
           };
         });
         expect(bar.box).toEqual([0, 0, width, 48]);
-        expect(bar.text, 'the bar is empty').toBe('');
-        expect(bar.children).toBe(0);
+        expect(bar.text, 'the bar holds no text').toBe('');
+        expect(bar.controls, 'the window buttons are its only controls').toEqual(['Close', 'Minimize', 'Maximize']);
         expect(bar.background).toBe('rgb(239, 234, 224)');
         expect(bar.border).toEqual(['1px', 'solid', 'rgba(28, 25, 23, 0.08)']);
 
