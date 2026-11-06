@@ -719,3 +719,198 @@ describe('AttentionMonitor turn-end events of external sessions', () => {
     expect(events).toEqual([]);
   });
 });
+
+interface ProcessEnd {
+  exitCode: number | undefined;
+  signal: number | undefined;
+  stopRequested: boolean;
+}
+
+class FakeRegistry {
+  readonly sessions = new Map<string, ProcessEnd>();
+
+  get(id: string): ProcessEnd | undefined {
+    return this.sessions.get(id);
+  }
+
+  end(id: string, end: Partial<ProcessEnd>): void {
+    this.sessions.set(id, { exitCode: undefined, signal: undefined, stopRequested: false, ...end });
+  }
+}
+
+const EXIT: ChangeCause = { type: 'exit' };
+
+function setupWithRegistry() {
+  const tracker = new FakeTracker();
+  const scanner = new FakeScanner();
+  const registry = new FakeRegistry();
+  const start = () => {
+    const monitor = new AttentionMonitor({ tracker, scanner, turns: new FakeTurns(), registry });
+    const events: AttentionEvent[] = [];
+    monitor.onEvent((event) => events.push(event));
+    return { monitor, events };
+  };
+  return { tracker, scanner, registry, start };
+}
+
+describe('AttentionMonitor session-end events', () => {
+  // plan-session_notifications/REQ-21, REQ-23: a signal the client did not send ends the session with no error
+  it('gives one session_end event with error false, at once, when a foreign signal ends a known hosted session', () => {
+    const { tracker, registry, start } = setupWithRegistry();
+    tracker.seed(hosted('h1', 'working'));
+    const { events } = start();
+
+    registry.end('h1', { signal: 9 });
+    tracker.set(hosted('h1', 'ended'), EXIT);
+
+    expect(events).toEqual([
+      { id: expect.stringMatching(UUID), sessionId: 'h1', kind: 'session_end', folder: '/projects/ai-client', label: 'Fix the login form', error: false },
+    ]);
+  });
+
+  // plan-session_notifications/REQ-21, REQ-23
+  it('gives one session_end event with error true when the process exits with a code other than 0', () => {
+    const { tracker, registry, start } = setupWithRegistry();
+    tracker.seed(hosted('h1', 'working'));
+    const { events } = start();
+
+    registry.end('h1', { exitCode: 1 });
+    tracker.set(hosted('h1', 'ended'), EXIT);
+
+    expect(events).toEqual([expect.objectContaining({ sessionId: 'h1', kind: 'session_end', error: true })]);
+  });
+
+  // plan-session_notifications/REQ-22: exit code 0 is the user's exit command
+  it('gives no event when the process exits with code 0', () => {
+    const { tracker, registry, start } = setupWithRegistry();
+    tracker.seed(hosted('h1', 'working'));
+    const { events } = start();
+
+    registry.end('h1', { exitCode: 0 });
+    tracker.set(hosted('h1', 'ended'), EXIT);
+
+    expect(events).toEqual([]);
+  });
+
+  // plan-session_notifications/REQ-22: Terminate, quit of the desktop app, server shutdown
+  it('gives no event when stop() was called, whatever the exit code or the signal', () => {
+    const { tracker, registry, start } = setupWithRegistry();
+    const ends: Partial<ProcessEnd>[] = [{ signal: 15 }, { signal: 9 }, { exitCode: 1 }, { exitCode: 0 }];
+    ends.forEach((_, i) => tracker.seed(hosted(`h${i}`, 'working')));
+    const { events } = start();
+
+    ends.forEach((end, i) => {
+      registry.end(`h${i}`, { ...end, stopRequested: true });
+      tracker.set(hosted(`h${i}`, 'ended'), EXIT);
+    });
+
+    expect(events).toEqual([]);
+  });
+
+  // plan-session_notifications/REQ-21: from any state the session was in
+  it('gives the event whatever the known state before the end', () => {
+    const { tracker, registry, start } = setupWithRegistry();
+    tracker.seed(hosted('h1', 'working'));
+    tracker.seed(hosted('h2', 'idle'));
+    tracker.seed(hosted('h3', 'needs_input'));
+    const { events } = start();
+
+    for (const id of ['h1', 'h2', 'h3']) {
+      registry.end(id, { signal: 9 });
+      tracker.set(hosted(id, 'ended'), EXIT);
+    }
+
+    expect(events.map((event) => [event.sessionId, event.kind])).toEqual([
+      ['h1', 'session_end'],
+      ['h2', 'session_end'],
+      ['h3', 'session_end'],
+    ]);
+  });
+
+  // plan-session_notifications/REQ-7: folder and label at the time of the state change
+  it('takes the folder and the label of the session as it ends', () => {
+    const { tracker, registry, start } = setupWithRegistry();
+    tracker.seed(hosted('h1', 'working'));
+    const { events } = start();
+
+    registry.end('h1', { exitCode: 2 });
+    tracker.set(hosted('h1', 'ended', { folder: '/projects/billing', label: 'A later label' }), EXIT);
+
+    expect(events).toEqual([expect.objectContaining({ folder: '/projects/billing', label: 'A later label' })]);
+  });
+
+  // plan-session_notifications/REQ-5: first sight is not a transition
+  it('gives no event for a hosted session first seen as it ends', () => {
+    const { tracker, registry, start } = setupWithRegistry();
+    const { events } = start();
+
+    registry.end('h1', { signal: 9 });
+    tracker.set(hosted('h1', 'ended'), EXIT);
+
+    expect(events).toEqual([]);
+  });
+
+  // AttentionMonitor: only a change caused by the process exit is checked
+  it('gives no event for a change to ended with another cause', () => {
+    const { tracker, registry, start } = setupWithRegistry();
+    tracker.seed(hosted('h1', 'working'));
+    const { events } = start();
+
+    registry.end('h1', { signal: 9 });
+    tracker.set(hosted('h1', 'ended'), { type: 'hook', hookEventName: 'SessionEnd' });
+
+    expect(events).toEqual([]);
+  });
+
+  // AttentionMonitor: no registry, no session-end event
+  it('gives no event when the monitor has no registry', () => {
+    const { tracker, scanner, turns } = setup();
+    tracker.seed(hosted('h1', 'working'));
+    const monitor = new AttentionMonitor({ tracker, scanner, turns });
+    const events: AttentionEvent[] = [];
+    monitor.onEvent((event) => events.push(event));
+
+    tracker.set(hosted('h1', 'ended'), EXIT);
+
+    expect(events).toEqual([]);
+  });
+
+  // AttentionMonitor: the registry has no Session with that id
+  it('gives no event when the registry has no session with that id', () => {
+    const { tracker, registry, start } = setupWithRegistry();
+    tracker.seed(hosted('h1', 'working'));
+    const { events } = start();
+
+    registry.end('other', { signal: 9 });
+    tracker.set(hosted('h1', 'ended'), EXIT);
+
+    expect(events).toEqual([]);
+  });
+
+  // AttentionMonitor: external sessions never give a session-end event
+  it('gives no event when an external session disappears', () => {
+    const { scanner, registry, start } = setupWithRegistry();
+    scanner.seed(external('e1', 'working'));
+    const { events } = start();
+
+    registry.end('e1', { signal: 9 });
+    scanner.remove('e1');
+
+    expect(events).toEqual([]);
+  });
+
+  // AttentionMonitor: list listeners run before the event listeners
+  it('calls the list listeners before the event listeners when a session in needs_input ends', () => {
+    const { tracker, scanner, registry } = setupWithRegistry();
+    tracker.seed(hosted('h1', 'needs_input'));
+    const monitor = new AttentionMonitor({ tracker, scanner, turns: new FakeTurns(), registry });
+    const calls: string[] = [];
+    monitor.onEvent((event) => calls.push(event.kind));
+    monitor.onNeedsInputChange((sessions) => calls.push(`list of ${sessions.length}`));
+
+    registry.end('h1', { exitCode: 1 });
+    tracker.set(hosted('h1', 'ended'), EXIT);
+
+    expect(calls).toEqual(['list of 0', 'session_end']);
+  });
+});

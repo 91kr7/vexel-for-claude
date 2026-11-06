@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { needsInputBody, notificationTexts, notificationTitle, turnEndBody } from './notification-texts.js';
+import { needsInputBody, notificationTexts, notificationTitle, sessionEndBody, turnEndBody } from './notification-texts.js';
 
 describe('notificationTitle', () => {
   // plan-session_notifications/REQ-7: folder name and label, as the list shows them
@@ -47,6 +47,19 @@ describe('turnEndBody', () => {
   });
 });
 
+describe('sessionEndBody', () => {
+  // plan-session_notifications/REQ-23
+  it('is "Session ended with an error" when the session ended with an error', () => {
+    expect(sessionEndBody(true)).toBe('Session ended with an error');
+  });
+
+  // plan-session_notifications/REQ-23
+  it('is "Session ended" otherwise', () => {
+    expect(sessionEndBody(false)).toBe('Session ended');
+    expect(sessionEndBody()).toBe('Session ended');
+  });
+});
+
 describe('notificationTexts', () => {
   // plan-session_notifications/REQ-7, REQ-8, REQ-9
   it('gives the title and the needs-input body of an event', () => {
@@ -60,5 +73,12 @@ describe('notificationTexts', () => {
     const base = { id: 'ev-2', sessionId: 's1', kind: 'turn_end' as const, folder: '/projects/billing', label: 'Review the invoices' };
     expect(notificationTexts({ ...base, excerpt: 'Done. The tests pass.' })).toEqual({ title: 'billing · Review the invoices', body: 'Done. The tests pass.' });
     expect(notificationTexts(base)).toEqual({ title: 'billing · Review the invoices', body: 'Claude finished' });
+  });
+
+  // plan-session_notifications/REQ-7, REQ-23
+  it('gives the title and the session-end body of an event', () => {
+    const base = { id: 'ev-3', sessionId: 's1', kind: 'session_end' as const, folder: '/projects/billing', label: 'Review the invoices' };
+    expect(notificationTexts({ ...base, error: true })).toEqual({ title: 'billing · Review the invoices', body: 'Session ended with an error' });
+    expect(notificationTexts({ ...base, error: false })).toEqual({ title: 'billing · Review the invoices', body: 'Session ended' });
   });
 });

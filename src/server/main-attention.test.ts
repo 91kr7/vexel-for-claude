@@ -1,4 +1,4 @@
-// REQ tests of plan-session_notifications, batches needs-input-notification and turn-end-notification, against the real server process.
+// REQ tests of plan-session_notifications, batches needs-input-notification, turn-end-notification and session-end-notification, against the real server process.
 import { type ChildProcess, spawn } from 'node:child_process';
 import { appendFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
@@ -9,7 +9,7 @@ import { FAKE_CLI, type WsClient, connectWs, delay, tempDir, waitFor, writeHisto
 
 const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-// REQ-2: every notification within 5 seconds of its state change.
+// plan-session_notifications/REQ-2
 const FIVE_SECONDS = 5000;
 // ExternalSessionScanner scans every 2 seconds: one full scan plus margin.
 const ONE_SCAN = 2600;
@@ -33,6 +33,7 @@ interface AttentionEvent {
   label: string;
   waitingTool?: string;
   excerpt?: string;
+  error?: boolean;
 }
 interface AttentionSession {
   sessionId: string;
@@ -361,10 +362,9 @@ describe('plan-session_notifications/REQ-15 an interrupted turn of a hosted sess
 
     terminal.send({ type: 'input', data: '\x1b' });
     await expect.poll(() => externalState(id), { timeout: FIVE_SECONDS }).toBe('idle');
-    // The transcript ends on a tool call: only the cause of the change (user input) keeps this silent.
     await delay(NO_EVENT_WAIT);
 
-    expect(eventsOf(client, id)).toEqual([]);
+    expect(eventsOf(client, id), 'the transcript ends on a tool call: only the input cause keeps this silent').toEqual([]);
   });
 });
 
@@ -411,5 +411,123 @@ describe('plan-session_notifications turn end of external sessions', { timeout: 
     await waitFor(() => turnEndsOf(client, 'ext-tool').length >= 1, 'external turn-end event', FIVE_SECONDS);
     expect(Date.now() - changedAt).toBeLessThan(FIVE_SECONDS);
     expect(turnEndsOf(client, 'ext-tool')[0]).not.toHaveProperty('excerpt');
+  });
+});
+
+// Batch session-end-notification.
+
+const sessionEndsOf = (client: WsClient, sessionId: string) => eventsOf(client, sessionId).filter((event) => event.kind === 'session_end');
+const typeLine = (terminal: WsClient, text: string) => terminal.send({ type: 'input', data: `${text}\r` });
+
+/** Starts a hosted session that works on a prompt, with its terminal open as in the browser client. */
+async function workingSession(name: string): Promise<{ id: string; folder: string; terminal: WsClient }> {
+  const { id, folder } = await startSession(name);
+  await prompt(id, 'Run the tests');
+  const terminal = connectWs(`ws://127.0.0.1:${port}/api/sessions/${id}/attach`);
+  clients.push(terminal);
+  await waitFor(() => terminal.text().includes('READY'), 'fake CLI banner');
+  return { id, folder, terminal };
+}
+
+async function cliPid(terminal: WsClient): Promise<number> {
+  typeLine(terminal, '/pid');
+  await waitFor(() => /PID:\d+/.test(terminal.text()), 'CLI pid');
+  return Number(/PID:(\d+)/.exec(terminal.text())?.[1]);
+}
+
+describe('plan-session_notifications/REQ-21, REQ-23, REQ-2 a hosted session that ends without the user', { timeout: TEST_TIMEOUT }, () => {
+  it('gives one session_end event with an error within 5 seconds when its CLI exits with code 1', async () => {
+    const client = await attention();
+    const { id, folder, terminal } = await workingSession('crash');
+
+    const endedAt = Date.now();
+    typeLine(terminal, '/crash 1');
+    await waitFor(() => sessionEndsOf(client, id).length >= 1, 'session-end event', FIVE_SECONDS);
+    expect(Date.now() - endedAt).toBeLessThan(FIVE_SECONDS);
+
+    expect(eventsOf(client, id)).toEqual([
+      { id: expect.stringMatching(UUID), sessionId: id, kind: 'session_end', folder, label: 'Run the tests', error: true },
+    ]);
+  });
+
+  it('gives one session_end event with no error within 5 seconds when kill -9 from another terminal ends its CLI', async () => {
+    const client = await attention();
+    const { id, folder, terminal } = await workingSession('killed');
+    const pid = await cliPid(terminal);
+
+    const endedAt = Date.now();
+    process.kill(pid, 'SIGKILL');
+    await waitFor(() => sessionEndsOf(client, id).length >= 1, 'session-end event', FIVE_SECONDS);
+    expect(Date.now() - endedAt).toBeLessThan(FIVE_SECONDS);
+
+    expect(eventsOf(client, id)).toEqual([
+      { id: expect.stringMatching(UUID), sessionId: id, kind: 'session_end', folder, label: 'Run the tests', error: false },
+    ]);
+  });
+});
+
+describe('plan-session_notifications/REQ-22 a hosted session that the user ends', { timeout: TEST_TIMEOUT }, () => {
+  it('gives no event when the user types /exit in its terminal', async () => {
+    const client = await attention();
+    const { id, terminal } = await workingSession('exit-command');
+
+    typeLine(terminal, '/exit');
+    await expect.poll(() => externalState(id), { timeout: FIVE_SECONDS }).toBe('ended');
+    await delay(NO_EVENT_WAIT);
+
+    expect(eventsOf(client, id)).toEqual([]);
+  });
+
+  it('gives no event when the user terminates it', async () => {
+    const client = await attention();
+    const { id } = await workingSession('terminate');
+
+    const response = await fetch(`${base}/api/sessions/${id}/stop`, { method: 'POST' });
+    expect(response.ok).toBe(true);
+    await expect.poll(() => externalState(id), { timeout: 10_000 }).toBe('ended');
+    await delay(NO_EVENT_WAIT);
+
+    expect(eventsOf(client, id)).toEqual([]);
+  });
+});
+
+describe('plan-session_notifications/REQ-22 the server shuts down, as when the desktop app quits', { timeout: TEST_TIMEOUT }, () => {
+  it('ends its hosted sessions and gives no session_end event before it closes', async () => {
+    const ownClaudeDir = await tempDir('ai-client-attention-shutdown-claude-');
+    const ownPort = await freePort();
+    const ownBase = `http://127.0.0.1:${ownPort}`;
+    const ownServer = spawn(path.join(repoRoot, 'node_modules/.bin/tsx'), ['src/server/main.ts'], {
+      cwd: repoRoot,
+      env: { ...process.env, PORT: String(ownPort), AI_CLIENT_CLAUDE_CLI: FAKE_CLI, CLAUDE_CONFIG_DIR: ownClaudeDir },
+      stdio: 'ignore',
+    });
+    try {
+      await expect.poll(() => fetch(`${ownBase}/api/health`).then((r) => r.ok, () => false), { timeout: 20_000 }).toBe(true);
+      const client = connectWs(`ws://127.0.0.1:${ownPort}/api/attention`);
+      clients.push(client);
+      await waitFor(() => client.frames.length >= 1, 'list frame on connect');
+      const folder = path.join(projectsRoot, 'shutdown');
+      await mkdir(folder, { recursive: true });
+      const started = await fetch(`${ownBase}/api/sessions`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ path: folder }),
+      });
+      const { id } = (await started.json()) as { id: string };
+      const post = (event: object) =>
+        fetch(`${ownBase}/api/sessions/${id}/hook-events`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(event) });
+      await post({ hook_event_name: 'UserPromptSubmit', prompt: 'Deploy' });
+      await post({ hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
+      await waitFor(() => listed(client, id), 'session in the list', FIVE_SECONDS);
+
+      ownServer.kill('SIGTERM');
+      await client.closed;
+
+      expect(listed(client, id), 'the session ended before the socket closed').toBe(false);
+      expect(sessionEndsOf(client, id)).toEqual([]);
+    } finally {
+      ownServer.kill('SIGKILL');
+      await rm(ownClaudeDir, { recursive: true, force: true });
+    }
   });
 });

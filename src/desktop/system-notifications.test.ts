@@ -309,3 +309,38 @@ describe('SystemNotifications turn-end notifications', () => {
     expect(clicked).toEqual(['gone']);
   });
 });
+
+const sessionEndRequest = (sessionId: string, body = 'Session ended') => ({ ...request(sessionId, body), kind: 'session_end' as const });
+
+describe('SystemNotifications session-end notifications', () => {
+  // plan-session_notifications/REQ-24: normal urgency, the server's usual timeout
+  it('sends a session-end notification with normal urgency and expire timeout -1', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(sessionEndRequest('a', 'Session ended with an error'));
+    expect(server.notified).toEqual([
+      {
+        replacesId: 0,
+        appName: 'Vexel for Claude',
+        appIcon: '/opt/vexel/icons/vexel-for-claude.png',
+        summary: 'a · Fix the login form',
+        body: 'Session ended with an error',
+        actions: ['default', 'Open'],
+        urgency: 'normal',
+        expireTimeoutMs: -1,
+      },
+    ]);
+  });
+
+  // plan-session_notifications/REQ-19, REQ-24: it replaces the session's notification in place
+  it('replaces in place, with the same id, the notification of the session of another kind', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(request('a'));
+    const id = server.lastId();
+    await notifications.show(sessionEndRequest('a'));
+
+    expect(server.notified.map(({ replacesId, urgency, expireTimeoutMs }) => [replacesId, urgency, expireTimeoutMs])).toEqual([
+      [0, 'critical', 0],
+      [id, 'normal', -1],
+    ]);
+  });
+});

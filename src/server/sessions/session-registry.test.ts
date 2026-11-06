@@ -35,6 +35,8 @@ function receivedInput(text: string): string[] {
   return [...text.matchAll(/IN:([0-9a-f]+)/g)].map((match) => match[1] ?? '');
 }
 
+const endReport = (session: Session) => ({ exitCode: session.exitCode, signal: session.signal, stopRequested: session.stopRequested });
+
 beforeAll(async () => {
   workDir = await tempDir();
 });
@@ -295,8 +297,7 @@ describe('Session input and size', () => {
     session.attach(late);
     await waitFor(() => late.frames.length > 0, 'snapshot');
     const lines = await renderLines(late.frames[0] ?? '', 50, 20);
-    // LINE: plus 70 characters wraps at 50 columns.
-    expect(lines).toContain(`LINE:${'y'.repeat(45)}`);
+    expect(lines, 'LINE: plus 70 characters wraps at 50 columns').toContain(`LINE:${'y'.repeat(45)}`);
   });
 
   it('exited becomes true when the process ends; write and resize then have no effect', async () => {
@@ -515,5 +516,103 @@ describe('Session.stop', () => {
     expect(session.exited).toBe(true);
     expect(exits()).toBe(1);
     expect(viewer.ended).toBe(1);
+  });
+
+  // plan-session_notifications/REQ-22, SessionRegistry: stopRequested is true from the stop() call and never goes back
+  it('stopRequested becomes true at the stop() call and stays true after the end', async () => {
+    const { session } = await startStoppable(exitsOnSigterm, 10_000);
+    expect(session.stopRequested).toBe(false);
+    session.stop();
+    expect(session.stopRequested).toBe(true);
+    await waitFor(() => session.exited, 'exit on SIGTERM', 3000);
+    expect(endReport(session)).toEqual({ exitCode: 0, signal: undefined, stopRequested: true });
+  });
+
+  // plan-session_notifications/REQ-22, SessionRegistry: a stop that ends in SIGKILL is still a stop
+  it('a process ended by the SIGKILL of stop() reports signal 9 and stopRequested', async () => {
+    const { session } = await startStoppable(ignoresSigterm, 500);
+    session.stop();
+    await waitFor(() => session.exited, 'exit after SIGKILL', 3000);
+    expect(endReport(session)).toEqual({ exitCode: undefined, signal: 9, stopRequested: true });
+  });
+
+  // plan-session_notifications/REQ-22, SessionRegistry: a process that SIGTERM ends
+  it('a process ended by the SIGTERM of stop() reports signal 15 and stopRequested', async () => {
+    const { session } = await startStoppable(FAKE_CLI);
+    session.stop();
+    await waitFor(() => session.exited, 'exit on SIGTERM', 3000);
+    expect(endReport(session)).toEqual({ exitCode: undefined, signal: 15, stopRequested: true });
+  });
+
+  // SessionRegistry: stopRequested is true only for a stop() called while the process runs
+  it('stop() after the process ended leaves stopRequested false', async () => {
+    const { session } = await startStoppable(FAKE_CLI);
+    session.write('/exit\r');
+    await waitFor(() => session.exited, 'exit');
+    session.stop();
+    expect(session.stopRequested).toBe(false);
+  });
+});
+
+describe('Session exitCode and signal', () => {
+  // SessionRegistry: nothing to report while the process runs
+  it('are undefined, and stopRequested false, while the process runs', async () => {
+    const session = startFake();
+    await attachReady(session);
+    expect(endReport(session)).toEqual({ exitCode: undefined, signal: undefined, stopRequested: false });
+  });
+
+  // plan-session_notifications/REQ-22: the user's exit command ends with code 0
+  it('give exit code 0 and no signal when the process exits with code 0', async () => {
+    const session = startFake();
+    await attachReady(session);
+    session.write('/exit\r');
+    await waitFor(() => session.exited, 'process exit');
+    expect(endReport(session)).toEqual({ exitCode: 0, signal: undefined, stopRequested: false });
+  });
+
+  // plan-session_notifications/REQ-21, REQ-23
+  it('give the exit code and no signal when the process exits by itself with another code', async () => {
+    const session = startFake();
+    await attachReady(session);
+    session.write('/crash 3\r');
+    await waitFor(() => session.exited, 'process exit');
+    expect(endReport(session)).toEqual({ exitCode: 3, signal: undefined, stopRequested: false });
+  });
+
+  // plan-session_notifications/REQ-21: kill -9 from another terminal
+  it('give signal 9 and no exit code when a SIGKILL from outside ends the process', async () => {
+    const session = startFake();
+    await attachReady(session);
+    process.kill(session.pid, 'SIGKILL');
+    await waitFor(() => session.exited, 'process exit');
+    expect(endReport(session)).toEqual({ exitCode: undefined, signal: 9, stopRequested: false });
+  });
+
+  // plan-session_notifications/REQ-21
+  it('give signal 15 and no exit code when a SIGTERM from outside ends the process', async () => {
+    const session = startFake();
+    await attachReady(session);
+    process.kill(session.pid, 'SIGTERM');
+    await waitFor(() => session.exited, 'process exit');
+    expect(endReport(session)).toEqual({ exitCode: undefined, signal: 15, stopRequested: false });
+  });
+
+  // SessionRegistry: exitCode and signal are already set when the onExit listeners run
+  it('are set before the onExit listeners run', async () => {
+    const crashed = startFake();
+    const killed = startFake();
+    const seen: Record<string, ReturnType<typeof endReport>> = {};
+    crashed.onExit(() => (seen.crashed = endReport(crashed)));
+    killed.onExit(() => (seen.killed = endReport(killed)));
+    await attachReady(crashed);
+    await attachReady(killed);
+    crashed.write('/crash 5\r');
+    process.kill(killed.pid, 'SIGKILL');
+    await waitFor(() => crashed.exited && killed.exited, 'both exits');
+    expect(seen).toEqual({
+      crashed: { exitCode: 5, signal: undefined, stopRequested: false },
+      killed: { exitCode: undefined, signal: 9, stopRequested: false },
+    });
   });
 });

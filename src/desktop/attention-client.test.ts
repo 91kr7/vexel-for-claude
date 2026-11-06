@@ -328,7 +328,6 @@ describe('connectAttention with the real backend', () => {
       env: { ...process.env, PORT: String(port), AI_CLIENT_CLAUDE_CLI: fakeCli, CLAUDE_CONFIG_DIR: claudeDir },
       stdio: 'ignore',
     });
-    // As DesktopApp: the client starts once the backend is ready.
     const deadline = Date.now() + 20_000;
     while (!(await fetch(`${origin}/api/health`).then((r) => r.ok, () => false))) {
       if (Date.now() > deadline) throw new Error('backend did not start');
@@ -392,8 +391,48 @@ describe('connectAttention turn-end events', () => {
     connect(origin, handlers);
     await waitFor(() => server.connections.length === 1, 'connection');
 
-    server.send({ type: 'event', event: { ...finished, kind: 'session_end' } });
+    server.send({ type: 'event', event: { ...finished, kind: 'process_exit' } });
     server.send({ type: 'event', event: { ...finished, excerpt: 42 } });
+    server.send({ type: 'needs-input', sessions: [session] });
+    await waitFor(() => calls.length >= 1, 'the valid frame');
+    await delay(100);
+
+    expect(calls).toEqual([['list', [session]]]);
+  });
+});
+
+describe('connectAttention session-end events', () => {
+  const { waitingTool: _tool, ...needsInputWithNoTool } = event;
+  const ended: AttentionEvent = { ...needsInputWithNoTool, id: 'ev-end', kind: 'session_end', error: true };
+
+  // plan-session_notifications/REQ-21, REQ-23
+  it('passes on session_end events, with or without an error', async () => {
+    const { server, origin } = await backend();
+    const { calls, handlers } = recorder();
+    connect(origin, handlers);
+    await waitFor(() => server.connections.length === 1, 'connection');
+
+    server.send({ type: 'event', event: ended });
+    server.send({ type: 'event', event: { ...ended, id: 'ev-end-2', error: false } });
+    await waitFor(() => calls.length >= 2, 'two events');
+
+    expect(calls).toEqual([
+      ['event', ended],
+      ['event', { ...ended, id: 'ev-end-2', error: false }],
+    ]);
+  });
+
+  // AttentionClient: error is a boolean, required for session_end
+  it('ignores a session_end event with no error or an error that is not a boolean', async () => {
+    const { server, origin } = await backend();
+    const { calls, handlers } = recorder();
+    connect(origin, handlers);
+    await waitFor(() => server.connections.length === 1, 'connection');
+
+    const { error: _error, ...endedWithNoError } = ended;
+    for (const bad of [endedWithNoError, { ...ended, error: 'true' }, { ...ended, error: 1 }, { ...ended, error: null }]) {
+      server.send({ type: 'event', event: bad });
+    }
     server.send({ type: 'needs-input', sessions: [session] });
     await waitFor(() => calls.length >= 1, 'the valid frame');
     await delay(100);
