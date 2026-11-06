@@ -4,3 +4,9 @@
 |------|-------|------|---------|--------|
 | 2026-11-06 | analysis | question analyst Q1 | decided | Evolution: `claude_sessions_client.md` line 163 left token and cost reports out of scope |
 | 2026-11-06 | analysis | G1 analysis | pass | ordinary, 110/200 lines; placement, occupancy formula, window size, warning levels and pricing are analyst defaults, kept |
+| 2026-11-06 | plan | question planner Q1 | decided | REQ-4: fixed model table + "[1m]" marker, else 200k; REQ-5 fallback |
+| 2026-11-06 | plan | question planner Q2 | decided | REQ-29: estimate label as tooltip in the list, as text in the header |
+| 2026-11-06 | plan | question planner Q3 | decided | REQ-30: no known price → "—" with the incomplete mark, not "<$0.01" |
+| 2026-11-06 | plan | question planner Q4 | decided | REQ-8: warning colour from 70%, error colour from 90% |
+| 2026-11-06 | plan | G2 requirements | pass | REQ-1..35 in 3 features cover the spec |
+| 2026-11-06 | plan | G3 coverage | pass | 3 chained batches, REQ-1..35 covered, all modify paths exist; SessionView untouched (parallel cycle); token parts in a popover to keep the header on one row |
