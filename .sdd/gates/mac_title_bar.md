@@ -7,3 +7,4 @@
 | 2026-11-06 | plan | question planner Q1 | decided | No added window border: the spec lists it only as a risk; to check by hand on GNOME |
 | 2026-11-06 | plan | G2 requirements | pass | REQ-1..28 in 2 features (title bar, window buttons) cover the spec |
 | 2026-11-06 | plan | G3 coverage | pass | 2 batches, REQ-1..28 covered, all modify paths exist; startup page stays light (no access to the saved theme) accepted; double click left to the desktop's title bar action via the drag region |
+| 2026-11-06 | dev | G4 title-bar | pass | Build green (re-run); files map to INT-1..5; accepted: INT-4 as a `.modal` rule in `styles.css` instead of `Dialog.tsx` (smaller change); GNOME double click, edge resize and shadow unverified, left to tests and the human |

@@ -5,9 +5,14 @@ const STYLE = `
   html, body { height: 100%; margin: 0; }
   body {
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-    padding: 32px; box-sizing: border-box;
+    padding: 80px 32px 32px; box-sizing: border-box;
     background: #f4f1ea; color: #1c1917;
     font: 14px/20px 'Roboto Flex', Roboto, system-ui, sans-serif;
+  }
+  .title-bar {
+    position: fixed; top: 0; left: 0; right: 0; height: 48px; box-sizing: border-box;
+    background: #efeae0; border-bottom: 1px solid rgba(28, 25, 23, 0.08);
+    -webkit-app-region: drag;
   }
   .spinner {
     width: 24px; height: 24px; border-radius: 50%;
@@ -50,7 +55,7 @@ export function startupPageHtml(state: StartupState): string {
 <title>Vexel for Claude</title>
 <style>${STYLE}</style>
 </head>
-<body>${body(state)}</body>
+<body><div class="title-bar"></div>${body(state)}</body>
 </html>
 `;
 }

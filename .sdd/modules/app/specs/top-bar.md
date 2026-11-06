@@ -6,7 +6,7 @@ type: UI component
 
 # TopBar
 
-**Purpose** → the 48 px bar on top of the page: the logo, the brand, the theme switch and "New Session". It copies "1. TOP APP BAR" of `.sdd/mockups/studio-dark/mock.html`, without its other controls.
+**Purpose** → the 48 px bar on top of the page: the logo, the brand, the theme switch and "New Session". In the desktop window it is also the title bar that moves the window. It copies "1. TOP APP BAR" of `.sdd/mockups/studio-dark/mock.html`, without its other controls.
 
 ## Contract
 
@@ -25,17 +25,29 @@ Shows:
 Actions:
 - "New Session" → `onNewSession()`.
 
+Desktop window (`isDesktopWindow()` is `true`):
+- the `header` is a drag area (`-webkit-app-region: drag`): dragging it moves the window, and a double click maximizes or restores it, by the desktop's title bar action.
+- its controls (buttons, links, fields) are `no-drag`: a click or a double click acts on the control only.
+- the logo, the brand and the space between the two ends stay in the drag area.
+
+Browser (`isDesktopWindow()` is `false`):
+- no drag area. The bar is the same as before the desktop title bar.
+
 ## Rules and invariants
 
 - The bar holds no control other than the ThemeSwitch and "New Session": no search, settings, session pill or sidebar switch.
 - The logo mark adds nothing to the accessible names of the page.
+- The bar keeps the theme tokens in both cases: dark in the dark theme, light in the light theme, and it changes with the rest of the page.
+- In the desktop window there is a drag area at every window width: the logo and the brand are never controls.
 
 ## Dependencies
 
 - ThemeSwitch, IconSet (`PlusIcon`), ThemeTokens, WebEntry
+- useDesktopBridge (`isDesktopWindow`)
 
 ## Requirements served
 
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-16`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-52`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-53`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`
 - `plan-light_theme/REQ-1`
+- `plan-mac_title_bar/REQ-6`, `plan-mac_title_bar/REQ-7`, `plan-mac_title_bar/REQ-8`, `plan-mac_title_bar/REQ-9`, `plan-mac_title_bar/REQ-12`, `plan-mac_title_bar/REQ-13`, `plan-mac_title_bar/REQ-14`

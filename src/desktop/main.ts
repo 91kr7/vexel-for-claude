@@ -84,6 +84,7 @@ async function start(): Promise<void> {
     icon: iconPath,
     backgroundColor: '#0b0b0e',
     autoHideMenuBar: true,
+    frame: false,
     webPreferences: { preload: preloadPath },
   });
   mainWindow = current;

@@ -23,3 +23,7 @@ export function useDesktopBridge(openSessionId: string | null, onOpenSession: (s
 
   useEffect(() => window.desktopBridge?.onOpenSession((sessionId) => latestOnOpenSession.current(sessionId)), []);
 }
+
+export function isDesktopWindow(): boolean {
+  return typeof window !== 'undefined' && window.desktopBridge !== undefined;
+}

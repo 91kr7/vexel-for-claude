@@ -15,9 +15,10 @@ type: UI page
 - `state` → `{ kind: "loading" }` or `{ kind: "error", outputLines: string[] }`.
 
 Description:
-- one centred column on the light background of the client. Title of the document: "Vexel for Claude".
+- a 48 px bar across the top, then one centred column on the light background of the client. Title of the document: "Vexel for Claude".
 
 Shows:
+- both states → the top bar: empty, the light top bar colours (`#efeae0`, 1 px line `rgba(28, 25, 23, 0.08)` at the bottom). All of it is a drag area (`-webkit-app-region: drag`): it moves the window, and a double click maximizes or restores it.
 - loading → "Starting the backend…" with a rotating indicator.
 - error → "The backend could not start." in the error colour. Below it, the output lines in a monospace block, one per row, in the order given.
 - the output lines are shown as plain text: HTML in a line is never interpreted.
@@ -32,3 +33,4 @@ Shows:
 
 - `plan-desktop_app/REQ-7`
 - `plan-light_theme/REQ-20`
+- `plan-mac_title_bar/REQ-10`

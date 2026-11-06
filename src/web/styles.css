@@ -417,6 +417,14 @@ input {
   user-select: none;
 }
 
+.top-bar-drag {
+  -webkit-app-region: drag;
+}
+
+.top-bar-drag :is(button, a, input, select, textarea) {
+  -webkit-app-region: no-drag;
+}
+
 .top-bar-brand {
   display: flex;
   align-items: center;
@@ -1634,6 +1642,7 @@ input {
 }
 
 .modal {
+  -webkit-app-region: no-drag;
   display: flex;
   flex-direction: column;
   width: 100%;

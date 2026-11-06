@@ -10,12 +10,12 @@ type: Electron main process
 
 ## Contract
 
-- launch → it shows the TrayIcon with no session that needs input, and opens one window "Vexel for Claude", 1280 × 800, on the StartupPage in the loading state. The window has the AppIcon, a hidden menu bar (Alt shows it) and the DesktopBridge preload.
+- launch → it shows the TrayIcon with no session that needs input, and opens one window "Vexel for Claude", 1280 × 800, on the StartupPage in the loading state. The window has no native frame, so the desktop draws no title bar. It has the AppIcon, a hidden menu bar (Alt shows it) and the DesktopBridge preload.
 - then it runs `launchBackend` with the repository folder and the log file `backend.log` in the Electron logs folder.
   - ready → it starts the AttentionClient on the backend origin, then the window loads `<origin>/`, the client page of the backend.
   - failed → the window shows the StartupPage in the error state, with the output lines.
 - a second launch while the app runs → the running app restores, shows and focuses its window, also when the window is hidden. The second launch exits and opens no window.
-- closing the window → the window hides and the app keeps running, with the backend and its sessions. The page stays loaded.
+- closing the window (the desktop's close shortcut included) → the window hides and the app keeps running, with the backend and its sessions. The page stays loaded.
 - "Open Window" in the TrayIcon → the same as a second launch: the window restores, shows and focuses.
 - quit request ("Quit" in the TrayIcon, or any other quit of the app):
   - it runs `confirmQuit` (QuitCheck) with the ready backend, and the native message box as `ask`.
@@ -49,6 +49,7 @@ Tray:
 - The backend runs outside Electron, with the system Node. node-pty therefore keeps its Node build.
 - A backend that the app did not start keeps running after the app quits, with its sessions.
 - The app quits only from a quit request, never because its window closes.
+- Without the native frame, the window keeps: the resize from every edge and corner, its name "Vexel for Claude" in the task switcher and the dock, and the desktop's window shortcuts. The page moves it through its drag areas (TopBar, StartupPage).
 
 ## Dependencies
 
@@ -60,3 +61,4 @@ Tray:
 - `plan-desktop_app/REQ-1`, `plan-desktop_app/REQ-3`, `plan-desktop_app/REQ-4`, `plan-desktop_app/REQ-6`, `plan-desktop_app/REQ-7`, `plan-desktop_app/REQ-9`, `plan-desktop_app/REQ-11`, `plan-desktop_app/REQ-12`, `plan-desktop_app/REQ-13`, `plan-desktop_app/REQ-14`, `plan-desktop_app/REQ-15`, `plan-desktop_app/REQ-16`, `plan-desktop_app/REQ-17`
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-3`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-25`, `plan-session_notifications/REQ-28`
 - `plan-session_notifications/REQ-30`, `plan-session_notifications/REQ-32`, `plan-session_notifications/REQ-33`, `plan-session_notifications/REQ-34`, `plan-session_notifications/REQ-36`
+- `plan-mac_title_bar/REQ-1`, `plan-mac_title_bar/REQ-2`, `plan-mac_title_bar/REQ-3`, `plan-mac_title_bar/REQ-4`, `plan-mac_title_bar/REQ-5`
