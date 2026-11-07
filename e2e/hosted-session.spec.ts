@@ -184,23 +184,30 @@ for (const colorScheme of ['light', 'dark'] as const) {
       expect(await style(pill, 'font-family')).toMatch(mono);
       await expect(pill.locator('[aria-hidden="true"]')).toHaveCount(1);
 
-      // actions: rose "Interrupt" then "Terminate", 8 px apart, at the right edge inside the padding
+      // actions: orange "Interrupt" then rose "Terminate", same shape, 8 px apart, at the right edge inside the padding
+      // (plan-session_list_width/REQ-32, REQ-36)
       const interrupt = button(page, 'Interrupt');
       const stop = button(page, 'Terminate');
       const interruptBox = await box(interrupt);
       const stopBox = await box(stop);
       near(stopBox.x, interruptBox.x + interruptBox.width + 8, 'gap between the actions');
       near(stopBox.x + stopBox.width, headBox.x + headBox.width - 16, 'actions at the right edge');
-      for (const action of [interrupt, stop]) {
+      const looks = [
+        { action: interrupt, fill: '--orange-500-15', text: '--orange-400', line: '--orange-500-30' },
+        { action: stop, fill: '--rose-500-15', text: '--rose-400', line: '--rose-500-30' },
+      ];
+      for (const { action, fill, text, line } of looks) {
         expect(await styles(action, [
           'background-color', 'color', 'border-top-width', 'border-top-color', 'border-top-left-radius', 'padding-top', 'padding-left', 'font-size',
         ])).toEqual({
-          'background-color': 'rgba(244, 63, 94, 0.15)', color: 'rgb(251, 113, 133)', 'border-top-width': '1px', 'border-top-color': 'rgba(244, 63, 94, 0.3)',
+          'background-color': await colour(fill), color: await colour(text), 'border-top-width': '1px', 'border-top-color': await colour(line),
           'border-top-left-radius': '6px', 'padding-top': '4px', 'padding-left': '10px', 'font-size': '11px',
         });
         expect(await style(action, 'font-family')).toMatch(mono);
-        await expect(action.getByText('■', { exact: true })).toHaveAttribute('aria-hidden', 'true');
       }
+      await expect(interrupt.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+      await expect(interrupt).not.toContainText('■');
+      await expect(stop.getByText('■', { exact: true })).toHaveAttribute('aria-hidden', 'true');
 
       // the terminal panel: canvas, subtle border, 8 px radius, padding 12, 16 px from the left, right and top
       const term = panel(page);

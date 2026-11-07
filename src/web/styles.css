@@ -241,7 +241,8 @@ input {
 }
 
 .button-danger,
-.button-attn {
+.button-attn,
+.button-interrupt {
   padding: 4px 10px;
   border-radius: 6px;
   border: 1px solid;
@@ -260,6 +261,16 @@ input {
   background-color: var(--rose-500-25);
 }
 
+.button-interrupt {
+  background-color: var(--orange-500-15);
+  border-color: var(--orange-500-30);
+  color: var(--orange-400);
+}
+
+.button-interrupt:hover:not(:disabled) {
+  background-color: var(--orange-500-25);
+}
+
 .button-attn {
   background-color: var(--amber-500-15);
   border-color: var(--amber-500-30);
@@ -271,7 +282,8 @@ input {
 }
 
 .button-danger .icon,
-.button-attn .icon {
+.button-attn .icon,
+.button-interrupt .icon {
   width: 12px;
   height: 12px;
 }

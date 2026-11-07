@@ -11,7 +11,7 @@ type: UI component
 ## Contract
 
 Description:
-- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with "Search", "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the SessionFooter.
+- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with, from left to right in its right group, "Search" (as `leadingActions`), the state pill, "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the SessionFooter.
 - the panel takes all the height the header and the footer leave.
 
 Props:
@@ -38,13 +38,13 @@ Shows:
   - code `1000` (the session process ended) → no message. The header shows "Ended".
   - code `4404` → "The session no longer exists."
   - any other code (e.g. the server stopped) → "Connection to the session lost."
-- "Search" → an icon button (search icon, 26 px, `--text-secondary`) with the accessible name "Search" and the tooltip "Search (Ctrl+Shift+F)". It shows in every state, `ended` included, before "Interrupt".
+- "Search" → an icon button (search icon, 26 px, `--text-secondary`) with the accessible name "Search" and the tooltip "Search (Ctrl+Shift+F)". It shows in every state, `ended` included, before the state pill. Tab goes from "Search" to "Interrupt", then to "Terminate".
 - the TerminalSearchBox at the top right of the panel, while the search is open. Its count follows the search, also while new output arrives.
 - the search matches → every match on a `--term-match-bg` background. The current match has a 1 px `--term-match-current-border` outline over the selection colour, so it looks different from the others.
 - the TerminalZoomControls → at the right end of the footer, in every state, `ended` included. They show the size of TerminalFontSizeStore.
 - while files are dragged over the panel, in the desktop app (useDesktopBridge gives a path lookup) and the session is not `ended` (`undefined` included) → the panel shows that it accepts the drop: the `drop-target` class, a 2 px dashed `--accent-primary` outline and an `--accent-primary` border. It goes when the drag leaves the panel or the files are dropped. In the browser client and on an ended session the panel never shows it.
 - after a drop on the panel in the browser client (no path lookup) → the message "Paths can be dropped only in the desktop app." (`role="status"`) at the bottom centre of the panel, for 4 seconds; a new drop starts the 4 seconds again. It does not take the pointer.
-- "Interrupt" → `.button-danger` (rose, look of `#subbar-stop-btn`) with the decorative glyph "■" before the text. Its accessible name is "Interrupt". It shows in every state except `ended`, `undefined` included.
+- "Interrupt" → `.button-interrupt` (orange) with the decorative CirclePauseIcon before the text. Its accessible name is "Interrupt" and it has no tooltip. It shows in every state except `ended`, `undefined` included. "Terminate" keeps its rose look.
 
 Actions:
 - every key typed in the terminal → sent to the pty as `input`, Esc included. Ctrl+Shift+L, Ctrl+Shift+F and the zoom keys are the only exceptions.
@@ -100,4 +100,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-light_theme/REQ-12`
 - `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`, `plan-terminal_addons/REQ-14`, `plan-terminal_addons/REQ-15`, `plan-terminal_addons/REQ-16`, `plan-terminal_addons/REQ-17`, `plan-terminal_addons/REQ-18`, `plan-terminal_addons/REQ-19`, `plan-terminal_addons/REQ-20`, `plan-terminal_addons/REQ-21`, `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-23`, `plan-terminal_addons/REQ-24`, `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-26`, `plan-terminal_addons/REQ-27`, `plan-terminal_addons/REQ-28`, `plan-terminal_addons/REQ-29`, `plan-terminal_addons/REQ-32`, `plan-terminal_addons/REQ-33`, `plan-terminal_addons/REQ-34`, `plan-terminal_addons/REQ-35`, `plan-terminal_addons/REQ-36`, `plan-terminal_addons/REQ-37`, `plan-terminal_addons/REQ-38`, `plan-terminal_addons/REQ-39`, `plan-terminal_addons/REQ-42`, `plan-terminal_addons/REQ-43`, `plan-terminal_addons/REQ-46`, `plan-terminal_addons/REQ-47`, `plan-terminal_addons/REQ-48`, `plan-terminal_addons/REQ-50`, `plan-terminal_addons/REQ-51`, `plan-terminal_addons/REQ-52`, `plan-terminal_addons/REQ-54`
-- `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`
+- `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`, `plan-session_list_width/REQ-30`, `plan-session_list_width/REQ-31`, `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-33`, `plan-session_list_width/REQ-36`

@@ -55,6 +55,31 @@ Words used below:
 | REQ-28 | The footer stays one line high, so the terminal keeps its number of rows. |
 | REQ-29 | On a hosted session, the terminal text size controls show at the right end of the footer. |
 
+Fix of 2026-11-07. Order of the hosted header items, and look of "Interrupt".
+
+| ID | Requirement |
+|----|-------------|
+| REQ-30 | In the header of a hosted session, "Search", the state badge, "Interrupt" and "Terminate" show from left to right in this order. |
+| REQ-31 | Tab moves the keyboard focus through these header items in the order of REQ-30. |
+| REQ-32 | "Interrupt" shows a pause icon in orange, in place of the red "■". |
+| REQ-33 | "Interrupt" keeps its behaviour, its accessible name and its tooltip. |
+| REQ-34 | The orange of "Interrupt" looks different from the amber of the needs-input state, in the dark and in the light theme. |
+| REQ-35 | The orange icon of "Interrupt" reaches a 3:1 contrast with its background (WCAG 2.2 AA, non-text contrast), in the dark and in the light theme. |
+| REQ-36 | "Terminate" keeps its current look. |
+
+## Test suite
+
+Fix of 2026-11-07. This is not a product feature. REQ-41 closes in batch `header-footer`. The other REQs apply to the closing run of the plan, not to a batch.
+
+| ID | Requirement |
+|----|-------------|
+| REQ-37 | At the end of the plan, every test group of the project runs and passes, the Electron e2e group and the tests not related to this plan included. |
+| REQ-38 | A failing test is fixed at its cause: the product changes when it breaks a requirement of a current analysis, and the test changes when it checks a behaviour that a later analysis changed. |
+| REQ-39 | No test is skipped, deleted or weakened only to make the run pass. A test is removed only when no current analysis keeps the behaviour it checks. |
+| REQ-40 | A test that fails only on some runs counts as failing, and after its fix it passes on repeated runs. |
+| REQ-41 | The tests of the session header check the order of REQ-30 and the icon and colour of REQ-32. |
+| REQ-42 | A test that cannot run on this machine is named in the closing report, with the reason. |
+
 ## Assumptions
 
 - **Narrow window (REQ-3, REQ-4, REQ-5).** The list panel shows the saved width when the main area keeps 700 px. Otherwise it shows the width that leaves 700 px, but never less than 180 px. Below a window of about 932 px, the 180 px minimum wins and the main area gets the rest. The desktop window cannot get that narrow (spec, "Assumptions").
@@ -67,6 +92,13 @@ Words used below:
 - **Key hint (REQ-22).** Departing from the spec, human decision (2026-11-07): "nel footer mi aggiungi anche di togliere l'indicazione della shortcut per tornare al menù? è totalmente inutile e magari ti farò implementare in futuro un sistema di shortcut". The footer shows no key hint. Ctrl+Shift+L in the terminal still moves the focus to the list.
 - **Search and text size controls (REQ-15, REQ-29).** Departing from the spec, human decision (2026-11-06): "lo zoom mettilo in basso a destra mentre il search va bene in alto". The spec lists the header items as "only ..." and leaves out "Search" and the text size controls. "Search" stays in the header. The text size controls move to the footer.
 - **Footer height (REQ-28).** 40 px, the height of today's hint row.
+- **Header order (REQ-30, REQ-31).** The order applies to the items at the right of the header. The folder name and the label stay at the left. The state badge takes no focus, so Tab goes from "Search" to "Interrupt", then to "Terminate".
+- **Label of "Interrupt" (REQ-32, REQ-33).** Gatekeeper decision, not a human decision. "Interrupt" keeps its visible text, like "Terminate", so its accessible name does not change. The pause icon takes the place of the "■" glyph. Today the button has no tooltip, so it stays without one.
+- **Orange look (REQ-32, REQ-34, REQ-35).** Gatekeeper decision, not a human decision. The whole button takes the orange in place of the rose: icon, text and border, as `.button-danger` colours the whole button today. Its text tone also reaches 4.5:1, like every text of the client.
+- **Test groups (REQ-37).** The three test commands of `.sdd/.archi`: unit, browser e2e and Electron e2e. The Electron group keeps its own command (knowledge base `electron-e2e-separate`). The closing run runs it, because the spec asks for every group.
+- **Repeated runs (REQ-40).** Gatekeeper decision, not a human decision. After its fix, a test that failed only on some runs passes 5 runs of its file in a row (for Playwright, `--repeat-each=5`).
+- **Machine limits (REQ-42).** REQ-42 is the only exception to REQ-37. A test counts as unable to run only after a real attempt that fails for a machine reason, such as no display.
+- **Fixes outside this plan (REQ-38).** The closing report names each product change made in another feature to fix a test. The human did not review these changes (spec, "Risks").
 
 ## Constraints on the whole plan
 
@@ -81,3 +113,4 @@ These are not REQs. They apply to every REQ above.
   - `plan-session_usage/REQ-2`, `plan-session_usage/REQ-8`, `plan-session_usage/REQ-13`, `plan-session_usage/REQ-23`, `plan-session_usage/REQ-29` → the figures, their highlights and the cost label move from the header to the footer. The four token parts move to a tooltip.
   - `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-33`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-35` → the hint row under the terminal goes, and the footer takes its place. The Ctrl+Shift+L key stays, with no on-screen hint.
   - `plan-terminal_addons`, assumption "Position of the controls" → the text size controls of `plan-terminal_addons/REQ-35` move from the header to the footer.
+  - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32` → only "Terminate" keeps the rose style of the stop button. "Interrupt" becomes orange, with a pause icon.

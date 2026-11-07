@@ -154,8 +154,9 @@ for (const scheme of ['light', 'dark'] as const) {
     });
 
     // ThemeTokens "Rules": no token is orange, indigo, violet or pink; the Material 3 roles are not defined.
-    // The search highlights are amber by ThemeTokens "Terminal search tokens" (plan-terminal_addons/REQ-22, REQ-31): exempt.
-    const SEARCH_HIGHLIGHTS = new Set(['--term-match-bg', '--term-match-current-bg']);
+    // Exempt: the amber search highlights (plan-terminal_addons/REQ-22, REQ-31) and the orange action tokens of "Interrupt",
+    // which are not accents (plan-session_list_width/REQ-32).
+    const EXEMPT = new Set(['--term-match-bg', '--term-match-current-bg', '--orange-400', '--orange-500', '--orange-500-15', '--orange-500-25', '--orange-500-30']);
     test('no colour token is orange, indigo, violet or pink, and the Material 3 roles are not defined', async ({ page }) => {
       await page.goto('/');
       const names = await rootCustomProperties(page);
@@ -164,7 +165,7 @@ for (const scheme of ['light', 'dark'] as const) {
       const isColour = await page.evaluate((values) => values.map((v) => v !== '' && CSS.supports('color', v)), Object.values(t));
       const offenders: string[] = [];
       for (const [i, name] of Object.keys(t).entries()) {
-        if (!isColour[i] || SEARCH_HIGHLIGHTS.has(name)) continue;
+        if (!isColour[i] || EXEMPT.has(name)) continue;
         const rgba = await resolved(page, t[name]!);
         const c = lab(rgba);
         const { h } = hsl(rgba);

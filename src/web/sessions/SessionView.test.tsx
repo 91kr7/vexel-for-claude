@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { SessionState } from './live-session-store';
+import { CirclePauseIcon } from '../icons/Icons';
 import { SessionView } from './SessionView';
 
 /** The visible text: the tokens tooltip shows only on hover or focus. */
@@ -29,12 +30,37 @@ describe('SessionView', () => {
     expect(button(html, 'Terminate')).toBeNull();
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32: "Interrupt" is the rose .button-danger with the decorative "■" first
-  it('renders "Interrupt" as a .button-danger button with a decorative "■" before its name', () => {
+  // plan-session_list_width/REQ-32, REQ-33: "Interrupt" is the orange .button-interrupt with the decorative CirclePauseIcon first, and no tooltip
+  it('renders "Interrupt" as a .button-interrupt button with the decorative pause icon before its name', () => {
     const match = button(render('idle'), 'Interrupt');
-    expect(classesOf(`<button${match?.[1] ?? ''}>`)).toContain('button-danger');
+    const classes = classesOf(`<button${match?.[1] ?? ''}>`);
+    expect(classes).toContain('button-interrupt');
+    expect(classes).not.toContain('button-danger');
+    expect(match?.[1]).not.toMatch(/\stitle=/);
+    expect(match?.[1]).not.toMatch(/\saria-label=/);
     const inner = match?.[2] ?? '';
-    expect(inner).toMatch(/^<\w+\b[^>]*aria-hidden="true"[^>]*>■<\/\w+>\s*Interrupt\s*$/);
+    expect(inner).not.toContain('■');
+    expect(inner.replace(/\s*Interrupt\s*$/, '')).toBe(renderToStaticMarkup(<CirclePauseIcon />));
+  });
+
+  // plan-session_list_width/REQ-36: "Terminate" keeps the rose .button-danger with the decorative "■"
+  it('keeps "Terminate" as a .button-danger button with a decorative "■" before its name', () => {
+    const match = button(render('idle'), 'Terminate');
+    expect(classesOf(`<button${match?.[1] ?? ''}>`)).toContain('button-danger');
+    expect(match?.[2]).toMatch(/^<\w+\b[^>]*aria-hidden="true"[^>]*>■<\/\w+>\s*Terminate\s*$/);
+  });
+
+  // plan-session_list_width/REQ-30, REQ-31: "Search", the state pill, "Interrupt" and "Terminate", in this order in the markup
+  it.each<SessionState>(['working', 'needs_input', 'idle'])('shows "Search", the state pill, "Interrupt" and "Terminate" in this order when the state is %s', (state) => {
+    const header = partOf(render(state), 'header');
+    const positions = [
+      header.search(/<button\b[^>]*\saria-label="Search"/),
+      header.search(new RegExp(`class="[^"]*\\bstate-${state}\\b`)),
+      header.indexOf(button(header, 'Interrupt')?.[0] ?? '\0'),
+      header.indexOf(button(header, 'Terminate')?.[0] ?? '\0'),
+    ];
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect([...positions].sort((a, b) => a - b)).toEqual(positions);
   });
 
   // plan-terminal_addons/REQ-15: "Search" shows in every state, ended included, before "Interrupt"

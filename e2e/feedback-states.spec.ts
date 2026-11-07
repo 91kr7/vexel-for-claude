@@ -428,6 +428,8 @@ test.describe('open session', () => {
     });
     await page.goto('/');
     await button(rail(page), 'New Claude Code Session').click();
+    // The field shows the current folder once the first listing is in: typing earlier races it.
+    await expect(pathField(page)).toHaveValue(/^\//);
     await pathField(page).fill(folder);
     const started = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/sessions' && r.request().method() === 'POST');
     await button(chooser(page), 'Start Session').click();
@@ -536,6 +538,8 @@ test.describe('folder chooser', () => {
   test('a start in a folder that does not exist keeps the chooser open with "The folder does not exist." in the error look', async ({ page }) => {
     await page.goto('/');
     await openChooser(page);
+    // The field shows the current folder once the first listing is in: typing earlier races it.
+    await expect(pathField(page)).toHaveValue(/^\//);
     await pathField(page).fill(path.join(projectsRoot, 'missing'));
 
     await button(chooser(page), 'Start Session').click();
@@ -787,6 +791,8 @@ for (const scheme of ['light', 'dark'] as const) {
 
       await page.keyboard.press('Enter');
       await expect(pathField(page)).toBeFocused();
+      // The field shows the current folder once the first listing is in: typing earlier races it.
+      await expect(pathField(page)).toHaveValue(/^\//);
       await page.keyboard.press('Control+A');
       await page.keyboard.type(folder);
       await page.keyboard.press('Enter');

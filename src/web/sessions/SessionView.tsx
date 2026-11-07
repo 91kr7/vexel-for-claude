@@ -6,7 +6,7 @@ import '@xterm/xterm/css/xterm.css';
 import { desktopFilePathLookup } from '../desktop-bridge';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
-import { SearchIcon } from '../icons/Icons';
+import { CirclePauseIcon, SearchIcon } from '../icons/Icons';
 import { folderNameOf } from './Avatar';
 import { droppedPathsText } from './dropped-paths-text';
 import { openLink } from './link-opener';
@@ -348,16 +348,16 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
     <div className="session-view">
       <SessionHeader
         session={session}
+        leadingActions={
+          <button type="button" className="session-search-button" aria-label="Search" title="Search (Ctrl+Shift+F)" onClick={openSearch}>
+            <SearchIcon />
+          </button>
+        }
         actions={
           <>
-            <button type="button" className="session-search-button" aria-label="Search" title="Search (Ctrl+Shift+F)" onClick={openSearch}>
-              <SearchIcon />
-            </button>
             {session?.state !== 'ended' && (
-              <button type="button" className="button-danger session-interrupt" onClick={interrupt}>
-                <span className="stop-glyph" aria-hidden="true">
-                  ■
-                </span>
+              <button type="button" className="button-interrupt session-interrupt" onClick={interrupt}>
+                <CirclePauseIcon />
                 Interrupt
               </button>
             )}

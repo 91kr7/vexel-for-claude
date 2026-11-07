@@ -1,7 +1,7 @@
 ---
 request_slug: session_list_width
-date: 2026-11-06
-type: evolution
+date: 2026-11-07
+type: fix
 size: ordinary
 reference: .sdd/analysis/claude_sessions_client-ui_redesign-material3_mock-studio_dark.md
 ---
@@ -13,6 +13,9 @@ reference: .sdd/analysis/claude_sessions_client-ui_redesign-material3_mock-studi
 > fai in modo che la barra delle sessioni sia ridimensionabile. è possibile fare in modo che la larghezza sia salvata così se chiudo l'app me la propone larga uguale?
 
 > puoi mettere nell'analisi anche un restiling nell'heade che mostra persorso, contesto, token, stato della sessione ecc? c'è troppa roba su una sola riga!!! magari alcune cose si possono spostare nel rooter in cui c'è la shortcur ctrl+shift
+
+> riapri l'ultimo batch fixa il fatto che il tasto lente di ingrandiento per cercare in console sia fra i lbottone dello stato e l'interrupt!!! in ordine devono esserci: lente, stato, interrupt (magari mettiamo un icona di pausa e colore arancione anzichè rosso) e terminate.
+> inoltre fixa tutti i test che non vanno, anche se non centrano con le modifiche da te fatte! io vado a dormire! esegui tutto in autonomia
 
 ## Reference
 
@@ -29,9 +32,14 @@ Changes:
 - The four token parts move from the visible text to a tooltip.
 - Every other requirement of the references stays true.
 
+Fix 2026-11-07:
+- The hosted session header shows its items in this order: search, state badge, interrupt, stop.
+- The interrupt action uses an orange pause icon instead of a red one.
+- Every failing test of the project is fixed, also the tests not related to this feature.
+
 ## Summary
 
-The user can drag the right edge of the session list panel to make it wider or narrower. The app remembers the width. The session header becomes shorter: the path and the usage figures move to a footer bar under the session.
+The user can drag the right edge of the session list panel to make it wider or narrower. The app remembers the width. The session header becomes shorter: the path and the usage figures move to a footer bar under the session. The header actions follow a fixed order, and the whole test suite passes.
 
 ## Requirements
 
@@ -52,7 +60,13 @@ List panel width
 - The user must be able to reach the edge with the keyboard and change the width with the arrow keys, with visible focus.
 
 Session header
-- The header of a hosted session must show only the folder name, the session label or name, the state badge, and the search, interrupt and stop actions.
+- The header of a hosted session must show only the folder name, the session label or name, the search action, the state badge, and the interrupt and stop actions.
+- In a hosted session header, these items must show from left to right in this order: search, state badge, interrupt, stop.
+- The keyboard focus must move through them in the same order.
+- The interrupt action must show a pause icon in orange, not red. Its behaviour, accessible name and tooltip must not change.
+- The orange must look different from the amber of the needs-input state.
+- The orange icon must meet WCAG 2.2 AA non-text contrast (3:1) in the dark and in the light theme.
+- The stop action must keep its current look.
 - The header of an external session must show only the folder name, the session label or name, the state badge, the read-only chip and the resume-here action.
 - The header must stay on one line at every main area width from 700 px up. Its items must never overlap or wrap.
 - A label or name that does not fit must be cut with an ellipsis, and the full text must show on hover and on focus.
@@ -77,6 +91,16 @@ Text
 - The footer must stay one line high, so the terminal keeps its number of rows.
 - The header must keep the 40 px height of the reference.
 
+### Test suite
+
+- At the end of this fix, every test group of the project must run and pass, including the separate Electron e2e group.
+- This includes tests that fail for reasons not related to this feature.
+- A failing test must be fixed at its cause. When the product breaks a requirement of a current analysis, the product changes. When the test checks a behaviour that a later analysis changed, the test changes.
+- A test must not be skipped, deleted or weakened only to make the run pass. It may be removed only when no current analysis keeps the behaviour it checks.
+- A test that fails only on some runs counts as failing. It must pass on repeated runs.
+- The tests of the session header must check the new order and the new interrupt icon and colour.
+- If a test cannot run on this machine, the closing report must name it and give the reason.
+
 ## Assumptions
 
 - This is an evolution, not a fix. The 224 px width and the header content were deliberate choices. The orchestrator decided this.
@@ -91,11 +115,20 @@ Text
 - The four token parts go into a tooltip, because the human asked for less text on one line. No figure is lost.
 - The terminal search stays in the header and the text size controls go to the right end of the footer. The human decided this on 2026-11-06: "lo zoom mettilo in basso a destra mentre il search va bene in alto".
 - The key hint goes away. The human decided this on 2026-11-07: "nel footer mi aggiungi anche di togliere l'indicazione della shortcut per tornare al menù? è totalmente inutile e magari ti farò implementare in futuro un sistema di shortcut".
+- The 2026-11-07 change is a fix of this analysis, not a new evolution. The human said "riapri l'ultimo batch fixa".
+- "Lente" means the terminal search action. "Terminate" means the stop action.
+- The pause icon and the orange colour are decided, although the human wrote "magari". The human asked to work alone and is not available.
+- The external session header does not change. It has no search, interrupt or stop action.
+- The orange applies to the interrupt action only. The accent stays light blue ([studio_dark](claude_sessions_client-ui_redesign-material3_mock-studio_dark.md), line 24).
+- "Tutti i test" means every test group the project defines, unit and e2e, with the Electron group included.
 
 ## Risks
 
 - Claude Code redraws its screen on each column change. Many changes during one drag can make the terminal flicker or show a broken frame for a moment.
 - The context warning at 70% and 90% moves to the bottom of the view. A user who looks at the header may notice it later.
+- The orange interrupt sits next to the state badge. If the badge is amber (needs input), the user may read the two as one signal.
+- A failing test may show a real bug in another feature. Its fix then changes that feature, while the human is not available to review it.
+- Some tests may fail because of the machine and not the code, for example the Electron e2e group without a display.
 
 ## Scope
 
@@ -103,6 +136,8 @@ In scope:
 - Resizing the session list panel with the mouse and the keyboard.
 - Remembering the panel width across reloads and restarts.
 - A shorter header and a footer bar for hosted and external sessions.
+- The order of the hosted header items and the look of the interrupt action.
+- Fixing every failing test of the project.
 
 Out of scope:
 - Collapsing or hiding the panel.
@@ -113,3 +148,6 @@ Out of scope:
 - Any change to how the usage figures are computed.
 - A footer that the user can configure.
 - A system of keyboard shortcuts.
+- The look of any other button, including the stop action.
+- New tests for features not touched by a fix.
+- Changing another analysis so that a test passes.

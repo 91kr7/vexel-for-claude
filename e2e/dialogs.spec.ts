@@ -145,6 +145,8 @@ test.describe('folder chooser', () => {
     await page.goto('/');
     await openChooser(page);
 
+    // The field shows the current folder once the first listing is in: typing earlier races it.
+    await expect(pathField(page)).toHaveValue(/^\//);
     await pathField(page).fill(folder);
     await pathField(page).press('Enter');
     await expect(action(chooser(page), 'sottocartella')).toBeVisible();
@@ -175,6 +177,8 @@ test.describe('folder chooser', () => {
     });
     await page.goto('/');
     await openChooser(page);
+    // The field shows the current folder once the first listing is in: typing earlier races it.
+    await expect(pathField(page)).toHaveValue(/^\//);
     await pathField(page).fill(folder);
     await pathField(page).press('Enter');
     await expect(pathField(page)).toHaveValue(folder);

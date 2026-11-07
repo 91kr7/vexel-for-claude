@@ -167,6 +167,8 @@ test('a relative path and a missing folder show English errors in the new-sessio
   await page.goto('/');
   await topBar(page).getByRole('button', { name: 'New Session', exact: true }).click();
   await expect(pathField(page)).toBeVisible();
+  // The field shows the current folder once the first listing is in: typing earlier races it.
+  await expect(pathField(page)).toHaveValue(/^\//);
 
   await pathField(page).fill('relative/project');
   await pathField(page).press('Enter');
