@@ -30,3 +30,5 @@
 | 2026-11-07 | dev | G4 header-footer fix | pass | Build green (re-run); files map to INT-7..11; light orange `#b62a12` (vermilion) accepted: orange-700 fails 4.5:1 on hover, orange-800 too close to light amber; to review by eye in the light theme |
 | 2026-11-07 | test | G5 header-footer fix | pass | Re-run by gatekeeper: unit 37/37, e2e 33/33 (header-footer, hosted-session, colours-type); tester full runs unit 1990/1990, browser e2e 452/452, Electron 30/30; 5 failures triaged as test faults (outdated orange rule, 3 races, open events socket), each 5 runs green; no source change |
 | 2026-11-07 | test | latent path-field race | sent back | Same race as feedback-states:755 in 6 untouched spots (dialogs, english-ui, feedback-states); flaky counts as failing (REQ-40): apply the same wait |
+| 2026-11-07 | test | latent path-field race | pass | Wait added in 5 spots (english-ui :176 covered by :171); tester 275/275 on 5 runs, gatekeeper re-run 20/20; tests only |
+| 2026-11-07 | closing | REQ-37..42 | pass | Unit, browser e2e and Electron groups green; no source change after the full run; nothing unrunnable on this machine |
