@@ -41,6 +41,7 @@ type: configuration
 | `--on-accent` | `--bg-canvas`: text on an accent fill |
 
 - Status colours, Tailwind v3 values: `--emerald-400/500`, `--amber-300/400/500`, `--rose-300/400/500`, `--zinc-400/500`. Tints of the 500 tone: `--emerald-500-15/30`, `--amber-500-15/20/25/30/40`, `--rose-500-15/25/30`, `--zinc-500-15/30` (the suffix is the opacity in %).
+- Orange of "Interrupt", Tailwind v3 values: `--orange-400` `#fb923c` (text and icon), `--orange-500` `#f97316`, and its tints `--orange-500-15/25/30`.
 - Names kept because components read them:
   - `--color-error` → `--rose-400`
   - `--color-focus-ring` → `--accent-primary`
@@ -84,6 +85,7 @@ type: configuration
 | `--rose-300`, `--rose-400` | `#9f1239` (rose-800) |
 | `--zinc-400` | `#52525b` (zinc-600) |
 
+- `--orange-400` → `#b62a12` (OKLCH L 0.51, chroma 0.18, hue 32), not a Tailwind tone: orange-800 sits too close to the amber `#92400e` (see rules).
 - The 500 tones, their tints, `--color-backdrop`, the shadows, the fonts and `--term-size` keep the dark values. The mock uses the same ones in both themes.
 
 ### Removed
@@ -92,12 +94,14 @@ type: configuration
 
 ## Rules and invariants
 
-- No accent token is orange, indigo, violet or pink, as the old mock's accents were. The amber and brown tokens of warnings, needs input and terminal search highlights are allowed.
+- No accent token is orange, indigo, violet or pink, as the old mock's accents were. The amber and brown tokens of warnings, needs input and terminal search highlights are allowed. The orange tokens are an action colour, not an accent.
 - In each set, `--text-primary`, `--text-secondary` and `--text-muted` reach 4.5:1 on canvas and on surfaces 1, 2 and 3.
 - Dark `--text-muted` is the least lightening of the mock value that reaches it on surface 3 (about 4.56:1). Light `--text-muted` is the least darkening, same HSL hue and saturation (about 4.51:1).
 - Dark: `--on-accent` on `--accent-primary` reaches 4.5:1 (about 11.7:1), and on `--accent-deep` too (about 5.8:1).
 - Light: `--accent-primary` reaches 4.5:1 on canvas and surfaces 1–3 (about 4.51:1 on surface 3). `--on-accent` reaches 6.0:1 on it and 9.9:1 on `--accent-deep`.
 - Light: the status text tones stay apart from each other: green, brown-orange, crimson and grey.
+- `--orange-400` reaches 4.5:1 on surface 1 and on the `--orange-500-15` and `--orange-500-25` tints over it. Dark: about 8.3, 6.7 and 5.6:1. Light: about 6.0, 5.2 and 4.7:1.
+- `--orange-400` keeps its OKLCH hue apart from `--amber-400` and `--rose-400` of the same set. Dark: 56 against 84 and 13. Light: 32 against 46 and 14, also with more chroma than the amber (0.18 against 0.13).
 - The terminal tokens never change with the theme.
 - `--window-symbol` over each window button colour reaches 3:1 (about 3.1:1 on the red, the lowest). 50 % would give 2.96:1.
 - `--term-fg` reaches 4.5:1 on `--term-match-bg` (about 7.7:1) and on `--term-match-current-bg` (about 6.3:1). `--term-match-current-border` reaches 3:1 on `--term-bg` (about 13.6:1).
@@ -114,3 +118,4 @@ type: configuration
 - `plan-mac_title_bar/REQ-22`, `plan-mac_title_bar/REQ-26`
 - `plan-light_theme/REQ-6`, `plan-light_theme/REQ-7`, `plan-light_theme/REQ-8`, `plan-light_theme/REQ-9`, `plan-light_theme/REQ-10`, `plan-light_theme/REQ-12`, `plan-light_theme/REQ-13`, `plan-light_theme/REQ-14`, `plan-light_theme/REQ-15`, `plan-light_theme/REQ-16`
 - `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-31`
+- `plan-session_list_width/REQ-34`, `plan-session_list_width/REQ-35`

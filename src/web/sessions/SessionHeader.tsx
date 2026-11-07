@@ -33,11 +33,12 @@ function LineChip({ text }: { text: string }) {
 interface SessionHeaderProps {
   session?: SessionHeaderSummary;
   actions: ReactNode;
+  leadingActions?: ReactNode;
   notice?: ReactNode;
   line?: string;
 }
 
-export function SessionHeader({ session, actions, notice, line }: SessionHeaderProps) {
+export function SessionHeader({ session, actions, leadingActions, notice, line }: SessionHeaderProps) {
   const name = session && folderNameOf(session.folder);
   const subtitle = session && (line ?? session.label);
   return (
@@ -53,6 +54,7 @@ export function SessionHeader({ session, actions, notice, line }: SessionHeaderP
         )}
       </div>
       <div className="session-header-actions">
+        {leadingActions}
         {session && <StateBadge state={session.state} variant="chip" />}
         {notice}
         {actions}

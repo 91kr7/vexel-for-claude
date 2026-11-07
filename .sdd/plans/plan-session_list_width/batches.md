@@ -9,7 +9,7 @@ Requirements → `requirements.md`. Batch files → `batches/`.
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
 | list-width | Resizable list panel | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14 | — | certified | The user makes the list wider and finds the same width after a reload |
-| header-footer | Lighter header and footer bar | REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-41 | — | certified | The user reads the session details in the footer of a hosted session |
+| header-footer | Lighter header and footer bar | REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-41 | — | implemented | The user reads the session details in the footer of a hosted session |
 
 Execution order: list-width, then header-footer. The two batches do not depend on each other. Both may touch `src/web/styles.css`, so they run in this order.
 

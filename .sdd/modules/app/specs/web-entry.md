@@ -49,6 +49,7 @@ Client classes built from the mock's parts:
 | `.button-bar` | with `.button-primary`: 32 px high, padding 0 × 10 px, `shadow-sm`, scaled to 95 % while pressed (top-bar "New Session") |
 | `.button-danger` | mono 11 px, padding 4 × 10 px, 6 px radius, rose-500 at 15 % fill, rose-400 text, rose-500 at 30 % border; hover → fill at 25 % (`#subbar-stop-btn`) |
 | `.button-attn` | `.button-danger` in amber |
+| `.button-interrupt` | `.button-danger` in orange: `--orange-500-15` fill, `--orange-400` text and icon, `--orange-500-30` border; hover → `--orange-500-25` fill. Keyboard focus shows the common focus ring. "Interrupt" of SessionView |
 | `.field`, `.field-label`, `.field-input` | label mono 11 px `--text-secondary`, 4 px above the input. Input mono 12 px, padding 8 × 12 px, 8 px radius, `--bg-canvas`, `--border-subtle` border; on focus no ring and the border becomes `--accent-border` (`#new-sess-dir`) |
 
 - the font is Roboto Mono wherever the mock uses JetBrains Mono, and Roboto Flex wherever it uses Plus Jakarta Sans or Instrument Serif. Where the mock asks mono 600 or 700, the client uses 500.
@@ -72,3 +73,4 @@ Client classes built from the mock's parts:
 - `plan-claude_sessions_client/REQ-1`, `plan-claude_sessions_client-ui_redesign/REQ-1`
 - `plan-light_theme/REQ-11`, `plan-light_theme/REQ-13`, `plan-light_theme/REQ-18`, `plan-light_theme/REQ-19`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-10`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-11`
+- `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-34`, `plan-session_list_width/REQ-35`, `plan-session_list_width/REQ-36`

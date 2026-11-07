@@ -27,3 +27,4 @@
 | 2026-11-07 | plan (fix header order) | question planner Q1-Q5 | decided | Interrupt keeps its text with the pause icon; whole button orange; existing `CirclePauseIcon`; flaky fix = 5 green runs; REQ-41 closes in header-footer, REQ-37..40 and 42 in the closing run |
 | 2026-11-07 | plan (fix header order) | G2 requirements | pass | REQ-30..36 header order and Interrupt look, REQ-37..42 test suite; match the fix block of the analysis |
 | 2026-11-07 | plan (fix header order) | G3 coverage | pass | INT-7..11 reopen header-footer, modify paths exist, `CirclePauseIcon` exists; REQ-37..40 and 42 declared exception closed by the closing run; batch reopened to `todo` |
+| 2026-11-07 | dev | G4 header-footer fix | pass | Build green (re-run); files map to INT-7..11; light orange `#b62a12` (vermilion) accepted: orange-700 fails 4.5:1 on hover, orange-800 too close to light amber; to review by eye in the light theme |

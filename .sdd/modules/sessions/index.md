@@ -16,7 +16,7 @@
 | droppedPathsText | frontend function | `src/web/sessions/dropped-paths-text.ts` | Text of a drop: each path followed by one space, quoted in single quotes when it has spaces or shell-special characters | `specs/dropped-paths-text.md` |
 | LinkOpener | frontend function | `src/web/sessions/link-opener.ts` | Opens an `http`/`https` address in a new tab with no opener; any other scheme does nothing | `specs/link-opener.md` |
 | WebAddressLinks | frontend function | `src/web/sessions/web-address-links.ts` | Link provider of the `http`/`https` addresses in the terminal rows, with wrapped and full-row addresses joined | `specs/web-address-links.md` |
-| SessionHeader | UI component | `src/web/sessions/SessionHeader.tsx` | 40 px subbar of the open session: folder name, line chip cut with its full-text tooltip, state pill, actions | `specs/session-header.md` |
+| SessionHeader | UI component | `src/web/sessions/SessionHeader.tsx` | 40 px subbar of the open session: folder name, line chip cut with its full-text tooltip, leading actions, state pill, actions | `specs/session-header.md` |
 | SessionFooter | UI component | `src/web/sessions/SessionFooter.tsx` | 40 px footer of the open session: optional lead text, path cut with its tooltip, figures, end items at the right | `specs/session-footer.md` |
 | SessionFigures | UI component | `src/web/sessions/SessionFigures.tsx` | Context, total tokens with the four parts in a tooltip, and estimated cost chips of a session summary | `specs/session-figures.md` |
 | StopSessionButton | UI component | `src/web/sessions/StopSessionButton.tsx` | Rose "Terminate" button of the open session, with confirmation when working | `specs/stop-session-button.md` |
