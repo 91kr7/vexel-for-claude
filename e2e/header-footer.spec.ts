@@ -366,3 +366,152 @@ test.describe('Header and footer of an open session', () => {
     await expect(costChip(page)).toHaveText(cost);
   });
 });
+
+type Rgba = [number, number, number, number];
+const rgbaOf = (css: string): Rgba => {
+  const [r = 0, g = 0, b = 0, a = 1] = (css.match(/[\d.]+/g) ?? []).map(Number);
+  return [r, g, b, a];
+};
+/** `top` painted over the opaque `below`. */
+const over = ([r, g, b, a]: Rgba, below: Rgba): Rgba => [r * a + below[0] * (1 - a), g * a + below[1] * (1 - a), b * a + below[2] * (1 - a), 1];
+const linear = (channel: number) => {
+  const c = channel / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+};
+const luminance = ([r, g, b]: Rgba) => 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+/** WCAG 2.2 contrast ratio of two opaque colours. */
+const contrast = (one: Rgba, two: Rgba) => {
+  const [hi, lo] = [luminance(one), luminance(two)].sort((x, y) => y - x) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+};
+/** OKLab coordinates of an opaque colour. */
+const oklab = ([r, g, b]: Rgba): [number, number, number] => {
+  const [lr, lg, lb] = [linear(r), linear(g), linear(b)];
+  const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+  const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+  const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+};
+// OKLab distance: about 0.02 is the smallest visible difference; 0.05 makes two colours clearly apart.
+const CLEARLY_APART = 0.05;
+const distance = (one: Rgba, two: Rgba) => Math.hypot(...oklab(one).map((v, i) => v - oklab(two)[i]!));
+
+const actionButton = (page: Page, name: string) => header(page).getByRole('button', { name, exact: true });
+const statePill = (page: Page, name: string) => header(page).locator('.status-pill').filter({ hasText: name });
+const style = (locator: Locator, property: string) => locator.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), property);
+
+test.describe('Order and look of the header actions of a hosted session', () => {
+  // plan-session_list_width/REQ-30, REQ-31, REQ-32, REQ-36 — scenario "The user finds "Search", the state, "Interrupt" and "Terminate" in this order"
+  test('"Search", the state, "Interrupt" and "Terminate" show and take the focus in this order', async ({ page, request }) => {
+    const folder = await newFolder('order');
+    const label = 'Add the invoice export';
+    await hosted(request, folder, label, [response(SOME_RESPONSES)], { working: true });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+    await entry(page, folder).click();
+    await page.mouse.move(0, 0);
+
+    const search = actionButton(page, 'Search');
+    const interrupt = actionButton(page, 'Interrupt');
+    const stop = actionButton(page, 'Terminate');
+    const pill = statePill(page, 'Running');
+    await expect(pill).toBeVisible();
+    const xs = await Promise.all([search, pill, interrupt, stop].map(async (item) => (await box(item)).x));
+    expect([...xs].sort((a, b) => a - b), 'Search, state, Interrupt, Terminate from left to right').toEqual(xs);
+    await expectOneRow(page, [search, pill, interrupt, stop]);
+
+    // Tab from the label chip: "Search", then "Interrupt", then "Terminate"; the state takes no focus.
+    await header(page).locator('.mono-chip').filter({ hasText: label }).focus();
+    for (const next of [search, interrupt, stop]) {
+      await page.keyboard.press('Tab');
+      await expect(next).toBeFocused();
+    }
+
+    // "Interrupt": orange pause icon and text, no "■".
+    const orange = await colourOf(page, '--orange-400');
+    await expect(interrupt).toHaveCSS('color', orange);
+    await expect(interrupt).not.toContainText('■');
+    const icon = interrupt.locator('svg');
+    await expect(icon).toHaveCount(1);
+    await expect(icon).toBeVisible();
+    await expect(icon).toHaveAttribute('aria-hidden', 'true');
+    expect(await style(icon, 'stroke'), 'the icon is drawn in orange').toBe(orange);
+    const iconBox = await box(icon);
+    const textLeft = await interrupt.evaluate((el) => {
+      const node = [...el.childNodes].find((child) => child.nodeType === Node.TEXT_NODE && child.textContent?.includes('Interrupt'));
+      const range = document.createRange();
+      range.selectNodeContents(node!);
+      return range.getBoundingClientRect().x;
+    });
+    expect(iconBox.x + iconBox.width, 'the icon comes before the text').toBeLessThanOrEqual(textLeft + TOLERANCE);
+
+    // "Terminate": the rose look of the stop button, with its "■".
+    await expect(stop).toHaveCSS('background-color', await colourOf(page, '--rose-500-15'));
+    await expect(stop).toHaveCSS('color', await colourOf(page, '--rose-400'));
+    await expect(stop).toHaveCSS('border-top-color', await colourOf(page, '--rose-500-30'));
+    await expect(stop.getByText('■', { exact: true })).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  // plan-session_list_width/REQ-33 — scenario ""Interrupt" stops Claude's turn as before"
+  test('"Interrupt" sends Esc, gives the focus to the terminal and keeps its name with no tooltip', async ({ page, request }) => {
+    const folder = await newFolder('interrupt');
+    await hosted(request, folder, 'Explain the code', [], { working: true });
+    await page.goto('/');
+    await entry(page, folder).click();
+    const interrupt = actionButton(page, 'Interrupt');
+    await expect(interrupt).toHaveAccessibleName('Interrupt');
+    await expect(interrupt).toHaveText(/^\s*Interrupt\s*$/);
+
+    await interrupt.click();
+    await expect(page.locator('.xterm-rows')).toContainText('IN:1b');
+    await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
+
+    await interrupt.hover();
+    await page.waitForTimeout(1_000);
+    await expect(interrupt).not.toHaveAttribute('title');
+    await expect(tooltip(page)).toHaveCount(0);
+  });
+
+  // plan-session_list_width/REQ-34, REQ-35 — scenario "The orange of "Interrupt" stays apart from the amber of needs input"
+  test('in both themes "Interrupt" is orange, readable on the header, and apart from the amber of needs input', async ({ page, request }) => {
+    const folder = await newFolder('needs-input');
+    const id = await hosted(request, folder, 'Explain the code', [], { working: true });
+    await hookEvent(request, id, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
+    await page.goto('/');
+    await entry(page, folder).click();
+    const interrupt = actionButton(page, 'Interrupt');
+    const pill = statePill(page, 'Needs Input');
+    await expect(pill).toBeVisible();
+
+    for (const theme of ['dark', 'light'] as const) {
+      if (theme === 'light') {
+        await page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true }).click();
+        await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+      }
+      await page.mouse.move(0, 0);
+      const orange = await colourOf(page, '--orange-400');
+      await expect(interrupt, `${theme}: orange text`).toHaveCSS('color', orange);
+      expect(await style(interrupt.locator('svg'), 'stroke'), `${theme}: orange icon`).toBe(orange);
+      const amber = rgbaOf(await style(pill, 'color'));
+      expect(distance(rgbaOf(orange), amber), `${theme}: orange apart from the amber state`).toBeGreaterThanOrEqual(CLEARLY_APART);
+
+      const surface = rgbaOf(await style(header(page), 'background-color'));
+      const restingFill = await colourOf(page, '--orange-500-15');
+      await expect(interrupt, `${theme}: orange fill`).toHaveCSS('background-color', restingFill);
+      await expect(interrupt, `${theme}: orange border`).toHaveCSS('border-top-color', await colourOf(page, '--orange-500-30'));
+      const resting = over(rgbaOf(restingFill), surface);
+      const hoverFill = await colourOf(page, '--orange-500-25');
+      await interrupt.hover();
+      await expect(interrupt, `${theme}: hover fill`).toHaveCSS('background-color', hoverFill);
+      const hovered = over(rgbaOf(hoverFill), surface);
+      for (const [where, background] of [['header', surface], ['button', resting], ['hovered button', hovered]] as const) {
+        expect(contrast(rgbaOf(orange), background), `${theme}: icon on the ${where}`).toBeGreaterThanOrEqual(3);
+        expect(contrast(rgbaOf(orange), background), `${theme}: text on the ${where}`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+});

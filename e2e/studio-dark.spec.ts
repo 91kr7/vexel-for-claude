@@ -667,14 +667,17 @@ test.describe('hosted session view', () => {
     expect(await style(pill, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     await expect(pill.locator('[aria-hidden="true"]')).toHaveCount(1);
 
-    // REQ-32: rose "Interrupt" and "Terminate"
-    for (const name of ['Interrupt', 'Terminate']) {
-      const action = button(head, name);
-      expect(await style(action, 'color'), name).toBe(ROSE_400);
-      expect(await style(action, 'background-color'), name).toBe(ROSE_500_15);
-      expect(await style(action, 'font-family'), name).toMatch(/^["']?Roboto Mono["']?/);
-      await expect(action).toContainText('■');
-    }
+    // REQ-32, changed by plan-session_list_width/REQ-32, REQ-36: orange "Interrupt" with a pause icon, rose "Terminate" with "■"
+    const interrupt = button(head, 'Interrupt');
+    expect(await style(interrupt, 'color')).toBe(await colour(page, 'var(--orange-400)'));
+    expect(await style(interrupt, 'background-color')).toBe(await colour(page, 'var(--orange-500-15)'));
+    await expect(interrupt.locator('svg')).toHaveCount(1);
+    await expect(interrupt).not.toContainText('■');
+    const stop = button(head, 'Terminate');
+    expect(await style(stop, 'color')).toBe(ROSE_400);
+    expect(await style(stop, 'background-color')).toBe(ROSE_500_15);
+    await expect(stop).toContainText('■');
+    for (const action of [interrupt, stop]) expect(await style(action, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
 
     // REQ-34: the terminal panel on canvas, subtle border, 8 px radius, 12 px mono
     const region = page.getByRole('region', { name: 'Terminal: billing-api' });
@@ -1043,6 +1046,8 @@ test.describe('area states', () => {
       (url) => url.pathname === '/api/sessions',
       (route) => (route.request().method() === 'GET' ? route.fulfill({ json: [] }) : route.fallback()),
     );
+    // No live frames: sessions that parallel tests start would fill the list.
+    await page.routeWebSocket(/\/api\/sessions\/events$/, () => {});
     await page.goto('/');
     const block = panel(page).locator('.vx-surface-1').filter({ hasText: 'No sessions.' });
     await expect(block).toBeVisible();

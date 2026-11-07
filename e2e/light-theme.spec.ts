@@ -473,6 +473,8 @@ test.describe('theme switch', () => {
     await page.goto('/');
     await button(topBar(page), 'New Session').click();
     const field = chooser(page).getByRole('textbox', { name: 'Working Directory Path', exact: true });
+    // The field shows the current folder once the first listing is in: typing earlier races it.
+    await expect(field).toHaveValue(/^\//);
     await field.fill('/tmp/some-project');
     // The modal backdrop covers the top bar, so the click is dispatched to the switch directly.
     await themeSwitch(page).evaluate((el) => (el as HTMLButtonElement).click());
@@ -487,6 +489,8 @@ test.describe('theme switch', () => {
     await showOnly(page);
     await page.goto('/');
     await expect(button(mainArea(page), 'New Session')).toBeVisible();
+    // The list must have loaded: a shot of "Loading…" would differ from the one taken after the switch.
+    await expect(panel(page).getByText('No sessions.', { exact: true })).toBeVisible();
     const darkTokens = await allTokens(page);
     const darkShot = await page.screenshot({ animations: 'disabled' });
 

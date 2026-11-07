@@ -787,6 +787,8 @@ for (const scheme of ['light', 'dark'] as const) {
 
       await page.keyboard.press('Enter');
       await expect(pathField(page)).toBeFocused();
+      // The field shows the current folder once the first listing is in: typing earlier races it.
+      await expect(pathField(page)).toHaveValue(/^\//);
       await page.keyboard.press('Control+A');
       await page.keyboard.type(folder);
       await page.keyboard.press('Enter');

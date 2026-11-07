@@ -27,6 +27,23 @@ describe('SessionHeader', () => {
     expect(text(html)).toBe('negozio Aggiungi il carrello Needs Input Avviso Azione');
   });
 
+  // plan-session_list_width/REQ-30, REQ-31: the leading actions come first in the right group, then the state pill, the notice and the actions
+  it('shows the leading actions before the state pill, then the notice and the actions', () => {
+    const html = renderToStaticMarkup(
+      <SessionHeader session={session} leadingActions={<button type="button">Cerca</button>} actions={actions} notice={<span>Avviso</span>} />,
+    );
+    const chip = renderToStaticMarkup(<StateBadge state="needs_input" variant="chip" />);
+    expect(text(html)).toBe('negozio Aggiungi il carrello Cerca Needs Input Avviso Azione');
+    expect(html.indexOf('Cerca')).toBeLessThan(html.indexOf(chip));
+    expect(html.indexOf(chip)).toBeLessThan(html.indexOf('Azione'));
+  });
+
+  // SessionHeader "Shows": without a session, the leading actions still show, before the notice and the actions
+  it('without a session still shows the leading actions, the notice and the actions', () => {
+    const html = renderToStaticMarkup(<SessionHeader leadingActions={<button type="button">Cerca</button>} actions={actions} notice={<span>Avviso</span>} />);
+    expect(text(html)).toBe('Cerca Avviso Azione');
+  });
+
   // plan-session_list_width/REQ-15: no "/", no path and no figures, even when the session has usage
   it('shows no "/", no path and no usage figures', () => {
     const html = renderToStaticMarkup(<SessionHeader session={{ ...session, usage }} actions={actions} />);
