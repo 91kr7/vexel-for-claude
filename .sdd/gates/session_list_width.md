@@ -24,3 +24,6 @@
 | 2026-11-07 | closing | merge with light-theme.spec.ts:486 red | human decision | Merge anyway; the failure predates this cycle and stays open |
 | 2026-11-07 | analysis (fix header order) | start | human decision | Human asked to reopen the last batch as a fix and to run without stops ("esegui tutto in autonomia"); new branch `fix/session_list_width`, `feat/` already merged |
 | 2026-11-07 | analysis (fix header order) | G1 analysis | pass | ordinary, 153/200 lines; `type: fix` as in the `claude_sessions_client` precedent; pause icon and orange taken as decided; external header unchanged; Electron group included in "tutti i test" |
+| 2026-11-07 | plan (fix header order) | question planner Q1-Q5 | decided | Interrupt keeps its text with the pause icon; whole button orange; existing `CirclePauseIcon`; flaky fix = 5 green runs; REQ-41 closes in header-footer, REQ-37..40 and 42 in the closing run |
+| 2026-11-07 | plan (fix header order) | G2 requirements | pass | REQ-30..36 header order and Interrupt look, REQ-37..42 test suite; match the fix block of the analysis |
+| 2026-11-07 | plan (fix header order) | G3 coverage | pass | INT-7..11 reopen header-footer, modify paths exist, `CirclePauseIcon` exists; REQ-37..40 and 42 declared exception closed by the closing run; batch reopened to `todo` |

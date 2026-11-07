@@ -1,13 +1,15 @@
 ---
 batch: header-footer
 feature: Lighter header and footer bar
-closed_req: [REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29]
+closed_req: [REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-41]
 depends: []
 ---
 
 # Batch header-footer — Lighter header and footer bar
 
-The requirements are in `.sdd/plans/plan-session_list_width/requirements.md`, with the assumptions "Cost label", "Text of an external session", "Footer layout", "Footer height", "Search and text size controls" and "Key hint". REQ-22 is withdrawn.
+The requirements are in `.sdd/plans/plan-session_list_width/requirements.md`, with the assumptions "Cost label", "Text of an external session", "Footer layout", "Footer height", "Search and text size controls", "Key hint", "Header order", Label of "Interrupt" and "Orange look". REQ-22 is withdrawn.
+
+The fix of 2026-11-07 reopens this batch for REQ-30 to REQ-36 and REQ-41: INT-7 to INT-11. INT-1 to INT-6 are already done.
 
 ## What this batch builds
 
@@ -21,11 +23,20 @@ The requirements are in `.sdd/plans/plan-session_list_width/requirements.md`, wi
 | INT-4 | modify | `src/web/sessions/SessionHeader.tsx` | The line chip is cut with an ellipsis. It is reachable with Tab and shows its full text in a tooltip, on hover and on keyboard focus. | REQ-18 | INT-3 |
 | INT-5 | modify | `src/web/sessions/SessionView.tsx` | Header actions: "Search", "Interrupt" and "Terminate". The TerminalZoomControls leave the header. The footer takes the place of the hint row: path and figures of `session`, then the TerminalZoomControls at the right end. The Ctrl+Shift+L hint goes, and the key still works. | REQ-15, REQ-19, REQ-20, REQ-28, REQ-29 | INT-1, INT-2, INT-3 |
 | INT-6 | modify | `src/web/external/ConversationView.tsx` | The header line shows the label or name, not "Open in Another Terminal". Under the content, the footer shows the lead text "Open in Another Terminal · ", then the path and figures of `session`. The "Read-only" chip and "Resume Here" stay in the header. | REQ-16, REQ-19, REQ-20, REQ-21 | INT-1, INT-2, INT-3 |
+| INT-7 | modify | `src/web/sessions/SessionHeader.tsx` | New optional prop: items shown in the right group before the state pill. The markup order is the visual order, so Tab follows it. Without the prop the header is as today, so the external view does not change. | REQ-30, REQ-31 | — |
+| INT-8 | modify | `src/web/sessions/SessionView.tsx` | "Search" moves from `actions` to the prop of INT-7. `actions` keeps "Interrupt", then "Terminate". | REQ-30, REQ-31 | INT-7 |
+| INT-9 | modify | `src/web/theme/tokens.css` | Orange tokens for "Interrupt" in the dark and the light set, with the tints the button needs. Each text tone reaches 4.5:1 on surface 1 and on the button's hover tint. In each set its hue stays apart from amber and rose. | REQ-34, REQ-35 | — |
+| INT-10 | modify | `src/web/styles.css` | Orange button class for "Interrupt": the shape of `.button-danger`, with icon, text and border in the orange of INT-9, and its hover and focus. `.button-danger` and `.stop-glyph` do not change. | REQ-32, REQ-34, REQ-35, REQ-36 | INT-9 |
+| INT-11 | modify | `src/web/sessions/SessionView.tsx` | "Interrupt": `CirclePauseIcon` of IconSet in place of the "■" glyph, and the class of INT-10 in place of `.button-danger`. The text, the accessible name, the absence of a tooltip, the Esc it sends and its hiding on `ended` stay. | REQ-32, REQ-33 | INT-8, INT-10 |
 
 Notes:
 
 - The summary that SessionView and ConversationView get already carries `usage`: the header shows the figures from it today. The footer reads the same summary, so the figures are computed as today.
 - The footer is as high as today's hint row (40 px), so the terminal keeps its number of rows (REQ-28). On an external session the conversation area gets 40 px shorter.
+- StopSessionButton also uses `.button-danger` and `.stop-glyph`. So INT-10 adds a class and changes neither of them (REQ-36).
+- In the light set the amber text tone is already a brown-orange (`#92400e`). INT-9 must keep the light orange clearly apart from it (REQ-34).
+- The orange tokens are an action colour, not an accent. The ThemeTokens rule "no accent token is orange" still holds.
+- REQ-41 has no INT and no scenario. The tester of this batch changes the existing unit and e2e tests of the header and of SessionView that check the old order, the "■" glyph or the rose "Interrupt". The batch test run checks it.
 
 ## Human acceptance
 
@@ -74,3 +85,26 @@ Notes:
 - Given → a hosted session answered at least once, and its footer shows its figures
 - When → the user presses "Terminate" and confirms
 - Then → the header shows "Ended", and the footer still shows the last figures
+
+### Scenario: The user finds "Search", the state, "Interrupt" and "Terminate" in this order
+
+- REQ → REQ-30, REQ-31, REQ-32, REQ-36
+- Given → a hosted session is open and Claude is working
+- When → the user moves the focus with Tab, starting from the session label in the header
+- Then → the header shows from left to right "Search", the state, "Interrupt" with an orange pause icon, and "Terminate" in its rose look as before
+- And → the focus goes to "Search", then to "Interrupt", then to "Terminate"
+
+### Scenario: "Interrupt" stops Claude's turn as before
+
+- REQ → REQ-33
+- Given → a hosted session is open and Claude is working
+- When → the user presses "Interrupt"
+- Then → Claude Code stops its turn, as with Esc in the terminal, and the terminal gets the focus
+- And → the button still reads "Interrupt" and shows no tooltip on hover
+
+### Scenario: The orange of "Interrupt" stays apart from the amber of needs input
+
+- REQ → REQ-34, REQ-35
+- Given → an open hosted session needs input, so the header shows the amber state next to "Interrupt", in the dark theme
+- When → the user switches to the light theme
+- Then → in both themes "Interrupt" is orange, clearly visible on the header, and its colour differs from the amber state
