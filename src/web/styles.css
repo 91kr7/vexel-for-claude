@@ -769,6 +769,22 @@ input {
   text-decoration: underline;
 }
 
+.short-message {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 50;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 40px);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-primary);
+  pointer-events: none;
+}
+
 .state-working {
   --state-solid: var(--emerald-400);
   --state-tint: var(--emerald-500-15);
@@ -1673,6 +1689,10 @@ input {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+.conversation-items:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
 .conversation-column {

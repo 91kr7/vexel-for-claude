@@ -4,7 +4,7 @@
 |-----------|------|------|----------------|------|
 | Server | configuration | `src/server/main.ts` | Fastify process on 127.0.0.1: guard, routes, static page | `specs/server.md` |
 | LocalAccessGuard | backend service (request hook) | `src/server/local-access-guard.ts` | Rejects HTTP and WebSocket requests whose Host is not local or whose Origin is not the client's own (plus Vite in development) | `specs/local-access-guard.md` |
-| AppLayout | UI page | `src/web/AppLayout.tsx` | Full-window frame: top bar, rail, resizable list panel ("Sessions", needs-input chip, session list), dot-grid main area, fixed snackbar | `specs/app-layout.md` |
+| AppLayout | UI page | `src/web/AppLayout.tsx` | Full-window frame: top bar, rail, resizable list panel ("Sessions", needs-input chip, session list), dot-grid main area, fixed snackbar and short-message toast; runs the navigation shortcuts | `specs/app-layout.md` |
 | ListWidthStore | frontend service | `src/web/list-width-store.ts` | Width of the list panel: 180 to 480 px, default 224 px, saved in `localStorage`, and the width shown in a window that keeps 700 px for the main area | `specs/list-width-store.md` |
 | ListPanelEdge | UI component | `src/web/ListPanelEdge.tsx` | Separator "Resize Session List" on the right border of the list panel: drag, or Left and Right arrows by 16 px | `specs/list-panel-edge.md` |
 | TopBar | UI component | `src/web/TopBar.tsx` | 48 px bar with the "VX" logo mark, "Vexel for Claude", the theme switch and "New Session"; the window buttons and the window drag area in the desktop window | `specs/top-bar.md` |
@@ -23,5 +23,8 @@
 | AreaState | UI component | `src/web/feedback/AreaState.tsx` | Empty, loading or error block that fills an area, in full or compact size | `specs/area-state.md` |
 | ProgressIndicator | UI component | `src/web/feedback/ProgressIndicator.tsx` | Rotating indicator with a label for a loading area, and the Spinner of a busy button | `specs/progress-indicator.md` |
 | ErrorMessage | UI component | `src/web/feedback/ErrorMessage.tsx` | Icon and text in rose, announced as an alert | `specs/error-message.md` |
+| ShortcutMap | configuration | `src/web/shortcut-map.ts` | The one list of the client shortcuts: physical key, modifiers, area, action text and command, and the lookup of a key event | `specs/shortcut-map.md` |
+| useShortcutKeys | frontend hook | `src/web/shortcut-keys.ts` | Window `keydown` listener in the capture phase: runs the command of a map key, cancels and stops the event; does nothing while a dialog is open | `specs/shortcut-keys.md` |
+| ShortMessageToast | UI component | `src/web/ShortMessageToast.tsx` | Glass status box at the bottom centre that shows one text for 4 s | `specs/short-message-toast.md` |
 | IconSet | UI component | `src/web/icons/Icons.tsx`, `src/web/icons/LICENSE` | Lucide icons as local decorative SVG components, with their licence | `specs/icon-set.md` |
 | ThirdPartyNotices | document | `THIRD-PARTY-NOTICES.md` | Source, version and licence of each third-party font and icon set | `specs/third-party-notices.md` |

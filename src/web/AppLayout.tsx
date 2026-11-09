@@ -8,11 +8,15 @@ import { ListPanelEdge } from './ListPanelEdge';
 import { listWidthLimit, pageListWidthStore, shownListWidth, useListWidth } from './list-width-store';
 import { NavigationRail } from './NavigationRail';
 import { NeedsInputSnackbar, useNeedsInputSnackbar } from './NeedsInputSnackbar';
+import { ShortMessageToast, useShortMessage } from './ShortMessageToast';
 import { countNeedsInput, NeedsInputCounter } from './sessions/NeedsInputCounter';
 import { SessionList } from './sessions/SessionList';
 import { SessionView } from './sessions/SessionView';
 import { type SessionSummary, useLiveSessions } from './sessions/live-session-store';
+import { sessionToOpen } from './sessions/navigation-targets';
 import { useSessionOrder } from './sessions/session-order-store';
+import { useShortcutKeys } from './shortcut-keys';
+import type { ShortcutCommand } from './shortcut-map';
 import { TopBar } from './TopBar';
 
 function subscribeToWindowResize(listener: () => void): () => void {
@@ -49,6 +53,10 @@ export function AppLayout() {
   const [resuming, setResuming] = useState(false);
   const listPanelRef = useRef<HTMLElement>(null);
   const newSessionRef = useRef<HTMLButtonElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const mainViewRef = useRef<{ focus(): void }>(null);
+  const focusMainViewAfterOpen = useRef(false);
+  const shortMessage = useShortMessage();
   const { sessions, status } = useLiveSessions();
   const { order: sessionOrder, move: moveSession } = useSessionOrder(sessions, status);
   const snackbarSession = useNeedsInputSnackbar(sessions, status, openSessionId);
@@ -89,6 +97,26 @@ export function AppLayout() {
     target?.focus({ focusVisible: true });
   };
 
+  useEffect(() => {
+    if (!focusMainViewAfterOpen.current) return;
+    focusMainViewAfterOpen.current = false;
+    mainViewRef.current?.focus();
+  }, [openSessionId, openIsExternal]);
+
+  useShortcutKeys((command: ShortcutCommand) => {
+    if (command.kind === 'focus-list') focusList();
+    else if (command.kind === 'focus-main-view') mainViewRef.current?.focus();
+    else {
+      const sessionId = sessionToOpen(sessions, sessionOrder, openSessionId, command.target);
+      if (sessionId === null) {
+        if (command.target.kind === 'next-needs-input') shortMessage.show('No session needs input');
+      } else if (sessionId !== openSessionId) {
+        focusMainViewAfterOpen.current = mainRef.current?.contains(document.activeElement) === true;
+        openFromList(sessionId);
+      }
+    }
+  });
+
   return (
     <div className="app">
       <TopBar onNewSession={() => setChoosingFolder(true)} />
@@ -115,17 +143,30 @@ export function AppLayout() {
             onOpen={openFromList}
           />
         </ListPanel>
-        <main className="session-area vx-dot-grid">
+        <main className="session-area vx-dot-grid" ref={mainRef}>
           {openSessionId && openIsExternal ? (
-            <ConversationView key={openSessionId} sessionId={openSessionId} session={openSummary} onResumed={openHosted} />
+            <ConversationView
+              key={openSessionId}
+              sessionId={openSessionId}
+              session={openSummary}
+              onResumed={openHosted}
+              focusRef={mainViewRef}
+            />
           ) : openSessionId ? (
-            <SessionView key={openSessionId} sessionId={openSessionId} session={openSummary} onLeaveTerminal={focusList} />
+            <SessionView
+              key={openSessionId}
+              sessionId={openSessionId}
+              session={openSummary}
+              onLeaveTerminal={focusList}
+              focusRef={mainViewRef}
+            />
           ) : (
             <EmptyState onNewSession={() => setChoosingFolder(true)} onResumeSession={() => setResuming(true)} />
           )}
         </main>
       </div>
       {snackbar}
+      <ShortMessageToast text={shortMessage.text} />
       {choosingFolder && (
         <FolderChooser
           onStarted={(sessionId) => {

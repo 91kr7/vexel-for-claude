@@ -18,6 +18,7 @@ Props:
 - `sessionId` → the id of the external session.
 - `session` → `{ folder, label, state, usage? }` for the header and the footer. Optional.
 - `onResumed(id)` → called with the id of the hosted session after "Resume Here" succeeds.
+- `focusRef` → optional. Gets `{ focus() }`: puts the keyboard focus in the message area (the scrolling content), which then shows the focus ring inside its edge. The message area is not in the Tab order.
 
 Shows:
 - the SessionHeader with `session`: folder name, the label or name as its line, the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The action is ResumeHereButton.
@@ -100,3 +101,4 @@ Scrolling:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-33`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-36` to `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-41`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-16`
 - `plan-session_list_width/REQ-16`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-21`
+- `plan-keyboard_shortcuts/REQ-3`

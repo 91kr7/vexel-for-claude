@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, type Ref, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AreaState } from '../feedback/AreaState';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
@@ -27,6 +27,7 @@ interface ConversationViewProps {
   sessionId: string;
   session?: SessionHeaderSummary;
   onResumed: (id: string) => void;
+  focusRef?: Ref<{ focus(): void }>;
 }
 
 const AT_END_TOLERANCE_PX = 8;
@@ -179,7 +180,7 @@ function MessageBlock({ item }: { item: UserItem | AssistantItem }) {
   );
 }
 
-export function ConversationView({ sessionId, session, onResumed }: ConversationViewProps) {
+export function ConversationView({ sessionId, session, onResumed, focusRef }: ConversationViewProps) {
   const [items, setItems] = useState<ConversationItem[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [unseen, setUnseen] = useState(0);
@@ -187,6 +188,7 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
   const followEndRef = useRef(true);
   const countedRef = useRef(0);
   const entries = useMemo(() => entriesOf(items ?? []), [items]);
+  useImperativeHandle(focusRef, () => ({ focus: () => listRef.current?.focus({ focusVisible: true }) }), []);
 
   useEffect(() => {
     const listeners = new AbortController();
@@ -267,7 +269,7 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
         }
       />
       <div className="conversation-panel">
-        <div className="conversation-items" ref={listRef} onScroll={onScroll}>
+        <div className="conversation-items" ref={listRef} tabIndex={-1} onScroll={onScroll}>
           <div className="conversation-column">
             {items === null &&
               (unavailable ? (

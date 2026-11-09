@@ -8,7 +8,7 @@ Requirements → `requirements.md`. Batch files → `batches/`.
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| navigation | Navigation shortcuts | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11 | — | todo | The user opens the next session from the terminal |
+| navigation | Navigation shortcuts | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11 | — | implemented | The user opens the next session from the terminal |
 | session-actions | Session action shortcuts | REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21 | navigation | todo | The user stops a working session from the keyboard, after the confirmation |
 | shortcuts-panel | Shortcuts panel | REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42, REQ-43, REQ-44, REQ-45, REQ-46 | navigation, session-actions | todo | The user opens the shortcuts panel and finds every shortcut |
 

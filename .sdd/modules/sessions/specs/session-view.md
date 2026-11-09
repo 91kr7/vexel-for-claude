@@ -20,6 +20,7 @@ Props:
   - the terminal never shows output of the previous session after a switch.
   - a new `sessionId` closes the search box, with its text and its count.
 - `onLeaveTerminal()` → called when the user presses Ctrl+Shift+L in the terminal.
+- `focusRef` → optional. Gets `{ focus() }`: puts the keyboard focus in the terminal. Before the terminal opens it does nothing.
 - `session` → `{ folder, label, state, usage? }` of the session, optional. It goes to the SessionHeader and the SessionFooter, and its `state` and folder name to StopSessionButton. A change of `session` does not reconnect the terminal.
 
 Shows:
@@ -56,7 +57,8 @@ Reconnection:
 - a new `sessionId` or the removal of the view ends the attempts.
 
 Actions:
-- every key typed in the terminal → sent to the pty as `input`, Esc included. Ctrl+Shift+L, Ctrl+Shift+F and the zoom keys are the only exceptions.
+- every key typed in the terminal → sent to the pty as `input`, Esc included. Ctrl+Shift+L, Ctrl+Shift+F, the zoom keys and the keys of the ShortcutMap are the only exceptions.
+- a key of the ShortcutMap (`shortcutCommandOf` gives a command) in the terminal → the terminal does not process it and nothing goes to the pty.
 - Ctrl+click on a link → LinkOpener `openLink` with the full address (a wrapped address included). The session stays on screen.
 - a plain click on a link (no Ctrl) → opens nothing; focus and text selection work as on any other text.
 - Ctrl+Shift+L in the terminal (no Alt, no Meta, either case of L) → `onLeaveTerminal()`. The terminal does not process it, nothing goes to the pty, and the browser default is prevented.
@@ -96,7 +98,7 @@ Actions:
 
 - AttachSessionRoute
 - WebAddressLinks, LinkOpener, TerminalSearchBox, TerminalFontSizeStore, TerminalZoomControls, droppedPathsText
-- useDesktopBridge `desktopFilePathLookup` (module app)
+- useDesktopBridge `desktopFilePathLookup`, ShortcutMap `shortcutCommandOf` (module app)
 - `@xterm/addon-search`
 - SessionHeader, SessionFooter, StopSessionButton, Avatar (`folderNameOf`)
 - ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, WebEntry, BundledFont (module app)
@@ -109,4 +111,5 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-light_theme/REQ-12`
 - `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`, `plan-terminal_addons/REQ-14`, `plan-terminal_addons/REQ-15`, `plan-terminal_addons/REQ-16`, `plan-terminal_addons/REQ-17`, `plan-terminal_addons/REQ-18`, `plan-terminal_addons/REQ-19`, `plan-terminal_addons/REQ-20`, `plan-terminal_addons/REQ-21`, `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-23`, `plan-terminal_addons/REQ-24`, `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-26`, `plan-terminal_addons/REQ-27`, `plan-terminal_addons/REQ-28`, `plan-terminal_addons/REQ-29`, `plan-terminal_addons/REQ-32`, `plan-terminal_addons/REQ-33`, `plan-terminal_addons/REQ-34`, `plan-terminal_addons/REQ-35`, `plan-terminal_addons/REQ-36`, `plan-terminal_addons/REQ-37`, `plan-terminal_addons/REQ-38`, `plan-terminal_addons/REQ-39`, `plan-terminal_addons/REQ-42`, `plan-terminal_addons/REQ-43`, `plan-terminal_addons/REQ-46`, `plan-terminal_addons/REQ-47`, `plan-terminal_addons/REQ-48`, `plan-terminal_addons/REQ-50`, `plan-terminal_addons/REQ-51`, `plan-terminal_addons/REQ-52`, `plan-terminal_addons/REQ-54`
+- `plan-keyboard_shortcuts/REQ-2`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-39`, `plan-keyboard_shortcuts/REQ-40`, `plan-keyboard_shortcuts/REQ-44`
 - `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`, `plan-session_list_width/REQ-30`, `plan-session_list_width/REQ-31`, `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-33`, `plan-session_list_width/REQ-36`
