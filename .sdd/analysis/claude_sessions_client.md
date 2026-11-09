@@ -1,6 +1,6 @@
 ---
 request_slug: claude_sessions_client
-date: 2026-11-06
+date: 2026-11-09
 type: fix
 size: broad
 reference: .sdd/analysis/claude_sessions_client.md
@@ -24,6 +24,16 @@ Changes:
 - Non-functional → new "Local access" requirements that limit browser access to the client's own origin.
 - Assumptions, Risks and Out of scope → entries on local access.
 
+Fix of 2026-11-09 to this analysis. Fix request:
+
+> vi è un bug che, nel momento in cui ci si disconnette dal backend e compare l'errore del backend disconnesso, anche quando il backend si riattiva l'errore permane!
+
+Starting point: the list must update by itself, without a manual reload ("Session list" requirements). The desktop window shows an error when the backend cannot start ([desktop_app.md](desktop_app.md), line 44). No requirement says what happens when the backend comes back after a disconnection. Today the backend-disconnected error stays on screen after the backend returns.
+
+Changes:
+- Functional → new "Backend reconnection" requirements.
+- Assumptions and Out of scope → entries on reconnection.
+
 ## Summary
 
 A local client that replaces many terminal windows with one page. The page lists the user's Claude Code sessions. The user clicks a session to open it and work with it as in the terminal.
@@ -32,6 +42,7 @@ A local client that replaces many terminal windows with one page. The page lists
 
 - 2026-11-05 → The human asked to show the sessions that run in other shells too. They chose "yes, in this cycle": external sessions are listed, readable live and can be taken over with "Riprendi qui".
 - 2026-11-06 → The Origin request is a fix of this analysis, not an evolution. The orchestrator decided this.
+- 2026-11-09 → The reconnection bug is a fix of this analysis, not an evolution. The human decided this.
 
 ## Business goal
 
@@ -75,6 +86,15 @@ Session lifecycle
 - Sessions must keep running when the page is closed or reloaded.
 - A session started from the client must stay resumable from the terminal with the standard Claude Code commands, and the reverse.
 
+Backend reconnection
+- While the backend is unreachable, the client must keep trying to reconnect by itself.
+- The backend-disconnected error must disappear within a few seconds of the backend being reachable again, without a manual reload.
+- After the reconnection, the session list, the states and the needs-input count must show the current data of the backend.
+- After the reconnection, the open session must reconnect and accept input again.
+- When the open session ended while the backend was unreachable, the client must show it as ended.
+- The error must appear again at every new disconnection and disappear again at every return of the backend.
+- These rules must hold in the browser page and in the desktop window ([desktop_app.md](desktop_app.md)).
+
 ### Non-functional
 
 - Access to the client must be limited to the local machine by default, because a session can run commands on it.
@@ -108,6 +128,9 @@ Local access
 - The Vite origin uses the configured dev port, on the same loopback hosts.
 - No new loopback names are added, for example `[::1]`. The fix only narrows today's rule.
 - Local programs that are not browsers stay trusted. They send no Origin, and they can already run commands as the user.
+- The reconnection fix covers every place where the client shows the backend-disconnected error.
+- The recovery is automatic, so the error offers no "retry" button.
+- The sessions hosted by a backend that stopped are ended, as the assumption on the client stopping already says. After the reconnection the client shows them as ended.
 
 ## Constraints
 
@@ -151,6 +174,7 @@ In scope:
 - Start, stop and resume of sessions on the local machine.
 - Interoperability with the terminal through the standard Claude Code resume.
 - External sessions in the list, their read-only live conversation, and "Riprendi qui".
+- Automatic recovery of the page after the backend returns.
 
 Out of scope:
 - Typing into a session that keeps running in another terminal. Only that terminal has its keyboard.
@@ -158,6 +182,9 @@ Out of scope:
 - More than one user, user accounts and authentication.
 - Protection against local programs that are not browsers, such as tokens for local clients.
 - Logs or alerts for rejected connections.
+- Automatic restart of a backend that crashed.
+- Keeping messages typed while the backend is unreachable and sending them later.
+- Changes to when or how the backend-disconnected error first appears.
 - Operating system notifications outside the page.
 - Git worktree or branch isolation per session.
 - Token usage and cost reports.

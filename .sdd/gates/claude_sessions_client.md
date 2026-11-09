@@ -51,3 +51,6 @@
 | 2026-11-06 | plan (fix strict origin) | G3 coverage | pass | One batch `local-access`, REQ-37..45 covered, 3 existing modify paths + `package.json`; dev signal from the `dev` script, not `NODE_ENV` |
 | 2026-11-06 | dev (fix strict origin) | G4 local-access | pass | Build green (re-run); files map to INT-1..4; divergences accepted: guard reads the real listening port from the server (works with `PORT=0`), optional `allowedPorts` default `[]` (strictest); 5 old guard test cases expect the old rule |
 | 2026-11-06 | test (fix strict origin) | G5 local-access | pass | Re-run by gatekeeper: 110/110 batch files. Tester closing pass: unit 1279/1279, default e2e 317/317; 5 old guard cases adapted to the new contract; no Electron run |
+| 2026-11-09 | analysis | question analyst Q1 fix/evolution | escalated | No analysis defines recovery after a disconnection; a fix reopens `fix/claude_sessions_client`, already merged |
+| 2026-11-09 | analysis | question analyst Q1 fix/evolution | human decision | Fix of `claude_sessions_client.md`; branch `fix/claude_sessions_client` reopened, fast-forwarded to `main` |
+| 2026-11-09 | analysis | G1 analysis | pass | broad, 192 lines; group "Backend reconnection" (7 requirements), 3 assumptions, 3 out of scope; all traced to the request |
