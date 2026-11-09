@@ -58,3 +58,5 @@
 | 2026-11-09 | plan (fix reconnection) | G2 requirements | pass | REQ-46..53 cover the 7 "Backend reconnection" requirements; REQ-49/50 split hosted vs external |
 | 2026-11-09 | plan (fix reconnection) | G3 coverage | pass | One batch `backend-reconnection`, REQ-46..53, INT-1..7 on 5 existing paths; error text kept (analysis out of scope); INT-7 asked to listen after the first scan settles, even on failure |
 | 2026-11-09 | dev (fix reconnection) | G4 backend-reconnection | pass | Build green (re-run); files map to INT-1..7 plus specs and indexes; accepted: extra startup `scan()` before `start()`, failed list load closes the socket and retries; old store test "stays error" to be rewritten |
+| 2026-11-09 | test (fix reconnection) | G5 backend-reconnection | pass | Re-run by gatekeeper: unit 43/43, e2e backend-reconnection + feedback-states 45/45, Electron reconnection 1/1; tester full runs unit 2006/2006, browser e2e 462/462; only tests and `playwright.config.ts`; 2 old no-reconnection tests removed |
+| 2026-11-09 | closing (fix reconnection) | merge | pass | Batch certified; no source change after the full run; automatic merge into `main` |
