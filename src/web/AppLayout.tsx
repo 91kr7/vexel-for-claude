@@ -8,6 +8,7 @@ import { ListPanelEdge } from './ListPanelEdge';
 import { listWidthLimit, pageListWidthStore, shownListWidth, useListWidth } from './list-width-store';
 import { NavigationRail } from './NavigationRail';
 import { NeedsInputSnackbar, useNeedsInputSnackbar } from './NeedsInputSnackbar';
+import { ShortcutsPanel } from './ShortcutsPanel';
 import { ShortMessageToast, useShortMessage } from './ShortMessageToast';
 import { countNeedsInput, NeedsInputCounter } from './sessions/NeedsInputCounter';
 import { SessionList } from './sessions/SessionList';
@@ -53,6 +54,8 @@ export function AppLayout() {
   const [openIsExternal, setOpenIsExternal] = useState(false);
   const [choosingFolder, setChoosingFolder] = useState(false);
   const [resuming, setResuming] = useState(false);
+  const [showingShortcuts, setShowingShortcuts] = useState(false);
+  const toggleShortcuts = () => setShowingShortcuts((showing) => !showing);
   const listPanelRef = useRef<HTMLElement>(null);
   const newSessionRef = useRef<HTMLButtonElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -111,6 +114,7 @@ export function AppLayout() {
     else if (command.kind === 'new-session') setChoosingFolder(true);
     else if (command.kind === 'resume-history') setResuming(true);
     else if (command.kind === 'toggle-theme') pageThemeStore().toggle();
+    else if (command.kind === 'toggle-shortcuts-panel') toggleShortcuts();
     else if (command.kind === 'session-command') sendSessionCommand(command.command);
     else {
       const sessionId = sessionToOpen(sessions, sessionOrder, openSessionId, command.target);
@@ -125,7 +129,7 @@ export function AppLayout() {
 
   return (
     <div className="app">
-      <TopBar onNewSession={() => setChoosingFolder(true)} />
+      <TopBar onNewSession={() => setChoosingFolder(true)} shortcutsPanelOpen={showingShortcuts} onToggleShortcutsPanel={toggleShortcuts} />
       <div className="app-body">
         <NavigationRail
           needsInputCount={countNeedsInput(sessions)}
@@ -191,6 +195,7 @@ export function AppLayout() {
           onCancel={() => setResuming(false)}
         />
       )}
+      {showingShortcuts && <ShortcutsPanel onClose={() => setShowingShortcuts(false)} />}
     </div>
   );
 }
