@@ -1,4 +1,4 @@
-// Tests of plan-keyboard_shortcuts, batch navigation: ShortcutMap spec.
+// Tests of plan-keyboard_shortcuts, batches navigation and session-actions: ShortcutMap spec.
 import { describe, expect, it } from 'vitest';
 import { SHORTCUTS, type ShortcutKey, shortcutCommandOf } from './shortcut-map';
 
@@ -67,6 +67,40 @@ describe('SHORTCUTS', () => {
     ]);
   });
 
+  // plan-keyboard_shortcuts/REQ-12, REQ-13, REQ-14, REQ-16, REQ-17, REQ-18, REQ-19, REQ-21: the six sessions rows and the theme row
+  it('has the sessions and general rows of the key map, in order, with their keys and commands', () => {
+    const rowsOf = (area: string) =>
+      SHORTCUTS.filter((row) => row.area === area).map((row) => ({
+        action: row.action,
+        keys: row.keys.map((key) => ({ code: key.code, modifiers: [...key.modifiers].sort(), command: key.command })),
+      }));
+    expect(rowsOf('sessions')).toEqual([
+      { action: 'New session dialog', keys: [{ code: 'KeyN', modifiers: ['Alt'], command: { kind: 'new-session' } }] },
+      { action: 'Resume history dialog', keys: [{ code: 'KeyH', modifiers: ['Alt'], command: { kind: 'resume-history' } }] },
+      { action: 'Rename the open session', keys: [{ code: 'KeyE', modifiers: ['Alt'], command: { kind: 'session-command', command: 'rename' } }] },
+      {
+        action: '"Resume" or "Resume Here" on the open session',
+        keys: [{ code: 'KeyR', modifiers: ['Alt'], command: { kind: 'session-command', command: 'resume' } }],
+      },
+      { action: 'Stop the open hosted session', keys: [{ code: 'KeyQ', modifiers: ['Alt', 'Shift'], command: { kind: 'session-command', command: 'stop' } }] },
+      { action: 'Dismiss the open ended session', keys: [{ code: 'KeyW', modifiers: ['Alt', 'Shift'], command: { kind: 'session-command', command: 'dismiss' } }] },
+    ]);
+    expect(rowsOf('general')).toEqual([{ action: 'Light/Dark theme', keys: [{ code: 'KeyA', modifiers: ['Alt'], command: { kind: 'toggle-theme' } }] }]);
+  });
+
+  // ShortcutMap spec: the rows come in area order, navigation first, then sessions
+  it('lists the sessions rows after the navigation rows', () => {
+    const areas = SHORTCUTS.map((row) => row.area);
+    expect(areas.lastIndexOf('navigation')).toBeLessThan(areas.indexOf('sessions'));
+  });
+
+  // ShortcutMap invariant, assumption "Key map": the keys that stop or dismiss a session also need Shift
+  it('gives Shift to the keys that stop or dismiss a session', () => {
+    const removing = allKeys.filter((key) => key.command.kind === 'session-command' && (key.command.command === 'stop' || key.command.command === 'dismiss'));
+    expect(removing).toHaveLength(2);
+    for (const key of removing) expect(key.modifiers, comboOf(key)).toContain('Shift');
+  });
+
   // plan-keyboard_shortcuts/REQ-34: every key has Ctrl or Alt, so none is a single character key
   it('gives every key Ctrl or Alt', () => {
     for (const key of allKeys) expect(key.modifiers.some((m) => m === 'Ctrl' || m === 'Alt'), comboOf(key)).toBe(true);
@@ -131,6 +165,31 @@ describe('shortcutCommandOf', () => {
     ['KeyI', { kind: 'open-session', target: { kind: 'next-needs-input' } }],
   ])('gives the command of Alt+%s', (code, command) => {
     expect(shortcutCommandOf(alt(code))).toEqual(command);
+  });
+
+  // plan-keyboard_shortcuts/REQ-12, REQ-13, REQ-14, REQ-16, REQ-17, REQ-18, REQ-19, REQ-21: each session action key gives its command
+  it.each([
+    ['Alt+N', alt('KeyN'), { kind: 'new-session' }],
+    ['Alt+H', alt('KeyH'), { kind: 'resume-history' }],
+    ['Alt+E', alt('KeyE'), { kind: 'session-command', command: 'rename' }],
+    ['Alt+R', alt('KeyR'), { kind: 'session-command', command: 'resume' }],
+    ['Alt+Shift+Q', alt('KeyQ', { shift: true }), { kind: 'session-command', command: 'stop' }],
+    ['Alt+Shift+W', alt('KeyW', { shift: true }), { kind: 'session-command', command: 'dismiss' }],
+    ['Alt+A', alt('KeyA'), { kind: 'toggle-theme' }],
+  ])('gives the command of %s', (_, event, command) => {
+    expect(shortcutCommandOf(event)).toEqual(command);
+  });
+
+  // Assumption "Key map": stop and dismiss need Shift, so Alt alone on Q or W does nothing
+  it('gives null for Alt+Q and Alt+W without Shift', () => {
+    expect(shortcutCommandOf(alt('KeyQ'))).toBeNull();
+    expect(shortcutCommandOf(alt('KeyW'))).toBeNull();
+  });
+
+  // ShortcutMap contract: an extra Shift on a session key is not that key
+  it('gives null for Alt+Shift+R and Alt+Shift+E', () => {
+    expect(shortcutCommandOf(alt('KeyR', { shift: true }))).toBeNull();
+    expect(shortcutCommandOf(alt('KeyE', { shift: true }))).toBeNull();
   });
 
   // plan-keyboard_shortcuts/REQ-45: the physical key decides, whatever character the layout types
