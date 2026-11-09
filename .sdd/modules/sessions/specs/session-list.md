@@ -77,6 +77,8 @@ Actions:
 - "Reply" → `onOpen(id)`, once.
 - "Resume" and "Dismiss" of an ended hosted entry → EndedEntryActions. A resume calls `onResumed(id)` with the new session id. They do not call `onOpen`.
 - "Rename" → opens the name editor of the entry (above). It does not call `onOpen` or `onReorder`.
+- shortcut command `rename` (ShortcutChannel), only when the list has the entry of `openSessionId` → opens the name editor of that entry, as "Rename" does. The entry scrolls into view and the focus is in the "Session Name" field. When that entry already edits, nothing changes. Another entry that was editing ends its edit.
+- EndedEntryActions of an ended hosted entry get `open` → `true` only for the entry of `openSessionId`.
 - every entry, row or card, is draggable with the mouse. A click with no drag still opens the session.
 - drag over an entry of the dragged session's own group → the upper half of the entry means "before it", the lower half means "after it".
 - drop on an entry of the own group → `onReorder(id, group, index)` once. `index` is the place the session takes in the group without it:
@@ -118,7 +120,7 @@ Drag feedback (the mock has no drag state):
 ## Dependencies
 
 - groupSessions, SessionOrderStore (`SessionOrder`), usage format (`percentOf`, `usageLevelOf`, `costText`, `INCOMPLETE_COST_TEXT`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions, SessionNameEditor
-- AreaState, IconSet, ThemeTokens, WebEntry (module app)
+- AreaState, IconSet, ShortcutChannel, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
 
@@ -133,3 +135,4 @@ Drag feedback (the mock has no drag state):
 - `plan-session_usage/REQ-1`, `plan-session_usage/REQ-8`, `plan-session_usage/REQ-9`, `plan-session_usage/REQ-10`
 - `plan-session_usage/REQ-22`, `plan-session_usage/REQ-29`, `plan-session_usage/REQ-30`, `plan-session_usage/REQ-33`, `plan-session_usage/REQ-34`
 - `plan-session_list_width/REQ-10`
+- `plan-keyboard_shortcuts/REQ-16`, `plan-keyboard_shortcuts/REQ-17`, `plan-keyboard_shortcuts/REQ-18`

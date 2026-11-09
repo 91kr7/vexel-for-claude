@@ -538,6 +538,11 @@ input {
   color: var(--text-primary);
 }
 
+.shortcuts-button[aria-expanded='true'] {
+  position: relative;
+  z-index: 120;
+}
+
 .app-body {
   position: relative;
   flex: 1;
@@ -767,6 +772,22 @@ input {
 
 .snackbar-action:hover {
   text-decoration: underline;
+}
+
+.short-message {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 50;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 40px);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-primary);
+  pointer-events: none;
 }
 
 .state-working {
@@ -1675,6 +1696,10 @@ input {
   overflow-y: auto;
 }
 
+.conversation-items:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
 .conversation-column {
   display: flex;
   flex-direction: column;
@@ -1974,6 +1999,49 @@ input {
 
 .dialog-description b {
   font-weight: 600;
+  color: var(--text-primary);
+}
+
+.shortcuts-groups {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shortcuts-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shortcuts-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shortcuts-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.shortcuts-keys {
+  flex: 0 0 168px;
+  color: var(--text-muted);
+}
+
+.shortcuts-key {
+  font: inherit;
+  white-space: nowrap;
+}
+
+.shortcuts-action {
   color: var(--text-primary);
 }
 

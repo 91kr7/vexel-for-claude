@@ -4,10 +4,10 @@
 |-----------|------|------|----------------|------|
 | Server | configuration | `src/server/main.ts` | Fastify process on 127.0.0.1: guard, routes, static page | `specs/server.md` |
 | LocalAccessGuard | backend service (request hook) | `src/server/local-access-guard.ts` | Rejects HTTP and WebSocket requests whose Host is not local or whose Origin is not the client's own (plus Vite in development) | `specs/local-access-guard.md` |
-| AppLayout | UI page | `src/web/AppLayout.tsx` | Full-window frame: top bar, rail, resizable list panel ("Sessions", needs-input chip, session list), dot-grid main area, fixed snackbar | `specs/app-layout.md` |
+| AppLayout | UI page | `src/web/AppLayout.tsx` | Full-window frame: top bar, rail, resizable list panel ("Sessions", needs-input chip, session list), dot-grid main area, fixed snackbar and short-message toast; runs the shortcuts and holds the shortcuts panel | `specs/app-layout.md` |
 | ListWidthStore | frontend service | `src/web/list-width-store.ts` | Width of the list panel: 180 to 480 px, default 224 px, saved in `localStorage`, and the width shown in a window that keeps 700 px for the main area | `specs/list-width-store.md` |
 | ListPanelEdge | UI component | `src/web/ListPanelEdge.tsx` | Separator "Resize Session List" on the right border of the list panel: drag, or Left and Right arrows by 16 px | `specs/list-panel-edge.md` |
-| TopBar | UI component | `src/web/TopBar.tsx` | 48 px bar with the "VX" logo mark, "Vexel for Claude", the theme switch and "New Session"; the window buttons and the window drag area in the desktop window | `specs/top-bar.md` |
+| TopBar | UI component | `src/web/TopBar.tsx` | 48 px bar with the "VX" logo mark, "Vexel for Claude", the shortcuts button, the theme switch and "New Session"; the window buttons and the window drag area in the desktop window | `specs/top-bar.md` |
 | WindowButtons | UI component | `src/web/WindowButtons.tsx` | Red, yellow and green round buttons that close the window to the tray, minimize it, and maximize or restore it | `specs/window-buttons.md` |
 | EmptyState | UI component | `src/web/EmptyState.tsx` | Main area with no open session: full AreaState with "New Session" and "Resume Session" | `specs/empty-state.md` |
 | NavigationRail | UI component | `src/web/NavigationRail.tsx` | 52 px rail: "New Claude Code Session", "Sessions" with the amber badge, "Resume", hover tooltips | `specs/navigation-rail.md` |
@@ -17,11 +17,17 @@
 | ThemeTokens | configuration | `src/web/theme/tokens.css` | The mock's dark and editorial-light tokens with the light-blue accent, status colours, the orange of "Interrupt", fixed terminal colours, shadows and focus ring | `specs/theme-tokens.md` |
 | ThemeStore | frontend service | `src/web/theme/theme-store.ts` | Active theme of the page, started from the page mark, its `data-theme` mark on the root, and the toggle that saves it in `localStorage` | `specs/theme-store.md` |
 | ThemeSwitch | UI component | `src/web/ThemeSwitch.tsx` | Top-bar sun/moon icon button "Dark theme" that toggles the theme | `specs/theme-switch.md` |
+| ShortcutsButton | UI component | `src/web/ShortcutsButton.tsx` | Top-bar keyboard icon button "Keyboard Shortcuts" that opens and closes the shortcuts panel, above the dialog backdrop while the panel is open | `specs/shortcuts-button.md` |
+| ShortcutsPanel | UI component | `src/web/ShortcutsPanel.tsx` | Dialog "Keyboard Shortcuts" that lists every row of the shortcut map by area, keys in keyboard badges | `specs/shortcuts-panel.md` |
 | BundledFont | configuration | `src/web/fonts/roboto.css`, `src/web/fonts/roboto-flex-latin.woff2`, `src/web/fonts/roboto-mono-latin.woff2`, `src/web/fonts/OFL.txt` | Roboto Flex and Roboto Mono fonts shipped with the client, with their licence | `specs/bundled-font.md` |
-| Dialog | UI component | `src/web/dialogs/Dialog.tsx` | Shared modal frame of the mock: header with "[Esc]", body, footer with "Cancel" and primary action, Enter, Esc, focus trap | `specs/dialog.md` |
+| Dialog | UI component | `src/web/dialogs/Dialog.tsx` | Shared modal frame of the mock: header with "[Esc]", body, footer with "Cancel" and an optional primary action ("Close" alone without it), Enter, Esc, focus trap | `specs/dialog.md` |
 | WarningDialog | UI component | `src/web/dialogs/WarningDialog.tsx` | Dialog for a risky action: rose or amber primary action, amber banner, focus on "Cancel" | `specs/warning-dialog.md` |
 | AreaState | UI component | `src/web/feedback/AreaState.tsx` | Empty, loading or error block that fills an area, in full or compact size | `specs/area-state.md` |
 | ProgressIndicator | UI component | `src/web/feedback/ProgressIndicator.tsx` | Rotating indicator with a label for a loading area, and the Spinner of a busy button | `specs/progress-indicator.md` |
 | ErrorMessage | UI component | `src/web/feedback/ErrorMessage.tsx` | Icon and text in rose, announced as an alert | `specs/error-message.md` |
+| ShortcutMap | configuration | `src/web/shortcut-map.ts` | The one list of the client shortcuts, terminal keys included: key, modifiers, area, action text and command, and the lookup of a key event | `specs/shortcut-map.md` |
+| useShortcutKeys | frontend hook | `src/web/shortcut-keys.ts` | Window `keydown` listener in the capture phase: runs the command of a map key, cancels and stops the event; does nothing while a dialog is open, except the panel key over the shortcuts panel | `specs/shortcut-keys.md` |
+| ShortcutChannel | frontend service | `src/web/shortcut-channel.ts` | Sends a session command of a shortcut (stop, dismiss, resume, rename) to the mounted component that subscribed to it; no subscriber, no effect | `specs/shortcut-channel.md` |
+| ShortMessageToast | UI component | `src/web/ShortMessageToast.tsx` | Glass status box at the bottom centre that shows one text for 4 s | `specs/short-message-toast.md` |
 | IconSet | UI component | `src/web/icons/Icons.tsx`, `src/web/icons/LICENSE` | Lucide icons as local decorative SVG components, with their licence | `specs/icon-set.md` |
 | ThirdPartyNotices | document | `THIRD-PARTY-NOTICES.md` | Source, version and licence of each third-party font and icon set | `specs/third-party-notices.md` |

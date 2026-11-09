@@ -28,11 +28,12 @@ Actions:
   - "Terminate" → the dialog closes and the stop request leaves.
 - "Terminate", any other `state` → the stop request leaves at once.
 - stop request → `POST /api/sessions/:id/stop`, no body. A network error or a non-`2xx` answer is a failed stop.
+- shortcut command `stop` (ShortcutChannel), while "Terminate" shows and no stop runs → acts as a press of "Terminate", with the confirmation for a `working` session. While a stop runs, or with `state` `ended`, the command does nothing.
 
 ## Dependencies
 
 - StopSessionRoute
-- WarningDialog, ProgressIndicator, ErrorMessage, ThemeTokens, WebEntry (module app)
+- WarningDialog, ProgressIndicator, ErrorMessage, ShortcutChannel, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
 
@@ -42,3 +43,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-47`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-48`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-52`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-48`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
+- `plan-keyboard_shortcuts/REQ-14`, `plan-keyboard_shortcuts/REQ-15`, `plan-keyboard_shortcuts/REQ-43`

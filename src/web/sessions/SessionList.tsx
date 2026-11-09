@@ -1,6 +1,7 @@
 import { type DragEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react';
 import { AreaState } from '../feedback/AreaState';
 import { PencilIcon } from '../icons/Icons';
+import { useSessionCommand } from '../shortcut-channel';
 import { folderNameOf } from './Avatar';
 import { EndedEntryActions } from './EndedEntryActions';
 import type { ContextOccupancy, LoadStatus, RunningTool, SessionSummary, SessionUsage } from './live-session-store';
@@ -182,6 +183,8 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const renameButtons = useRef(new Map<string, HTMLButtonElement>());
   const focusAfterRename = useRef<string | null>(null);
+  const scrollToEditor = useRef(false);
+  const listRef = useRef<HTMLDivElement>(null);
   const groups = groupSessions(sessions, order);
   const draggedGroup = drag && groups.find((group) => group.id === drag.groupId && group.sessions.some((session) => session.id === drag.sessionId));
 
@@ -194,6 +197,23 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
     renameButtons.current.get(focusAfterRename.current)?.focus();
     focusAfterRename.current = null;
   }, [renamingId]);
+
+  useEffect(() => {
+    if (!scrollToEditor.current) return;
+    scrollToEditor.current = false;
+    listRef.current?.querySelector('.session-name-editor')?.scrollIntoView({ block: 'nearest' });
+  }, [renamingId]);
+
+  const openListed = openSessionId !== null && sessions.some((session) => session.id === openSessionId);
+  useSessionCommand(
+    'rename',
+    () => {
+      if (openSessionId === null || renamingId === openSessionId) return;
+      scrollToEditor.current = true;
+      setRenamingId(openSessionId);
+    },
+    openListed,
+  );
 
   const endRename = (sessionId: string, end: NameEditorEnd) => {
     if (end !== 'blurred') focusAfterRename.current = sessionId;
@@ -216,6 +236,7 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
 
   return (
     <div
+      ref={listRef}
       className="session-list"
       onDragOver={(event) => {
         if (!drag) return;
@@ -278,7 +299,12 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
                       }
                     />
                     {session.state === 'ended' && !session.external && (
-                      <EndedEntryActions sessionId={session.id} resumable={session.resumable === true} onResumed={onResumed} />
+                      <EndedEntryActions
+                        sessionId={session.id}
+                        resumable={session.resumable === true}
+                        open={session.id === openSessionId}
+                        onResumed={onResumed}
+                      />
                     )}
                     <button
                       ref={(button) => {

@@ -4,10 +4,12 @@ import { ErrorMessage } from '../feedback/ErrorMessage';
 import { Spinner } from '../feedback/ProgressIndicator';
 import { RunningElsewhereWarning } from '../history/RunningElsewhereWarning';
 import { HistoryIcon, XIcon } from '../icons/Icons';
+import { useSessionCommand } from '../shortcut-channel';
 
 interface EndedEntryActionsProps {
   sessionId: string;
   resumable: boolean;
+  open?: boolean;
   onResumed?: (sessionId: string) => void;
 }
 
@@ -20,7 +22,7 @@ const RESUME_ERRORS: Record<string, string> = {
 const RESUME_FAILED = 'Could not resume the session.';
 const DISMISS_FAILED = 'Could not dismiss the session.';
 
-export function EndedEntryActions({ sessionId, resumable, onResumed }: EndedEntryActionsProps) {
+export function EndedEntryActions({ sessionId, resumable, open = false, onResumed }: EndedEntryActionsProps) {
   const [busy, setBusy] = useState<Action | null>(null);
   const [warning, setWarning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +67,9 @@ export function EndedEntryActions({ sessionId, resumable, onResumed }: EndedEntr
       },
       RESUME_FAILED,
     );
+
+  useSessionCommand('dismiss', () => void dismiss(), open);
+  useSessionCommand('resume', () => void resume(false), open && resumable);
 
   return (
     <>

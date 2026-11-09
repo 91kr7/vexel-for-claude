@@ -6,8 +6,8 @@ export interface DialogProps {
   title: string;
   description?: ReactNode;
   children?: ReactNode;
-  primaryLabel: string;
-  onPrimary: () => void;
+  primaryLabel?: string;
+  onPrimary?: () => void;
   primaryDisabled?: boolean;
   primaryBusy?: boolean;
   onCancel: () => void;
@@ -47,6 +47,7 @@ export function Dialog({
   const warning = tone === 'warning';
   const attnBanner = warning && accent === 'attn';
   const primaryBlocked = primaryDisabled || primaryBusy;
+  const hasPrimary = primaryLabel !== undefined && onPrimary !== undefined;
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -85,7 +86,7 @@ export function Dialog({
     } else if (event.key === 'Enter') {
       if (event.defaultPrevented || event.nativeEvent.isComposing || event.target instanceof HTMLButtonElement) return;
       event.preventDefault();
-      if (!primaryBlocked) onPrimary();
+      if (hasPrimary && !primaryBlocked) onPrimary();
     } else if (event.key === 'Tab') {
       keepFocusInside(event);
     }
@@ -137,18 +138,20 @@ export function Dialog({
           </div>
           <div className="modal-actions">
             <button type="button" className="button-neutral dialog-cancel" onClick={onCancel} autoFocus={initialFocus === 'cancel'}>
-              Cancel
+              {hasPrimary ? 'Cancel' : 'Close'}
             </button>
-            <button
-              type="button"
-              className={primaryClass(warning, accent)}
-              onClick={onPrimary}
-              disabled={primaryBlocked}
-              aria-busy={primaryBusy || undefined}
-            >
-              {primaryBusy && <Spinner />}
-              {primaryLabel}
-            </button>
+            {hasPrimary && (
+              <button
+                type="button"
+                className={primaryClass(warning, accent)}
+                onClick={onPrimary}
+                disabled={primaryBlocked}
+                aria-busy={primaryBusy || undefined}
+              >
+                {primaryBusy && <Spinner />}
+                {primaryLabel}
+              </button>
+            )}
           </div>
         </form>
       </div>

@@ -26,6 +26,7 @@ Actions:
 - "Cancel" in the warning → the warning closes. Nothing is sent.
 - "Resume Anyway" → the warning closes, then `POST /api/past-sessions/<sessionId>/resume` (ResumeSessionRoute).
   - `201` → `onResumed(id)` with the `id` of the body.
+- shortcut command `resume` (ShortcutChannel), while no request runs → acts as a click: the warning shows first. While a request runs, the command does nothing.
 
 ## Rules and invariants
 
@@ -34,7 +35,7 @@ Actions:
 ## Dependencies
 
 - RunningElsewhereWarning, ResumeSessionRoute (module history)
-- ProgressIndicator, ErrorMessage, WebEntry (module app)
+- ProgressIndicator, ErrorMessage, ShortcutChannel, WebEntry (module app)
 
 ## Requirements served
 
@@ -43,3 +44,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-35`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-43`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-33`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-52`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`
+- `plan-keyboard_shortcuts/REQ-19`, `plan-keyboard_shortcuts/REQ-20`

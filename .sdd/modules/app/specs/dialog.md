@@ -14,11 +14,11 @@ Props:
 - `title` → the heading. It is the accessible name of the dialog.
 - `description` → optional text or markup at the top of the body. It is the accessible description of the dialog.
 - `children` → the content under the description.
-- `primaryLabel`, `onPrimary()` → the primary action.
+- `primaryLabel`, `onPrimary()` → the primary action. Optional: without them the dialog has no primary action.
 - `primaryDisabled` → the primary action is disabled. Default `false`.
 - `primaryBusy` → the primary action runs: its button shows the Spinner (ProgressIndicator), is disabled and has `aria-busy="true"`. Its name does not change. Default `false`.
-- `onCancel()` → called by "Cancel", by "[Esc]" and by the Esc key.
-- `initialFocus` → `dialog` (default) or `cancel`.
+- `onCancel()` → called by "Cancel" (or "Close"), by "[Esc]" and by the Esc key.
+- `initialFocus` → `dialog` (default) or `cancel` (the "Cancel" or "Close" button).
 - `formName` → optional accessible name of the form that holds the body and the footer.
 - `className` → extra class of the frame.
 - `tone` → `default` or `warning`. Warning dialogs use WarningDialog.
@@ -29,14 +29,14 @@ Shows (sizes in px):
 - the frame → `.vx-surface-2` with a 1 `--border-strong` border, 12 radius, `shadow-2xl`, full width up to 448, as tall as the backdrop allows. No icon.
 - the header → padding 12 × 16, 1 `--border-subtle` line below. From the left: an 8 accent dot (decorative), the title (14/20, weight 600), and on the right the button "[Esc]" (mono 12/16, `--text-muted`, `--text-primary` on hover).
 - the body → padding 16, items 14 apart, text 12/16. The description first, in `--text-secondary`; bold parts in `--text-primary`.
-- the footer → `--bg-surface-1`, 1 `--border-subtle` line above, padding 12 × 16, buttons on the right, 8 apart: "Cancel" (`.button-neutral`), then the primary action. `default` tone → `.button-primary`.
+- the footer → `--bg-surface-1`, 1 `--border-subtle` line above, padding 12 × 16, buttons on the right, 8 apart: "Cancel" (`.button-neutral`), then the primary action. `default` tone → `.button-primary`. No primary action → one button "Close" (`.button-neutral`) in place of "Cancel".
 - `tone` `default` → role `dialog`. `tone` `warning` → role `alertdialog`, see WarningDialog.
 - `aria-modal="true"`.
 
 Keyboard:
 - Esc → `onCancel()`. Nothing else happens.
 - Enter, focus on a button → that button acts. The dialog adds nothing.
-- Enter, focus anywhere else in the dialog → `onPrimary()`, unless the primary action is disabled or busy. A content element that handles Enter itself (prevents its default) keeps it.
+- Enter, focus anywhere else in the dialog → `onPrimary()`, unless the primary action is disabled or busy. No primary action → Enter adds nothing. A content element that handles Enter itself (prevents its default) keeps it.
 - Tab and Shift+Tab → move among the dialog elements only, "[Esc]" included, and wrap from the last to the first and back. A radio group counts as one stop: its checked radio, or any of its radios when none is checked.
 
 Actions:
@@ -68,3 +68,4 @@ Focus:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-43`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-44`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-45`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-47`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-52`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`
 - `plan-mac_title_bar/REQ-8`, `plan-mac_title_bar/REQ-11`, `plan-mac_title_bar/REQ-24`
+- `plan-keyboard_shortcuts/REQ-29`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-33`

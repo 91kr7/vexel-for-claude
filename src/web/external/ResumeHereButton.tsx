@@ -3,6 +3,7 @@ import { RunningElsewhereWarning } from '../history/RunningElsewhereWarning';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { Spinner } from '../feedback/ProgressIndicator';
 import { LogInIcon } from '../icons/Icons';
+import { useSessionCommand } from '../shortcut-channel';
 
 interface ResumeHereButtonProps {
   sessionId: string;
@@ -38,6 +39,8 @@ export function ResumeHereButton({ sessionId, onResumed }: ResumeHereButtonProps
       setBusy(false);
     }
   };
+
+  useSessionCommand('resume', () => setWarning(true), !busy);
 
   return (
     <>

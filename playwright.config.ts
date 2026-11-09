@@ -7,9 +7,9 @@ import { E2E_CLAUDE_DIR } from './e2e/claude-dir';
 const port = Number(process.env.E2E_PORT ?? 3100);
 const baseURL = `http://127.0.0.1:${port}`;
 // These specs share the server's fixture Claude Code folder, so they must never run at the same time.
-const claudeDirSpecs = /(resume-session|dismiss-resume|history-search|external-sessions|session-entries|open-session-external|dialogs|desktop-bridge-external|running-tool|rename|context-occupancy|tokens-consumed|estimated-cost|header-footer)\.spec\.ts$/;
+const claudeDirSpecs = /(resume-session|dismiss-resume|history-search|external-sessions|session-entries|open-session-external|dialogs|desktop-bridge-external|running-tool|rename|context-occupancy|tokens-consumed|estimated-cost|header-footer|navigation-shortcuts-external|session-action-shortcuts-resume)\.spec\.ts$/;
 // Specs that launch Electron open windows on the user's display: only `npm run test:e2e:desktop` runs them (E2E_DESKTOP=1).
-const electronSpecs = /desktop-(window|notifications|tray|links|font-zoom|file-drop|list-width|reconnection)\.spec\.ts$/;
+const electronSpecs = /desktop-(window|notifications|tray|links|font-zoom|file-drop|list-width|reconnection|shortcuts)\.spec\.ts$/;
 const electron = process.env.E2E_DESKTOP === '1';
 // The specs of earlier plans were written for a client that started dark: the browser runs as a user who chose dark.
 // e2e/remembered-theme.spec.ts clears this choice to test the light default.

@@ -1,9 +1,10 @@
-import { type DragEvent, useEffect, useRef, useState } from 'react';
+import { type DragEvent, type Ref, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { type IBufferRange, Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { type ISearchOptions, SearchAddon } from '@xterm/addon-search';
 import '@xterm/xterm/css/xterm.css';
 import { desktopFilePathLookup } from '../desktop-bridge';
+import { shortcutCommandOf } from '../shortcut-map';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { CirclePauseIcon, SearchIcon } from '../icons/Icons';
@@ -31,6 +32,7 @@ interface SessionViewProps {
   sessionId: string;
   session?: SessionHeaderSummary;
   onLeaveTerminal: () => void;
+  focusRef?: Ref<{ focus(): void }>;
 }
 
 interface TerminalSearch {
@@ -127,7 +129,7 @@ function loadTerminalFont(fontFamily: string, fontSize: number): Promise<unknown
   return Promise.all(faces).catch(() => undefined);
 }
 
-export function SessionView({ sessionId, session, onLeaveTerminal }: SessionViewProps) {
+export function SessionView({ sessionId, session, onLeaveTerminal, focusRef }: SessionViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
@@ -145,6 +147,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
   const [dropNotice, setDropNotice] = useState(0);
   const fontSizeStore = pageTerminalFontSizeStore();
   const fontSize = useTerminalFontSize(fontSizeStore);
+  useImperativeHandle(focusRef, () => ({ focus: () => terminalRef.current?.focus() }), []);
 
   useEffect(() => {
     if (dropNotice === 0) return;
@@ -249,6 +252,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
     };
     connect(false);
     terminal.attachCustomKeyEventHandler((event) => {
+      if (shortcutCommandOf(event)) return false;
       const shortcut = isCtrlShiftKey(event, 'l')
         ? () => onLeaveTerminalRef.current()
         : isCtrlShiftKey(event, 'f')

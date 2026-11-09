@@ -16,6 +16,7 @@ Description:
 Props:
 - `sessionId` → the id of the ended hosted session.
 - `resumable` → `true` shows "Resume".
+- `open` → `true` when the session is the open one. Optional, default `false`.
 - `onResumed(id)` → called with the id of the new hosted session after a resume. Optional.
 
 Shows:
@@ -35,6 +36,9 @@ Actions:
   - `404` `session_not_found` → "The session no longer exists.".
   - `404` `folder_not_found` → "The project folder does not exist.".
   - any other answer, or a network error → "Could not resume the session.".
+- shortcut command `dismiss` (ShortcutChannel), only when `open` → acts as a press of "Dismiss".
+- shortcut command `resume`, only when `open` and `resumable` → acts as a press of "Resume", with the warning and the errors above.
+- while a request runs, a shortcut command sends nothing more, as a click.
 - Tab reaches "Resume" then "Dismiss" after the entry button. Enter or Space presses them. The focused button shows the focus ring.
 
 ## Rules and invariants
@@ -44,10 +48,11 @@ Actions:
 
 ## Dependencies
 
-- ErrorMessage, ProgressIndicator (`Spinner`), IconSet (module app)
+- ErrorMessage, ProgressIndicator (`Spinner`), IconSet, ShortcutChannel (module app)
 - RunningElsewhereWarning (module history)
 - DismissSessionRoute, ResumeEndedSessionRoute
 
 ## Requirements served
 
 - `plan-session_list_improvements/REQ-4`, `plan-session_list_improvements/REQ-8`, `plan-session_list_improvements/REQ-9`, `plan-session_list_improvements/REQ-12`, `plan-session_list_improvements/REQ-13`
+- `plan-keyboard_shortcuts/REQ-17`, `plan-keyboard_shortcuts/REQ-18`, `plan-keyboard_shortcuts/REQ-43`

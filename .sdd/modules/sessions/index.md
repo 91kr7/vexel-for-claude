@@ -41,6 +41,7 @@
 | plainExcerpt | backend function | `src/server/sessions/plain-excerpt.ts` | Markdown response to plain text of at most 100 characters | `specs/plain-excerpt.md` |
 | AttentionRoute | REST endpoint (WebSocket) | `src/server/sessions/attention-route.ts` | `GET /api/attention`: the needs-input list on connect and on each change, and each new event | `specs/attention-route.md` |
 | groupSessions, orderSessions | frontend function | `src/web/sessions/session-order.ts` | The four list groups in order; inside each, the given order, then latest activity first | `specs/session-order.md` |
+| sessionToOpen | frontend function | `src/web/sessions/navigation-targets.ts` | Session that a navigation shortcut opens from the list order: previous, next, position 1 to 9, next that needs input | `specs/navigation-targets.md` |
 | nextSessionOrder | frontend function | `src/web/sessions/next-session-order.ts` | New order of each group from the previous order and the current sessions | `specs/next-session-order.md` |
 | SessionOrderStore | frontend service | `src/web/sessions/session-order-store.ts` | Order of the sessions inside each group, kept current, moved by the user and saved in `localStorage` | `specs/session-order-store.md` |
 | LiveSessionStore | frontend service | `src/web/sessions/live-session-store.ts` | Session list in the page and its load status, loaded at each connection, kept current by events, reconnected every 2 s after a loss | `specs/live-session-store.md` |

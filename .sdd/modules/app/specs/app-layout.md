@@ -27,6 +27,8 @@ Shows:
 - an open external session → its ConversationView with its summary, in place of the SessionView. It stays open when the entry leaves the list, with the last summary the list gave.
 - an open session, hosted or external, that the list no longer has when LiveSessionStore goes from `error` to `ready` (a reload after a reconnection) → it stays open, with its last summary and the state `ended`. If the list has it again later, the view uses the listed summary.
 - the NeedsInputSnackbar of `useNeedsInputSnackbar`, when it gives a session → fixed at the bottom right of the window, whatever the main area shows.
+- the ShortMessageToast of `useShortMessage`, at the bottom centre of the window.
+- the ShortcutsPanel, while it is open. It is a dialog over the page: the open SessionView or ConversationView stays mounted under it, with its size, its scroll position and its session running.
 
 Actions:
 - "New Session" in the top bar or in the EmptyState, or "New Claude Code Session" in the rail → opens FolderChooser.
@@ -50,6 +52,23 @@ else → "New Claude Code Session" in the rail
 - ConversationView resumes the session ("Resume Here") → the new hosted session becomes the open one.
 - "open this session" from the desktop app (useDesktopBridge) → when LiveSessionStore lists the session, it becomes the open one, hosted or external as for a list click. Else nothing changes.
 - each change of the open session is reported to the desktop app (useDesktopBridge).
+- the ShortcutsButton of the TopBar → opens the ShortcutsPanel, or closes it when it is open.
+- the panel closes ("[Esc]", "Close", Esc) → it goes; the focus goes back where it was before it opened (Dialog).
+
+Shortcuts (useShortcutKeys, while the page is mounted):
+- `focus-list` (Alt+L) → the focus moves to a list entry, with the same rule as "Sessions" in the rail.
+- `focus-main-view` (Alt+C) → the focus goes to the main view: the terminal of the open SessionView, or the message area of the open ConversationView. No open session → nothing.
+- `open-session` → sessionToOpen with the live sessions, the order of `useSessionOrder`, the open session and the target:
+  - a session other than the open one → it becomes the open one, hosted or external as for a list click.
+  - the open session → nothing changes.
+  - none, target `next-needs-input` → the open session does not change, and the toast shows "No session needs input".
+  - none, any other target → nothing.
+- focus after an open by shortcut → it follows the open path of a click. In addition, when the focus was in the main view before the open, the new main view gets it.
+- `new-session` (Alt+N) → opens FolderChooser, as "New Session" does.
+- `resume-history` (Alt+H) → opens ResumeDialog, as "Resume" in the rail does.
+- `toggle-theme` (Alt+A) → switches the theme, as the ThemeSwitch does (ThemeStore `toggle`).
+- `toggle-shortcuts-panel` (Alt+S) → opens the ShortcutsPanel, or closes it when it is open, as the ShortcutsButton does.
+- `session-command` (Alt+E, Alt+R, Alt+Shift+Q, Alt+Shift+W) → sent to ShortcutChannel. The component that owns the action runs it; with no owner on the page, nothing happens.
 
 ## Rules and invariants
 
@@ -61,10 +80,11 @@ else → "New Claude Code Session" in the rail
 
 ## Dependencies
 
-- TopBar, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
+- TopBar, ShortcutsPanel, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
+- useShortcutKeys, ShortcutMap, ShortcutChannel, ShortMessageToast, ThemeStore
 - FolderChooser (module folders)
 - ResumeDialog (module history)
-- SessionView, SessionList, NeedsInputCounter, LiveSessionStore, SessionOrderStore (module sessions)
+- SessionView, SessionList, NeedsInputCounter, LiveSessionStore, SessionOrderStore, sessionToOpen (module sessions)
 - ConversationView (module external)
 
 ## Requirements served
@@ -77,3 +97,4 @@ else → "New Claude Code Session" in the rail
 - `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-20`
 - `plan-session_list_improvements/REQ-7`, `plan-session_list_improvements/REQ-10`
 - `plan-session_list_width/REQ-3`, `plan-session_list_width/REQ-4`, `plan-session_list_width/REQ-5`, `plan-session_list_width/REQ-6`, `plan-session_list_width/REQ-9`, `plan-session_list_width/REQ-11`
+- `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-21`, `plan-keyboard_shortcuts/REQ-24`, `plan-keyboard_shortcuts/REQ-25`, `plan-keyboard_shortcuts/REQ-29`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-31`, `plan-keyboard_shortcuts/REQ-43`
