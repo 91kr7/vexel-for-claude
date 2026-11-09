@@ -172,4 +172,18 @@ describe('Dialog', () => {
     expect(idle?.attrs).not.toContain('aria-busy="true"');
     expect(render()).not.toContain(renderToStaticMarkup(<Spinner />));
   });
+
+  // plan-keyboard_shortcuts/REQ-29, REQ-33, Dialog: with no primary action the footer has one neutral "Close" in place of "Cancel"
+  it('without a primary action shows "[Esc]" and one neutral "Close", with no "Cancel" and no primary button', () => {
+    const html = renderToStaticMarkup(
+      <Dialog title="Titolo" onCancel={() => {}}>
+        <p>Contenuto</p>
+      </Dialog>,
+    );
+    expect(buttons(html).map((b) => b.label)).toEqual(['[Esc]', 'Close']);
+    const close = button(html, 'Close');
+    expect(classes(close?.attrs ?? '')).toContain('button-neutral');
+    expect(attr(close?.attrs ?? '', 'type')).toBe('button');
+    expect(html).not.toContain('button-primary');
+  });
 });

@@ -1,4 +1,4 @@
-// Tests of plan-keyboard_shortcuts, batches navigation and session-actions: ShortcutMap spec.
+// Tests of plan-keyboard_shortcuts, batches navigation, session-actions and shortcuts-panel: ShortcutMap spec.
 import { describe, expect, it } from 'vitest';
 import { SHORTCUTS, type ShortcutKey, shortcutCommandOf } from './shortcut-map';
 
@@ -35,6 +35,9 @@ const keyEvent = (code: string, pressed: Pressed = {}): KeyboardEvent => {
 const alt = (code: string, extra: Pressed = {}) => keyEvent(code, { alt: true, ...extra });
 
 const allKeys: ShortcutKey[] = SHORTCUTS.flatMap((row) => [...row.keys]);
+// The keys this plan adds: the terminal keys come from earlier plans, unchanged (REQ-44).
+const newKeys = allKeys.filter((key) => key.command.kind !== 'terminal');
+const terminalKeys = allKeys.filter((key) => key.command.kind === 'terminal');
 const comboOf = (key: ShortcutKey) => [...[...key.modifiers].sort(), key.code].join('+');
 const LETTER = /^Key[A-Z]$/;
 
@@ -85,13 +88,31 @@ describe('SHORTCUTS', () => {
       { action: 'Stop the open hosted session', keys: [{ code: 'KeyQ', modifiers: ['Alt', 'Shift'], command: { kind: 'session-command', command: 'stop' } }] },
       { action: 'Dismiss the open ended session', keys: [{ code: 'KeyW', modifiers: ['Alt', 'Shift'], command: { kind: 'session-command', command: 'dismiss' } }] },
     ]);
-    expect(rowsOf('general')).toEqual([{ action: 'Light/Dark theme', keys: [{ code: 'KeyA', modifiers: ['Alt'], command: { kind: 'toggle-theme' } }] }]);
+    expect(rowsOf('general')).toEqual([
+      { action: 'Light/Dark theme', keys: [{ code: 'KeyA', modifiers: ['Alt'], command: { kind: 'toggle-theme' } }] },
+      { action: 'Shortcuts panel', keys: [{ code: 'KeyS', modifiers: ['Alt'], command: { kind: 'toggle-shortcuts-panel' } }] },
+    ]);
   });
 
-  // ShortcutMap spec: the rows come in area order, navigation first, then sessions
-  it('lists the sessions rows after the navigation rows', () => {
-    const areas = SHORTCUTS.map((row) => row.area);
-    expect(areas.lastIndexOf('navigation')).toBeLessThan(areas.indexOf('sessions'));
+  // plan-keyboard_shortcuts/REQ-26, REQ-44: the existing terminal keys, keyed by typed character, with the terminal command
+  it('has the terminal rows of the existing keys, in order', () => {
+    const terminal = SHORTCUTS.filter((row) => row.area === 'terminal').map((row) => ({
+      action: row.action,
+      keys: row.keys.map((key) => ({ code: key.code, modifiers: [...key.modifiers].sort(), command: key.command })),
+    }));
+    const ctrl = (code: string) => ({ code, modifiers: ['Ctrl'], command: { kind: 'terminal' } });
+    const ctrlShift = (code: string) => ({ code, modifiers: ['Ctrl', 'Shift'], command: { kind: 'terminal' } });
+    expect(terminal).toEqual([
+      { action: 'Search', keys: [ctrlShift('f')] },
+      { action: 'Larger / smaller / default text', keys: [ctrl('='), ctrl('+'), ctrl('-'), ctrl('0')] },
+      { action: 'Focus the list', keys: [ctrlShift('l')] },
+    ]);
+  });
+
+  // ShortcutMap invariant: rows of the same area are next to each other, in the order navigation, sessions, terminal, general
+  it('groups the rows by area, in the order navigation, sessions, terminal, general', () => {
+    const areas = SHORTCUTS.map((row) => row.area).filter((area, index, all) => index === 0 || all[index - 1] !== area);
+    expect(areas).toEqual(['navigation', 'sessions', 'terminal', 'general']);
   });
 
   // ShortcutMap invariant, assumption "Key map": the keys that stop or dismiss a session also need Shift
@@ -101,29 +122,29 @@ describe('SHORTCUTS', () => {
     for (const key of removing) expect(key.modifiers, comboOf(key)).toContain('Shift');
   });
 
-  // plan-keyboard_shortcuts/REQ-34: every key has Ctrl or Alt, so none is a single character key
+  // plan-keyboard_shortcuts/REQ-34 and the ShortcutMap invariant: every key, new or terminal, has Ctrl or Alt, so none is a single character key
   it('gives every key Ctrl or Alt', () => {
     for (const key of allKeys) expect(key.modifiers.some((m) => m === 'Ctrl' || m === 'Alt'), comboOf(key)).toBe(true);
   });
 
-  // plan-keyboard_shortcuts/REQ-35: no letter of the key map exclusion list (Claude Code keys)
-  it('uses none of the letters B, D, F, O, P, T, Y, M, V', () => {
+  // plan-keyboard_shortcuts/REQ-35: no new key uses a letter of the key map exclusion list (Claude Code keys); the terminal keys are not new
+  it('gives no new key the letters B, D, F, O, P, T, Y, M, V', () => {
     const excluded = ['KeyB', 'KeyD', 'KeyF', 'KeyO', 'KeyP', 'KeyT', 'KeyY', 'KeyM', 'KeyV'];
-    for (const key of allKeys) expect(excluded, comboOf(key)).not.toContain(key.code);
+    for (const key of newKeys) expect(excluded, comboOf(key)).not.toContain(key.code);
   });
 
-  // plan-keyboard_shortcuts/REQ-35: no Claude Code key of the spec "Constraints" (Ctrl with a letter, Ctrl+Enter, Ctrl+Shift+-)
-  it('uses no Claude Code terminal key', () => {
+  // plan-keyboard_shortcuts/REQ-35: no new key is a Claude Code key of the spec "Constraints" (Ctrl with a letter, Ctrl+Enter, Ctrl+Shift+-)
+  it('gives no new key a Claude Code terminal key', () => {
     const claudeCode = ['Ctrl+Enter', 'Ctrl+Shift+Minus', 'Escape', 'Tab', 'Shift+Tab'];
-    for (const key of allKeys) {
+    for (const key of newKeys) {
       expect(claudeCode, comboOf(key)).not.toContain(comboOf(key));
       const ctrlLetterOnly = LETTER.test(key.code) && key.modifiers.includes('Ctrl') && !key.modifiers.includes('Alt');
       expect(ctrlLetterOnly, `${comboOf(key)} is Ctrl with a letter`).toBe(false);
     }
   });
 
-  // plan-keyboard_shortcuts/REQ-36: no default Ubuntu GNOME key of the spec "Constraints"
-  it('uses no default Ubuntu GNOME key', () => {
+  // plan-keyboard_shortcuts/REQ-36: no new key is a default Ubuntu GNOME key of the spec "Constraints"
+  it('gives no new key a default Ubuntu GNOME key', () => {
     const gnome = [
       'Alt+Tab',
       'Alt+F1',
@@ -136,13 +157,21 @@ describe('SHORTCUTS', () => {
       'Alt+Ctrl+KeyT',
       'Alt+Ctrl+Delete',
     ];
-    for (const key of allKeys) expect(gnome, comboOf(key)).not.toContain(comboOf(key));
+    for (const key of newKeys) expect(gnome, comboOf(key)).not.toContain(comboOf(key));
   });
 
-  // plan-keyboard_shortcuts/REQ-37: no key that Chromium keeps for itself
-  it('uses no key that the browser keeps', () => {
+  // plan-keyboard_shortcuts/REQ-37: no new key is a key that Chromium keeps for itself
+  it('gives no new key a key that the browser keeps', () => {
     const browser = ['Ctrl+KeyT', 'Ctrl+KeyW', 'Ctrl+KeyN', 'Ctrl+Shift+KeyT', 'Ctrl+Shift+KeyW', 'Ctrl+Shift+KeyN', 'Ctrl+Tab', 'Ctrl+Shift+Tab'];
-    for (const key of allKeys) expect(browser, comboOf(key)).not.toContain(comboOf(key));
+    for (const key of newKeys) expect(browser, comboOf(key)).not.toContain(comboOf(key));
+  });
+
+  // plan-keyboard_shortcuts/REQ-34, REQ-45: every new key uses Alt, the left Alt of the key map, and never Ctrl, so none needs AltGr
+  it('gives every new key Alt and no Ctrl', () => {
+    for (const key of newKeys) {
+      expect(key.modifiers, comboOf(key)).toContain('Alt');
+      expect(key.modifiers, comboOf(key)).not.toContain('Ctrl');
+    }
   });
 
   // ShortcutMap invariant: no two keys with the same code and the same modifiers
@@ -176,6 +205,7 @@ describe('shortcutCommandOf', () => {
     ['Alt+Shift+Q', alt('KeyQ', { shift: true }), { kind: 'session-command', command: 'stop' }],
     ['Alt+Shift+W', alt('KeyW', { shift: true }), { kind: 'session-command', command: 'dismiss' }],
     ['Alt+A', alt('KeyA'), { kind: 'toggle-theme' }],
+    ['Alt+S', alt('KeyS'), { kind: 'toggle-shortcuts-panel' }],
   ])('gives the command of %s', (_, event, command) => {
     expect(shortcutCommandOf(event)).toEqual(command);
   });
@@ -226,6 +256,42 @@ describe('shortcutCommandOf', () => {
     expect(shortcutCommandOf(alt('Numpad1'))).toBeNull();
     expect(shortcutCommandOf(alt('Digit0'))).toBeNull();
     expect(shortcutCommandOf(alt('KeyB'))).toBeNull();
+  });
+
+  // plan-keyboard_shortcuts/REQ-26, REQ-28: every new key of the map gives its own command, so every row of the panel acts
+  it('gives each new key of the map its own command', () => {
+    for (const key of newKeys) {
+      const event = keyEvent(key.code, { ctrl: key.modifiers.includes('Ctrl'), alt: key.modifiers.includes('Alt'), shift: key.modifiers.includes('Shift') });
+      expect(shortcutCommandOf(event), comboOf(key)).toEqual(key.command);
+    }
+  });
+
+  // ShortcutMap contract, plan-keyboard_shortcuts/REQ-44: a terminal key never gives a command, SessionView keeps it
+  it.each([
+    ['Ctrl+Shift+F', keyEvent('KeyF', { ctrl: true, shift: true, key: 'F' })],
+    ['Ctrl+=', keyEvent('Equal', { ctrl: true, key: '=' })],
+    ['Ctrl++', keyEvent('Equal', { ctrl: true, shift: true, key: '+' })],
+    ['Ctrl+-', keyEvent('Minus', { ctrl: true, key: '-' })],
+    ['Ctrl+0', keyEvent('Digit0', { ctrl: true, key: '0' })],
+    ['Ctrl+Shift+L', keyEvent('KeyL', { ctrl: true, shift: true, key: 'L' })],
+  ])('gives null for the terminal key %s', (_, event) => {
+    expect(shortcutCommandOf(event)).toBeNull();
+  });
+
+  // ShortcutMap contract: a terminal key never gives a command, even with an event shaped as its own map entry
+  it('gives null for every terminal key of the map', () => {
+    expect(terminalKeys).not.toHaveLength(0);
+    for (const key of terminalKeys) {
+      const event = keyEvent(key.code, { ctrl: key.modifiers.includes('Ctrl'), alt: key.modifiers.includes('Alt'), shift: key.modifiers.includes('Shift'), key: key.code });
+      expect(shortcutCommandOf(event), comboOf(key)).toBeNull();
+    }
+  });
+
+  // plan-keyboard_shortcuts/REQ-45: Alt+S is the physical S key on any layout, and never with AltGr
+  it('matches Alt+S by physical key and not with AltGr', () => {
+    expect(shortcutCommandOf(alt('KeyS', { key: 'ß' }))).toEqual({ kind: 'toggle-shortcuts-panel' });
+    expect(shortcutCommandOf(alt('KeyS', { altGraph: true }))).toBeNull();
+    expect(shortcutCommandOf(alt('KeyS', { shift: true }))).toBeNull();
   });
 
   // ShortcutMap contract: the event type does not matter
