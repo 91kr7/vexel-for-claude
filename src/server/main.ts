@@ -86,6 +86,8 @@ if (existsSync(webRoot)) {
   await app.register(fastifyStatic, { root: webRoot });
 }
 
+// A page that reconnects to a fresh server must not see running external sessions as ended.
+await externalScanner.scan().catch(() => undefined);
 externalScanner.start();
 runningToolMonitor.start();
 usageMonitor.start();

@@ -1,6 +1,6 @@
 ---
 slug: claude_sessions_client
-date: 2026-11-06
+date: 2026-11-09
 spec: .sdd/analysis/claude_sessions_client.md
 status: validated
 ---
@@ -89,3 +89,18 @@ Fix of 2026-11-06. Only pages served by the client itself can drive the sessions
 | REQ-43 | A rejected connection receives no session data and writes nothing to any session terminal. |
 | REQ-44 | The Origin rule applies to every request that the access check covers before the fix, HTTP requests included. |
 | REQ-45 | The page opened on the client's port, the desktop app and the hook forwarder work as before the fix. |
+
+## Feature: Backend reconnection
+
+Fix of 2026-11-09. The page recovers by itself when the backend comes back after a disconnection.
+
+| ID | Requirement |
+|----|-------------|
+| REQ-46 | While the backend is unreachable, the client keeps trying to reconnect by itself. |
+| REQ-47 | The backend-disconnected error disappears within 5 seconds of the backend being reachable again, without a manual reload. |
+| REQ-48 | After the reconnection, the session list, the states and the needs-input count show the current data of the backend. |
+| REQ-49 | After the reconnection, the open hosted session reconnects and accepts input again. |
+| REQ-50 | After the reconnection, the open external session shows its conversation updated live again. |
+| REQ-51 | When the open session ended while the backend was unreachable, the page shows it as ended. |
+| REQ-52 | The error appears again at every new disconnection and disappears again at every return of the backend. |
+| REQ-53 | REQ-46 to REQ-52 hold in the browser page and in the desktop window. |

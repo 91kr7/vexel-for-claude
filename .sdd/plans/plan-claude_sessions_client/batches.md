@@ -1,6 +1,6 @@
 ---
 slug: claude_sessions_client
-date: 2026-11-06
+date: 2026-11-09
 status: validated
 ---
 
@@ -14,8 +14,9 @@ status: validated
 | [resume-session](batches/batch-resume-session.md) | Resume a past session | REQ-13, REQ-25, REQ-26, REQ-27, REQ-28 | session-list | certified | The user resumes a session started in the terminal |
 | [external-sessions](batches/batch-external-sessions.md) | External sessions | REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36 | resume-session | certified | The user sees a session that runs in another terminal |
 | [local-access](batches/batch-local-access.md) | Local access | REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42, REQ-43, REQ-44, REQ-45 | — | certified | The page on the client's port works as before |
+| [backend-reconnection](batches/batch-backend-reconnection.md) | Backend reconnection | REQ-46, REQ-47, REQ-48, REQ-49, REQ-50, REQ-51, REQ-52, REQ-53 | — | certified | The page recovers when the backend comes back |
 
-Execution order: session-interaction → session-list → stop-session and resume-session. The last two are independent of each other. external-sessions comes after resume-session. local-access is the fix of 2026-11-06. It runs alone, because every other batch is certified.
+Execution order: session-interaction → session-list → stop-session and resume-session. The last two are independent of each other. external-sessions comes after resume-session. local-access is the fix of 2026-11-06. It runs alone, because every other batch is certified. backend-reconnection is the fix of 2026-11-09. It also runs alone, for the same reason.
 
 ## Assumptions and decisions
 
@@ -46,6 +47,12 @@ Fix of 2026-11-06 (Local access). The orchestrator decided that the Origin reque
 - **The client's own origin uses the `http` scheme** (REQ-37). The server serves plain HTTP. Gatekeeper decision at requirements validation.
 - **Development is an explicit signal of the `dev` script**, not `NODE_ENV`. Details and the other decisions are in `batch-local-access.md`, "Decisions for this batch".
 
+Fix of 2026-11-09 (Backend reconnection). The human decided that the reconnection bug is a fix of this analysis, as the spec records.
+
+- **Indexes and specs exist now.** The `modify` points come from `.sdd/modules/` (modules sessions, external, app).
+- **The fix changes existing components only.** The page reconnects from LiveSessionStore, SessionView and ConversationView. AppLayout keeps the open session on screen as ended. The server waits for its first external scan before it listens.
+- **Gatekeeper decisions at requirements and coverage validation** (5 seconds for REQ-47, the reading of REQ-50, what the list shows after a restart, the unchanged error text, the simulated drop for REQ-49, the Electron e2e for REQ-53, the listen after a failed scan) → `batch-backend-reconnection.md`, "Decisions for this batch".
+
 ## Human decisions
 
 - 2026-11-05 → The client also shows the Claude Code sessions that run in other terminals. This came mid-cycle, after the plan was validated. The spec records it in its "Human decisions" section. It adds REQ-29 to REQ-36.
@@ -57,7 +64,7 @@ None.
 
 ## Coverage check
 
-Each INT is cited as `batch/INT-n`. The batches are abbreviated: `si` = session-interaction, `sl` = session-list, `ss` = stop-session, `rs` = resume-session, `ex` = external-sessions, `la` = local-access.
+Each INT is cited as `batch/INT-n`. The batches are abbreviated: `si` = session-interaction, `sl` = session-list, `ss` = stop-session, `rs` = resume-session, `ex` = external-sessions, `la` = local-access, `br` = backend-reconnection.
 
 | REQ | Served by | Closes in |
 |-----|-----------|-----------|
@@ -106,6 +113,14 @@ Each INT is cited as `batch/INT-n`. The batches are abbreviated: `si` = session-
 | REQ-43 | la/INT-1 | local-access |
 | REQ-44 | la/INT-1, la/INT-3 | local-access |
 | REQ-45 | la/INT-1, la/INT-3 | local-access |
+| REQ-46 | br/INT-1, br/INT-2, br/INT-4 | backend-reconnection |
+| REQ-47 | br/INT-1, br/INT-2 | backend-reconnection |
+| REQ-48 | br/INT-1, br/INT-7 | backend-reconnection |
+| REQ-49 | br/INT-2 | backend-reconnection |
+| REQ-50 | br/INT-4, br/INT-7 | backend-reconnection |
+| REQ-51 | br/INT-3, br/INT-5, br/INT-6, br/INT-7 | backend-reconnection |
+| REQ-52 | br/INT-1, br/INT-2 | backend-reconnection |
+| REQ-53 | br/INT-1, br/INT-2, br/INT-3, br/INT-4, br/INT-5, br/INT-6 | backend-reconnection |
 
 - Every REQ is served by at least one INT.
 - Every INT serves at least one REQ. The exceptions are two enabling INTs: si/INT-2 (CLI executable from an environment variable, for the tests) and si/INT-12 (`lang="it"` on the page).

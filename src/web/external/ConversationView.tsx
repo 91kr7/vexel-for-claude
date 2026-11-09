@@ -30,6 +30,8 @@ interface ConversationViewProps {
 }
 
 const AT_END_TOLERANCE_PX = 8;
+const STREAM_NOT_FOUND = 4404;
+const RETRY_DELAY_MS = 2000;
 const INLINE_CODE = /`([^`\n]+)`/;
 
 function conversationUrl(sessionId: string): string {
@@ -187,36 +189,47 @@ export function ConversationView({ sessionId, session, onResumed }: Conversation
   const entries = useMemo(() => entriesOf(items ?? []), [items]);
 
   useEffect(() => {
-    const socket = new WebSocket(conversationUrl(sessionId));
     const listeners = new AbortController();
+    const { signal } = listeners;
+    let socket: WebSocket;
+    let retry: ReturnType<typeof setTimeout> | undefined;
     let loaded = false;
-    socket.addEventListener(
-      'message',
-      (event: MessageEvent<string>) => {
-        let message: { type?: unknown; items?: unknown };
-        try {
-          message = JSON.parse(event.data) as typeof message;
-        } catch {
-          return;
-        }
-        if (message.type !== 'items' || !Array.isArray(message.items)) return;
-        const received = message.items as ConversationItem[];
-        const list = listRef.current;
-        followEndRef.current = !loaded || !list || isAtEnd(list);
-        loaded = true;
-        setItems((current) => [...(current ?? []), ...received]);
-      },
-      { signal: listeners.signal },
-    );
-    socket.addEventListener(
-      'close',
-      () => {
-        if (!loaded) setUnavailable(true);
-      },
-      { signal: listeners.signal },
-    );
+    const connect = () => {
+      socket = new WebSocket(conversationUrl(sessionId));
+      let firstFrame = true;
+      socket.addEventListener(
+        'message',
+        (event: MessageEvent<string>) => {
+          let message: { type?: unknown; items?: unknown };
+          try {
+            message = JSON.parse(event.data) as typeof message;
+          } catch {
+            return;
+          }
+          if (message.type !== 'items' || !Array.isArray(message.items)) return;
+          const received = message.items as ConversationItem[];
+          const list = listRef.current;
+          followEndRef.current = !loaded || !list || isAtEnd(list);
+          loaded = true;
+          const replace = firstFrame;
+          firstFrame = false;
+          setItems((current) => (replace ? received : [...(current ?? []), ...received]));
+        },
+        { signal },
+      );
+      socket.addEventListener(
+        'close',
+        (event: CloseEvent) => {
+          if (!loaded) setUnavailable(true);
+          else if (event.code !== STREAM_NOT_FOUND) retry = setTimeout(connect, RETRY_DELAY_MS);
+        },
+        { signal },
+      );
+    };
+    connect();
     return () => {
       listeners.abort();
+      clearTimeout(retry);
       socket.close();
     };
   }, [sessionId]);

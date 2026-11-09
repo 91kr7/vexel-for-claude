@@ -37,7 +37,7 @@ Shows:
 - the connection closes, between the header and the panel → an ErrorMessage on surface 1:
   - code `1000` (the session process ended) → no message. The header shows "Ended".
   - code `4404` → "The session no longer exists."
-  - any other code (e.g. the server stopped) → "Connection to the session lost."
+  - any other code (e.g. the server stopped) → "Connection to the session lost." The view then attaches again (see "Reconnection").
 - "Search" → an icon button (search icon, 26 px, `--text-secondary`) with the accessible name "Search" and the tooltip "Search (Ctrl+Shift+F)". It shows in every state, `ended` included, before the state pill. Tab goes from "Search" to "Interrupt", then to "Terminate".
 - the TerminalSearchBox at the top right of the panel, while the search is open. Its count follows the search, also while new output arrives.
 - the search matches → every match on a `--term-match-bg` background. The current match has a 1 px `--term-match-current-border` outline over the selection colour, so it looks different from the others.
@@ -45,6 +45,15 @@ Shows:
 - while files are dragged over the panel, in the desktop app (useDesktopBridge gives a path lookup) and the session is not `ended` (`undefined` included) → the panel shows that it accepts the drop: the `drop-target` class, a 2 px dashed `--accent-primary` outline and an `--accent-primary` border. It goes when the drag leaves the panel or the files are dropped. In the browser client and on an ended session the panel never shows it.
 - after a drop on the panel in the browser client (no path lookup) → the message "Paths can be dropped only in the desktop app." (`role="status"`) at the bottom centre of the panel, for 4 seconds; a new drop starts the 4 seconds again. It does not take the pointer.
 - "Interrupt" → `.button-interrupt` (orange) with the decorative CirclePauseIcon before the text. Its accessible name is "Interrupt" and it has no tooltip. It shows in every state except `ended`, `undefined` included. "Terminate" keeps its rose look.
+
+Reconnection:
+- after a close with a code other than `1000` and `4404`, the view attaches again 2 s later, and again every 2 s while the attempts fail. The error stays during the attempts.
+- a failed attempt adds no `[Session disconnected]` line and changes no message.
+- an attempt that gets its first frame → the error goes, the new snapshot replaces the whole terminal content, then the live output follows. The view sends `resize` when it connects, and typed input goes to the new connection.
+- an attempt closed with `4404` → no more attempts and no error message. The terminal keeps its content.
+- an attempt closed with `1000` → no more attempts and no error message.
+- a connection that got its snapshot and then closes behaves like the first connection: the line, the message by code, and the attempts again.
+- a new `sessionId` or the removal of the view ends the attempts.
 
 Actions:
 - every key typed in the terminal → sent to the pty as `input`, Esc included. Ctrl+Shift+L, Ctrl+Shift+F and the zoom keys are the only exceptions.
@@ -94,7 +103,7 @@ Actions:
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-2`, `plan-claude_sessions_client/REQ-3`, `plan-claude_sessions_client/REQ-4`, `plan-claude_sessions_client/REQ-5`, `plan-claude_sessions_client/REQ-8`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`, `plan-claude_sessions_client/REQ-21`, `plan-claude_sessions_client/REQ-22`, `plan-claude_sessions_client/REQ-23`
+- `plan-claude_sessions_client/REQ-2`, `plan-claude_sessions_client/REQ-3`, `plan-claude_sessions_client/REQ-4`, `plan-claude_sessions_client/REQ-5`, `plan-claude_sessions_client/REQ-8`, `plan-claude_sessions_client/REQ-18`, `plan-claude_sessions_client/REQ-19`, `plan-claude_sessions_client/REQ-21`, `plan-claude_sessions_client/REQ-22`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-46`, `plan-claude_sessions_client/REQ-47`, `plan-claude_sessions_client/REQ-49`, `plan-claude_sessions_client/REQ-51`, `plan-claude_sessions_client/REQ-52`, `plan-claude_sessions_client/REQ-53`
 - `plan-claude_sessions_client-ui_redesign/REQ-4`, `plan-claude_sessions_client-ui_redesign/REQ-17`, `plan-claude_sessions_client-ui_redesign/REQ-18`, `plan-claude_sessions_client-ui_redesign/REQ-24`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-32`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-34`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-35`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
