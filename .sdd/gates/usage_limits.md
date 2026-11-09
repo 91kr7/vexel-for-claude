@@ -15,3 +15,7 @@
 | 2026-11-09 | dev | question developer (labels) | decided | Labels as `/usage`; source requirements.md "Names", REQ-18 |
 | 2026-11-09 | dev | question developer (scoped rows) | decided | Show every weekly_scoped row, 0% included; allowlist of CLI not reproducible; flagged for human review |
 | 2026-11-09 | dev | G4 development | pass | Build green on re-run; diff only explained files; no test or plan file touched; token not logged |
+| 2026-11-09 | test | question tester (stale top-bar e2e) | decided | Update two earlier top-bar tests to expect the new button; REQ-1, `top-bar.md` |
+| 2026-11-09 | test | G5 tests, round 1 | sent back | Route 500 on synchronous reader throw (`plan-usage-route.ts`); 2 stale top-bar e2e |
+| 2026-11-09 | dev | G4 development | pass | Fix limited to `plan-usage-route.ts`; no test or plan file touched |
+| 2026-11-09 | test | G5 tests, round 2 | pass | Unit 2279/2279; e2e 529 pass, 1 flaky `terminal-search.spec.ts:227` under load, 3/3 alone; no only/skip added besides a root-only guard |

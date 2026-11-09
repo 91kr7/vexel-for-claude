@@ -326,11 +326,15 @@ test.describe('theme switch', () => {
     await page.goto('/');
     const check = async (screen: string) => {
       const sw = await box(themeSwitch(page));
+      // plan-usage_limits/REQ-1: the usage button sits between the switch and "New Session", 6 px from each.
+      const usage = await box(button(topBar(page), 'Plan Usage'));
       const next = await box(button(topBar(page), 'New Session'));
       const bar = await box(topBar(page));
       expect(sw.width, screen).toBeCloseTo(32, 0);
       expect(sw.height, screen).toBeCloseTo(32, 0);
-      expect(next.x - (sw.x + sw.width), `${screen}: 6 px before "New Session"`).toBeCloseTo(6, 0);
+      expect(usage.width, screen).toBeCloseTo(32, 0);
+      expect(usage.x - (sw.x + sw.width), `${screen}: 6 px before the usage button`).toBeCloseTo(6, 0);
+      expect(next.x - (usage.x + usage.width), `${screen}: 6 px before "New Session"`).toBeCloseTo(6, 0);
       expect(sw.x, `${screen}: on the right half of the bar`).toBeGreaterThan(bar.width / 2);
       expect(Math.abs(sw.y + sw.height / 2 - (bar.y + bar.height / 2)), `${screen}: vertically centred`).toBeLessThanOrEqual(1);
     };

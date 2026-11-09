@@ -4,8 +4,7 @@ import type { PlanLimitsReader, PlanLimitsResult } from './plan-limits-reader.js
 export function registerPlanUsageRoute(app: FastifyInstance, reader: Pick<PlanLimitsReader, 'read'>): void {
   let inFlight: Promise<PlanLimitsResult> | undefined;
   const readShared = (): Promise<PlanLimitsResult> => {
-    inFlight ??= reader
-      .read()
+    inFlight ??= (async () => reader.read())()
       .catch((): PlanLimitsResult => ({ status: 'error' }))
       .finally(() => {
         inFlight = undefined;
