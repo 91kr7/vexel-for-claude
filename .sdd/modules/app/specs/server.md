@@ -21,6 +21,7 @@ type: configuration
 - registers StartSessionRoute, StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute (with the tracker), RenameSessionRoute (with the tracker, the scanner and the name store) and FolderRoute.
 - one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute (also with the name store), ResumeSessionRoute and ResumeEndedSessionRoute with them, the registry and the tracker.
 - one ExternalSessionScanner on that ExternalSessionCheck and SessionHistory, with the hosted pids of the registry and the name store. It starts with the server.
+- it starts listening only after one `scan()` of that scanner has settled. A scan that fails or throws does not stop the listen.
 - passes the scanner to SessionListRoute and SessionEventsRoute.
 - one AttentionMonitor on the tracker, the scanner and the registry, created before the scanner starts. Registers AttentionRoute with it.
 - one TranscriptReader with the default Claude Code folder. Registers ConversationStreamRoute and ItemContentRoute with it and the scanner.
@@ -44,7 +45,7 @@ type: configuration
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-29`, `plan-claude_sessions_client/REQ-32`, `plan-claude_sessions_client/REQ-33`, `plan-claude_sessions_client/REQ-37`, `plan-claude_sessions_client/REQ-38`, `plan-claude_sessions_client/REQ-44`, `plan-claude_sessions_client/REQ-45`
+- `plan-claude_sessions_client/REQ-9`, `plan-claude_sessions_client/REQ-14`, `plan-claude_sessions_client/REQ-15`, `plan-claude_sessions_client/REQ-23`, `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-29`, `plan-claude_sessions_client/REQ-32`, `plan-claude_sessions_client/REQ-33`, `plan-claude_sessions_client/REQ-37`, `plan-claude_sessions_client/REQ-38`, `plan-claude_sessions_client/REQ-44`, `plan-claude_sessions_client/REQ-45`, `plan-claude_sessions_client/REQ-48`, `plan-claude_sessions_client/REQ-50`, `plan-claude_sessions_client/REQ-51`
 - `plan-claude_sessions_client-ui_redesign/REQ-21`
 - `plan-desktop_app/REQ-15`
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-21`

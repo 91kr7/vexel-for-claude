@@ -46,6 +46,8 @@ export interface SessionSummary {
 
 export type LoadStatus = 'loading' | 'ready' | 'error';
 
+const RETRY_DELAY_MS = 2000;
+
 type SessionEvent = { type: 'session'; session: SessionSummary } | { type: 'session-removed'; id: string };
 
 function isSessionEvent(value: unknown): value is SessionEvent {
@@ -67,10 +69,22 @@ export class LiveSessionStore {
 
   start(): void {
     this.stop();
+    this.#setStatus('loading');
+    this.#connect();
+  }
+
+  #connect(): void {
     const socket = new WebSocket(`${this.#origin.replace(/^http/, 'ws')}/api/sessions/events`);
     const listeners = new AbortController();
     let pending: SessionEvent[] | undefined = [];
-    this.#setStatus('loading');
+    const fail = () => {
+      if (listeners.signal.aborted) return;
+      listeners.abort();
+      socket.close();
+      const retry = setTimeout(() => this.#connect(), RETRY_DELAY_MS);
+      this.#stopCurrent = () => clearTimeout(retry);
+      this.#setStatus('error');
+    };
 
     socket.addEventListener(
       'message',
@@ -97,16 +111,13 @@ export class LiveSessionStore {
             const events = pending ?? [];
             pending = undefined;
             this.#sessions = sessions;
-            if (this.#status === 'loading') this.#status = 'ready';
+            this.#status = 'ready';
             this.#apply(events);
           })
-          .catch(() => {
-            if (!listeners.signal.aborted) this.#setStatus('error');
-          });
+          .catch(fail);
       },
       { signal: listeners.signal },
     );
-    const fail = () => this.#setStatus('error');
     socket.addEventListener('close', fail, { signal: listeners.signal });
     socket.addEventListener('error', fail, { signal: listeners.signal });
 

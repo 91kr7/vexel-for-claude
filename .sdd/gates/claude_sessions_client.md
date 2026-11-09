@@ -57,3 +57,4 @@
 | 2026-11-09 | plan (fix reconnection) | question planner Q1-Q3 | decided | REQ-47 bound 5 s; REQ-50 external session resumes live view (read-only, analysis l.79); REQ-48/51 list shows only current backend data, open session kept as ended (analysis l.124, decision 2026-11-05) |
 | 2026-11-09 | plan (fix reconnection) | G2 requirements | pass | REQ-46..53 cover the 7 "Backend reconnection" requirements; REQ-49/50 split hosted vs external |
 | 2026-11-09 | plan (fix reconnection) | G3 coverage | pass | One batch `backend-reconnection`, REQ-46..53, INT-1..7 on 5 existing paths; error text kept (analysis out of scope); INT-7 asked to listen after the first scan settles, even on failure |
+| 2026-11-09 | dev (fix reconnection) | G4 backend-reconnection | pass | Build green (re-run); files map to INT-1..7 plus specs and indexes; accepted: extra startup `scan()` before `start()`, failed list load closes the socket and retries; old store test "stays error" to be rewritten |

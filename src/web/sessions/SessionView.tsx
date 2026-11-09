@@ -21,6 +21,7 @@ import { loadWebAddressLinks } from './web-address-links';
 const ESCAPE = '\x1b';
 const SESSION_ENDED = 1000;
 const SESSION_NOT_FOUND = 4404;
+const RETRY_DELAY_MS = 2000;
 const TERMINAL_LINE_HEIGHT = 1.2;
 const LINK_TOOLTIP_OFFSET = 12;
 const LINK_TOOLTIP_MAX_WIDTH = 480;
@@ -202,36 +203,51 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
     terminalRef.current = terminal;
     searchRef.current = { addon: searchAddon, options: searchOptions(container) };
 
-    const socket = new WebSocket(attachUrl(sessionId));
-    socketRef.current = socket;
+    const listeners = new AbortController();
+    const { signal } = listeners;
+    let socket: WebSocket;
+    let retry: ReturnType<typeof setTimeout> | undefined;
     const send = (message: object) => {
       if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
     };
     const sendSize = () => send({ type: 'resize', cols: terminal.cols, rows: terminal.rows });
 
-    const listeners = new AbortController();
-    const { signal } = listeners;
-    socket.addEventListener('open', sendSize, { signal });
-    let snapshotShown = false;
-    socket.addEventListener(
-      'message',
-      (event: MessageEvent<string>) => {
-        terminal.write(event.data);
-        if (snapshotShown) return;
-        snapshotShown = true;
-        setLoading(false);
-      },
-      { signal },
-    );
-    socket.addEventListener(
-      'close',
-      (event: CloseEvent) => {
-        terminal.write('\r\n\x1b[2m[Session disconnected]\x1b[0m\r\n');
-        setLoading(false);
-        setConnectionError(closeMessage(event.code));
-      },
-      { signal },
-    );
+    const connect = (reconnecting: boolean) => {
+      socket = new WebSocket(attachUrl(sessionId));
+      socketRef.current = socket;
+      socket.addEventListener('open', sendSize, { signal });
+      let snapshotShown = false;
+      socket.addEventListener(
+        'message',
+        (event: MessageEvent<string>) => {
+          if (!snapshotShown && reconnecting) {
+            terminal.reset();
+            setConnectionError(null);
+          }
+          terminal.write(event.data);
+          if (snapshotShown) return;
+          snapshotShown = true;
+          setLoading(false);
+        },
+        { signal },
+      );
+      socket.addEventListener(
+        'close',
+        (event: CloseEvent) => {
+          const lost = event.code !== SESSION_ENDED && event.code !== SESSION_NOT_FOUND;
+          if (!reconnecting || snapshotShown) {
+            terminal.write('\r\n\x1b[2m[Session disconnected]\x1b[0m\r\n');
+            setLoading(false);
+            setConnectionError(closeMessage(event.code));
+          } else if (!lost) {
+            setConnectionError(null);
+          }
+          if (lost) retry = setTimeout(() => connect(true), RETRY_DELAY_MS);
+        },
+        { signal },
+      );
+    };
+    connect(false);
     terminal.attachCustomKeyEventHandler((event) => {
       const shortcut = isCtrlShiftKey(event, 'l')
         ? () => onLeaveTerminalRef.current()
@@ -255,6 +271,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal }: SessionView
 
     return () => {
       listeners.abort();
+      clearTimeout(retry);
       resizeObserver.disconnect();
       unsubscribeFontSize();
       inputSubscription.dispose();

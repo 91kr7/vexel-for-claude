@@ -64,6 +64,13 @@ Actions:
   - a part already loaded is never requested again.
 - a card is open when its result arrives → the full output loads at once when it is `truncated`.
 
+Reconnection:
+- the socket closes after the first frame, not by unmount → the view opens a new socket 2 s later, and again every 2 s while the attempts fail.
+- the first frame of a new socket replaces all the items. No entry shows twice. For "N new messages", only the entries beyond the previous count are new.
+- an attempt closed with `4404` → no more attempts. The items stay.
+- no error shows after the first frame, during the attempts or after them.
+- a socket that closes before the first frame of the view → the error AreaState above, and no attempt.
+
 Scrolling:
 - the view is at the end when its bottom is within 8 px of the end of the content.
 - the first frame always shows the last entry.
@@ -76,7 +83,7 @@ Scrolling:
 ## Rules and invariants
 
 - It has no input field. It sends nothing on the socket.
-- It opens one socket per `sessionId` and closes it on unmount.
+- It has one socket open at a time per `sessionId`. Unmount closes it and ends the attempts.
 - The header and the footer stay in place. Only the content scrolls; the button does not.
 - It requests the full content of a part only when the user opens its card.
 
@@ -88,7 +95,7 @@ Scrolling:
 
 ## Requirements served
 
-- `plan-claude_sessions_client/REQ-33`, `plan-claude_sessions_client/REQ-34`, `plan-claude_sessions_client/REQ-36`
+- `plan-claude_sessions_client/REQ-33`, `plan-claude_sessions_client/REQ-34`, `plan-claude_sessions_client/REQ-36`, `plan-claude_sessions_client/REQ-46`, `plan-claude_sessions_client/REQ-50`, `plan-claude_sessions_client/REQ-51`, `plan-claude_sessions_client/REQ-53`
 - `plan-claude_sessions_client-ui_redesign/REQ-17`, `plan-claude_sessions_client-ui_redesign/REQ-19`, `plan-claude_sessions_client-ui_redesign/REQ-20`, `plan-claude_sessions_client-ui_redesign/REQ-21`, `plan-claude_sessions_client-ui_redesign/REQ-22`, `plan-claude_sessions_client-ui_redesign/REQ-23`, `plan-claude_sessions_client-ui_redesign/REQ-24`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-33`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-36` to `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-41`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-16`

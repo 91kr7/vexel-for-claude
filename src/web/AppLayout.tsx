@@ -55,8 +55,16 @@ export function AppLayout() {
   const lastOpenSummary = useRef<SessionSummary | undefined>(undefined);
   const listedSummary = sessions.find((session) => session.id === openSessionId);
   if (listedSummary) lastOpenSummary.current = listedSummary;
-  const openSummary = listedSummary ?? (lastOpenSummary.current?.id === openSessionId ? lastOpenSummary.current : undefined);
-  const openHostedLeftList = !openIsExternal && !listedSummary && openSummary !== undefined;
+  const lastSummary = listedSummary ?? (lastOpenSummary.current?.id === openSessionId ? lastOpenSummary.current : undefined);
+  const [previousStatus, setPreviousStatus] = useState(status);
+  const [endedWhileAwayId, setEndedWhileAwayId] = useState<string | null>(null);
+  if (status !== previousStatus) {
+    setPreviousStatus(status);
+    if (previousStatus === 'error' && status === 'ready' && !listedSummary && lastSummary) setEndedWhileAwayId(openSessionId);
+  }
+  const openEndedWhileAway = endedWhileAwayId === openSessionId && !listedSummary && lastSummary !== undefined;
+  const openSummary = openEndedWhileAway ? { ...lastSummary, state: 'ended' as const } : lastSummary;
+  const openHostedLeftList = !openIsExternal && !openEndedWhileAway && !listedSummary && openSummary !== undefined;
   useEffect(() => {
     if (openHostedLeftList) setOpenSessionId(null);
   }, [openHostedLeftList]);
