@@ -40,6 +40,7 @@ Add a button next to the theme switch. It opens a view of what `/usage` shows ab
 - A limit near its threshold must stand out at 70% and stand out more at 90%.
 - The figures must be current when the view opens, and must refresh while the view stays open.
 - When plan limits are not available, the view must say so and must show no figures, not zeros.
+- When the figures cannot be refreshed, the view must say so and must not present the old figures as current.
 - Every new text must be in English, like the rest of the UI.
 - The button and the view must look right in both the light and the dark theme.
 
