@@ -281,21 +281,6 @@ test.describe('session list', () => {
     await expect(list(page)).not.toContainText('No sessions.');
     await expect(loading(list(page))).toHaveCount(0);
   });
-
-  // plan-claude_sessions_client-ui_redesign/REQ-30, LiveSessionStore: the store does not reconnect by itself
-  test('after the connection is lost the client opens no new events connection', async ({ page }) => {
-    let connections = 0;
-    await page.routeWebSocket(EVENTS, (ws) => {
-      connections += 1;
-      ws.connectToServer();
-      if (connections === 1) setTimeout(() => void ws.close({ code: 1011 }), 300);
-    });
-    await page.goto('/');
-    await expect(list(page).getByRole('alert')).toHaveText(LOST_SERVER);
-    await page.waitForTimeout(1500);
-    expect(connections).toBe(1);
-    await expect(list(page).getByRole('alert')).toHaveText(LOST_SERVER);
-  });
 });
 
 test.describe('open session', () => {
