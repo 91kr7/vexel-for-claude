@@ -61,6 +61,10 @@ Shortcuts (useShortcutKeys, while the page is mounted):
   - none, target `next-needs-input` → the open session does not change, and the toast shows "No session needs input".
   - none, any other target → nothing.
 - focus after an open by shortcut → it follows the open path of a click. In addition, when the focus was in the main view before the open, the new main view gets it.
+- `new-session` (Alt+N) → opens FolderChooser, as "New Session" does.
+- `resume-history` (Alt+H) → opens ResumeDialog, as "Resume" in the rail does.
+- `toggle-theme` (Alt+A) → switches the theme, as the ThemeSwitch does (ThemeStore `toggle`).
+- `session-command` (Alt+E, Alt+R, Alt+Shift+Q, Alt+Shift+W) → sent to ShortcutChannel. The component that owns the action runs it; with no owner on the page, nothing happens.
 
 ## Rules and invariants
 
@@ -73,7 +77,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 ## Dependencies
 
 - TopBar, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
-- useShortcutKeys, ShortcutMap, ShortMessageToast
+- useShortcutKeys, ShortcutMap, ShortcutChannel, ShortMessageToast, ThemeStore
 - FolderChooser (module folders)
 - ResumeDialog (module history)
 - SessionView, SessionList, NeedsInputCounter, LiveSessionStore, SessionOrderStore, sessionToOpen (module sessions)
@@ -89,4 +93,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-20`
 - `plan-session_list_improvements/REQ-7`, `plan-session_list_improvements/REQ-10`
 - `plan-session_list_width/REQ-3`, `plan-session_list_width/REQ-4`, `plan-session_list_width/REQ-5`, `plan-session_list_width/REQ-6`, `plan-session_list_width/REQ-9`, `plan-session_list_width/REQ-11`
-- `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-43`
+- `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-21`, `plan-keyboard_shortcuts/REQ-43`

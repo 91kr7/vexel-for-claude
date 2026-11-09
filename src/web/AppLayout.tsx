@@ -15,8 +15,10 @@ import { SessionView } from './sessions/SessionView';
 import { type SessionSummary, useLiveSessions } from './sessions/live-session-store';
 import { sessionToOpen } from './sessions/navigation-targets';
 import { useSessionOrder } from './sessions/session-order-store';
+import { sendSessionCommand } from './shortcut-channel';
 import { useShortcutKeys } from './shortcut-keys';
 import type { ShortcutCommand } from './shortcut-map';
+import { pageThemeStore } from './theme/theme-store';
 import { TopBar } from './TopBar';
 
 function subscribeToWindowResize(listener: () => void): () => void {
@@ -106,6 +108,10 @@ export function AppLayout() {
   useShortcutKeys((command: ShortcutCommand) => {
     if (command.kind === 'focus-list') focusList();
     else if (command.kind === 'focus-main-view') mainViewRef.current?.focus();
+    else if (command.kind === 'new-session') setChoosingFolder(true);
+    else if (command.kind === 'resume-history') setResuming(true);
+    else if (command.kind === 'toggle-theme') pageThemeStore().toggle();
+    else if (command.kind === 'session-command') sendSessionCommand(command.command);
     else {
       const sessionId = sessionToOpen(sessions, sessionOrder, openSessionId, command.target);
       if (sessionId === null) {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { WarningDialog } from '../dialogs/WarningDialog';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { Spinner } from '../feedback/ProgressIndicator';
+import { useSessionCommand } from '../shortcut-channel';
 import type { SessionState } from './live-session-store';
 
 const STILL_WORKING = ' is still working. The current turn will be interrupted. You can resume the conversation from the history.';
@@ -17,8 +18,6 @@ export function StopSessionButton({ sessionId, state, folderName }: StopSessionB
   const [stopping, setStopping] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  if (state === 'ended') return null;
-
   const stop = async () => {
     setConfirming(false);
     setFailed(false);
@@ -32,6 +31,11 @@ export function StopSessionButton({ sessionId, state, folderName }: StopSessionB
       setFailed(true);
     }
   };
+  const terminate = () => (state === 'working' ? setConfirming(true) : void stop());
+
+  useSessionCommand('stop', terminate, state !== 'ended' && !stopping);
+
+  if (state === 'ended') return null;
 
   return (
     <>
@@ -40,7 +44,7 @@ export function StopSessionButton({ sessionId, state, folderName }: StopSessionB
         className="button-danger stop-session-button"
         disabled={stopping}
         aria-busy={stopping || undefined}
-        onClick={() => (state === 'working' ? setConfirming(true) : void stop())}
+        onClick={terminate}
       >
         {stopping ? (
           <Spinner />

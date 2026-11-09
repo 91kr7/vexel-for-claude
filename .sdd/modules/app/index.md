@@ -25,6 +25,7 @@
 | ErrorMessage | UI component | `src/web/feedback/ErrorMessage.tsx` | Icon and text in rose, announced as an alert | `specs/error-message.md` |
 | ShortcutMap | configuration | `src/web/shortcut-map.ts` | The one list of the client shortcuts: physical key, modifiers, area, action text and command, and the lookup of a key event | `specs/shortcut-map.md` |
 | useShortcutKeys | frontend hook | `src/web/shortcut-keys.ts` | Window `keydown` listener in the capture phase: runs the command of a map key, cancels and stops the event; does nothing while a dialog is open | `specs/shortcut-keys.md` |
+| ShortcutChannel | frontend service | `src/web/shortcut-channel.ts` | Sends a session command of a shortcut (stop, dismiss, resume, rename) to the mounted component that subscribed to it; no subscriber, no effect | `specs/shortcut-channel.md` |
 | ShortMessageToast | UI component | `src/web/ShortMessageToast.tsx` | Glass status box at the bottom centre that shows one text for 4 s | `specs/short-message-toast.md` |
 | IconSet | UI component | `src/web/icons/Icons.tsx`, `src/web/icons/LICENSE` | Lucide icons as local decorative SVG components, with their licence | `specs/icon-set.md` |
 | ThirdPartyNotices | document | `THIRD-PARTY-NOTICES.md` | Source, version and licence of each third-party font and icon set | `specs/third-party-notices.md` |
