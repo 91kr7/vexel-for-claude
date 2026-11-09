@@ -13,6 +13,8 @@ import { registerPastSessionListRoute } from './history/past-session-list-route.
 import { registerResumeSessionRoute } from './history/resume-session-route.js';
 import { SessionHistory } from './history/session-history.js';
 import { registerLocalAccessGuard } from './local-access-guard.js';
+import { PlanLimitsReader } from './plan-limits-reader.js';
+import { registerPlanUsageRoute } from './plan-usage-route.js';
 import { registerAttachSessionRoute } from './sessions/attach-session-route.js';
 import { AttentionMonitor } from './sessions/attention-monitor.js';
 import { registerAttentionRoute } from './sessions/attention-route.js';
@@ -80,6 +82,7 @@ registerResumeSessionRoute(app, { history, registry });
 registerConversationStreamRoute(app, { scanner: externalScanner, reader: transcriptReader });
 registerItemContentRoute(app, { scanner: externalScanner, reader: transcriptReader });
 registerAttentionRoute(app, attentionMonitor);
+registerPlanUsageRoute(app, new PlanLimitsReader());
 
 // In dev the page comes from Vite, so dist/web may not exist yet.
 if (existsSync(webRoot)) {

@@ -8,6 +8,8 @@ import { ListPanelEdge } from './ListPanelEdge';
 import { listWidthLimit, pageListWidthStore, shownListWidth, useListWidth } from './list-width-store';
 import { NavigationRail } from './NavigationRail';
 import { NeedsInputSnackbar, useNeedsInputSnackbar } from './NeedsInputSnackbar';
+import { PlanUsagePopover } from './plan-usage/PlanUsagePopover';
+import { usePlanUsage } from './plan-usage/plan-usage-store';
 import { ShortcutsPanel } from './ShortcutsPanel';
 import { ShortMessageToast, useShortMessage } from './ShortMessageToast';
 import { countNeedsInput, NeedsInputCounter } from './sessions/NeedsInputCounter';
@@ -56,6 +58,8 @@ export function AppLayout() {
   const [resuming, setResuming] = useState(false);
   const [showingShortcuts, setShowingShortcuts] = useState(false);
   const toggleShortcuts = () => setShowingShortcuts((showing) => !showing);
+  const [showingPlanUsage, setShowingPlanUsage] = useState(false);
+  const planUsage = usePlanUsage(showingPlanUsage);
   const listPanelRef = useRef<HTMLElement>(null);
   const newSessionRef = useRef<HTMLButtonElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -129,7 +133,14 @@ export function AppLayout() {
 
   return (
     <div className="app">
-      <TopBar onNewSession={() => setChoosingFolder(true)} shortcutsPanelOpen={showingShortcuts} onToggleShortcutsPanel={toggleShortcuts} />
+      <TopBar
+        onNewSession={() => setChoosingFolder(true)}
+        shortcutsPanelOpen={showingShortcuts}
+        onToggleShortcutsPanel={toggleShortcuts}
+        planUsageOpen={showingPlanUsage}
+        onTogglePlanUsage={() => setShowingPlanUsage((showing) => !showing)}
+      />
+      {showingPlanUsage && <PlanUsagePopover state={planUsage} onClose={() => setShowingPlanUsage(false)} />}
       <div className="app-body">
         <NavigationRail
           needsInputCount={countNeedsInput(sessions)}

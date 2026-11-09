@@ -543,6 +543,130 @@ input {
   z-index: 120;
 }
 
+.plan-usage-popover {
+  -webkit-app-region: no-drag;
+  position: fixed;
+  top: 52px;
+  right: 14px;
+  z-index: 90;
+  width: 320px;
+  max-width: calc(100vw - 28px);
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  padding: 12px 14px 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-2xl);
+  color: var(--text-primary);
+}
+
+.plan-usage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.plan-usage-title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.plan-usage-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--text-muted);
+}
+
+.plan-usage-close:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-surface-3);
+}
+
+.plan-usage-message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+
+.plan-usage-note {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-muted);
+}
+
+.plan-limits {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-limit-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.plan-limit-label {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.plan-limit-percent {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+
+.plan-limit-bar {
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 3px;
+  overflow: hidden;
+  background-color: var(--bg-surface-3);
+}
+
+.plan-limit-fill {
+  height: 100%;
+  border-radius: 3px;
+  background-color: var(--accent-primary);
+}
+
+.plan-limit-fill.usage-warning {
+  background-color: var(--amber-400);
+}
+
+.plan-limit-fill.usage-error {
+  background-color: var(--rose-400);
+}
+
+.plan-limit-percent.usage-warning {
+  color: var(--amber-400);
+}
+
+.plan-limit-percent.usage-error {
+  color: var(--rose-400);
+}
+
+.plan-limit-reset {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-muted);
+}
+
 .app-body {
   position: relative;
   flex: 1;

@@ -32,6 +32,7 @@ Components and where the client uses them today:
 - `Maximize2Icon`, `Minimize2Icon` → the green WindowButtons button, to maximize and to restore
 - `MoonIcon`, `SunIcon` → the ThemeSwitch in the dark and in the light theme
 - `KeyboardIcon` → the ShortcutsButton
+- `GaugeIcon` → the PlanUsageButton
 - `PencilIcon` → "Rename" of a list entry
 - `CirclePauseIcon` → "Interrupt" in the SessionView subbar
 - no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
@@ -58,3 +59,4 @@ Components and where the client uses them today:
 - `plan-mac_title_bar/REQ-19`, `plan-mac_title_bar/REQ-21`
 - `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-35`
 - `plan-keyboard_shortcuts/REQ-22`
+- `plan-usage_limits/REQ-1`

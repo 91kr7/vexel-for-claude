@@ -27,6 +27,7 @@ type: configuration
 - one TranscriptReader with the default Claude Code folder. Registers ConversationStreamRoute and ItemContentRoute with it and the scanner.
 - one RunningToolMonitor on the tracker, the scanner and that TranscriptReader, created before the scanner starts. It starts with the server and stops on `SIGTERM` or `SIGINT`. Passed to SessionListRoute and SessionEventsRoute.
 - one UsageMonitor on the tracker, the scanner and that TranscriptReader, created before the scanner starts. It starts with the server and stops on `SIGTERM` or `SIGINT`. Passed to SessionListRoute and SessionEventsRoute.
+- one PlanLimitsReader with the default Claude Code folder. Registers PlanUsageRoute with it.
 - serves the files of `dist/web` when the folder exists.
 - on `SIGTERM` or `SIGINT` → it stops every running session of the SessionRegistry and waits for their exit, then closes the server and exits with code `0`. A second signal during this stop changes nothing.
 
@@ -39,6 +40,7 @@ type: configuration
 
 - LocalAccessGuard
 - SessionRegistry, SessionStateTracker, SessionNameStore, RenameSessionRoute, HookSettings, StartSessionRoute, StopSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute, ResumeEndedSessionRoute, AttentionMonitor, AttentionRoute, RunningToolMonitor, UsageMonitor (module sessions)
+- PlanUsageRoute, PlanLimitsReader
 - FolderRoute (module folders)
 - SessionHistory, ExternalSessionCheck, PastSessionListRoute, ResumeSessionRoute (module history)
 - ExternalSessionScanner, TranscriptReader, ConversationStreamRoute, ItemContentRoute (module external)
@@ -51,3 +53,4 @@ type: configuration
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-21`
 - `plan-session_list_improvements/REQ-4`, `plan-session_list_improvements/REQ-8`, `plan-session_list_improvements/REQ-14`, `plan-session_list_improvements/REQ-25`, `plan-session_list_improvements/REQ-35`
 - `plan-session_usage/REQ-1`, `plan-session_usage/REQ-12`
+- `plan-usage_limits/REQ-11`, `plan-usage_limits/REQ-13`

@@ -54,6 +54,7 @@ else → "New Claude Code Session" in the rail
 - each change of the open session is reported to the desktop app (useDesktopBridge).
 - the ShortcutsButton of the TopBar → opens the ShortcutsPanel, or closes it when it is open.
 - the panel closes ("[Esc]", "Close", Esc) → it goes; the focus goes back where it was before it opened (Dialog).
+- the PlanUsageButton of the TopBar → opens the PlanUsagePopover, or closes it when it is open. The popover shows the state of `usePlanUsage(open)`: the figures load when it opens and every 60 s while it is open. Its close button and Esc close it. It is not a dialog: the open session, its terminal focus and scroll, and any open dialog stay as they are.
 
 Shortcuts (useShortcutKeys, while the page is mounted):
 - `focus-list` (Alt+L) → the focus moves to a list entry, with the same rule as "Sessions" in the rail.
@@ -80,7 +81,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 
 ## Dependencies
 
-- TopBar, ShortcutsPanel, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
+- TopBar, ShortcutsPanel, PlanUsagePopover, PlanUsageStore, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
 - useShortcutKeys, ShortcutMap, ShortcutChannel, ShortMessageToast, ThemeStore
 - FolderChooser (module folders)
 - ResumeDialog (module history)
@@ -97,4 +98,5 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-20`
 - `plan-session_list_improvements/REQ-7`, `plan-session_list_improvements/REQ-10`
 - `plan-session_list_width/REQ-3`, `plan-session_list_width/REQ-4`, `plan-session_list_width/REQ-5`, `plan-session_list_width/REQ-6`, `plan-session_list_width/REQ-9`, `plan-session_list_width/REQ-11`
+- `plan-usage_limits/REQ-3`, `plan-usage_limits/REQ-4`
 - `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-21`, `plan-keyboard_shortcuts/REQ-24`, `plan-keyboard_shortcuts/REQ-25`, `plan-keyboard_shortcuts/REQ-29`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-31`, `plan-keyboard_shortcuts/REQ-43`
