@@ -1,5 +1,6 @@
 import { isDesktopWindow } from './desktop-bridge';
 import { PlusIcon } from './icons/Icons';
+import { PlanUsageButton } from './PlanUsageButton';
 import { ShortcutsButton } from './ShortcutsButton';
 import { ThemeSwitch } from './ThemeSwitch';
 import { WindowButtons } from './WindowButtons';
@@ -8,9 +9,11 @@ interface TopBarProps {
   onNewSession: () => void;
   shortcutsPanelOpen: boolean;
   onToggleShortcutsPanel: () => void;
+  planUsageOpen: boolean;
+  onTogglePlanUsage: () => void;
 }
 
-export function TopBar({ onNewSession, shortcutsPanelOpen, onToggleShortcutsPanel }: TopBarProps) {
+export function TopBar({ onNewSession, shortcutsPanelOpen, onToggleShortcutsPanel, planUsageOpen, onTogglePlanUsage }: TopBarProps) {
   const desktop = isDesktopWindow();
   return (
     <header className={desktop ? 'top-bar top-bar-drag' : 'top-bar'}>
@@ -27,6 +30,7 @@ export function TopBar({ onNewSession, shortcutsPanelOpen, onToggleShortcutsPane
       <div className="top-bar-actions">
         <ShortcutsButton open={shortcutsPanelOpen} onToggle={onToggleShortcutsPanel} />
         <ThemeSwitch />
+        <PlanUsageButton open={planUsageOpen} onToggle={onTogglePlanUsage} />
         <button type="button" className="button-primary button-bar" onClick={onNewSession}>
           <PlusIcon />
           New Session

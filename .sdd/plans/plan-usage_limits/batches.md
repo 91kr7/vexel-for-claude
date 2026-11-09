@@ -6,7 +6,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [plan-usage-view](batches/batch-plan-usage-view.md) | Plan usage view | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18 | — | in progress | The user sees the 5-hour and weekly limits |
+| [plan-usage-view](batches/batch-plan-usage-view.md) | Plan usage view | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18 | — | implemented | The user sees the 5-hour and weekly limits |
 
 Execution order: `plan-usage-view`.
 
