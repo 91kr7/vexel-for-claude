@@ -245,3 +245,33 @@ describe('CommitDetail', () => {
     await settle();
   });
 });
+
+describe('HistoryTab after a refresh', () => {
+  const listShown = (container: HTMLElement) => {
+    const list = commitList(container);
+    return list !== null && list.closest('[hidden]') === null;
+  };
+
+  // plan-git_explorer/REQ-26
+  it('keeps the open commit open, as it was, when its hash is still among the commits', async () => {
+    const { container, update } = mount(tab());
+    flushSync(() => commitList(container)!.querySelectorAll('button')[1]!.click());
+    await until(() => backButton(container) !== undefined);
+    const calls = fetchMock.mock.calls.length;
+    const added: Commit = { hash: 'f'.repeat(40), shortHash: 'fffffff', message: 'newer', author: 'Cy', date: '2026-11-10T10:00:00+00:00' };
+    update(tab({ commits: [added, { ...newest }, { ...older }] }));
+    expect(backButton(container)).toBeDefined();
+    expect(listShown(container)).toBe(false);
+    await settle();
+    expect(fetchMock).toHaveBeenCalledTimes(calls);
+  });
+
+  it('closes the open commit and shows the list when its hash is no longer among the commits', async () => {
+    const { container, update } = mount(tab());
+    flushSync(() => commitList(container)!.querySelectorAll('button')[1]!.click());
+    await until(() => backButton(container) !== undefined);
+    update(tab({ commits: [{ ...newest }] }));
+    expect(backButton(container)).toBeUndefined();
+    expect(listShown(container)).toBe(true);
+  });
+});

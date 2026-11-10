@@ -154,3 +154,74 @@ describe('ChangesTab', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+function renderUpdatable(entries: ChangeEntry[]) {
+  const container = document.createElement('div');
+  document.body.append(container);
+  const root = createRoot(container);
+  roots.push(root);
+  flushSync(() => root.render(<ChangesTab root={ROOT} changes={entries} />));
+  return { view: container, update: (next: ChangeEntry[]) => flushSync(() => root.render(<ChangesTab root={ROOT} changes={next} />)) };
+}
+
+const pressed = (view: HTMLElement) => buttons(view).filter((b) => b.getAttribute('aria-pressed') === 'true');
+
+describe('ChangesTab after a refresh', () => {
+  // plan-git_explorer/REQ-26
+  it('keeps the entry with the same group and path selected and loads its diff again', async () => {
+    const { view, update } = renderUpdatable(changes);
+    flushSync(() => button(group(view, 'Unstaged')!, 'src/both.ts')!.click());
+    await until(() => pending.length === 1);
+    answer(0, { binary: false, cut: false, lines: [{ kind: 'added', text: 'old content' }] });
+    await until(() => view.textContent!.includes('+old content'));
+    update(changes.map((entry) => ({ ...entry })));
+    const selected = pressed(view);
+    expect(selected).toHaveLength(1);
+    expect(group(view, 'Unstaged')!.contains(selected[0]!)).toBe(true);
+    expect(selected[0]!.textContent).toContain('src/both.ts');
+    await until(() => pending.length === 2);
+    expect(requestedUrl(1).searchParams.get('group')).toBe('unstaged');
+    expect(requestedUrl(1).searchParams.get('file')).toBe('src/both.ts');
+    await until(() => view.textContent!.includes('Loading…'));
+    expect(view.textContent).not.toContain('+old content');
+    answer(1, { binary: false, cut: false, lines: [{ kind: 'added', text: 'new content' }] });
+    await until(() => view.textContent!.includes('+new content'));
+  });
+
+  it('keeps the selection when the entry changes kind in the same group', async () => {
+    const { view, update } = renderUpdatable(changes);
+    flushSync(() => button(group(view, 'Staged')!, 'src/new.ts')!.click());
+    await until(() => pending.length === 1);
+    update(changes.map((entry) => (entry.path === 'src/new.ts' ? { ...entry, kind: 'modified' as const } : { ...entry })));
+    const selected = pressed(view);
+    expect(selected).toHaveLength(1);
+    expect(selected[0]!.textContent).toContain('src/new.ts');
+    await until(() => pending.length === 2);
+  });
+
+  it('closes the selection and the diff when the file is no longer in the same group', async () => {
+    const { view, update } = renderUpdatable(changes);
+    flushSync(() => button(group(view, 'Staged')!, 'src/both.ts')!.click());
+    await until(() => pending.length === 1);
+    answer(0, { binary: false, cut: false, lines: [{ kind: 'added', text: 'staged line' }] });
+    await until(() => view.textContent!.includes('+staged line'));
+    update(changes.filter((entry) => !(entry.group === 'staged' && entry.path === 'src/both.ts')));
+    expect(pressed(view)).toHaveLength(0);
+    expect(view.textContent).not.toContain('+staged line');
+    await settle();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(view.textContent).not.toContain('Loading…');
+  });
+
+  it('keeps the selection closed when the file comes back in a later refresh', async () => {
+    const { view, update } = renderUpdatable(changes);
+    flushSync(() => button(group(view, 'Unstaged')!, 'notes.txt')!.click());
+    await until(() => pending.length === 1);
+    update(changes.filter((entry) => entry.path !== 'notes.txt'));
+    expect(pressed(view)).toHaveLength(0);
+    update(changes.map((entry) => ({ ...entry })));
+    expect(pressed(view)).toHaveLength(0);
+    await settle();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});

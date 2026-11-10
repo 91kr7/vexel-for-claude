@@ -143,3 +143,50 @@ describe('useRepositoryLookup', () => {
     expect(latest).toEqual({ status: 'loading' });
   });
 });
+
+function RevisionProbe({ folder, revision }: { folder: string; revision: number }) {
+  latest = useRepositoryLookup(folder, revision);
+  return null;
+}
+
+function mountRevision(folder: string, revision = 0) {
+  const root = createRoot(document.createElement('div'));
+  roots.push(root);
+  flushSync(() => root.render(<RevisionProbe folder={folder} revision={revision} />));
+  return { set: (next: string, nextRevision: number) => flushSync(() => root.render(<RevisionProbe folder={next} revision={nextRevision} />)) };
+}
+
+describe('useRepositoryLookup refresh', () => {
+  // plan-git_explorer/REQ-23, plan-git_explorer/REQ-24
+  it('asks again on a new revision and keeps the current state until the new answer', async () => {
+    steps.push({ json: repositoryBody }, 'pending');
+    const probe = mountRevision('/home/dev/project/src');
+    await until(() => latest.status === 'repository');
+    probe.set('/home/dev/project/src', 1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(requestedUrl(1).searchParams.get('path')).toBe('/home/dev/project/src');
+    await settle();
+    expect(latest).toEqual(repositoryBody);
+    const detached = { ...repositoryBody, branch: { kind: 'detached', hash: 'a1b2c3d' } };
+    pending[0]!(new Response(JSON.stringify(detached)));
+    await until(() => latest.status === 'repository' && latest.branch.kind === 'detached');
+  });
+
+  it('drops the answer of an older revision', async () => {
+    steps.push('pending', { json: repositoryBody });
+    const probe = mountRevision('/home/dev/project');
+    probe.set('/home/dev/project', 1);
+    await until(() => latest.status === 'repository');
+    pending[0]!(new Response(JSON.stringify({ status: 'none' })));
+    await settle();
+    expect(latest).toEqual(repositoryBody);
+  });
+
+  it('is loading in the same render when the folder changes', async () => {
+    steps.push({ json: repositoryBody }, 'pending');
+    const probe = mountRevision('/home/dev/project');
+    await until(() => latest.status === 'repository');
+    probe.set('/home/dev/other', 0);
+    expect(latest).toEqual({ status: 'loading' });
+  });
+});

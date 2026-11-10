@@ -177,3 +177,111 @@ describe('useHistory', () => {
     expect(latest.history).toEqual({ status: 'error', message: FALLBACK });
   });
 });
+
+function RevisionProbe({ root, revision }: { root: string | undefined; revision: number }) {
+  latest = useHistory(root, revision);
+  return null;
+}
+
+function mountRevision(root: string | undefined, revision = 0) {
+  const r = createRoot(document.createElement('div'));
+  roots.push(r);
+  flushSync(() => r.render(<RevisionProbe root={root} revision={revision} />));
+  return { set: (nextRoot: string | undefined, nextRevision: number) => flushSync(() => r.render(<RevisionProbe root={nextRoot} revision={nextRevision} />)) };
+}
+
+describe('useHistory refresh', () => {
+  // plan-git_explorer/REQ-24
+  it('reads the first page again on a new revision, keeping the commits with loadingMore until it answers', async () => {
+    steps.push({ json: { commits: commits(1, 100), hasMore: true } }, 'pending');
+    const probe = mountRevision(ROOT);
+    await until(() => latest.history.status === 'loaded');
+    probe.set(ROOT, 1);
+    await until(() => fetchMock.mock.calls.length === 2);
+    expect(requestedUrl(1).searchParams.get('path')).toBe(ROOT);
+    expect(requestedUrl(1).searchParams.get('offset')).toBe('0');
+    await until(() => loaded()?.loadingMore === true);
+    expect(loaded()!.commits).toEqual(commits(1, 100));
+    expect(loaded()!.moreError).toBeUndefined();
+    pending[0]!(new Response(JSON.stringify({ commits: commits(50, 3), hasMore: false })));
+    await until(() => loaded()?.loadingMore === false);
+    expect(latest.history).toMatchObject({ status: 'loaded', commits: commits(50, 3), hasMore: false, loadingMore: false });
+  });
+
+  it('keeps only the first page after a refresh: pages read before are dropped', async () => {
+    steps.push({ json: { commits: commits(1, 100), hasMore: true } }, { json: { commits: commits(101, 20), hasMore: false } });
+    const probe = mountRevision(ROOT);
+    await until(() => latest.history.status === 'loaded');
+    flushSync(() => latest.loadMore());
+    await until(() => loaded()?.commits.length === 120);
+    steps.push({ json: { commits: commits(1, 100), hasMore: true } });
+    probe.set(ROOT, 1);
+    await until(() => loaded()?.commits.length === 100 && loaded()?.loadingMore === false);
+    expect(loaded()!.hasMore).toBe(true);
+  });
+
+  it('clears a moreError while the refresh is in flight', async () => {
+    steps.push({ json: { commits: commits(1, 100), hasMore: true } }, new Error('network down'), 'pending');
+    const probe = mountRevision(ROOT);
+    await until(() => latest.history.status === 'loaded');
+    flushSync(() => latest.loadMore());
+    await until(() => loaded()?.moreError !== undefined);
+    probe.set(ROOT, 1);
+    await until(() => loaded()?.loadingMore === true);
+    expect(loaded()!.moreError).toBeUndefined();
+  });
+
+  it('drops a load-more page still in flight when a refresh starts', async () => {
+    steps.push({ json: { commits: commits(1, 100), hasMore: true } }, 'pending', 'pending');
+    const probe = mountRevision(ROOT);
+    await until(() => latest.history.status === 'loaded');
+    flushSync(() => latest.loadMore());
+    await until(() => fetchMock.mock.calls.length === 2);
+    probe.set(ROOT, 1);
+    await until(() => fetchMock.mock.calls.length === 3);
+    pending[1]!(new Response(JSON.stringify({ commits: commits(1, 5), hasMore: false })));
+    await until(() => loaded()?.loadingMore === false);
+    pending[0]!(new Response(JSON.stringify({ commits: commits(101, 10), hasMore: false })));
+    await settle();
+    expect(loaded()!.commits).toEqual(commits(1, 5));
+  });
+
+  it('drops the answer of an older revision', async () => {
+    steps.push('pending', 'pending');
+    const probe = mountRevision(ROOT);
+    probe.set(ROOT, 1);
+    await until(() => fetchMock.mock.calls.length === 2);
+    pending[1]!(new Response(JSON.stringify({ commits: commits(9, 1), hasMore: false })));
+    await until(() => latest.history.status === 'loaded');
+    pending[0]!(new Response(JSON.stringify({ commits: commits(1, 4), hasMore: false })));
+    await settle();
+    expect(loaded()!.commits).toEqual(commits(9, 1));
+  });
+
+  it('keeps an error state until the refresh answers', async () => {
+    steps.push({ json: { error: 'git_error', message: 'fatal: broken' }, status: 500 }, 'pending');
+    const probe = mountRevision(ROOT);
+    await until(() => latest.history.status === 'error');
+    probe.set(ROOT, 1);
+    await settle();
+    expect(latest.history).toEqual({ status: 'error', message: 'fatal: broken' });
+    pending[0]!(new Response(JSON.stringify({ commits: commits(1, 1), hasMore: false })));
+    await until(() => latest.history.status === 'loaded');
+  });
+
+  it('asks nothing on a new revision while the root is undefined', async () => {
+    const probe = mountRevision(undefined);
+    probe.set(undefined, 1);
+    await settle();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(latest.history).toEqual({ status: 'idle' });
+  });
+
+  it('is loading in the same render when the root changes', async () => {
+    steps.push({ json: { commits: commits(1, 2), hasMore: false } }, 'pending');
+    const probe = mountRevision(ROOT);
+    await until(() => latest.history.status === 'loaded');
+    probe.set('/other/root', 0);
+    expect(latest.history).toEqual({ status: 'loading' });
+  });
+});

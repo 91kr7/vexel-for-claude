@@ -223,3 +223,36 @@ describe('useCommitFileDiff', () => {
     expect(latest).toEqual({ status: 'error', message: FALLBACK });
   });
 });
+
+describe('diff stores on a new key', () => {
+  // plan-git_explorer/REQ-26: a refresh gives a new entry object for the same file
+  it('useFileDiff asks again for a new entry object of the same file and is loading in the same render', async () => {
+    const newDiff = { binary: false, cut: false, lines: [{ kind: 'added', text: 'new line' }] };
+    steps.push({ json: someDiff }, 'pending');
+    const probe = mount(modified);
+    await until(() => latest.status === 'loaded');
+    probe.set({ ...modified });
+    expect(latest).toEqual({ status: 'loading' });
+    await until(() => fetchMock.mock.calls.length === 2);
+    expect(requestedUrl(1).searchParams.get('file')).toBe(modified.path);
+    pending[0]!(new Response(JSON.stringify(newDiff)));
+    await until(() => latest.status === 'loaded');
+    expect(latest).toEqual({ status: 'loaded', diff: newDiff });
+  });
+
+  it('useFileDiff is loading in the same render when the root changes', async () => {
+    steps.push({ json: someDiff }, 'pending');
+    const probe = mount(modified);
+    await until(() => latest.status === 'loaded');
+    probe.set(modified, '/other/root');
+    expect(latest).toEqual({ status: 'loading' });
+  });
+
+  it('useCommitFileDiff is loading in the same render when the hash changes', async () => {
+    steps.push({ json: someDiff }, 'pending');
+    const probe = mountCommit(commitFile);
+    await until(() => latest.status === 'loaded');
+    probe.set(commitFile, 'd'.repeat(40));
+    expect(latest).toEqual({ status: 'loading' });
+  });
+});

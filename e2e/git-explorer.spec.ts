@@ -1,4 +1,4 @@
-// e2e of plan-git_explorer, batches explorer-access, uncommitted-changes and history: the "Git Explorer" button, the panel, its uncommitted changes and the history.
+// e2e of plan-git_explorer, batches explorer-access, uncommitted-changes, history and refresh: the "Git Explorer" button, the panel, its uncommitted changes, the history and the refresh.
 // Repositories are real git repositories in temp folders. External sessions use fixture files in E2E_CLAUDE_DIR.
 import { type ChildProcess, execFileSync, spawn, spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
@@ -547,5 +547,162 @@ test.describe('History in the git explorer', () => {
     expect(await readFile(path.join(repo, '.git', 'index'))).toEqual(indexBefore);
     expect(gitStatus(repo)).toBe(statusBefore);
     expect(await readFile(path.join(repo, 'README.md'), 'utf8')).toBe('changed\n');
+  });
+});
+
+const refreshButton = (page: Page) => explorer(page).getByRole('button', { name: 'Refresh', exact: true });
+
+/** An external session in `folder` whose state follows `setStatus` ("busy" is working). */
+async function runExternalWithStatus(sessionId: string, folder: string, status: string): Promise<(next: string) => Promise<void>> {
+  const file = transcriptPath(folder, sessionId);
+  await mkdir(path.dirname(file), { recursive: true });
+  const lines = [{ type: 'user', cwd: folder, isSidechain: false, message: { role: 'user', content: 'Hello' } }];
+  await writeFile(file, lines.map((line) => `${JSON.stringify(line)}\n`).join(''));
+  const process = spawn('sleep', ['300'], { stdio: 'ignore' });
+  terminals.push(process);
+  const pid = process.pid ?? 0;
+  execFileSync('mkfifo', [path.join(SESSIONS_DIR, `${pid}.5a6b7c8d.key`)]);
+  const write = (next: string) =>
+    writeFile(path.join(SESSIONS_DIR, `${pid}.json`), JSON.stringify({ pid, sessionId, cwd: folder, kind: 'interactive', status: next, updatedAt: Date.now() }));
+  await write(status);
+  return write;
+}
+
+test.describe('Refresh of the git explorer', () => {
+  // plan-git_explorer/REQ-25, REQ-26: human acceptance scenario "The git explorer follows a turn of another session in the same repository"
+  test('a turn end of a session in a subfolder of the repository refreshes the changes and the open diff with no click', async ({ page, request }) => {
+    const repo = await newRepository('progetto');
+    await mkdir(path.join(repo, 'frontend'));
+    await writeFile(path.join(repo, 'README.md'), 'hello\nfirst edit\n');
+    const setStatus = await runExternalWithStatus('8f1c2d3e-0000-4000-8000-000000000010', path.join(repo, 'frontend'), 'busy');
+
+    await openExplorer(page, request, repo);
+    await expect(entry(page, path.join(repo, 'frontend'))).toContainText('Running', SCAN);
+    await fileEntry(page, 'Unstaged', 'README.md').click();
+    await expect(diffLines(page).filter({ hasText: /^\+first edit$/ })).toHaveCount(1);
+
+    await writeFile(path.join(repo, 'README.md'), 'hello\nfirst edit\nsecond edit\n');
+    await writeFile(path.join(repo, 'frontend', 'new.ts'), 'export const fresh = true;\n');
+    // No refresh before the turn ends: the panel does not poll.
+    await page.waitForTimeout(3_000);
+    await expect(fileEntry(page, 'Unstaged', 'frontend/new.ts')).toHaveCount(0);
+
+    await setStatus('idle');
+    await expect(entry(page, path.join(repo, 'frontend'))).toContainText('Idle', SCAN);
+    await expect(fileEntry(page, 'Unstaged', 'frontend/new.ts')).toContainText('Untracked');
+    await expect(fileEntry(page, 'Unstaged', 'README.md')).toHaveAttribute('aria-pressed', 'true');
+    await expect(diffLines(page).filter({ hasText: /^\+second edit$/ })).toHaveCount(1);
+    await expect(diffLines(page).filter({ hasText: /^\+first edit$/ })).toHaveCount(1);
+  });
+
+  // plan-git_explorer/REQ-25: a session outside the repository does not refresh it
+  test('a turn end of a session outside the repository does not refresh the panel', async ({ page, request }) => {
+    const repo = await newRepository('quiet-repo');
+    const other = await newPlainFolder('elsewhere');
+    const setStatus = await runExternalWithStatus('8f1c2d3e-0000-4000-8000-000000000011', other, 'busy');
+
+    await openExplorer(page, request, repo);
+    await expect(entry(page, other)).toContainText('Running', SCAN);
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+    await writeFile(path.join(repo, 'late.txt'), 'late\n');
+    let changesReads = 0;
+    page.on('request', (r) => {
+      if (isChanges(r.url())) changesReads += 1;
+    });
+    await setStatus('idle');
+    await expect(entry(page, other)).toContainText('Idle', SCAN);
+    await page.waitForTimeout(1_000);
+    expect(changesReads).toBe(0);
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+  });
+
+  // plan-git_explorer/REQ-24, REQ-26: human acceptance scenario "The user refreshes by hand"
+  test('"Refresh" after restoring the open file removes it from the list and closes its diff', async ({ page, request }) => {
+    const repo = await newRepository('manual-repo');
+    await writeFile(path.join(repo, 'README.md'), 'hello\nchanged\n');
+    await writeFile(path.join(repo, 'other.txt'), 'other\n');
+
+    await openExplorer(page, request, repo);
+    await expect(refreshButton(page)).toHaveAttribute('title', 'Refresh');
+    await fileEntry(page, 'Unstaged', 'README.md').click();
+    await expect(diffLines(page).filter({ hasText: /^\+changed$/ })).toHaveCount(1);
+
+    git(repo, 'checkout', '--', 'README.md');
+    await refreshButton(page).click();
+    await expect(fileEntry(page, 'Unstaged', 'README.md')).toHaveCount(0);
+    await expect(fileEntry(page, 'Unstaged', 'other.txt')).toBeVisible();
+    await expect(diffLines(page)).toHaveCount(0);
+    await expect(group(page, 'Unstaged').getByRole('button', { pressed: true })).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-24: "Refresh" reads the history and the branch again
+  test('"Refresh" shows a new commit in "History" and a new branch in the header', async ({ page, request }) => {
+    const repo = await newRepository('refresh-history-repo');
+    await openExplorer(page, request, repo);
+    await tab(page, 'History').click();
+    await expect(commitRows(page)).toHaveCount(1);
+
+    git(repo, 'checkout', '-q', '-b', 'feature/refresh');
+    await writeFile(path.join(repo, 'next.txt'), 'next\n');
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'Add next');
+    await refreshButton(page).click();
+    await expect(commitRows(page)).toHaveCount(2);
+    await expect(commitRows(page).first()).toContainText('Add next');
+    await expect(explorer(page)).toContainText('feature/refresh');
+  });
+
+  // plan-git_explorer/REQ-24: the same button in the panel of an external session
+  test('"Refresh" in the panel of an external session reads the changes and the branch again', async ({ page }) => {
+    const repo = await newRepository('external-refresh-repo');
+    await runExternal('8f1c2d3e-0000-4000-8000-000000000012', repo);
+    await page.goto('/');
+    await expect(entry(page, repo)).toBeVisible(SCAN);
+    await entry(page, repo).click();
+    await expect(conversation(page)).toContainText('Hi there');
+    await externalHeader(page).getByRole('button', { name: 'Git Explorer', exact: true }).click();
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+
+    await writeFile(path.join(repo, 'added.txt'), 'added\n');
+    git(repo, 'checkout', '-q', '-b', 'ext-branch');
+    await refreshButton(page).click();
+    await expect(fileEntry(page, 'Unstaged', 'added.txt')).toContainText('Untracked');
+    await expect(explorer(page)).toContainText('ext-branch');
+  });
+
+  // plan-git_explorer/REQ-23: human acceptance scenario "Opening the panel again reads the repository again"
+  test('opening the panel again after a commit made in a terminal shows the new commit and no longer lists its files', async ({ page, request }) => {
+    const repo = await newRepository('reopen-repo');
+    await writeFile(path.join(repo, 'work.ts'), 'export const work = 1;\n');
+    await openExplorer(page, request, repo);
+    await expect(fileEntry(page, 'Unstaged', 'work.ts')).toBeVisible();
+    await explorerButton(page).click();
+    await expect(explorer(page)).toHaveCount(0);
+
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'Commit the work');
+    await explorerButton(page).click();
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+    await tab(page, 'History').click();
+    await expect(commitRows(page)).toHaveCount(2);
+    await expect(commitRows(page).first()).toContainText('Commit the work');
+  });
+
+  // plan-git_explorer/REQ-26: an open commit closes when a refresh no longer lists it
+  test('an open commit closes after a refresh when it is no longer in the history', async ({ page, request }) => {
+    const repo = await newRepository('rewrite-repo');
+    await writeFile(path.join(repo, 'a.txt'), 'a\n');
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'To be dropped');
+    await openExplorer(page, request, repo);
+    await tab(page, 'History').click();
+    await commitRows(page).filter({ hasText: 'To be dropped' }).click();
+    await expect(backButton(page)).toBeVisible();
+
+    git(repo, 'reset', '-q', '--hard', 'HEAD~1');
+    await refreshButton(page).click();
+    await expect(backButton(page)).toHaveCount(0);
+    await expect(commitRows(page)).toHaveCount(1);
+    await expect(commitRows(page).first()).toContainText('first');
   });
 });

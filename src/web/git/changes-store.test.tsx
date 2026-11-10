@@ -126,3 +126,49 @@ describe('useChanges', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+function RevisionProbe({ root, revision }: { root: string | undefined; revision: number }) {
+  latest = useChanges(root, revision);
+  return null;
+}
+
+function mountRevision(root: string, revision = 0) {
+  const r = createRoot(document.createElement('div'));
+  roots.push(r);
+  flushSync(() => r.render(<RevisionProbe root={root} revision={revision} />));
+  return { set: (nextRoot: string, nextRevision: number) => flushSync(() => r.render(<RevisionProbe root={nextRoot} revision={nextRevision} />)) };
+}
+
+describe('useChanges refresh', () => {
+  // plan-git_explorer/REQ-24
+  it('asks again on a new revision and keeps the current changes until the new answer', async () => {
+    steps.push({ json: { changes: someChanges } }, 'pending');
+    const probe = mountRevision('/repo', 0);
+    await until(() => latest.status === 'loaded');
+    probe.set('/repo', 1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(requestedUrl(1).searchParams.get('path')).toBe('/repo');
+    await settle();
+    expect(latest).toEqual({ status: 'loaded', changes: someChanges });
+    pending[0]!(new Response(JSON.stringify({ changes: [] })));
+    await until(() => latest.status === 'loaded' && latest.changes.length === 0);
+  });
+
+  it('drops the answer of an older revision', async () => {
+    steps.push('pending', { json: { changes: someChanges } });
+    const probe = mountRevision('/repo', 0);
+    probe.set('/repo', 1);
+    await until(() => latest.status === 'loaded');
+    pending[0]!(new Response(JSON.stringify({ changes: [] })));
+    await settle();
+    expect(latest).toEqual({ status: 'loaded', changes: someChanges });
+  });
+
+  it('is loading in the same render when the root changes', async () => {
+    steps.push({ json: { changes: someChanges } }, 'pending');
+    const probe = mountRevision('/repo/one');
+    await until(() => latest.status === 'loaded');
+    probe.set('/repo/two', 0);
+    expect(latest).toEqual({ status: 'loading' });
+  });
+});

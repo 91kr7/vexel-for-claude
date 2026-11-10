@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GitExplorerPanel } from './GitExplorerPanel';
+import type { SessionSummary } from '../sessions/live-session-store';
 import type { RepositoryLookupState } from './repository-lookup-store';
 
 const roots: Root[] = [];
@@ -193,5 +194,155 @@ describe('GitExplorerPanel tabs', () => {
     answerTo('/api/git/history', { error: 'git_error', message: 'fatal: bad object HEAD' }, 500);
     await until(() => region.querySelector('[role="alert"]') !== null);
     expect(region.querySelector('[role="alert"]')!.textContent).toBe('fatal: bad object HEAD');
+  });
+});
+
+const ROOT_PATH = '/home/dev/my-project';
+const summary = (id: string, folder: string, state: SessionSummary['state']): SessionSummary => ({
+  id,
+  folder,
+  label: id,
+  state,
+  lastActivity: '2026-11-10T10:00:00Z',
+});
+
+function renderWith(props: React.ComponentProps<typeof GitExplorerPanel>) {
+  const container = document.createElement('div');
+  document.body.append(container);
+  const root = createRoot(container);
+  roots.push(root);
+  flushSync(() => root.render(<GitExplorerPanel {...props} />));
+  const region = () => container.querySelector<HTMLElement>('section[aria-label="Git Explorer"]')!;
+  return {
+    region,
+    update: (next: React.ComponentProps<typeof GitExplorerPanel>) => flushSync(() => root.render(<GitExplorerPanel {...next} />)),
+    unmount: () => {
+      root.unmount();
+      roots.splice(roots.indexOf(root), 1);
+    },
+  };
+}
+
+const refreshButton = (region: HTMLElement) =>
+  [...region.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Refresh' || b.textContent?.trim() === 'Refresh');
+const callsTo = (pathname: string) => paths().filter((p) => p === pathname).length;
+/** Answers the last request to `pathname`. */
+function answerLast(pathname: string, body: unknown, status = 200) {
+  const index = paths().lastIndexOf(pathname);
+  pending[index]!(new Response(JSON.stringify(body), { status }));
+}
+const changeEntry = (path: string) => ({ group: 'unstaged', kind: 'modified', path });
+const settlePanel = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+describe('GitExplorerPanel refresh', () => {
+  // plan-git_explorer/REQ-24
+  it('shows the icon button "Refresh" with its tooltip in the header', () => {
+    const { region } = renderWith({ lookup: repository });
+    const button = refreshButton(region());
+    expect(button, 'a "Refresh" button').toBeDefined();
+    expect(button!.getAttribute('title')).toBe('Refresh');
+    expect(button!.querySelector('svg'), 'an icon').not.toBeNull();
+  });
+
+  // plan-git_explorer/REQ-24
+  it('reads the changes again and calls onRefresh on "Refresh"; the unopened history is not read', async () => {
+    const onRefresh = vi.fn();
+    const { region } = renderWith({ lookup: repository, onRefresh });
+    await until(() => callsTo('/api/git/changes') === 1);
+    answerLast('/api/git/changes', { changes: [changeEntry('a.ts')] });
+    await until(() => region().textContent!.includes('a.ts'));
+    flushSync(() => refreshButton(region())!.click());
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+    await until(() => callsTo('/api/git/changes') === 2);
+    const url = new URL(String(fetchMock.mock.calls[paths().lastIndexOf('/api/git/changes')]?.[0]), 'http://localhost');
+    expect(url.searchParams.get('path')).toBe(ROOT_PATH);
+    await settlePanel();
+    expect(callsTo('/api/git/history')).toBe(0);
+  });
+
+  it('keeps the changes shown until the refresh answers, then shows the new ones', async () => {
+    const { region } = renderWith({ lookup: repository });
+    await until(() => callsTo('/api/git/changes') === 1);
+    answerLast('/api/git/changes', { changes: [changeEntry('old-file.ts')] });
+    await until(() => region().textContent!.includes('old-file.ts'));
+    flushSync(() => refreshButton(region())!.click());
+    await until(() => callsTo('/api/git/changes') === 2);
+    await settlePanel();
+    expect(region().textContent).toContain('old-file.ts');
+    expect(region().textContent).not.toContain('Loading…');
+    answerLast('/api/git/changes', { changes: [changeEntry('new-file.ts')] });
+    await until(() => region().textContent!.includes('new-file.ts'));
+    expect(region().textContent).not.toContain('old-file.ts');
+  });
+
+  // plan-git_explorer/REQ-24
+  it('reads the first history page again once the tab was opened, with "Load more" disabled meanwhile', async () => {
+    const { region } = renderWith({ lookup: repository });
+    flushSync(() => tabNamed(region(), 'History').click());
+    await until(() => callsTo('/api/git/history') === 1);
+    answerLast('/api/git/history', { commits: [historyCommit], hasMore: true });
+    await until(() => region().textContent!.includes('Initial import'));
+    flushSync(() => refreshButton(region())!.click());
+    await until(() => callsTo('/api/git/history') === 2);
+    const url = new URL(String(fetchMock.mock.calls[paths().lastIndexOf('/api/git/history')]?.[0]), 'http://localhost');
+    expect(url.searchParams.get('offset')).toBe('0');
+    const loadMore = () => [...region().querySelectorAll('button')].find((b) => /Load more|Loading…/.test(b.textContent ?? '')) as HTMLButtonElement;
+    await until(() => loadMore()?.textContent?.trim() === 'Loading…');
+    expect(loadMore().disabled).toBe(true);
+    expect(region().textContent).toContain('Initial import');
+  });
+
+  // plan-git_explorer/REQ-24, plan-git_explorer/REQ-6
+  it('shows only "Refresh" in the header with a git error, and calls onRefresh on it', () => {
+    const onRefresh = vi.fn();
+    const { region } = renderWith({ lookup: { status: 'error', message: 'fatal: x' }, onRefresh });
+    expect(region().querySelectorAll('button')).toHaveLength(1);
+    expect(region().querySelector('[role="alert"]')!.textContent).toBe('fatal: x');
+    flushSync(() => refreshButton(region())!.click());
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  // plan-git_explorer/REQ-23
+  it('reads the changes again at each mount, with nothing kept from the previous opening', async () => {
+    const first = renderWith({ lookup: repository });
+    await until(() => callsTo('/api/git/changes') === 1);
+    answerLast('/api/git/changes', { changes: [changeEntry('old-file.ts')] });
+    await until(() => first.region().textContent!.includes('old-file.ts'));
+    first.unmount();
+    const second = renderWith({ lookup: repository });
+    expect(second.region().textContent).not.toContain('old-file.ts');
+    await until(() => callsTo('/api/git/changes') === 2);
+  });
+});
+
+describe('GitExplorerPanel turn-end refresh', () => {
+  // plan-git_explorer/REQ-25
+  it('refreshes with no click when a session in the repository goes from working to idle', async () => {
+    const onRefresh = vi.fn();
+    const props = { lookup: repository, onRefresh };
+    const { update } = renderWith({ ...props, sessions: [summary('b', `${ROOT_PATH}/frontend`, 'working')] });
+    await until(() => callsTo('/api/git/changes') === 1);
+    update({ ...props, sessions: [summary('b', `${ROOT_PATH}/frontend`, 'idle')] });
+    await until(() => callsTo('/api/git/changes') === 2);
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not refresh for a turn end outside the repository', async () => {
+    const onRefresh = vi.fn();
+    const props = { lookup: repository, onRefresh };
+    const { update } = renderWith({ ...props, sessions: [summary('b', '/home/dev/other', 'working')] });
+    await until(() => callsTo('/api/git/changes') === 1);
+    update({ ...props, sessions: [summary('b', '/home/dev/other', 'idle')] });
+    await settlePanel();
+    expect(callsTo('/api/git/changes')).toBe(1);
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('does not refresh when the first session list already holds an idle session', async () => {
+    const onRefresh = vi.fn();
+    renderWith({ lookup: repository, onRefresh, sessions: [summary('b', ROOT_PATH, 'idle')] });
+    await settlePanel();
+    expect(callsTo('/api/git/changes')).toBe(1);
+    expect(onRefresh).not.toHaveBeenCalled();
   });
 });
