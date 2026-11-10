@@ -1,4 +1,4 @@
-// Unit tests of GitRunner (plan-git_explorer, batch explorer-access). Fake git programs are shell scripts in a temp folder.
+// Unit tests of GitRunner (plan-git_explorer, batches explorer-access and uncommitted-changes). Fake git programs are shell scripts in a temp folder.
 import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
@@ -39,13 +39,16 @@ describe('isReadCommand', () => {
     [['rev-parse', '--short', 'HEAD']],
     [['symbolic-ref', 'HEAD']],
     [['symbolic-ref', '--short', '-q', 'HEAD']],
+    [['status']],
+    [['status', '--porcelain=v2', '-z', '--untracked-files=all']],
+    [['diff', '--cached', '--', 'a.txt']],
+    [['ls-files', '--error-unmatch', '--', 'a.txt']],
   ])('accepts the read command %j', (args) => {
     expect(isReadCommand(args)).toBe(true);
   });
 
   it.each([
     [[]],
-    [['status']],
     [['commit', '-m', 'x']],
     [['checkout', 'main']],
     [['symbolic-ref', 'HEAD', 'refs/heads/other']],
@@ -53,6 +56,10 @@ describe('isReadCommand', () => {
     [['symbolic-ref', '--delete', 'HEAD']],
     [['rev-parse', '--output=/tmp/x']],
     [['rev-parse', '--output', '/tmp/x']],
+    [['diff', '--output=/tmp/x']],
+    [['diff', 'HEAD', '--output', '/tmp/x']],
+    [['add', 'a.txt']],
+    [['stash']],
   ])('refuses %j', (args) => {
     expect(isReadCommand(args)).toBe(false);
   });
@@ -155,5 +162,58 @@ describe('GitRunner.run', () => {
     expect(elapsed).toBeLessThan(15_000);
     const pid = Number((await readFile(pidFile, 'utf8')).trim());
     expect(() => process.kill(pid, 0), 'the git process is stopped').toThrow();
+  });
+});
+
+describe('GitRunner.run with successExitCodes', () => {
+  it('gives the stdout of an exit code listed as success', async () => {
+    const git = await fakeGit('echo listed; exit 1');
+    expect(await new GitRunner(git).run(dir, ['diff', '--no-index'], { successExitCodes: [1] })).toBe('listed\n');
+  });
+
+  it('still rejects with failed for an exit code not listed', async () => {
+    const git = await fakeGit('echo boom >&2; exit 2');
+    const error = await gitErrorOf(new GitRunner(git).run(dir, ['diff'], { successExitCodes: [1] }));
+    expect(error.kind).toBe('failed');
+    expect(error.exitCode).toBe(2);
+  });
+
+  it('rejects exit code 1 when no success codes are given', async () => {
+    const git = await fakeGit('exit 1');
+    expect((await gitErrorOf(new GitRunner(git).run(dir, ['diff']))).kind).toBe('failed');
+  });
+});
+
+describe('GitRunner.runCapped', () => {
+  // plan-git_explorer/REQ-15: a huge diff output is cut, not an error
+  it('gives the first 5 MB and truncated: true for an output over 5 MB', async () => {
+    const git = await fakeGit('head -c 6000000 /dev/zero');
+    const result = await new GitRunner(git).runCapped(dir, ['diff']);
+    expect(result.truncated).toBe(true);
+    expect(result.output.length).toBe(5 * 1024 * 1024);
+  });
+
+  it('gives the whole output and truncated: false under 5 MB', async () => {
+    const git = await fakeGit('echo small');
+    expect(await new GitRunner(git).runCapped(dir, ['diff'])).toEqual({ output: 'small\n', truncated: false });
+  });
+
+  it('applies successExitCodes as run does', async () => {
+    const git = await fakeGit('echo listed; exit 1');
+    expect(await new GitRunner(git).runCapped(dir, ['diff', '--no-index'], { successExitCodes: [1] })).toEqual({ output: 'listed\n', truncated: false });
+  });
+
+  it('rejects a command off the read list without starting git', async () => {
+    const log = path.join(dir, 'capped-rejected.log');
+    const git = await fakeGit(`echo ran > '${log}'`);
+    await expect(new GitRunner(git).runCapped(dir, ['commit', '-m', 'x'])).rejects.toBeInstanceOf(GitCommandRejected);
+    expect(existsSync(log)).toBe(false);
+  });
+
+  it('rejects with failed on a git error', async () => {
+    const git = await fakeGit(`echo 'fatal: bad revision' >&2; exit 128`);
+    const error = await gitErrorOf(new GitRunner(git).runCapped(dir, ['diff']));
+    expect(error.kind).toBe('failed');
+    expect(error.message).toBe('fatal: bad revision');
   });
 });

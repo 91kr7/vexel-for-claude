@@ -1,4 +1,4 @@
-// e2e of plan-git_explorer, batch explorer-access: the "Git Explorer" button and panel of hosted and external sessions.
+// e2e of plan-git_explorer, batches explorer-access and uncommitted-changes: the "Git Explorer" button, the panel and its uncommitted changes.
 // Repositories are real git repositories in temp folders. External sessions use fixture files in E2E_CLAUDE_DIR.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
@@ -252,5 +252,149 @@ test.describe('Git explorer of an external session', () => {
     await expect(conversation(page)).toContainText('Hi there');
     expect(await (await lookup).json()).toEqual({ status: 'none' });
     await expect(externalHeader(page).getByRole('button', { name: 'Git Explorer', exact: true })).toHaveCount(0);
+  });
+});
+
+const group = (page: Page, name: 'Staged' | 'Unstaged') => explorer(page).getByRole('region', { name, exact: true });
+const fileEntry = (page: Page, name: 'Staged' | 'Unstaged', file: string) => group(page, name).getByRole('button').filter({ hasText: file });
+const diffLines = (page: Page) => explorer(page).locator('.diff-line');
+const isChanges = (url: string) => new URL(url).pathname === '/api/git/changes';
+
+/** The computed colour of a CSS variable, as the browser writes colours (rgb). */
+const cssColour = (page: Page, variable: string) =>
+  page.evaluate((name) => {
+    const probe = document.createElement('span');
+    probe.style.color = `var(${name})`;
+    document.body.append(probe);
+    const colour = getComputedStyle(probe).color;
+    probe.remove();
+    return colour;
+  }, variable);
+
+async function openExplorer(page: Page, request: APIRequestContext, folder: string): Promise<void> {
+  await startHosted(request, folder);
+  await page.goto('/');
+  await openHosted(page, folder);
+  await explorerButton(page).click();
+  await expect(explorer(page)).toBeVisible();
+}
+
+const numbered = (count: number, prefix: string) => Array.from({ length: count }, (_, i) => `${prefix} ${i + 1}\n`).join('');
+
+test.describe('Uncommitted changes in the git explorer', () => {
+  // plan-git_explorer/REQ-5, REQ-9, REQ-10, REQ-11, REQ-12: human acceptance scenario "The user sees the uncommitted changes and their diff"
+  test('lists staged and unstaged changes of the whole repository and shows the diff of a clicked file', async ({ page, request }) => {
+    const repo = await newRepository('changes-repo');
+    await mkdir(path.join(repo, 'app'));
+    await mkdir(path.join(repo, 'lib'));
+    await writeFile(path.join(repo, 'lib', 'util.ts'), 'export const a = 1;\nexport const b = 2;\nexport const c = 3;\n');
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'second');
+    await writeFile(path.join(repo, 'app', 'feature.ts'), 'export const feature = true;\n');
+    git(repo, 'add', 'app/feature.ts');
+    await writeFile(path.join(repo, 'lib', 'util.ts'), 'export const a = 1;\nexport const b = 20;\nexport const c = 3;\n');
+    await writeFile(path.join(repo, 'todo.md'), 'later\n');
+
+    await openExplorer(page, request, path.join(repo, 'app'));
+
+    await expect(fileEntry(page, 'Staged', 'app/feature.ts')).toContainText('Added');
+    await expect(fileEntry(page, 'Unstaged', 'lib/util.ts')).toContainText('Modified');
+    await expect(fileEntry(page, 'Unstaged', 'todo.md')).toContainText('Untracked');
+    await expect(group(page, 'Staged').getByRole('button')).toHaveCount(1);
+    await expect(group(page, 'Unstaged').getByRole('button')).toHaveCount(2);
+    const stagedBox = await box(group(page, 'Staged'));
+    const unstagedBox = await box(group(page, 'Unstaged'));
+    expect(stagedBox.y, '"Staged" is above "Unstaged"').toBeLessThan(unstagedBox.y);
+
+    await fileEntry(page, 'Unstaged', 'lib/util.ts').click();
+    await expect(fileEntry(page, 'Unstaged', 'lib/util.ts')).toHaveAttribute('aria-pressed', 'true');
+    const removed = diffLines(page).filter({ hasText: /^-export const b = 2;$/ });
+    const added = diffLines(page).filter({ hasText: /^\+export const b = 20;$/ });
+    await expect(removed).toHaveCount(1);
+    await expect(added).toHaveCount(1);
+    await expect(diffLines(page).filter({ hasText: /^@@ / })).toHaveCount(1);
+
+    const green = await cssColour(page, '--emerald-400');
+    const red = await cssColour(page, '--color-error');
+    expect(green).not.toBe(red);
+    await expect(added).toHaveCSS('color', green);
+    await expect(removed).toHaveCSS('color', red);
+    expect(await added.evaluate((el) => getComputedStyle(el).fontFamily)).toContain('Roboto Mono');
+  });
+
+  // plan-git_explorer/REQ-12: an untracked file shows all its lines as added
+  test('shows every line of an untracked file as added', async ({ page, request }) => {
+    const repo = await newRepository('untracked-repo');
+    await writeFile(path.join(repo, 'draft.txt'), 'first\nsecond\n');
+    await openExplorer(page, request, repo);
+    await fileEntry(page, 'Unstaged', 'draft.txt').click();
+    await expect(diffLines(page).filter({ hasText: /^\+(first|second)$/ })).toHaveCount(2);
+    await expect(diffLines(page).filter({ hasText: /^-/ })).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-13: human acceptance scenario "A clean repository says it has no changes"
+  test('a clean repository says "No uncommitted changes"', async ({ page, request }) => {
+    const repo = await newRepository('clean-repo');
+    await openExplorer(page, request, repo);
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+    await expect(group(page, 'Staged')).toHaveCount(0);
+    await expect(group(page, 'Unstaged')).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-14, REQ-15: human acceptance scenario "A binary file and a very large diff stay readable"
+  test('a binary file shows its note, and a 20,000-line diff shows its first lines, the cut note, and the page keeps reacting', async ({ page, request }) => {
+    const repo = await newRepository('large-repo');
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 1, 0, 0, 0, 1]);
+    await writeFile(path.join(repo, 'logo.png'), png);
+    await writeFile(path.join(repo, 'data.txt'), numbered(20_000, 'old'));
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'assets');
+    await writeFile(path.join(repo, 'logo.png'), Buffer.concat([png, Buffer.from([0, 7, 0, 9])]));
+    await writeFile(path.join(repo, 'data.txt'), numbered(20_000, 'new'));
+
+    await openExplorer(page, request, repo);
+    await expect(fileEntry(page, 'Unstaged', 'logo.png')).toContainText('Modified');
+
+    await fileEntry(page, 'Unstaged', 'logo.png').click();
+    await expect(explorer(page)).toContainText('Binary file, no diff shown');
+    await expect(diffLines(page)).toHaveCount(0);
+
+    const started = Date.now();
+    await fileEntry(page, 'Unstaged', 'data.txt').click();
+    await expect(explorer(page)).toContainText('Diff cut at 5,000 lines', { timeout: 10_000 });
+    expect(Date.now() - started, 'the cut diff shows within 5 s').toBeLessThan(5_000);
+    await expect(diffLines(page).first()).toHaveText(/^@@ /);
+    await expect(diffLines(page).nth(1)).toHaveText('-old 1');
+    await expect(diffLines(page)).toHaveCount(5_000);
+    await expect(explorer(page)).not.toContainText('Binary file, no diff shown');
+
+    // The page keeps reacting: the diff scrolls, and a click answers at once.
+    const scroller = await diffLines(page).first().evaluateHandle((line) => {
+      let node: HTMLElement | null = line.parentElement;
+      while (node && !(node.scrollHeight > node.clientHeight && /(auto|scroll)/.test(getComputedStyle(node).overflowY))) node = node.parentElement;
+      return node;
+    });
+    expect(await scroller.evaluate((node) => node !== null), 'the diff has a vertical scroll').toBe(true);
+    const lineBox = await box(diffLines(page).nth(3));
+    await page.mouse.move(lineBox.x + 20, lineBox.y + 5);
+    await page.mouse.wheel(0, 3_000);
+    await expect.poll(() => scroller.evaluate((node) => (node as HTMLElement).scrollTop)).toBeGreaterThan(0);
+
+    const clicked = Date.now();
+    await fileEntry(page, 'Unstaged', 'logo.png').click();
+    await expect(fileEntry(page, 'Unstaged', 'logo.png')).toHaveAttribute('aria-pressed', 'true');
+    await expect(explorer(page)).toContainText('Binary file, no diff shown');
+    expect(Date.now() - clicked, 'a click after the large diff answers within 2 s').toBeLessThan(2_000);
+  });
+
+  // plan-git_explorer/REQ-6 (served here): a git error of the changes appears in the panel
+  test('a git error of the changes appears as an alert in the panel', async ({ page, request }) => {
+    const repo = await newRepository('changes-error-repo');
+    await page.route((url) => isChanges(url.href), (route) =>
+      route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'git_error', message: 'fatal: index file corrupt' }) }),
+    );
+    await openExplorer(page, request, repo);
+    await expect(explorer(page).getByRole('alert')).toHaveText('fatal: index file corrupt');
+    await expect(terminalPanel(page)).toBeVisible();
   });
 });
