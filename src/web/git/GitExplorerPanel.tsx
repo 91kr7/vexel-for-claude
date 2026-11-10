@@ -1,12 +1,14 @@
 import { useId, useState } from 'react';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
-import { GitBranchIcon } from '../icons/Icons';
+import { GitBranchIcon, RefreshCwIcon } from '../icons/Icons';
+import type { SessionSummary } from '../sessions/live-session-store';
 import { ChangesTab } from './ChangesTab';
 import { useChanges, type ChangesState } from './changes-store';
 import { HistoryTab } from './HistoryTab';
 import { useHistory, type HistoryState } from './history-store';
 import type { BranchInfo, RepositoryLookupState } from './repository-lookup-store';
+import { useTurnEndSignal } from './turn-end-watcher';
 
 const NAME = 'Git Explorer';
 
@@ -44,12 +46,27 @@ function HistoryBody({ root, history, onLoadMore }: { root: string; history: His
   );
 }
 
-export function GitExplorerPanel({ lookup }: { lookup: RepositoryLookupState }) {
+const NO_SESSIONS: readonly SessionSummary[] = [];
+
+interface GitExplorerPanelProps {
+  lookup: RepositoryLookupState;
+  /** Asks the owner to read the repository again. */
+  onRefresh?: () => void;
+  sessions?: readonly SessionSummary[];
+}
+
+export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: GitExplorerPanelProps) {
   const root = lookup.status === 'repository' ? lookup.root : undefined;
-  const changes = useChanges(root);
+  const [revision, setRevision] = useState(0);
+  const refresh = () => {
+    setRevision((current) => current + 1);
+    onRefresh?.();
+  };
+  const changes = useChanges(root, revision);
   const [tab, setTab] = useState<Tab>('changes');
   const [historyOpened, setHistoryOpened] = useState(false);
-  const { history, loadMore } = useHistory(historyOpened ? root : undefined);
+  const { history, loadMore } = useHistory(historyOpened ? root : undefined, revision);
+  useTurnEndSignal(sessions, root, refresh);
   const idPrefix = useId();
   const tabId = (id: Tab) => `${idPrefix}-tab-${id}`;
   const panelId = (id: Tab) => `${idPrefix}-tabpanel-${id}`;
@@ -61,15 +78,22 @@ export function GitExplorerPanel({ lookup }: { lookup: RepositoryLookupState }) 
 
   return (
     <section className="git-explorer-panel" aria-label={NAME}>
-      {lookup.status === 'repository' && (
+      {(lookup.status === 'repository' || lookup.status === 'error') && (
         <header className="git-explorer-header">
-          <h3 className="git-explorer-repository" title={lookup.root}>
-            {folderNameOf(lookup.root)}
-          </h3>
-          <span className="mono-chip vx-surface-2 git-explorer-branch">
-            <GitBranchIcon />
-            {branchText(lookup.branch)}
-          </span>
+          {lookup.status === 'repository' && (
+            <>
+              <h3 className="git-explorer-repository" title={lookup.root}>
+                {folderNameOf(lookup.root)}
+              </h3>
+              <span className="mono-chip vx-surface-2 git-explorer-branch">
+                <GitBranchIcon />
+                {branchText(lookup.branch)}
+              </span>
+            </>
+          )}
+          <button type="button" className="session-search-button git-explorer-refresh" aria-label="Refresh" title="Refresh" onClick={refresh}>
+            <RefreshCwIcon />
+          </button>
         </header>
       )}
       {root !== undefined && (

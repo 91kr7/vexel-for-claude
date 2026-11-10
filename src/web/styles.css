@@ -1710,6 +1710,11 @@ input {
   color: var(--text-secondary);
 }
 
+.git-explorer-refresh {
+  flex: none;
+  margin-left: auto;
+}
+
 .git-explorer-error {
   padding: 8px 16px;
 }

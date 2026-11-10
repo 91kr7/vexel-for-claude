@@ -15,6 +15,7 @@ interface HistoryTabProps {
 
 export function HistoryTab({ root, commits, hasMore, loadingMore, moreError, onLoadMore }: HistoryTabProps) {
   const [selected, setSelected] = useState<Commit>();
+  if (selected !== undefined && !commits.some((commit) => commit.hash === selected.hash)) setSelected(undefined);
 
   if (commits.length === 0) return <p className="git-explorer-message">No commits yet</p>;
   return (

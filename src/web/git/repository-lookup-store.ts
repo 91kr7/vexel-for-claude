@@ -32,18 +32,18 @@ async function lookup(folder: string, signal: AbortSignal): Promise<RepositoryLo
   }
 }
 
-export function useRepositoryLookup(folder: string | undefined): RepositoryLookupState {
-  const [state, setState] = useState<RepositoryLookupState>(LOADING);
+/** A new `revision` reads again and keeps the current state until the answer. */
+export function useRepositoryLookup(folder: string | undefined, revision = 0): RepositoryLookupState {
+  const [stored, setStored] = useState<{ folder?: string; state: RepositoryLookupState }>({ state: LOADING });
 
   useEffect(() => {
-    setState(LOADING);
     if (folder === undefined) return;
     const controller = new AbortController();
     void lookup(folder, controller.signal).then((result) => {
-      if (!controller.signal.aborted) setState(result);
+      if (!controller.signal.aborted) setStored({ folder, state: result });
     });
     return () => controller.abort();
-  }, [folder]);
+  }, [folder, revision]);
 
-  return state;
+  return folder !== undefined && stored.folder === folder ? stored.state : LOADING;
 }

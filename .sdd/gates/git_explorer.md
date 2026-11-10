@@ -21,3 +21,6 @@
 | 2026-11-10 | test | G5 tests, uncommitted-changes | pass | Re-run 205 unit, 13 e2e green; only test files; outdated runner test fixed to the updated spec; stale state for one render noted, no contract broken |
 | 2026-11-10 | dev | G4 development, history | pass | Build green on re-run; diff only INT files, specs, indexes; `commit-format.ts` internal helper without spec accepted |
 | 2026-11-10 | test | G5 tests, history | pass | Re-run 325 unit, 17 e2e green; only test files; REQ-6 and REQ-8 closed with a corrupt index e2e |
+| 2026-11-10 | dev | G4 development, refresh | pass | Build green on re-run; diff only INT files, specs, indexes; no test or plan file touched |
+| 2026-11-10 | dev | divergence refresh revision | decided | Panel owns the revision, new props optional; existing tests keep compiling |
+| 2026-11-10 | dev | divergence open commit after refresh | human decision | A commit beyond the first page closes after a refresh; accepted, written in `history-tab.md` |

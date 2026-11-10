@@ -15,14 +15,15 @@
 | lookupCommitFileDiff | backend function | `src/server/git/commit-diff-lookup.ts` | Diff of one file in a commit, against the same base as lookupCommitFiles | `specs/commit-diff-lookup.md` |
 | HistoryRoute | REST endpoint | `src/server/git/history-route.ts` | `GET /api/git/history`, `GET /api/git/commit-files` and `GET /api/git/commit-diff` | `specs/history-route.md` |
 | RepositoryRoute | REST endpoint | `src/server/git/repository-route.ts` | `GET /api/git/repository`: the repository lookup of a folder path | `specs/repository-route.md` |
-| useRepositoryLookup | frontend hook | `src/web/git/repository-lookup-store.ts` | Repository lookup of the open session folder, once per folder: loading, repository, none, error | `specs/repository-lookup-store.md` |
+| useRepositoryLookup | frontend hook | `src/web/git/repository-lookup-store.ts` | Repository lookup of the open session folder, once per folder and again at each new revision: loading, repository, none, error | `specs/repository-lookup-store.md` |
 | GitExplorerButton | UI component | `src/web/git/GitExplorerButton.tsx` | Header icon button "Git Explorer" that opens and closes the panel, shown for a repository or a git error | `specs/git-explorer-button.md` |
-| GitExplorerPanel | UI component | `src/web/git/GitExplorerPanel.tsx` | Right panel of the session content: repository name with its path as tooltip, branch chip, tabs "Changes" and "History", git error | `specs/git-explorer-panel.md` |
-| useChanges | frontend hook | `src/web/git/changes-store.ts` | Uncommitted changes of a repository root, once per root: loading, loaded, error | `specs/changes-store.md` |
+| GitExplorerPanel | UI component | `src/web/git/GitExplorerPanel.tsx` | Right panel of the session content: repository name with its path as tooltip, branch chip, "Refresh", tabs "Changes" and "History", git error; refreshes on a turn end in the repository | `specs/git-explorer-panel.md` |
+| useChanges | frontend hook | `src/web/git/changes-store.ts` | Uncommitted changes of a repository root, once per root and again at each new revision: loading, loaded, error | `specs/changes-store.md` |
 | useFileDiff | frontend hook | `src/web/git/diff-store.ts` | Diff of one changed file, or of one file in a commit (`useCommitFileDiff`): idle, loading, loaded, error | `specs/diff-store.md` |
 | DiffView | UI component | `src/web/git/DiffView.tsx` | Diff of one file in Roboto Mono: coloured "+" and "-" lines, muted hunk headers, binary and cut notes | `specs/diff-view.md` |
 | ChangesTab | UI component | `src/web/git/ChangesTab.tsx` | Changed files in the groups "Staged" and "Unstaged" with kind labels; a click shows the file diff | `specs/changes-tab.md` |
-| useHistory | frontend hook | `src/web/git/history-store.ts` | History of a repository root in pages: idle, loading, loaded with "load more", error | `specs/history-store.md` |
+| useHistory | frontend hook | `src/web/git/history-store.ts` | History of a repository root in pages, first page read again at each new revision: idle, loading, loaded with "load more", error | `specs/history-store.md` |
 | useCommitFiles | frontend hook | `src/web/git/commit-files-store.ts` | Files of one commit: loading, loaded, error | `specs/commit-files-store.md` |
 | HistoryTab | UI component | `src/web/git/HistoryTab.tsx` | Commit rows with short hash, subject, author and date; "Load more"; "No commits yet"; opens the commit detail | `specs/history-tab.md` |
 | CommitDetail | UI component | `src/web/git/CommitDetail.tsx` | Full message and changed files of a commit with kind labels; a click shows the file diff | `specs/commit-detail.md` |
+| useTurnEndSignal | frontend hook | `src/web/git/turn-end-watcher.ts` | Signals a session of the list going from `working` to `idle` with its folder at or under the repository root | `specs/turn-end-watcher.md` |

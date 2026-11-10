@@ -15,6 +15,7 @@ import { folderNameOf } from './Avatar';
 import { droppedPathsText } from './dropped-paths-text';
 import { openLink } from './link-opener';
 import { SessionFooter } from './SessionFooter';
+import type { SessionSummary } from './live-session-store';
 import { SessionHeader, type SessionHeaderSummary } from './SessionHeader';
 import { StopSessionButton } from './StopSessionButton';
 import { pageTerminalFontSizeStore, type TerminalFontSizeStore, useTerminalFontSize } from './terminal-font-size-store';
@@ -34,6 +35,7 @@ const DROP_NOTICE_MS = 4000;
 interface SessionViewProps {
   sessionId: string;
   session?: SessionHeaderSummary;
+  sessions?: readonly SessionSummary[];
   onLeaveTerminal: () => void;
   focusRef?: Ref<{ focus(): void }>;
 }
@@ -132,7 +134,7 @@ function loadTerminalFont(fontFamily: string, fontSize: number): Promise<unknown
   return Promise.all(faces).catch(() => undefined);
 }
 
-export function SessionView({ sessionId, session, onLeaveTerminal, focusRef }: SessionViewProps) {
+export function SessionView({ sessionId, session, sessions, onLeaveTerminal, focusRef }: SessionViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
@@ -150,9 +152,15 @@ export function SessionView({ sessionId, session, onLeaveTerminal, focusRef }: S
   const [dropNotice, setDropNotice] = useState(0);
   const fontSizeStore = pageTerminalFontSizeStore();
   const fontSize = useTerminalFontSize(fontSizeStore);
-  const repository = useRepositoryLookup(session?.folder);
+  const [gitRevision, setGitRevision] = useState(0);
+  const repository = useRepositoryLookup(session?.folder, gitRevision);
   const [gitOpen, setGitOpen] = useState(false);
   const gitShown = gitOpen && (repository.status === 'repository' || repository.status === 'error');
+  const refreshGit = () => setGitRevision((revision) => revision + 1);
+  const toggleGit = () => {
+    if (!gitShown) refreshGit();
+    setGitOpen(!gitShown);
+  };
   useImperativeHandle(focusRef, () => ({ focus: () => terminalRef.current?.focus() }), []);
 
   useEffect(() => {
@@ -377,7 +385,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal, focusRef }: S
         session={session}
         leadingActions={
           <>
-            <GitExplorerButton lookup={repository} open={gitShown} onToggle={() => setGitOpen((open) => !open)} />
+            <GitExplorerButton lookup={repository} open={gitShown} onToggle={toggleGit} />
             <button type="button" className="session-search-button" aria-label="Search" title="Search (Ctrl+Shift+F)" onClick={openSearch}>
               <SearchIcon />
             </button>
@@ -428,7 +436,7 @@ export function SessionView({ sessionId, session, onLeaveTerminal, focusRef }: S
             </div>
           )}
         </div>
-        {gitShown && <GitExplorerPanel lookup={repository} />}
+        {gitShown && <GitExplorerPanel lookup={repository} onRefresh={refreshGit} sessions={sessions} />}
       </div>
       {linkTooltip && (
         <div className="terminal-link-tooltip" role="tooltip" style={{ left: linkTooltip.left, top: linkTooltip.top }}>

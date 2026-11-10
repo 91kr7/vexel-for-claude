@@ -29,6 +29,10 @@ Shows:
 Actions:
 - click on an entry → it becomes the selected one (`aria-pressed`, surface 3 background) and its diff loads.
 
+After a refresh (a new `changes` list):
+- the list holds an entry with the same group and path as the selected one → that entry stays selected and its diff loads again ("Loading…", then the new diff);
+- else → the selection and the diff close, and stay closed.
+
 ## Dependencies
 
 - useFileDiff, DiffView
@@ -36,4 +40,4 @@ Actions:
 
 ## Requirements served
 
-- `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-10`, `plan-git_explorer/REQ-11`, `plan-git_explorer/REQ-12`
+- `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-10`, `plan-git_explorer/REQ-11`, `plan-git_explorer/REQ-12`, `plan-git_explorer/REQ-26`

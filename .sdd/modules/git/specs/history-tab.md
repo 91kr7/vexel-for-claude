@@ -32,6 +32,10 @@ Actions:
 - "Load more" → `onLoadMore()`; the next commits appear after the current ones.
 - "Back" in the CommitDetail → the list again.
 
+After a refresh (a new `commits` list):
+- the open commit is among the new commits (same hash) → it stays open, as it was;
+- else → it closes and the list shows again. After a refresh only the first page is loaded, so a commit of a later page closes too.
+
 ## Dependencies
 
 - CommitDetail
@@ -39,4 +43,4 @@ Actions:
 
 ## Requirements served
 
-- `plan-git_explorer/REQ-16`, `plan-git_explorer/REQ-17`, `plan-git_explorer/REQ-20`, `plan-git_explorer/REQ-21`
+- `plan-git_explorer/REQ-16`, `plan-git_explorer/REQ-17`, `plan-git_explorer/REQ-20`, `plan-git_explorer/REQ-21`, `plan-git_explorer/REQ-26`

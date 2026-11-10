@@ -21,7 +21,10 @@ export const KIND_LABEL: Record<ChangeKind, string> = {
 const pathText = ({ path, oldPath }: ChangeEntry) => (oldPath === undefined ? path : `${oldPath} → ${path}`);
 
 export function ChangesTab({ root, changes }: { root: string; changes: ChangeEntry[] }) {
-  const [selected, setSelected] = useState<ChangeEntry>();
+  const [selectedKey, setSelectedKey] = useState<Pick<ChangeEntry, 'group' | 'path'>>();
+  // After a refresh the selection follows the same group and path, else it closes.
+  const selected = selectedKey && changes.find((entry) => entry.group === selectedKey.group && entry.path === selectedKey.path);
+  if (selectedKey !== undefined && selected === undefined) setSelectedKey(undefined);
   const diff = useFileDiff(root, selected);
 
   return (
@@ -40,7 +43,7 @@ export function ChangesTab({ root, changes }: { root: string; changes: ChangeEnt
                       type="button"
                       className={entry === selected ? 'changes-file selected' : 'changes-file'}
                       aria-pressed={entry === selected}
-                      onClick={() => setSelected(entry)}
+                      onClick={() => setSelectedKey({ group: entry.group, path: entry.path })}
                     >
                       <span className="changes-file-path" title={pathText(entry)}>
                         {pathText(entry)}

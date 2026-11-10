@@ -170,6 +170,7 @@ export function AppLayout() {
               key={openSessionId}
               sessionId={openSessionId}
               session={openSummary}
+              sessions={sessions}
               onResumed={openHosted}
               focusRef={mainViewRef}
             />
@@ -178,6 +179,7 @@ export function AppLayout() {
               key={openSessionId}
               sessionId={openSessionId}
               session={openSummary}
+              sessions={sessions}
               onLeaveTerminal={focusList}
               focusRef={mainViewRef}
             />

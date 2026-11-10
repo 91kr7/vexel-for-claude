@@ -7,6 +7,7 @@ import { GitExplorerPanel } from '../git/GitExplorerPanel';
 import { useRepositoryLookup } from '../git/repository-lookup-store';
 import { ArrowDownIcon, LockIcon } from '../icons/Icons';
 import { SessionFooter } from '../sessions/SessionFooter';
+import type { SessionSummary } from '../sessions/live-session-store';
 import { SessionHeader, type SessionHeaderSummary } from '../sessions/SessionHeader';
 import { ResumeHereButton } from './ResumeHereButton';
 
@@ -29,6 +30,7 @@ type FullContent = { status: 'idle' | 'loading' | 'failed' } | { status: 'loaded
 interface ConversationViewProps {
   sessionId: string;
   session?: SessionHeaderSummary;
+  sessions?: readonly SessionSummary[];
   onResumed: (id: string) => void;
   focusRef?: Ref<{ focus(): void }>;
 }
@@ -183,7 +185,7 @@ function MessageBlock({ item }: { item: UserItem | AssistantItem }) {
   );
 }
 
-export function ConversationView({ sessionId, session, onResumed, focusRef }: ConversationViewProps) {
+export function ConversationView({ sessionId, session, sessions, onResumed, focusRef }: ConversationViewProps) {
   const [items, setItems] = useState<ConversationItem[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [unseen, setUnseen] = useState(0);
@@ -191,9 +193,15 @@ export function ConversationView({ sessionId, session, onResumed, focusRef }: Co
   const followEndRef = useRef(true);
   const countedRef = useRef(0);
   const entries = useMemo(() => entriesOf(items ?? []), [items]);
-  const repository = useRepositoryLookup(session?.folder);
+  const [gitRevision, setGitRevision] = useState(0);
+  const repository = useRepositoryLookup(session?.folder, gitRevision);
   const [gitOpen, setGitOpen] = useState(false);
   const gitShown = gitOpen && (repository.status === 'repository' || repository.status === 'error');
+  const refreshGit = () => setGitRevision((revision) => revision + 1);
+  const toggleGit = () => {
+    if (!gitShown) refreshGit();
+    setGitOpen(!gitShown);
+  };
   useImperativeHandle(focusRef, () => ({ focus: () => listRef.current?.focus({ focusVisible: true }) }), []);
 
   useEffect(() => {
@@ -268,7 +276,7 @@ export function ConversationView({ sessionId, session, onResumed, focusRef }: Co
         session={session}
         actions={
           <>
-            <GitExplorerButton lookup={repository} open={gitShown} onToggle={() => setGitOpen((open) => !open)} />
+            <GitExplorerButton lookup={repository} open={gitShown} onToggle={toggleGit} />
             <ResumeHereButton sessionId={sessionId} onResumed={onResumed} />
           </>
         }
@@ -306,7 +314,7 @@ export function ConversationView({ sessionId, session, onResumed, focusRef }: Co
             </button>
           )}
         </div>
-        {gitShown && <GitExplorerPanel lookup={repository} />}
+        {gitShown && <GitExplorerPanel lookup={repository} onRefresh={refreshGit} sessions={sessions} />}
       </div>
       <SessionFooter session={session} lead="Open in Another Terminal · " />
     </div>

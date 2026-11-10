@@ -22,7 +22,7 @@ Description:
 Shows:
 - the rail badge, the counter and the list, always, also while a session is open. All follow LiveSessionStore (`useLiveSessions`). The rail badge gets `countNeedsInput` of the list. The list also gets its load status, and the order of `useSessionOrder` for the live sessions and their status. Its `onReorder` is the `move` of the same hook.
 - no open session → the EmptyState in the main area.
-- an open hosted session → its SessionView, with the summary (folder, label, state) of that session from LiveSessionStore. No summary while the store does not list it yet.
+- an open hosted session → its SessionView, with the summary (folder, label, state) of that session from LiveSessionStore. No summary while the store does not list it yet. The SessionView and the ConversationView also get the whole session list.
 - an open hosted session that the store listed and then no longer lists (dismissed, or resumed from its entry) → no open session: the EmptyState.
 - an open external session → its ConversationView with its summary, in place of the SessionView. It stays open when the entry leaves the list, with the last summary the list gave.
 - an open session, hosted or external, that the list no longer has when LiveSessionStore goes from `error` to `ready` (a reload after a reconnection) → it stays open, with its last summary and the state `ended`. If the list has it again later, the view uses the listed summary.
@@ -100,3 +100,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-session_list_width/REQ-3`, `plan-session_list_width/REQ-4`, `plan-session_list_width/REQ-5`, `plan-session_list_width/REQ-6`, `plan-session_list_width/REQ-9`, `plan-session_list_width/REQ-11`
 - `plan-usage_limits/REQ-3`, `plan-usage_limits/REQ-4`
 - `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-21`, `plan-keyboard_shortcuts/REQ-24`, `plan-keyboard_shortcuts/REQ-25`, `plan-keyboard_shortcuts/REQ-29`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-31`, `plan-keyboard_shortcuts/REQ-43`
+- `plan-git_explorer/REQ-25`

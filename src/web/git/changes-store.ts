@@ -28,18 +28,18 @@ async function readChanges(root: string, signal: AbortSignal): Promise<ChangesSt
   }
 }
 
-export function useChanges(root: string | undefined): ChangesState {
-  const [state, setState] = useState<ChangesState>(LOADING);
+/** A new `revision` reads again and keeps the current state until the answer. */
+export function useChanges(root: string | undefined, revision = 0): ChangesState {
+  const [stored, setStored] = useState<{ root?: string; state: ChangesState }>({ state: LOADING });
 
   useEffect(() => {
-    setState(LOADING);
     if (root === undefined) return;
     const controller = new AbortController();
     void readChanges(root, controller.signal).then((result) => {
-      if (!controller.signal.aborted) setState(result);
+      if (!controller.signal.aborted) setStored({ root, state: result });
     });
     return () => controller.abort();
-  }, [root]);
+  }, [root, revision]);
 
-  return state;
+  return root !== undefined && stored.root === root ? stored.state : LOADING;
 }
