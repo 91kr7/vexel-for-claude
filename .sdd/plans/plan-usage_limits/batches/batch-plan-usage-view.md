@@ -18,9 +18,9 @@ Naming. The client already uses "usage" for the context, tokens and cost of a se
 - **Plan limits reader** → a backend service: one call to the Anthropic usage endpoint, with the token, and its result `ok`, `unavailable` or `error`.
 - **Plan usage route** → `GET /api/plan-usage`: gives the page the result of the reader.
 - **Reset time format** → page functions: the time remaining until a reset, and its date and time.
-- **Plan usage store** → page hook: loads the limits when the view opens and every 60 s while it stays open, and gives the view state.
+- **Plan usage store** → page hook: loads the limits once when the view opens, with no refresh while it stays open, and gives the view state.
 - **Plan limit row** → one limit: label, percentage as a number and as a bar, reset time.
-- **Plan usage popover** → the view: a panel anchored to the usage button, with its loading, "not available" and "could not refresh" states.
+- **Plan usage popover** → the view: a panel anchored to the usage button, with its loading and "not available" states.
 - **Usage button** → the top-bar icon button "Plan Usage" that opens and closes the popover.
 
 ## Interventions
@@ -34,11 +34,11 @@ Naming. The client already uses "usage" for the context, tokens and cost of a se
 | INT-5 | create | backend, app area | Plan usage route `GET /api/plan-usage`: `200` with `{ status: "ok", limits }`, `{ status: "unavailable" }` or `{ status: "error" }`. Overlapping calls share one request to the endpoint. The body never holds the token. | REQ-11, REQ-13, REQ-14, REQ-17 | INT-4 |
 | INT-6 | modify | `src/server/main.ts` | Create the plan limits reader with the default Claude Code folder. Register the plan usage route with it. | REQ-11, REQ-13 | INT-5 |
 | INT-7 | create | frontend, app area | Reset time format: time remaining as "2h 15m", "3d 4h" or "<1m", and the reset as local date and time, e.g. "Mon 14 Nov, 18:30". A reset in the past gives "<1m". | REQ-9 | — |
-| INT-8 | create | frontend, app area | Plan usage store, hook `usePlanUsage(open)`: when `open` turns true it drops earlier figures, starts as loading and loads `GET /api/plan-usage`. While `open` it loads again every 60 s. When `open` turns false it stops, and a late answer changes nothing. | REQ-11, REQ-12, REQ-17 | — |
-| INT-9 | create | frontend, app area | Same store, state of the view: `loading`, `ready` with the limits, `unavailable`, or `stale` with the time of the last good read. A failed first load, `unavailable` and `error` before any figures give `unavailable`. A failed refresh after `ready` gives `stale`. | REQ-13, REQ-14 | INT-8 |
+| INT-8 | create | frontend, app area | Plan usage store, hook `usePlanUsage(open)`: when `open` turns true it drops earlier figures, starts as loading and loads `GET /api/plan-usage`. While `open` it does not load again: one request per opening. When `open` turns false it stops, and a late answer changes nothing. | REQ-11, REQ-17 | — |
+| INT-9 | create | frontend, app area | Same store, state of the view: `loading`, `ready` with the limits, or `unavailable`. A failed load, `unavailable` and `error` give `unavailable`. | REQ-13 | INT-8 |
 | INT-10 | create | frontend, app area | Plan limit row: the label of INT-2, the whole percentage as a number, a bar of that width with `role="progressbar"`, then "Resets in" the remaining time and the date and time (INT-7). The level (`usageLevelOf` of module sessions: warning 70, error 90) sets the colours of number and bar. | REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-15, REQ-16 | INT-7 |
 | INT-11 | create | frontend, app area | Plan usage popover frame: a panel titled "Plan Usage" under the usage button, below the backdrop of any dialog, with a close button. Esc, with the focus on the button or in the panel, closes it. Opening it takes no focus and moves no scroll. | REQ-3, REQ-4, REQ-15, REQ-16 | — |
-| INT-12 | create | frontend, app area | Popover content by state (INT-9). `loading` → ProgressIndicator. `ready` → one row (INT-10) per limit. `unavailable` → "Plan usage is not available" and no figures. `stale` → "Could not refresh the plan usage" and the last read time, and no figures. | REQ-5, REQ-6, REQ-7, REQ-13, REQ-14, REQ-15, REQ-17 | INT-9, INT-10, INT-11 |
+| INT-12 | create | frontend, app area | Popover content by state (INT-9). `loading` → ProgressIndicator. `ready` → one row (INT-10) per limit. `unavailable` → "Plan usage is not available" and no figures. | REQ-5, REQ-6, REQ-7, REQ-13, REQ-15, REQ-17 | INT-9, INT-10, INT-11 |
 | INT-13 | create | frontend, app area | Usage button: the ThemeSwitch look with the gauge icon. Accessible name and tooltip "Plan Usage", `aria-expanded` follows the popover, a mouse press does not take the focus. Click, Enter or Space toggles. | REQ-1, REQ-2, REQ-15, REQ-16 | INT-1 |
 | INT-14 | modify | `src/web/TopBar.tsx` | Show the usage button right after the ThemeSwitch, 6 px apart, before "New Session". `no-drag` in the desktop window. New props: the open state and the toggle. | REQ-1, REQ-2 | INT-13 |
 | INT-15 | modify | `src/web/AppLayout.tsx` | Hold the open state of the popover. The button toggles it, the close button and Esc close it. Render the popover and pass the store state to it. The open session view and any dialog stay as they are. | REQ-3, REQ-4 | INT-8, INT-12, INT-14 |
@@ -54,8 +54,8 @@ Naming. The client already uses "usage" for the context, tokens and cost of a se
 - **Every model row shows, 0% included (gatekeeper decision, 2026-11-09).** The CLI hides some model rows by an internal allowlist that the client cannot reproduce. So a model row can show here and not in `/usage`.
 - **Token field and request (result of the checks).** The token reader takes only `claudeAiOauth.accessToken`. The file also holds a refresh token and `mcpOAuth` tokens, and the reader never reads them. The request is `GET https://api.anthropic.com/api/oauth/usage` with `Authorization: Bearer <token>` and the header `anthropic-beta: oauth-2025-04-20`.
 - **Expired token.** The client never refreshes the token. An expired token gives `error`, so "not available" at the first read. Claude Code refreshes the file when it runs.
-- **Statuses.** `unavailable` means no token. `error` means the call failed. The page shows both as "not available" on the first read, and a failed refresh after figures as "could not refresh" (REQ-13, REQ-14).
-- **Refresh.** The page loads on open and every 60 s while open. The server keeps no cache: overlapping calls share one request. The remaining time is computed again at each load.
+- **Statuses.** `unavailable` means no token. `error` means the call failed. The page shows both as "not available" (REQ-13). There is no refresh, so no state for a failed refresh (changed 2026-11-10).
+- **Refresh (changed 2026-11-10).** Human decision: the page loads once on open and never refreshes while open, because the source answered 429 under the 60 s refresh. The server keeps no cache: overlapping calls share one request. The remaining time is computed at each load.
 - **Placement.** The usage button sits right after the ThemeSwitch: the order is shortcuts, theme, usage, "New Session". It has no keyboard shortcut: the spec asks for none.
 - **Popover.** No mock. It uses the look of the existing panels: `.vx-surface-1`, `--border-subtle`, the status tokens for the levels. It does not trap the focus and does not close on a click outside, so a click in the terminal keeps working. It sits below the backdrop of dialogs.
 - **Reuse.** `usageLevelOf` of `src/web/sessions/usage-format.ts` is used as it is. `shortTokens`, `percentOf` and the tokens-and-cost figures are not touched.
@@ -115,12 +115,12 @@ Naming. The client already uses "usage" for the context, tokens and cost of a se
 - When → the user opens the usage panel and uses the rest of the client
 - Then → the panel shows "Loading…", and the rest of the client keeps responding
 
-### Scenario: The figures refresh while the panel stays open
+### Scenario: The figures are read once per opening
 
-- REQ → REQ-11, REQ-12
+- REQ → REQ-11
 - Given → the usage panel is open and shows a limit at 40%
-- When → the limit goes to 45% and about a minute passes
-- Then → the panel shows 45% with no action of the user
+- When → the limit goes to 45% and some minutes pass
+- Then → the panel still shows 40%, and it shows 45% only after the user closes it and opens it again
 
 ### Scenario: Plan limits are not available
 
@@ -128,13 +128,6 @@ Naming. The client already uses "usage" for the context, tokens and cost of a se
 - Given → the account has no plan limits, for example an API key
 - When → the user opens the usage panel
 - Then → the panel says "Plan usage is not available", and shows no row and no "0%"
-
-### Scenario: A failed refresh does not look current
-
-- REQ → REQ-14
-- Given → the usage panel is open with figures, and the figures cannot be read at the next refresh
-- When → the refresh fails
-- Then → the panel says "Could not refresh the plan usage" with the time of the last read, and shows no figures
 
 ### Scenario: The panel reads well in both themes
 

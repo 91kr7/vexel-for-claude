@@ -243,22 +243,25 @@ test.describe('the popover figures', () => {
     await expect(popover(page).getByText('Loading…')).toHaveCount(0);
   });
 
-  // plan-usage_limits/REQ-12 — scenario "The figures refresh while the panel stays open"
-  test('refreshes the figures about a minute later with no action of the user', async ({ page }) => {
+  // plan-usage_limits/REQ-11 — scenario "The figures are read once per opening"
+  test('reads the figures once per opening and shows the new ones only on the next opening', async ({ page }) => {
     await page.clock.install();
     const answers = await planUsageAnswers(page, [json(okBody(limitsAt(40, 50))), json(okBody(limitsAt(45, 50)))]);
     await loadPage(page);
     await usageButton(page).click();
     await expect(rows(page).nth(0)).toContainText('40%');
-    await page.clock.runFor(30_000);
+    await page.clock.runFor(300_000);
+    await expect(rows(page).nth(0)).toContainText('40%');
     expect(answers.count()).toBe(1);
-    await page.clock.runFor(31_000);
+    await usageButton(page).click();
+    await expect(popover(page)).toHaveCount(0);
+    await usageButton(page).click();
     await expect(rows(page).nth(0)).toContainText('45%');
     expect(answers.count()).toBe(2);
   });
 
-  // plan-usage_limits/REQ-12: closing stops the refresh
-  test('stops refreshing once the popover is closed', async ({ page }) => {
+  // plan-usage_limits/REQ-11: nothing loads while the popover is closed
+  test('loads nothing once the popover is closed', async ({ page }) => {
     await page.clock.install();
     const answers = await planUsageAnswers(page, [json(okBody(limitsAt(40, 50)))]);
     await loadPage(page);
@@ -303,40 +306,6 @@ test.describe('the states without figures', () => {
     await usageButton(page).click();
     await expect(popover(page)).toContainText('Plan usage is not available');
     await expect(popover(page).locator('li')).toHaveCount(0);
-  });
-
-  // plan-usage_limits/REQ-14 — scenario "A failed refresh does not look current"
-  test('after a failed refresh says "Could not refresh the plan usage" with the last read time and no figures', async ({ page }) => {
-    await page.clock.install();
-    await planUsageAnswers(page, [json(okBody(limitsAt(40, 50))), json({ status: 'error' })]);
-    await loadPage(page);
-    await usageButton(page).click();
-    await expect(rows(page)).toHaveCount(2);
-    const readTime = await page.evaluate(() => {
-      const now = new Date();
-      return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    });
-    await page.clock.runFor(61_000);
-    await expect(popover(page)).toContainText('Could not refresh the plan usage');
-    await expect(popover(page)).toContainText(/Last read at \d{2}:\d{2}/);
-    await expect(popover(page)).toContainText(`Last read at ${readTime}`);
-    await expect(popover(page).locator('li')).toHaveCount(0);
-    await expect(bars(page)).toHaveCount(0);
-    await expect(popover(page)).not.toContainText('40%');
-    await expect(popover(page)).not.toContainText('Plan usage is not available');
-  });
-
-  test('shows the figures again when the next refresh works', async ({ page }) => {
-    await page.clock.install();
-    await planUsageAnswers(page, [json(okBody(limitsAt(40, 50))), json({ status: 'error' }), json(okBody(limitsAt(55, 50)))]);
-    await loadPage(page);
-    await usageButton(page).click();
-    await expect(rows(page)).toHaveCount(2);
-    await page.clock.runFor(61_000);
-    await expect(popover(page)).toContainText('Could not refresh the plan usage');
-    await page.clock.runFor(60_000);
-    await expect(rows(page).nth(0)).toContainText('55%');
-    await expect(popover(page)).not.toContainText('Could not refresh the plan usage');
   });
 });
 

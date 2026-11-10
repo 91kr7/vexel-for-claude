@@ -38,9 +38,9 @@ Add a button next to the theme switch. It opens a view of what `/usage` shows ab
 - Each limit must show its percentage as a number and as a bar.
 - A reset time must be shown as a time remaining and as a date and time.
 - A limit near its threshold must stand out at 70% and stand out more at 90%.
-- The figures must be current when the view opens, and must refresh while the view stays open.
+- The figures must be current when the view opens. They are read once at each opening and do not refresh while the view stays open (changed 2026-11-10, human decision: the source answered 429 under a periodic refresh).
 - When plan limits are not available, the view must say so and must show no figures, not zeros.
-- When the figures cannot be refreshed, the view must say so and must not present the old figures as current.
+- When the figures cannot be read, the view must say so like it does for plan limits that are not available, and must show no figures. With no refresh there is no state for a failed refresh (changed 2026-11-10).
 - Every new text must be in English, like the rest of the UI.
 - The button and the view must look right in both the light and the dark theme.
 
@@ -65,7 +65,7 @@ Add a button next to the theme switch. It opens a view of what `/usage` shows ab
 
 - The data behind `/usage` is not a documented public contract. A new Claude Code version can change it or break the view.
 - A reset time shown wrongly sends the user to stop work at the wrong moment.
-- A stale figure can make a limit look safe when it is not.
+- A figure read at the opening can age while the view stays open and make a limit look safe when it is not. The user closes and opens the view again to read it anew (changed 2026-11-10).
 
 ## Scope
 
@@ -80,4 +80,4 @@ Out of scope:
 - History or charts of limit use over time.
 - Tokens and cost per session, which stay as in the reference.
 - Any action on the limits, such as buying more usage or changing plan.
-- A setting for the levels or for how often the figures refresh.
+- A setting for the levels, and any refresh of the figures while the view is open.
