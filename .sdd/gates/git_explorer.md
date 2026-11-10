@@ -13,3 +13,4 @@
 | 2026-11-10 | dev | G4 development, explorer-access | pass | Build green on re-run; diff only INT files, specs, indexes; no test or plan file touched |
 | 2026-11-10 | dev | divergence INT-7 | decided | Button also shown on a git error, so REQ-6 can appear; REQ-2 holds for none and no git |
 | 2026-11-10 | dev | divergence INT-11 | decided | Electron e2e spec goes to the tester |
+| 2026-11-10 | test | G5 tests, explorer-access | pass | Re-run 70 unit, 8 e2e green; Electron 1 accepted from report; only test files and `playwright.config.ts` |
