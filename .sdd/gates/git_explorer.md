@@ -24,3 +24,5 @@
 | 2026-11-10 | dev | G4 development, refresh | pass | Build green on re-run; diff only INT files, specs, indexes; no test or plan file touched |
 | 2026-11-10 | dev | divergence refresh revision | decided | Panel owns the revision, new props optional; existing tests keep compiling |
 | 2026-11-10 | dev | divergence open commit after refresh | human decision | A commit beyond the first page closes after a refresh; accepted, written in `history-tab.md` |
+| 2026-11-10 | test | G5 tests, refresh | pass | Re-run 229 unit, 24 e2e green; full suites from report: unit 2670, e2e 552, Electron 1; `main.test.ts` REQ-28 flaky once, green on 3 reruns |
+| 2026-11-10 | closing | merge into main | pass | All batches certified; no source commit after the full run |
