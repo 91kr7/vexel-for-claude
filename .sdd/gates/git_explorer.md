@@ -14,3 +14,7 @@
 | 2026-11-10 | dev | divergence INT-7 | decided | Button also shown on a git error, so REQ-6 can appear; REQ-2 holds for none and no git |
 | 2026-11-10 | dev | divergence INT-11 | decided | Electron e2e spec goes to the tester |
 | 2026-11-10 | test | G5 tests, explorer-access | pass | Re-run 70 unit, 8 e2e green; Electron 1 accepted from report; only test files and `playwright.config.ts` |
+| 2026-11-10 | dev | G4 development, uncommitted-changes | sent back | Diff over 5 MB gives an error; `requirements.md` "Large content" asks a cut diff with a note |
+| 2026-11-10 | dev | divergence GitRunner change | decided | New read commands and exit-code option needed; runner spec foresaw them |
+| 2026-11-10 | dev | divergence no tab bar | decided | One tab only; `batch-history` INT-9 adds the tabs |
+| 2026-11-10 | dev | G4 development, uncommitted-changes | pass | Over 5 MB now cut; note text "5,000 lines" inexact in that rare case, accepted, flagged for human review |

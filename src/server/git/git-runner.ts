@@ -30,6 +30,9 @@ const positionalCount = (args: readonly string[]) => args.filter((arg) => !arg.s
 const READ_COMMANDS: Record<string, (args: readonly string[]) => boolean> = {
   'rev-parse': () => true,
   'symbolic-ref': (args) => positionalCount(args) <= 1 && !args.some((arg) => arg === '-d' || arg === '--delete'),
+  status: () => true,
+  diff: () => true,
+  'ls-files': () => true,
 };
 
 export function isReadCommand(args: readonly string[]): boolean {
@@ -46,21 +49,45 @@ function gitEnvironment(): NodeJS.ProcessEnv {
   return { ...env, LC_ALL: 'C', GIT_OPTIONAL_LOCKS: '0', GIT_TERMINAL_PROMPT: '0' };
 }
 
+const OUTPUT_TOO_LARGE = 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER';
+
 // A missing working folder and a missing git binary both fail the spawn with ENOENT.
 function errorOf(error: ExecFileException, stderr: string, folder: string): GitError {
   if (error.code === 'ENOENT') {
     return existsSync(folder) ? new GitError('not_installed', 'git is not installed.') : new GitError('folder_not_found', 'The folder does not exist.');
   }
-  if (error.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER') return new GitError('output_too_large', 'The git output is larger than 5 MB.');
+  if (error.code === OUTPUT_TOO_LARGE) return new GitError('output_too_large', 'The git output is larger than 5 MB.');
   if (error.killed) return new GitError('timeout', 'git did not answer within 10 s.');
   const message = stderr.trim() || error.message;
   return new GitError('failed', message, typeof error.code === 'number' ? error.code : undefined);
 }
 
+export interface GitRunOptions {
+  /** Exit codes that count as success besides 0, e.g. 1 for `diff --no-index`. */
+  successExitCodes?: readonly number[];
+}
+
+export interface CappedOutput {
+  output: string;
+  truncated: boolean;
+}
+
+const isSuccessExit = (error: ExecFileException, options: GitRunOptions) =>
+  !error.killed && typeof error.code === 'number' && (options.successExitCodes ?? []).includes(error.code);
+
 export class GitRunner {
   constructor(private readonly gitPath = 'git') {}
 
-  run(folder: string, args: readonly string[]): Promise<string> {
+  async run(folder: string, args: readonly string[], options: GitRunOptions = {}): Promise<string> {
+    return (await this.execute(folder, args, options, false)).output;
+  }
+
+  /** As `run`, but an output over 5 MB gives its first 5 MB instead of an error. */
+  runCapped(folder: string, args: readonly string[], options: GitRunOptions = {}): Promise<CappedOutput> {
+    return this.execute(folder, args, options, true);
+  }
+
+  private execute(folder: string, args: readonly string[], options: GitRunOptions, capped: boolean): Promise<CappedOutput> {
     if (!isReadCommand(args)) return Promise.reject(new GitCommandRejected(args));
     return new Promise((resolve, reject) => {
       execFile(
@@ -68,8 +95,9 @@ export class GitRunner {
         ['--no-optional-locks', ...args],
         { cwd: folder, env: gitEnvironment(), timeout: GIT_TIMEOUT_MS, maxBuffer: GIT_MAX_OUTPUT_BYTES, encoding: 'utf8' },
         (error, stdout, stderr) => {
-          if (error) reject(errorOf(error, stderr, folder));
-          else resolve(stdout);
+          if (capped && error?.code === OUTPUT_TOO_LARGE) resolve({ output: stdout, truncated: true });
+          else if (error && !isSuccessExit(error, options)) reject(errorOf(error, stderr, folder));
+          else resolve({ output: stdout, truncated: false });
         },
       );
     });
