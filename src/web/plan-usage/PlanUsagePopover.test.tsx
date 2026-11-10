@@ -82,15 +82,6 @@ describe('PlanUsagePopover', () => {
     expect(panel.textContent).not.toContain('0%');
   });
 
-  // plan-usage_limits/REQ-14: stale -> says so with the last read time, no figures
-  it('says it could not refresh, with the last read time and no figures', () => {
-    const { panel } = mount({ kind: 'stale', lastReadAt: new Date(2026, 10, 9, 7, 3).getTime() });
-    expect(panel.textContent).toContain('Could not refresh the plan usage');
-    expect(panel.textContent).toContain('Last read at 07:03');
-    expect(panel.querySelector('li, [role="progressbar"]')).toBeNull();
-    expect(panel.textContent).not.toContain('%');
-  });
-
   // plan-usage_limits/REQ-3: the close button and Esc inside the panel close it
   it('calls onClose from the close button', () => {
     const { panel, onClose } = mount({ kind: 'loading' });

@@ -35,8 +35,8 @@
 | PlanLimitsReader | backend service | `src/server/plan-limits-reader.ts` | One call to the Anthropic usage endpoint with the token: `ok` with the limits, `unavailable` (no token) or `error` | `specs/plan-limits-reader.md` |
 | PlanUsageRoute | REST endpoint | `src/server/plan-usage-route.ts` | `GET /api/plan-usage`: the result of the reader, overlapping calls share one request, never the token | `specs/plan-usage-route.md` |
 | remainingText, resetDateText, lastReadText | frontend function | `src/web/plan-usage/reset-time-format.ts` | Time remaining ("2h 15m", "3d 4h", "<1m"), reset date and time ("Mon 14 Nov, 18:30") and last read time | `specs/reset-time-format.md` |
-| PlanUsageStore | frontend hook | `src/web/plan-usage/plan-usage-store.ts` | `usePlanUsage(open)`: loads the limits on open and every 60 s, state `loading`, `ready`, `unavailable` or `stale` | `specs/plan-usage-store.md` |
+| PlanUsageStore | frontend hook | `src/web/plan-usage/plan-usage-store.ts` | `usePlanUsage(open)`: loads the limits once on open, state `loading`, `ready` or `unavailable` | `specs/plan-usage-store.md` |
 | PlanLimitRow | UI component | `src/web/plan-usage/PlanLimitRow.tsx` | One limit: label, percentage as a number and a progress bar with the usage level colours, "Resets in" time and date | `specs/plan-limit-row.md` |
-| PlanUsagePopover | UI component | `src/web/plan-usage/PlanUsagePopover.tsx` | Non-modal panel "Plan Usage" under the top bar: loading, rows, "not available" and "could not refresh" | `specs/plan-usage-popover.md` |
+| PlanUsagePopover | UI component | `src/web/plan-usage/PlanUsagePopover.tsx` | Non-modal panel "Plan Usage" under the top bar: loading, rows and "not available" | `specs/plan-usage-popover.md` |
 | PlanUsageButton | UI component | `src/web/PlanUsageButton.tsx` | Top-bar gauge icon button "Plan Usage" that opens and closes the popover | `specs/plan-usage-button.md` |
 | ThirdPartyNotices | document | `THIRD-PARTY-NOTICES.md` | Source, version and licence of each third-party font and icon set | `specs/third-party-notices.md` |

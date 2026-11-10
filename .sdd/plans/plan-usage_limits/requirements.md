@@ -29,9 +29,9 @@ Words used below:
 | REQ-9 | A reset time is shown as a time remaining and as a date and time. |
 | REQ-10 | A limit stands out from 70% and stands out more from 90%. |
 | REQ-11 | The figures are current when the usage view opens. |
-| REQ-12 | The figures refresh while the usage view stays open. |
+| REQ-12 | ~~The figures refresh while the usage view stays open.~~ Superseded 2026-11-10, see "Change of 2026-11-10". |
 | REQ-13 | When plan limits are not available, the usage view says so and shows no figures, not zeros. |
-| REQ-14 | When the figures cannot be refreshed, the usage view says so and does not present the old figures as current. |
+| REQ-14 | ~~When the figures cannot be refreshed, the usage view says so and does not present the old figures as current.~~ Superseded 2026-11-10, see "Change of 2026-11-10". |
 | REQ-15 | Every new text of the usage button and of the usage view is in English. |
 | REQ-16 | The usage button and the usage view look right in the light and in the dark theme. |
 | REQ-17 | The usage view opens without blocking the client while the figures load, and shows that it is loading. |
@@ -42,7 +42,8 @@ Words used below:
 REQ-14 comes from the risk "A stale figure can make a limit look safe when it is not". The human decided on 2026-11-09 to keep it as a requirement, and the spec now carries it. The refresh interval and the shape of the view are gatekeeper decisions of the same date. The other REQs apply the spec.
 
 - **Level of REQ-10.** The same levels as the context occupancy of `plan-session_usage`: "stands out" from 70% and "stands out more" from 90%, using the warning and the error colours of the theme. The percentage is a whole number, rounded to the nearest, as in "23%". The levels apply to the rounded value.
-- **Refresh of REQ-12.** The refresh interval is fixed, 60 seconds. The spec does not set it and puts a setting for it out of scope. A long interval also protects the source of the figures from too many requests.
+- **Change of 2026-11-10.** Human decision. The usage endpoint answered 429 under the 60 s refresh, so the view loads once at each opening and never refreshes while open. REQ-12 and REQ-14 no longer apply: there is no refresh to fail, so the state `stale` and the text "Could not refresh the plan usage" are gone. REQ-11 and REQ-13 stand: a failed load shows "Plan usage is not available". The batch file and the analysis keep their original text as history.
+- **Refresh of REQ-12 (superseded).** The refresh interval is fixed, 60 seconds. The spec does not set it and puts a setting for it out of scope. A long interval also protects the source of the figures from too many requests.
 - **Current figures (REQ-11).** Opening the view reads the figures again. The view never shows the figures of an earlier opening as current.
 - **Not available (REQ-13, REQ-14).** The two states are different. "Not available" is an account with no plan limits, for example an API key, or one whose limits cannot be read at all. A failed refresh after figures were shown is REQ-14.
 - **Shape of the view.** It is a popover anchored to the usage button, not a modal dialog that stops the rest of the client. There is no mock. REQ-4 sets the effect, the design follows the look of the existing panels.

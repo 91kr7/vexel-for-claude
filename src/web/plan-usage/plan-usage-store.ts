@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export interface PlanLimit {
   label: string;
@@ -9,10 +9,7 @@ export interface PlanLimit {
 export type PlanUsageState =
   | { kind: 'loading' }
   | { kind: 'ready'; limits: PlanLimit[]; readAt: number }
-  | { kind: 'unavailable' }
-  | { kind: 'stale'; lastReadAt: number };
-
-export const PLAN_USAGE_REFRESH_MS = 60_000;
+  | { kind: 'unavailable' };
 
 const LOADING: PlanUsageState = { kind: 'loading' };
 
@@ -34,41 +31,19 @@ async function loadLimits(signal: AbortSignal): Promise<PlanLimit[] | undefined>
   }
 }
 
+// One request per opening of the popover: no periodic refresh, so the usage endpoint is not hit again while it stays open.
 export function usePlanUsage(open: boolean): PlanUsageState {
   const [state, setState] = useState<PlanUsageState>(LOADING);
-  const lastReadAt = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    if (!open) {
-      lastReadAt.current = undefined;
-      setState(LOADING);
-      return;
-    }
-    lastReadAt.current = undefined;
     setState(LOADING);
-    let active = true;
-    let sequence = 0;
+    if (!open) return;
     const controller = new AbortController();
-    const load = async () => {
-      const mine = ++sequence;
-      const limits = await loadLimits(controller.signal);
-      if (!active || mine !== sequence) return;
-      if (limits) {
-        const readAt = Date.now();
-        lastReadAt.current = readAt;
-        setState({ kind: 'ready', limits, readAt });
-      } else {
-        const last = lastReadAt.current;
-        setState(last === undefined ? { kind: 'unavailable' } : { kind: 'stale', lastReadAt: last });
-      }
-    };
-    void load();
-    const timer = setInterval(() => void load(), PLAN_USAGE_REFRESH_MS);
-    return () => {
-      active = false;
-      controller.abort();
-      clearInterval(timer);
-    };
+    void loadLimits(controller.signal).then((limits) => {
+      if (controller.signal.aborted) return;
+      setState(limits ? { kind: 'ready', limits, readAt: Date.now() } : { kind: 'unavailable' });
+    });
+    return () => controller.abort();
   }, [open]);
 
   return open ? state : LOADING;

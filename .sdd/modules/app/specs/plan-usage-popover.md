@@ -22,7 +22,6 @@ Shows, by `state`:
 - `loading` → the ProgressIndicator "Loading…".
 - `ready` → one PlanLimitRow per limit, in the given order.
 - `unavailable` → "Plan usage is not available", no row and no "0%".
-- `stale` → "Could not refresh the plan usage" and "Last read at HH:MM", no figures.
 
 Actions:
 - close button → `onClose()`.
@@ -41,4 +40,4 @@ Actions:
 
 ## Requirements served
 
-- `plan-usage_limits/REQ-3`, `plan-usage_limits/REQ-4`, `plan-usage_limits/REQ-5`, `plan-usage_limits/REQ-6`, `plan-usage_limits/REQ-7`, `plan-usage_limits/REQ-13`, `plan-usage_limits/REQ-14`, `plan-usage_limits/REQ-15`, `plan-usage_limits/REQ-16`, `plan-usage_limits/REQ-17`
+- `plan-usage_limits/REQ-3`, `plan-usage_limits/REQ-4`, `plan-usage_limits/REQ-5`, `plan-usage_limits/REQ-6`, `plan-usage_limits/REQ-7`, `plan-usage_limits/REQ-13`, `plan-usage_limits/REQ-15`, `plan-usage_limits/REQ-16`, `plan-usage_limits/REQ-17`
