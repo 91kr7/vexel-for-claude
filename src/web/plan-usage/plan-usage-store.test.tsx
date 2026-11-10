@@ -74,19 +74,14 @@ describe('usePlanUsage', () => {
     expect(Math.abs((latest as { readAt: number }).readAt - Date.now())).toBeLessThan(1_000);
   });
 
-  // plan-usage_limits/REQ-12: loads again every 60 s while open
-  it('loads again every 60 s while open and shows the new figures', async () => {
-    steps = [{ json: okBody(40) }, { json: okBody(45) }, { json: okBody(50) }];
+  // loads once per opening: no periodic refresh while the popover stays open
+  it('requests the usage once per opening and never refreshes while open', async () => {
+    steps = [{ json: okBody(40) }, { json: okBody(45) }];
     mount(true);
     await until(() => latest.kind === 'ready');
-    await vi.advanceTimersByTimeAsync(59_000);
+    await vi.advanceTimersByTimeAsync(600_000);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    await vi.advanceTimersByTimeAsync(1_000);
-    await until(() => latest.kind === 'ready' && latest.limits[0]?.percent === 45);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    await vi.advanceTimersByTimeAsync(60_000);
-    await until(() => latest.kind === 'ready' && latest.limits[0]?.percent === 50);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(latest).toMatchObject({ kind: 'ready', limits: [{ percent: 40 }] });
   });
 
   // plan-usage_limits/REQ-13: a failed first load gives unavailable
@@ -105,35 +100,8 @@ describe('usePlanUsage', () => {
     expect(latest).toEqual({ kind: 'unavailable' });
   });
 
-  // plan-usage_limits/REQ-14: a failed refresh after a good read gives stale with the time of that read
-  it('gives stale with the time of the last good read when a refresh fails, then ready again', async () => {
-    steps = [{ json: okBody(40) }, { json: { status: 'error' } }, { json: { status: 'error' } }, { json: okBody(61) }];
-    mount(true);
-    await until(() => latest.kind === 'ready');
-    const firstRead = (latest as { readAt: number }).readAt;
-    await vi.advanceTimersByTimeAsync(60_000);
-    await until(() => latest.kind === 'stale');
-    expect(latest).toEqual({ kind: 'stale', lastReadAt: firstRead });
-    await vi.advanceTimersByTimeAsync(60_000);
-    await until(() => fetchMock.mock.calls.length === 3);
-    await settle();
-    expect(latest).toEqual({ kind: 'stale', lastReadAt: firstRead });
-    await vi.advanceTimersByTimeAsync(60_000);
-    await until(() => latest.kind === 'ready');
-    expect((latest as { readAt: number }).readAt).toBeGreaterThan(firstRead);
-  });
-
-  // spec: a network error on a refresh also gives stale
-  it('gives stale when a refresh has a network error', async () => {
-    steps = [{ json: okBody() }, new TypeError('offline')];
-    mount(true);
-    await until(() => latest.kind === 'ready');
-    await vi.advanceTimersByTimeAsync(60_000);
-    await until(() => latest.kind === 'stale');
-  });
-
-  // plan-usage_limits/REQ-11 and spec: closing aborts, stops the interval, resets to loading
-  it('aborts the request in flight, stops refreshing and resets to loading on close', async () => {
+  // plan-usage_limits/REQ-11 and spec: closing aborts and resets to loading
+  it('aborts the request in flight and resets to loading on close', async () => {
     steps = [{ json: okBody() }];
     const view = mount(true);
     await until(() => latest.kind === 'ready');
@@ -168,7 +136,7 @@ describe('usePlanUsage', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('gives unavailable, not stale, when the second opening fails before any good read', async () => {
+  it('gives unavailable when the second opening fails after a good read of the first', async () => {
     steps = [{ json: okBody(40) }, { json: { status: 'error' } }];
     const view = mount(true);
     await until(() => latest.kind === 'ready');
@@ -177,18 +145,5 @@ describe('usePlanUsage', () => {
     view.setOpen(true);
     await until(() => latest.kind !== 'loading');
     expect(latest).toEqual({ kind: 'unavailable' });
-  });
-
-  // spec: only the newest request changes the state
-  it('lets only the newest request change the state', async () => {
-    steps = ['pending', { json: okBody(45) }];
-    mount(true);
-    await until(() => pendingResolvers.length === 1);
-    await vi.advanceTimersByTimeAsync(60_000);
-    await until(() => latest.kind === 'ready');
-    expect(latest).toMatchObject({ kind: 'ready', limits: [{ percent: 45 }] });
-    pendingResolvers[0]?.(new Response(JSON.stringify({ status: 'error' }), { status: 200 }));
-    await settle();
-    expect(latest).toMatchObject({ kind: 'ready', limits: [{ percent: 45 }] });
   });
 });

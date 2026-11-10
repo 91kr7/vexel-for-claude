@@ -54,7 +54,7 @@ else → "New Claude Code Session" in the rail
 - each change of the open session is reported to the desktop app (useDesktopBridge).
 - the ShortcutsButton of the TopBar → opens the ShortcutsPanel, or closes it when it is open.
 - the panel closes ("[Esc]", "Close", Esc) → it goes; the focus goes back where it was before it opened (Dialog).
-- the PlanUsageButton of the TopBar → opens the PlanUsagePopover, or closes it when it is open. The popover shows the state of `usePlanUsage(open)`: the figures load when it opens and every 60 s while it is open. Its close button and Esc close it. It is not a dialog: the open session, its terminal focus and scroll, and any open dialog stay as they are.
+- the PlanUsageButton of the TopBar → opens the PlanUsagePopover, or closes it when it is open. The popover shows the state of `usePlanUsage(open)`: the figures load once when it opens and are not refreshed while it is open. Its close button and Esc close it. It is not a dialog: the open session, its terminal focus and scroll, and any open dialog stay as they are.
 
 Shortcuts (useShortcutKeys, while the page is mounted):
 - `focus-list` (Alt+L) → the focus moves to a list entry, with the same rule as "Sessions" in the rail.
