@@ -8,7 +8,7 @@ Requirements: `requirements.md`. Batch files: `batches/`.
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| `batch-explorer-access` | Git explorer access | REQ-1, REQ-2, REQ-3, REQ-4, REQ-7 | — | todo | The user opens the git explorer of a session in a repository |
+| `batch-explorer-access` | Git explorer access | REQ-1, REQ-2, REQ-3, REQ-4, REQ-7 | — | implemented | The user opens the git explorer of a session in a repository |
 | `batch-uncommitted-changes` | Uncommitted changes | REQ-5, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15 | `batch-explorer-access` | todo | The user sees the uncommitted changes and their diff |
 | `batch-history` | History | REQ-6, REQ-8, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22 | `batch-uncommitted-changes` | todo | The user browses the history and the diff of a commit |
 | `batch-refresh` | Refresh | REQ-23, REQ-24, REQ-25, REQ-26 | `batch-history` | todo | The git explorer follows a turn of another session in the same repository |

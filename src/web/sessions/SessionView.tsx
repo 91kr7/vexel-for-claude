@@ -7,6 +7,9 @@ import { desktopFilePathLookup } from '../desktop-bridge';
 import { shortcutCommandOf } from '../shortcut-map';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
+import { GitExplorerButton } from '../git/GitExplorerButton';
+import { GitExplorerPanel } from '../git/GitExplorerPanel';
+import { useRepositoryLookup } from '../git/repository-lookup-store';
 import { CirclePauseIcon, SearchIcon } from '../icons/Icons';
 import { folderNameOf } from './Avatar';
 import { droppedPathsText } from './dropped-paths-text';
@@ -147,6 +150,9 @@ export function SessionView({ sessionId, session, onLeaveTerminal, focusRef }: S
   const [dropNotice, setDropNotice] = useState(0);
   const fontSizeStore = pageTerminalFontSizeStore();
   const fontSize = useTerminalFontSize(fontSizeStore);
+  const repository = useRepositoryLookup(session?.folder);
+  const [gitOpen, setGitOpen] = useState(false);
+  const gitShown = gitOpen && (repository.status === 'repository' || repository.status === 'error');
   useImperativeHandle(focusRef, () => ({ focus: () => terminalRef.current?.focus() }), []);
 
   useEffect(() => {
@@ -370,9 +376,12 @@ export function SessionView({ sessionId, session, onLeaveTerminal, focusRef }: S
       <SessionHeader
         session={session}
         leadingActions={
-          <button type="button" className="session-search-button" aria-label="Search" title="Search (Ctrl+Shift+F)" onClick={openSearch}>
-            <SearchIcon />
-          </button>
+          <>
+            <GitExplorerButton lookup={repository} open={gitShown} onToggle={() => setGitOpen((open) => !open)} />
+            <button type="button" className="session-search-button" aria-label="Search" title="Search (Ctrl+Shift+F)" onClick={openSearch}>
+              <SearchIcon />
+            </button>
+          </>
         }
         actions={
           <>
@@ -387,36 +396,39 @@ export function SessionView({ sessionId, session, onLeaveTerminal, focusRef }: S
         }
       />
       {connectionError && <ErrorMessage className="session-alert">{connectionError}</ErrorMessage>}
-      <div
-        className={dropTarget ? 'session-terminal-panel drop-target' : 'session-terminal-panel'}
-        role="region"
-        aria-label={session ? `Terminal: ${folderNameOf(session.folder)}` : 'Terminal'}
-        onDragOver={dragOver}
-        onDragLeave={dragLeave}
-        onDrop={drop}
-      >
-        <div className="session-terminal" ref={containerRef} />
-        {searchOpen && (
-          <TerminalSearchBox
-            query={searchQuery}
-            results={searchResults}
-            inputRef={searchFieldRef}
-            onQueryChange={changeSearchQuery}
-            onNext={findNext}
-            onPrevious={findPrevious}
-            onClose={closeSearch}
-          />
-        )}
-        {dropNotice > 0 && (
-          <div className="terminal-drop-notice" role="status">
-            Paths can be dropped only in the desktop app.
-          </div>
-        )}
-        {loading && (
-          <div className="session-terminal-loading">
-            <ProgressIndicator />
-          </div>
-        )}
+      <div className="session-workspace">
+        <div
+          className={dropTarget ? 'session-terminal-panel drop-target' : 'session-terminal-panel'}
+          role="region"
+          aria-label={session ? `Terminal: ${folderNameOf(session.folder)}` : 'Terminal'}
+          onDragOver={dragOver}
+          onDragLeave={dragLeave}
+          onDrop={drop}
+        >
+          <div className="session-terminal" ref={containerRef} />
+          {searchOpen && (
+            <TerminalSearchBox
+              query={searchQuery}
+              results={searchResults}
+              inputRef={searchFieldRef}
+              onQueryChange={changeSearchQuery}
+              onNext={findNext}
+              onPrevious={findPrevious}
+              onClose={closeSearch}
+            />
+          )}
+          {dropNotice > 0 && (
+            <div className="terminal-drop-notice" role="status">
+              Paths can be dropped only in the desktop app.
+            </div>
+          )}
+          {loading && (
+            <div className="session-terminal-loading">
+              <ProgressIndicator />
+            </div>
+          )}
+        </div>
+        {gitShown && <GitExplorerPanel lookup={repository} />}
       </div>
       {linkTooltip && (
         <div className="terminal-link-tooltip" role="tooltip" style={{ left: linkTooltip.left, top: linkTooltip.top }}>

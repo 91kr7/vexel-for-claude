@@ -33,6 +33,7 @@ Components and where the client uses them today:
 - `MoonIcon`, `SunIcon` → the ThemeSwitch in the dark and in the light theme
 - `KeyboardIcon` → the ShortcutsButton
 - `GaugeIcon` → the PlanUsageButton
+- `GitBranchIcon` → the GitExplorerButton and the branch chip of the GitExplorerPanel (module git)
 - `PencilIcon` → "Rename" of a list entry
 - `CirclePauseIcon` → "Interrupt" in the SessionView subbar
 - no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
@@ -60,3 +61,4 @@ Components and where the client uses them today:
 - `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-35`
 - `plan-keyboard_shortcuts/REQ-22`
 - `plan-usage_limits/REQ-1`
+- `plan-git_explorer/REQ-1`

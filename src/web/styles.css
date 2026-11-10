@@ -1659,6 +1659,66 @@ input {
   min-height: 0;
 }
 
+.session-workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.session-workspace > .session-terminal-panel,
+.session-workspace > .conversation-panel {
+  min-width: 0;
+}
+
+.git-explorer-panel {
+  flex: 0 0 50%;
+  min-width: 360px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-surface-1);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.git-explorer-header {
+  flex: none;
+  height: 40px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.git-explorer-repository {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.git-explorer-branch {
+  flex: 0 1000 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-secondary);
+}
+
+.git-explorer-error {
+  padding: 8px 16px;
+}
+
+.git-explorer-button.open {
+  background-color: var(--bg-surface-3);
+  color: var(--accent-primary);
+}
+
 .terminal-drop-notice {
   position: absolute;
   left: 50%;

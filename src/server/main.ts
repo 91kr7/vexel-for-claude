@@ -8,6 +8,8 @@ import { ExternalSessionScanner } from './external/external-session-scanner.js';
 import { registerItemContentRoute } from './external/item-content-route.js';
 import { TranscriptReader } from './external/transcript-reader.js';
 import { registerFolderRoute } from './folders/folder-route.js';
+import { GitRunner } from './git/git-runner.js';
+import { registerRepositoryRoute } from './git/repository-route.js';
 import { ExternalSessionCheck } from './history/external-session-check.js';
 import { registerPastSessionListRoute } from './history/past-session-list-route.js';
 import { registerResumeSessionRoute } from './history/resume-session-route.js';
@@ -77,6 +79,7 @@ registerSessionListRoute(app, tracker, externalScanner, runningToolMonitor, usag
 registerSessionEventsRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor);
 registerHookEventRoute(app, tracker);
 registerFolderRoute(app);
+registerRepositoryRoute(app, new GitRunner());
 registerPastSessionListRoute(app, { history, externalCheck, registry, tracker, names });
 registerResumeSessionRoute(app, { history, registry });
 registerConversationStreamRoute(app, { scanner: externalScanner, reader: transcriptReader });

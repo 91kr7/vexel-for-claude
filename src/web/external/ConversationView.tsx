@@ -2,6 +2,9 @@ import { type ReactNode, type Ref, useEffect, useImperativeHandle, useLayoutEffe
 import { AreaState } from '../feedback/AreaState';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
+import { GitExplorerButton } from '../git/GitExplorerButton';
+import { GitExplorerPanel } from '../git/GitExplorerPanel';
+import { useRepositoryLookup } from '../git/repository-lookup-store';
 import { ArrowDownIcon, LockIcon } from '../icons/Icons';
 import { SessionFooter } from '../sessions/SessionFooter';
 import { SessionHeader, type SessionHeaderSummary } from '../sessions/SessionHeader';
@@ -188,6 +191,9 @@ export function ConversationView({ sessionId, session, onResumed, focusRef }: Co
   const followEndRef = useRef(true);
   const countedRef = useRef(0);
   const entries = useMemo(() => entriesOf(items ?? []), [items]);
+  const repository = useRepositoryLookup(session?.folder);
+  const [gitOpen, setGitOpen] = useState(false);
+  const gitShown = gitOpen && (repository.status === 'repository' || repository.status === 'error');
   useImperativeHandle(focusRef, () => ({ focus: () => listRef.current?.focus({ focusVisible: true }) }), []);
 
   useEffect(() => {
@@ -260,7 +266,12 @@ export function ConversationView({ sessionId, session, onResumed, focusRef }: Co
     <div className="conversation-view">
       <SessionHeader
         session={session}
-        actions={<ResumeHereButton sessionId={sessionId} onResumed={onResumed} />}
+        actions={
+          <>
+            <GitExplorerButton lookup={repository} open={gitShown} onToggle={() => setGitOpen((open) => !open)} />
+            <ResumeHereButton sessionId={sessionId} onResumed={onResumed} />
+          </>
+        }
         notice={
           <span className="mono-chip vx-surface-2 read-only-chip">
             <LockIcon />
@@ -268,31 +279,34 @@ export function ConversationView({ sessionId, session, onResumed, focusRef }: Co
           </span>
         }
       />
-      <div className="conversation-panel">
-        <div className="conversation-items" ref={listRef} tabIndex={-1} onScroll={onScroll}>
-          <div className="conversation-column">
-            {items === null &&
-              (unavailable ? (
-                <AreaState kind="error" title="Conversation not available." />
-              ) : (
-                <AreaState kind="loading" title="Loading…" />
-              ))}
-            {items?.length === 0 && <AreaState kind="empty" title="No messages." />}
-            {entries.map((entry) =>
-              entry.kind === 'tool' ? (
-                <ToolCard key={entry.key} sessionId={sessionId} call={entry.call} result={entry.result} />
-              ) : (
-                <MessageBlock key={entry.key} item={entry.item} />
-              ),
-            )}
+      <div className="session-workspace">
+        <div className="conversation-panel">
+          <div className="conversation-items" ref={listRef} tabIndex={-1} onScroll={onScroll}>
+            <div className="conversation-column">
+              {items === null &&
+                (unavailable ? (
+                  <AreaState kind="error" title="Conversation not available." />
+                ) : (
+                  <AreaState kind="loading" title="Loading…" />
+                ))}
+              {items?.length === 0 && <AreaState kind="empty" title="No messages." />}
+              {entries.map((entry) =>
+                entry.kind === 'tool' ? (
+                  <ToolCard key={entry.key} sessionId={sessionId} call={entry.call} result={entry.result} />
+                ) : (
+                  <MessageBlock key={entry.key} item={entry.item} />
+                ),
+              )}
+            </div>
           </div>
+          {unseen > 0 && (
+            <button type="button" className="vx-glass new-messages" onClick={jumpToEnd}>
+              <ArrowDownIcon />
+              {unseen === 1 ? '1 new message' : `${unseen} new messages`}
+            </button>
+          )}
         </div>
-        {unseen > 0 && (
-          <button type="button" className="vx-glass new-messages" onClick={jumpToEnd}>
-            <ArrowDownIcon />
-            {unseen === 1 ? '1 new message' : `${unseen} new messages`}
-          </button>
-        )}
+        {gitShown && <GitExplorerPanel lookup={repository} />}
       </div>
       <SessionFooter session={session} lead="Open in Another Terminal · " />
     </div>

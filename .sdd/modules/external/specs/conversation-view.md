@@ -21,7 +21,9 @@ Props:
 - `focusRef` → optional. Gets `{ focus() }`: puts the keyboard focus in the message area (the scrolling content), which then shows the focus ring inside its edge. The message area is not in the Tab order.
 
 Shows:
-- the SessionHeader with `session`: folder name, the label or name as its line, the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The action is ResumeHereButton.
+- the SessionHeader with `session`: folder name, the label or name as its line, the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The actions are GitExplorerButton, then ResumeHereButton.
+- the GitExplorerPanel, while open, at the right of the content, in the same row. The content takes the width it leaves.
+- GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known). A click opens the panel; a second click closes it. The panel is closed when the view opens.
 - the SessionFooter with `session` and the lead text "Open in Another Terminal · ": the lead, the path, then the figures. No end items.
 - before the first frame of ConversationStreamRoute → an AreaState `loading` "Loading…".
 - first frame with no items → an AreaState `empty` "No messages.".
@@ -92,6 +94,7 @@ Scrolling:
 
 - ConversationStreamRoute, ItemContentRoute, ResumeHereButton
 - SessionHeader, SessionFooter (module sessions)
+- useRepositoryLookup, GitExplorerButton, GitExplorerPanel (module git)
 - AreaState, IconSet, ProgressIndicator, ErrorMessage, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
@@ -102,3 +105,4 @@ Scrolling:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-16`
 - `plan-session_list_width/REQ-16`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-21`
 - `plan-keyboard_shortcuts/REQ-3`
+- `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-3`

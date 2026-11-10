@@ -10,3 +10,6 @@
 | 2026-11-10 | plan | question planner (untracked files) | decided | Unstaged group, kind "untracked", as `git status` groups them |
 | 2026-11-10 | plan | G2 requirements | pass | 26 REQ cover the spec; REQ-26 traced to spec Risks |
 | 2026-11-10 | plan | G3 coverage | pass | 26 REQ, 4 vertical batches in sequence, 37 INT; modify paths exist; lists match; every REQ in a scenario |
+| 2026-11-10 | dev | G4 development, explorer-access | pass | Build green on re-run; diff only INT files, specs, indexes; no test or plan file touched |
+| 2026-11-10 | dev | divergence INT-7 | decided | Button also shown on a git error, so REQ-6 can appear; REQ-2 holds for none and no git |
+| 2026-11-10 | dev | divergence INT-11 | decided | Electron e2e spec goes to the tester |
