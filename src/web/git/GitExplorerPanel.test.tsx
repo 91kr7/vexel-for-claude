@@ -116,3 +116,82 @@ describe('GitExplorerPanel changes', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+const tabs = (region: HTMLElement) => [...region.querySelectorAll('[role="tab"]')] as HTMLElement[];
+const tabNamed = (region: HTMLElement, name: string) => tabs(region).find((t) => t.textContent?.trim() === name)!;
+const isHidden = (element: Element) => element.closest('[hidden]') !== null;
+const paths = () => fetchMock.mock.calls.map((call) => new URL(String(call[0]), 'http://localhost').pathname);
+/** Answers the first pending request to `pathname`. */
+function answerTo(pathname: string, body: unknown, status = 200) {
+  const index = paths().indexOf(pathname);
+  pending[index]!(new Response(JSON.stringify(body), { status }));
+}
+const historyCommit = { hash: 'a'.repeat(40), shortHash: 'aaaaaaa', message: 'Initial import', author: 'Ada', date: '2026-11-10T15:25:02+01:00' };
+
+describe('GitExplorerPanel tabs', () => {
+  // plan-git_explorer/REQ-16 (spec GitExplorerPanel): tabs "Changes" (selected) and "History"
+  it('shows the tabs "Changes", selected, and "History"; the history is not read before its tab opens', async () => {
+    const region = render(repository);
+    expect(tabs(region).map((t) => t.textContent?.trim())).toEqual(['Changes', 'History']);
+    expect(tabNamed(region, 'Changes').getAttribute('aria-selected')).toBe('true');
+    expect(tabNamed(region, 'History').getAttribute('aria-selected')).toBe('false');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(paths()).toEqual(['/api/git/changes']);
+  });
+
+  // plan-git_explorer/REQ-16
+  it('reads the first history page of the root when "History" first opens, and shows it', async () => {
+    const region = render(repository);
+    flushSync(() => tabNamed(region, 'History').click());
+    expect(tabNamed(region, 'History').getAttribute('aria-selected')).toBe('true');
+    expect(tabNamed(region, 'Changes').getAttribute('aria-selected')).toBe('false');
+    await until(() => paths().includes('/api/git/history'));
+    const url = new URL(String(fetchMock.mock.calls[paths().indexOf('/api/git/history')]?.[0]), 'http://localhost');
+    expect(url.searchParams.get('path')).toBe('/home/dev/my-project');
+    expect(url.searchParams.get('offset')).toBe('0');
+    const historyPanel = () => [...region.querySelectorAll('[role="tabpanel"]')].find((p) => !isHidden(p))!;
+    await until(() => historyPanel().textContent!.includes('Loading…'));
+    answerTo('/api/git/history', { commits: [historyCommit], hasMore: false });
+    await until(() => historyPanel().textContent!.includes('Initial import'));
+  });
+
+  // plan-git_explorer/REQ-20
+  it('says "No commits yet" in "History" for a repository with no commits', async () => {
+    const region = render(repository);
+    flushSync(() => tabNamed(region, 'History').click());
+    await until(() => paths().includes('/api/git/history'));
+    answerTo('/api/git/history', { commits: [], hasMore: false });
+    await until(() => region.textContent!.includes('No commits yet'));
+    expect(region.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('keeps both panels mounted, hides the other one, and reads nothing again when going back to a tab', async () => {
+    const region = render(repository);
+    await until(() => pending.length === 1);
+    answerTo('/api/git/changes', { changes: [] });
+    await until(() => region.textContent!.includes('No uncommitted changes'));
+    flushSync(() => tabNamed(region, 'History').click());
+    await until(() => paths().includes('/api/git/history'));
+    answerTo('/api/git/history', { commits: [historyCommit], hasMore: false });
+    await until(() => region.textContent!.includes('Initial import'));
+    const changesText = [...region.querySelectorAll('*')].find((el) => el.textContent === 'No uncommitted changes')!;
+    expect(isHidden(changesText), 'the Changes panel is hidden, not removed').toBe(true);
+
+    flushSync(() => tabNamed(region, 'Changes').click());
+    flushSync(() => tabNamed(region, 'History').click());
+    flushSync(() => tabNamed(region, 'Changes').click());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(paths()).toEqual(['/api/git/changes', '/api/git/history']);
+    expect(isHidden(changesText)).toBe(false);
+  });
+
+  // plan-git_explorer/REQ-6
+  it('shows a git error of the history as an alert in the panel', async () => {
+    const region = render(repository);
+    flushSync(() => tabNamed(region, 'History').click());
+    await until(() => paths().includes('/api/git/history'));
+    answerTo('/api/git/history', { error: 'git_error', message: 'fatal: bad object HEAD' }, 500);
+    await until(() => region.querySelector('[role="alert"]') !== null);
+    expect(region.querySelector('[role="alert"]')!.textContent).toBe('fatal: bad object HEAD');
+  });
+});

@@ -43,6 +43,8 @@ describe('isReadCommand', () => {
     [['status', '--porcelain=v2', '-z', '--untracked-files=all']],
     [['diff', '--cached', '--', 'a.txt']],
     [['ls-files', '--error-unmatch', '--', 'a.txt']],
+    [['log', '-z', '--skip=100', '-n', '101', 'HEAD']],
+    [['diff-tree', '-r', '--no-commit-id', '-M', 'HEAD^', 'HEAD']],
   ])('accepts the read command %j', (args) => {
     expect(isReadCommand(args)).toBe(true);
   });
@@ -58,6 +60,8 @@ describe('isReadCommand', () => {
     [['rev-parse', '--output', '/tmp/x']],
     [['diff', '--output=/tmp/x']],
     [['diff', 'HEAD', '--output', '/tmp/x']],
+    [['log', '--output=/tmp/x']],
+    [['diff-tree', '-p', 'HEAD', '--output', '/tmp/x']],
     [['add', 'a.txt']],
     [['stash']],
   ])('refuses %j', (args) => {

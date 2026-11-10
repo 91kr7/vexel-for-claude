@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-// Unit tests of useFileDiff (plan-git_explorer, batch uncommitted-changes).
+// Unit tests of useFileDiff (plan-git_explorer, batch uncommitted-changes) and useCommitFileDiff (batch history).
 import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChangeEntry } from './changes-store';
-import { type FileDiffState, useFileDiff } from './diff-store';
+import type { CommitFile } from './commit-files-store';
+import { type FileDiffState, useCommitFileDiff, useFileDiff } from './diff-store';
 
 const FALLBACK = 'Could not read the diff.';
 const ROOT = '/home/dev/project';
@@ -124,6 +125,100 @@ describe('useFileDiff', () => {
   ])('gives the fallback message for %s', async (_name, step) => {
     steps.push(step);
     mount(modified);
+    await until(() => latest.status === 'error');
+    expect(latest).toEqual({ status: 'error', message: FALLBACK });
+  });
+});
+
+const HASH = 'c'.repeat(40);
+const commitFile: CommitFile = { kind: 'modified', path: 'lib/a b.ts', binary: false };
+const commitRename: CommitFile = { kind: 'renamed', path: 'new.ts', oldPath: 'old.ts', binary: false };
+
+function CommitProbe({ root, hash, file }: { root: string; hash: string; file: CommitFile | undefined }) {
+  latest = useCommitFileDiff(root, hash, file);
+  return null;
+}
+
+function mountCommit(file: CommitFile | undefined, hash = HASH, root = ROOT) {
+  const r = createRoot(document.createElement('div'));
+  roots.push(r);
+  flushSync(() => r.render(<CommitProbe root={root} hash={hash} file={file} />));
+  return {
+    set: (next: CommitFile | undefined, nextHash = hash, nextRoot = root) =>
+      flushSync(() => r.render(<CommitProbe root={nextRoot} hash={nextHash} file={next} />)),
+  };
+}
+
+describe('useCommitFileDiff', () => {
+  it('is idle and asks nothing with no file', async () => {
+    mountCommit(undefined);
+    expect(latest).toEqual({ status: 'idle' });
+    await settle();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // plan-git_explorer/REQ-19
+  it('asks GET /api/git/commit-diff with the root, the hash and the file, and gives the diff', async () => {
+    steps.push('pending');
+    mountCommit(commitFile);
+    await settle();
+    expect(latest).toEqual({ status: 'loading' });
+    pending[0]!(new Response(JSON.stringify(someDiff)));
+    await until(() => latest.status === 'loaded');
+    expect(latest).toEqual({ status: 'loaded', diff: someDiff });
+    const url = requestedUrl(0);
+    expect(url.pathname).toBe('/api/git/commit-diff');
+    expect(url.searchParams.get('path')).toBe(ROOT);
+    expect(url.searchParams.get('hash')).toBe(HASH);
+    expect(url.searchParams.get('file')).toBe('lib/a b.ts');
+    expect(url.searchParams.has('oldPath')).toBe(false);
+  });
+
+  it('sends the oldPath of a rename', async () => {
+    mountCommit(commitRename);
+    await until(() => latest.status === 'loaded');
+    expect(requestedUrl(0).searchParams.get('oldPath')).toBe('old.ts');
+  });
+
+  it('asks again for a new file and drops the answer for the previous file', async () => {
+    const otherDiff = { binary: true, cut: false, lines: [] };
+    steps.push('pending', 'pending');
+    const probe = mountCommit(commitFile);
+    probe.set(commitRename);
+    await settle();
+    expect(latest).toEqual({ status: 'loading' });
+    pending[1]!(new Response(JSON.stringify(otherDiff)));
+    await until(() => latest.status === 'loaded');
+    pending[0]!(new Response(JSON.stringify(someDiff)));
+    await settle();
+    expect(latest).toEqual({ status: 'loaded', diff: otherDiff });
+  });
+
+  it('asks again when the hash or the root changes', async () => {
+    const probe = mountCommit(commitFile);
+    await until(() => latest.status === 'loaded');
+    probe.set(commitFile, 'd'.repeat(40));
+    await until(() => fetchMock.mock.calls.length === 2);
+    expect(requestedUrl(1).searchParams.get('hash')).toBe('d'.repeat(40));
+    probe.set(commitFile, 'd'.repeat(40), '/other/root');
+    await until(() => fetchMock.mock.calls.length === 3);
+    expect(requestedUrl(2).searchParams.get('path')).toBe('/other/root');
+  });
+
+  it('gives the message of an error answer', async () => {
+    steps.push({ json: { error: 'git_error', message: 'fatal: bad object' }, status: 500 });
+    mountCommit(commitFile);
+    await until(() => latest.status === 'error');
+    expect(latest).toEqual({ status: 'error', message: 'fatal: bad object' });
+  });
+
+  it.each<[string, Step]>([
+    ['an error answer with no message', { json: { error: 'invalid_file' }, status: 400 }],
+    ['a failed request', new Error('network down')],
+    ['an answer of another shape', { json: { lines: 'none' } }],
+  ])('gives the fallback message for %s', async (_name, step) => {
+    steps.push(step);
+    mountCommit(commitFile);
     await until(() => latest.status === 'error');
     expect(latest).toEqual({ status: 'error', message: FALLBACK });
   });

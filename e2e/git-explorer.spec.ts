@@ -1,7 +1,7 @@
-// e2e of plan-git_explorer, batches explorer-access and uncommitted-changes: the "Git Explorer" button, the panel and its uncommitted changes.
+// e2e of plan-git_explorer, batches explorer-access, uncommitted-changes and history: the "Git Explorer" button, the panel, its uncommitted changes and the history.
 // Repositories are real git repositories in temp folders. External sessions use fixture files in E2E_CLAUDE_DIR.
-import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
-import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { type ChildProcess, execFileSync, spawn, spawnSync } from 'node:child_process';
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
@@ -396,5 +396,156 @@ test.describe('Uncommitted changes in the git explorer', () => {
     await openExplorer(page, request, repo);
     await expect(explorer(page).getByRole('alert')).toHaveText('fatal: index file corrupt');
     await expect(terminalPanel(page)).toBeVisible();
+  });
+});
+
+const tab = (page: Page, name: 'Changes' | 'History') => explorer(page).getByRole('tab', { name, exact: true });
+const commitRows = (page: Page) => explorer(page).locator('[aria-label="Commits"]').getByRole('button');
+const changedFiles = (page: Page) => explorer(page).locator('[aria-label="Changed files"]').getByRole('button');
+const backButton = (page: Page) => explorer(page).getByRole('button', { name: /^Back/ });
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+/** DD/MM/YYYY HH:MM in local time. */
+function localDate(iso: string): string {
+  const d = new Date(iso);
+  const two = (n: number) => String(n).padStart(2, '0');
+  return `${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()} ${two(d.getHours())}:${two(d.getMinutes())}`;
+}
+
+/** Status of the repository and its exit code, git's error output included, without touching the index. */
+function gitStatus(folder: string): string {
+  const result = spawnSync('git', ['--no-optional-locks', 'status', '--porcelain=v2'], { cwd: folder, encoding: 'utf8' });
+  return `${result.status}\n${result.stdout}\n${result.stderr}`;
+}
+
+test.describe('History in the git explorer', () => {
+  // plan-git_explorer/REQ-16, REQ-17, REQ-18, REQ-19: human acceptance scenario "The user browses the history and the diff of a commit"
+  test('lists three commits newest first, shows the files of the newest and the diff of one file', async ({ page, request }) => {
+    const repo = await newRepository('history-repo');
+    await writeFile(path.join(repo, 'app.ts'), 'export const version = 1;\n');
+    git(repo, 'add', '.');
+    git(repo, '-c', 'user.name=Grace Hopper', 'commit', '-q', '-m', 'Add the app');
+    await writeFile(path.join(repo, 'app.ts'), 'export const version = 2;\n');
+    await writeFile(path.join(repo, 'notes.md'), 'notes\n');
+    git(repo, 'add', '.');
+    git(repo, '-c', 'user.name=Ada Lovelace', 'commit', '-q', '-m', 'Bump the version', '-m', 'Also add notes.');
+    const log = git(repo, 'log', '--format=%h|%an|%aI').split('\n').map((line) => line.split('|'));
+
+    await openExplorer(page, request, repo);
+    await expect(tab(page, 'Changes')).toHaveAttribute('aria-selected', 'true');
+    await tab(page, 'History').click();
+    await expect(tab(page, 'History')).toHaveAttribute('aria-selected', 'true');
+
+    await expect(commitRows(page)).toHaveCount(3);
+    const subjects = ['Bump the version', 'Add the app', 'first'];
+    for (const [index, subject] of subjects.entries()) {
+      const [shortHash, author, date] = log[index]!;
+      const row = commitRows(page).nth(index);
+      await expect(row).toContainText(shortHash!);
+      await expect(row).toContainText(subject);
+      await expect(row).toContainText(`${author} · ${localDate(date!)}`);
+    }
+    await expect(commitRows(page).first()).not.toContainText('Also add notes.');
+
+    await commitRows(page).first().click();
+    await expect(explorer(page)).toContainText('Also add notes.');
+    await expect(changedFiles(page)).toHaveCount(2);
+    await expect(changedFiles(page).filter({ hasText: 'app.ts' })).toContainText('Modified');
+    await expect(changedFiles(page).filter({ hasText: 'notes.md' })).toContainText('Added');
+
+    await changedFiles(page).filter({ hasText: 'app.ts' }).click();
+    await expect(changedFiles(page).filter({ hasText: 'app.ts' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(diffLines(page).filter({ hasText: /^-export const version = 1;$/ })).toHaveCount(1);
+    await expect(diffLines(page).filter({ hasText: /^\+export const version = 2;$/ })).toHaveCount(1);
+
+    await backButton(page).click();
+    await expect(commitRows(page)).toHaveCount(3);
+  });
+
+  // plan-git_explorer/REQ-20: human acceptance scenario "A new repository shows an empty history"
+  test('a repository with no commits says "No commits yet" and shows no error', async ({ page, request }) => {
+    const repo = path.join(await mkdtemp(path.join(projectsRoot, 'r-')), 'unborn-repo');
+    await mkdir(repo);
+    git(repo, 'init', '-q', '-b', 'main');
+    await openExplorer(page, request, repo);
+    await tab(page, 'History').click();
+    await expect(explorer(page)).toContainText('No commits yet');
+    await expect(explorer(page).getByRole('alert')).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-21, REQ-22: human acceptance scenario "A long history and a binary file in a commit"
+  test('a history of 250 commits loads in pages, keeps the scroll on "Back", and an image of a commit shows the binary note', async ({ page, request }) => {
+    test.setTimeout(90_000);
+    const repo = await newRepository('long-repo');
+    for (let i = 2; i <= 249; i++) git(repo, 'commit', '-q', '--allow-empty', '-m', `commit ${i}`);
+    await writeFile(path.join(repo, 'logo.png'), PNG);
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'Add the logo');
+
+    await openExplorer(page, request, repo);
+    await tab(page, 'History').click();
+    await expect(commitRows(page)).toHaveCount(100);
+    const loadMore = explorer(page).getByRole('button', { name: 'Load more', exact: true });
+    await loadMore.click();
+    await expect(commitRows(page)).toHaveCount(200);
+    await loadMore.click();
+    const started = Date.now();
+    await expect(commitRows(page)).toHaveCount(250);
+    await expect(loadMore).toHaveCount(0);
+    await expect(commitRows(page).last()).toContainText('first');
+
+    // The page keeps reacting: the list scrolls, and a click answers at once.
+    await commitRows(page).nth(240).scrollIntoViewIfNeeded();
+    const scroller = await commitRows(page).first().evaluateHandle((row) => {
+      let node: HTMLElement | null = row.parentElement;
+      while (node && !(node.scrollHeight > node.clientHeight && /(auto|scroll)/.test(getComputedStyle(node).overflowY))) node = node.parentElement;
+      return node;
+    });
+    const scrolled = await scroller.evaluate((node) => (node as HTMLElement).scrollTop);
+    expect(scrolled, 'the list scrolled').toBeGreaterThan(0);
+    await commitRows(page).nth(240).click();
+    await expect(backButton(page)).toBeVisible();
+    expect(Date.now() - started, 'the long list answers within 5 s').toBeLessThan(5_000);
+    await backButton(page).click();
+    await expect(commitRows(page).nth(240)).toBeVisible();
+    expect(await scroller.evaluate((node) => (node as HTMLElement).scrollTop), 'same scroll position after "Back"').toBe(scrolled);
+
+    await commitRows(page).first().scrollIntoViewIfNeeded();
+    await commitRows(page).first().click();
+    const logo = changedFiles(page).filter({ hasText: 'logo.png' });
+    await expect(logo).toContainText('Added');
+    await expect(logo).toContainText('Binary');
+    await logo.click();
+    await expect(explorer(page)).toContainText('Binary file, no diff shown');
+    await expect(diffLines(page)).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-6, REQ-8: human acceptance scenario "A git error stays in the panel and changes nothing"
+  test('a corrupt index shows the git error in "Changes", the client keeps working and the repository is unchanged', async ({ page, request }) => {
+    const repo = await newRepository('corrupt-repo');
+    const other = await newRepository('healthy-repo');
+    await writeFile(path.join(repo, 'README.md'), 'changed\n');
+    await writeFile(path.join(repo, '.git', 'index'), 'not an index');
+    const indexBefore = await readFile(path.join(repo, '.git', 'index'));
+    const statusBefore = gitStatus(repo);
+    expect(statusBefore, 'git itself reports the corrupt index').toMatch(/index/i);
+    await startHosted(request, other);
+
+    await openExplorer(page, request, repo);
+    await expect(tab(page, 'Changes')).toHaveAttribute('aria-selected', 'true');
+    const alert = explorer(page).getByRole('alert');
+    await expect(alert).toBeVisible();
+    await expect(alert).toContainText(/index/i);
+    await tab(page, 'History').click();
+    await expect(commitRows(page)).toHaveCount(1);
+
+    await expect(terminalPanel(page)).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasNotText: /index/i })).toHaveCount(0);
+    await openHosted(page, other);
+    await expect(list(page)).toBeVisible();
+
+    expect(await readFile(path.join(repo, '.git', 'index'))).toEqual(indexBefore);
+    expect(gitStatus(repo)).toBe(statusBefore);
+    expect(await readFile(path.join(repo, 'README.md'), 'utf8')).toBe('changed\n');
   });
 });
