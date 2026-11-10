@@ -10,7 +10,7 @@ const GROUPS: { group: ChangeGroup; title: string }[] = [
   { group: 'unstaged', title: 'Unstaged' },
 ];
 
-const KIND_LABEL: Record<ChangeKind, string> = {
+export const KIND_LABEL: Record<ChangeKind, string> = {
   added: 'Added',
   modified: 'Modified',
   deleted: 'Deleted',

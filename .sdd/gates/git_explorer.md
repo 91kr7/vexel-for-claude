@@ -19,3 +19,4 @@
 | 2026-11-10 | dev | divergence no tab bar | decided | One tab only; `batch-history` INT-9 adds the tabs |
 | 2026-11-10 | dev | G4 development, uncommitted-changes | pass | Over 5 MB now cut; note text "5,000 lines" inexact in that rare case, accepted, flagged for human review |
 | 2026-11-10 | test | G5 tests, uncommitted-changes | pass | Re-run 205 unit, 13 e2e green; only test files; outdated runner test fixed to the updated spec; stale state for one render noted, no contract broken |
+| 2026-11-10 | dev | G4 development, history | pass | Build green on re-run; diff only INT files, specs, indexes; `commit-format.ts` internal helper without spec accepted |

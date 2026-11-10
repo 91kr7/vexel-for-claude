@@ -21,7 +21,7 @@ type: backend service
     - `failed` → git exits with a non-zero code. Message → git's error output, trimmed (the process error text when git wrote none). `exitCode` → the exit code.
     - `timeout` → git runs for more than 10 s. The process is stopped. Message "git did not answer within 10 s."
     - `output_too_large` → the output is larger than 5 MB. Message "The git output is larger than 5 MB."
-- `runCapped(folder, args, options?) → { output, truncated }` → as `run`, except for an output larger than 5 MB: no `output_too_large` error, `output` is its first 5 MB and `truncated` is `true`. Otherwise `truncated` is `false`. The diff lookup uses it; every other caller keeps the error.
+- `runCapped(folder, args, options?) → { output, truncated }` → as `run`, except for an output larger than 5 MB: no `output_too_large` error, `output` is its first 5 MB and `truncated` is `true`. Otherwise `truncated` is `false`. The diff lookups use it; every other caller keeps the error.
 - `isReadCommand(args) → boolean` → the check that `run` applies.
 
 ## Rules and invariants
@@ -29,7 +29,7 @@ type: backend service
 - Read commands (the fixed list) → the first argument is one of:
   - `rev-parse`, with any arguments;
   - `symbolic-ref`, with at most one non-option argument and without `-d` or `--delete` (the read form; a second ref would write HEAD);
-  - `status`, `diff`, `ls-files`, with any arguments.
+  - `status`, `diff`, `ls-files`, `log`, `diff-tree`, with any arguments.
 - No argument may start with `--output`, for any command.
 - Every run passes `--no-optional-locks` and `GIT_OPTIONAL_LOCKS=0`: git does not write the index or take its lock.
 - Git runs with `LC_ALL=C`, so its messages are in English, and with `GIT_TERMINAL_PROMPT=0`. No `GIT_*` variable of the server environment reaches git.
@@ -37,4 +37,4 @@ type: backend service
 
 ## Requirements served
 
-- `plan-git_explorer/REQ-2`, `plan-git_explorer/REQ-6`, `plan-git_explorer/REQ-8`, `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-12`
+- `plan-git_explorer/REQ-2`, `plan-git_explorer/REQ-6`, `plan-git_explorer/REQ-8`, `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-12`, `plan-git_explorer/REQ-16`, `plan-git_explorer/REQ-19`

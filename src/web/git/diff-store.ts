@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEntry } from './changes-store';
+import type { CommitFile } from './commit-files-store';
 
 export type DiffLineKind = 'added' | 'removed' | 'context' | 'hunk';
 
@@ -28,9 +29,15 @@ function diffUrl(root: string, { group, path, oldPath }: ChangeEntry): string {
   return `/api/git/diff?${query.toString()}`;
 }
 
-async function readDiff(root: string, entry: ChangeEntry, signal: AbortSignal): Promise<FileDiffState> {
+function commitDiffUrl(root: string, hash: string, { path, oldPath }: CommitFile): string {
+  const query = new URLSearchParams({ path: root, hash, file: path });
+  if (oldPath !== undefined) query.set('oldPath', oldPath);
+  return `/api/git/commit-diff?${query.toString()}`;
+}
+
+async function readDiff(url: string, signal: AbortSignal): Promise<FileDiffState> {
   try {
-    const response = await fetch(diffUrl(root, entry), { signal });
+    const response = await fetch(url, { signal });
     const body = (await response.json()) as Partial<FileDiff> & { message?: unknown };
     if (!response.ok) return { status: 'error', message: typeof body.message === 'string' ? body.message : READ_FAILED };
     if (typeof body.binary !== 'boolean' || typeof body.cut !== 'boolean' || !Array.isArray(body.lines)) {
@@ -52,11 +59,31 @@ export function useFileDiff(root: string, entry: ChangeEntry | undefined): FileD
     }
     setState({ status: 'loading' });
     const controller = new AbortController();
-    void readDiff(root, entry, controller.signal).then((result) => {
+    void readDiff(diffUrl(root, entry), controller.signal).then((result) => {
       if (!controller.signal.aborted) setState(result);
     });
     return () => controller.abort();
   }, [root, entry]);
+
+  return state;
+}
+
+/** As useFileDiff, for one file of the commit `hash`. */
+export function useCommitFileDiff(root: string, hash: string, file: CommitFile | undefined): FileDiffState {
+  const [state, setState] = useState<FileDiffState>({ status: 'idle' });
+
+  useEffect(() => {
+    if (file === undefined) {
+      setState({ status: 'idle' });
+      return;
+    }
+    setState({ status: 'loading' });
+    const controller = new AbortController();
+    void readDiff(commitDiffUrl(root, hash, file), controller.signal).then((result) => {
+      if (!controller.signal.aborted) setState(result);
+    });
+    return () => controller.abort();
+  }, [root, hash, file]);
 
   return state;
 }

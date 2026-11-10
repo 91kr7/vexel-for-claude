@@ -33,6 +33,8 @@ const READ_COMMANDS: Record<string, (args: readonly string[]) => boolean> = {
   status: () => true,
   diff: () => true,
   'ls-files': () => true,
+  log: () => true,
+  'diff-tree': () => true,
 };
 
 export function isReadCommand(args: readonly string[]): boolean {

@@ -4,12 +4,12 @@ import { lookupChanges } from './changes-lookup.js';
 import { lookupFileDiff } from './diff-lookup.js';
 import { GitError, type GitRunner } from './git-runner.js';
 
-const isInsideRepository = (file: string) => {
+export const isInsideRepository = (file: string) => {
   const normalized = posix.normalize(file);
   return file !== '' && !posix.isAbsolute(file) && normalized !== '..' && !normalized.startsWith('../') && !file.includes('\0');
 };
 
-async function answer<T>(reply: FastifyReply, read: () => Promise<T>): Promise<T | FastifyReply> {
+export async function answer<T>(reply: FastifyReply, read: () => Promise<T>): Promise<T | FastifyReply> {
   try {
     return await read();
   } catch (error) {
