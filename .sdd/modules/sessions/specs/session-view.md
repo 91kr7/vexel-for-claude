@@ -11,14 +11,16 @@ type: UI component
 ## Contract
 
 Description:
-- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with, from left to right in its right group, "Search" (as `leadingActions`), the state pill, "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the SessionFooter.
+- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with, from left to right in its right group, GitExplorerButton and "Search" (as `leadingActions`), the state pill, "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the SessionFooter.
 - the panel takes all the height the header and the footer leave.
+- the GitExplorerPanel, while open, sits at the right of the terminal panel, in the same row. The terminal panel takes the width it leaves, and the terminal fits it.
 
 Props:
 - `sessionId` → the session to show.
   - a new `sessionId` → closes the connection of the previous session. The terminal is empty, then shows the snapshot of the new session, then its live output. It fits the panel and sends `resize`.
   - the terminal never shows output of the previous session after a switch.
   - a new `sessionId` closes the search box, with its text and its count.
+- `sessions` → optional, the session list of LiveSessionStore, passed to the GitExplorerPanel.
 - `onLeaveTerminal()` → called when the user presses Ctrl+Shift+L in the terminal.
 - `focusRef` → optional. Gets `{ focus() }`: puts the keyboard focus in the terminal. Before the terminal opens it does nothing.
 - `session` → `{ folder, label, state, usage? }` of the session, optional. It goes to the SessionHeader and the SessionFooter, and its `state` and folder name to StopSessionButton. A change of `session` does not reconnect the terminal.
@@ -80,6 +82,8 @@ Actions:
   - desktop app, session `ended` → nothing is inserted and nothing goes to the pty.
   - browser client → nothing is inserted and nothing goes to the pty; the message above shows.
 - a drag that carries no files (e.g. text) → the panel does not change it: no drop state, no message.
+- GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known, and one more at each opening of the panel and each refresh). A click opens the GitExplorerPanel; a second click closes it. The panel is closed when the view opens.
+- the GitExplorerPanel gets the session list of the `sessions` prop. Each opening of the panel, and each refresh the panel asks for (`onRefresh`), reads the repository again. While a lookup of a refresh is in flight, the button and the panel stay as they are.
 - "Interrupt" → sends Esc (`\x1b`) as `input`, then gives focus back to the terminal.
 - the panel changes size → the terminal fits it and sends the new `resize`. It also sends a `resize` as soon as it connects.
 
@@ -101,6 +105,7 @@ Actions:
 - useDesktopBridge `desktopFilePathLookup`, ShortcutMap `shortcutCommandOf` (module app)
 - `@xterm/addon-search`
 - SessionHeader, SessionFooter, StopSessionButton, Avatar (`folderNameOf`)
+- useRepositoryLookup, GitExplorerButton, GitExplorerPanel (module git)
 - ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, WebEntry, BundledFont (module app)
 
 ## Requirements served
@@ -112,4 +117,5 @@ Actions:
 - `plan-light_theme/REQ-12`
 - `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`, `plan-terminal_addons/REQ-14`, `plan-terminal_addons/REQ-15`, `plan-terminal_addons/REQ-16`, `plan-terminal_addons/REQ-17`, `plan-terminal_addons/REQ-18`, `plan-terminal_addons/REQ-19`, `plan-terminal_addons/REQ-20`, `plan-terminal_addons/REQ-21`, `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-23`, `plan-terminal_addons/REQ-24`, `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-26`, `plan-terminal_addons/REQ-27`, `plan-terminal_addons/REQ-28`, `plan-terminal_addons/REQ-29`, `plan-terminal_addons/REQ-32`, `plan-terminal_addons/REQ-33`, `plan-terminal_addons/REQ-34`, `plan-terminal_addons/REQ-35`, `plan-terminal_addons/REQ-36`, `plan-terminal_addons/REQ-37`, `plan-terminal_addons/REQ-38`, `plan-terminal_addons/REQ-39`, `plan-terminal_addons/REQ-42`, `plan-terminal_addons/REQ-43`, `plan-terminal_addons/REQ-46`, `plan-terminal_addons/REQ-47`, `plan-terminal_addons/REQ-48`, `plan-terminal_addons/REQ-50`, `plan-terminal_addons/REQ-51`, `plan-terminal_addons/REQ-52`, `plan-terminal_addons/REQ-54`
 - `plan-keyboard_shortcuts/REQ-2`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-39`, `plan-keyboard_shortcuts/REQ-40`, `plan-keyboard_shortcuts/REQ-44`
+- `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-3`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-25`
 - `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`, `plan-session_list_width/REQ-30`, `plan-session_list_width/REQ-31`, `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-33`, `plan-session_list_width/REQ-36`

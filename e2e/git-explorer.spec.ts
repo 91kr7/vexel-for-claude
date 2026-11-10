@@ -1,0 +1,708 @@
+// e2e of plan-git_explorer, batches explorer-access, uncommitted-changes, history and refresh: the "Git Explorer" button, the panel, its uncommitted changes, the history and the refresh.
+// Repositories are real git repositories in temp folders. External sessions use fixture files in E2E_CLAUDE_DIR.
+import { type ChildProcess, execFileSync, spawn, spawnSync } from 'node:child_process';
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
+import { E2E_CLAUDE_DIR } from './claude-dir';
+
+const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
+// The scanner reads the sessions folder every 2 seconds.
+const SCAN = { timeout: 10_000 };
+
+let projectsRoot: string;
+const createdIds: string[] = [];
+const terminals: ChildProcess[] = [];
+
+test.beforeAll(async () => {
+  await rm(E2E_CLAUDE_DIR, { recursive: true, force: true });
+  await mkdir(SESSIONS_DIR, { recursive: true });
+  await mkdir(path.join(E2E_CLAUDE_DIR, 'projects'), { recursive: true });
+  projectsRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), 'ai-client-e2e-git-')));
+});
+
+test.afterEach(async ({ request }) => {
+  for (const id of createdIds.splice(0)) await request.post(`/api/sessions/${id}/stop`);
+  for (const terminal of terminals.splice(0)) terminal.kill('SIGKILL');
+});
+
+test.afterAll(async () => {
+  await rm(E2E_CLAUDE_DIR, { recursive: true, force: true });
+  await rm(projectsRoot, { recursive: true, force: true });
+});
+
+const git = (folder: string, ...args: string[]) =>
+  execFileSync('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', '-c', 'commit.gpgsign=false', ...args], { cwd: folder, encoding: 'utf8' }).trim();
+
+/** A repository on `main` with one commit. */
+async function newRepository(name: string): Promise<string> {
+  const root = path.join(await mkdtemp(path.join(projectsRoot, 'r-')), name);
+  await mkdir(root);
+  git(root, 'init', '-q', '-b', 'main');
+  await writeFile(path.join(root, 'README.md'), 'hello\n');
+  git(root, 'add', '.');
+  git(root, 'commit', '-q', '-m', 'first');
+  return root;
+}
+
+async function newPlainFolder(name: string): Promise<string> {
+  const folder = path.join(await mkdtemp(path.join(projectsRoot, 'p-')), name);
+  await mkdir(folder);
+  return folder;
+}
+
+const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
+const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
+const mainArea = (page: Page) => page.getByRole('main');
+const terminalPanel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
+const terminal = (page: Page) => page.locator('.xterm-rows');
+const header = (page: Page) => mainArea(page).locator('.session-header');
+const explorerButton = (page: Page) => header(page).getByRole('button', { name: 'Git Explorer', exact: true });
+const explorer = (page: Page) => mainArea(page).getByRole('region', { name: 'Git Explorer', exact: true });
+const isLookup = (url: string) => new URL(url).pathname === '/api/git/repository';
+
+async function startHosted(request: APIRequestContext, folder: string): Promise<void> {
+  const response = await request.post('/api/sessions', { data: { path: folder } });
+  expect(response.status()).toBe(201);
+  createdIds.push(((await response.json()) as { id: string }).id);
+}
+
+async function openHosted(page: Page, folder: string): Promise<void> {
+  await entry(page, folder).click();
+  await expect(terminal(page)).toContainText(`CWD:${folder}`);
+}
+
+async function box(locator: Locator) {
+  const b = await locator.boundingBox();
+  expect(b, 'element is rendered').not.toBeNull();
+  return b!;
+}
+
+/** The accessible names of the header buttons, left to right. */
+const headerButtonNames = (page: Page) =>
+  header(page)
+    .getByRole('button')
+    .evaluateAll((buttons) => buttons.map((b) => b.getAttribute('aria-label') ?? b.textContent?.trim() ?? ''));
+
+/** The panel shows the repository folder name, the full path on hover, and the branch. */
+async function expectRepositoryShown(page: Page, root: string, branch: string): Promise<void> {
+  await expect(explorer(page)).toBeVisible();
+  const name = explorer(page).getByTitle(root, { exact: true });
+  await expect(name).toHaveText(path.basename(root));
+  await expect(explorer(page)).toContainText(branch);
+}
+
+test.describe('Git explorer of a hosted session', () => {
+  // plan-git_explorer/REQ-1, REQ-3, REQ-4: the button opens a panel at the right with the repository and the branch
+  test('the "Git Explorer" button, first in the header actions, opens and closes the panel of the repository', async ({ page, request }) => {
+    const repo = await newRepository('alpha-repo');
+    await startHosted(request, repo);
+    await page.goto('/');
+    await openHosted(page, repo);
+
+    await expect(explorerButton(page)).toBeVisible();
+    await expect(explorerButton(page)).toHaveAttribute('title', 'Git Explorer');
+    await expect(explorerButton(page)).toHaveAttribute('aria-expanded', 'false');
+    const names = await headerButtonNames(page);
+    expect(names.indexOf('Git Explorer'), names.join(' | ')).toBeGreaterThanOrEqual(0);
+    expect(names.indexOf('Git Explorer'), 'before Search').toBeLessThan(names.indexOf('Search'));
+    await expect(explorer(page), 'the panel is closed when the view opens').toHaveCount(0);
+
+    const before = await box(terminalPanel(page));
+    await explorerButton(page).click();
+    await expect(explorerButton(page)).toHaveAttribute('aria-expanded', 'true');
+    await expectRepositoryShown(page, repo, 'main');
+
+    const panel = await box(explorer(page));
+    const term = await box(terminalPanel(page));
+    expect(panel.x, 'the panel is at the right of the terminal').toBeGreaterThanOrEqual(term.x + term.width - 1);
+    expect(term.width, 'the terminal takes the width that is left').toBeLessThan(before.width);
+    expect(panel.width).toBeGreaterThanOrEqual(360);
+
+    await explorerButton(page).click();
+    await expect(explorer(page)).toHaveCount(0);
+    await expect(explorerButton(page)).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  // plan-git_explorer/REQ-7 (spec GitExplorerPanel): 50 % of the session content, at least 360 px
+  test('the panel takes half of the session content width', async ({ page, request }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    const repo = await newRepository('wide-repo');
+    await startHosted(request, repo);
+    await page.goto('/');
+    await openHosted(page, repo);
+    await explorerButton(page).click();
+    await expect(explorer(page)).toBeVisible();
+    const panel = await box(explorer(page));
+    const term = await box(terminalPanel(page));
+    const content = panel.x + panel.width - term.x;
+    expect(Math.abs(panel.width - content / 2), `panel ${panel.width} of content ${content}`).toBeLessThanOrEqual(content * 0.03);
+  });
+
+  test('a subfolder of a repository shows the repository root', async ({ page, request }) => {
+    const repo = await newRepository('nested-repo');
+    const sub = path.join(repo, 'frontend');
+    await mkdir(sub);
+    await startHosted(request, sub);
+    await page.goto('/');
+    await openHosted(page, sub);
+    await explorerButton(page).click();
+    await expectRepositoryShown(page, repo, 'main');
+  });
+
+  // plan-git_explorer/REQ-2: no button outside a repository
+  test('a folder outside any repository shows no "Git Explorer" button', async ({ page, request }) => {
+    const plain = await newPlainFolder('plain-folder');
+    await startHosted(request, plain);
+    await page.goto('/');
+    const lookup = page.waitForResponse((r) => isLookup(r.url()));
+    await openHosted(page, plain);
+    expect(await (await lookup).json()).toEqual({ status: 'none' });
+    await expect(header(page).getByRole('button', { name: 'Search', exact: true })).toBeVisible();
+    await expect(explorerButton(page)).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-4: detached HEAD shows "detached" and the short hash
+  test('a detached HEAD shows "detached" and the short hash in the branch chip', async ({ page, request }) => {
+    const repo = await newRepository('detached-repo');
+    git(repo, 'checkout', '-q', '--detach');
+    const hash = git(repo, 'rev-parse', '--short', 'HEAD');
+    await startHosted(request, repo);
+    await page.goto('/');
+    await openHosted(page, repo);
+    await explorerButton(page).click();
+    await expectRepositoryShown(page, repo, `detached ${hash}`);
+  });
+
+  // plan-git_explorer/REQ-6 (served here): a git error keeps the button, the panel shows the message, the session keeps working
+  test('a git error appears as an alert in the panel', async ({ page, request }) => {
+    const repo = await newRepository('error-repo');
+    await startHosted(request, repo);
+    await page.route((url) => isLookup(url.href), (route) =>
+      route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'git_error', message: 'fatal: test failure' }) }),
+    );
+    await page.goto('/');
+    await openHosted(page, repo);
+    await explorerButton(page).click();
+    await expect(explorer(page).getByRole('alert')).toHaveText('fatal: test failure');
+    await expect(terminalPanel(page)).toBeVisible();
+  });
+});
+
+const transcriptPath = (folder: string, id: string) => path.join(E2E_CLAUDE_DIR, 'projects', folder.replace(/[^A-Za-z0-9]/g, '-'), `${id}.jsonl`);
+
+async function runExternal(sessionId: string, folder: string): Promise<void> {
+  const file = transcriptPath(folder, sessionId);
+  await mkdir(path.dirname(file), { recursive: true });
+  const lines = [
+    { type: 'user', cwd: folder, isSidechain: false, message: { role: 'user', content: 'Hello' } },
+    { type: 'assistant', cwd: folder, isSidechain: false, message: { role: 'assistant', content: [{ type: 'text', text: 'Hi there' }] } },
+  ];
+  await writeFile(file, lines.map((line) => `${JSON.stringify(line)}\n`).join(''));
+  const process = spawn('sleep', ['300'], { stdio: 'ignore' });
+  terminals.push(process);
+  const pid = process.pid ?? 0;
+  execFileSync('mkfifo', [path.join(SESSIONS_DIR, `${pid}.5a6b7c8d.key`)]);
+  await writeFile(path.join(SESSIONS_DIR, `${pid}.json`), JSON.stringify({ pid, sessionId, cwd: folder, kind: 'interactive', status: 'idle', updatedAt: Date.now() }));
+}
+
+const conversation = (page: Page) => page.locator('.conversation-view');
+const externalHeader = (page: Page) => conversation(page).locator('.session-header');
+
+test.describe('Git explorer of an external session', () => {
+  // plan-git_explorer/REQ-1, REQ-3, REQ-4: same button, before "Resume Here", and the panel beside the conversation
+  test('the "Git Explorer" button, before "Resume Here", opens the panel of the repository', async ({ page }) => {
+    const repo = await newRepository('external-repo');
+    await runExternal('8f1c2d3e-0000-4000-8000-000000000001', repo);
+    await page.goto('/');
+    await expect(entry(page, repo)).toBeVisible(SCAN);
+    await entry(page, repo).click();
+    await expect(conversation(page)).toContainText('Hi there');
+
+    const button = externalHeader(page).getByRole('button', { name: 'Git Explorer', exact: true });
+    await expect(button).toBeVisible();
+    const names = await externalHeader(page)
+      .getByRole('button')
+      .evaluateAll((buttons) => buttons.map((b) => b.getAttribute('aria-label') ?? b.textContent?.trim() ?? ''));
+    const resume = names.findIndex((name) => name.includes('Resume Here'));
+    expect(resume, names.join(' | ')).toBeGreaterThanOrEqual(0);
+    expect(names.indexOf('Git Explorer'), 'before Resume Here').toBeLessThan(resume);
+
+    const before = await box(conversation(page).locator('.conversation-items'));
+    await button.click();
+    await expectRepositoryShown(page, repo, 'main');
+    const panel = await box(explorer(page));
+    const content = await box(conversation(page).locator('.conversation-items'));
+    expect(panel.x, 'the panel is at the right of the conversation').toBeGreaterThanOrEqual(content.x + content.width - 1);
+    expect(content.width).toBeLessThan(before.width);
+
+    await button.click();
+    await expect(explorer(page)).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-2
+  test('an external session outside any repository shows no "Git Explorer" button', async ({ page }) => {
+    const plain = await newPlainFolder('external-plain');
+    await runExternal('8f1c2d3e-0000-4000-8000-000000000002', plain);
+    await page.goto('/');
+    await expect(entry(page, plain)).toBeVisible(SCAN);
+    const lookup = page.waitForResponse((r) => isLookup(r.url()));
+    await entry(page, plain).click();
+    await expect(conversation(page)).toContainText('Hi there');
+    expect(await (await lookup).json()).toEqual({ status: 'none' });
+    await expect(externalHeader(page).getByRole('button', { name: 'Git Explorer', exact: true })).toHaveCount(0);
+  });
+});
+
+const group = (page: Page, name: 'Staged' | 'Unstaged') => explorer(page).getByRole('region', { name, exact: true });
+const fileEntry = (page: Page, name: 'Staged' | 'Unstaged', file: string) => group(page, name).getByRole('button').filter({ hasText: file });
+const diffLines = (page: Page) => explorer(page).locator('.diff-line');
+const isChanges = (url: string) => new URL(url).pathname === '/api/git/changes';
+
+/** The computed colour of a CSS variable, as the browser writes colours (rgb). */
+const cssColour = (page: Page, variable: string) =>
+  page.evaluate((name) => {
+    const probe = document.createElement('span');
+    probe.style.color = `var(${name})`;
+    document.body.append(probe);
+    const colour = getComputedStyle(probe).color;
+    probe.remove();
+    return colour;
+  }, variable);
+
+async function openExplorer(page: Page, request: APIRequestContext, folder: string): Promise<void> {
+  await startHosted(request, folder);
+  await page.goto('/');
+  await openHosted(page, folder);
+  await explorerButton(page).click();
+  await expect(explorer(page)).toBeVisible();
+}
+
+const numbered = (count: number, prefix: string) => Array.from({ length: count }, (_, i) => `${prefix} ${i + 1}\n`).join('');
+
+test.describe('Uncommitted changes in the git explorer', () => {
+  // plan-git_explorer/REQ-5, REQ-9, REQ-10, REQ-11, REQ-12: human acceptance scenario "The user sees the uncommitted changes and their diff"
+  test('lists staged and unstaged changes of the whole repository and shows the diff of a clicked file', async ({ page, request }) => {
+    const repo = await newRepository('changes-repo');
+    await mkdir(path.join(repo, 'app'));
+    await mkdir(path.join(repo, 'lib'));
+    await writeFile(path.join(repo, 'lib', 'util.ts'), 'export const a = 1;\nexport const b = 2;\nexport const c = 3;\n');
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'second');
+    await writeFile(path.join(repo, 'app', 'feature.ts'), 'export const feature = true;\n');
+    git(repo, 'add', 'app/feature.ts');
+    await writeFile(path.join(repo, 'lib', 'util.ts'), 'export const a = 1;\nexport const b = 20;\nexport const c = 3;\n');
+    await writeFile(path.join(repo, 'todo.md'), 'later\n');
+
+    await openExplorer(page, request, path.join(repo, 'app'));
+
+    await expect(fileEntry(page, 'Staged', 'app/feature.ts')).toContainText('Added');
+    await expect(fileEntry(page, 'Unstaged', 'lib/util.ts')).toContainText('Modified');
+    await expect(fileEntry(page, 'Unstaged', 'todo.md')).toContainText('Untracked');
+    await expect(group(page, 'Staged').getByRole('button')).toHaveCount(1);
+    await expect(group(page, 'Unstaged').getByRole('button')).toHaveCount(2);
+    const stagedBox = await box(group(page, 'Staged'));
+    const unstagedBox = await box(group(page, 'Unstaged'));
+    expect(stagedBox.y, '"Staged" is above "Unstaged"').toBeLessThan(unstagedBox.y);
+
+    await fileEntry(page, 'Unstaged', 'lib/util.ts').click();
+    await expect(fileEntry(page, 'Unstaged', 'lib/util.ts')).toHaveAttribute('aria-pressed', 'true');
+    const removed = diffLines(page).filter({ hasText: /^-export const b = 2;$/ });
+    const added = diffLines(page).filter({ hasText: /^\+export const b = 20;$/ });
+    await expect(removed).toHaveCount(1);
+    await expect(added).toHaveCount(1);
+    await expect(diffLines(page).filter({ hasText: /^@@ / })).toHaveCount(1);
+
+    const green = await cssColour(page, '--emerald-400');
+    const red = await cssColour(page, '--color-error');
+    expect(green).not.toBe(red);
+    await expect(added).toHaveCSS('color', green);
+    await expect(removed).toHaveCSS('color', red);
+    expect(await added.evaluate((el) => getComputedStyle(el).fontFamily)).toContain('Roboto Mono');
+  });
+
+  // plan-git_explorer/REQ-12: an untracked file shows all its lines as added
+  test('shows every line of an untracked file as added', async ({ page, request }) => {
+    const repo = await newRepository('untracked-repo');
+    await writeFile(path.join(repo, 'draft.txt'), 'first\nsecond\n');
+    await openExplorer(page, request, repo);
+    await fileEntry(page, 'Unstaged', 'draft.txt').click();
+    await expect(diffLines(page).filter({ hasText: /^\+(first|second)$/ })).toHaveCount(2);
+    await expect(diffLines(page).filter({ hasText: /^-/ })).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-13: human acceptance scenario "A clean repository says it has no changes"
+  test('a clean repository says "No uncommitted changes"', async ({ page, request }) => {
+    const repo = await newRepository('clean-repo');
+    await openExplorer(page, request, repo);
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+    await expect(group(page, 'Staged')).toHaveCount(0);
+    await expect(group(page, 'Unstaged')).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-14, REQ-15: human acceptance scenario "A binary file and a very large diff stay readable"
+  test('a binary file shows its note, and a 20,000-line diff shows its first lines, the cut note, and the page keeps reacting', async ({ page, request }) => {
+    const repo = await newRepository('large-repo');
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 1, 0, 0, 0, 1]);
+    await writeFile(path.join(repo, 'logo.png'), png);
+    await writeFile(path.join(repo, 'data.txt'), numbered(20_000, 'old'));
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'assets');
+    await writeFile(path.join(repo, 'logo.png'), Buffer.concat([png, Buffer.from([0, 7, 0, 9])]));
+    await writeFile(path.join(repo, 'data.txt'), numbered(20_000, 'new'));
+
+    await openExplorer(page, request, repo);
+    await expect(fileEntry(page, 'Unstaged', 'logo.png')).toContainText('Modified');
+
+    await fileEntry(page, 'Unstaged', 'logo.png').click();
+    await expect(explorer(page)).toContainText('Binary file, no diff shown');
+    await expect(diffLines(page)).toHaveCount(0);
+
+    const started = Date.now();
+    await fileEntry(page, 'Unstaged', 'data.txt').click();
+    await expect(explorer(page)).toContainText('Diff cut at 5,000 lines', { timeout: 10_000 });
+    expect(Date.now() - started, 'the cut diff shows within 5 s').toBeLessThan(5_000);
+    await expect(diffLines(page).first()).toHaveText(/^@@ /);
+    await expect(diffLines(page).nth(1)).toHaveText('-old 1');
+    await expect(diffLines(page)).toHaveCount(5_000);
+    await expect(explorer(page)).not.toContainText('Binary file, no diff shown');
+
+    // The page keeps reacting: the diff scrolls, and a click answers at once.
+    const scroller = await diffLines(page).first().evaluateHandle((line) => {
+      let node: HTMLElement | null = line.parentElement;
+      while (node && !(node.scrollHeight > node.clientHeight && /(auto|scroll)/.test(getComputedStyle(node).overflowY))) node = node.parentElement;
+      return node;
+    });
+    expect(await scroller.evaluate((node) => node !== null), 'the diff has a vertical scroll').toBe(true);
+    const lineBox = await box(diffLines(page).nth(3));
+    await page.mouse.move(lineBox.x + 20, lineBox.y + 5);
+    await page.mouse.wheel(0, 3_000);
+    await expect.poll(() => scroller.evaluate((node) => (node as HTMLElement).scrollTop)).toBeGreaterThan(0);
+
+    const clicked = Date.now();
+    await fileEntry(page, 'Unstaged', 'logo.png').click();
+    await expect(fileEntry(page, 'Unstaged', 'logo.png')).toHaveAttribute('aria-pressed', 'true');
+    await expect(explorer(page)).toContainText('Binary file, no diff shown');
+    expect(Date.now() - clicked, 'a click after the large diff answers within 2 s').toBeLessThan(2_000);
+  });
+
+  // plan-git_explorer/REQ-6 (served here): a git error of the changes appears in the panel
+  test('a git error of the changes appears as an alert in the panel', async ({ page, request }) => {
+    const repo = await newRepository('changes-error-repo');
+    await page.route((url) => isChanges(url.href), (route) =>
+      route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'git_error', message: 'fatal: index file corrupt' }) }),
+    );
+    await openExplorer(page, request, repo);
+    await expect(explorer(page).getByRole('alert')).toHaveText('fatal: index file corrupt');
+    await expect(terminalPanel(page)).toBeVisible();
+  });
+});
+
+const tab = (page: Page, name: 'Changes' | 'History') => explorer(page).getByRole('tab', { name, exact: true });
+const commitRows = (page: Page) => explorer(page).locator('[aria-label="Commits"]').getByRole('button');
+const changedFiles = (page: Page) => explorer(page).locator('[aria-label="Changed files"]').getByRole('button');
+const backButton = (page: Page) => explorer(page).getByRole('button', { name: /^Back/ });
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+/** DD/MM/YYYY HH:MM in local time. */
+function localDate(iso: string): string {
+  const d = new Date(iso);
+  const two = (n: number) => String(n).padStart(2, '0');
+  return `${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()} ${two(d.getHours())}:${two(d.getMinutes())}`;
+}
+
+/** Status of the repository and its exit code, git's error output included, without touching the index. */
+function gitStatus(folder: string): string {
+  const result = spawnSync('git', ['--no-optional-locks', 'status', '--porcelain=v2'], { cwd: folder, encoding: 'utf8' });
+  return `${result.status}\n${result.stdout}\n${result.stderr}`;
+}
+
+test.describe('History in the git explorer', () => {
+  // plan-git_explorer/REQ-16, REQ-17, REQ-18, REQ-19: human acceptance scenario "The user browses the history and the diff of a commit"
+  test('lists three commits newest first, shows the files of the newest and the diff of one file', async ({ page, request }) => {
+    const repo = await newRepository('history-repo');
+    await writeFile(path.join(repo, 'app.ts'), 'export const version = 1;\n');
+    git(repo, 'add', '.');
+    git(repo, '-c', 'user.name=Grace Hopper', 'commit', '-q', '-m', 'Add the app');
+    await writeFile(path.join(repo, 'app.ts'), 'export const version = 2;\n');
+    await writeFile(path.join(repo, 'notes.md'), 'notes\n');
+    git(repo, 'add', '.');
+    git(repo, '-c', 'user.name=Ada Lovelace', 'commit', '-q', '-m', 'Bump the version', '-m', 'Also add notes.');
+    const log = git(repo, 'log', '--format=%h|%an|%aI').split('\n').map((line) => line.split('|'));
+
+    await openExplorer(page, request, repo);
+    await expect(tab(page, 'Changes')).toHaveAttribute('aria-selected', 'true');
+    await tab(page, 'History').click();
+    await expect(tab(page, 'History')).toHaveAttribute('aria-selected', 'true');
+
+    await expect(commitRows(page)).toHaveCount(3);
+    const subjects = ['Bump the version', 'Add the app', 'first'];
+    for (const [index, subject] of subjects.entries()) {
+      const [shortHash, author, date] = log[index]!;
+      const row = commitRows(page).nth(index);
+      await expect(row).toContainText(shortHash!);
+      await expect(row).toContainText(subject);
+      await expect(row).toContainText(`${author} · ${localDate(date!)}`);
+    }
+    await expect(commitRows(page).first()).not.toContainText('Also add notes.');
+
+    await commitRows(page).first().click();
+    await expect(explorer(page)).toContainText('Also add notes.');
+    await expect(changedFiles(page)).toHaveCount(2);
+    await expect(changedFiles(page).filter({ hasText: 'app.ts' })).toContainText('Modified');
+    await expect(changedFiles(page).filter({ hasText: 'notes.md' })).toContainText('Added');
+
+    await changedFiles(page).filter({ hasText: 'app.ts' }).click();
+    await expect(changedFiles(page).filter({ hasText: 'app.ts' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(diffLines(page).filter({ hasText: /^-export const version = 1;$/ })).toHaveCount(1);
+    await expect(diffLines(page).filter({ hasText: /^\+export const version = 2;$/ })).toHaveCount(1);
+
+    await backButton(page).click();
+    await expect(commitRows(page)).toHaveCount(3);
+  });
+
+  // plan-git_explorer/REQ-20: human acceptance scenario "A new repository shows an empty history"
+  test('a repository with no commits says "No commits yet" and shows no error', async ({ page, request }) => {
+    const repo = path.join(await mkdtemp(path.join(projectsRoot, 'r-')), 'unborn-repo');
+    await mkdir(repo);
+    git(repo, 'init', '-q', '-b', 'main');
+    await openExplorer(page, request, repo);
+    await tab(page, 'History').click();
+    await expect(explorer(page)).toContainText('No commits yet');
+    await expect(explorer(page).getByRole('alert')).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-21, REQ-22: human acceptance scenario "A long history and a binary file in a commit"
+  test('a history of 250 commits loads in pages, keeps the scroll on "Back", and an image of a commit shows the binary note', async ({ page, request }) => {
+    test.setTimeout(90_000);
+    const repo = await newRepository('long-repo');
+    for (let i = 2; i <= 249; i++) git(repo, 'commit', '-q', '--allow-empty', '-m', `commit ${i}`);
+    await writeFile(path.join(repo, 'logo.png'), PNG);
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'Add the logo');
+
+    await openExplorer(page, request, repo);
+    await tab(page, 'History').click();
+    await expect(commitRows(page)).toHaveCount(100);
+    const loadMore = explorer(page).getByRole('button', { name: 'Load more', exact: true });
+    await loadMore.click();
+    await expect(commitRows(page)).toHaveCount(200);
+    await loadMore.click();
+    const started = Date.now();
+    await expect(commitRows(page)).toHaveCount(250);
+    await expect(loadMore).toHaveCount(0);
+    await expect(commitRows(page).last()).toContainText('first');
+
+    // The page keeps reacting: the list scrolls, and a click answers at once.
+    await commitRows(page).nth(240).scrollIntoViewIfNeeded();
+    const scroller = await commitRows(page).first().evaluateHandle((row) => {
+      let node: HTMLElement | null = row.parentElement;
+      while (node && !(node.scrollHeight > node.clientHeight && /(auto|scroll)/.test(getComputedStyle(node).overflowY))) node = node.parentElement;
+      return node;
+    });
+    const scrolled = await scroller.evaluate((node) => (node as HTMLElement).scrollTop);
+    expect(scrolled, 'the list scrolled').toBeGreaterThan(0);
+    await commitRows(page).nth(240).click();
+    await expect(backButton(page)).toBeVisible();
+    expect(Date.now() - started, 'the long list answers within 5 s').toBeLessThan(5_000);
+    await backButton(page).click();
+    await expect(commitRows(page).nth(240)).toBeVisible();
+    expect(await scroller.evaluate((node) => (node as HTMLElement).scrollTop), 'same scroll position after "Back"').toBe(scrolled);
+
+    await commitRows(page).first().scrollIntoViewIfNeeded();
+    await commitRows(page).first().click();
+    const logo = changedFiles(page).filter({ hasText: 'logo.png' });
+    await expect(logo).toContainText('Added');
+    await expect(logo).toContainText('Binary');
+    await logo.click();
+    await expect(explorer(page)).toContainText('Binary file, no diff shown');
+    await expect(diffLines(page)).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-6, REQ-8: human acceptance scenario "A git error stays in the panel and changes nothing"
+  test('a corrupt index shows the git error in "Changes", the client keeps working and the repository is unchanged', async ({ page, request }) => {
+    const repo = await newRepository('corrupt-repo');
+    const other = await newRepository('healthy-repo');
+    await writeFile(path.join(repo, 'README.md'), 'changed\n');
+    await writeFile(path.join(repo, '.git', 'index'), 'not an index');
+    const indexBefore = await readFile(path.join(repo, '.git', 'index'));
+    const statusBefore = gitStatus(repo);
+    expect(statusBefore, 'git itself reports the corrupt index').toMatch(/index/i);
+    await startHosted(request, other);
+
+    await openExplorer(page, request, repo);
+    await expect(tab(page, 'Changes')).toHaveAttribute('aria-selected', 'true');
+    const alert = explorer(page).getByRole('alert');
+    await expect(alert).toBeVisible();
+    await expect(alert).toContainText(/index/i);
+    await tab(page, 'History').click();
+    await expect(commitRows(page)).toHaveCount(1);
+
+    await expect(terminalPanel(page)).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasNotText: /index/i })).toHaveCount(0);
+    await openHosted(page, other);
+    await expect(list(page)).toBeVisible();
+
+    expect(await readFile(path.join(repo, '.git', 'index'))).toEqual(indexBefore);
+    expect(gitStatus(repo)).toBe(statusBefore);
+    expect(await readFile(path.join(repo, 'README.md'), 'utf8')).toBe('changed\n');
+  });
+});
+
+const refreshButton = (page: Page) => explorer(page).getByRole('button', { name: 'Refresh', exact: true });
+
+/** An external session in `folder` whose state follows `setStatus` ("busy" is working). */
+async function runExternalWithStatus(sessionId: string, folder: string, status: string): Promise<(next: string) => Promise<void>> {
+  const file = transcriptPath(folder, sessionId);
+  await mkdir(path.dirname(file), { recursive: true });
+  const lines = [{ type: 'user', cwd: folder, isSidechain: false, message: { role: 'user', content: 'Hello' } }];
+  await writeFile(file, lines.map((line) => `${JSON.stringify(line)}\n`).join(''));
+  const process = spawn('sleep', ['300'], { stdio: 'ignore' });
+  terminals.push(process);
+  const pid = process.pid ?? 0;
+  execFileSync('mkfifo', [path.join(SESSIONS_DIR, `${pid}.5a6b7c8d.key`)]);
+  const write = (next: string) =>
+    writeFile(path.join(SESSIONS_DIR, `${pid}.json`), JSON.stringify({ pid, sessionId, cwd: folder, kind: 'interactive', status: next, updatedAt: Date.now() }));
+  await write(status);
+  return write;
+}
+
+test.describe('Refresh of the git explorer', () => {
+  // plan-git_explorer/REQ-25, REQ-26: human acceptance scenario "The git explorer follows a turn of another session in the same repository"
+  test('a turn end of a session in a subfolder of the repository refreshes the changes and the open diff with no click', async ({ page, request }) => {
+    const repo = await newRepository('progetto');
+    await mkdir(path.join(repo, 'frontend'));
+    await writeFile(path.join(repo, 'README.md'), 'hello\nfirst edit\n');
+    const setStatus = await runExternalWithStatus('8f1c2d3e-0000-4000-8000-000000000010', path.join(repo, 'frontend'), 'busy');
+
+    await openExplorer(page, request, repo);
+    await expect(entry(page, path.join(repo, 'frontend'))).toContainText('Running', SCAN);
+    await fileEntry(page, 'Unstaged', 'README.md').click();
+    await expect(diffLines(page).filter({ hasText: /^\+first edit$/ })).toHaveCount(1);
+
+    await writeFile(path.join(repo, 'README.md'), 'hello\nfirst edit\nsecond edit\n');
+    await writeFile(path.join(repo, 'frontend', 'new.ts'), 'export const fresh = true;\n');
+    // No refresh before the turn ends: the panel does not poll.
+    await page.waitForTimeout(3_000);
+    await expect(fileEntry(page, 'Unstaged', 'frontend/new.ts')).toHaveCount(0);
+
+    await setStatus('idle');
+    await expect(entry(page, path.join(repo, 'frontend'))).toContainText('Idle', SCAN);
+    await expect(fileEntry(page, 'Unstaged', 'frontend/new.ts')).toContainText('Untracked');
+    await expect(fileEntry(page, 'Unstaged', 'README.md')).toHaveAttribute('aria-pressed', 'true');
+    await expect(diffLines(page).filter({ hasText: /^\+second edit$/ })).toHaveCount(1);
+    await expect(diffLines(page).filter({ hasText: /^\+first edit$/ })).toHaveCount(1);
+  });
+
+  // plan-git_explorer/REQ-25: a session outside the repository does not refresh it
+  test('a turn end of a session outside the repository does not refresh the panel', async ({ page, request }) => {
+    const repo = await newRepository('quiet-repo');
+    const other = await newPlainFolder('elsewhere');
+    const setStatus = await runExternalWithStatus('8f1c2d3e-0000-4000-8000-000000000011', other, 'busy');
+
+    await openExplorer(page, request, repo);
+    await expect(entry(page, other)).toContainText('Running', SCAN);
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+    await writeFile(path.join(repo, 'late.txt'), 'late\n');
+    let changesReads = 0;
+    page.on('request', (r) => {
+      if (isChanges(r.url())) changesReads += 1;
+    });
+    await setStatus('idle');
+    await expect(entry(page, other)).toContainText('Idle', SCAN);
+    await page.waitForTimeout(1_000);
+    expect(changesReads).toBe(0);
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+  });
+
+  // plan-git_explorer/REQ-24, REQ-26: human acceptance scenario "The user refreshes by hand"
+  test('"Refresh" after restoring the open file removes it from the list and closes its diff', async ({ page, request }) => {
+    const repo = await newRepository('manual-repo');
+    await writeFile(path.join(repo, 'README.md'), 'hello\nchanged\n');
+    await writeFile(path.join(repo, 'other.txt'), 'other\n');
+
+    await openExplorer(page, request, repo);
+    await expect(refreshButton(page)).toHaveAttribute('title', 'Refresh');
+    await fileEntry(page, 'Unstaged', 'README.md').click();
+    await expect(diffLines(page).filter({ hasText: /^\+changed$/ })).toHaveCount(1);
+
+    git(repo, 'checkout', '--', 'README.md');
+    await refreshButton(page).click();
+    await expect(fileEntry(page, 'Unstaged', 'README.md')).toHaveCount(0);
+    await expect(fileEntry(page, 'Unstaged', 'other.txt')).toBeVisible();
+    await expect(diffLines(page)).toHaveCount(0);
+    await expect(group(page, 'Unstaged').getByRole('button', { pressed: true })).toHaveCount(0);
+  });
+
+  // plan-git_explorer/REQ-24: "Refresh" reads the history and the branch again
+  test('"Refresh" shows a new commit in "History" and a new branch in the header', async ({ page, request }) => {
+    const repo = await newRepository('refresh-history-repo');
+    await openExplorer(page, request, repo);
+    await tab(page, 'History').click();
+    await expect(commitRows(page)).toHaveCount(1);
+
+    git(repo, 'checkout', '-q', '-b', 'feature/refresh');
+    await writeFile(path.join(repo, 'next.txt'), 'next\n');
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'Add next');
+    await refreshButton(page).click();
+    await expect(commitRows(page)).toHaveCount(2);
+    await expect(commitRows(page).first()).toContainText('Add next');
+    await expect(explorer(page)).toContainText('feature/refresh');
+  });
+
+  // plan-git_explorer/REQ-24: the same button in the panel of an external session
+  test('"Refresh" in the panel of an external session reads the changes and the branch again', async ({ page }) => {
+    const repo = await newRepository('external-refresh-repo');
+    await runExternal('8f1c2d3e-0000-4000-8000-000000000012', repo);
+    await page.goto('/');
+    await expect(entry(page, repo)).toBeVisible(SCAN);
+    await entry(page, repo).click();
+    await expect(conversation(page)).toContainText('Hi there');
+    await externalHeader(page).getByRole('button', { name: 'Git Explorer', exact: true }).click();
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+
+    await writeFile(path.join(repo, 'added.txt'), 'added\n');
+    git(repo, 'checkout', '-q', '-b', 'ext-branch');
+    await refreshButton(page).click();
+    await expect(fileEntry(page, 'Unstaged', 'added.txt')).toContainText('Untracked');
+    await expect(explorer(page)).toContainText('ext-branch');
+  });
+
+  // plan-git_explorer/REQ-23: human acceptance scenario "Opening the panel again reads the repository again"
+  test('opening the panel again after a commit made in a terminal shows the new commit and no longer lists its files', async ({ page, request }) => {
+    const repo = await newRepository('reopen-repo');
+    await writeFile(path.join(repo, 'work.ts'), 'export const work = 1;\n');
+    await openExplorer(page, request, repo);
+    await expect(fileEntry(page, 'Unstaged', 'work.ts')).toBeVisible();
+    await explorerButton(page).click();
+    await expect(explorer(page)).toHaveCount(0);
+
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'Commit the work');
+    await explorerButton(page).click();
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+    await tab(page, 'History').click();
+    await expect(commitRows(page)).toHaveCount(2);
+    await expect(commitRows(page).first()).toContainText('Commit the work');
+  });
+
+  // plan-git_explorer/REQ-26: an open commit closes when a refresh no longer lists it
+  test('an open commit closes after a refresh when it is no longer in the history', async ({ page, request }) => {
+    const repo = await newRepository('rewrite-repo');
+    await writeFile(path.join(repo, 'a.txt'), 'a\n');
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'To be dropped');
+    await openExplorer(page, request, repo);
+    await tab(page, 'History').click();
+    await commitRows(page).filter({ hasText: 'To be dropped' }).click();
+    await expect(backButton(page)).toBeVisible();
+
+    git(repo, 'reset', '-q', '--hard', 'HEAD~1');
+    await refreshButton(page).click();
+    await expect(backButton(page)).toHaveCount(0);
+    await expect(commitRows(page)).toHaveCount(1);
+    await expect(commitRows(page).first()).toContainText('first');
+  });
+});
