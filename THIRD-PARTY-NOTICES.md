@@ -19,3 +19,15 @@ The client ships these files from other projects. They are copied into the repos
 - Files → the SVG path data in `src/web/icons/Icons.tsx` and `src/desktop/startup-page.ts`.
 - Source → Lucide, https://lucide.dev. Taken from the npm package `lucide-static` 1.69.0. Icons drawn in the mock boards `.sdd/mockups/vexel-material3/` take their path data from the board.
 - Licence → ISC. Icons derived from Feather are also under the MIT licence. Full text of both in `src/web/icons/LICENSE`.
+
+## npm dependencies
+
+This repository contains only Vexel's own source and the files listed above. The npm dependencies are not copied into it: `npm install` downloads them, each under its own license.
+
+- The production dependencies, direct and transitive (118 packages), and their licenses are listed in [docs/dependency-licenses.md](docs/dependency-licenses.md). All of them are permissive: MIT, ISC, BSD-3-Clause, Apache-2.0 and BlueOak-1.0.0.
+
+## Electron and Chromium
+
+Electron is an npm dependency (MIT). It is not part of this repository.
+
+If you build and redistribute a packaged application (for example an AppImage or a `.deb`), the package will contain Electron, Chromium and Node.js, and their license notices must travel with it. Keep the `LICENSE` and `LICENSES.chromium.html` files that Electron ships in its distribution, and include the dependency licenses above.
