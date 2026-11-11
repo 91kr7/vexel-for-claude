@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/91kr7/vexel-for-claude/actions/workflows/ci.yml/badge.svg)](https://github.com/91kr7/vexel-for-claude/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Platform: Linux](https://img.shields.io/badge/platform-Linux-lightgrey)
+![Platform: Ubuntu](https://img.shields.io/badge/platform-Ubuntu-E95420)
 ![Node >= 22](https://img.shields.io/badge/node-%3E%3D22-339933)
 
 <!-- TODO: add a screenshot or a short GIF here, e.g. docs/screenshot.png -->
@@ -29,9 +29,20 @@ Claude Code is a terminal tool. When you work on several tasks at once you end u
 - **Keyboard first** – a shortcut for navigation and for the main session actions (press the keyboard button in the top bar to see them all).
 - **Light and dark themes.**
 
+## Platform support
+
+| Platform | Status |
+|----------|--------|
+| **Ubuntu** | Fully supported. Developed and tested on Ubuntu 24.04 LTS (X11) |
+| Other Linux distributions | Should work, but untested |
+| **Windows** | Not supported |
+| **macOS** | Not supported |
+
+Vexel relies on Linux desktop features: system notifications go through D-Bus (`org.freedesktop.Notifications`), the application-menu entry is a freedesktop `.desktop` file, and the project declares `os: linux`. Windows and macOS support is not planned for now.
+
 ## Requirements
 
-- **Linux** (macOS and Windows are not supported yet)
+- **Ubuntu** (or another Linux desktop)
 - **Node.js 22 or newer**
 - The [`claude` CLI](https://code.claude.com/docs/en/setup) installed and logged in
 - Build tools for the native `node-pty` module (`build-essential` and `python3` on Debian/Ubuntu)
