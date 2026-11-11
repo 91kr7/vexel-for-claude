@@ -1,6 +1,18 @@
 {
   "name": "ai-client",
   "version": "0.1.0",
+  "description": "One window for all your Claude Code sessions: live terminals, needs-input notifications, usage and cost, git explorer.",
+  "license": "MIT",
+  "author": "91kr7",
+  "homepage": "https://github.com/91kr7/vexel-for-claude#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/91kr7/vexel-for-claude.git"
+  },
+  "bugs": {
+    "url": "https://github.com/91kr7/vexel-for-claude/issues"
+  },
+  "keywords": ["claude-code", "electron", "terminal", "xterm", "developer-tools", "linux"],
   "private": true,
   "type": "module",
   "main": "dist/desktop/main.js",
