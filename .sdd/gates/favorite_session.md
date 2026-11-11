@@ -7,3 +7,4 @@
 | 2026-11-11 | plan | G2 requirements | pass | REQ-1..13 cover the analysis; yes/no verifiable; vocabulary of the spec |
 | 2026-11-11 | plan | question planner | decided | REQ-8 live update covers the session list only; history shows the mark at open; source analysis scope |
 | 2026-11-11 | plan | G3 coverage | pass | one batch; REQ-1..13 all covered; modify paths exist; acceptance scenarios cover every REQ |
+| 2026-11-11 | dev | G4 development | pass | build green (rerun); diff limited to INT files, specs, indexes; no tests or plan files touched |

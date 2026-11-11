@@ -1,4 +1,5 @@
 import path from 'node:path';
+import type { SessionFavoriteStore } from './session-favorite-store.js';
 import type { SessionNameStore } from './session-name-store.js';
 
 export type SessionState = 'working' | 'needs_input' | 'idle' | 'ended';
@@ -11,6 +12,7 @@ export interface SessionSummary {
   lastActivity: string;
   waitingTool?: string;
   resumable?: true;
+  favorite?: true;
 }
 
 export interface TrackedSession {
@@ -31,6 +33,7 @@ export interface HookEvent {
 export interface SessionStateTrackerOptions {
   now?: () => Date;
   names?: Pick<SessionNameStore, 'get' | 'move' | 'onChange'>;
+  favorites?: Pick<SessionFavoriteStore, 'has' | 'move' | 'onChange'>;
 }
 
 export type ChangeCause =
@@ -38,7 +41,8 @@ export type ChangeCause =
   | { type: 'hook'; hookEventName: string }
   | { type: 'input' }
   | { type: 'exit' }
-  | { type: 'name' };
+  | { type: 'name' }
+  | { type: 'favorite' };
 
 type ChangeListener = (summary: SessionSummary, cause: ChangeCause) => void;
 type RemoveListener = (sessionId: string) => void;
@@ -89,6 +93,7 @@ export function labelOf(prompt: unknown): string {
 export class SessionStateTracker {
   readonly #now: () => Date;
   readonly #names: SessionStateTrackerOptions['names'];
+  readonly #favorites: SessionStateTrackerOptions['favorites'];
   readonly #entries = new Map<string, Entry>();
   readonly #listeners = new Set<ChangeListener>();
   readonly #removeListeners = new Set<RemoveListener>();
@@ -96,9 +101,17 @@ export class SessionStateTracker {
   constructor(options: SessionStateTrackerOptions = {}) {
     this.#now = options.now ?? (() => new Date());
     this.#names = options.names;
+    this.#favorites = options.favorites;
     this.#names?.onChange((key) => {
       for (const entry of this.#entries.values()) {
         if (this.#nameKey(entry) === key && this.#refreshLabel(entry)) this.#notify(entry.summary, { type: 'name' });
+      }
+    });
+    this.#favorites?.onChange((key) => {
+      for (const entry of this.#entries.values()) {
+        if (this.#nameKey(entry) === key && this.#refreshFavorite(entry)) {
+          this.#notify(entry.summary, { type: 'favorite' });
+        }
       }
     });
   }
@@ -121,6 +134,7 @@ export class SessionStateTracker {
       claudeSessionId: session.resumedFrom?.sessionId,
     };
     this.#refreshLabel(entry);
+    this.#refreshFavorite(entry);
     this.#entries.set(session.id, entry);
     this.#notify(entry.summary, { type: 'track' });
     session.onExit(() =>
@@ -223,12 +237,22 @@ export class SessionStateTracker {
     return true;
   }
 
+  #refreshFavorite(entry: Entry): boolean {
+    const favorite = this.#favorites?.has(this.#nameKey(entry)) === true;
+    if (favorite === (entry.summary.favorite === true)) return false;
+    const { favorite: _previous, ...rest } = entry.summary;
+    entry.summary = favorite ? { ...rest, favorite: true } : rest;
+    return true;
+  }
+
   #setClaudeSessionId(entry: Entry, claudeSessionId: string): void {
     const previousKey = this.#nameKey(entry);
     entry.claudeSessionId = claudeSessionId;
     if (previousKey === claudeSessionId) return;
     void this.#names?.move(previousKey, claudeSessionId).catch(() => undefined);
+    void this.#favorites?.move(previousKey, claudeSessionId).catch(() => undefined);
     if (this.#refreshLabel(entry)) this.#notify(entry.summary, { type: 'name' });
+    if (this.#refreshFavorite(entry)) this.#notify(entry.summary, { type: 'favorite' });
   }
 
   #update(sessionId: string, changes: Partial<SessionSummary>, cause: ChangeCause): void {

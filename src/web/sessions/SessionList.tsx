@@ -4,6 +4,8 @@ import { PencilIcon } from '../icons/Icons';
 import { useSessionCommand } from '../shortcut-channel';
 import { folderNameOf } from './Avatar';
 import { EndedEntryActions } from './EndedEntryActions';
+import { FavoriteButton } from './FavoriteButton';
+import { FavoriteIndicator } from './FavoriteIndicator';
 import type { ContextOccupancy, LoadStatus, RunningTool, SessionSummary, SessionUsage } from './live-session-store';
 import { ProgressBar } from './ProgressBar';
 import { RelativeTime } from './RelativeTime';
@@ -34,6 +36,15 @@ function EntryTitle({ session }: { session: SessionSummary }) {
     <span className="session-entry-title" title={session.folder}>
       {folderNameOf(session.folder)}
     </span>
+  );
+}
+
+function EntryHeading({ session }: { session: SessionSummary }) {
+  return (
+    <>
+      <EntryTitle session={session} />
+      {session.favorite === true && <FavoriteIndicator />}
+    </>
   );
 }
 
@@ -82,7 +93,7 @@ function EntryRow({ session, open, onOpen, editor }: EntryProps) {
     <>
       <span className="session-entry-line">
         <StateBadge state={session.state} variant="dot" />
-        <EntryTitle session={session} />
+        <EntryHeading session={session} />
         {externalNeedsInput && <span className="mono-chip vx-surface-2 session-external">External</span>}
         <StateBadge state={session.state} />
       </span>
@@ -120,7 +131,7 @@ function NeedsInputCard({ session, open, onOpen, editor }: EntryProps) {
     <>
       <span className="session-entry-line">
         <span className="perm-tag">Needs Input</span>
-        <EntryTitle session={session} />
+        <EntryHeading session={session} />
       </span>
       <span className="session-entry-line">
         {editor ?? (
@@ -306,6 +317,7 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
                         onResumed={onResumed}
                       />
                     )}
+                    <FavoriteButton sessionId={session.id} favorite={session.favorite === true} hidden={renaming} />
                     <button
                       ref={(button) => {
                         if (button) renameButtons.current.set(session.id, button);

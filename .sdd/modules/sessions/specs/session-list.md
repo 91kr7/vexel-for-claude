@@ -63,6 +63,13 @@ Hosted needs-input card (look of `#permission-banner`): a block with the class `
 - the card button is described by the needs-input line (`aria-describedby`).
 - the open card has `aria-current="true"` on its button, the accent glow over its background and the 2 px accent bar inside its left edge.
 
+Favorite indicator (a marked entry, in every group):
+- FavoriteIndicator right after the folder name on line 1 of a row, and after the folder name in the needs-input card. It never shrinks, so the folder name is cut first. A row of an external session needing input keeps the "External" chip after it.
+- an entry with `favorite: true` shows it. The entry keeps its place and its group.
+
+"Mark as Favorite" / "Remove Favorite" (every entry, rows and the needs-input card):
+- FavoriteButton on the entry, "Remove Favorite" when the entry has `favorite: true`. It sits left of "Rename". On an ended hosted row, EndedEntryActions stay left of it. Tab order: entry, EndedEntryActions, FavoriteButton, "Rename". It is hidden with "Rename" during a rename. Its error shows under the entry.
+
 "Rename" (every entry, rows and the needs-input card):
 - a 20 px square icon button (pencil icon, 14 px, `--text-muted` on `--bg-surface-2`, 4 px radius), with the accessible name and the tooltip "Rename". It sits beside the entry button, not inside it, after the EndedEntryActions in the tab order.
 - place → top right of the row, over its state name; top right inside the needs-input card. On an ended hosted row, EndedEntryActions move to its left.
@@ -76,6 +83,7 @@ Actions:
 - click anywhere on the hosted needs-input card → `onOpen(id)`, once.
 - "Reply" → `onOpen(id)`, once.
 - "Resume" and "Dismiss" of an ended hosted entry → EndedEntryActions. A resume calls `onResumed(id)` with the new session id. They do not call `onOpen`.
+- "Mark as Favorite" and "Remove Favorite" → FavoriteButton. They do not call `onOpen` or `onReorder`.
 - "Rename" → opens the name editor of the entry (above). It does not call `onOpen` or `onReorder`.
 - shortcut command `rename` (ShortcutChannel), only when the list has the entry of `openSessionId` → opens the name editor of that entry, as "Rename" does. The entry scrolls into view and the focus is in the "Session Name" field. When that entry already edits, nothing changes. Another entry that was editing ends its edit.
 - EndedEntryActions of an ended hosted entry get `open` → `true` only for the entry of `openSessionId`.
@@ -107,6 +115,8 @@ Drag feedback (the mock has no drag state):
 - Only the open session's button has `aria-current="true"`.
 - Only the entries of ended hosted sessions show "Dismiss" or "Resume". Working, needs-input, idle and external entries show neither.
 - Every entry, hosted or external, in any state, has "Rename".
+- Every entry, hosted or external, in any state, has the favorite button.
+- Marking or unmarking never moves an entry or changes its group.
 - Renaming never moves an entry: the order comes from `order` and the last activity, not from the label.
 - The needs-input entries are the most visible of the list: amber, first group.
 - An external entry is told apart without colour: the dashed border, and the "External" chip when it needs input.
@@ -119,7 +129,7 @@ Drag feedback (the mock has no drag state):
 
 ## Dependencies
 
-- groupSessions, SessionOrderStore (`SessionOrder`), usage format (`percentOf`, `usageLevelOf`, `costText`, `INCOMPLETE_COST_TEXT`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions, SessionNameEditor
+- groupSessions, SessionOrderStore (`SessionOrder`), usage format (`percentOf`, `usageLevelOf`, `costText`, `INCOMPLETE_COST_TEXT`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions, SessionNameEditor, FavoriteButton, FavoriteIndicator
 - AreaState, IconSet, ShortcutChannel, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
@@ -135,4 +145,5 @@ Drag feedback (the mock has no drag state):
 - `plan-session_usage/REQ-1`, `plan-session_usage/REQ-8`, `plan-session_usage/REQ-9`, `plan-session_usage/REQ-10`
 - `plan-session_usage/REQ-22`, `plan-session_usage/REQ-29`, `plan-session_usage/REQ-30`, `plan-session_usage/REQ-33`, `plan-session_usage/REQ-34`
 - `plan-session_list_width/REQ-10`
+- `plan-favorite_session/REQ-1`, `plan-favorite_session/REQ-2`, `plan-favorite_session/REQ-3`, `plan-favorite_session/REQ-8`, `plan-favorite_session/REQ-9`, `plan-favorite_session/REQ-13`
 - `plan-keyboard_shortcuts/REQ-16`, `plan-keyboard_shortcuts/REQ-17`, `plan-keyboard_shortcuts/REQ-18`

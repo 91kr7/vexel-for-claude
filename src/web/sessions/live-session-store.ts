@@ -40,6 +40,7 @@ export interface SessionSummary {
   external?: true;
   waitingTool?: string;
   resumable?: true;
+  favorite?: true;
   runningTool?: RunningTool;
   usage?: SessionUsage;
 }

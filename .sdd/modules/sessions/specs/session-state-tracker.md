@@ -10,7 +10,7 @@ type: backend service
 
 ## Contract
 
-- `new SessionStateTracker(options?)` → `options.now` gives the current time. Default: the system clock. `options.names` → the SessionNameStore. Default: none, so no names.
+- `new SessionStateTracker(options?)` → `options.now` gives the current time. Default: the system clock. `options.names` → the SessionNameStore. Default: none, so no names. `options.favorites` → the SessionFavoriteStore. Default: none, so no favorites.
 - `track(session)` → `session` is `{ id, cwd, onExit(listener), resumedFrom? }` (a registry Session fits).
   - adds the session: state `idle`, label = last segment of `cwd`, last activity = now.
   - `resumedFrom` given → Claude Code session id = `resumedFrom.sessionId`. When `resumedFrom.firstUserMessage` gives a non-empty label (label rule below), that is the label and it is final.
@@ -36,14 +36,16 @@ type: backend service
 - `{ type: "input" }` → `applyUserInput`.
 - `{ type: "exit" }` → the session process exited.
 - `{ type: "name" }` → the label changed because of a name (rules below).
+- `{ type: "favorite" }` → the favorite mark changed (rules below).
 
-`SessionSummary` → `{ id, folder, label, state, lastActivity, waitingTool?, resumable? }`.
+`SessionSummary` → `{ id, folder, label, state, lastActivity, waitingTool?, resumable?, favorite? }`.
 
 - `folder` → the session `cwd`.
 - `state` → `working` | `needs_input` | `idle` | `ended`.
 - `lastActivity` → ISO-8601 UTC string.
 - `waitingTool` → the tool that waits for permission. Present only in `needs_input`, and only when known (rule below).
 - `resumable` → `true` when the session has a saved conversation: it was tracked with `resumedFrom.sessionId`, or it got a `UserPromptSubmit` before it ended. Otherwise the field is absent. Once set, it stays.
+- `favorite` → `true` when SessionFavoriteStore has the name key of the session. Otherwise the field is absent.
 
 Hook event → state (`event.hook_event_name`):
 
@@ -69,6 +71,9 @@ any other event or notification_type              → no change at all
 - `label` → the name of the name key in SessionNameStore when it has one, else the default label. This holds for `track`, `get`, `list` and every notification.
 - A name change of a key → each tracked session with that name key whose label changes is notified with `{ type: "name" }`. Ended sessions too.
 - When the Claude Code session id is set or changes, the name of the old name key moves to the new one (SessionNameStore `move`). When the label then changes (the new key already had a name), it notifies `{ type: "name" }`.
+- `favorite` follows the name key. This holds for `track`, `get`, `list` and every notification.
+- A favorite change of a key → each tracked session with that name key whose `favorite` changes is notified with `{ type: "favorite" }`. Ended sessions too. State and last activity stay as they are.
+- When the Claude Code session id is set or changes, the favorite mark of the old name key moves to the new one (SessionFavoriteStore `move`). When `favorite` then changes, it notifies `{ type: "favorite" }`.
 - User input → last activity = now, notified. When `data` is exactly `\x1b` (Esc) or `\x03` (Ctrl+C) and the state is `working` or `needs_input`, the state becomes `idle`. Longer input that starts with `\x1b` (an arrow key) is not an interrupt.
 - Claude Code session id: each hook event with a non-empty string `session_id` sets it, the last one wins. This holds for every event, also one that changes no state. It notifies nothing.
 - Waiting tool:
@@ -82,13 +87,13 @@ any other event or notification_type              → no change at all
   ```
 
   An AskUserQuestion or an `elicitation_dialog` gives no waiting tool.
-- `ended` is final: later hook events and input change nothing and notify nothing. Only a name change still changes the label.
+- `ended` is final: later hook events and input change nothing and notify nothing. Only a name change still changes the label, and only a favorite change still changes `favorite`.
 - Sessions stay in the list until `dismiss` removes them or the server stops. Only ended sessions can be removed.
 - A removed session is unknown from then on: its hook events give `false` and its input changes nothing.
 
 ## Dependencies
 
-- SessionNameStore
+- SessionNameStore, SessionFavoriteStore
 
 ## Requirements served
 
@@ -96,4 +101,5 @@ any other event or notification_type              → no change at all
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-22`
 - `plan-session_notifications/REQ-14`, `plan-session_notifications/REQ-15`, `plan-session_notifications/REQ-16`
 - `plan-session_list_improvements/REQ-2`, `plan-session_list_improvements/REQ-4`, `plan-session_list_improvements/REQ-5`, `plan-session_list_improvements/REQ-6`
+- `plan-favorite_session/REQ-3`, `plan-favorite_session/REQ-7`, `plan-favorite_session/REQ-8`, `plan-favorite_session/REQ-9`
 - `plan-session_list_improvements/REQ-26`, `plan-session_list_improvements/REQ-27`, `plan-session_list_improvements/REQ-28`, `plan-session_list_improvements/REQ-36`, `plan-session_list_improvements/REQ-37`

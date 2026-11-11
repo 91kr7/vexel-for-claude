@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { SessionFavoriteStore } from '../sessions/session-favorite-store.js';
 import type { SessionNameStore } from '../sessions/session-name-store.js';
 import type { SessionRegistry } from '../sessions/session-registry.js';
 import { labelOf, type SessionStateTracker } from '../sessions/session-state-tracker.js';
@@ -10,6 +11,7 @@ export interface PastSessionEntry {
   label: string;
   lastActivity: string;
   runningElsewhere: boolean;
+  favorite?: true;
 }
 
 export interface PastSessionGroup {
@@ -23,6 +25,7 @@ export interface PastSessionListDependencies {
   registry: Pick<SessionRegistry, 'list'>;
   tracker: Pick<SessionStateTracker, 'liveClaudeSessionIds'>;
   names?: Pick<SessionNameStore, 'get'>;
+  favorites?: Pick<SessionFavoriteStore, 'has'>;
 }
 
 export function registerPastSessionListRoute(app: FastifyInstance, deps: PastSessionListDependencies): void {
@@ -46,6 +49,7 @@ export function registerPastSessionListRoute(app: FastifyInstance, deps: PastSes
         label: deps.names?.get(session.id) ?? labelOf(session.firstUserMessage),
         lastActivity: session.lastModified.toISOString(),
         runningElsewhere: runningElsewhere.has(session.id),
+        ...(deps.favorites?.has(session.id) && { favorite: true as const }),
       });
       groups.set(session.folder, entries);
     }

@@ -4,6 +4,7 @@ import { ErrorMessage } from '../feedback/ErrorMessage';
 import { AreaState } from '../feedback/AreaState';
 import { HistoryIcon, SearchIcon, TerminalIcon, XIcon } from '../icons/Icons';
 import { Avatar } from '../sessions/Avatar';
+import { FavoriteIndicator } from '../sessions/FavoriteIndicator';
 import { RunningElsewhereWarning } from './RunningElsewhereWarning';
 
 interface PastSessionEntry {
@@ -11,6 +12,7 @@ interface PastSessionEntry {
   label: string;
   lastActivity: string;
   runningElsewhere: boolean;
+  favorite?: true;
 }
 
 interface PastSessionGroup {
@@ -33,6 +35,13 @@ const RESUME_FAILED = 'Could not resume the session.';
 async function errorMessage(response: Response): Promise<string> {
   const body = (await response.json().catch(() => null)) as { error?: string } | null;
   return ERROR_MESSAGES[body?.error ?? ''] ?? RESUME_FAILED;
+}
+
+function describedBy(id: string, session: PastSessionEntry): string {
+  const parts = [`${id}-time`];
+  if (session.runningElsewhere) parts.push(`${id}-running`);
+  if (session.favorite === true) parts.push(`${id}-favorite`);
+  return parts.join(' ');
 }
 
 function formatDate(iso: string): string {
@@ -170,8 +179,15 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
                     <label key={session.id} className={checked ? 'dialog-row dialog-row-checked' : 'dialog-row'}>
                       <Avatar folder={group.folder} />
                       <span className="dialog-row-text">
-                        <span id={`${id}-label`} className="dialog-row-title">
-                          {session.label}
+                        <span className="past-session-heading">
+                          <span id={`${id}-label`} className="dialog-row-title">
+                            {session.label}
+                          </span>
+                          {session.favorite === true && (
+                            <span id={`${id}-favorite`} className="past-session-favorite">
+                              <FavoriteIndicator />
+                            </span>
+                          )}
                         </span>
                         <time id={`${id}-time`} className="dialog-row-detail" dateTime={session.lastActivity}>
                           {formatDate(session.lastActivity)}
@@ -190,7 +206,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
                         checked={checked}
                         disabled={busy}
                         aria-labelledby={`${id}-label`}
-                        aria-describedby={session.runningElsewhere ? `${id}-time ${id}-running` : `${id}-time`}
+                        aria-describedby={describedBy(id, session)}
                         onChange={() => setSelected(session)}
                       />
                     </label>
