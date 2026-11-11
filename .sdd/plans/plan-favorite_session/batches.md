@@ -6,7 +6,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [favorite](batches/batch-favorite.md) | Favorite session | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | — | implemented | The user marks a session as favorite from the list |
+| [favorite](batches/batch-favorite.md) | Favorite session | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | — | certified | The user marks a session as favorite from the list |
 
 Execution order: `favorite`.
 
