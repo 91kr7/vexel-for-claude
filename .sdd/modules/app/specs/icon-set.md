@@ -36,7 +36,7 @@ Components and where the client uses them today:
 - `GitBranchIcon` → the GitExplorerButton and the branch chip of the GitExplorerPanel (module git)
 - `RefreshCwIcon` → "Refresh" in the GitExplorerPanel (module git)
 - `PencilIcon` → "Rename" of a list entry
-- `StarIcon` → "Mark as Favorite" and "Remove Favorite" of a list entry (FavoriteButton), and the FavoriteIndicator. It has a filled variant (`filled`), painted with `currentColor`
+- `StarIcon` → "Mark as Favorite" and "Remove Favorite" of a list entry (FavoriteButton), and the FavoriteIndicator. It has a filled variant (`filled`): the SVG has the class `icon-filled` and its computed `fill` is `currentColor`; the other icons keep `fill: none`
 - `CirclePauseIcon` → "Interrupt" in the SessionView subbar
 - no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
 

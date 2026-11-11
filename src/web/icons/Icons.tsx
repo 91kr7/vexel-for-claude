@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 function LucideIcon({ children, filled = false }: { children: ReactNode; filled?: boolean }) {
   return (
     <svg
-      className="icon"
+      className={filled ? 'icon icon-filled' : 'icon'}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
       fill={filled ? 'currentColor' : 'none'}
