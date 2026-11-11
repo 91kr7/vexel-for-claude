@@ -27,6 +27,7 @@ import {
   PlusIcon,
   PowerIcon,
   SparkIcon,
+  StarIcon,
   SunIcon,
   TerminalIcon,
   TriangleAlertIcon,
@@ -53,6 +54,7 @@ const icons: [string, ComponentType][] = [
   ['ChevronDownIcon', ChevronDownIcon],
   ['ChevronUpIcon', ChevronUpIcon],
   ['PencilIcon', PencilIcon],
+  ['StarIcon', StarIcon],
   ['CheckIcon', CheckIcon],
   ['ArrowDownIcon', ArrowDownIcon],
   ['FolderIcon', FolderIcon],
@@ -194,6 +196,16 @@ describe('IconSet', () => {
 
   it('CircleXIcon draws the circle of board "Sessione esterna"', () => {
     expect(renderToStaticMarkup(<CircleXIcon />)).toMatch(/<circle\b(?=[^>]*\scx="12")(?=[^>]*\scy="12")(?=[^>]*\sr="10")[^>]*>/);
+  });
+
+  // IconSet: StarIcon is the Lucide star; outline by default, filled with currentColor on `filled`
+  it('StarIcon draws one star outline, and fills it with currentColor when filled', () => {
+    const outline = renderToStaticMarkup(<StarIcon />);
+    const filled = renderToStaticMarkup(<StarIcon filled />);
+    expect(svgTag(outline)).toContain('fill="none"');
+    expect(svgTag(filled)).toContain('fill="currentColor"');
+    expect(drawnShapes(filled)).toEqual(drawnShapes(outline));
+    expect(drawnShapes(outline)).toHaveLength(1);
   });
 
   // IconSet: SparkIcon is the ember four-point star of the board, a filled shape with the class "spark"

@@ -17,10 +17,11 @@ type: configuration
 - at start, writes the HookSettings file for `http://127.0.0.1:<port>`.
 - one shared SessionRegistry that starts the CLI with that settings file.
 - one SessionNameStore, loaded at start from the data folder (`dataDirOf()`: `AI_CLIENT_DATA_DIR`, else `$XDG_DATA_HOME/ai-client`).
-- one shared SessionStateTracker with that name store. It tracks every session the registry starts.
-- registers StartSessionRoute, StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute (with the tracker), RenameSessionRoute (with the tracker, the scanner and the name store) and FolderRoute.
-- one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute (also with the name store), ResumeSessionRoute and ResumeEndedSessionRoute with them, the registry and the tracker.
-- one ExternalSessionScanner on that ExternalSessionCheck and SessionHistory, with the hosted pids of the registry and the name store. It starts with the server.
+- one SessionFavoriteStore, loaded at start from the same data folder.
+- one shared SessionStateTracker with that name store and favorite store. It tracks every session the registry starts.
+- registers StartSessionRoute, StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute (with the tracker), RenameSessionRoute (with the tracker, the scanner and the name store), FavoriteSessionRoute (with the tracker, the scanner and the favorite store) and FolderRoute.
+- one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute (also with the name store and the favorite store), ResumeSessionRoute and ResumeEndedSessionRoute with them, the registry and the tracker.
+- one ExternalSessionScanner on that ExternalSessionCheck and SessionHistory, with the hosted pids of the registry, the name store and the favorite store. It starts with the server.
 - it starts listening only after one `scan()` of that scanner has settled. A scan that fails or throws does not stop the listen.
 - passes the scanner to SessionListRoute and SessionEventsRoute.
 - one AttentionMonitor on the tracker, the scanner and the registry, created before the scanner starts. Registers AttentionRoute with it.
@@ -40,7 +41,7 @@ type: configuration
 ## Dependencies
 
 - LocalAccessGuard
-- SessionRegistry, SessionStateTracker, SessionNameStore, RenameSessionRoute, HookSettings, StartSessionRoute, StopSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute, ResumeEndedSessionRoute, AttentionMonitor, AttentionRoute, RunningToolMonitor, UsageMonitor (module sessions)
+- SessionRegistry, SessionStateTracker, SessionNameStore, SessionFavoriteStore, RenameSessionRoute, FavoriteSessionRoute, HookSettings, StartSessionRoute, StopSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute, ResumeEndedSessionRoute, AttentionMonitor, AttentionRoute, RunningToolMonitor, UsageMonitor (module sessions)
 - PlanUsageRoute, PlanLimitsReader
 - FolderRoute (module folders)
 - SessionHistory, ExternalSessionCheck, PastSessionListRoute, ResumeSessionRoute (module history)

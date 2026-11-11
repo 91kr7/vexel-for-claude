@@ -198,6 +198,16 @@ describe('LiveSessionStore', () => {
     expect(store.getSnapshot()[0]?.label).toBe('Nuova etichetta');
   });
 
+  // plan-favorite_session/REQ-8: a session event carries the mark, and a later event without it removes it
+  it('shows the favorite mark of a session event and drops it when a later event has none', async () => {
+    const store = newStore();
+    await loaded(store, [summary('a')]);
+    lastSocket().receive(event({ ...summary('a'), favorite: true }));
+    expect(store.getSnapshot()[0]?.favorite).toBe(true);
+    lastSocket().receive(event(summary('a')));
+    expect(store.getSnapshot()[0]?.favorite).toBeUndefined();
+  });
+
   // plan-claude_sessions_client/REQ-15: listeners are called after each change and can unsubscribe
   it('calls listeners after each change until they unsubscribe', async () => {
     const store = newStore();

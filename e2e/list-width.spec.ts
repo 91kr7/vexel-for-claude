@@ -411,7 +411,7 @@ test.describe('List panel width', () => {
     const folder = await startSession(request);
     await openPage(page);
     await entry(page, folder).focus();
-    const passed = await tabToEdge(page, 10);
+    const passed = await tabToEdge(page);
     expect(passed.filter((step) => step.startsWith('outside')), 'no stop outside the list panel before the edge').toEqual([]);
   });
 

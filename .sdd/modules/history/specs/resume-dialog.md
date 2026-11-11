@@ -28,6 +28,7 @@ Shows:
 - one section per visible group, in the order of the route, named by the folder path. Its heading is the full folder path in `.section-label .section-label-path`: mono 10 px, `--text-muted`, not uppercase, wrapping.
 - one radio row per visible session, in the order of the route, drawn as a "Recent" row of FolderChooser: the Avatar of the folder, the label (12 px) above its date and time ("DD/MM/YYYY HH:MM:SS", 24-hour clock, mono 11 px, `--text-muted`), and the radio.
   - the radio is named by the label and described by the date and time.
+  - a session with `favorite` → FavoriteIndicator right after the label, on the same line. The radio is also described by "Favorite". The dialog offers no action to mark or unmark. The mark is read when the dialog opens.
   - a session with `runningElsewhere` → the amber pill "Running in a terminal" (the StateBadge `chip` look in amber, with `TerminalIcon` at 12 px), 4 px under the date. The radio is also described by the pill.
   - the selected session → its radio is checked and its row has the checked look of a "Recent" row. On open no session is selected.
 - "Resume" → disabled while no session is selected. While a resume runs it is busy (Dialog `primaryBusy`): Spinner, disabled, same name.
@@ -73,7 +74,7 @@ Errors (an ErrorMessage under the scrolling area, the dialog stays open):
 ## Dependencies
 
 - Dialog, AreaState, ErrorMessage, IconSet (`HistoryIcon`, `TerminalIcon`, `SearchIcon`, `XIcon`), ThemeTokens, WebEntry (module app)
-- Avatar (module sessions)
+- Avatar, FavoriteIndicator (module sessions)
 - FolderChooser (module folders), for the row and heading look
 - RunningElsewhereWarning, PastSessionListRoute, ResumeSessionRoute
 

@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { ExternalSessionCheck, RunningSessionFile } from '../history/external-session-check.js';
 import type { SessionHistory } from '../history/session-history.js';
+import type { SessionFavoriteStore } from '../sessions/session-favorite-store.js';
 import type { SessionNameStore } from '../sessions/session-name-store.js';
 import { labelOf } from '../sessions/session-state-tracker.js';
 
@@ -11,6 +12,7 @@ export interface ExternalSessionSummary {
   state: 'working' | 'needs_input' | 'idle';
   lastActivity: string;
   external: true;
+  favorite?: true;
 }
 
 export type ExternalSessionChange =
@@ -22,6 +24,7 @@ export interface ExternalSessionScannerDependencies {
   history: Pick<SessionHistory, 'get'>;
   hostedPids: () => Iterable<number>;
   names?: Pick<SessionNameStore, 'get' | 'onChange'>;
+  favorites?: Pick<SessionFavoriteStore, 'has' | 'onChange'>;
   intervalMs?: number;
   now?: () => Date;
 }
@@ -36,7 +39,13 @@ interface Entry {
 }
 
 function sameSummary(a: ExternalSessionSummary, b: ExternalSessionSummary): boolean {
-  return a.folder === b.folder && a.label === b.label && a.state === b.state && a.lastActivity === b.lastActivity;
+  return (
+    a.folder === b.folder &&
+    a.label === b.label &&
+    a.state === b.state &&
+    a.lastActivity === b.lastActivity &&
+    a.favorite === b.favorite
+  );
 }
 
 function stateOf(status: string | undefined): ExternalSessionSummary['state'] {
@@ -76,6 +85,12 @@ export class ExternalSessionScanner {
       const label = this.#labelOf(id, entry.defaultLabel);
       if (label === entry.summary.label) return;
       entry.summary = { ...entry.summary, label };
+      this.#notify({ type: 'session', session: { ...entry.summary } });
+    });
+    deps.favorites?.onChange((id, favorite) => {
+      const entry = this.#entries.get(id);
+      if (!entry || (entry.summary.favorite === true) === favorite) return;
+      entry.summary = this.#withFavorite(entry.summary, favorite);
       this.#notify({ type: 'session', session: { ...entry.summary } });
     });
   }
@@ -123,6 +138,7 @@ export class ExternalSessionScanner {
         lastActivity: typeof file.updatedAt === 'number' ? new Date(file.updatedAt).toISOString() : firstSeen,
         external: true,
       };
+      if (this.#deps.favorites?.has(id)) summary.favorite = true;
       const current = this.#entries.get(id);
       this.#entries.set(id, { summary, defaultLabel, labelFromMessage, firstSeen });
       if (!current || !sameSummary(current.summary, summary)) this.#notify({ type: 'session', session: { ...summary } });
@@ -153,6 +169,11 @@ export class ExternalSessionScanner {
     if (generation !== this.#generation) return;
     this.#timer = setTimeout(() => void this.#loop(generation), this.#intervalMs);
     this.#timer.unref();
+  }
+
+  #withFavorite(summary: ExternalSessionSummary, favorite: boolean): ExternalSessionSummary {
+    const { favorite: _previous, ...rest } = summary;
+    return favorite ? { ...rest, favorite: true } : rest;
   }
 
   #labelOf(id: string, defaultLabel: string): string {

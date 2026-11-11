@@ -215,7 +215,9 @@ test('the keyboard renames an open session: the entry and the header show the na
   // "Rename" is hidden until the focus inside the entry is visible from the keyboard
   await page.mouse.move(1, 1);
   await expect.poll(() => seenOpacity(page, target.folder)).toBe(0);
+  // Tab order: entry, favorite button (plan-favorite_session), "Rename"
   await entry(page, target.folder).focus();
+  await page.keyboard.press('Tab');
   await page.keyboard.press('Tab');
   await expect(renameButton(page, target.folder)).toBeFocused();
   await expect.poll(() => seenOpacity(page, target.folder)).toBe(1);

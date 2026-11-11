@@ -25,11 +25,13 @@ import { registerAttentionRoute } from './sessions/attention-route.js';
 import { registerDismissSessionRoute } from './sessions/dismiss-session-route.js';
 import { registerHookEventRoute } from './sessions/hook-event-route.js';
 import { writeHookSettings } from './sessions/hook-settings.js';
+import { registerFavoriteSessionRoute } from './sessions/favorite-session-route.js';
 import { registerRenameSessionRoute } from './sessions/rename-session-route.js';
 import { registerResumeEndedSessionRoute } from './sessions/resume-ended-session-route.js';
 import { RunningToolMonitor } from './sessions/running-tool-monitor.js';
 import { registerSessionEventsRoute } from './sessions/session-events-route.js';
 import { registerSessionListRoute } from './sessions/session-list-route.js';
+import { SessionFavoriteStore } from './sessions/session-favorite-store.js';
 import { dataDirOf, SessionNameStore } from './sessions/session-name-store.js';
 import { SessionRegistry } from './sessions/session-registry.js';
 import { SessionStateTracker } from './sessions/session-state-tracker.js';
@@ -52,7 +54,8 @@ const app = Fastify({ logger: true });
 const settingsPath = await writeHookSettings(`http://${HOST}:${port}`);
 const registry = new SessionRegistry({ settingsPath });
 const names = await SessionNameStore.load(dataDirOf());
-const tracker = new SessionStateTracker({ names });
+const favorites = await SessionFavoriteStore.load(dataDirOf());
+const tracker = new SessionStateTracker({ names, favorites });
 registry.onSessionStart((session) => tracker.track(session));
 const history = new SessionHistory();
 const externalCheck = new ExternalSessionCheck();
@@ -61,6 +64,7 @@ const externalScanner = new ExternalSessionScanner({
   history,
   hostedPids: () => registry.hostedPids(),
   names,
+  favorites,
 });
 const transcriptReader = new TranscriptReader();
 const attentionMonitor = new AttentionMonitor({ tracker, scanner: externalScanner, registry });
@@ -75,6 +79,7 @@ registerStartSessionRoute(app, registry);
 registerStopSessionRoute(app, registry);
 registerDismissSessionRoute(app, tracker);
 registerRenameSessionRoute(app, { tracker, scanner: externalScanner, names });
+registerFavoriteSessionRoute(app, { tracker, scanner: externalScanner, favorites });
 registerResumeEndedSessionRoute(app, { tracker, history, registry, externalCheck });
 registerAttachSessionRoute(app, registry, tracker);
 registerSessionListRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor);
@@ -85,7 +90,7 @@ const gitRunner = new GitRunner();
 registerRepositoryRoute(app, gitRunner);
 registerChangesRoutes(app, gitRunner);
 registerHistoryRoutes(app, gitRunner);
-registerPastSessionListRoute(app, { history, externalCheck, registry, tracker, names });
+registerPastSessionListRoute(app, { history, externalCheck, registry, tracker, names, favorites });
 registerResumeSessionRoute(app, { history, registry });
 registerConversationStreamRoute(app, { scanner: externalScanner, reader: transcriptReader });
 registerItemContentRoute(app, { scanner: externalScanner, reader: transcriptReader });
