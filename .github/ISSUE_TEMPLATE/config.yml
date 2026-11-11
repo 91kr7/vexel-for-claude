@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea
+    url: https://github.com/91kr7/vexel-for-claude/discussions
+    about: Ask questions and share ideas in Discussions.
+  - name: Security vulnerability
+    url: https://github.com/91kr7/vexel-for-claude/security/advisories/new
+    about: Please report security problems privately, not as a public issue.
