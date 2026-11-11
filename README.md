@@ -7,7 +7,16 @@
 ![Platform: Ubuntu](https://img.shields.io/badge/platform-Ubuntu-E95420)
 ![Node >= 22](https://img.shields.io/badge/node-%3E%3D22-339933)
 
-<!-- TODO: add a screenshot or a short GIF here, e.g. docs/screenshot.png -->
+<p align="center">
+  <img src="docs/screenshots/session-dark.png" alt="Vexel for Claude: the session list with one session needing input, and a Claude Code terminal" width="900">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/git-explorer-dark.png" alt="The Git explorer next to a session" width="445">
+  <img src="docs/screenshots/session-light.png" alt="The light theme" width="445">
+</p>
+
+<sub>Screenshots of the desktop app with demo data: the sessions and the terminal text are simulated.</sub>
 
 > **Not affiliated with Anthropic.** Vexel for Claude is an independent, community project that drives the official `claude` command-line tool. "Claude" and "Claude Code" are trademarks of Anthropic, PBC.
 
