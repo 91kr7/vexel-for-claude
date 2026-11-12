@@ -24,3 +24,7 @@
 | 2026-11-12 | dev | regression external-sessions.spec.ts:127 | pass | Passes on main and twice on the branch alone; intermittent timeout |
 | 2026-11-12 | dev | G4 development (fix round 1) | pass | build green (rerun); diff limited to SessionNameDialog.tsx and its spec |
 | 2026-11-12 | dev | G5 tests (fix round 1) | sent back | 2 unit tests check `maxLength`, not the contract of the updated spec; to tester |
+| 2026-11-12 | dev | regression visual-language.spec.ts:313 | human decision | "fixa": the check now covers only notice entries with shipped files; 14 passed |
+| 2026-11-12 | dev | G5 tests (fix round 2) | pass | batch unit 45 and e2e 19 green; tests only; no maxLength check left |
+| 2026-11-12 | closing | full suites rerun | pass | unit 2832 green (second run; 3 intermittent fails in the first run passed alone); e2e 588 passed, terminal-search.spec.ts:227 intermittent, passed alone |
+| 2026-11-12 | closing | merge | pass | every batch certified; merged into main with --no-ff |
