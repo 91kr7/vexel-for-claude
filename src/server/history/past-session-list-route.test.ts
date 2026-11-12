@@ -1,5 +1,8 @@
+import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, afterEach, describe, expect, it } from 'vitest';
 import { registerPastSessionListRoute } from './past-session-list-route.js';
 import type { PastSession } from './session-history.js';
 
@@ -57,6 +60,7 @@ describe('GET /api/past-sessions', () => {
     expect(body).toEqual([
       {
         folder: '/work/b',
+        available: false,
         sessions: [
           { id: 'b2', label: 'B due', lastActivity: '2026-11-04T12:00:00.000Z', runningElsewhere: false },
           { id: 'b1', label: 'B uno', lastActivity: '2026-11-02T12:00:00.000Z', runningElsewhere: false },
@@ -64,6 +68,7 @@ describe('GET /api/past-sessions', () => {
       },
       {
         folder: '/work/a',
+        available: false,
         sessions: [
           { id: 'a2', label: 'A due', lastActivity: '2026-11-03T12:00:00.000Z', runningElsewhere: false },
           { id: 'a1', label: 'A uno', lastActivity: '2026-11-01T12:00:00.000Z', runningElsewhere: false },
@@ -116,7 +121,7 @@ describe('GET /api/past-sessions', () => {
         past('ok', '/work/a', 'Messaggio', '2026-11-01T00:00:00.000Z'),
       ],
     });
-    expect(body).toEqual([{ folder: '/work/a', sessions: [expect.objectContaining({ id: 'ok' })] }]);
+    expect(body).toEqual([{ folder: '/work/a', available: false, sessions: [expect.objectContaining({ id: 'ok' })] }]);
   });
 
   it('leaves out sessions the client hosts that have not ended, and drops a group left empty', async () => {
@@ -128,10 +133,71 @@ describe('GET /api/past-sessions', () => {
       ],
       live: ['hosted-live', 'only-one'],
     });
-    expect(body).toEqual([{ folder: '/work/a', sessions: [expect.objectContaining({ id: 'ended-or-free' })] }]);
+    expect(body).toEqual([{ folder: '/work/a', available: false, sessions: [expect.objectContaining({ id: 'ended-or-free' })] }]);
   });
 
   it('is an empty array when there is no past session', async () => {
     expect(await get({ past: [] })).toEqual([]);
+  });
+
+  describe('available (plan-recent_projects/REQ-10)', () => {
+    let root: string;
+
+    beforeAll(async () => {
+      root = await mkdtemp(path.join(os.tmpdir(), 'past-session-list-route-'));
+    });
+
+    afterAll(async () => {
+      await chmod(path.join(root, 'locked'), 0o755).catch(() => {});
+      await rm(root, { recursive: true, force: true });
+    });
+
+    const availabilityOf = async (folder: string) => {
+      const body = await get({ past: [past('s', folder, 'Message', '2026-11-01T00:00:00.000Z')] });
+      return body[0].available;
+    };
+
+    it('is true when the folder exists on disk as a folder', async () => {
+      const folder = path.join(root, 'present');
+      await mkdir(folder);
+      expect(await availabilityOf(folder)).toBe(true);
+    });
+
+    it('is false when the folder does not exist, and the group stays in the answer', async () => {
+      const folder = path.join(root, 'missing');
+      const body = await get({ past: [past('s', folder, 'Message', '2026-11-01T00:00:00.000Z')] });
+      expect(body).toEqual([{ folder, available: false, sessions: [expect.objectContaining({ id: 's' })] }]);
+    });
+
+    it('is false when the path is a file', async () => {
+      const file = path.join(root, 'a-file');
+      await writeFile(file, 'x');
+      expect(await availabilityOf(file)).toBe(false);
+    });
+
+    it.skipIf(process.getuid?.() === 0)('is false when the path cannot be read', async () => {
+      const locked = path.join(root, 'locked');
+      await mkdir(path.join(locked, 'inner'), { recursive: true });
+      await chmod(locked, 0o000);
+      expect(await availabilityOf(path.join(locked, 'inner'))).toBe(false);
+    });
+
+    it('is checked again at each request', async () => {
+      const folder = path.join(root, 'appears-later');
+      const sessions = [past('s', folder, 'Message', '2026-11-01T00:00:00.000Z')];
+      app = Fastify();
+      registerPastSessionListRoute(app, {
+        history: { list: async () => sessions },
+        externalCheck: { runningSessionIds: async () => new Set<string>() },
+        registry: { list: () => [] as never },
+        tracker: { liveClaudeSessionIds: () => new Set<string>() },
+      });
+      const availableNow = async () => (await app!.inject({ method: 'GET', url: '/api/past-sessions' })).json()[0].available;
+      expect(await availableNow()).toBe(false);
+      await mkdir(folder);
+      expect(await availableNow()).toBe(true);
+      await rm(folder, { recursive: true });
+      expect(await availableNow()).toBe(false);
+    });
   });
 });
