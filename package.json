@@ -1,6 +1,6 @@
 {
   "name": "ai-client",
-  "version": "0.1.0",
+  "version": "0.2.2",
   "description": "One window for all your Claude Code sessions: live terminals, needs-input notifications, usage and cost, git explorer.",
   "license": "MIT",
   "author": "91kr7",
