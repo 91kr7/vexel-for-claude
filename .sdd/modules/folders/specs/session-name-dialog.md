@@ -20,7 +20,7 @@ Description:
 
 Shows:
 - the project box → the Avatar of the folder, the folder name (`folderNameOf`) and the full path in mono. Background `--bg-surface-1`, 1 px `--border-subtle` border, 10 px radius.
-- the field "Session name" → a text input, empty at open, with the focus. At most 200 characters.
+- the field "Session name" → a text input, empty at open, with the focus. At most 200 characters: a longer text, typed or pasted, keeps its first 200.
 - under the field, the hint "Leave it empty to use the default name. Enter starts, Esc cancels." in `--text-muted`.
 - a failed start → the ErrorMessage "Could not start the session." under the field.
 

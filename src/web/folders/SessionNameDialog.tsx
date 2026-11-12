@@ -13,8 +13,13 @@ interface SessionNameDialogProps {
   onCancel: () => void;
 }
 
+function cutToMaxLength(text: string): string {
+  const characters = Array.from(text);
+  return characters.length > NAME_MAX_LENGTH ? characters.slice(0, NAME_MAX_LENGTH).join('') : text;
+}
+
 function sessionNameOf(text: string): string {
-  return Array.from(text.trim()).slice(0, NAME_MAX_LENGTH).join('');
+  return cutToMaxLength(text.trim());
 }
 
 export function SessionNameDialog({ project, onStarted, onCancel }: SessionNameDialogProps) {
@@ -67,9 +72,8 @@ export function SessionNameDialog({ project, onStarted, onCancel }: SessionNameD
           className="field-input"
           type="text"
           autoComplete="off"
-          maxLength={NAME_MAX_LENGTH}
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => setName(cutToMaxLength(event.target.value))}
           autoFocus
         />
         <small className="field-hint">Leave it empty to use the default name. Enter starts, Esc cancels.</small>

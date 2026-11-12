@@ -19,3 +19,8 @@
 | 2026-11-12 | dev | G4 development project-session-start | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes |
 | 2026-11-12 | dev | test file touched by developer | decided | start-session-route.test.ts: call line only, needed for `tsc -b` after the INT-3 signature change; no assertion changed |
 | 2026-11-12 | dev | divergence side view after start | decided | Side column stays on Projects after a start, as in mock step 3; the session is in the session list |
+| 2026-11-12 | dev | G5 tests project-session-start (round 1) | sent back | Code defect: SessionNameDialog `maxLength` counts UTF-16 units, spec and REQ-18 want 200 code points; to developer |
+| 2026-11-12 | dev | regression visual-language.spec.ts:313 | escalated | Fails on main too (notices entry "npm dependencies" has no link); older than this cycle |
+| 2026-11-12 | dev | regression external-sessions.spec.ts:127 | pass | Passes on main and twice on the branch alone; intermittent timeout |
+| 2026-11-12 | dev | G4 development (fix round 1) | pass | build green (rerun); diff limited to SessionNameDialog.tsx and its spec |
+| 2026-11-12 | dev | G5 tests (fix round 1) | sent back | 2 unit tests check `maxLength`, not the contract of the updated spec; to tester |
