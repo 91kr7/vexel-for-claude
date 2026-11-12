@@ -8,3 +8,6 @@
 | 2026-11-12 | analysis | question analyst Q4 | decided | Removing a project is out of scope: not in the request |
 | 2026-11-12 | analysis | G1 analysis | pass | 84 lines vs ordinary budget 200; request verbatim; no placeholders; no technical choices |
 | 2026-11-12 | analysis | mock panel vs dialog | decided | Mock `.sdd/mockups/recent_projects/mock.html`: list opens in the side column, the rail button is a view like Sessions; name prompt is a dialog |
+| 2026-11-12 | plan | question planner Q1 | decided | Session count, folder count and start toast from the mock are not built: not in the analysis Requirements |
+| 2026-11-12 | plan | G2 requirements | pass | REQ-1..24 cover the analysis; REQ-13/24 pair desktop+English per feature, accepted |
+| 2026-11-12 | plan | G3 coverage | pass | 2 vertical batches, REQ-1..13 and REQ-14..24; modify paths exist; project-session-start/INT-6 points to the component batch project-list creates, accepted; every REQ in a scenario |
