@@ -234,7 +234,7 @@ describe('ProjectList favorite mark', () => {
     for (const button of buttons) expect(button.closest('.project-row')).toBeNull();
     const focusable = [...host.querySelectorAll<HTMLButtonElement>('button')].filter((b) => b.tabIndex >= 0);
     const order = focusable.map((b) => (b.classList.contains('project-row') ? b.querySelector('[title^="/"]')?.getAttribute('title') : nameOf(b)));
-    expect(order).toEqual(['/home/u/web-dashboard', 'Remove Favorite', '/home/u/old-api', 'Mark as Favorite']);
+    expect(order).toEqual(['/home/u/web-dashboard', 'Remove Favorite', 'Remove from Projects', '/home/u/old-api', 'Mark as Favorite', 'Remove from Projects']);
   });
 
   it('keeps the favorite button of an unavailable row enabled', async () => {
@@ -252,5 +252,134 @@ describe('ProjectList favorite mark', () => {
     favoriteButtons(host)[0]!.click();
     expect(onChoose).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
+  });
+});
+
+const removeButtons = (host: HTMLElement) => [...host.querySelectorAll<HTMLButtonElement>('button')].filter((b) => nameOf(b) === 'Remove from Projects');
+
+const threeGroups = [
+  { folder: '/home/u/alpha', available: true, sessions: [session('2026-11-10T10:00:00.000Z')] },
+  { folder: '/home/u/bravo', available: false, sessions: [session('2026-11-09T10:00:00.000Z')] },
+  { folder: '/home/u/charlie', available: true, sessions: [session('2026-11-08T10:00:00.000Z')] },
+];
+const REMOVED_AT = '2026-11-12T08:00:00.000Z';
+
+/** A store on threeGroups whose removals the test sets. */
+async function removableStore() {
+  const listeners = new Set<() => void>();
+  let snapshot = { favorites: new Set<string>() as ReadonlySet<string>, removed: new Map<string, string>() as ReadonlyMap<string, string> };
+  const marks = {
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    getSnapshot: () => snapshot,
+  };
+  const store = new ProjectListStore(async () => threeGroups as never, marks);
+  store.load();
+  await settle();
+  const remove = async (...folders: string[]) => {
+    snapshot = { favorites: snapshot.favorites, removed: new Map([...snapshot.removed, ...folders.map((f) => [f, REMOVED_AT] as [string, string])]) };
+    for (const listener of listeners) listener();
+    await settle();
+  };
+  return { store, remove };
+}
+
+const shown = (host: HTMLElement) => rows(host).map((row) => row.querySelector('[title^="/"]')?.getAttribute('title'));
+
+describe('ProjectList remove action', () => {
+  // plan-project_list_actions/REQ-12, REQ-18, REQ-21: each row, unavailable too, has its remove button beside the row button
+  it('gives every row a remove button beside the row button, not inside it, enabled also on an unavailable row', async () => {
+    const { store } = await removableStore();
+    const host = mount(store);
+    const buttons = removeButtons(host);
+    expect(buttons).toHaveLength(3);
+    for (const button of buttons) {
+      expect(button.closest('.project-row')).toBeNull();
+      expect(button.disabled).toBe(false);
+      expect(button.getAttribute('aria-disabled')).not.toBe('true');
+    }
+    expect(rowOf(host, '/home/u/bravo').getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('a press on the remove button does not choose the project', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+    const onChoose = vi.fn();
+    const { store } = await removableStore();
+    const host = mount(store, onChoose);
+    removeButtons(host)[0]!.click();
+    expect(onChoose).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  // ProjectRemoveButton rule: the button does not hide the row by itself; the row leaves through the marks
+  it('after a 204 the row stays until the marks hold the removal, then it leaves at once', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 204 })));
+    const { store, remove } = await removableStore();
+    const host = mount(store);
+    removeButtons(host)[1]!.click();
+    await settle();
+    expect(shown(host)).toEqual(['/home/u/alpha', '/home/u/bravo', '/home/u/charlie']);
+    await remove('/home/u/bravo');
+    expect(shown(host)).toEqual(['/home/u/alpha', '/home/u/charlie']);
+    vi.unstubAllGlobals();
+  });
+
+  // plan-project_list_actions/REQ-21: the focus goes to the next row still in the list
+  it('when the row holding the focus leaves, the focus goes to the row button of the next row', async () => {
+    const { store, remove } = await removableStore();
+    const host = mount(store);
+    removeButtons(host)[1]!.focus();
+    expect(document.activeElement).toBe(removeButtons(host)[1]);
+    await remove('/home/u/bravo');
+    expect(document.activeElement).toBe(rowOf(host, '/home/u/charlie'));
+  });
+
+  it('when the row button itself held the focus, the focus goes to the next row too', async () => {
+    const { store, remove } = await removableStore();
+    const host = mount(store);
+    rowOf(host, '/home/u/alpha').focus();
+    await remove('/home/u/alpha');
+    expect(document.activeElement).toBe(rowOf(host, '/home/u/bravo'));
+  });
+
+  it('when the last row holding the focus leaves, the focus goes to the previous row', async () => {
+    const { store, remove } = await removableStore();
+    const host = mount(store);
+    removeButtons(host)[2]!.focus();
+    await remove('/home/u/charlie');
+    expect(document.activeElement).toBe(rowOf(host, '/home/u/bravo'));
+  });
+
+  it('skips the rows that leave together: the focus goes to the next row still in the list', async () => {
+    const { store, remove } = await removableStore();
+    const host = mount(store);
+    removeButtons(host)[0]!.focus();
+    await remove('/home/u/alpha', '/home/u/bravo');
+    expect(document.activeElement).toBe(rowOf(host, '/home/u/charlie'));
+  });
+
+  it('does not move the focus when no row is left', async () => {
+    const { store, remove } = await removableStore();
+    const host = mount(store);
+    removeButtons(host)[0]!.focus();
+    await remove('/home/u/alpha', '/home/u/bravo', '/home/u/charlie');
+    expect(rows(host)).toHaveLength(0);
+    expect(host.contains(document.activeElement)).toBe(false);
+  });
+
+  it('does not move the focus when it is on another element', async () => {
+    const { store, remove } = await removableStore();
+    const host = mount(store);
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    outside.focus();
+    await remove('/home/u/bravo');
+    expect(document.activeElement).toBe(outside);
+
+    rowOf(host, '/home/u/alpha').focus();
+    await remove('/home/u/charlie');
+    expect(document.activeElement).toBe(rowOf(host, '/home/u/alpha'));
   });
 });

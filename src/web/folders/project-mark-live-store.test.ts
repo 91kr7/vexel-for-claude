@@ -222,6 +222,51 @@ describe('ProjectMarkLiveStore', () => {
   });
 });
 
+const removedOf = (store: ProjectMarkLiveStore) => Object.fromEntries(store.getSnapshot().removed);
+
+describe('ProjectMarkLiveStore removals', () => {
+  it('starts with no removed folder', () => {
+    expect(new ProjectMarkLiveStore('http://127.0.0.1:3000').getSnapshot().removed.size).toBe(0);
+  });
+
+  // plan-project_list_actions/REQ-20: each frame replaces the removed folders and their time, as the server sent it
+  it('keeps the removed folders of each frame with their removal time, as sent', () => {
+    const store = started();
+    last().receive({ ...frame(['/work/a']), removed: { '/work/b': '2026-11-10T10:00:00.000Z', '/work/c': '2026-11-11T09:00:00Z' } });
+    expect(removedOf(store)).toEqual({ '/work/b': '2026-11-10T10:00:00.000Z', '/work/c': '2026-11-11T09:00:00Z' });
+    expect(favoritesOf(store)).toEqual(['/work/a']);
+    last().receive({ ...frame([]), removed: { '/work/c': '2026-11-11T09:00:00Z' } });
+    expect(removedOf(store)).toEqual({ '/work/c': '2026-11-11T09:00:00Z' });
+  });
+
+  it('a frame with no removed gives no removed folder', () => {
+    const store = started();
+    last().receive({ ...frame([]), removed: { '/work/b': '2026-11-10T10:00:00.000Z' } });
+    const listener = vi.fn();
+    store.subscribe(listener);
+    last().receive(frame(['/work/a']));
+    expect(removedOf(store)).toEqual({});
+    expect(favoritesOf(store)).toEqual(['/work/a']);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['removed that is an array', ['/work/x']],
+    ['removed that is a string', '/work/x'],
+    ['removed that is null', null],
+    ['removed with a value that is not a string', { '/work/x': 3 }],
+  ])('ignores a frame with %s', (_name, removed) => {
+    const store = started();
+    last().receive({ ...frame(['/work/a']), removed: { '/work/b': '2026-11-10T10:00:00.000Z' } });
+    const before = store.getSnapshot();
+    const listener = vi.fn();
+    store.subscribe(listener);
+    last().receive({ ...frame(['/work/z']), removed });
+    expect(store.getSnapshot()).toBe(before);
+    expect(listener).not.toHaveBeenCalled();
+  });
+});
+
 describe('pageProjectMarkLiveStore', () => {
   it('creates the one store of the page on window.location.origin, started on the first call', async () => {
     vi.stubGlobal('window', { location: { origin: 'http://127.0.0.1:4555' } });

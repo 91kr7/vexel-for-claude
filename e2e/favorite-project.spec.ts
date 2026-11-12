@@ -250,7 +250,7 @@ test('when the server does not answer, the row shows "Could not change the favor
 });
 
 // ProjectList "Shows" and ProjectFavoriteButton "Shows": the button place, its visibility and its busy state
-test('the favorite button is hidden until hover, sits at the right end centred on the row, right of "▶ New session"', async ({ page }) => {
+test('the favorite button is hidden until hover, sits 4 px left of the remove button centred on the row, right of "▶ New session"', async ({ page }) => {
   const { a, b } = await threeProjects(page);
   await page.mouse.move(5, 5);
   await expect.poll(() => seenOpacity(markButton(page, a)), 'hidden with no hover and no focus').toBe(0);
@@ -263,8 +263,8 @@ test('the favorite button is hidden until hover, sits at the right end centred o
   expect(buttonBox.width).toBeCloseTo(20, 0);
   expect(buttonBox.height).toBeCloseTo(20, 0);
   expect(buttonBox.y + buttonBox.height / 2, 'centred on the height of the row button').toBeCloseTo(rowBox.y + rowBox.height / 2, 0);
-  expect(buttonBox.x + buttonBox.width, 'inside the right end of the row').toBeLessThanOrEqual(rowBox.x + rowBox.width + 0.5);
-  expect(rowBox.x + rowBox.width - (buttonBox.x + buttonBox.width), 'at the right end of the row').toBeLessThan(16);
+  const removeBox = (await item(page, a).getByRole('button', { name: 'Remove from Projects', exact: true }).boundingBox())!;
+  expect(removeBox.x - (buttonBox.x + buttonBox.width), '4 px left of the remove button').toBeCloseTo(4, 0);
   const label = row(page, a).getByText('New session');
   await expect(label).toBeVisible();
   const labelBox = (await label.boundingBox())!;

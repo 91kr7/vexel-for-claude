@@ -28,6 +28,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   for (const folder of marks.favorites()) await marks.setFavorite(folder, false);
+  for (const folder of Object.keys(marks.removals())) await marks.clearRemoval(folder);
 });
 
 async function connect(): Promise<WsClient> {
@@ -53,7 +54,7 @@ describe('GET /api/projects/marks', () => {
 
   it('sends an empty list on connect when no project is marked', async () => {
     const client = await connect();
-    expect(frames(client)[0]).toEqual({ type: 'project-marks', favorites: [] });
+    expect(frames(client)[0]).toEqual({ type: 'project-marks', favorites: [], removed: {} });
   });
 
   // plan-project_list_actions/REQ-29: every open page gets every change
@@ -94,5 +95,34 @@ describe('GET /api/projects/marks', () => {
     await waitFor(() => staying.frames.length === 2, 'frame after the mark');
     expect(leaving.frames).toHaveLength(1);
     expect(lastFavorites(staying)).toEqual(['/work/a']);
+  });
+});
+
+describe('GET /api/projects/marks removals', () => {
+  const lastRemoved = (client: WsClient) => (JSON.parse(client.frames.at(-1)!) as { removed: Record<string, string> }).removed;
+
+  it('sends the removed folders with their removal time on connect', async () => {
+    await marks.remove('/work/a');
+    const client = await connect();
+    expect(frames(client)[0]).toEqual({ type: 'project-marks', favorites: [], removed: marks.removals() });
+    expect(Object.keys(lastRemoved(client))).toEqual(['/work/a']);
+  });
+
+  // plan-project_list_actions/REQ-20: every open page gets the removal
+  it('sends the marks after a removal and after its clearing to every connected page', async () => {
+    await marks.setFavorite('/work/a', true);
+    const first = await connect();
+    const second = await connect();
+    await marks.remove('/work/a');
+    await waitFor(() => first.frames.length === 2 && second.frames.length === 2, 'frame after the removal');
+    for (const client of [first, second]) {
+      expect(lastFavorites(client)).toEqual([]);
+      expect(lastRemoved(client)).toEqual({ '/work/a': marks.removals()['/work/a'] });
+    }
+
+    await marks.clearRemoval('/work/a');
+    await waitFor(() => first.frames.length === 3 && second.frames.length === 3, 'frame after the clearing');
+    expect(lastRemoved(first)).toEqual({});
+    expect(lastRemoved(second)).toEqual({});
   });
 });

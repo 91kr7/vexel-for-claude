@@ -356,3 +356,120 @@ describe('ProjectListStore with project marks', () => {
     expect(folders(store)).toEqual(['/work/b *', '/work/a', '/work/c', '/work/d']);
   });
 });
+
+/** A mark source with favorites and removals, set by the test. */
+function fakeRemovalMarks(favorites: string[] = [], removed: Record<string, string> = {}) {
+  const listeners = new Set<() => void>();
+  const snapshotOf = (f: string[], r: Record<string, string>) => ({ favorites: new Set(f) as ReadonlySet<string>, removed: new Map(Object.entries(r)) as ReadonlyMap<string, string> });
+  let snapshot = snapshotOf(favorites, removed);
+  return {
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    getSnapshot: () => snapshot,
+    set(nextFavorites: string[], nextRemoved: Record<string, string>) {
+      snapshot = snapshotOf(nextFavorites, nextRemoved);
+      for (const listener of listeners) listener();
+    },
+  };
+}
+
+async function loadedWith(marks: ReturnType<typeof fakeRemovalMarks>, body: unknown = fourGroups) {
+  const calls: Deferred[] = [];
+  const fetchGroups = vi.fn(() => {
+    const call = deferred();
+    calls.push(call);
+    return call.promise as never;
+  });
+  const store = new ProjectListStore(fetchGroups, marks);
+  store.load();
+  calls[0]!.resolve(body);
+  await settle();
+  return { store, calls, fetchGroups };
+}
+
+// fourGroups: /work/a 2026-11-10T10:00Z, /work/b 2026-11-09T10:00Z, /work/c 2026-11-08T10:00Z (unavailable), /work/d 2026-11-07T10:00Z
+describe('ProjectListStore with removed projects', () => {
+  // plan-project_list_actions/REQ-13, REQ-15
+  it('leaves out a project removed after its last activity', async () => {
+    const { store } = await loadedWith(fakeRemovalMarks([], { '/work/b': '2026-11-12T08:00:00.000Z' }));
+    expect(folders(store)).toEqual(['/work/a', '/work/c', '/work/d']);
+  });
+
+  it('leaves out a project removed at the same time as its last activity, written in another form', async () => {
+    const { store } = await loadedWith(fakeRemovalMarks([], { '/work/b': '2026-11-09T10:00:00Z', '/work/d': '2026-11-07T12:00:00+02:00' }));
+    expect(folders(store)).toEqual(['/work/a', '/work/c']);
+  });
+
+  // plan-project_list_actions/REQ-16: activity after the removal brings the project back
+  it('keeps a project whose last activity is later than its removal time', async () => {
+    const { store } = await loadedWith(fakeRemovalMarks([], { '/work/b': '2026-11-09T09:59:59.999Z', '/work/a': '2026-11-10T11:30:00+02:00' }));
+    expect(folders(store)).toEqual(['/work/a', '/work/b', '/work/c', '/work/d']);
+  });
+
+  it.each([
+    ['a removal time', { '/work/b': 'not a time' }, fourGroups],
+    ['a last activity', { '/work/b': '2026-11-12T08:00:00.000Z' }, fourGroups.map((g) => (g.folder === '/work/b' ? { ...g, sessions: [session('yesterday')] } : g))],
+  ])('never hides a project when %s does not parse', async (_name, removed, body) => {
+    const { store } = await loadedWith(fakeRemovalMarks([], removed), body);
+    expect(folders(store)).toEqual(['/work/a', '/work/b', '/work/c', '/work/d']);
+  });
+
+  // plan-project_list_actions/REQ-18
+  it('leaves out an unavailable removed project', async () => {
+    const { store } = await loadedWith(fakeRemovalMarks([], { '/work/c': '2026-11-12T08:00:00.000Z' }));
+    expect(folders(store)).toEqual(['/work/a', '/work/b', '/work/d']);
+  });
+
+  it('ignores removals of folders that are not in the list', async () => {
+    const { store } = await loadedWith(fakeRemovalMarks([], { '/work/elsewhere': '2026-11-12T08:00:00.000Z' }));
+    expect(folders(store)).toEqual(['/work/a', '/work/b', '/work/c', '/work/d']);
+  });
+
+  // plan-project_list_actions/REQ-13, REQ-20: a removal leaves the list at once, with no new load
+  it('in ready, a removal gives a new ready state at once without the project, with no new load', async () => {
+    const marks = fakeRemovalMarks(['/work/c']);
+    const { store, fetchGroups } = await loadedWith(marks);
+    expect(folders(store)).toEqual(['/work/c *', '/work/a', '/work/b', '/work/d']);
+    const before = store.getSnapshot();
+    const listener = vi.fn();
+    store.subscribe(listener);
+
+    marks.set(['/work/c'], { '/work/a': '2026-11-12T08:00:00.000Z' });
+    expect(listener).toHaveBeenCalled();
+    expect(store.getSnapshot()).not.toBe(before);
+    expect(folders(store)).toEqual(['/work/c *', '/work/b', '/work/d']);
+
+    // The server cleared the removal (a hosted session in the folder): the project is back in its place.
+    marks.set(['/work/c'], {});
+    expect(folders(store)).toEqual(['/work/c *', '/work/a', '/work/b', '/work/d']);
+    expect(fetchGroups).toHaveBeenCalledTimes(1);
+  });
+
+  // plan-project_list_actions/REQ-16, REQ-19: a project that comes back by new activity is not favorite
+  it('a project removed and back by new activity is placed by last activity, below the favorites', async () => {
+    const marks = fakeRemovalMarks(['/work/c'], { '/work/b': '2026-11-09T12:00:00.000Z' });
+    const back = [
+      { folder: '/work/b', available: true, sessions: [session('2026-11-12T10:00:00.000Z')] },
+      ...fourGroups.filter((g) => g.folder !== '/work/b'),
+    ];
+    const { store } = await loadedWith(marks, back);
+    expect(folders(store)).toEqual(['/work/c *', '/work/b', '/work/a', '/work/d']);
+  });
+
+  it('a load that ends after a removal uses the current marks', async () => {
+    const marks = fakeRemovalMarks();
+    const calls: Deferred[] = [];
+    const store = new ProjectListStore(() => {
+      const call = deferred();
+      calls.push(call);
+      return call.promise as never;
+    }, marks);
+    store.load();
+    marks.set([], { '/work/d': '2026-11-12T08:00:00.000Z' });
+    calls[0]!.resolve(fourGroups);
+    await settle();
+    expect(folders(store)).toEqual(['/work/a', '/work/b', '/work/c']);
+  });
+});
