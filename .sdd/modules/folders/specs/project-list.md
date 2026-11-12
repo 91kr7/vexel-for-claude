@@ -12,6 +12,7 @@ type: UI component
 
 Props:
 - `store` → optional ProjectListStore. Default: the page store. The component shows its state and starts no load.
+- `onChoose(project)` → optional. Called when the user chooses an available row.
 
 Description:
 - two parts, in the list panel column: the title row, then the list area. Only the list area scrolls, when its rows do not fit.
@@ -28,9 +29,11 @@ Shows:
   - "Last activity" and the RelativeTime of `lastActivity`, 11 px, `--text-secondary`.
 - a row with `available` false → `aria-disabled="true"`, opacity 0.55, the `not-allowed` cursor, no hover style. Before "Last activity" it shows "Folder not found" in `--amber-400`, then " · ".
 - an available row on hover → `--bg-surface-2` background and a 1 px `--border-subtle` border.
+- an available row on hover or with visible focus → the label "▶ New session" at its right end, 11 px weight 600, on the accent colour. The label is decorative: it is not part of the row name. An unavailable row has no label.
 
 Actions:
-- click on a row → nothing.
+- click, Enter or Space on an available row → `onChoose(project)` with that row's project.
+- click, Enter or Space on an unavailable row → nothing.
 - Tab → reaches every row, unavailable rows included. The focused row shows the focus ring inside its edge.
 
 ## Rules and invariants
@@ -46,4 +49,4 @@ Actions:
 
 ## Requirements served
 
-- `plan-recent_projects/REQ-6`, `plan-recent_projects/REQ-9`, `plan-recent_projects/REQ-10`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-12`, `plan-recent_projects/REQ-13`
+- `plan-recent_projects/REQ-6`, `plan-recent_projects/REQ-9`, `plan-recent_projects/REQ-10`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-12`, `plan-recent_projects/REQ-13`, `plan-recent_projects/REQ-14`, `plan-recent_projects/REQ-15`

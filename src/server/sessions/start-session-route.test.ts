@@ -3,6 +3,7 @@ import path from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FAKE_CLI, delay, tempDir } from '../test-support.js';
+import { SessionNameStore } from './session-name-store.js';
 import { SessionRegistry } from './session-registry.js';
 import { registerStartSessionRoute } from './start-session-route.js';
 
@@ -16,7 +17,7 @@ beforeAll(async () => {
   await writeFile(path.join(projectDir, 'a-file.txt'), 'x');
   registry = new SessionRegistry({ command: FAKE_CLI });
   app = Fastify();
-  registerStartSessionRoute(app, registry);
+  registerStartSessionRoute(app, { registry, tracker: { claudeSessionId: () => undefined }, names: new SessionNameStore() });
   await app.ready();
 });
 

@@ -3,8 +3,9 @@ import { useDesktopBridge } from './desktop-bridge';
 import { EmptyState } from './EmptyState';
 import { ConversationView } from './external/ConversationView';
 import { FolderChooser } from './folders/FolderChooser';
-import { pageProjectListStore } from './folders/project-list-store';
+import { pageProjectListStore, type Project } from './folders/project-list-store';
 import { ProjectList } from './folders/ProjectList';
+import { SessionNameDialog } from './folders/SessionNameDialog';
 import { ResumeDialog } from './history/ResumeDialog';
 import { ListPanelEdge } from './ListPanelEdge';
 import { listWidthLimit, pageListWidthStore, shownListWidth, useListWidth } from './list-width-store';
@@ -57,6 +58,7 @@ export function AppLayout() {
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
   const [openIsExternal, setOpenIsExternal] = useState(false);
   const [choosingFolder, setChoosingFolder] = useState(false);
+  const [namingProject, setNamingProject] = useState<Project | null>(null);
   const [resuming, setResuming] = useState(false);
   const [sideView, setSideView] = useState<SideView>('sessions');
   const [focusRequest, setFocusRequest] = useState<{ view: SideView } | null>(null);
@@ -174,7 +176,7 @@ export function AppLayout() {
         />
         <ListPanel panelRef={listPanelRef}>
           {sideView === 'projects' ? (
-            <ProjectList />
+            <ProjectList onChoose={setNamingProject} />
           ) : (
             <>
               <div className="list-panel-title">
@@ -226,6 +228,16 @@ export function AppLayout() {
             openHosted(sessionId);
           }}
           onCancel={() => setChoosingFolder(false)}
+        />
+      )}
+      {namingProject && (
+        <SessionNameDialog
+          project={namingProject}
+          onStarted={(sessionId) => {
+            setNamingProject(null);
+            openHosted(sessionId);
+          }}
+          onCancel={() => setNamingProject(null)}
         />
       )}
       {resuming && (

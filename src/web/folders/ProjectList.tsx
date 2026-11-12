@@ -4,12 +4,17 @@ import { Avatar, folderNameOf } from '../sessions/Avatar';
 import { RelativeTime } from '../sessions/RelativeTime';
 import { type Project, type ProjectListStore, useProjectList } from './project-list-store';
 
-function ProjectRow({ project }: { project: Project }) {
+type ChooseProject = (project: Project) => void;
+
+function ProjectRow({ project, onChoose }: { project: Project; onChoose?: ChooseProject | undefined }) {
   return (
     <button
       type="button"
       className={project.available ? 'project-row' : 'project-row unavailable'}
       aria-disabled={project.available ? undefined : true}
+      onClick={() => {
+        if (project.available) onChoose?.(project);
+      }}
     >
       <Avatar folder={project.folder} />
       <span className="project-row-text">
@@ -27,11 +32,16 @@ function ProjectRow({ project }: { project: Project }) {
           Last activity <RelativeTime iso={project.lastActivity} />
         </span>
       </span>
+      {project.available && (
+        <span className="project-row-go" aria-hidden="true">
+          ▶ New session
+        </span>
+      )}
     </button>
   );
 }
 
-export function ProjectList({ store }: { store?: ProjectListStore }) {
+export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onChoose?: ChooseProject }) {
   const state = useProjectList(store);
   return (
     <>
@@ -49,7 +59,7 @@ export function ProjectList({ store }: { store?: ProjectListStore }) {
           <ul>
             {state.projects.map((project) => (
               <li key={project.folder}>
-                <ProjectRow project={project} />
+                <ProjectRow project={project} onChoose={onChoose} />
               </li>
             ))}
           </ul>

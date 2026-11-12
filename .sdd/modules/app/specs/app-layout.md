@@ -38,6 +38,9 @@ Actions:
 - "Resume" in the rail, or "Resume Session" in the EmptyState → opens ResumeDialog.
 - ResumeDialog resumes a session → the dialog closes and the resumed session becomes the open one.
 - ResumeDialog cancelled → the dialog closes; the open session does not change.
+- ProjectList `onChoose(project)` → opens SessionNameDialog for that project.
+- SessionNameDialog starts a session → the dialog closes and the new session becomes the open one. The side view does not change.
+- SessionNameDialog cancelled → the dialog closes; the open session does not change. The focus goes back to the project row (Dialog).
 - "Resume" on an ended entry of SessionList (`onResumed`) → the new hosted session becomes the open one.
 - click on a SessionList entry → that session becomes the open one. The other sessions keep running.
 - "Projects" in the rail → the side view becomes `projects`, and ProjectListStore `load()` runs on the page store. Then the focus moves to the first project row, with the focus ring also after a mouse click. With no row on screen, the focus does not move.
@@ -85,7 +88,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 
 - TopBar, ShortcutsPanel, PlanUsagePopover, PlanUsageStore, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
 - useShortcutKeys, ShortcutMap, ShortcutChannel, ShortMessageToast, ThemeStore
-- FolderChooser, ProjectList, ProjectListStore (module folders)
+- FolderChooser, ProjectList, ProjectListStore, SessionNameDialog (module folders)
 - ResumeDialog (module history)
 - SessionView, SessionList, NeedsInputCounter, LiveSessionStore, SessionOrderStore, sessionToOpen (module sessions)
 - ConversationView (module external)
@@ -103,4 +106,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-usage_limits/REQ-3`, `plan-usage_limits/REQ-4`
 - `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-21`, `plan-keyboard_shortcuts/REQ-24`, `plan-keyboard_shortcuts/REQ-25`, `plan-keyboard_shortcuts/REQ-29`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-31`, `plan-keyboard_shortcuts/REQ-43`
 - `plan-git_explorer/REQ-25`
-- `plan-recent_projects/REQ-2`, `plan-recent_projects/REQ-8`, `plan-recent_projects/REQ-11`
+- `plan-recent_projects/REQ-2`, `plan-recent_projects/REQ-8`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-14`, `plan-recent_projects/REQ-17`, `plan-recent_projects/REQ-21`

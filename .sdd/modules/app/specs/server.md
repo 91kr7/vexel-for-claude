@@ -19,7 +19,7 @@ type: configuration
 - one SessionNameStore, loaded at start from the data folder (`dataDirOf()`: `AI_CLIENT_DATA_DIR`, else `$XDG_DATA_HOME/ai-client`).
 - one SessionFavoriteStore, loaded at start from the same data folder.
 - one shared SessionStateTracker with that name store and favorite store. It tracks every session the registry starts.
-- registers StartSessionRoute, StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute (with the tracker), RenameSessionRoute (with the tracker, the scanner and the name store), FavoriteSessionRoute (with the tracker, the scanner and the favorite store) and FolderRoute.
+- registers StartSessionRoute (with the tracker and the name store), StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute (with the tracker), RenameSessionRoute (with the tracker, the scanner and the name store), FavoriteSessionRoute (with the tracker, the scanner and the favorite store) and FolderRoute.
 - one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute (also with the name store and the favorite store), ResumeSessionRoute and ResumeEndedSessionRoute with them, the registry and the tracker.
 - one ExternalSessionScanner on that ExternalSessionCheck and SessionHistory, with the hosted pids of the registry, the name store and the favorite store. It starts with the server.
 - it starts listening only after one `scan()` of that scanner has settled. A scan that fails or throws does not stop the listen.
@@ -58,3 +58,4 @@ type: configuration
 - `plan-session_usage/REQ-1`, `plan-session_usage/REQ-12`
 - `plan-usage_limits/REQ-11`, `plan-usage_limits/REQ-13`
 - `plan-git_explorer/REQ-1`
+- `plan-recent_projects/REQ-16`, `plan-recent_projects/REQ-18`
