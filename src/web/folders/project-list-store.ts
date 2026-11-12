@@ -18,7 +18,9 @@ interface PastSessionGroupBody {
 
 type FetchGroups = () => Promise<unknown>;
 
-type MarkSource = Pick<ProjectMarkLiveStore, 'subscribe' | 'getSnapshot'>;
+type MarkSnapshot = Pick<ProjectMarks, 'favorites'> & Partial<Pick<ProjectMarks, 'removed'>>;
+
+type MarkSource = Pick<ProjectMarkLiveStore, 'subscribe'> & { getSnapshot: () => MarkSnapshot };
 
 type LoadedProject = Omit<Project, 'favorite'>;
 
@@ -39,8 +41,15 @@ function loadedProjectsOf(groups: PastSessionGroupBody[]): LoadedProject[] {
   });
 }
 
-function markedProjectsOf(loaded: LoadedProject[], marks: ProjectMarks | undefined): Project[] {
-  const projects = loaded.map((project) => ({ ...project, favorite: marks?.favorites.has(project.folder) === true }));
+function isRemoved(project: LoadedProject, marks: MarkSnapshot | undefined): boolean {
+  const removedAt = marks?.removed?.get(project.folder);
+  return removedAt !== undefined && Date.parse(removedAt) >= Date.parse(project.lastActivity);
+}
+
+function markedProjectsOf(loaded: LoadedProject[], marks: MarkSnapshot | undefined): Project[] {
+  const projects = loaded
+    .filter((project) => !isRemoved(project, marks))
+    .map((project) => ({ ...project, favorite: marks?.favorites.has(project.folder) === true }));
   return [...projects.filter((project) => project.favorite), ...projects.filter((project) => !project.favorite)];
 }
 

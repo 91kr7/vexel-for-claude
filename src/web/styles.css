@@ -1157,7 +1157,7 @@ input {
 .project-row-go {
   position: absolute;
   top: 50%;
-  right: 34px;
+  right: 58px;
   transform: translateY(-50%);
   padding: 5px 8px;
   border-radius: 8px;
@@ -1181,11 +1181,16 @@ input {
 
 .project-list li > .project-favorite {
   top: 28px;
+  right: 32px;
+}
+
+.project-list li > .project-remove {
+  top: 28px;
   right: 8px;
 }
 
-.project-list li:hover > .project-favorite,
-.project-list li:has(:focus-visible) > .project-favorite {
+.project-list li:hover > .entry-favorite,
+.project-list li:has(:focus-visible) > .entry-favorite {
   opacity: 1;
 }
 

@@ -11,6 +11,7 @@ import { registerFolderRoute } from './folders/folder-route.js';
 import { registerProjectFavoriteRoute } from './folders/project-favorite-route.js';
 import { registerProjectMarkEventsRoute } from './folders/project-mark-events-route.js';
 import { ProjectMarkStore } from './folders/project-mark-store.js';
+import { registerProjectRemoveRoute } from './folders/project-remove-route.js';
 import { registerChangesRoutes } from './git/changes-route.js';
 import { GitRunner } from './git/git-runner.js';
 import { registerHistoryRoutes } from './git/history-route.js';
@@ -104,7 +105,11 @@ registerSessionEventsRoute(app, tracker, externalScanner, runningToolMonitor, us
 registerHookEventRoute(app, tracker);
 registerFolderRoute(app);
 registerProjectFavoriteRoute(app, projectMarks);
+registerProjectRemoveRoute(app, projectMarks);
 registerProjectMarkEventsRoute(app, projectMarks);
+tracker.onChange((summary, cause) => {
+  if (cause.type === 'track') projectMarks.clearRemoval(summary.folder).catch((error: unknown) => app.log.error(error));
+});
 const gitRunner = new GitRunner();
 registerRepositoryRoute(app, gitRunner);
 registerChangesRoutes(app, gitRunner);

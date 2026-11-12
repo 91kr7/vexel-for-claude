@@ -19,3 +19,5 @@
 | 2026-11-13 | dev | G5 tests favorite-project (round 1) | sent back | Code defect: ProjectFavoriteButton.tsx:22 accepts any 2xx, spec wants 204 only; to developer |
 | 2026-11-13 | dev | G4 development (fix round 1) | pass | build green (rerun); one line in ProjectFavoriteButton.tsx |
 | 2026-11-13 | dev | G5 tests favorite-project (round 2) | pass | unit 264 and e2e 28 green (rerun); tests, playwright.config only |
+| 2026-11-13 | dev | G4 development remove-project | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes |
+| 2026-11-13 | dev | divergence remove route method | decided | `POST /api/projects/remove`: each call saves a new removal time; plan leaves the method open |

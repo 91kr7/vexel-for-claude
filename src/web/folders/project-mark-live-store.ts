@@ -1,20 +1,27 @@
 export interface ProjectMarks {
   favorites: ReadonlySet<string>;
+  removed: ReadonlyMap<string, string>;
 }
 
 const RETRY_DELAY_MS = 2000;
 
-function favoritesOf(message: unknown): string[] | undefined {
+function isStringRecord(value: unknown): value is Record<string, string> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  return Object.values(value).every((removedAt) => typeof removedAt === 'string');
+}
+
+function marksOf(message: unknown): ProjectMarks | undefined {
   if (typeof message !== 'object' || message === null) return undefined;
-  const { type, favorites } = message as { type?: unknown; favorites?: unknown };
+  const { type, favorites, removed = {} } = message as { type?: unknown; favorites?: unknown; removed?: unknown };
   if (type !== 'project-marks' || !Array.isArray(favorites)) return undefined;
-  return favorites.every((folder) => typeof folder === 'string') ? (favorites as string[]) : undefined;
+  if (!favorites.every((folder) => typeof folder === 'string') || !isStringRecord(removed)) return undefined;
+  return { favorites: new Set(favorites as string[]), removed: new Map(Object.entries(removed)) };
 }
 
 export class ProjectMarkLiveStore {
   readonly #origin: string;
   readonly #listeners = new Set<() => void>();
-  #marks: ProjectMarks = { favorites: new Set() };
+  #marks: ProjectMarks = { favorites: new Set(), removed: new Map() };
   #stopCurrent: (() => void) | undefined;
 
   constructor(origin: string) {
@@ -46,9 +53,9 @@ export class ProjectMarkLiveStore {
         } catch {
           return;
         }
-        const favorites = favoritesOf(message);
-        if (favorites === undefined) return;
-        this.#marks = { favorites: new Set(favorites) };
+        const marks = marksOf(message);
+        if (marks === undefined) return;
+        this.#marks = marks;
         for (const listener of this.#listeners) listener();
       },
       { signal: listeners.signal },

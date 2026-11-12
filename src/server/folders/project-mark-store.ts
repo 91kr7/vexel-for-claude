@@ -5,32 +5,41 @@ const MARKS_FILE = 'project-marks.json';
 
 type MarkListener = () => void;
 
+function savedFavoritesOf(saved: unknown): string[] {
+  const favorites = (saved as { favorites?: unknown }).favorites;
+  return Array.isArray(favorites) ? favorites.filter((folder): folder is string => typeof folder === 'string') : [];
+}
+
+function savedRemovalsOf(saved: unknown): [string, string][] {
+  const removed = (saved as { removed?: unknown }).removed;
+  if (typeof removed !== 'object' || removed === null || Array.isArray(removed)) return [];
+  return Object.entries(removed).filter((entry): entry is [string, string] => typeof entry[1] === 'string');
+}
+
 export class ProjectMarkStore {
   readonly #file: string | undefined;
   readonly #favorites: Set<string>;
+  readonly #removed: Map<string, string>;
   readonly #listeners = new Set<MarkListener>();
   #saving: Promise<void> = Promise.resolve();
 
-  constructor(file?: string, favorites: Iterable<string> = []) {
+  constructor(file?: string, favorites: Iterable<string> = [], removed: Iterable<[string, string]> = []) {
     this.#file = file;
     this.#favorites = new Set(favorites);
+    this.#removed = new Map(removed);
   }
 
   static async load(dataDir: string): Promise<ProjectMarkStore> {
     const file = path.join(dataDir, MARKS_FILE);
-    const favorites: string[] = [];
     try {
       const saved: unknown = JSON.parse(await readFile(file, 'utf8'));
-      const savedFavorites = typeof saved === 'object' && saved !== null ? (saved as { favorites?: unknown }).favorites : undefined;
-      if (Array.isArray(savedFavorites)) {
-        for (const folder of savedFavorites) {
-          if (typeof folder === 'string') favorites.push(folder);
-        }
+      if (typeof saved === 'object' && saved !== null) {
+        return new ProjectMarkStore(file, savedFavoritesOf(saved), savedRemovalsOf(saved));
       }
     } catch {
       // A missing or unreadable file means no marks yet.
     }
-    return new ProjectMarkStore(file, favorites);
+    return new ProjectMarkStore(file);
   }
 
   isFavorite(folder: string): boolean {
@@ -41,17 +50,36 @@ export class ProjectMarkStore {
     return [...this.#favorites];
   }
 
+  removals(): Record<string, string> {
+    return Object.fromEntries(this.#removed);
+  }
+
   async setFavorite(folder: string, favorite: boolean): Promise<void> {
     if (this.#favorites.has(folder) === favorite) return;
     if (favorite) this.#favorites.add(folder);
     else this.#favorites.delete(folder);
-    for (const listener of this.#listeners) listener();
-    await this.#save();
+    await this.#changed();
+  }
+
+  async remove(folder: string): Promise<void> {
+    this.#removed.set(folder, new Date().toISOString());
+    this.#favorites.delete(folder);
+    await this.#changed();
+  }
+
+  async clearRemoval(folder: string): Promise<void> {
+    if (!this.#removed.delete(folder)) return;
+    await this.#changed();
   }
 
   onChange(listener: MarkListener): () => void {
     this.#listeners.add(listener);
     return () => this.#listeners.delete(listener);
+  }
+
+  #changed(): Promise<void> {
+    for (const listener of this.#listeners) listener();
+    return this.#save();
   }
 
   #save(): Promise<void> {
@@ -60,7 +88,8 @@ export class ProjectMarkStore {
     const write = async () => {
       await mkdir(path.dirname(file), { recursive: true });
       const temporary = `${file}.${process.pid}.tmp`;
-      await writeFile(temporary, `${JSON.stringify({ favorites: [...this.#favorites] }, null, 2)}\n`);
+      const marks = { favorites: [...this.#favorites], removed: this.removals() };
+      await writeFile(temporary, `${JSON.stringify(marks, null, 2)}\n`);
       await rename(temporary, file);
     };
     this.#saving = this.#saving.catch(() => undefined).then(write);

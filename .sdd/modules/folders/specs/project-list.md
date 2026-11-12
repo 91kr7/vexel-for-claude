@@ -22,20 +22,21 @@ Shows:
 - state `loading` → a compact loading AreaState "Loading…".
 - state `error` → a compact error AreaState "Could not load the projects.".
 - state `ready` with no project → a compact empty AreaState "No projects yet", with the folder icon.
-- state `ready` with projects → a list, one row per project, in the store order. Each row has a button (class `project-row`) and, beside it and not inside it, the ProjectFavoriteButton of the project. The row button has:
+- state `ready` with projects → a list, one row per project, in the store order. Each row has a button (class `project-row`) and, beside it and not inside it, the ProjectFavoriteButton and then the ProjectRemoveButton of the project. The row button has:
   - the Avatar of the folder;
   - the folder name (`folderNameOf`), weight 600, 13 px, cut with an ellipsis; then the FavoriteIndicator when the project is favorite;
   - the full path, mono 11 px, `--text-muted`, cut with an ellipsis; its `title` is the full path;
   - "Last activity" and the RelativeTime of `lastActivity`, 11 px, `--text-secondary`.
 - a row with `available` false → `aria-disabled="true"`, opacity 0.55, the `not-allowed` cursor, no hover style. Before "Last activity" it shows "Folder not found" in `--amber-400`, then " · ".
 - an available row on hover → `--bg-surface-2` background and a 1 px `--border-subtle` border.
-- the ProjectFavoriteButton → at the right end of the row, centred on the height of the row button. Hidden (opacity 0) until the pointer is over the row or the focus inside the row is visible from the keyboard. It stays shown while its request runs. Its error shows under the row button. Unavailable rows have it too. It is not dimmed there, and it works.
+- the ProjectRemoveButton → at the right end of the row; the ProjectFavoriteButton → left of it, 4 px apart. Both are centred on the height of the row button. Each is hidden (opacity 0) until the pointer is over the row or the focus inside the row is visible from the keyboard. Each stays shown while its request runs. Their errors show under the row button. Unavailable rows have them too. They are not dimmed there, and they work.
 - an available row on hover or with visible focus → the label "▶ New session" at its right end, left of the favorite button, 11 px weight 600, on the accent colour. The label is decorative: it is not part of the row name. An unavailable row has no label.
 
 Actions:
 - click, Enter or Space on an available row → `onChoose(project)` with that row's project.
 - click, Enter or Space on an unavailable row → nothing.
-- Tab → reaches every row button, unavailable rows included, and after each row button its favorite button. The focused row button shows the focus ring inside its edge.
+- Tab → reaches every row button, unavailable rows included, and after each row button its favorite button, then its remove button. The focused row button shows the focus ring inside its edge.
+- a row that holds the focus leaves the list (e.g. after "Remove from Projects") → the focus goes to the row button of the next row still in the list, else of the previous one. No row left → the focus is not moved. The focus is not moved either when it is already on another element.
 
 ## Rules and invariants
 
@@ -46,10 +47,12 @@ Actions:
 
 - ProjectListStore
 - ProjectFavoriteButton
+- ProjectRemoveButton
 - AreaState, IconSet (`FolderIcon`) (module app)
 - Avatar, `folderNameOf`, RelativeTime, FavoriteIndicator (module sessions)
 
 ## Requirements served
 
 - `plan-recent_projects/REQ-6`, `plan-recent_projects/REQ-9`, `plan-recent_projects/REQ-10`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-12`, `plan-recent_projects/REQ-13`, `plan-recent_projects/REQ-14`, `plan-recent_projects/REQ-15`
+- `plan-project_list_actions/REQ-12`, `plan-project_list_actions/REQ-18`, `plan-project_list_actions/REQ-21`, `plan-project_list_actions/REQ-22`
 - `plan-project_list_actions/REQ-23`, `plan-project_list_actions/REQ-24`, `plan-project_list_actions/REQ-27`, `plan-project_list_actions/REQ-30`, `plan-project_list_actions/REQ-31`, `plan-project_list_actions/REQ-32`
