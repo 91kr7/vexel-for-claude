@@ -19,7 +19,7 @@ export function ProjectFavoriteButton({ folder, favorite }: { folder: string; fa
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ folder, favorite: !favorite }),
       });
-      if (!response.ok) setError(true);
+      if (response.status !== 204) setError(true);
     } catch {
       setError(true);
     } finally {
