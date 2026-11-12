@@ -1,5 +1,6 @@
 import { isDesktopWindow } from './desktop-bridge';
 import { PlusIcon } from './icons/Icons';
+import { useInstalledVersion } from './installed-version-loader';
 import { PlanUsageButton } from './PlanUsageButton';
 import { ShortcutsButton } from './ShortcutsButton';
 import { ThemeSwitch } from './ThemeSwitch';
@@ -15,6 +16,7 @@ interface TopBarProps {
 
 export function TopBar({ onNewSession, shortcutsPanelOpen, onToggleShortcutsPanel, planUsageOpen, onTogglePlanUsage }: TopBarProps) {
   const desktop = isDesktopWindow();
+  const installedVersion = useInstalledVersion();
   return (
     <header className={desktop ? 'top-bar top-bar-drag' : 'top-bar'}>
       <div className="top-bar-brand">
@@ -25,6 +27,7 @@ export function TopBar({ onNewSession, shortcutsPanelOpen, onToggleShortcutsPane
         <span className="top-bar-wordmark">
           <span className="top-bar-name">Vexel</span>
           <span className="top-bar-suffix">for Claude</span>
+          {installedVersion !== null && <span className="top-bar-suffix">v{installedVersion}</span>}
         </span>
       </div>
       <div className="top-bar-actions">

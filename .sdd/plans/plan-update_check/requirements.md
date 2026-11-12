@@ -25,3 +25,11 @@ A launch is the start of the desktop app, or the start of the server for the bro
 | REQ-10 | The check and the notice work in the desktop window and in the browser page. |
 | REQ-11 | The check never delays or blocks the launch, or the display of the session list. |
 | REQ-12 | The request to GitHub carries no credentials and no data about the user or the sessions. |
+
+## Feature: Installed version in the top bar
+
+| ID | Requirement |
+|----|-------------|
+| REQ-13 | In the desktop window and in the browser page, the top bar always shows the installed version in the form of the release tags, for example `v0.2.2`, right after the application name "Vexel for Claude". |
+| REQ-14 | The top bar and the notice show the same installed version number. |
+| REQ-15 | The top bar shows the installed version without network access and without waiting for the check of REQ-1. |
