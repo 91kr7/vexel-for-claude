@@ -14,3 +14,5 @@
 | 2026-11-12 | plan | planner decision server-start check | decided | Check runs once per server start; a desktop start reusing a running server shows that server's result; edge case, no extra desktop INT |
 | 2026-11-12 | plan | G3 coverage | pass | 1 batch, REQ-1..12; modify paths exist; INT-8 enabling; every REQ in a scenario |
 | 2026-11-12 | dev | G4 development newer-version-notice | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes; env var `AI_CLIENT_RELEASE_SOURCE_URL` named by developer as the plan allowed |
+| 2026-11-12 | dev | G5 tests newer-version-notice | pass | batch unit/REST 90 and e2e 9 green (rerun); tests and vitest.config env only; every REQ tested; full unit 2924 green |
+| 2026-11-12 | dev | regression terminal-search.spec.ts:240 | pass | Outside perimeter; passes alone on the branch (11/11); already logged intermittent in `recent_projects.md` |
