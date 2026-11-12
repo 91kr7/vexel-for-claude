@@ -312,7 +312,8 @@ test('a button focused from the keyboard shows the focus ring colour', async ({ 
 // plan-claude_sessions_client-ui_redesign/REQ-7
 test('each bundled font and icon set is recorded with its source, version and an existing licence file', async () => {
   const notices = await readFile(path.join(repoRoot, 'THIRD-PARTY-NOTICES.md'), 'utf8');
-  const entries = notices.split(/^## /m).slice(1);
+  // Only the entries of files shipped in the repository; npm dependencies and Electron are not copied into it.
+  const entries = notices.split(/^## /m).slice(1).filter((entry) => entry.includes('Files →'));
   expect(entries.length).toBeGreaterThanOrEqual(2);
 
   for (const entry of entries) {
