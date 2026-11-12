@@ -13,7 +13,7 @@ Requirements: `requirements.md`. There is no mock for this request.
 |-------|---------|------------|---------|--------|------------------|
 | [favorite-project](batches/batch-favorite-project.md) | Favorite project | REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32 | — | certified | A favorite project moves to the top of the list |
 | [remove-project](batches/batch-remove-project.md) | Remove a project | REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22 | favorite-project | certified | The user removes a project from the list |
-| [project-search](batches/batch-project-search.md) | Project search | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11 | favorite-project | in progress | The user finds a project by typing part of its path |
+| [project-search](batches/batch-project-search.md) | Project search | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11 | favorite-project | implemented | The user finds a project by typing part of its path |
 
 Execution order: favorite-project, then remove-project, then project-search. Remove and search do not depend on each other. They run one after the other because both change `ProjectList.tsx`. favorite-project goes first: remove clears the mark (REQ-19), and the search keeps the favorites at the top (REQ-4).
 

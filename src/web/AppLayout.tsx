@@ -64,6 +64,7 @@ export function AppLayout() {
   const [resuming, setResuming] = useState(false);
   const [sideView, setSideView] = useState<SideView>('sessions');
   const [focusRequest, setFocusRequest] = useState<{ view: SideView } | null>(null);
+  const [projectsOpening, setProjectsOpening] = useState(0);
   const [showingShortcuts, setShowingShortcuts] = useState(false);
   const toggleShortcuts = () => setShowingShortcuts((showing) => !showing);
   const [showingPlanUsage, setShowingPlanUsage] = useState(false);
@@ -123,6 +124,7 @@ export function AppLayout() {
 
   const showProjects = () => {
     setSideView('projects');
+    setProjectsOpening((count) => count + 1);
     pageProjectListStore().load();
     setFocusRequest({ view: 'projects' });
   };
@@ -180,7 +182,7 @@ export function AppLayout() {
         />
         <ListPanel panelRef={listPanelRef}>
           {sideView === 'projects' ? (
-            <ProjectList onChoose={setNamingProject} />
+            <ProjectList key={projectsOpening} onChoose={setNamingProject} />
           ) : (
             <>
               <div className="list-panel-title">

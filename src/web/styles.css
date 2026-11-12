@@ -2863,6 +2863,10 @@ input {
   opacity: 1;
 }
 
+.project-search-input:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+}
+
 .search-field-clear {
   position: absolute;
   top: 50%;

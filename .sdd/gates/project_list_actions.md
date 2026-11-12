@@ -22,3 +22,5 @@
 | 2026-11-13 | dev | G4 development remove-project | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes |
 | 2026-11-13 | dev | divergence remove route method | decided | `POST /api/projects/remove`: each call saves a new removal time; plan leaves the method open |
 | 2026-11-13 | dev | G5 tests remove-project | pass | unit 275 and e2e 28 green (rerun); tests and playwright.config only |
+| 2026-11-13 | dev | G4 development project-search | pass | build green (rerun); diff limited to ProjectList.tsx, AppLayout.tsx, styles.css, specs, index |
+| 2026-11-13 | dev | side effects of the search reset | decided | Remount on "Projects" also drops a row error; search bar hidden while loading, on error and with no project; no REQ affected |

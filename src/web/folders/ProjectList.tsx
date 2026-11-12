@@ -1,6 +1,6 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AreaState } from '../feedback/AreaState';
-import { FolderIcon } from '../icons/Icons';
+import { FolderIcon, SearchIcon, XIcon } from '../icons/Icons';
 import { Avatar, folderNameOf } from '../sessions/Avatar';
 import { FavoriteIndicator } from '../sessions/FavoriteIndicator';
 import { RelativeTime } from '../sessions/RelativeTime';
@@ -58,7 +58,13 @@ function ProjectRow({ project, onChoose }: { project: Project; onChoose?: Choose
 
 export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onChoose?: ChooseProject }) {
   const state = useProjectList(store);
-  const projects = state.kind === 'ready' ? state.projects : undefined;
+  const [query, setQuery] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
+  const allProjects = state.kind === 'ready' ? state.projects : undefined;
+  const projects = useMemo(() => {
+    const text = query.toLowerCase();
+    return text === '' ? allProjects : allProjects?.filter((project) => project.folder.toLowerCase().includes(text));
+  }, [allProjects, query]);
   const listRef = useRef<HTMLUListElement>(null);
   const focusedFolder = useRef<string | undefined>(undefined);
   const shownProjects = useRef(projects);
@@ -81,6 +87,34 @@ export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onC
       <div className="list-panel-title">
         <h1 className="section-label">Projects</h1>
       </div>
+      {allProjects !== undefined && allProjects.length > 0 && (
+        <div className="search-field">
+          <SearchIcon />
+          <input
+            ref={searchRef}
+            className="field-input search-field-input project-search-input"
+            type="text"
+            value={query}
+            placeholder="Search projects"
+            aria-label="Search projects"
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          {query !== '' && (
+            <button
+              type="button"
+              className="search-field-clear"
+              aria-label="Clear Search"
+              title="Clear Search"
+              onClick={() => {
+                setQuery('');
+                searchRef.current?.focus();
+              }}
+            >
+              <XIcon />
+            </button>
+          )}
+        </div>
+      )}
       <div className="project-list">
         {state.kind === 'loading' ? (
           <AreaState kind="loading" size="compact" title="Loading…" />
@@ -88,6 +122,8 @@ export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onC
           <AreaState kind="error" size="compact" title="Could not load the projects." />
         ) : state.projects.length === 0 ? (
           <AreaState kind="empty" size="compact" title="No projects yet" icon={<FolderIcon />} />
+        ) : projects === undefined || projects.length === 0 ? (
+          <AreaState kind="empty" size="compact" title={`No projects match "${query}"`} icon={<FolderIcon />} />
         ) : (
           <ul
             ref={listRef}
@@ -95,7 +131,7 @@ export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onC
               if (event.relatedTarget !== null && !event.currentTarget.contains(event.relatedTarget)) focusedFolder.current = undefined;
             }}
           >
-            {state.projects.map((project) => (
+            {projects.map((project) => (
               <li key={project.folder} onFocus={() => (focusedFolder.current = project.folder)}>
                 <ProjectRow project={project} onChoose={onChoose} />
                 <ProjectFavoriteButton folder={project.folder} favorite={project.favorite} />
