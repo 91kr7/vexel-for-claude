@@ -908,7 +908,7 @@ describe('plan-claude_sessions_client external sessions', { timeout: 20_000 }, (
   });
 
   describe('plan-claude_sessions_client/REQ-32 external sessions come, change and go by themselves', () => {
-    it('a connected page receives the new external entry, its state change and its removal, with no request of its own', async () => {
+    it('a connected page receives the new external entry, its state change, its end and its dismissal, with no request of its own', async () => {
       const events = connectWs(`ws://127.0.0.1:${port}/api/sessions/events`, { Origin: base });
       clients.push(events);
       await new Promise<void>((resolve) => events.socket.once('open', () => resolve()));
@@ -925,7 +925,16 @@ describe('plan-claude_sessions_client external sessions', { timeout: 20_000 }, (
       await waitFor(() => mine().some((f) => f.session?.state === 'working'), 'external entry working');
 
       await terminal.end();
-      await waitFor(() => mine().some((f) => f.type === 'session-removed'), 'external entry removed', 8000);
+      await waitFor(() => mine().some((f) => f.session?.state === 'ended'), 'external entry ended', 8000);
+      expect(mine().at(-1)).toEqual({
+        type: 'session',
+        session: expect.objectContaining({ id: 'req32-events', state: 'ended', resumable: true, external: true }),
+      });
+      expect((await listSessions()).find((s) => s.id === 'req32-events')?.state).toBe('ended');
+
+      const dismissed = await fetch(`${base}/api/sessions/req32-events/dismiss`, { method: 'POST' });
+      expect(dismissed.status).toBe(204);
+      await waitFor(() => mine().some((f) => f.type === 'session-removed'), 'external entry removed');
       expect(mine().at(-1)).toEqual({ type: 'session-removed', id: 'req32-events' });
       expect((await listSessions()).map((s) => s.id)).not.toContain('req32-events');
     });
@@ -1067,7 +1076,7 @@ describe('plan-claude_sessions_client-ui_redesign/REQ-21 full content of a tool 
     expect(await resultResponse.json()).toEqual({ text: fullOutput });
 
     await terminal.end();
-    await waitForList((sessions) => !sessions.some((s) => s.id === 'req21-expand'), 'external entry removed');
+    await waitForList((sessions) => sessions.some((s) => s.id === 'req21-expand' && s.state === 'ended'), 'external entry ended');
     const afterEnd = await itemContent('req21-expand', result?.ref ?? { offset: -1, block: -1 });
     expect(afterEnd.status).toBe(200);
     expect(await afterEnd.json()).toEqual({ text: fullOutput });

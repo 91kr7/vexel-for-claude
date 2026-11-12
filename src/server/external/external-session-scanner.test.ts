@@ -31,6 +31,7 @@ interface Fixture {
   files: RunningSessionFile[];
   messages: Map<string, string | null>;
   hosted: number[];
+  hostedIds: Set<string>;
   check: { runningSessions: ReturnType<typeof vi.fn> };
   history: { get: ReturnType<typeof vi.fn> };
   scanner: ExternalSessionScanner;
@@ -43,6 +44,7 @@ function fixture(options: { intervalMs?: number } = {}): Fixture {
     files: [] as RunningSessionFile[],
     messages: new Map<string, string | null>(),
     hosted: [] as number[],
+    hostedIds: new Set<string>(),
     changes: [] as ExternalSessionChange[],
     clock: { now: SCAN_TIME },
   } as Fixture;
@@ -54,6 +56,7 @@ function fixture(options: { intervalMs?: number } = {}): Fixture {
     check: f.check as never,
     history: f.history as never,
     hostedPids: () => f.hosted,
+    hostedSessionIds: () => f.hostedIds,
     now: () => f.clock.now,
     ...options,
   });
@@ -201,7 +204,7 @@ describe('ExternalSessionScanner entries', () => {
 
 describe('ExternalSessionScanner changes', () => {
   // plan-claude_sessions_client/REQ-32
-  it('notifies an addition, a change and a removal, and nothing when the data is the same', async () => {
+  it('notifies an addition, a change and the end, and nothing when the data is the same', async () => {
     const f = fixture();
     f.files = [sessionFile(1, 'a')];
     await f.scanner.scan();
@@ -219,8 +222,55 @@ describe('ExternalSessionScanner changes', () => {
 
     f.files = [];
     await f.scanner.scan();
-    expect(f.changes.at(-1)).toEqual({ type: 'session-removed', id: 'a' });
+    expect(f.changes.at(-1)).toEqual({
+      type: 'session',
+      session: expect.objectContaining({ id: 'a', state: 'ended', resumable: true, external: true }),
+    });
     expect(f.changes).toHaveLength(3);
+
+    await f.scanner.scan();
+    expect(f.changes).toHaveLength(3);
+    expect(f.scanner.list()).toEqual([expect.objectContaining({ id: 'a', state: 'ended' })]);
+  });
+
+  // A session whose terminal closed stays listed as ended, readable and resumable, until dismissed.
+  it('keeps an ended session until it is dismissed, and dismisses only ended sessions', async () => {
+    const f = fixture();
+    f.files = [sessionFile(1, 'a'), sessionFile(2, 'b')];
+    await f.scanner.scan();
+    expect(f.scanner.dismiss('a')).toBe(false);
+    expect(f.scanner.dismiss('unknown')).toBe(false);
+
+    f.files = [sessionFile(2, 'b')];
+    await f.scanner.scan();
+    expect(f.scanner.get('a')?.state).toBe('ended');
+    expect(f.scanner.dismiss('a')).toBe(true);
+    expect(f.changes.at(-1)).toEqual({ type: 'session-removed', id: 'a' });
+    expect(f.scanner.list().map((s) => s.id)).toEqual(['b']);
+  });
+
+  it('an ended session that runs again in a terminal is live again', async () => {
+    const f = fixture();
+    f.files = [sessionFile(1, 'a')];
+    await f.scanner.scan();
+    f.files = [];
+    await f.scanner.scan();
+    f.files = [sessionFile(3, 'a', { status: 'busy' })];
+    await f.scanner.scan();
+    const session = f.scanner.get('a');
+    expect(session?.state).toBe('working');
+    expect(session?.resumable).toBeUndefined();
+  });
+
+  it('an ended session resumed in the client leaves the list', async () => {
+    const f = fixture();
+    f.files = [sessionFile(1, 'a')];
+    await f.scanner.scan();
+    f.files = [];
+    await f.scanner.scan();
+    f.hostedIds = new Set(['a']);
+    await f.scanner.scan();
+    expect(f.changes.at(-1)).toEqual({ type: 'session-removed', id: 'a' });
     expect(f.scanner.list()).toEqual([]);
   });
 
@@ -234,6 +284,7 @@ describe('ExternalSessionScanner changes', () => {
     f.files = [sessionFile(7, 'taken')];
     await f.scanner.scan();
     f.hosted = [7];
+    f.hostedIds = new Set(['taken']);
     await f.scanner.scan();
     expect(f.changes.map((c) => c.type)).toEqual(['session', 'session-removed']);
   });
@@ -269,7 +320,7 @@ describe('ExternalSessionScanner changes', () => {
     expect(f.changes).toHaveLength(1);
     f.files = [];
     await f.scanner.scan();
-    expect(f.changes.at(-1)).toEqual({ type: 'session-removed', id: 'a' });
+    expect(f.changes.at(-1)).toEqual({ type: 'session', session: expect.objectContaining({ id: 'a', state: 'ended' }) });
   });
 });
 

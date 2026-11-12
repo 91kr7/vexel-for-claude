@@ -9,9 +9,10 @@ export interface ExternalSessionSummary {
   id: string;
   folder: string;
   label: string;
-  state: 'working' | 'needs_input' | 'idle';
+  state: 'working' | 'needs_input' | 'idle' | 'ended';
   lastActivity: string;
   external: true;
+  resumable?: true;
   favorite?: true;
 }
 
@@ -23,6 +24,8 @@ export interface ExternalSessionScannerDependencies {
   check: Pick<ExternalSessionCheck, 'runningSessions'>;
   history: Pick<SessionHistory, 'get'>;
   hostedPids: () => Iterable<number>;
+  /** Claude session ids that run inside the client: an ended external session resumed here leaves the list. */
+  hostedSessionIds?: () => ReadonlySet<string>;
   names?: Pick<SessionNameStore, 'get' | 'onChange'>;
   favorites?: Pick<SessionFavoriteStore, 'has' | 'onChange'>;
   intervalMs?: number;
@@ -44,6 +47,7 @@ function sameSummary(a: ExternalSessionSummary, b: ExternalSessionSummary): bool
     a.label === b.label &&
     a.state === b.state &&
     a.lastActivity === b.lastActivity &&
+    a.resumable === b.resumable &&
     a.favorite === b.favorite
   );
 }
@@ -143,11 +147,29 @@ export class ExternalSessionScanner {
       this.#entries.set(id, { summary, defaultLabel, labelFromMessage, firstSeen });
       if (!current || !sameSummary(current.summary, summary)) this.#notify({ type: 'session', session: { ...summary } });
     }
-    for (const id of [...this.#entries.keys()]) {
+    // A session whose terminal closed stays in the list as ended, so its conversation stays readable and resumable,
+    // until the user dismisses it or resumes it in the client.
+    const hosted = this.#deps.hostedSessionIds?.() ?? new Set<string>();
+    for (const [id, entry] of [...this.#entries]) {
       if (found.has(id)) continue;
-      this.#entries.delete(id);
-      this.#notify({ type: 'session-removed', id });
+      if (hosted.has(id)) {
+        this.#entries.delete(id);
+        this.#notify({ type: 'session-removed', id });
+        continue;
+      }
+      if (entry.summary.state === 'ended') continue;
+      entry.summary = { ...entry.summary, state: 'ended', resumable: true };
+      this.#notify({ type: 'session', session: { ...entry.summary } });
     }
+  }
+
+  /** Removes an ended session from the list. Returns false when the session is unknown or still running. */
+  dismiss(id: string): boolean {
+    const entry = this.#entries.get(id);
+    if (!entry || entry.summary.state !== 'ended') return false;
+    this.#entries.delete(id);
+    this.#notify({ type: 'session-removed', id });
+    return true;
   }
 
   list(): ExternalSessionSummary[] {

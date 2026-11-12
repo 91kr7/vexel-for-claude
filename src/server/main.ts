@@ -63,6 +63,7 @@ const externalScanner = new ExternalSessionScanner({
   check: externalCheck,
   history,
   hostedPids: () => registry.hostedPids(),
+  hostedSessionIds: () => tracker.liveClaudeSessionIds(),
   names,
   favorites,
 });
@@ -77,10 +78,10 @@ await app.register(fastifyWebsocket);
 app.get('/api/health', async () => ({ status: 'ok' }));
 registerStartSessionRoute(app, registry);
 registerStopSessionRoute(app, registry);
-registerDismissSessionRoute(app, tracker);
+registerDismissSessionRoute(app, tracker, externalScanner);
 registerRenameSessionRoute(app, { tracker, scanner: externalScanner, names });
 registerFavoriteSessionRoute(app, { tracker, scanner: externalScanner, favorites });
-registerResumeEndedSessionRoute(app, { tracker, history, registry, externalCheck });
+registerResumeEndedSessionRoute(app, { tracker, history, registry, externalCheck, scanner: externalScanner });
 registerAttachSessionRoute(app, registry, tracker);
 registerSessionListRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor);
 registerSessionEventsRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor);

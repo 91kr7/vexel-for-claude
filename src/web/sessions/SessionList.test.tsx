@@ -359,17 +359,22 @@ describe('SessionList, ended hosted entry actions', () => {
   });
 
   // plan-session_list_improvements/REQ-3: no other entry offers "Dismiss" or "Resume"
-  it('offers neither action on working, needs-input, idle or external entries, ended external ones included', () => {
+  it('offers neither action on working, needs-input, idle or running external entries', () => {
     const html = renderList([
       { ...session('work', 'working', now), resumable: true },
       { ...session('wait', 'needs_input', now), resumable: true },
       { ...session('rest', 'idle', now), resumable: true },
       external('ext-work', 'working', now),
       external('ext-wait', 'needs_input', now),
-      { ...external('ext-ended', 'ended', now), resumable: true },
     ]);
-    expect(items(html)).toHaveLength(6);
+    expect(items(html)).toHaveLength(5);
     expect(actionNames(html)).toEqual([]);
+  });
+
+  // An external session whose terminal closed stays in "Ended" with the same actions as a hosted one.
+  it('offers Resume and Dismiss on an ended external entry', () => {
+    const item = itemOf(renderList([{ ...external('ext-ended', 'ended', now), resumable: true }]), 'ext-ended');
+    expect(actionNames(item)).toEqual(['Resume', 'Dismiss']);
   });
 
   // EndedEntryActions: the buttons sit beside the entry button, not inside it

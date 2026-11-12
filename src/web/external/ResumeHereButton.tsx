@@ -8,6 +8,8 @@ import { useSessionCommand } from '../shortcut-channel';
 interface ResumeHereButtonProps {
   sessionId: string;
   onResumed: (id: string) => void;
+  /** The terminal of the session has closed: no running-elsewhere warning before resuming. */
+  ended?: boolean;
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -16,7 +18,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 const RESUME_FAILED = 'Could not resume the session.';
 
-export function ResumeHereButton({ sessionId, onResumed }: ResumeHereButtonProps) {
+export function ResumeHereButton({ sessionId, onResumed, ended = false }: ResumeHereButtonProps) {
   const [warning, setWarning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,11 +42,13 @@ export function ResumeHereButton({ sessionId, onResumed }: ResumeHereButtonProps
     }
   };
 
-  useSessionCommand('resume', () => setWarning(true), !busy);
+  const start = () => (ended ? void resume() : setWarning(true));
+
+  useSessionCommand('resume', start, !busy);
 
   return (
     <>
-      <button type="button" className="button-primary button-bar resume-here-button" disabled={busy} aria-busy={busy || undefined} onClick={() => setWarning(true)}>
+      <button type="button" className="button-primary button-bar resume-here-button" disabled={busy} aria-busy={busy || undefined} onClick={start}>
         {busy ? <Spinner /> : <LogInIcon />}
         Resume Here
       </button>
