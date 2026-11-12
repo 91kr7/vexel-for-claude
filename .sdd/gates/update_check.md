@@ -7,3 +7,9 @@
 | 2026-11-12 | analysis | question analyst Q3 | decided | Repository public, no credentials; source `README.md` and `CONTRIBUTING.md` clone URL, CI badge |
 | 2026-11-12 | analysis | launch scope | decided | Check covers desktop window and browser page; `README.md` "Install and run" offers both, request says "l'applicazione" |
 | 2026-11-12 | analysis | G1 analysis | pass | 71 lines vs narrow budget 80; request verbatim; no placeholders; no technical choices |
+| 2026-11-12 | plan | question planner Q1 | decided | Closed notice lives in the open page only; reload shows it again; analysis puts remembering a close out of scope; minimal intervention |
+| 2026-11-12 | plan | planner assumptions | decided | Semver comparison ignoring leading `v`; non-blocking banner, English text, existing UI look |
+| 2026-11-12 | plan | test isolation | decided | No test calls the real GitHub; release source replaceable in tests |
+| 2026-11-12 | plan | G2 requirements | pass | REQ-1..12 cover the analysis; one sentence each, verifiable |
+| 2026-11-12 | plan | planner decision server-start check | decided | Check runs once per server start; a desktop start reusing a running server shows that server's result; edge case, no extra desktop INT |
+| 2026-11-12 | plan | G3 coverage | pass | 1 batch, REQ-1..12; modify paths exist; INT-8 enabling; every REQ in a scenario |
