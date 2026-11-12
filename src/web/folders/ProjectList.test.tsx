@@ -190,3 +190,67 @@ describe('ProjectList', () => {
     expect(text(unavailable)).not.toContain('New session');
   });
 });
+
+/** A store with the given project marks. */
+async function markedStore(favorites: string[]) {
+  const marks = { subscribe: () => () => {}, getSnapshot: () => ({ favorites: new Set(favorites) as ReadonlySet<string> }) };
+  const store = new ProjectListStore(async () => groups as never, marks);
+  store.load();
+  await settle();
+  return store;
+}
+
+const rowOf = (host: HTMLElement, folder: string) => rows(host).find((row) => row.querySelector(`[title="${folder}"]`))!;
+const favoriteButtons = (host: HTMLElement) =>
+  [...host.querySelectorAll<HTMLButtonElement>('button')].filter((b) => /^(Mark as Favorite|Remove Favorite)$/.test(b.getAttribute('aria-label') ?? b.textContent?.trim() ?? ''));
+const nameOf = (button: HTMLButtonElement) => button.getAttribute('aria-label') ?? button.textContent?.trim();
+
+describe('ProjectList favorite mark', () => {
+  // plan-project_list_actions/REQ-24, REQ-30: the star of a favorite row, told apart by shape and name
+  it('shows the FavoriteIndicator after the folder name of a favorite row only', async () => {
+    const host = mount(await markedStore(['/home/u/old-api']));
+    const favorite = rowOf(host, '/home/u/old-api');
+    const indicator = favorite.querySelector('[role="img"][aria-label="Favorite"]');
+    expect(indicator).not.toBeNull();
+    expect(indicator!.getAttribute('title')).toBe('Favorite');
+    expect(indicator!.querySelector('svg.icon-filled')).not.toBeNull();
+    const name = [...favorite.querySelectorAll('*')].find((el) => el.children.length === 0 && el.textContent === 'old-api');
+    expect(name).toBeDefined();
+    expect(name!.compareDocumentPosition(indicator!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(rowOf(host, '/home/u/web-dashboard').querySelector('[aria-label="Favorite"]')).toBeNull();
+  });
+
+  // plan-project_list_actions/REQ-25
+  it('shows the favorite row first, in the store order', async () => {
+    const host = mount(await markedStore(['/home/u/old-api']));
+    expect(rows(host).map((row) => row.querySelector('[title^="/"]')?.getAttribute('title'))).toEqual(['/home/u/old-api', '/home/u/web-dashboard']);
+  });
+
+  // plan-project_list_actions/REQ-23, REQ-27, REQ-31: each row, unavailable too, has its button beside the row button
+  it('gives every row a favorite button beside the row button, not inside it, right after it in the tab order', async () => {
+    const host = mount(await markedStore(['/home/u/web-dashboard']));
+    const buttons = favoriteButtons(host);
+    expect(buttons).toHaveLength(2);
+    for (const button of buttons) expect(button.closest('.project-row')).toBeNull();
+    const focusable = [...host.querySelectorAll<HTMLButtonElement>('button')].filter((b) => b.tabIndex >= 0);
+    const order = focusable.map((b) => (b.classList.contains('project-row') ? b.querySelector('[title^="/"]')?.getAttribute('title') : nameOf(b)));
+    expect(order).toEqual(['/home/u/web-dashboard', 'Remove Favorite', '/home/u/old-api', 'Mark as Favorite']);
+  });
+
+  it('keeps the favorite button of an unavailable row enabled', async () => {
+    const host = mount(await markedStore([]));
+    const unavailableButton = favoriteButtons(host)[1]!;
+    expect(rowOf(host, '/home/u/old-api').getAttribute('aria-disabled')).toBe('true');
+    expect(unavailableButton.disabled).toBe(false);
+    expect(unavailableButton.getAttribute('aria-disabled')).not.toBe('true');
+  });
+
+  it('a press on the favorite button does not choose the project', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+    const onChoose = vi.fn();
+    const host = mount(await markedStore([]), onChoose);
+    favoriteButtons(host)[0]!.click();
+    expect(onChoose).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});

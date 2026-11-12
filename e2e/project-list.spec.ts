@@ -239,10 +239,13 @@ test('with hundreds of folders, a second opening from the keyboard shows the lis
   expect(await focusedShowsRing(page)).toBe(true);
   release();
 
-  // Tab reaches the next rows, unavailable ones included.
+  // Tab reaches the next rows, unavailable ones included; each row's favorite button comes after the row button.
+  await page.keyboard.press('Tab');
+  await expect(page.locator(':focus')).toHaveAccessibleName(/Favorite$/);
   await page.keyboard.press('Tab');
   await expect(rows(page).nth(1)).toBeFocused();
   await rows(page).nth(49).focus();
+  await page.keyboard.press('Tab');
   await page.keyboard.press('Tab');
   await expect(rows(page).nth(50)).toBeFocused();
   await expect(rows(page).nth(50)).toHaveAttribute('aria-disabled', 'true');

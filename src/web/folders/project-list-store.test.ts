@@ -63,14 +63,14 @@ describe('ProjectListStore', () => {
   });
 
   // plan-recent_projects/REQ-3, REQ-6, REQ-7, REQ-10: one project per group, in the route order
-  it('gives one project per group, in the group order, with the folder, the first session lastActivity and available', async () => {
+  it('gives one project per group, in the group order, with the folder, the first session lastActivity, available, and no favorite without marks', async () => {
     const { store } = await loaded(groups);
     expect(store.getSnapshot()).toEqual({
       kind: 'ready',
       projects: [
-        { folder: '/work/new', lastActivity: '2026-11-10T10:00:00.000Z', available: true },
-        { folder: '/work/gone', lastActivity: '2026-11-09T10:00:00.000Z', available: false },
-        { folder: '/work/old', lastActivity: '2026-11-08T10:00:00.000Z', available: true },
+        { folder: '/work/new', lastActivity: '2026-11-10T10:00:00.000Z', available: true, favorite: false },
+        { folder: '/work/gone', lastActivity: '2026-11-09T10:00:00.000Z', available: false, favorite: false },
+        { folder: '/work/old', lastActivity: '2026-11-08T10:00:00.000Z', available: true, favorite: false },
       ],
     });
   });
@@ -209,7 +209,150 @@ describe('ProjectListStore', () => {
     });
   });
 
+  // pageProjectListStore uses pageProjectMarkLiveStore, which needs the page origin and a WebSocket.
   it('pageProjectListStore gives the same store at each call', () => {
+    vi.stubGlobal('window', { location: { origin: 'http://127.0.0.1:4555' } });
+    vi.stubGlobal('WebSocket', class {
+      addEventListener() {}
+      close() {}
+    });
     expect(pageProjectListStore()).toBe(pageProjectListStore());
+  });
+});
+
+/** A mark source as ProjectMarkLiveStore gives it, set by the test. */
+function fakeMarks(initial: string[] = []) {
+  const listeners = new Set<() => void>();
+  let snapshot = { favorites: new Set(initial) as ReadonlySet<string> };
+  return {
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    getSnapshot: () => snapshot,
+    set(favorites: string[]) {
+      snapshot = { favorites: new Set(favorites) };
+      for (const listener of listeners) listener();
+    },
+  };
+}
+
+function markedStore(marks: ReturnType<typeof fakeMarks>) {
+  const calls: Deferred[] = [];
+  const fetchGroups = vi.fn(() => {
+    const call = deferred();
+    calls.push(call);
+    return call.promise as never;
+  });
+  return { store: new ProjectListStore(fetchGroups, marks), calls, fetchGroups };
+}
+
+const folders = (store: ProjectListStore) => {
+  const state = store.getSnapshot();
+  return state.kind === 'ready' ? state.projects.map((p) => `${p.folder}${p.favorite ? ' *' : ''}`) : state.kind;
+};
+
+const fourGroups = [
+  { folder: '/work/a', available: true, sessions: [session('2026-11-10T10:00:00.000Z')] },
+  { folder: '/work/b', available: true, sessions: [session('2026-11-09T10:00:00.000Z')] },
+  { folder: '/work/c', available: false, sessions: [session('2026-11-08T10:00:00.000Z')] },
+  { folder: '/work/d', available: true, sessions: [session('2026-11-07T10:00:00.000Z')] },
+];
+
+describe('ProjectListStore with project marks', () => {
+  // plan-project_list_actions/REQ-25, REQ-26
+  it('puts the favorite projects first; each part keeps the route order', async () => {
+    const marks = fakeMarks(['/work/d', '/work/b']);
+    const { store, calls } = markedStore(marks);
+    store.load();
+    calls[0]!.resolve(fourGroups);
+    await settle();
+    expect(folders(store)).toEqual(['/work/b *', '/work/d *', '/work/a', '/work/c']);
+  });
+
+  // plan-project_list_actions/REQ-27: an unavailable project can be favorite
+  it('marks an unavailable project as favorite and puts it first', async () => {
+    const { store, calls } = markedStore(fakeMarks(['/work/c']));
+    store.load();
+    calls[0]!.resolve(fourGroups);
+    await settle();
+    const state = store.getSnapshot();
+    expect(state.kind === 'ready' && state.projects[0]).toEqual({ folder: '/work/c', lastActivity: '2026-11-08T10:00:00.000Z', available: false, favorite: true });
+  });
+
+  it('ignores marks of folders that are not in the list', async () => {
+    const { store, calls } = markedStore(fakeMarks(['/work/elsewhere']));
+    store.load();
+    calls[0]!.resolve(fourGroups);
+    await settle();
+    expect(folders(store)).toEqual(['/work/a', '/work/b', '/work/c', '/work/d']);
+  });
+
+  // plan-project_list_actions/REQ-29: a mark change shows at once, with no new load
+  it('in ready, a mark change gives a new ready state at once, with no new load', async () => {
+    const marks = fakeMarks();
+    const { store, calls, fetchGroups } = markedStore(marks);
+    store.load();
+    calls[0]!.resolve(fourGroups);
+    await settle();
+    const before = store.getSnapshot();
+    const listener = vi.fn();
+    store.subscribe(listener);
+
+    marks.set(['/work/c']);
+    expect(listener).toHaveBeenCalled();
+    expect(store.getSnapshot()).not.toBe(before);
+    expect(folders(store)).toEqual(['/work/c *', '/work/a', '/work/b', '/work/d']);
+
+    marks.set(['/work/c', '/work/b']);
+    expect(folders(store)).toEqual(['/work/b *', '/work/c *', '/work/a', '/work/d']);
+
+    marks.set(['/work/b']);
+    expect(folders(store)).toEqual(['/work/b *', '/work/a', '/work/c', '/work/d']);
+    expect(fetchGroups).toHaveBeenCalledTimes(1);
+  });
+
+  it('applies a mark change to the last loaded list while a new load runs', async () => {
+    const marks = fakeMarks();
+    const { store, calls } = markedStore(marks);
+    store.load();
+    calls[0]!.resolve(fourGroups);
+    await settle();
+    store.load();
+    marks.set(['/work/d']);
+    expect(folders(store)).toEqual(['/work/d *', '/work/a', '/work/b', '/work/c']);
+    calls[1]!.resolve(fourGroups.slice(0, 2));
+    await settle();
+    expect(folders(store)).toEqual(['/work/a', '/work/b']);
+  });
+
+  it.each([
+    ['loading', async () => undefined],
+    ['error', async (call: Deferred) => {
+      call.reject(new Error('down'));
+      await settle();
+    }],
+  ])('in %s, a mark change changes nothing', async (kind, reach) => {
+    const marks = fakeMarks();
+    const { store, calls } = markedStore(marks);
+    store.load();
+    await reach(calls[0]!);
+    const before = store.getSnapshot();
+    expect(before.kind).toBe(kind);
+    const listener = vi.fn();
+    store.subscribe(listener);
+    marks.set(['/work/a']);
+    expect(store.getSnapshot()).toBe(before);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('a load that ends after a mark change uses the current marks', async () => {
+    const marks = fakeMarks();
+    const { store, calls } = markedStore(marks);
+    store.load();
+    marks.set(['/work/b']);
+    calls[0]!.resolve(fourGroups);
+    await settle();
+    expect(folders(store)).toEqual(['/work/b *', '/work/a', '/work/c', '/work/d']);
   });
 });
