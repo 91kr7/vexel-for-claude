@@ -1,0 +1,273 @@
+<title>Vexel Recent Projects</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600;8..144,700&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the real Vexel window (rail · side column · terminal) shown inside a scrollable stage, with notes beside it. Tokens copied from src/web/theme/tokens.css (dark). */
+:root {
+  color-scheme: dark;
+  --font-ui: 'Roboto Flex', system-ui, sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, monospace;
+  --bg-page: #060608;
+  --bg-canvas: #0b0b0e;
+  --bg-surface-1: #121216;
+  --bg-surface-2: #18181f;
+  --bg-surface-3: #21212b;
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --text-primary: #f3f2ee;
+  --text-secondary: #a1a0ab;
+  --text-muted: #898894;
+  --accent: #8ccfff;
+  --accent-glow: rgba(140, 207, 255, 0.16);
+  --accent-border: rgba(140, 207, 255, 0.42);
+  --on-accent: #0b0b0e;
+  --emerald: #34d399;
+  --amber: #fbbf24;
+  --amber-tint: rgba(245, 158, 11, 0.15);
+  --scrim: rgba(0, 0, 0, 0.55);
+  --note-bg: #14141a;
+  --note-mark: #fbbf24;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  padding-block: 32px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.page { max-width: 1240px; margin: 0 auto; display: grid; gap: 28px; }
+header.intro { display: grid; gap: 8px; max-width: 70ch; }
+.eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+.intro p { margin: 0; color: var(--text-secondary); line-height: 1.55; }
+
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.tab { font: 500 13px var(--font-ui); color: var(--text-secondary); background: var(--bg-surface-1); border: 1px solid var(--border-subtle); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+.tab[aria-selected="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+.tab:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.stage-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; align-items: start; }
+@media (max-width: 980px) { .stage-wrap { grid-template-columns: minmax(0, 1fr); } }
+.stage { overflow-x: auto; border-radius: 14px; }
+
+/* ---- App window ---- */
+.win { position: relative; width: 1000px; height: 620px; background: var(--bg-canvas); border: 1px solid var(--border-strong); border-radius: 14px; overflow: hidden; display: grid; grid-template-rows: 48px 1fr; }
+.titlebar { display: flex; align-items: center; gap: 14px; padding: 0 14px; border-bottom: 1px solid var(--border-subtle); background: var(--bg-surface-1); }
+.lights { display: flex; gap: 7px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.brand .logo { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #8ccfff, #008ef4); color: var(--on-accent); display: grid; place-items: center; font-size: 11px; }
+.brand small { font-family: var(--font-mono); font-weight: 400; font-size: 11px; color: var(--text-muted); }
+.titlebar .spacer { flex: 1; }
+.btn-primary { font: 600 13px var(--font-ui); background: var(--accent); color: var(--on-accent); border: 0; border-radius: 10px; padding: 8px 14px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.btn-ghost { font: 500 13px var(--font-ui); background: transparent; color: var(--text-secondary); border: 1px solid var(--border-strong); border-radius: 10px; padding: 8px 14px; cursor: pointer; }
+
+.body { display: grid; grid-template-columns: 52px 240px 1fr; min-height: 0; }
+.rail { border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 10px; background: var(--bg-surface-1); }
+.rail-fab { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; border: 0; }
+.rail-div { width: 24px; height: 1px; background: var(--border-strong); }
+.rail-btn { position: relative; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--text-secondary); background: transparent; border: 1px solid transparent; cursor: pointer; }
+.rail-btn.active { background: var(--accent-glow); border-color: var(--accent-border); color: var(--accent); }
+.rail-btn svg { width: 18px; height: 18px; }
+.rail-btn.new::after { content: "NEW"; position: absolute; left: 38px; top: 8px; font: 600 9px var(--font-mono); letter-spacing: 0.08em; color: var(--on-accent); background: var(--note-mark); border-radius: 4px; padding: 1px 4px; }
+.tip { position: absolute; left: 44px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-size: 12px; background: var(--bg-surface-3); color: var(--text-primary); border: 1px solid var(--border-strong); border-radius: 6px; padding: 4px 8px; pointer-events: none; opacity: 0; z-index: 5; }
+.rail-btn:hover .tip { opacity: 1; }
+
+.side { border-right: 1px solid var(--border-subtle); background: var(--bg-surface-1); display: flex; flex-direction: column; min-height: 0; }
+.side-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 8px; }
+.label { font: 500 11px var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+.count { font: 500 11px var(--font-mono); color: var(--text-muted); }
+.list { overflow-y: auto; padding: 0 8px 12px; display: grid; gap: 4px; align-content: start; }
+.proj { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: center; padding: 9px 8px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; text-align: left; background: transparent; color: inherit; font: inherit; width: 100%; }
+.proj:hover, .proj.hot { background: var(--bg-surface-2); border-color: var(--border-subtle); }
+.av { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font: 600 11px var(--font-mono); }
+.ptext { min-width: 0; display: grid; gap: 2px; }
+.pname { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ppath { font: 400 11px var(--font-mono); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pmeta { font-size: 11px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.pmeta .gone { color: var(--amber); }
+.proj.off { cursor: not-allowed; opacity: .55; }
+.proj.off:hover { background: transparent; border-color: transparent; }
+.go { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font: 600 11px var(--font-ui); color: var(--on-accent); background: var(--accent); border-radius: 8px; padding: 5px 8px; opacity: 0; display: inline-flex; gap: 4px; align-items: center; }
+.proj:hover .go, .proj.hot .go, .proj:focus-visible .go { opacity: 1; }
+
+.term { display: flex; flex-direction: column; min-height: 0; }
+.term-head { height: 40px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 10px; padding: 0 14px; font-weight: 600; font-size: 13px; }
+.pill { font: 500 11px var(--font-mono); border-radius: 6px; padding: 3px 8px; border: 1px solid var(--border-strong); color: var(--text-secondary); font-weight: 400; }
+.pill.run { color: var(--emerald); border-color: rgba(16,185,129,.3); background: rgba(16,185,129,.12); }
+.term-box { flex: 1; margin: 12px; border: 1px solid var(--accent-border); border-radius: 12px; background: #09090b; padding: 16px; font: 12.5px/1.75 var(--font-mono); color: var(--text-secondary); overflow: hidden; }
+.term-box .o { color: #fb923c; } .term-box b { color: var(--text-primary); font-weight: 500; }
+
+/* ---- dialog ---- */
+.scrim { position: absolute; inset: 48px 0 0 0; background: var(--scrim); display: grid; place-items: center; z-index: 10; }
+.dialog { width: 420px; background: var(--bg-surface-2); border: 1px solid var(--border-strong); border-radius: 16px; padding: 22px; display: grid; gap: 16px; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+.dialog h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.dproj { display: grid; grid-template-columns: 30px minmax(0,1fr); gap: 10px; align-items: center; background: var(--bg-surface-1); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px; }
+.field { display: grid; gap: 6px; }
+.field span { font-size: 12px; color: var(--text-secondary); }
+.field input { font: 14px var(--font-ui); color: var(--text-primary); background: var(--bg-canvas); border: 1px solid var(--accent-border); border-radius: 10px; padding: 10px 12px; box-shadow: 0 0 0 3px var(--accent-glow); }
+.field small { font-size: 11px; color: var(--text-muted); }
+.actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+
+/* ---- annotations ---- */
+.marker { position: absolute; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: var(--note-mark); color: var(--on-accent); font: 700 12px var(--font-mono); display: grid; place-items: center; box-shadow: 0 0 0 4px rgba(251,191,36,.25); }
+.notes { display: grid; gap: 10px; }
+.note { background: var(--note-bg); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px 14px; display: grid; grid-template-columns: 22px minmax(0,1fr); gap: 10px; line-height: 1.5; color: var(--text-secondary); font-size: 13px; }
+.note .n { width: 22px; height: 22px; border-radius: 50%; background: var(--note-mark); color: var(--on-accent); font: 700 12px var(--font-mono); display: grid; place-items: center; }
+.note strong { color: var(--text-primary); font-weight: 600; }
+.hint { font-size: 12px; color: var(--text-muted); }
+@media (prefers-reduced-motion: no-preference) { .go, .tip { transition: opacity .15s; } }
+</style>
+
+<div class="page">
+  <header class="intro">
+    <span class="eyebrow">Mock · recent_projects</span>
+    <h1>Progetti recenti nella barra laterale</h1>
+    <p>Un nuovo pulsante <strong>Projects</strong> nella rail apre, nella colonna laterale, l'elenco delle cartelle in cui hai usato Claude Code, anche dopo aver chiuso l'app. Scegli un progetto, dai un nome alla sessione e la sessione parte. I testi dell'interfaccia restano in inglese, come nel resto dell'app.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Stato del mock">
+    <button class="tab" role="tab" id="tab-list" aria-selected="true" data-step="list">1 · Elenco progetti</button>
+    <button class="tab" role="tab" id="tab-name" aria-selected="false" data-step="name">2 · Nome della sessione</button>
+    <button class="tab" role="tab" id="tab-started" aria-selected="false" data-step="started">3 · Sessione avviata</button>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="stage">
+      <div class="win" id="win">
+        <div class="titlebar">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <div class="brand"><span class="logo">VX</span>Vexel <small>for Claude</small></div>
+          <div class="spacer"></div>
+          <button class="btn-primary" type="button">+ New Session</button>
+        </div>
+        <div class="body">
+          <nav class="rail" aria-label="Main Navigation">
+            <span class="rail-fab" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+            <span class="rail-div"></span>
+            <button class="rail-btn" type="button" aria-label="Sessions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 17h7"/></svg><span class="tip">Sessions</span></button>
+            <button class="rail-btn active new" type="button" aria-label="Projects" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="tip">Projects</span></button>
+            <button class="rail-btn" type="button" aria-label="Resume"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></svg><span class="tip">Resume</span></button>
+          </nav>
+
+          <aside class="side" aria-label="Projects">
+            <div class="side-head"><span class="label">Projects</span></div>
+            <div class="list" id="list"></div>
+          </aside>
+
+          <section class="term">
+            <div class="term-head" id="term-head">docs-site <span class="pill">Idle</span></div>
+            <div class="term-box" id="term-box"></div>
+          </section>
+        </div>
+
+        <div class="scrim" id="scrim" hidden>
+          <form class="dialog" id="dialog" role="dialog" aria-labelledby="dlg-title">
+            <h2 id="dlg-title">New session</h2>
+            <div class="dproj" id="dproj"></div>
+            <label class="field">
+              <span>Session name</span>
+              <input id="session-name" type="text" value="Rate limiter tests" autocomplete="off">
+              <small>Leave it empty to use the default name. Enter starts, Esc cancels.</small>
+            </label>
+            <div class="actions">
+              <button class="btn-ghost" type="button" id="cancel">Cancel</button>
+              <button class="btn-primary" type="submit">Start Session</button>
+            </div>
+          </form>
+        </div>
+
+
+        <span class="marker" id="m1" style="left: 42px; top: 96px;">1</span>
+        <span class="marker" id="m2" style="left: 268px; top: 60px;">2</span>
+        <span class="marker" id="m3" style="left: 268px; top: 118px;">3</span>
+        <span class="marker" id="m4" style="left: 296px; top: 200px;" hidden>4</span>
+      </div>
+    </div>
+
+    <aside class="notes" aria-label="Note">
+      <div class="note"><span class="n">1</span><div><strong>Pulsante Projects</strong> nella rail, tra Sessions e Resume. Attivo, apre l'elenco nella colonna laterale al posto delle sessioni.</div></div>
+      <div class="note"><span class="n">2</span><div><strong>Tutte le cartelle di Claude Code</strong> su questa macchina, anche usate solo da terminale. Restano dopo la chiusura dell'app. Le più recenti in alto, con percorso e ultima attività. Una cartella sparita dal disco resta, segnata <em>Folder not found</em>, e non avvia sessioni.</div></div>
+      <div class="note"><span class="n">3</span><div><strong>Clic su un progetto</strong>: compare il pulsante <em>New session</em> al passaggio del mouse; il clic sulla riga apre la richiesta del nome.</div></div>
+      <div class="note"><span class="n">4</span><div><strong>Nome della sessione</strong>, poi <em>Start Session</em>: la sessione parte in quella cartella e appare nell'elenco Sessions.</div></div>
+      <p class="hint">Il mock è interattivo: clicca una riga, scrivi un nome, premi Start Session. Dati di esempio.</p>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  var projects = [
+    { name: 'shop-api', path: '~/dev/shop-api', when: '12 min ago', sessions: 14, live: true, c: ['#8ccfff', 'rgba(140,207,255,.16)'] },
+    { name: 'billing-api', path: '~/dev/billing-api', when: '2 h ago', sessions: 9, live: false, c: ['#fbbf24', 'rgba(245,158,11,.15)'] },
+    { name: 'docs-site', path: '~/dev/docs-site', when: 'Yesterday', sessions: 6, live: false, c: ['#34d399', 'rgba(16,185,129,.15)'] },
+    { name: 'infra-terraform', path: '~/work/infra-terraform', when: '3 days ago', sessions: 21, live: false, c: ['#fda4af', 'rgba(244,63,94,.15)'] },
+    { name: 'mobile-app', path: '~/work/mobile-app', when: '1 week ago', sessions: 4, live: false, c: ['#c4b5fd', 'rgba(139,92,246,.15)'] },
+    { name: 'dotfiles', path: '~/dotfiles', when: '5 weeks ago', sessions: 2, live: false, c: ['#a1a0ab', 'rgba(161,160,171,.15)'] },
+    { name: 'old-prototype', path: '~/tmp/old-prototype', when: '3 months ago', sessions: 1, live: false, gone: true, c: ['#898894', 'rgba(137,136,148,.12)'] }
+  ];
+  var list = document.getElementById('list');
+  var scrim = document.getElementById('scrim');
+  var dproj = document.getElementById('dproj');
+  var nameInput = document.getElementById('session-name');
+  var termHead = document.getElementById('term-head');
+  var termBox = document.getElementById('term-box');
+  var chosen = projects[0];
+
+  function avatar(p) {
+    return '<span class="av" style="color:' + p.c[0] + ';background:' + p.c[1] + '">' + p.name.slice(0, 2).toUpperCase() + '</span>';
+  }
+  function meta(p) {
+    return '<span class="pmeta">' + (p.gone ? '<span class="gone">Folder not found</span> · ' : '') + 'Last activity ' + p.when + '</span>';
+  }
+  function render(filter) {
+    var q = (filter || '').toLowerCase();
+    list.innerHTML = '';
+    projects.filter(function (p) { return p.name.indexOf(q) >= 0 || p.path.indexOf(q) >= 0; }).forEach(function (p, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'proj' + (p === chosen && i === 0 && !q ? ' hot' : '') + (p.gone ? ' off' : '');
+      if (p.gone) b.setAttribute('aria-disabled', 'true');
+      b.innerHTML = avatar(p) + '<span class="ptext"><span class="pname">' + p.name + '</span><span class="ppath">' + p.path + '</span>' + meta(p) + '</span>' + (p.gone ? '' : '<span class="go">▶ New session</span>');
+      b.addEventListener('click', function () { if (p.gone) return; chosen = p; setStep('name'); });
+      list.appendChild(b);
+    });
+  }
+  function idleTerm() {
+    termHead.innerHTML = 'docs-site <span class="pill">Idle</span>';
+    termBox.innerHTML = '<span class="o">✻</span> Welcome to Claude Code<br>&nbsp;&nbsp;cwd: ~/dev/docs-site<br><br>&gt; Document the new orders endpoint<br><br><span class="o">●</span> Done. <b>docs/orders.md</b> updated.';
+  }
+  function startedTerm() {
+    var n = nameInput.value.trim();
+    termHead.innerHTML = chosen.name + (n ? ' <span class="pill">' + n.replace(/</g, '&lt;') + '</span>' : '') + ' <span class="pill run">● Running</span>';
+    termBox.innerHTML = '<span class="o">✻</span> Welcome to Claude Code<br>&nbsp;&nbsp;cwd: ' + chosen.path + '<br><br><b>&gt;</b> <span style="opacity:.6">Try "write a test for the rate limiter"</span>';
+  }
+  function setStep(step) {
+    document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.step === step)); });
+    scrim.hidden = step !== 'name';
+    document.getElementById('m4').hidden = step !== 'name';
+    ['m1', 'm2', 'm3'].forEach(function (id) { document.getElementById(id).hidden = step === 'name'; });
+    if (step === 'name') {
+      dproj.innerHTML = avatar(chosen) + '<span class="ptext"><span class="pname">' + chosen.name + '</span><span class="ppath">' + chosen.path + '</span></span>';
+      document.getElementById('m4').style.cssText = 'left: 300px; top: 300px;';
+      setTimeout(function () { nameInput.focus(); nameInput.select(); }, 0);
+    }
+    if (step === 'started') {
+      startedTerm();
+    } else {
+      idleTerm();
+    }
+  }
+  document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { setStep(t.dataset.step); }); });
+  document.getElementById('dialog').addEventListener('submit', function (e) { e.preventDefault(); setStep('started'); });
+  document.getElementById('cancel').addEventListener('click', function () { setStep('list'); });
+  render('');
+  setStep('list');
+})();
+</script>

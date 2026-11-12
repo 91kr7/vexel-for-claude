@@ -75,7 +75,7 @@ registerLocalAccessGuard(app, { viteDevPort });
 await app.register(fastifyWebsocket);
 
 app.get('/api/health', async () => ({ status: 'ok' }));
-registerStartSessionRoute(app, registry);
+registerStartSessionRoute(app, { registry, tracker, names });
 registerStopSessionRoute(app, registry);
 registerDismissSessionRoute(app, tracker);
 registerRenameSessionRoute(app, { tracker, scanner: externalScanner, names });

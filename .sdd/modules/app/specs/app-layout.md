@@ -12,7 +12,8 @@ type: UI page
 
 Description:
 - the page fills the window edge to edge, on `--bg-surface-1`. From top: the TopBar, then one row with the NavigationRail, the list panel and the main area.
-- the list panel → a `section` with the label "Session List". Padding 10 px, `--bg-surface-1`, 1 px `--border-subtle` line on the right. One column with a 10 px gap:
+- the side view → `sessions` or `projects`; `sessions` at page load. It sets the content of the list panel and the `shownView` of the NavigationRail.
+- the list panel → a `section` with the label "Session List", in both views. Padding 10 px, `--bg-surface-1`, 1 px `--border-subtle` line on the right. One column with a 10 px gap. View `projects` → the ProjectList. View `sessions` →
   - the title row (padding 0 × 6 px, centred, space between) → the `h1` "Sessions" in `.section-label` on the left, the NeedsInputCounter on the right.
   - the SessionList.
 - the list panel width → `shownListWidth` of the ListWidthStore width and the window width: the stored width, narrowed so that the main area keeps 700 px, never under 180 px. A window resize computes it again; the stored width does not change.
@@ -20,7 +21,7 @@ Description:
 - the main area (`main`) → takes the rest of the width, with the `.vx-dot-grid` background.
 
 Shows:
-- the rail badge, the counter and the list, always, also while a session is open. All follow LiveSessionStore (`useLiveSessions`). The rail badge gets `countNeedsInput` of the list. The list also gets its load status, and the order of `useSessionOrder` for the live sessions and their status. Its `onReorder` is the `move` of the same hook.
+- the rail badge always, in both views. The counter and the list in the `sessions` view. All three stay also while a session is open. All follow LiveSessionStore (`useLiveSessions`). The rail badge gets `countNeedsInput` of the list. The list also gets its load status, and the order of `useSessionOrder` for the live sessions and their status. Its `onReorder` is the `move` of the same hook.
 - no open session → the EmptyState in the main area.
 - an open hosted session → its SessionView, with the summary (folder, label, state) of that session from LiveSessionStore. No summary while the store does not list it yet. The SessionView and the ConversationView also get the whole session list.
 - an open hosted session that the store listed and then no longer lists (dismissed, or resumed from its entry) → no open session: the EmptyState.
@@ -37,9 +38,13 @@ Actions:
 - "Resume" in the rail, or "Resume Session" in the EmptyState → opens ResumeDialog.
 - ResumeDialog resumes a session → the dialog closes and the resumed session becomes the open one.
 - ResumeDialog cancelled → the dialog closes; the open session does not change.
+- ProjectList `onChoose(project)` → opens SessionNameDialog for that project.
+- SessionNameDialog starts a session → the dialog closes and the new session becomes the open one. The side view does not change.
+- SessionNameDialog cancelled → the dialog closes; the open session does not change. The focus goes back to the project row (Dialog).
 - "Resume" on an ended entry of SessionList (`onResumed`) → the new hosted session becomes the open one.
 - click on a SessionList entry → that session becomes the open one. The other sessions keep running.
-- "Sessions" in the rail, or Ctrl+Shift+L in the terminal of the open SessionView → the focus moves to a list entry:
+- "Projects" in the rail → the side view becomes `projects`, and ProjectListStore `load()` runs on the page store. Then the focus moves to the first project row, with the focus ring also after a mouse click. With no row on screen, the focus does not move.
+- "Sessions" in the rail, or Ctrl+Shift+L in the terminal of the open SessionView → the side view becomes `sessions`. Then the focus moves to a list entry:
 
 ```
 if the list has the open session's entry → that entry
@@ -57,7 +62,7 @@ else → "New Claude Code Session" in the rail
 - the PlanUsageButton of the TopBar → opens the PlanUsagePopover, or closes it when it is open. The popover shows the state of `usePlanUsage(open)`: the figures load once when it opens and are not refreshed while it is open. Its close button and Esc close it. It is not a dialog: the open session, its terminal focus and scroll, and any open dialog stay as they are.
 
 Shortcuts (useShortcutKeys, while the page is mounted):
-- `focus-list` (Alt+L) → the focus moves to a list entry, with the same rule as "Sessions" in the rail.
+- `focus-list` (Alt+L) → as "Sessions" in the rail: the `sessions` view, then the focus on a list entry.
 - `focus-main-view` (Alt+C) → the focus goes to the main view: the terminal of the open SessionView, or the message area of the open ConversationView. No open session → nothing.
 - `open-session` → sessionToOpen with the live sessions, the order of `useSessionOrder`, the open session and the target:
   - a session other than the open one → it becomes the open one, hosted or external as for a list click.
@@ -73,7 +78,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 
 ## Rules and invariants
 
-- the top bar, the rail and the head of the list panel stay in place. Only the SessionList scrolls, when its entries do not fit.
+- the top bar, the rail and the head of the list panel stay in place. Only the SessionList, or the rows of the ProjectList, scroll when they do not fit.
 - at 1440 × 900 px with no saved width → top bar 48 px high, rail 52 px wide, list panel 224 px wide.
 - the first frame already shows the stored width: no jump at start or after a reload.
 - from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements, except the snackbar, which may cover the corner of the main area.
@@ -83,7 +88,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 
 - TopBar, ShortcutsPanel, PlanUsagePopover, PlanUsageStore, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
 - useShortcutKeys, ShortcutMap, ShortcutChannel, ShortMessageToast, ThemeStore
-- FolderChooser (module folders)
+- FolderChooser, ProjectList, ProjectListStore, SessionNameDialog (module folders)
 - ResumeDialog (module history)
 - SessionView, SessionList, NeedsInputCounter, LiveSessionStore, SessionOrderStore, sessionToOpen (module sessions)
 - ConversationView (module external)
@@ -101,3 +106,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-usage_limits/REQ-3`, `plan-usage_limits/REQ-4`
 - `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-21`, `plan-keyboard_shortcuts/REQ-24`, `plan-keyboard_shortcuts/REQ-25`, `plan-keyboard_shortcuts/REQ-29`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-31`, `plan-keyboard_shortcuts/REQ-43`
 - `plan-git_explorer/REQ-25`
+- `plan-recent_projects/REQ-2`, `plan-recent_projects/REQ-8`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-14`, `plan-recent_projects/REQ-17`, `plan-recent_projects/REQ-21`

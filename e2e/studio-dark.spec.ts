@@ -401,11 +401,11 @@ test.describe('page frame', () => {
     await expect(panel(page).getByRole('button', { name: 'New Session' })).toHaveCount(0);
   });
 
-  // REQ-17, REQ-53: 52 px rail, 34 x 34 px buttons, the accent gradient "New Claude Code Session", a divider
-  test('the rail shows "New Claude Code Session", a divider, "Sessions" and "Resume", all 34 x 34 px', async ({ page }) => {
+  // REQ-17, REQ-53, plan-recent_projects/REQ-1: 52 px rail, 34 x 34 px buttons, the accent gradient "New Claude Code Session", a divider
+  test('the rail shows "New Claude Code Session", a divider, "Sessions", "Projects" and "Resume", all 34 x 34 px', async ({ page }) => {
     await page.goto('/');
-    await expect(rail(page).getByRole('button')).toHaveCount(3);
-    for (const name of ['New Claude Code Session', 'Sessions', 'Resume']) {
+    await expect(rail(page).getByRole('button')).toHaveCount(4);
+    for (const name of ['New Claude Code Session', 'Sessions', 'Projects', 'Resume']) {
       const b = await box(railButton(page, name));
       expect(b.width, name).toBeCloseTo(34, 0);
       expect(b.height, name).toBeCloseTo(34, 0);

@@ -4,7 +4,7 @@
 |-----------|------|------|----------------|------|
 | SessionRegistry | backend service | `src/server/sessions/session-registry.ts` | Spawns the CLI in a pty (new or `--resume`) with the hook settings and keeps each session by id, with its viewers, pids and how its process ended | `specs/session-registry.md` |
 | TerminalMirror | backend service | `src/server/sessions/terminal-mirror.ts` | Headless terminal of a session that gives a serialized snapshot | `specs/terminal-mirror.md` |
-| StartSessionRoute | REST endpoint | `src/server/sessions/start-session-route.ts` | `POST /api/sessions`: starts a session in an existing folder | `specs/start-session-route.md` |
+| StartSessionRoute | REST endpoint | `src/server/sessions/start-session-route.ts` | `POST /api/sessions`: starts a session in an existing folder, with an optional name | `specs/start-session-route.md` |
 | StopSessionRoute | REST endpoint | `src/server/sessions/stop-session-route.ts` | `POST /api/sessions/:id/stop`: stops the CLI process, SIGTERM then SIGKILL | `specs/stop-session-route.md` |
 | DismissSessionRoute | REST endpoint | `src/server/sessions/dismiss-session-route.ts` | `POST /api/sessions/:id/dismiss`: removes an ended hosted session from the list | `specs/dismiss-session-route.md` |
 | ResumeEndedSessionRoute | REST endpoint | `src/server/sessions/resume-ended-session-route.ts` | `POST /api/sessions/:id/resume`: resumes an ended hosted session, with the running-elsewhere check, and removes its ended entry | `specs/resume-ended-session-route.md` |

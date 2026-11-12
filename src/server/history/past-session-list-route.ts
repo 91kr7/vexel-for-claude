@@ -1,3 +1,4 @@
+import { stat } from 'node:fs/promises';
 import type { FastifyInstance } from 'fastify';
 import type { SessionFavoriteStore } from '../sessions/session-favorite-store.js';
 import type { SessionNameStore } from '../sessions/session-name-store.js';
@@ -16,6 +17,7 @@ export interface PastSessionEntry {
 
 export interface PastSessionGroup {
   folder: string;
+  available: boolean;
   sessions: PastSessionEntry[];
 }
 
@@ -26,6 +28,14 @@ export interface PastSessionListDependencies {
   tracker: Pick<SessionStateTracker, 'liveClaudeSessionIds'>;
   names?: Pick<SessionNameStore, 'get'>;
   favorites?: Pick<SessionFavoriteStore, 'has'>;
+}
+
+async function isFolder(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 export function registerPastSessionListRoute(app: FastifyInstance, deps: PastSessionListDependencies): void {
@@ -53,6 +63,8 @@ export function registerPastSessionListRoute(app: FastifyInstance, deps: PastSes
       });
       groups.set(session.folder, entries);
     }
-    return [...groups].map(([folder, entries]) => ({ folder, sessions: entries }));
+    return Promise.all(
+      [...groups].map(async ([folder, entries]) => ({ folder, available: await isFolder(folder), sessions: entries })),
+    );
   });
 }

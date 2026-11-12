@@ -11,7 +11,8 @@ type: REST endpoint
 ## Contract
 
 - `GET /api/past-sessions` → `200`. Body: array of groups.
-  - group → `{ folder, sessions }`.
+  - group → `{ folder, available, sessions }`.
+  - `available` → `true` when `folder` exists on disk and is a folder, checked at each request. Else `false`: a missing path, a file, or a path that cannot be read.
   - session → `{ id, label, lastActivity, runningElsewhere, favorite? }`.
     - `id` → the Claude Code session id (SessionHistory).
     - `label` → the name of `id` in SessionNameStore when it has one. Else the first user message, cut with the label rule of SessionStateTracker (one space per whitespace run, trimmed, first 80 characters).
@@ -36,3 +37,4 @@ type: REST endpoint
 - `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-26`, `plan-claude_sessions_client/REQ-27`
 - `plan-favorite_session/REQ-4`, `plan-favorite_session/REQ-5`, `plan-favorite_session/REQ-10`
 - `plan-session_list_improvements/REQ-29`, `plan-session_list_improvements/REQ-30`
+- `plan-recent_projects/REQ-10`

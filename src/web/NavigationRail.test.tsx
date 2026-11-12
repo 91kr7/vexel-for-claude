@@ -5,8 +5,10 @@ import { NavigationRail } from './NavigationRail';
 const textOf = (html: string) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 const noop = () => {};
 
-const renderRail = (needsInputCount: number) =>
-  renderToStaticMarkup(<NavigationRail needsInputCount={needsInputCount} onNewSession={noop} onShowSessions={noop} onResume={noop} />);
+const renderRail = (needsInputCount: number, shownView?: 'sessions' | 'projects') =>
+  renderToStaticMarkup(
+    <NavigationRail needsInputCount={needsInputCount} onNewSession={noop} onShowSessions={noop} onShowProjects={noop} onResume={noop} shownView={shownView} />,
+  );
 
 interface Button {
   attributes: string;
@@ -37,12 +39,12 @@ describe('NavigationRail', () => {
     expect(renderRail(0)).toMatch(/^<nav\b[^>]*aria-label="Main Navigation"/);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14, REQ-17: no logo, then "New Claude Code Session", "Sessions" and "Resume"
-  it('shows no logo and the buttons "New Claude Code Session", "Sessions" and "Resume", in this order', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14, REQ-17, plan-recent_projects/REQ-1: no logo, then the four buttons in order
+  it('shows no logo and the buttons "New Claude Code Session", "Sessions", "Projects" and "Resume", in this order', () => {
     const html = renderRail(0);
     expect(html).not.toMatch(/role="img"/);
     expect(html).not.toContain('Vexel');
-    expect(buttons(html).map(nameOf)).toEqual(['New Claude Code Session', 'Sessions', 'Resume']);
+    expect(buttons(html).map(nameOf)).toEqual(['New Claude Code Session', 'Sessions', 'Projects', 'Resume']);
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-17: a divider between "New Claude Code Session" and "Sessions"
@@ -61,12 +63,46 @@ describe('NavigationRail', () => {
     }
   });
 
-  // NavigationRail "Shows": "Sessions" always has aria-current="page", "Resume" has none
-  it.each([0, 4])('marks "Sessions" as the current page and "Resume" not, with %i sessions needing input', (count) => {
-    const html = renderRail(count);
-    expect(byName(html, 'Sessions')[0]?.attributes).toMatch(/aria-current="page"/);
-    expect(byName(html, 'Resume')[0]?.attributes).not.toMatch(/aria-current/);
-    expect(byName(html, 'New Claude Code Session')[0]?.attributes).not.toMatch(/aria-current/);
+  // NavigationRail "Shows": only the button of shownView has aria-current="page"; default sessions
+  it.each([
+    [0, undefined, 'Sessions'],
+    [4, 'sessions', 'Sessions'],
+    [0, 'projects', 'Projects'],
+    [4, 'projects', 'Projects'],
+  ] as const)('with %i sessions needing input and shownView %s, marks only "%s" as the current page', (count, shownView, current) => {
+    const html = renderRail(count, shownView);
+    for (const name of ['New Claude Code Session', 'Sessions', 'Projects', 'Resume']) {
+      const attributes = byName(html, name)[0]?.attributes;
+      if (name === current) expect(attributes, name).toMatch(/aria-current="page"/);
+      else expect(attributes, name).not.toMatch(/aria-current/);
+    }
+  });
+
+  // plan-recent_projects/REQ-1, REQ-2: a click on "Projects" calls onShowProjects
+  it('calls onShowProjects on a click of "Projects", and only it', () => {
+    const calls: string[] = [];
+    const element = NavigationRail({
+      needsInputCount: 0,
+      onNewSession: () => calls.push('new'),
+      onShowSessions: () => calls.push('sessions'),
+      onShowProjects: () => calls.push('projects'),
+      onResume: () => calls.push('resume'),
+    });
+    const find = (node: unknown): { props: { onClick?: () => void } } | undefined => {
+      if (!node || typeof node !== 'object') return undefined;
+      if (Array.isArray(node)) {
+        for (const child of node) {
+          const found = find(child);
+          if (found) return found;
+        }
+        return undefined;
+      }
+      const props = (node as { props?: Record<string, unknown> }).props;
+      if (props?.['aria-label'] === 'Projects') return node as { props: { onClick?: () => void } };
+      return find(props?.children);
+    };
+    find(element)?.props.onClick?.();
+    expect(calls).toEqual(['projects']);
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-9: the badge shows the number on "Sessions"
@@ -79,6 +115,14 @@ describe('NavigationRail', () => {
     expect(badge?.[2]).toContain('aria-hidden="true"');
   });
 
+  // NavigationRail "Shows": the badge on "Sessions" in both views
+  it('keeps the badge on "Sessions" when the projects view is shown', () => {
+    const html = renderRail(2, 'projects');
+    const badge = badgeOf(byName(html, 'Sessions')[0]!);
+    expect(textOf(badge?.[3] ?? '')).toBe('2');
+    expect(badgeOf(byName(html, 'Projects')[0]!)).toBeNull();
+  });
+
   // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-9: hidden at zero
   it('shows no badge and no number when no session needs input', () => {
     const html = renderRail(0);
@@ -87,7 +131,7 @@ describe('NavigationRail', () => {
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-18: no visible label; the tooltip holds the name, hidden from assistive technology
-  it.each(['New Claude Code Session', 'Sessions', 'Resume'])('"%s" has no visible label and its name in a hidden tooltip', (name) => {
+  it.each(['New Claude Code Session', 'Sessions', 'Projects', 'Resume'])('"%s" has no visible label and its name in a hidden tooltip', (name) => {
     const button = byName(renderRail(0), name)[0];
     expect(button, name).toBeDefined();
     let visible = button?.html ?? '';
