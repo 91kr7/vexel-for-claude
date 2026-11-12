@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
@@ -17,8 +17,10 @@ import { registerPastSessionListRoute } from './history/past-session-list-route.
 import { registerResumeSessionRoute } from './history/resume-session-route.js';
 import { SessionHistory } from './history/session-history.js';
 import { registerLocalAccessGuard } from './local-access-guard.js';
+import { registerNewerVersionRoute } from './newer-version-route.js';
 import { PlanLimitsReader } from './plan-limits-reader.js';
 import { registerPlanUsageRoute } from './plan-usage-route.js';
+import { checkLatestRelease, latestReleaseApiUrl } from './release-check.js';
 import { registerAttachSessionRoute } from './sessions/attach-session-route.js';
 import { AttentionMonitor } from './sessions/attention-monitor.js';
 import { registerAttentionRoute } from './sessions/attention-route.js';
@@ -49,6 +51,16 @@ function parsePort(value: string | undefined): number | undefined {
   const port = Number(value);
   return value !== undefined && /^\d+$/.test(value) && port >= 1 && port <= 65535 ? port : undefined;
 }
+
+const packageJson = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
+  version: string;
+  repository: { url: string };
+};
+// Not awaited: the check must never delay the listen.
+const releaseCheck = checkLatestRelease({
+  sourceUrl: process.env.AI_CLIENT_RELEASE_SOURCE_URL || latestReleaseApiUrl(packageJson.repository.url),
+  installedVersion: packageJson.version,
+});
 
 const app = Fastify({ logger: true });
 const settingsPath = await writeHookSettings(`http://${HOST}:${port}`);
@@ -96,6 +108,7 @@ registerConversationStreamRoute(app, { scanner: externalScanner, reader: transcr
 registerItemContentRoute(app, { scanner: externalScanner, reader: transcriptReader });
 registerAttentionRoute(app, attentionMonitor);
 registerPlanUsageRoute(app, new PlanLimitsReader());
+registerNewerVersionRoute(app, releaseCheck);
 
 // In dev the page comes from Vite, so dist/web may not exist yet.
 if (existsSync(webRoot)) {

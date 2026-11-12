@@ -13,3 +13,4 @@
 | 2026-11-12 | plan | G2 requirements | pass | REQ-1..12 cover the analysis; one sentence each, verifiable |
 | 2026-11-12 | plan | planner decision server-start check | decided | Check runs once per server start; a desktop start reusing a running server shows that server's result; edge case, no extra desktop INT |
 | 2026-11-12 | plan | G3 coverage | pass | 1 batch, REQ-1..12; modify paths exist; INT-8 enabling; every REQ in a scenario |
+| 2026-11-12 | dev | G4 development newer-version-notice | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes; env var `AI_CLIENT_RELEASE_SOURCE_URL` named by developer as the plan allowed |

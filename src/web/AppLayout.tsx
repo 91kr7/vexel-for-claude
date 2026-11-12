@@ -11,6 +11,8 @@ import { ListPanelEdge } from './ListPanelEdge';
 import { listWidthLimit, pageListWidthStore, shownListWidth, useListWidth } from './list-width-store';
 import { NavigationRail, type SideView } from './NavigationRail';
 import { NeedsInputSnackbar, useNeedsInputSnackbar } from './NeedsInputSnackbar';
+import { NewerVersionNotice } from './newer-version/NewerVersionNotice';
+import { useNewerVersion } from './newer-version/newer-version-loader';
 import { PlanUsagePopover } from './plan-usage/PlanUsagePopover';
 import { usePlanUsage } from './plan-usage/plan-usage-store';
 import { ShortcutsPanel } from './ShortcutsPanel';
@@ -66,6 +68,8 @@ export function AppLayout() {
   const toggleShortcuts = () => setShowingShortcuts((showing) => !showing);
   const [showingPlanUsage, setShowingPlanUsage] = useState(false);
   const planUsage = usePlanUsage(showingPlanUsage);
+  const newerVersion = useNewerVersion();
+  const [updateNoticeClosed, setUpdateNoticeClosed] = useState(false);
   const listPanelRef = useRef<HTMLElement>(null);
   const newSessionRef = useRef<HTMLButtonElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -220,6 +224,7 @@ export function AppLayout() {
         </main>
       </div>
       {snackbar}
+      {newerVersion && !updateNoticeClosed && <NewerVersionNotice version={newerVersion} onClose={() => setUpdateNoticeClosed(true)} />}
       <ShortMessageToast text={shortMessage.text} />
       {choosingFolder && (
         <FolderChooser

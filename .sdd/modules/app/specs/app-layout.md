@@ -29,6 +29,7 @@ Shows:
 - an open session, hosted or external, that the list no longer has when LiveSessionStore goes from `error` to `ready` (a reload after a reconnection) → it stays open, with its last summary and the state `ended`. If the list has it again later, the view uses the listed summary.
 - the NeedsInputSnackbar of `useNeedsInputSnackbar`, when it gives a session → fixed at the bottom right of the window, whatever the main area shows.
 - the ShortMessageToast of `useShortMessage`, at the bottom centre of the window.
+- the NewerVersionNotice, while `useNewerVersion` gives a version and the user has not closed it in this page. The session list does not wait for it.
 - the ShortcutsPanel, while it is open. It is a dialog over the page: the open SessionView or ConversationView stays mounted under it, with its size, its scroll position and its session running.
 
 Actions:
@@ -59,6 +60,7 @@ else → "New Claude Code Session" in the rail
 - each change of the open session is reported to the desktop app (useDesktopBridge).
 - the ShortcutsButton of the TopBar → opens the ShortcutsPanel, or closes it when it is open.
 - the panel closes ("[Esc]", "Close", Esc) → it goes; the focus goes back where it was before it opened (Dialog).
+- "Close Update Notice" → the notice goes, and nothing else changes. The closed state lives only in this page: a reload or a new tab shows it again.
 - the PlanUsageButton of the TopBar → opens the PlanUsagePopover, or closes it when it is open. The popover shows the state of `usePlanUsage(open)`: the figures load once when it opens and are not refreshed while it is open. Its close button and Esc close it. It is not a dialog: the open session, its terminal focus and scroll, and any open dialog stay as they are.
 
 Shortcuts (useShortcutKeys, while the page is mounted):
@@ -81,12 +83,12 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - the top bar, the rail and the head of the list panel stay in place. Only the SessionList, or the rows of the ProjectList, scroll when they do not fit.
 - at 1440 × 900 px with no saved width → top bar 48 px high, rail 52 px wide, list panel 224 px wide.
 - the first frame already shows the stored width: no jump at start or after a reload.
-- from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements, except the snackbar, which may cover the corner of the main area.
+- from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements, except the snackbar and the NewerVersionNotice, which may cover part of the main area.
 - the list panel has no brand, no "New Session" and no "Resume Session" button.
 
 ## Dependencies
 
-- TopBar, ShortcutsPanel, PlanUsagePopover, PlanUsageStore, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
+- TopBar, ShortcutsPanel, PlanUsagePopover, PlanUsageStore, NewerVersionNotice, useNewerVersion, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
 - useShortcutKeys, ShortcutMap, ShortcutChannel, ShortMessageToast, ThemeStore
 - FolderChooser, ProjectList, ProjectListStore, SessionNameDialog (module folders)
 - ResumeDialog (module history)
@@ -107,3 +109,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-21`, `plan-keyboard_shortcuts/REQ-24`, `plan-keyboard_shortcuts/REQ-25`, `plan-keyboard_shortcuts/REQ-29`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-31`, `plan-keyboard_shortcuts/REQ-43`
 - `plan-git_explorer/REQ-25`
 - `plan-recent_projects/REQ-2`, `plan-recent_projects/REQ-8`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-14`, `plan-recent_projects/REQ-17`, `plan-recent_projects/REQ-21`
+- `plan-update_check/REQ-4`, `plan-update_check/REQ-7`, `plan-update_check/REQ-8`, `plan-update_check/REQ-10`
