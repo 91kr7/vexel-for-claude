@@ -14,3 +14,5 @@
 | 2026-11-12 | dev | G4 development project-list | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes |
 | 2026-11-12 | dev | divergence Alt+L / Ctrl+Shift+L | decided | Shortcuts go back to the sessions view before focusing the list; keeps the existing shortcut contract |
 | 2026-11-12 | dev | divergence panel label and avatar | decided | Panel label stays "Session List" (existing e2e, resize edge); neutral Avatar named by the plan, mock colors are sample data |
+| 2026-11-12 | dev | question tester (first-open focus) | decided | Focus stays on "Projects" while the first load has no row: literal reading of batch-project-list/INT-7 and the AppLayout spec; minimal intervention |
+| 2026-11-12 | dev | G5 tests project-list | pass | unit 113 and e2e project-list 9 green (rerun); tests and playwright.config only; studio-dark rail count updated to the new contract |
