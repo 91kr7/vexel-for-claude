@@ -48,6 +48,14 @@ describe('NewerVersionNotice', () => {
     expect(text(host)).toContain('Version 0.2.0 is available. You have 0.1.0.');
   });
 
+  it('puts "You have" on a new line after "is available."', () => {
+    const { host } = render();
+    const lineBreak = host.querySelector('.update-notice-text br');
+    expect(lineBreak).not.toBeNull();
+    expect((lineBreak!.previousSibling?.textContent ?? '').trimEnd()).toMatch(/is available\.$/);
+    expect((lineBreak!.nextSibling?.textContent ?? '').trimStart()).toMatch(/^You have/);
+  });
+
   // plan-update_check/REQ-6
   it('offers the "View Release" link to the release page, in a new tab', () => {
     const { host } = render();
