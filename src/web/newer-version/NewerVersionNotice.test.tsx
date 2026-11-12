@@ -50,10 +50,13 @@ describe('NewerVersionNotice', () => {
 
   it('puts "You have" on a new line after "is available."', () => {
     const { host } = render();
-    const lineBreak = host.querySelector('.update-notice-text br');
-    expect(lineBreak).not.toBeNull();
-    expect((lineBreak!.previousSibling?.textContent ?? '').trimEnd()).toMatch(/is available\.$/);
-    expect((lineBreak!.nextSibling?.textContent ?? '').trimStart()).toMatch(/^You have/);
+    const paragraph = host.querySelector('.update-notice-text');
+    const nodes = [...(paragraph?.childNodes ?? [])];
+    const breakAt = nodes.findIndex((node) => node.nodeName === 'BR');
+    expect(breakAt).toBeGreaterThan(-1);
+    const textOf = (part: ChildNode[]) => part.map((node) => node.textContent ?? '').join('').trim();
+    expect(textOf(nodes.slice(0, breakAt))).toBe('Version 0.2.0 is available.');
+    expect(textOf(nodes.slice(breakAt + 1))).toBe('You have 0.1.0.');
   });
 
   // plan-update_check/REQ-6
