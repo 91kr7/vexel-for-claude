@@ -222,6 +222,22 @@ describe('SystemNotifications when the server closes a notification', () => {
 });
 
 describe('SystemNotifications failures', () => {
+  it('logs one short line per distinct reason, not one per call, and logs again after a success', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    server.notifyReply = () => Promise.reject(new Error('The name org.freedesktop.Notifications was not provided by any .service files'));
+    await notifications.show(request('a'));
+    await notifications.show(request('b'));
+    await notifications.show(request('c'));
+    expect(vi.mocked(console.warn).mock.calls).toEqual([
+      ['System notification failed: The name org.freedesktop.Notifications was not provided by any .service files'],
+    ]);
+    delete server.notifyReply;
+    await notifications.show(request('d'));
+    server.notifyReply = () => Promise.reject(new Error('The name org.freedesktop.Notifications was not provided by any .service files'));
+    await notifications.show(request('e'));
+    expect(vi.mocked(console.warn).mock.calls).toHaveLength(2);
+  });
+
   it('never rejects when the connection fails, logs it, and connects again at the next call', async () => {
     connect.mockRejectedValueOnce(new Error('no session bus'));
     const notifications = new SystemNotifications({ ...APP, connect });

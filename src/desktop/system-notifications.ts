@@ -150,6 +150,7 @@ export class SystemNotifications {
   readonly #closeListeners = new Set<(sessionId: string) => void>();
   #connection: Promise<Connection> | undefined;
   #queue: Promise<void> = Promise.resolve();
+  #lastFailure: string | undefined;
 
   constructor(options: SystemNotificationsOptions) {
     this.#appName = options.appName;
@@ -196,10 +197,20 @@ export class SystemNotifications {
   }
 
   #enqueue(operation: () => Promise<void>): Promise<void> {
-    const run = this.#queue.then(operation).catch((error: unknown) => {
-      console.warn('System notification failed:', error);
-      this.#dropConnection();
-    });
+    const run = this.#queue
+      .then(operation)
+      .then(() => {
+        this.#lastFailure = undefined;
+      })
+      .catch((error: unknown) => {
+        // One short line per distinct reason: without a notification service (WSL, minimal desktops) every call fails the same way.
+        const reason = error instanceof Error ? error.message : String(error);
+        if (reason !== this.#lastFailure) {
+          this.#lastFailure = reason;
+          console.warn(`System notification failed: ${reason}`);
+        }
+        this.#dropConnection();
+      });
     this.#queue = run;
     return run;
   }
