@@ -114,8 +114,6 @@ h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; text
 .field small { font-size: 11px; color: var(--text-muted); }
 .actions { display: flex; justify-content: flex-end; gap: 8px; }
 
-.toast { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--bg-surface-3); border: 1px solid var(--border-strong); border-radius: 10px; padding: 10px 14px; font-size: 13px; z-index: 20; display: flex; gap: 8px; align-items: center; }
-.toast i { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); display: block; }
 
 /* ---- annotations ---- */
 .marker { position: absolute; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: var(--note-mark); color: var(--on-accent); font: 700 12px var(--font-mono); display: grid; place-items: center; box-shadow: 0 0 0 4px rgba(251,191,36,.25); }
@@ -159,7 +157,7 @@ h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; text
           </nav>
 
           <aside class="side" aria-label="Projects">
-            <div class="side-head"><span class="label">Projects</span><span class="count">7 folders</span></div>
+            <div class="side-head"><span class="label">Projects</span></div>
             <div class="list" id="list"></div>
           </aside>
 
@@ -185,7 +183,6 @@ h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; text
           </form>
         </div>
 
-        <div class="toast" id="toast" hidden><i></i><span id="toast-text"></span></div>
 
         <span class="marker" id="m1" style="left: 42px; top: 96px;">1</span>
         <span class="marker" id="m2" style="left: 268px; top: 60px;">2</span>
@@ -219,7 +216,6 @@ h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; text
   var scrim = document.getElementById('scrim');
   var dproj = document.getElementById('dproj');
   var nameInput = document.getElementById('session-name');
-  var toast = document.getElementById('toast');
   var termHead = document.getElementById('term-head');
   var termBox = document.getElementById('term-box');
   var chosen = projects[0];
@@ -255,7 +251,6 @@ h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; text
   function setStep(step) {
     document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.step === step)); });
     scrim.hidden = step !== 'name';
-    toast.hidden = step !== 'started';
     document.getElementById('m4').hidden = step !== 'name';
     ['m1', 'm2', 'm3'].forEach(function (id) { document.getElementById(id).hidden = step === 'name'; });
     if (step === 'name') {
@@ -264,7 +259,6 @@ h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; text
       setTimeout(function () { nameInput.focus(); nameInput.select(); }, 0);
     }
     if (step === 'started') {
-      document.getElementById('toast-text').textContent = 'Session started in ' + chosen.name;
       startedTerm();
     } else {
       idleTerm();
