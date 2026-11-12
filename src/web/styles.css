@@ -902,6 +902,72 @@ input {
   text-decoration: underline;
 }
 
+.update-notice {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  z-index: 50;
+  width: 320px;
+  max-width: calc(100vw - 40px);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-primary);
+}
+
+.update-notice-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.update-notice-title {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: 500;
+}
+
+.update-notice-text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.update-notice-link {
+  font-weight: 500;
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+.update-notice-link:hover {
+  text-decoration: underline;
+}
+
+.update-notice-close {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: -4px -8px 0 0;
+  border-radius: 6px;
+  color: var(--text-muted);
+}
+
+.update-notice-close:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-surface-3);
+}
+
 .short-message {
   position: fixed;
   left: 50%;

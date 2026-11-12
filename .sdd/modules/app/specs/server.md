@@ -30,12 +30,14 @@ type: configuration
 - one UsageMonitor on the tracker, the scanner and that TranscriptReader, created before the scanner starts. It starts with the server and stops on `SIGTERM` or `SIGINT`. Passed to SessionListRoute and SessionEventsRoute.
 - one PlanLimitsReader with the default Claude Code folder. Registers PlanUsageRoute with it.
 - one GitRunner. Registers RepositoryRoute with it.
+- release check → at start, one checkLatestRelease with `version` of `package.json` as the installed version. The source address comes from `AI_CLIENT_RELEASE_SOURCE_URL`. Missing or empty → `latestReleaseApiUrl` of `repository.url` of `package.json` (the GitHub API). The listen does not wait for the check. Registers NewerVersionRoute with its result.
 - serves the files of `dist/web` when the folder exists.
 - on `SIGTERM` or `SIGINT` → it stops every running session of the SessionRegistry and waits for their exit, then closes the server and exits with code `0`. A second signal during this stop changes nothing.
 
 ## Rules and invariants
 
 - Never reachable from another machine: no other bind address.
+- The release check runs once per server start. No route starts another one.
 - LocalAccessGuard covers every route, ConversationStreamRoute and ItemContentRoute included.
 
 ## Dependencies
@@ -43,6 +45,7 @@ type: configuration
 - LocalAccessGuard
 - SessionRegistry, SessionStateTracker, SessionNameStore, SessionFavoriteStore, RenameSessionRoute, FavoriteSessionRoute, HookSettings, StartSessionRoute, StopSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute, ResumeEndedSessionRoute, AttentionMonitor, AttentionRoute, RunningToolMonitor, UsageMonitor (module sessions)
 - PlanUsageRoute, PlanLimitsReader
+- checkLatestRelease, NewerVersionRoute
 - FolderRoute (module folders)
 - SessionHistory, ExternalSessionCheck, PastSessionListRoute, ResumeSessionRoute (module history)
 - ExternalSessionScanner, TranscriptReader, ConversationStreamRoute, ItemContentRoute (module external)
@@ -59,3 +62,4 @@ type: configuration
 - `plan-usage_limits/REQ-11`, `plan-usage_limits/REQ-13`
 - `plan-git_explorer/REQ-1`
 - `plan-recent_projects/REQ-16`, `plan-recent_projects/REQ-18`
+- `plan-update_check/REQ-1`, `plan-update_check/REQ-2`, `plan-update_check/REQ-10`, `plan-update_check/REQ-11`

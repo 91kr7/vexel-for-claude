@@ -2,9 +2,9 @@
 
 | Component | Type | Path | Responsibility | Spec |
 |-----------|------|------|----------------|------|
-| Server | configuration | `src/server/main.ts` | Fastify process on 127.0.0.1: guard, routes, static page | `specs/server.md` |
+| Server | configuration | `src/server/main.ts` | Fastify process on 127.0.0.1: guard, routes, static page, release check at start | `specs/server.md` |
 | LocalAccessGuard | backend service (request hook) | `src/server/local-access-guard.ts` | Rejects HTTP and WebSocket requests whose Host is not local or whose Origin is not the client's own (plus Vite in development) | `specs/local-access-guard.md` |
-| AppLayout | UI page | `src/web/AppLayout.tsx` | Full-window frame: top bar, rail, resizable list panel ("Sessions" view with needs-input chip and session list, or "Projects" view), dot-grid main area, fixed snackbar and short-message toast; runs the shortcuts and holds the shortcuts panel | `specs/app-layout.md` |
+| AppLayout | UI page | `src/web/AppLayout.tsx` | Full-window frame: top bar, rail, resizable list panel ("Sessions" view with needs-input chip and session list, or "Projects" view), dot-grid main area, fixed snackbar, newer version notice and short-message toast; runs the shortcuts and holds the shortcuts panel | `specs/app-layout.md` |
 | ListWidthStore | frontend service | `src/web/list-width-store.ts` | Width of the list panel: 180 to 480 px, default 224 px, saved in `localStorage`, and the width shown in a window that keeps 700 px for the main area | `specs/list-width-store.md` |
 | ListPanelEdge | UI component | `src/web/ListPanelEdge.tsx` | Separator "Resize Session List" on the right border of the list panel: drag, or Left and Right arrows by 16 px | `specs/list-panel-edge.md` |
 | TopBar | UI component | `src/web/TopBar.tsx` | 48 px bar with the "VX" logo mark, "Vexel for Claude", the shortcuts button, the theme switch, the plan usage button and "New Session"; the window buttons and the window drag area in the desktop window | `specs/top-bar.md` |
@@ -39,4 +39,9 @@
 | PlanLimitRow | UI component | `src/web/plan-usage/PlanLimitRow.tsx` | One limit: label, percentage as a number and a progress bar with the usage level colours, "Resets in" time and date | `specs/plan-limit-row.md` |
 | PlanUsagePopover | UI component | `src/web/plan-usage/PlanUsagePopover.tsx` | Non-modal panel "Plan Usage" under the top bar: loading, rows and "not available" | `specs/plan-usage-popover.md` |
 | PlanUsageButton | UI component | `src/web/PlanUsageButton.tsx` | Top-bar gauge icon button "Plan Usage" that opens and closes the popover | `specs/plan-usage-button.md` |
+| newerVersionOf | backend function | `src/server/version-rule.ts` | Release tag against the installed version as `MAJOR.MINOR.PATCH` (leading `v` ignored): the newer version, else `null` | `specs/version-rule.md` |
+| checkLatestRelease | backend service | `src/server/release-check.ts` | One GET for the latest release, no credentials, 10 s limit: `newer` with both versions and the release page, else `none`; and the GitHub API address of the repository | `specs/release-check.md` |
+| NewerVersionRoute | REST endpoint | `src/server/newer-version-route.ts` | `GET /api/newer-version`: the result of the release check of this server start, never a new check | `specs/newer-version-route.md` |
+| useNewerVersion | frontend hook | `src/web/newer-version/newer-version-loader.ts` | Loads the newer version once per page mount, in the background; `null` on none or failure | `specs/newer-version-loader.md` |
+| NewerVersionNotice | UI component | `src/web/newer-version/NewerVersionNotice.tsx` | Glass box "Update Available" under the top bar at the right: both versions, "View Release" link, "Close Update Notice" | `specs/newer-version-notice.md` |
 | ThirdPartyNotices | document | `THIRD-PARTY-NOTICES.md` | Source, version and licence of each third-party font and icon set | `specs/third-party-notices.md` |
