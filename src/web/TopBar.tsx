@@ -1,8 +1,10 @@
 import { isDesktopWindow } from './desktop-bridge';
 import { PlusIcon } from './icons/Icons';
+import { LookSwitch } from './LookSwitch';
 import { PlanUsageButton } from './PlanUsageButton';
 import { ShortcutsButton } from './ShortcutsButton';
 import { ThemeSwitch } from './ThemeSwitch';
+import { useLook } from './theme/look-store';
 import { WindowButtons } from './WindowButtons';
 
 interface TopBarProps {
@@ -15,10 +17,12 @@ interface TopBarProps {
 
 export function TopBar({ onNewSession, shortcutsPanelOpen, onToggleShortcutsPanel, planUsageOpen, onTogglePlanUsage }: TopBarProps) {
   const desktop = isDesktopWindow();
+  const { look } = useLook();
+  const windows11 = look === 'windows11';
   return (
     <header className={desktop ? 'top-bar top-bar-drag' : 'top-bar'}>
       <div className="top-bar-brand">
-        {desktop && <WindowButtons />}
+        {desktop && !windows11 && <WindowButtons look={look} />}
         <span className="logo-mark" aria-hidden="true">
           VX
         </span>
@@ -30,11 +34,13 @@ export function TopBar({ onNewSession, shortcutsPanelOpen, onToggleShortcutsPane
       <div className="top-bar-actions">
         <ShortcutsButton open={shortcutsPanelOpen} onToggle={onToggleShortcutsPanel} />
         <ThemeSwitch />
+        <LookSwitch />
         <PlanUsageButton open={planUsageOpen} onToggle={onTogglePlanUsage} />
         <button type="button" className="button-primary button-bar" onClick={onNewSession}>
           <PlusIcon />
           New Session
         </button>
+        {desktop && windows11 && <WindowButtons look={look} />}
       </div>
     </header>
   );

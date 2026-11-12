@@ -1,0 +1,178 @@
+/*
+ * Windows 11 look (Fluent): Mica-like neutral surfaces, Windows accent blue, Segoe UI,
+ * 4px controls and 8px overlays, caption buttons on the right.
+ * Applies on top of the light or dark theme through data-look on the root element.
+ * The monospace font and the terminal colours stay as they are: xterm reads them only when a terminal opens.
+ */
+
+:root[data-look='windows11'] {
+  --font-ui: 'Segoe UI Variable Text', 'Segoe UI Variable', 'Segoe UI', 'Selawik', system-ui, sans-serif;
+
+  --bg-canvas: #1c1c1c;
+  --bg-surface-1: #202020;
+  --bg-surface-2: #2b2b2b;
+  --bg-surface-3: #323232;
+  --bg-glass: rgba(44, 44, 44, 0.92);
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --specular-top: rgba(255, 255, 255, 0.05);
+  --text-primary: #ffffff;
+  --text-secondary: #c8c8c8;
+  /* 4.7:1 on surface 3. */
+  --text-muted: #9d9d9d;
+
+  --accent-primary: #60cdff;
+  --accent-secondary: #99ebff;
+  --accent-glow: rgba(96, 205, 255, 0.14);
+  --accent-border: rgba(96, 205, 255, 0.4);
+  --accent-deep: #0078d4;
+  --accent-selection: rgba(96, 205, 255, 0.3);
+  --on-accent: #000000;
+
+  --caption-hover: rgba(255, 255, 255, 0.08);
+  --caption-pressed: rgba(255, 255, 255, 0.05);
+  --caption-close: #c42b1c;
+  --caption-close-pressed: #b3261a;
+
+  --radius-control: 4px;
+  --radius-overlay: 8px;
+}
+
+/* Every token set above is set again here: this rule must win over the dark one in the light theme. */
+:root[data-look='windows11'][data-theme='light'] {
+  --bg-canvas: #eeeeee;
+  --bg-surface-1: #f3f3f3;
+  --bg-surface-2: #fafafa;
+  --bg-surface-3: #e9e9e9;
+  --bg-glass: rgba(252, 252, 252, 0.92);
+  --border-subtle: rgba(0, 0, 0, 0.07);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --specular-top: rgba(255, 255, 255, 0.7);
+  --text-primary: #1a1a1a;
+  --text-secondary: #5d5d5d;
+  /* 5:1 on surface 3. */
+  --text-muted: #616161;
+
+  --accent-primary: #005fb8;
+  --accent-secondary: #003e92;
+  --accent-glow: rgba(0, 95, 184, 0.1);
+  --accent-border: rgba(0, 95, 184, 0.35);
+  --accent-deep: #004a94;
+  --accent-selection: rgba(0, 95, 184, 0.3);
+  --on-accent: #ffffff;
+
+  --caption-hover: rgba(0, 0, 0, 0.05);
+  --caption-pressed: rgba(0, 0, 0, 0.03);
+}
+
+/* Fluent corners: 4px on controls, 8px on cards, popovers and dialogs. */
+:root[data-look='windows11'] :is(
+    .button-neutral,
+    .button-primary,
+    .button-interrupt,
+    .logo-mark,
+    .theme-switch,
+    .plan-usage-close,
+    .vx-rail-fab,
+    .vx-rail-btn,
+    .vx-tooltip,
+    .session-entry,
+    .session-figure-tokens-tooltip,
+    .terminal-zoom-size,
+    .terminal-search-input,
+    .terminal-search-button,
+    .terminal-link-tooltip,
+    .message-avatar-claude,
+    .message-user .message-text,
+    .field-input,
+    .search-field-clear,
+    .dialog-row,
+    .dialog-row-icon,
+    .area-state-compact,
+    .area-state-compact .area-state-tile
+  ) {
+  border-radius: var(--radius-control);
+}
+
+:root[data-look='windows11'] :is(
+    .area-state-full,
+    .area-state-full .area-state-tile,
+    .plan-usage-popover,
+    .snackbar,
+    .short-message,
+    .session-card,
+    .session-card > .session-entry::after,
+    .session-terminal-panel,
+    .terminal-drop-notice,
+    .terminal-search,
+    .tool-card,
+    .new-messages,
+    .modal,
+    .dialog-banner
+  ) {
+  border-radius: var(--radius-overlay);
+}
+
+/* Fluent accent button: flat fill with a slightly darker bottom edge. */
+:root[data-look='windows11'] .button-primary {
+  box-shadow: inset 0 -1px 0 0 rgba(0, 0, 0, 0.2);
+}
+
+:root[data-look='windows11'] .button-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+:root[data-look='windows11'] .top-bar-name {
+  letter-spacing: 0;
+}
+
+/* Caption buttons: right end of the top bar, full bar height, flush with the window edge. */
+.caption-buttons {
+  -webkit-app-region: no-drag;
+  position: relative;
+  z-index: 120;
+  display: flex;
+  align-self: stretch;
+  margin-left: 8px;
+  margin-right: -14px;
+}
+
+.caption-button {
+  width: 46px;
+  height: 100%;
+  color: var(--text-primary);
+  transition: background-color 100ms, color 100ms;
+}
+
+.caption-button:hover {
+  background-color: var(--caption-hover);
+}
+
+.caption-button:active {
+  background-color: var(--caption-pressed);
+}
+
+.caption-button:focus-visible {
+  outline-offset: -2px;
+}
+
+.caption-close:hover {
+  background-color: var(--caption-close);
+  color: #ffffff;
+}
+
+.caption-close:active {
+  background-color: var(--caption-close-pressed);
+  color: #ffffff;
+}
+
+.caption-glyph {
+  width: 10px;
+  height: 10px;
+  flex: none;
+}
+
+/* The top bar of the desktop window needs no right padding when the caption buttons sit there. */
+:root[data-look='windows11'] .top-bar-drag .top-bar-actions {
+  align-self: stretch;
+}
