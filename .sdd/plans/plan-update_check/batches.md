@@ -11,7 +11,7 @@ Requirements: `requirements.md`.
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [newer-version-notice](batches/batch-newer-version-notice.md) | Newer version notice | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12 | — | implemented | The user sees that a newer version exists |
+| [newer-version-notice](batches/batch-newer-version-notice.md) | Newer version notice | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12 | — | certified | The user sees that a newer version exists |
 
 Execution order: newer-version-notice (single batch).
 
