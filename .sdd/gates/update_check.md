@@ -22,3 +22,4 @@
 | 2026-11-12 | plan | question planner (v prefix) | decided | REQ-14 = same version number; notice text unchanged, certified batch untouched; minimal intervention |
 | 2026-11-12 | plan | G2 requirements (installed version) | pass | REQ-13..15 cover the added analysis lines; REQ-1..12 untouched |
 | 2026-11-12 | plan | G3 coverage (installed version) | pass | batch installed-version, REQ-13..15; modify paths exist; every REQ in a scenario; certified batch untouched |
+| 2026-11-12 | dev | G4 development installed-version | pass | build green (rerun); diff limited to INT files, specs, indexes; no CSS change (reuses `top-bar-suffix`) |

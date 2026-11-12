@@ -20,6 +20,7 @@ Shows:
 - on the left, 8 px apart:
   - the logo mark → a decorative 28 px square, 8 px radius, a 135° gradient from `--accent-primary` to `--accent-deep`, "VX" in mono 12 px weight 500 and `--on-accent`.
   - "Vexel" (14/20 px, weight 600, letter spacing −0.025em) and "for Claude" (mono 10 px, `--text-muted`), 8 px apart on the same baseline.
+  - the installed version → `v` followed by the version of useInstalledVersion, e.g. `v0.2.2`, right after "for Claude", 8 px apart, on the same baseline, same style as "for Claude". Plain text, not a control. While the version is `null` (loading or failure) → no version text, and the rest of the bar keeps its layout.
 - on the right, 6 px apart:
   - the ShortcutsButton, right before the ThemeSwitch.
   - the ThemeSwitch.
@@ -33,7 +34,7 @@ Desktop window (`isDesktopWindow()` is `true`):
 - the WindowButtons at the left end, before the logo mark.
 - the `header` is a drag area (`-webkit-app-region: drag`): dragging it moves the window, and a double click maximizes or restores it, by the desktop's title bar action.
 - its controls (buttons, links, fields) are `no-drag`: a click or a double click acts on the control only.
-- the logo, the brand and the space between the two ends stay in the drag area.
+- the logo, the brand, the installed version and the space between the two ends stay in the drag area.
 
 Browser (`isDesktopWindow()` is `false`):
 - no drag area and no WindowButtons, with no space kept for them. The bar is the same as before the desktop title bar.
@@ -49,6 +50,7 @@ Browser (`isDesktopWindow()` is `false`):
 
 - ShortcutsButton, ThemeSwitch, PlanUsageButton, IconSet (`PlusIcon`), ThemeTokens, WebEntry
 - useDesktopBridge (`isDesktopWindow`), WindowButtons
+- useInstalledVersion
 
 ## Requirements served
 
@@ -58,3 +60,4 @@ Browser (`isDesktopWindow()` is `false`):
 - `plan-usage_limits/REQ-1`, `plan-usage_limits/REQ-2`
 - `plan-keyboard_shortcuts/REQ-22`, `plan-keyboard_shortcuts/REQ-24`, `plan-keyboard_shortcuts/REQ-29`
 - `plan-mac_title_bar/REQ-6`, `plan-mac_title_bar/REQ-7`, `plan-mac_title_bar/REQ-8`, `plan-mac_title_bar/REQ-9`, `plan-mac_title_bar/REQ-12`, `plan-mac_title_bar/REQ-13`, `plan-mac_title_bar/REQ-14`, `plan-mac_title_bar/REQ-15`, `plan-mac_title_bar/REQ-25`
+- `plan-update_check/REQ-13`

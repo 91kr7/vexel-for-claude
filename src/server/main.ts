@@ -16,6 +16,7 @@ import { ExternalSessionCheck } from './history/external-session-check.js';
 import { registerPastSessionListRoute } from './history/past-session-list-route.js';
 import { registerResumeSessionRoute } from './history/resume-session-route.js';
 import { SessionHistory } from './history/session-history.js';
+import { registerInstalledVersionRoute } from './installed-version-route.js';
 import { registerLocalAccessGuard } from './local-access-guard.js';
 import { registerNewerVersionRoute } from './newer-version-route.js';
 import { PlanLimitsReader } from './plan-limits-reader.js';
@@ -109,6 +110,7 @@ registerItemContentRoute(app, { scanner: externalScanner, reader: transcriptRead
 registerAttentionRoute(app, attentionMonitor);
 registerPlanUsageRoute(app, new PlanLimitsReader());
 registerNewerVersionRoute(app, releaseCheck);
+registerInstalledVersionRoute(app, packageJson.version);
 
 // In dev the page comes from Vite, so dist/web may not exist yet.
 if (existsSync(webRoot)) {
