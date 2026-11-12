@@ -21,3 +21,4 @@
 | 2026-11-13 | dev | G5 tests favorite-project (round 2) | pass | unit 264 and e2e 28 green (rerun); tests, playwright.config only |
 | 2026-11-13 | dev | G4 development remove-project | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes |
 | 2026-11-13 | dev | divergence remove route method | decided | `POST /api/projects/remove`: each call saves a new removal time; plan leaves the method open |
+| 2026-11-13 | dev | G5 tests remove-project | pass | unit 275 and e2e 28 green (rerun); tests and playwright.config only |
