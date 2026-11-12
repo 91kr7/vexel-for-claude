@@ -184,9 +184,8 @@ test('a deleted folder stays in the list, dimmed, with "Folder not found" and ar
   expect(await seenOpacity(page, deleted)).toBeCloseTo(0.55, 2);
   await expect(row(page, kept)).not.toContainText('Folder not found');
   expect(await seenOpacity(page, kept)).toBe(1);
-  // A click on any row does nothing in this batch.
+  // A click on the unavailable row does nothing (plan-recent_projects/REQ-15).
   await row(page, deleted).click({ force: true });
-  await row(page, kept).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(rows(page)).toHaveCount(2);
 });

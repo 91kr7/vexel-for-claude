@@ -44,12 +44,12 @@ async function storeWith(body: unknown | Error) {
 }
 
 // The shell may export NODE_ENV=production, where React has no `act`: flushSync commits the render at once.
-function mount(store: ProjectListStore) {
+function mount(store: ProjectListStore, onChoose?: (project: unknown) => void) {
   const host = document.createElement('div');
   document.body.append(host);
   const root = createRoot(host);
   roots.push(root);
-  flushSync(() => root.render(<ProjectList store={store} />));
+  flushSync(() => root.render(<ProjectList store={store} onChoose={onChoose} />));
   return host;
 }
 
@@ -166,5 +166,27 @@ describe('ProjectList', () => {
     await settle();
     flushSync(() => {});
     expect(rows(host)).toHaveLength(2);
+  });
+
+  // plan-recent_projects/REQ-14, REQ-15: a click on an available row chooses its project; an unavailable row calls nothing
+  it('calls onChoose with the project of a clicked available row, and nothing for an unavailable row', async () => {
+    const { store } = await storeWith(groups);
+    const onChoose = vi.fn();
+    const [available, unavailable] = rows(mount(store, onChoose));
+    flushSync(() => unavailable!.click());
+    expect(onChoose).not.toHaveBeenCalled();
+    flushSync(() => available!.click());
+    expect(onChoose).toHaveBeenCalledOnce();
+    expect(onChoose.mock.calls[0]![0]).toMatchObject({ folder: '/home/u/web-dashboard', available: true, lastActivity: '2026-11-10T10:00:00.000Z' });
+  });
+
+  // ProjectList "Shows": the decorative "▶ New session" label only on available rows, outside the row name
+  it('gives only available rows the decorative "▶ New session" label, hidden from the row name', async () => {
+    const { store } = await storeWith(groups);
+    const [available, unavailable] = rows(mount(store, vi.fn()));
+    const label = [...available!.querySelectorAll('*')].find((el) => el.children.length === 0 && text(el).includes('New session'));
+    expect(text(label)).toBe('▶ New session');
+    expect(label!.closest('[aria-hidden="true"]')).not.toBeNull();
+    expect(text(unavailable)).not.toContain('New session');
   });
 });
