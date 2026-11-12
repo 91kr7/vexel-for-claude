@@ -16,3 +16,6 @@
 | 2026-11-13 | dev | incident port 4001 | decided | Developer's `pkill -f src/server/main.ts` stopped the human's running instance; later agents told never to kill processes by pattern |
 | 2026-11-13 | dev | G4 development favorite-project | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes; SessionNameDialog.test.tsx fixture line needed by `tsc -b` (TS2741), accepted |
 | 2026-11-13 | dev | divergence route names and file format | decided | `PUT /api/projects/favorite`, WebSocket `GET /api/projects/marks`, `project-marks.json` `{ favorites }`; plan leaves them open |
+| 2026-11-13 | dev | G5 tests favorite-project (round 1) | sent back | Code defect: ProjectFavoriteButton.tsx:22 accepts any 2xx, spec wants 204 only; to developer |
+| 2026-11-13 | dev | G4 development (fix round 1) | pass | build green (rerun); one line in ProjectFavoriteButton.tsx |
+| 2026-11-13 | dev | G5 tests favorite-project (round 2) | pass | unit 264 and e2e 28 green (rerun); tests, playwright.config only |
