@@ -8,3 +8,7 @@
 | 2026-11-13 | analysis | question analyst Q4 | human decision | Favorites at the top of the list, with a star |
 | 2026-11-13 | analysis | analyst defaults | decided | Search on path, client-only remove with no confirmation, persistence and live sync accepted as proposed |
 | 2026-11-13 | analysis | G1 analysis | pass | 102 lines vs ordinary budget 200; request verbatim; no placeholders; no technical choices |
+| 2026-11-13 | plan | question planner Q1 | decided | REQ-16: any new activity in the folder, terminal-only included; source `plan-recent_projects/REQ-3` |
+| 2026-11-13 | plan | question planner Q2 | decided | REQ-2: the search matches the path as the row shows it |
+| 2026-11-13 | plan | G2 requirements | pass | REQ-1..32 cover the analysis; "Common" points split per feature |
+| 2026-11-13 | plan | G3 coverage | pass | 3 vertical batches (favorite, remove, search); every REQ in an INT and a scenario; remove INT-1/3/5 point to components of batch favorite-project, accepted |
