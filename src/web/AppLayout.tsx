@@ -3,10 +3,12 @@ import { useDesktopBridge } from './desktop-bridge';
 import { EmptyState } from './EmptyState';
 import { ConversationView } from './external/ConversationView';
 import { FolderChooser } from './folders/FolderChooser';
+import { pageProjectListStore } from './folders/project-list-store';
+import { ProjectList } from './folders/ProjectList';
 import { ResumeDialog } from './history/ResumeDialog';
 import { ListPanelEdge } from './ListPanelEdge';
 import { listWidthLimit, pageListWidthStore, shownListWidth, useListWidth } from './list-width-store';
-import { NavigationRail } from './NavigationRail';
+import { NavigationRail, type SideView } from './NavigationRail';
 import { NeedsInputSnackbar, useNeedsInputSnackbar } from './NeedsInputSnackbar';
 import { PlanUsagePopover } from './plan-usage/PlanUsagePopover';
 import { usePlanUsage } from './plan-usage/plan-usage-store';
@@ -56,6 +58,8 @@ export function AppLayout() {
   const [openIsExternal, setOpenIsExternal] = useState(false);
   const [choosingFolder, setChoosingFolder] = useState(false);
   const [resuming, setResuming] = useState(false);
+  const [sideView, setSideView] = useState<SideView>('sessions');
+  const [focusRequest, setFocusRequest] = useState<{ view: SideView } | null>(null);
   const [showingShortcuts, setShowingShortcuts] = useState(false);
   const toggleShortcuts = () => setShowingShortcuts((showing) => !showing);
   const [showingPlanUsage, setShowingPlanUsage] = useState(false);
@@ -106,6 +110,23 @@ export function AppLayout() {
     target?.focus({ focusVisible: true });
   };
 
+  const showSessions = () => {
+    setSideView('sessions');
+    setFocusRequest({ view: 'sessions' });
+  };
+
+  const showProjects = () => {
+    setSideView('projects');
+    pageProjectListStore().load();
+    setFocusRequest({ view: 'projects' });
+  };
+
+  useEffect(() => {
+    if (focusRequest === null) return;
+    if (focusRequest.view === 'sessions') focusList();
+    else listPanelRef.current?.querySelector<HTMLElement>('.project-row')?.focus({ focusVisible: true });
+  }, [focusRequest]);
+
   useEffect(() => {
     if (!focusMainViewAfterOpen.current) return;
     focusMainViewAfterOpen.current = false;
@@ -113,7 +134,7 @@ export function AppLayout() {
   }, [openSessionId, openIsExternal]);
 
   useShortcutKeys((command: ShortcutCommand) => {
-    if (command.kind === 'focus-list') focusList();
+    if (command.kind === 'focus-list') showSessions();
     else if (command.kind === 'focus-main-view') mainViewRef.current?.focus();
     else if (command.kind === 'new-session') setChoosingFolder(true);
     else if (command.kind === 'resume-history') setResuming(true);
@@ -145,24 +166,32 @@ export function AppLayout() {
         <NavigationRail
           needsInputCount={countNeedsInput(sessions)}
           onNewSession={() => setChoosingFolder(true)}
-          onShowSessions={focusList}
+          onShowSessions={showSessions}
+          onShowProjects={showProjects}
           onResume={() => setResuming(true)}
           newSessionRef={newSessionRef}
+          shownView={sideView}
         />
         <ListPanel panelRef={listPanelRef}>
-          <div className="list-panel-title">
-            <h1 className="section-label">Sessions</h1>
-            <NeedsInputCounter sessions={sessions} />
-          </div>
-          <SessionList
-            sessions={sessions}
-            status={status}
-            order={sessionOrder}
-            onReorder={moveSession}
-            onResumed={openHosted}
-            openSessionId={openSessionId}
-            onOpen={openFromList}
-          />
+          {sideView === 'projects' ? (
+            <ProjectList />
+          ) : (
+            <>
+              <div className="list-panel-title">
+                <h1 className="section-label">Sessions</h1>
+                <NeedsInputCounter sessions={sessions} />
+              </div>
+              <SessionList
+                sessions={sessions}
+                status={status}
+                order={sessionOrder}
+                onReorder={moveSession}
+                onResumed={openHosted}
+                openSessionId={openSessionId}
+                onOpen={openFromList}
+              />
+            </>
+          )}
         </ListPanel>
         <main className="session-area vx-dot-grid" ref={mainRef}>
           {openSessionId && openIsExternal ? (
@@ -180,7 +209,7 @@ export function AppLayout() {
               sessionId={openSessionId}
               session={openSummary}
               sessions={sessions}
-              onLeaveTerminal={focusList}
+              onLeaveTerminal={showSessions}
               focusRef={mainViewRef}
             />
           ) : (

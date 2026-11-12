@@ -1,12 +1,16 @@
 import type { Ref } from 'react';
-import { HistoryIcon, PlusIcon, TerminalIcon } from './icons/Icons';
+import { FolderIcon, HistoryIcon, PlusIcon, TerminalIcon } from './icons/Icons';
+
+export type SideView = 'sessions' | 'projects';
 
 interface NavigationRailProps {
   needsInputCount: number;
   onNewSession: () => void;
   onShowSessions: () => void;
+  onShowProjects?: () => void;
   onResume: () => void;
   newSessionRef?: Ref<HTMLButtonElement>;
+  shownView?: SideView;
 }
 
 function Tooltip({ text }: { text: string }) {
@@ -17,7 +21,19 @@ function Tooltip({ text }: { text: string }) {
   );
 }
 
-export function NavigationRail({ needsInputCount, onNewSession, onShowSessions, onResume, newSessionRef }: NavigationRailProps) {
+function destinationProps(active: boolean) {
+  return active ? { className: 'vx-rail-btn active', 'aria-current': 'page' as const } : { className: 'vx-rail-btn' };
+}
+
+export function NavigationRail({
+  needsInputCount,
+  onNewSession,
+  onShowSessions,
+  onShowProjects,
+  onResume,
+  newSessionRef,
+  shownView = 'sessions',
+}: NavigationRailProps) {
   return (
     <nav className="nav-rail" aria-label="Main Navigation">
       <button type="button" className="vx-rail-fab" aria-label="New Claude Code Session" ref={newSessionRef} onClick={onNewSession}>
@@ -25,7 +41,7 @@ export function NavigationRail({ needsInputCount, onNewSession, onShowSessions, 
         <Tooltip text="New Claude Code Session" />
       </button>
       <div className="nav-rail-divider" />
-      <button type="button" className="vx-rail-btn active" aria-label="Sessions" aria-current="page" onClick={onShowSessions}>
+      <button type="button" {...destinationProps(shownView === 'sessions')} aria-label="Sessions" onClick={onShowSessions}>
         <TerminalIcon />
         {needsInputCount > 0 && (
           <span className="nav-rail-badge" aria-hidden="true">
@@ -33,6 +49,10 @@ export function NavigationRail({ needsInputCount, onNewSession, onShowSessions, 
           </span>
         )}
         <Tooltip text="Sessions" />
+      </button>
+      <button type="button" {...destinationProps(shownView === 'projects')} aria-label="Projects" onClick={onShowProjects}>
+        <FolderIcon />
+        <Tooltip text="Projects" />
       </button>
       <button type="button" className="vx-rail-btn" aria-label="Resume" onClick={onResume}>
         <HistoryIcon />

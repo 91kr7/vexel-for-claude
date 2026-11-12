@@ -11,3 +11,6 @@
 | 2026-11-12 | plan | question planner Q1 | decided | Session count, folder count and start toast from the mock are not built: not in the analysis Requirements |
 | 2026-11-12 | plan | G2 requirements | pass | REQ-1..24 cover the analysis; REQ-13/24 pair desktop+English per feature, accepted |
 | 2026-11-12 | plan | G3 coverage | pass | 2 vertical batches, REQ-1..13 and REQ-14..24; modify paths exist; project-session-start/INT-6 points to the component batch project-list creates, accepted; every REQ in a scenario |
+| 2026-11-12 | dev | G4 development project-list | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes |
+| 2026-11-12 | dev | divergence Alt+L / Ctrl+Shift+L | decided | Shortcuts go back to the sessions view before focusing the list; keeps the existing shortcut contract |
+| 2026-11-12 | dev | divergence panel label and avatar | decided | Panel label stays "Session List" (existing e2e, resize edge); neutral Avatar named by the plan, mock colors are sample data |

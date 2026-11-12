@@ -11,7 +11,7 @@ Requirements: `requirements.md`. Visual reference: `.sdd/mockups/recent_projects
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [project-list](batches/batch-project-list.md) | Project list | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | — | todo | The user sees the past projects in the side column |
+| [project-list](batches/batch-project-list.md) | Project list | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | — | implemented | The user sees the past projects in the side column |
 | [project-session-start](batches/batch-project-session-start.md) | Start a session from a project | REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24 | project-list | todo | The user starts a named session in a past project |
 
 Execution order: project-list, then project-session-start.
