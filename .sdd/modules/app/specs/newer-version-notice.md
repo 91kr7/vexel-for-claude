@@ -17,7 +17,7 @@ Props:
 Shows:
 - a `role="status"` `.vx-glass` box named "Update Available". It is fixed 12 px under the top bar and 20 px from the right edge of the window, above the page (z-index 50) and below the popovers and the dialogs. It looks like the NeedsInputSnackbar: padding 8 × 14 px, 8 px radius, mono 12/16 px in `--text-primary`.
 - the title "Update Available", in bold (mono 500).
-- the text "Version <newerVersion> is available. You have <installedVersion>."
+- the text "Version <newerVersion> is available." and, on a new line, "You have <installedVersion>."
 - the link "View Release" to `releaseUrl`, with `target="_blank"` and `rel="noopener noreferrer"`. Text link in `--accent-primary`, underlined on hover.
 - the icon button "Close Update Notice" (X icon).
 

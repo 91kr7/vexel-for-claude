@@ -12,7 +12,9 @@ export function NewerVersionNotice({ version, onClose }: NewerVersionNoticeProps
       <div className="update-notice-content">
         <h2 className="update-notice-title">Update Available</h2>
         <p className="update-notice-text">
-          Version {version.newerVersion} is available. You have {version.installedVersion}.
+          Version {version.newerVersion} is available.{' '}
+          <br />
+          You have {version.installedVersion}.
         </p>
         <a className="update-notice-link" href={version.releaseUrl} target="_blank" rel="noopener noreferrer">
           View Release
