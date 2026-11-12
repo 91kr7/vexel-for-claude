@@ -12,3 +12,7 @@
 | 2026-11-13 | plan | question planner Q2 | decided | REQ-2: the search matches the path as the row shows it |
 | 2026-11-13 | plan | G2 requirements | pass | REQ-1..32 cover the analysis; "Common" points split per feature |
 | 2026-11-13 | plan | G3 coverage | pass | 3 vertical batches (favorite, remove, search); every REQ in an INT and a scenario; remove INT-1/3/5 point to components of batch favorite-project, accepted |
+| 2026-11-13 | dev | interrupted run favorite-project | decided | Host process exited mid-batch; partial work kept in the tree, same developer resumed |
+| 2026-11-13 | dev | incident port 4001 | decided | Developer's `pkill -f src/server/main.ts` stopped the human's running instance; later agents told never to kill processes by pattern |
+| 2026-11-13 | dev | G4 development favorite-project | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes; SessionNameDialog.test.tsx fixture line needed by `tsc -b` (TS2741), accepted |
+| 2026-11-13 | dev | divergence route names and file format | decided | `PUT /api/projects/favorite`, WebSocket `GET /api/projects/marks`, `project-marks.json` `{ favorites }`; plan leaves them open |

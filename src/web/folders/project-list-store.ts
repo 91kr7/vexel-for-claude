@@ -1,9 +1,11 @@
 import { useSyncExternalStore } from 'react';
+import { pageProjectMarkLiveStore, type ProjectMarkLiveStore, type ProjectMarks } from './project-mark-live-store';
 
 export interface Project {
   folder: string;
   lastActivity: string;
   available: boolean;
+  favorite: boolean;
 }
 
 export type ProjectListState = { kind: 'loading' } | { kind: 'ready'; projects: Project[] } | { kind: 'error' };
@@ -16,6 +18,10 @@ interface PastSessionGroupBody {
 
 type FetchGroups = () => Promise<unknown>;
 
+type MarkSource = Pick<ProjectMarkLiveStore, 'subscribe' | 'getSnapshot'>;
+
+type LoadedProject = Omit<Project, 'favorite'>;
+
 const LOADING: ProjectListState = { kind: 'loading' };
 const ERROR: ProjectListState = { kind: 'error' };
 
@@ -25,7 +31,7 @@ async function fetchPastSessionGroups(): Promise<unknown> {
   return response.json();
 }
 
-function projectsOf(groups: PastSessionGroupBody[]): Project[] {
+function loadedProjectsOf(groups: PastSessionGroupBody[]): LoadedProject[] {
   return groups.flatMap((group) => {
     const first = group.sessions[0];
     if (first === undefined) return [];
@@ -33,14 +39,25 @@ function projectsOf(groups: PastSessionGroupBody[]): Project[] {
   });
 }
 
+function markedProjectsOf(loaded: LoadedProject[], marks: ProjectMarks | undefined): Project[] {
+  const projects = loaded.map((project) => ({ ...project, favorite: marks?.favorites.has(project.folder) === true }));
+  return [...projects.filter((project) => project.favorite), ...projects.filter((project) => !project.favorite)];
+}
+
 export class ProjectListStore {
   readonly #fetchGroups: FetchGroups;
+  readonly #marks: MarkSource | undefined;
   readonly #listeners = new Set<() => void>();
   #state: ProjectListState = LOADING;
+  #loaded: LoadedProject[] = [];
   #lastLoad = 0;
 
-  constructor(fetchGroups: FetchGroups = fetchPastSessionGroups) {
+  constructor(fetchGroups: FetchGroups = fetchPastSessionGroups, marks?: MarkSource) {
     this.#fetchGroups = fetchGroups;
+    this.#marks = marks;
+    marks?.subscribe(() => {
+      if (this.#state.kind === 'ready') this.#showLoaded();
+    });
   }
 
   load(): void {
@@ -49,8 +66,9 @@ export class ProjectListStore {
     this.#fetchGroups().then(
       (body) => {
         if (loadId !== this.#lastLoad) return;
-        if (Array.isArray(body)) this.#set({ kind: 'ready', projects: projectsOf(body as PastSessionGroupBody[]) });
-        else this.#fail();
+        if (!Array.isArray(body)) return this.#fail();
+        this.#loaded = loadedProjectsOf(body as PastSessionGroupBody[]);
+        this.#showLoaded();
       },
       () => {
         if (loadId === this.#lastLoad) this.#fail();
@@ -64,6 +82,10 @@ export class ProjectListStore {
   };
 
   getSnapshot = (): ProjectListState => this.#state;
+
+  #showLoaded(): void {
+    this.#set({ kind: 'ready', projects: markedProjectsOf(this.#loaded, this.#marks?.getSnapshot()) });
+  }
 
   #fail(): void {
     if (this.#state.kind !== 'ready') this.#set(ERROR);
@@ -79,7 +101,7 @@ export class ProjectListStore {
 let pageStore: ProjectListStore | undefined;
 
 export function pageProjectListStore(): ProjectListStore {
-  pageStore ??= new ProjectListStore();
+  pageStore ??= new ProjectListStore(fetchPastSessionGroups, pageProjectMarkLiveStore());
   return pageStore;
 }
 

@@ -1,7 +1,9 @@
 import { AreaState } from '../feedback/AreaState';
 import { FolderIcon } from '../icons/Icons';
 import { Avatar, folderNameOf } from '../sessions/Avatar';
+import { FavoriteIndicator } from '../sessions/FavoriteIndicator';
 import { RelativeTime } from '../sessions/RelativeTime';
+import { ProjectFavoriteButton } from './ProjectFavoriteButton';
 import { type Project, type ProjectListStore, useProjectList } from './project-list-store';
 
 type ChooseProject = (project: Project) => void;
@@ -18,7 +20,10 @@ function ProjectRow({ project, onChoose }: { project: Project; onChoose?: Choose
     >
       <Avatar folder={project.folder} />
       <span className="project-row-text">
-        <span className="project-row-name">{folderNameOf(project.folder)}</span>
+        <span className="project-row-heading">
+          <span className="project-row-name">{folderNameOf(project.folder)}</span>
+          {project.favorite && <FavoriteIndicator />}
+        </span>
         <span className="project-row-path" title={project.folder}>
           {project.folder}
         </span>
@@ -60,6 +65,7 @@ export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onC
             {state.projects.map((project) => (
               <li key={project.folder}>
                 <ProjectRow project={project} onChoose={onChoose} />
+                <ProjectFavoriteButton folder={project.folder} favorite={project.favorite} />
               </li>
             ))}
           </ul>

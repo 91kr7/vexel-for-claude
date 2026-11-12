@@ -4,7 +4,7 @@ import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionNameDialog } from './SessionNameDialog';
 
-const project = { folder: '/home/u/shop-api', lastActivity: '2026-11-10T10:00:00.000Z', available: true };
+const project = { folder: '/home/u/shop-api', lastActivity: '2026-11-10T10:00:00.000Z', available: true, favorite: false };
 
 const roots: Root[] = [];
 let fetchMock: ReturnType<typeof vi.fn>;
