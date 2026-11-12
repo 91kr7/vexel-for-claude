@@ -23,3 +23,7 @@
 | 2026-11-12 | plan | G2 requirements (installed version) | pass | REQ-13..15 cover the added analysis lines; REQ-1..12 untouched |
 | 2026-11-12 | plan | G3 coverage (installed version) | pass | batch installed-version, REQ-13..15; modify paths exist; every REQ in a scenario; certified batch untouched |
 | 2026-11-12 | dev | G4 development installed-version | pass | build green (rerun); diff limited to INT files, specs, indexes; no CSS change (reuses `top-bar-suffix`) |
+| 2026-11-12 | dev | G5 tests installed-version | pass | batch unit/REST 16 and e2e 7 green (rerun); tests only; REQ-13..15 tested; full unit 2942 green |
+| 2026-11-12 | dev | regression terminal-search.spec.ts:240 | pass | Outside perimeter; known intermittent |
+| 2026-11-12 | dev | regression visual-language.spec.ts:172 | pass | Outside perimeter; session start timed out under the full run; passes alone on the branch |
+| 2026-11-12 | closing | merge feat/installed_version | pass | every batch certified; merged into main with --no-ff |
