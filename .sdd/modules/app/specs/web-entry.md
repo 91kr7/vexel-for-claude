@@ -16,8 +16,12 @@ type: UI entry point
   - value `dark` or `light` → that theme.
   - anything else, missing, or storage not reachable → `light`.
   - effect: `data-theme` on the root and the `color-scheme` meta both carry that theme. The page never paints the other theme first.
+- the same script reads `localStorage` key `ai-client.look` (LookStore `LOOK_KEY`):
+  - value `vexel` or `windows11` → that look.
+  - anything else, missing, or storage not reachable → `vexel`.
+  - effect: `data-look` on the root carries that look. The page never paints the other look first.
 - the `color-scheme` meta is `light` in the HTML file. It only applies before the styles load: the `:root` value overrides it.
-- the script renders AppLayout in `#root`, with the global styles.
+- the script renders AppLayout in `#root`, with the global styles. The global styles load ThemeTokens, then Windows11Look.
 - body → `--bg-canvas` background, `--text-primary` text, Roboto Flex 14 px, line height 1.5.
 - selected text → `--accent-selection` background.
 - scrollbars → 5 px, transparent track, `--border-strong` thumb with full rounding. Browsers without `::-webkit-scrollbar` get `scrollbar-width: thin` in the same colours.
@@ -65,6 +69,7 @@ Client classes built from the mock's parts:
 - AppLayout
 - ThemeTokens
 - ThemeStore (takes over the first mark)
+- LookStore (takes over the first look mark), Windows11Look
 - BundledFont
 
 ## Requirements served
@@ -74,3 +79,4 @@ Client classes built from the mock's parts:
 - `plan-light_theme/REQ-11`, `plan-light_theme/REQ-13`, `plan-light_theme/REQ-18`, `plan-light_theme/REQ-19`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-10`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-11`
 - `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-34`, `plan-session_list_width/REQ-35`, `plan-session_list_width/REQ-36`
+- `plan-wsl_support/REQ-17`, `plan-wsl_support/REQ-23`, `plan-wsl_support/REQ-24`, `plan-wsl_support/REQ-34`

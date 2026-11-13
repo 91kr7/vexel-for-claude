@@ -358,18 +358,36 @@ describe('SessionList, ended hosted entry actions', () => {
     expect(actionNames(itemOf(html, 'empty'))).toEqual(['Dismiss']);
   });
 
-  // plan-session_list_improvements/REQ-3: no other entry offers "Dismiss" or "Resume"
-  it('offers neither action on working, needs-input, idle or external entries, ended external ones included', () => {
+  // plan-session_list_improvements/REQ-3, as changed by plan-wsl_support/REQ-9, REQ-10: no running entry offers "Dismiss" or "Resume"
+  it('offers neither action on working, needs-input, idle or running external entries', () => {
     const html = renderList([
       { ...session('work', 'working', now), resumable: true },
       { ...session('wait', 'needs_input', now), resumable: true },
       { ...session('rest', 'idle', now), resumable: true },
       external('ext-work', 'working', now),
       external('ext-wait', 'needs_input', now),
-      { ...external('ext-ended', 'ended', now), resumable: true },
+      external('ext-idle', 'idle', now),
     ]);
     expect(items(html)).toHaveLength(6);
     expect(actionNames(html)).toEqual([]);
+  });
+
+  // plan-wsl_support/REQ-9, REQ-10: an ended external entry offers the actions of an ended hosted entry
+  it('offers Resume and Dismiss on a resumable ended external entry, and only Dismiss on one that is not', () => {
+    const html = renderList([
+      { ...external('ext-saved', 'ended', now), resumable: true },
+      external('ext-unsaved', 'ended', now),
+    ]);
+    expect(actionNames(itemOf(html, 'ext-saved'))).toEqual(['Resume', 'Dismiss']);
+    expect(actionNames(itemOf(html, 'ext-unsaved'))).toEqual(['Dismiss']);
+  });
+
+  // plan-wsl_support/REQ-7: the ended external entry sits in the "Ended" group and keeps its dashed external row
+  it('shows an ended external entry in the "Ended" group with the classes ended and external', () => {
+    const html = renderList([{ ...external('ext-saved', 'ended', now), resumable: true }]);
+    expect(headings(html).map((h) => h.text)).toEqual(['Ended']);
+    const [entry] = entries(html);
+    expect(classesOf(entry?.attributes ?? '')).toEqual(expect.arrayContaining(['session-entry', 'ended', 'external']));
   });
 
   // EndedEntryActions: the buttons sit beside the entry button, not inside it

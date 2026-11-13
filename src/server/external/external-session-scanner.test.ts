@@ -4,6 +4,8 @@ import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ExternalSessionCheck, type RunningSessionFile } from '../history/external-session-check.js';
 import { type PastSession, SessionHistory } from '../history/session-history.js';
+import { SessionFavoriteStore } from '../sessions/session-favorite-store.js';
+import { SessionNameStore } from '../sessions/session-name-store.js';
 import { delay, snapshotTree, tempDir, userEntry, writeHistorySession } from '../test-support.js';
 import { type ExternalSessionChange, ExternalSessionScanner } from './external-session-scanner.js';
 
@@ -31,6 +33,7 @@ interface Fixture {
   files: RunningSessionFile[];
   messages: Map<string, string | null>;
   hosted: number[];
+  hostedIds: Set<string>;
   check: { runningSessions: ReturnType<typeof vi.fn> };
   history: { get: ReturnType<typeof vi.fn> };
   scanner: ExternalSessionScanner;
@@ -38,11 +41,12 @@ interface Fixture {
   clock: { now: Date };
 }
 
-function fixture(options: { intervalMs?: number } = {}): Fixture {
+function fixture(options: { intervalMs?: number; names?: SessionNameStore; favorites?: SessionFavoriteStore } = {}): Fixture {
   const f = {
     files: [] as RunningSessionFile[],
     messages: new Map<string, string | null>(),
     hosted: [] as number[],
+    hostedIds: new Set<string>(),
     changes: [] as ExternalSessionChange[],
     clock: { now: SCAN_TIME },
   } as Fixture;
@@ -54,6 +58,7 @@ function fixture(options: { intervalMs?: number } = {}): Fixture {
     check: f.check as never,
     history: f.history as never,
     hostedPids: () => f.hosted,
+    hostedSessionIds: () => f.hostedIds,
     now: () => f.clock.now,
     ...options,
   });
@@ -200,8 +205,8 @@ describe('ExternalSessionScanner entries', () => {
 });
 
 describe('ExternalSessionScanner changes', () => {
-  // plan-claude_sessions_client/REQ-32
-  it('notifies an addition, a change and a removal, and nothing when the data is the same', async () => {
+  // plan-claude_sessions_client/REQ-32, plan-wsl_support/REQ-7: a vanished session turns ended instead of leaving
+  it('notifies an addition, a change and the end, and nothing when the data is the same', async () => {
     const f = fixture();
     f.files = [sessionFile(1, 'a')];
     await f.scanner.scan();
@@ -219,12 +224,15 @@ describe('ExternalSessionScanner changes', () => {
 
     f.files = [];
     await f.scanner.scan();
-    expect(f.changes.at(-1)).toEqual({ type: 'session-removed', id: 'a' });
+    expect(f.changes.at(-1)).toEqual({
+      type: 'session',
+      session: expect.objectContaining({ id: 'a', state: 'ended', external: true }),
+    });
     expect(f.changes).toHaveLength(3);
-    expect(f.scanner.list()).toEqual([]);
+    expect(f.scanner.list()).toEqual([expect.objectContaining({ id: 'a', state: 'ended' })]);
   });
 
-  // plan-claude_sessions_client/REQ-32
+  // plan-claude_sessions_client/REQ-32, plan-wsl_support/REQ-12: resumed in the client, so it leaves
   it('a session that becomes hosted leaves the list', async () => {
     const f = fixture();
     f.check.runningSessions.mockImplementation(async (hosted: Iterable<number>) => {
@@ -234,8 +242,10 @@ describe('ExternalSessionScanner changes', () => {
     f.files = [sessionFile(7, 'taken')];
     await f.scanner.scan();
     f.hosted = [7];
+    f.hostedIds = new Set(['taken']);
     await f.scanner.scan();
     expect(f.changes.map((c) => c.type)).toEqual(['session', 'session-removed']);
+    expect(f.scanner.list()).toEqual([]);
   });
 
   it('a label that changes from the folder name to the first message is notified', async () => {
@@ -269,7 +279,190 @@ describe('ExternalSessionScanner changes', () => {
     expect(f.changes).toHaveLength(1);
     f.files = [];
     await f.scanner.scan();
+    expect(f.changes.at(-1)).toEqual({ type: 'session', session: expect.objectContaining({ id: 'a', state: 'ended' }) });
+  });
+});
+
+describe('ExternalSessionScanner ended entries', () => {
+  async function endedFixture(options: Parameters<typeof fixture>[0] = {}) {
+    const f = fixture(options);
+    f.files = [sessionFile(1, 'a'), sessionFile(2, 'b')];
+    await f.scanner.scan();
+    f.files = [sessionFile(2, 'b')];
+    await f.scanner.scan();
+    return f;
+  }
+
+  // plan-wsl_support/REQ-8: the ended entry stays, and later scans notify nothing
+  it('keeps an ended entry over the next scans, with no new notification', async () => {
+    const f = await endedFixture();
+    const ended = f.scanner.get('a');
+    expect(ended?.state).toBe('ended');
+    const count = f.changes.length;
+    await f.scanner.scan();
+    await f.scanner.scan();
+    expect(f.changes).toHaveLength(count);
+    expect(f.scanner.get('a')).toEqual(ended);
+    expect(f.scanner.list().map((s) => s.id).sort()).toEqual(['a', 'b']);
+  });
+
+  // plan-wsl_support/REQ-10: Resume is offered only when the conversation is saved
+  it('marks an ended entry resumable when its conversation is saved with a folder', async () => {
+    const f = fixture();
+    f.messages.set('saved', 'Fix the build');
+    f.files = [sessionFile(1, 'saved'), sessionFile(2, 'unsaved')];
+    await f.scanner.scan();
+    expect(f.scanner.get('saved')).not.toHaveProperty('resumable');
+    f.history.get.mockImplementation(async (id: string) =>
+      id === 'saved' ? pastSession(id, 'Fix the build') : id === 'nofolder' ? { ...pastSession(id, null), folder: null } : undefined,
+    );
+    f.files = [sessionFile(3, 'nofolder')];
+    await f.scanner.scan();
+    f.files = [];
+    await f.scanner.scan();
+    expect(f.scanner.get('saved')).toMatchObject({ state: 'ended', resumable: true });
+    expect(f.scanner.get('unsaved')?.state).toBe('ended');
+    expect(f.scanner.get('unsaved')).not.toHaveProperty('resumable');
+    expect(f.scanner.get('nofolder')?.state).toBe('ended');
+    expect(f.scanner.get('nofolder')).not.toHaveProperty('resumable');
+  });
+
+  // plan-wsl_support/REQ-15: the label, the client name and the favorite mark survive the end
+  it('keeps the label, the name and the favorite mark of the ended entry', async () => {
+    const names = new SessionNameStore(undefined, [['named', 'Nightly job']]);
+    const favorites = new SessionFavoriteStore(undefined, ['named', 'plain']);
+    const f = fixture({ names, favorites });
+    f.messages.set('plain', 'Write the release notes');
+    f.files = [sessionFile(1, 'named'), sessionFile(2, 'plain')];
+    await f.scanner.scan();
+    f.files = [];
+    await f.scanner.scan();
+    expect(f.scanner.get('named')).toMatchObject({ state: 'ended', label: 'Nightly job', favorite: true });
+    expect(f.scanner.get('plain')).toMatchObject({ state: 'ended', label: 'Write the release notes', favorite: true });
+  });
+
+  // plan-wsl_support/REQ-15: a name or favorite change of an ended entry is still notified
+  it('notifies a name or favorite change of an ended entry, and keeps it ended', async () => {
+    const names = new SessionNameStore();
+    const favorites = new SessionFavoriteStore();
+    const f = await endedFixture({ names, favorites });
+    f.changes.length = 0;
+    await names.set('a', 'Renamed');
+    await favorites.set('a', true);
+    expect(f.changes).toEqual([
+      { type: 'session', session: expect.objectContaining({ id: 'a', state: 'ended', label: 'Renamed' }) },
+      { type: 'session', session: expect.objectContaining({ id: 'a', state: 'ended', favorite: true }) },
+    ]);
+  });
+
+  // plan-wsl_support/REQ-12: an ended entry whose conversation now runs in the client leaves the list
+  it('removes an ended entry when its id becomes a live hosted session', async () => {
+    const f = await endedFixture();
+    f.hostedIds = new Set(['a']);
+    await f.scanner.scan();
     expect(f.changes.at(-1)).toEqual({ type: 'session-removed', id: 'a' });
+    expect(f.scanner.get('a')).toBeUndefined();
+    expect(f.scanner.list().map((s) => s.id)).toEqual(['b']);
+  });
+
+  // plan-wsl_support/REQ-7: without hostedSessionIds an ended entry never leaves by itself
+  it('keeps an ended entry when no hosted session ids are given', async () => {
+    const f = fixture();
+    const scanner = new ExternalSessionScanner({
+      check: f.check as never,
+      history: f.history as never,
+      hostedPids: () => [],
+      now: () => f.clock.now,
+    });
+    f.files = [sessionFile(1, 'a')];
+    await scanner.scan();
+    f.files = [];
+    await scanner.scan();
+    await scanner.scan();
+    expect(scanner.get('a')?.state).toBe('ended');
+  });
+
+  // An ended entry found again by a scan runs again: state from its file, no resumable
+  it('lists an ended entry as running again when its file comes back', async () => {
+    const f = fixture();
+    f.messages.set('a', 'Hello');
+    f.files = [sessionFile(1, 'a')];
+    await f.scanner.scan();
+    f.files = [];
+    await f.scanner.scan();
+    expect(f.scanner.get('a')).toMatchObject({ state: 'ended', resumable: true });
+    f.files = [sessionFile(4, 'a', { status: 'busy' })];
+    await f.scanner.scan();
+    expect(f.changes.at(-1)).toEqual({ type: 'session', session: expect.objectContaining({ id: 'a', state: 'working' }) });
+    expect(f.scanner.get('a')?.state).toBe('working');
+    expect(f.scanner.get('a')).not.toHaveProperty('resumable');
+  });
+});
+
+describe('ExternalSessionScanner dismiss', () => {
+  // plan-wsl_support/REQ-9: dismiss removes an ended entry and notifies the removal
+  it('removes an ended entry and notifies session-removed', async () => {
+    const f = fixture();
+    f.files = [sessionFile(1, 'a'), sessionFile(2, 'b')];
+    await f.scanner.scan();
+    f.files = [sessionFile(2, 'b')];
+    await f.scanner.scan();
+    expect(f.scanner.dismiss('a')).toBe(true);
+    expect(f.changes.at(-1)).toEqual({ type: 'session-removed', id: 'a' });
+    expect(f.scanner.get('a')).toBeUndefined();
+    expect(f.scanner.list().map((s) => s.id)).toEqual(['b']);
+  });
+
+  // dismiss(id) → false with no change when the id is unknown or its entry has not ended
+  it('refuses an unknown id and a running entry, with no change and no notification', async () => {
+    const f = fixture();
+    f.files = [sessionFile(1, 'a')];
+    await f.scanner.scan();
+    const before = f.scanner.list();
+    const count = f.changes.length;
+    expect(f.scanner.dismiss('unknown')).toBe(false);
+    expect(f.scanner.dismiss('a')).toBe(false);
+    expect(f.scanner.list()).toEqual(before);
+    expect(f.changes).toHaveLength(count);
+  });
+
+  // plan-wsl_support/REQ-9: a dismissed id does not come back as ended
+  it('does not bring a dismissed entry back as ended on the next scans', async () => {
+    const f = fixture();
+    f.files = [sessionFile(1, 'a')];
+    await f.scanner.scan();
+    f.files = [];
+    await f.scanner.scan();
+    f.scanner.dismiss('a');
+    const count = f.changes.length;
+    await f.scanner.scan();
+    await f.scanner.scan();
+    expect(f.changes).toHaveLength(count);
+    expect(f.scanner.list()).toEqual([]);
+  });
+
+  // plan-wsl_support/REQ-9 (gatekeeper decision): the conversation run again in a terminal is a live entry
+  it('lists a dismissed conversation that runs again in a terminal as a running entry', async () => {
+    const f = fixture();
+    f.files = [sessionFile(1, 'a')];
+    await f.scanner.scan();
+    f.files = [];
+    await f.scanner.scan();
+    f.scanner.dismiss('a');
+    f.files = [sessionFile(5, 'a', { status: 'waiting' })];
+    await f.scanner.scan();
+    expect(f.changes.at(-1)).toEqual({ type: 'session', session: expect.objectContaining({ id: 'a', state: 'needs_input' }) });
+    expect(f.scanner.get('a')?.state).toBe('needs_input');
+  });
+
+  it('a second dismiss of the same id gives false', async () => {
+    const f = fixture();
+    f.files = [sessionFile(1, 'a')];
+    await f.scanner.scan();
+    f.files = [];
+    await f.scanner.scan();
+    expect(f.scanner.dismiss('a')).toBe(true);
+    expect(f.scanner.dismiss('a')).toBe(false);
   });
 });
 

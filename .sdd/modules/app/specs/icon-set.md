@@ -31,6 +31,8 @@ Components and where the client uses them today:
 - `ChevronUpIcon`, `ChevronDownIcon` → "Previous match" and "Next match" in the TerminalSearchBox
 - `Maximize2Icon`, `Minimize2Icon` → the green WindowButtons button, to maximize and to restore
 - `MoonIcon`, `SunIcon` → the ThemeSwitch in the dark and in the light theme
+- `MacWindowIcon`, `WindowsLogoIcon` → the LookSwitch in the current and in the Windows 11 look. Drawn for the client, not Lucide icons: a window with three dots, and four rounded squares. Same `icon` class and stroke as the Lucide icons
+- `CaptionMinimizeGlyph`, `CaptionMaximizeGlyph`, `CaptionRestoreGlyph`, `CaptionCloseGlyph` → the WindowButtons in the Windows 11 look. Drawn for the client on a 10 × 10 grid with a 1 px line, class `caption-glyph` instead of `icon`
 - `KeyboardIcon` → the ShortcutsButton
 - `GaugeIcon` → the PlanUsageButton
 - `GitBranchIcon` → the GitExplorerButton and the branch chip of the GitExplorerPanel (module git)
@@ -44,7 +46,7 @@ Components and where the client uses them today:
 
 - Each icon is decorative: `aria-hidden="true"` and not focusable. It never changes the accessible name of the button that holds it.
 - The SVG is inline, so an icon makes no network request.
-- Only the icons the client uses are added to the set. A new icon is copied from the same Lucide version, cited in `THIRD-PARTY-NOTICES.md`. When a board of `.sdd/mockups/vexel-material3/` draws the icon, its path data comes from the board.
+- Only the icons the client uses are added to the set. A new icon is copied from the same Lucide version (except the look and caption glyphs above, drawn for the client), cited in `THIRD-PARTY-NOTICES.md`. When a board of `.sdd/mockups/vexel-material3/` draws the icon, its path data comes from the board.
 - The Lucide licence file sits next to the components.
 
 ## Requirements served
@@ -65,3 +67,4 @@ Components and where the client uses them today:
 - `plan-usage_limits/REQ-1`
 - `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-24`
 - `plan-favorite_session/REQ-3`, `plan-favorite_session/REQ-4`, `plan-favorite_session/REQ-11`
+- `plan-wsl_support/REQ-19`, `plan-wsl_support/REQ-28`

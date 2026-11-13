@@ -6,7 +6,7 @@ type: UI component
 
 # TopBar
 
-**Purpose** → the 48 px bar on top of the page: the logo, the brand, the shortcuts button, the theme switch, the plan usage button and "New Session". In the desktop window it is also the title bar that moves the window. It copies "1. TOP APP BAR" of `.sdd/mockups/studio-dark/mock.html`, without its other controls.
+**Purpose** → the 48 px bar on top of the page: the logo, the brand, the shortcuts button, the theme switch, the look switch, the plan usage button and "New Session". In the desktop window it is also the title bar that moves the window. It copies "1. TOP APP BAR" of `.sdd/mockups/studio-dark/mock.html`, without its other controls.
 
 ## Contract
 
@@ -24,31 +24,35 @@ Shows:
 - on the right, 6 px apart:
   - the ShortcutsButton, right before the ThemeSwitch.
   - the ThemeSwitch.
-  - the PlanUsageButton, right after the ThemeSwitch and before "New Session".
+  - the LookSwitch, right after the ThemeSwitch.
+  - the PlanUsageButton, right after the LookSwitch and before "New Session".
   - the button "New Session" → `.button-primary .button-bar` with the plus icon at 14 px.
 
 Actions:
 - "New Session" → `onNewSession()`.
 
 Desktop window (`isDesktopWindow()` is `true`):
-- the WindowButtons at the left end, before the logo mark.
+- current look → the WindowButtons (macOS buttons) at the left end, before the logo mark.
+- Windows 11 look → the WindowButtons (Windows-style buttons) at the right end, after "New Session", flush with the window edge. Nothing before the logo mark.
+  - at every window width the WindowButtons stay whole at the right end. When the bar is too narrow, the controls before them go under them and are hidden; the logo and "Vexel" stay visible.
+- a change of look moves the WindowButtons at once; the rest of the bar keeps its state.
 - the `header` is a drag area (`-webkit-app-region: drag`): dragging it moves the window, and a double click maximizes or restores it, by the desktop's title bar action.
 - its controls (buttons, links, fields) are `no-drag`: a click or a double click acts on the control only.
 - the logo, the brand, the installed version and the space between the two ends stay in the drag area.
 
 Browser (`isDesktopWindow()` is `false`):
-- no drag area and no WindowButtons, with no space kept for them. The bar is the same as before the desktop title bar.
+- no drag area and no WindowButtons in either look, with no space kept for them. The bar is the same as before the desktop title bar.
 
 ## Rules and invariants
 
-- The bar holds no control other than the ShortcutsButton, the ThemeSwitch, the PlanUsageButton, "New Session" and, in the desktop window, the WindowButtons: no search, settings, session pill or sidebar switch.
+- The bar holds no control other than the ShortcutsButton, the ThemeSwitch, the LookSwitch, the PlanUsageButton, "New Session" and, in the desktop window, the WindowButtons: no search, settings, session pill or sidebar switch.
 - The logo mark adds nothing to the accessible names of the page.
 - The bar keeps the theme tokens in both cases: dark in the dark theme, light in the light theme, and it changes with the rest of the page.
-- In the desktop window there is a drag area at every window width: the logo and the brand are never controls.
+- In the desktop window there is a drag area at every window width, in both looks: the logo and the brand are never controls.
 
 ## Dependencies
 
-- ShortcutsButton, ThemeSwitch, PlanUsageButton, IconSet (`PlusIcon`), ThemeTokens, WebEntry
+- ShortcutsButton, ThemeSwitch, LookSwitch, LookStore (`useLook`), PlanUsageButton, IconSet (`PlusIcon`), ThemeTokens, WebEntry
 - useDesktopBridge (`isDesktopWindow`), WindowButtons
 - useInstalledVersion
 
@@ -61,3 +65,4 @@ Browser (`isDesktopWindow()` is `false`):
 - `plan-keyboard_shortcuts/REQ-22`, `plan-keyboard_shortcuts/REQ-24`, `plan-keyboard_shortcuts/REQ-29`
 - `plan-mac_title_bar/REQ-6`, `plan-mac_title_bar/REQ-7`, `plan-mac_title_bar/REQ-8`, `plan-mac_title_bar/REQ-9`, `plan-mac_title_bar/REQ-12`, `plan-mac_title_bar/REQ-13`, `plan-mac_title_bar/REQ-14`, `plan-mac_title_bar/REQ-15`, `plan-mac_title_bar/REQ-25`
 - `plan-update_check/REQ-13`
+- `plan-wsl_support/REQ-18`, `plan-wsl_support/REQ-28`, `plan-wsl_support/REQ-32`, `plan-wsl_support/REQ-33`, `plan-wsl_support/REQ-35`

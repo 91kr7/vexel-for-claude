@@ -343,16 +343,17 @@ test.describe('page frame', () => {
   });
 
   // REQ-14, REQ-16, plan-keyboard_shortcuts/REQ-22, TopBar: logo mark, "Vexel for Claude", the shortcuts button, the theme switch and the accent "New Session", nothing else
-  test('the top bar shows the "VX" mark, "Vexel for Claude" and only the shortcuts button, the theme switch, "Plan Usage" and "New Session"', async ({ page }) => {
+  test('the top bar shows the "VX" mark, "Vexel for Claude" and only the shortcuts button, the theme switch, the look switch, "Plan Usage" and "New Session"', async ({ page }) => {
     await page.goto('/');
     expect(await style(topBar(page), 'background-color')).toBe(SURFACE_2);
     expect(await style(topBar(page), 'border-bottom-color')).toBe(BORDER_SUBTLE);
     await expect(topBar(page)).toContainText('Vexel');
     await expect(topBar(page)).toContainText('for Claude');
-    // plan-usage_limits/REQ-1: the usage button joins the bar.
-    await expect(topBar(page).getByRole('button')).toHaveCount(4);
+    // plan-usage_limits/REQ-1 and plan-wsl_support/REQ-18: the usage button and the look switch join the bar.
+    await expect(topBar(page).getByRole('button')).toHaveCount(5);
     await expect(button(topBar(page), 'Keyboard Shortcuts')).toBeVisible();
     await expect(button(topBar(page), 'Dark theme')).toBeVisible();
+    await expect(button(topBar(page), 'Windows 11 look')).toBeVisible();
     await expect(button(topBar(page), 'Plan Usage')).toBeVisible();
     await expect(button(topBar(page), 'New Session')).toBeVisible();
 

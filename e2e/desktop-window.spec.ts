@@ -1,4 +1,4 @@
-// e2e of plan-desktop_app, batches desktop-window and window-tray, of plan-light_theme, batch remembered-theme, and of plan-mac_title_bar, batches title-bar and window-buttons. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
+// e2e of plan-desktop_app, batches desktop-window and window-tray, of plan-light_theme, batch remembered-theme, of plan-mac_title_bar, batches title-bar and window-buttons, and of plan-wsl_support, batch windows-look. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -837,5 +837,115 @@ test.describe('Window buttons', () => {
     await window.getByRole('button', { name: 'Close', exact: true }).click();
     await expect.poll(async () => (await windowState(app)).map((state) => state.visible), { message: 'the window hides' }).toEqual([false]);
     expect(app.process().exitCode, 'the app keeps running').toBeNull();
+  });
+});
+
+// plan-wsl_support, batch windows-look. The look of the buttons is checked in e2e/windows-look.spec.ts; the window manager's drag and double click are checked by hand.
+test.describe('Windows 11 look', () => {
+  test.describe.configure({ timeout: 120_000 });
+
+  test.beforeAll(buildDesktop);
+
+  const isMaximized = (app: ElectronApplication) => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isMaximized());
+  const isMinimized = async (app: ElectronApplication) => (await windowState(app))[0]?.minimized;
+  const restoreFromMinimized = (app: ElectronApplication) => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.restore());
+  const lookSwitch = (page: Page) => page.getByRole('banner').getByRole('button', { name: 'Windows 11 look', exact: true });
+
+  test('REQ-24, REQ-34, REQ-28 to REQ-31, REQ-40: a new profile shows macOS buttons at the left; the Windows-style buttons at the right drive the window', async () => {
+    const port = await freePort();
+    const env = await desktopEnv(port);
+    const app = await launchDesktop(env);
+    const window = await app.firstWindow();
+    await expect(list(window)).toBeVisible({ timeout: 20_000 });
+    const bar = window.getByRole('banner');
+    const button = (name: string) => bar.getByRole('button', { name, exact: true });
+
+    await expect(lookSwitch(window), 'REQ-24: the current look on first start').toHaveAttribute('aria-pressed', 'false');
+    await expect(window.locator('html')).toHaveAttribute('data-look', 'vexel');
+    const logoX = async () => (await bar.getByText('VX', { exact: true }).boundingBox())!.x;
+    const macClose = (await button('Close').boundingBox())!;
+    expect(macClose.x + macClose.width, 'REQ-34: macOS buttons before the logo').toBeLessThan(await logoX());
+
+    const id = await startSession(port, path.join(env.HOME!, 'project-windows-look'));
+    await makeWorking(port, id);
+    await lookSwitch(window).click();
+    await expect(window.locator('html')).toHaveAttribute('data-look', 'windows11');
+    const width = (await window.evaluate(() => innerWidth)) as number;
+    const close = (await button('Close').boundingBox())!;
+    expect(close.x + close.width, 'REQ-28: at the right end of the title bar').toBeCloseTo(width, 0);
+    expect(close.x, 'REQ-28: no longer before the logo').toBeGreaterThan(await logoX());
+    expect(await bar.getByRole('button', { name: /^(Close|Minimize|Maximize|Restore)$/ }).count(), 'REQ-28: in place of the macOS buttons').toBe(3);
+
+    await button('Maximize').click();
+    await expect.poll(() => isMaximized(app), { message: 'REQ-31: the window maximizes' }).toBe(true);
+    await expect(button('Restore'), 'REQ-31, REQ-40: the button now restores').toBeVisible();
+    await button('Restore').click();
+    await expect.poll(() => isMaximized(app), { message: 'REQ-31: the window restores' }).toBe(false);
+    await expect(button('Maximize')).toBeVisible();
+
+    await button('Minimize').click();
+    await expect.poll(() => isMinimized(app), { message: 'REQ-30: the window minimizes' }).toBe(true);
+    await restoreFromMinimized(app);
+    await expect.poll(() => isMinimized(app)).toBe(false);
+
+    await button('Close').click();
+    await expect.poll(async () => (await windowState(app)).map((state) => state.visible), { message: 'REQ-29: the window hides' }).toEqual([false]);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    expect(app.process().exitCode, 'REQ-29: the app keeps running').toBeNull();
+    expect(app.process().signalCode).toBeNull();
+    if (hasTrayHost()) expect(trayItemOf(app.process().pid!), 'REQ-29: the tray icon stays').toBeDefined();
+    expect(await healthStatus(port), 'REQ-29: the backend keeps running').toBe(200);
+    expect(await sessionState(port, id), 'REQ-29: the session keeps working').toBe('working');
+  });
+
+  test('REQ-22, REQ-23: the Windows 11 look chosen in the window survives a restart, marked from the first frame of the client page', async () => {
+    const port = await freePort();
+    const env = await desktopEnv(port);
+    const first = await launchDesktop(env);
+    const firstWindow = await first.firstWindow();
+    await expect(list(firstWindow)).toBeVisible({ timeout: 20_000 });
+    await lookSwitch(firstWindow).click();
+    await expect(firstWindow.locator('html')).toHaveAttribute('data-look', 'windows11');
+    await quitDesktop(first);
+    await expect.poll(() => healthStatus(port), { timeout: 15_000 }).toBeUndefined();
+
+    const second = await launchDesktop(env);
+    const client = await second.firstWindow();
+    await client.addInitScript(() => {
+      const marks: (string | null)[] = [];
+      (window as unknown as { lookMarks: (string | null)[] }).lookMarks = marks;
+      new MutationObserver(() => marks.push(document.documentElement.getAttribute('data-look'))).observe(document, {
+        attributes: true,
+        attributeFilter: ['data-look'],
+        subtree: true,
+      });
+    });
+    await expect(list(client)).toBeVisible({ timeout: 20_000 });
+    await expect(lookSwitch(client)).toHaveAttribute('aria-pressed', 'true');
+    const marks = await client.evaluate(() => [...new Set((window as unknown as { lookMarks: (string | null)[] }).lookMarks)]);
+    expect(marks, 'REQ-23: the client page only ever carries the Windows 11 mark').toEqual(['windows11']);
+  });
+
+  test('REQ-32, REQ-33: in a narrow window, in both looks, the logo and the brand are a drag area and the look switch and the window buttons are not', async () => {
+    const port = await freePort();
+    const app = await launchDesktop(await desktopEnv(port));
+    const window = await app.firstWindow();
+    await expect(list(window)).toBeVisible({ timeout: 20_000 });
+    await app.evaluate(({ BrowserWindow }) => {
+      const current = BrowserWindow.getAllWindows()[0]!;
+      current.setMinimumSize(1, 1);
+      current.setSize(600, 600);
+    });
+    const bar = window.getByRole('banner');
+    const centre = async (name: string, kind: 'text' | 'button') => {
+      const box = (await (kind === 'text' ? bar.getByText(name, { exact: true }) : bar.getByRole('button', { name, exact: true })).boundingBox())!;
+      return appRegionAt(window, box.x + box.width / 2, box.y + box.height / 2);
+    };
+    for (const look of ['vexel', 'windows11'] as const) {
+      if ((await window.locator('html').getAttribute('data-look')) !== look) await lookSwitch(window).click();
+      await expect(window.locator('html')).toHaveAttribute('data-look', look);
+      for (const text of ['VX', 'Vexel']) expect(await centre(text, 'text'), `${look}: ${text}`).toBe('drag');
+      for (const name of ['Windows 11 look', 'Close', 'Minimize', 'Maximize']) expect(await centre(name, 'button'), `${look}: ${name}`).toBe('no-drag');
+    }
   });
 });

@@ -309,7 +309,7 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
                         ) : undefined
                       }
                     />
-                    {session.state === 'ended' && !session.external && (
+                    {session.state === 'ended' && (
                       <EndedEntryActions
                         sessionId={session.id}
                         resumable={session.resumable === true}

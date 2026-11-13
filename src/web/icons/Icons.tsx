@@ -372,3 +372,67 @@ export function SparkIcon() {
     </svg>
   );
 }
+
+export function WindowsLogoIcon() {
+  return (
+    <LucideIcon>
+      <rect x="3" y="3" width="8" height="8" rx="1" />
+      <rect x="13" y="3" width="8" height="8" rx="1" />
+      <rect x="3" y="13" width="8" height="8" rx="1" />
+      <rect x="13" y="13" width="8" height="8" rx="1" />
+    </LucideIcon>
+  );
+}
+
+export function MacWindowIcon() {
+  return (
+    <LucideIcon>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="M6 8h.01" />
+      <path d="M10 8h.01" />
+      <path d="M14 8h.01" />
+    </LucideIcon>
+  );
+}
+
+// Thin Fluent-style caption glyphs for the Windows 11 window buttons, drawn on a 10x10 grid.
+function CaptionGlyph({ children }: { children: ReactNode }) {
+  return (
+    <svg className="caption-glyph" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth={1} aria-hidden="true" focusable="false">
+      {children}
+    </svg>
+  );
+}
+
+export function CaptionMinimizeGlyph() {
+  return (
+    <CaptionGlyph>
+      <path d="M0 5.5h10" />
+    </CaptionGlyph>
+  );
+}
+
+export function CaptionMaximizeGlyph() {
+  return (
+    <CaptionGlyph>
+      <rect x="0.5" y="0.5" width="9" height="9" rx="1" />
+    </CaptionGlyph>
+  );
+}
+
+export function CaptionRestoreGlyph() {
+  return (
+    <CaptionGlyph>
+      <rect x="0.5" y="2.5" width="7" height="7" rx="1" />
+      <path d="M2.5 2.5V1.5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-1" />
+    </CaptionGlyph>
+  );
+}
+
+export function CaptionCloseGlyph() {
+  return (
+    <CaptionGlyph>
+      <path d="M0.5 0.5l9 9M9.5 0.5l-9 9" />
+    </CaptionGlyph>
+  );
+}

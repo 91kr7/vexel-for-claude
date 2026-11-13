@@ -21,9 +21,9 @@ type: configuration
 - one ProjectMarkStore, loaded at start from the same data folder. Registers ProjectFavoriteRoute, ProjectRemoveRoute and ProjectMarkEventsRoute with it.
 - on each tracker change with cause `track` (a hosted session started or resumed), clears the removal of the session folder in the ProjectMarkStore.
 - one shared SessionStateTracker with that name store and favorite store. It tracks every session the registry starts.
-- registers StartSessionRoute (with the tracker and the name store), StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute (with the tracker), RenameSessionRoute (with the tracker, the scanner and the name store), FavoriteSessionRoute (with the tracker, the scanner and the favorite store) and FolderRoute.
-- one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute (also with the name store and the favorite store), ResumeSessionRoute and ResumeEndedSessionRoute with them, the registry and the tracker.
-- one ExternalSessionScanner on that ExternalSessionCheck and SessionHistory, with the hosted pids of the registry, the name store and the favorite store. It starts with the server.
+- registers StartSessionRoute (with the tracker and the name store), StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute (with the tracker and the scanner), RenameSessionRoute (with the tracker, the scanner and the name store), FavoriteSessionRoute (with the tracker, the scanner and the favorite store) and FolderRoute.
+- one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute (also with the name store and the favorite store), ResumeSessionRoute and ResumeEndedSessionRoute with them, the registry and the tracker. ResumeEndedSessionRoute also gets the scanner.
+- one ExternalSessionScanner on that ExternalSessionCheck and SessionHistory, with the hosted pids of the registry, the live Claude Code session ids of the tracker (`liveClaudeSessionIds`), the name store and the favorite store. It starts with the server.
 - it starts listening only after one `scan()` of that scanner has settled. A scan that fails or throws does not stop the listen.
 - passes the scanner to SessionListRoute and SessionEventsRoute.
 - one AttentionMonitor on the tracker, the scanner and the registry, created before the scanner starts. Registers AttentionRoute with it.
@@ -67,3 +67,4 @@ type: configuration
 - `plan-recent_projects/REQ-16`, `plan-recent_projects/REQ-18`
 - `plan-update_check/REQ-1`, `plan-update_check/REQ-2`, `plan-update_check/REQ-10`, `plan-update_check/REQ-11`, `plan-update_check/REQ-14`, `plan-update_check/REQ-15`
 - `plan-project_list_actions/REQ-16`, `plan-project_list_actions/REQ-28`, `plan-project_list_actions/REQ-29`
+- `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-10`, `plan-wsl_support/REQ-12`
