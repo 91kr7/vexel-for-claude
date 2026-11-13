@@ -133,15 +133,21 @@
   letter-spacing: 0;
 }
 
-/* The negative right margin cancels the top-bar padding, so the close button touches the window edge. */
+/* The bar keeps room for the buttons; a narrow window clips the other controls under them, never the buttons. */
+:root[data-look='windows11'] .top-bar-drag {
+  position: relative;
+  padding-right: calc(3 * 46px + 8px);
+}
+
 .caption-buttons {
   -webkit-app-region: no-drag;
-  position: relative;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
   z-index: 120;
   display: flex;
-  align-self: stretch;
-  margin-left: 8px;
-  margin-right: -14px;
+  background-color: var(--bg-surface-2);
 }
 
 .caption-button {
@@ -177,8 +183,4 @@
   width: 10px;
   height: 10px;
   flex: none;
-}
-
-:root[data-look='windows11'] .top-bar-drag .top-bar-actions {
-  align-self: stretch;
 }

@@ -22,7 +22,7 @@ Current look shows:
 - pointer away from the group → the symbols are hidden: only the colours show. Keyboard focus does not show them.
 
 Windows 11 look shows:
-- a row of three buttons, in this order: minimize, maximize or restore, close. Each is 46 px wide and as high as the top bar, with no gap and no radius. The row ends flush with the right edge of the window.
+- a row of three buttons, in this order: minimize, maximize or restore, close. Each is 46 px wide and as high as the top bar, with no gap and no radius. The row ends flush with the right edge of the window at every window width, and never shrinks. It has the background of the top bar, so nothing shows through it.
 - each button holds a 10 px glyph with a 1 px line in `--text-primary`, always visible: a line (minimize), a square (maximize), two overlapping squares (restore, when maximized), a cross (close).
 - hover → `--caption-hover` background. Pressed → `--caption-pressed`.
 - close: hover → `--caption-close` background and a white glyph. Pressed → `--caption-close-pressed`.

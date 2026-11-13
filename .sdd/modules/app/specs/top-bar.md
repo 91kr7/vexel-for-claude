@@ -34,6 +34,7 @@ Actions:
 Desktop window (`isDesktopWindow()` is `true`):
 - current look → the WindowButtons (macOS buttons) at the left end, before the logo mark.
 - Windows 11 look → the WindowButtons (Windows-style buttons) at the right end, after "New Session", flush with the window edge. Nothing before the logo mark.
+  - at every window width the WindowButtons stay whole at the right end. When the bar is too narrow, the controls before them go under them and are hidden; the logo and "Vexel" stay visible.
 - a change of look moves the WindowButtons at once; the rest of the bar keeps its state.
 - the `header` is a drag area (`-webkit-app-region: drag`): dragging it moves the window, and a double click maximizes or restores it, by the desktop's title bar action.
 - its controls (buttons, links, fields) are `no-drag`: a click or a double click acts on the control only.
