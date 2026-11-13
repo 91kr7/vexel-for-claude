@@ -28,3 +28,6 @@
 | 2026-11-13 | dev | G5 ended-external-sessions | sent back | Red: dismissing the open ended external session leaves it in the main area (REQ-9 via `plan-session_list_improvements/REQ-7`, REQ-13); `AppLayout.tsx` line 95 clears only hosted sessions |
 | 2026-11-13 | dev | G4 ended-external-sessions fix 1 | pass | `AppLayout.tsx` outside the INTs, justified: an external entry now leaves the list only by dismiss or resume; spec app-layout updated |
 | 2026-11-13 | dev | G5 ended-external-sessions | pass | Green after fix 1; gatekeeper re-run: 208 unit, 14 e2e. Risk noted for the closing run: ended external leftovers on the shared e2e server |
+| 2026-11-13 | dev | G4 windows-look | decided | Three status tones lightened for WCAG AA (INT-4); `--accent-deep` = `#0078d4` in both themes; branch's unused `--accent-secondary` override dropped |
+| 2026-11-13 | dev | G4 windows-look | decided | Waiting and ended share the zinc tone, as on main: told apart by badge text (REQ-38) |
+| 2026-11-13 | dev | G4 windows-look | pass | Build re-run green; installed version of main kept in TopBar |
