@@ -162,9 +162,9 @@ test('the external view shows its header and footer, a read-only notice that sta
   expect(await box(header(page))).toEqual(headerBefore);
   expect(await box(footer(page))).toEqual(footerBefore);
 
-  // The header keeps the last known data after the entry leaves the list.
+  // plan-wsl_support/REQ-7: a closed terminal leaves the entry ended; the open view keeps its data.
   process.kill('SIGKILL');
-  await expect(listEntry(page, folder)).toHaveCount(0, SCAN);
+  await expect(listEntry(page, folder)).toHaveClass(/\bended\b/, SCAN);
   await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('negozio');
   await expect(footerPlace(page, folder)).toHaveText(`Open in Another Terminal · ${folder}`);
   await expect(notice).toBeVisible();
@@ -319,7 +319,8 @@ test('with 10 active sessions, a transcript with large outputs opens, and the vi
   for (let i = 1; i <= 8; i += 1) await runInTerminal(`e2e-open-other-${i}`, await newFolder(`altra-${i}`));
 
   await page.goto('/');
-  await expect(list(page).getByRole('button').filter({ has: page.locator(`[title^="${projectsRoot}"]`) })).toHaveCount(10, SCAN);
+  // The ended entries of the earlier tests of this file stay listed (plan-wsl_support/REQ-8): count the running ones.
+  await expect(list(page).locator('.session-entry:not(.ended)').filter({ has: page.locator(`[title^="${projectsRoot}"]`) })).toHaveCount(10, SCAN);
 
   await listEntry(page, big).click();
   await expect(items(page).last()).toContainText('Fine analisi dei log.', ONE_SECOND);
