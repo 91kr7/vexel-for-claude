@@ -6,14 +6,20 @@
     <meta name="color-scheme" content="light" />
     <title>Vexel for Claude</title>
     <script>
-      // Marks the saved theme before the first paint; ThemeStore owns the same key.
+      // Marks the saved theme and look before the first paint; ThemeStore and LookStore own the same keys.
       (function () {
         var theme = 'light';
         try {
           var saved = localStorage.getItem('ai-client.theme');
           if (saved === 'light' || saved === 'dark') theme = saved;
         } catch (e) {}
+        var look = 'vexel';
+        try {
+          var savedLook = localStorage.getItem('ai-client.look');
+          if (savedLook === 'vexel' || savedLook === 'windows11') look = savedLook;
+        } catch (e) {}
         document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-look', look);
         document.querySelector('meta[name="color-scheme"]').setAttribute('content', theme);
       })();
     </script>

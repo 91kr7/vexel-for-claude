@@ -80,13 +80,15 @@ const contrast = (a: string, b: string) => {
 };
 
 test.describe('the usage button', () => {
-  // plan-usage_limits/REQ-1, REQ-2, REQ-15: right after the switch, 6 px apart, before "New Session", named and with a tooltip
-  test('sits right after the theme switch, 6 px apart, before New Session, named and titled "Plan Usage"', async ({ page }) => {
+  // plan-usage_limits/REQ-1, REQ-2, REQ-15, plan-wsl_support/REQ-18: right after the look switch that follows the theme switch, 6 px apart, before "New Session"
+  test('sits right after the look switch, 6 px apart, before New Session, named and titled "Plan Usage"', async ({ page }) => {
     await planUsageAnswers(page, [json({ status: 'unavailable' })]);
     await loadPage(page);
-    const [shortcuts, sw, usage, create] = [await box(shortcutsButton(page)), await box(themeSwitch(page)), await box(usageButton(page)), await box(newSessionButton(page))];
+    const lookSwitch = banner(page).getByRole('button', { name: 'Windows 11 look', exact: true });
+    const [shortcuts, sw, look, usage, create] = [await box(shortcutsButton(page)), await box(themeSwitch(page)), await box(lookSwitch), await box(usageButton(page)), await box(newSessionButton(page))];
     expect(sw.x).toBeGreaterThan(shortcuts.x);
-    expect(usage.x - (sw.x + sw.width)).toBeCloseTo(6, 0);
+    expect(look.x).toBeGreaterThan(sw.x + sw.width);
+    expect(usage.x - (look.x + look.width)).toBeCloseTo(6, 0);
     expect(create.x).toBeGreaterThan(usage.x + usage.width);
     expect(usage.width).toBeCloseTo(sw.width, 0);
     expect(usage.height).toBeCloseTo(sw.height, 0);
@@ -99,7 +101,8 @@ test.describe('the usage button', () => {
   test('Tab reaches it with a visible focus, Enter opens the popover and Esc closes it', async ({ page }) => {
     await planUsageAnswers(page, [json(okBody(limitsAt(40, 50)))]);
     await loadPage(page);
-    await themeSwitch(page).focus();
+    // plan-wsl_support/REQ-18: the look switch sits between the theme switch and the usage button.
+    await banner(page).getByRole('button', { name: 'Windows 11 look', exact: true }).focus();
     await page.keyboard.press('Tab');
     await expect(usageButton(page)).toBeFocused();
     expect(await hasFocusVisible(usageButton(page))).toBe(true);

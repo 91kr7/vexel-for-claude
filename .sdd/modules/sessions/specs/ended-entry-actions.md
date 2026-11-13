@@ -6,7 +6,7 @@ type: UI component
 
 # EndedEntryActions
 
-**Purpose** → the "Resume" and "Dismiss" actions of the list entry of an ended hosted session.
+**Purpose** → the "Resume" and "Dismiss" actions of the list entry of an ended session, hosted or external (an external session whose terminal closed).
 
 ## Contract
 
@@ -14,7 +14,7 @@ Description:
 - two small icon buttons at the top right of the entry, over its state name, on `--bg-surface-2`. They sit beside the entry button, not inside it. An error shows under the entry.
 
 Props:
-- `sessionId` → the id of the ended hosted session.
+- `sessionId` → the id of the ended session, hosted or external.
 - `resumable` → `true` shows "Resume".
 - `open` → `true` when the session is the open one. Optional, default `false`.
 - `onResumed(id)` → called with the id of the new hosted session after a resume. Optional.
@@ -56,3 +56,4 @@ Actions:
 
 - `plan-session_list_improvements/REQ-4`, `plan-session_list_improvements/REQ-8`, `plan-session_list_improvements/REQ-9`, `plan-session_list_improvements/REQ-12`, `plan-session_list_improvements/REQ-13`
 - `plan-keyboard_shortcuts/REQ-17`, `plan-keyboard_shortcuts/REQ-18`, `plan-keyboard_shortcuts/REQ-43`
+- `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-10`, `plan-wsl_support/REQ-13`

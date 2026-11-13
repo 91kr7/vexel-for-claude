@@ -277,7 +277,7 @@ export function ConversationView({ sessionId, session, sessions, onResumed, focu
         actions={
           <>
             <GitExplorerButton lookup={repository} open={gitShown} onToggle={toggleGit} />
-            <ResumeHereButton sessionId={sessionId} onResumed={onResumed} />
+            <ResumeHereButton sessionId={sessionId} onResumed={onResumed} ended={session?.state === 'ended'} />
           </>
         }
         notice={

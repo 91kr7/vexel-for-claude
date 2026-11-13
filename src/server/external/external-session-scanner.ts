@@ -9,9 +9,10 @@ export interface ExternalSessionSummary {
   id: string;
   folder: string;
   label: string;
-  state: 'working' | 'needs_input' | 'idle';
+  state: 'working' | 'needs_input' | 'idle' | 'ended';
   lastActivity: string;
   external: true;
+  resumable?: true;
   favorite?: true;
 }
 
@@ -23,6 +24,8 @@ export interface ExternalSessionScannerDependencies {
   check: Pick<ExternalSessionCheck, 'runningSessions'>;
   history: Pick<SessionHistory, 'get'>;
   hostedPids: () => Iterable<number>;
+  /** Claude Code session ids that run in the client: an ended entry with one of them leaves the list. */
+  hostedSessionIds?: () => ReadonlySet<string>;
   names?: Pick<SessionNameStore, 'get' | 'onChange'>;
   favorites?: Pick<SessionFavoriteStore, 'has' | 'onChange'>;
   intervalMs?: number;
@@ -44,6 +47,7 @@ function sameSummary(a: ExternalSessionSummary, b: ExternalSessionSummary): bool
     a.label === b.label &&
     a.state === b.state &&
     a.lastActivity === b.lastActivity &&
+    a.resumable === b.resumable &&
     a.favorite === b.favorite
   );
 }
@@ -143,11 +147,34 @@ export class ExternalSessionScanner {
       this.#entries.set(id, { summary, defaultLabel, labelFromMessage, firstSeen });
       if (!current || !sameSummary(current.summary, summary)) this.#notify({ type: 'session', session: { ...summary } });
     }
-    for (const id of [...this.#entries.keys()]) {
-      if (found.has(id)) continue;
-      this.#entries.delete(id);
-      this.#notify({ type: 'session-removed', id });
+    // A session whose terminal closed stays as ended until it is dismissed or runs in the client.
+    const hosted = this.#deps.hostedSessionIds?.() ?? new Set<string>();
+    for (const [id, entry] of [...this.#entries]) {
+      if (found.has(id) || this.#entries.get(id) !== entry) continue;
+      if (hosted.has(id)) {
+        this.#entries.delete(id);
+        this.#notify({ type: 'session-removed', id });
+        continue;
+      }
+      if (entry.summary.state === 'ended') continue;
+      const saved = await this.#deps.history
+        .get(id)
+        .then((past) => past !== undefined && past.folder !== null)
+        .catch(() => false);
+      if (this.#entries.get(id) !== entry) continue;
+      entry.summary = { ...entry.summary, state: 'ended' };
+      if (saved) entry.summary.resumable = true;
+      this.#notify({ type: 'session', session: { ...entry.summary } });
     }
+  }
+
+  /** Removes an ended entry. `false` when the id is unknown or its session still runs. */
+  dismiss(id: string): boolean {
+    const entry = this.#entries.get(id);
+    if (!entry || entry.summary.state !== 'ended') return false;
+    this.#entries.delete(id);
+    this.#notify({ type: 'session-removed', id });
+    return true;
   }
 
   list(): ExternalSessionSummary[] {

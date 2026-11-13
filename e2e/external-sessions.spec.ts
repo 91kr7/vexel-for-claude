@@ -161,8 +161,8 @@ test('an external session that waits for a permission answer needs input and is 
     .toBe(true);
 });
 
-// plan-claude_sessions_client/REQ-32 — scenario "An external session leaves the list when it ends"
-test('an external session leaves the list when its terminal process ends, without a reload', async ({ page }) => {
+// plan-claude_sessions_client/REQ-32, as changed by plan-wsl_support/REQ-7: the entry turns ended instead of leaving
+test('an external session moves to "Ended" when its terminal process ends, without a reload', async ({ page }) => {
   const folder = await newFolder('ending');
   const session = await runInTerminal('e2e-ext-ending', folder);
 
@@ -171,7 +171,8 @@ test('an external session leaves the list when its terminal process ends, withou
   await markNoReload(page);
 
   session.end();
-  await expect(listEntry(page, folder)).toHaveCount(0, SCAN);
+  await expect(listEntry(page, folder)).toHaveClass(/\bended\b/, SCAN);
+  await expect(listEntry(page, folder)).toHaveClass(/\bexternal\b/);
   await expectNoReload(page);
 });
 
@@ -233,7 +234,7 @@ test('a click on an external entry shows its conversation read-only, updated liv
   expect(sentFrames).toEqual([]);
 
   session.end();
-  await expect(listEntry(page, folder)).toHaveCount(0, SCAN);
+  await expect(listEntry(page, folder)).toHaveClass(/\bended\b/, SCAN);
   await expect(items(page)).toHaveCount(5);
 });
 

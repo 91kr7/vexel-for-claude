@@ -6,11 +6,14 @@ type: UI component
 
 # WindowButtons
 
-**Purpose** → the red, yellow and green round buttons of the desktop window, in the macOS look. They close the window to the tray, minimize it, and maximize or restore it.
+**Purpose** → the window buttons of the desktop window: the red, yellow and green round buttons (macOS buttons) in the current look, the Windows-style buttons in the Windows 11 look. They close the window to the tray, minimize it, and maximize or restore it.
 
 ## Contract
 
-Shows:
+Props:
+- `look` → `'vexel'` or `'windows11'` (LookStore `Look`). Default: `'vexel'`.
+
+Current look shows:
 - a row of three 12 px circles, 8 px apart, in this order: red `--window-close`, yellow `--window-minimize`, green `--window-maximize`. 6 px of extra space after the green one.
 - each button holds an 8 px symbol in `--window-symbol`:
   - red → a cross (`XIcon`). Yellow → a minus (`MinusIcon`).
@@ -18,27 +21,35 @@ Shows:
 - pointer over the group, gaps included → all three symbols are visible.
 - pointer away from the group → the symbols are hidden: only the colours show. Keyboard focus does not show them.
 
+Windows 11 look shows:
+- a row of three buttons, in this order: minimize, maximize or restore, close. Each is 46 px wide and as high as the top bar, with no gap and no radius. The row ends flush with the right edge of the window at every window width, and never shrinks. It has the background of the top bar, so nothing shows through it.
+- each button holds a 10 px glyph with a 1 px line in `--text-primary`, always visible: a line (minimize), a square (maximize), two overlapping squares (restore, when maximized), a cross (close).
+- hover → `--caption-hover` background. Pressed → `--caption-pressed`.
+- close: hover → `--caption-close` background and a white glyph. Pressed → `--caption-close-pressed`.
+
 Actions:
-- red → `closeWindow()`. Yellow → `minimizeWindow()`. Green → `toggleMaximizeWindow()` (useDesktopBridge).
+- red, or close → `closeWindow()`. Yellow, or minimize → `minimizeWindow()`. Green, or maximize/restore → `toggleMaximizeWindow()` (useDesktopBridge).
 - a click does not take the focus: the focus stays where it was.
 
 Accessible names:
-- "Close", "Minimize", and "Maximize" or "Restore" by the window state (`useWindowMaximized`).
+- "Close", "Minimize", and "Maximize" or "Restore" by the window state (`useWindowMaximized`), in both looks.
 
 Keyboard:
-- the three are buttons in the Tab order. Enter and Space act as a click. Focus from the keyboard shows the focus ring of the page (`:focus-visible`).
+- the three are buttons in the Tab order. Enter and Space act as a click. Focus from the keyboard shows the focus ring of the page (`:focus-visible`), drawn inside the button in the Windows 11 look.
 
 ## Rules and invariants
 
 - The group is never a drag area (`-webkit-app-region: no-drag`), also in the gaps between the buttons.
 - The group sits above the dialog backdrop (z-index 120, above 100 and 110): visible and clickable while a dialog is open.
-- The colours and the symbol colour are the same in both themes.
+- Current look: the colours and the symbol colour are the same in both themes.
+- Windows 11 look: the glyph and hover colours follow the theme. The close red is the same in both.
 
 ## Dependencies
 
 - useDesktopBridge (`closeWindow`, `minimizeWindow`, `toggleMaximizeWindow`, `useWindowMaximized`)
-- IconSet (`XIcon`, `MinusIcon`, `Maximize2Icon`, `Minimize2Icon`), ThemeTokens
+- IconSet (`XIcon`, `MinusIcon`, `Maximize2Icon`, `Minimize2Icon`, `CaptionMinimizeGlyph`, `CaptionMaximizeGlyph`, `CaptionRestoreGlyph`, `CaptionCloseGlyph`), ThemeTokens, Windows11Look
 
 ## Requirements served
 
 - `plan-mac_title_bar/REQ-15`, `plan-mac_title_bar/REQ-16`, `plan-mac_title_bar/REQ-17`, `plan-mac_title_bar/REQ-18`, `plan-mac_title_bar/REQ-19`, `plan-mac_title_bar/REQ-20`, `plan-mac_title_bar/REQ-21`, `plan-mac_title_bar/REQ-22`, `plan-mac_title_bar/REQ-24`, `plan-mac_title_bar/REQ-26`, `plan-mac_title_bar/REQ-27`, `plan-mac_title_bar/REQ-28`
+- `plan-wsl_support/REQ-28`, `plan-wsl_support/REQ-29`, `plan-wsl_support/REQ-30`, `plan-wsl_support/REQ-31`, `plan-wsl_support/REQ-34`, `plan-wsl_support/REQ-39`, `plan-wsl_support/REQ-40`

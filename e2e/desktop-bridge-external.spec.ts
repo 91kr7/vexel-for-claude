@@ -91,9 +91,11 @@ test('"open this session" for an external session that left the list opens nothi
     await page.goto('/');
     await expect(entry(page, goneFolder)).toBeVisible({ timeout: 10_000 });
 
-    // The user closes that terminal: the session leaves the list.
+    // The user closes that terminal and dismisses its ended entry (plan-wsl_support/REQ-7, REQ-9): the session leaves the list.
     goneProcess.kill('SIGKILL');
-    await expect(entry(page, goneFolder)).toHaveCount(0, { timeout: 10_000 });
+    await expect(entry(page, goneFolder)).toHaveClass(/\bended\b/, { timeout: 10_000 });
+    expect((await page.request.post(`/api/sessions/${goneId}/dismiss`)).status()).toBe(204);
+    await expect(entry(page, goneFolder)).toHaveCount(0);
 
     await openFromDesktop(page, goneId);
     await page.waitForTimeout(300);

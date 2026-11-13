@@ -39,10 +39,13 @@ The D-Bus server: `GetCapabilities`, `Notify` (urgency as the `urgency` byte hin
 - A session has at most one notification.
 - When the server reports `NotificationClosed` (closed by the user, expired, or clicked), the notification no longer belongs to its session.
 - Calls run one at a time, in call order. A `close` right after a `show` closes that notification.
-- It never throws and its promises never reject. A failure (no bus, no server, no reply within 5 seconds) is logged, the connection is dropped, and the next call connects again.
+- It never throws and its promises never reject. A failure (no bus, no server, no reply within 5 seconds) drops the connection, and the next call connects again.
+- A failure is logged as one line, `System notification failed: <reason>`, only when its reason differs from the last failure logged. The reason is the error message.
+- A call that the server answers with success (`notify` or `closeNotification`) clears the last reason, so the next failure is logged again. A `close` of a session with no notification does not reach the server and clears nothing.
 
 ## Requirements served
 
 - `plan-session_notifications/REQ-10`, `plan-session_notifications/REQ-13`, `plan-session_notifications/REQ-18`, `plan-session_notifications/REQ-19`
 - `plan-session_notifications/REQ-24`
 - `plan-session_notifications/REQ-28`, `plan-session_notifications/REQ-29`
+- `plan-wsl_support/REQ-1`, `plan-wsl_support/REQ-2`, `plan-wsl_support/REQ-3`, `plan-wsl_support/REQ-4`, `plan-wsl_support/REQ-5`, `plan-wsl_support/REQ-6`
