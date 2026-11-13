@@ -31,3 +31,7 @@
 | 2026-11-13 | dev | G4 windows-look | decided | Three status tones lightened for WCAG AA (INT-4); `--accent-deep` = `#0078d4` in both themes; branch's unused `--accent-secondary` override dropped |
 | 2026-11-13 | dev | G4 windows-look | decided | Waiting and ended share the zinc tone, as on main: told apart by badge text (REQ-38) |
 | 2026-11-13 | dev | G4 windows-look | pass | Build re-run green; installed version of main kept in TopBar |
+| 2026-11-13 | dev | Ubuntu non-regression | human decision | WSL support must not break Ubuntu (knowledge base `wsl-keeps-ubuntu-working`); closing run includes the whole Electron e2e group |
+| 2026-11-13 | dev | G5 windows-look | sent back | Red: below ~573 px the Windows-style buttons overflow off the right edge (REQ-28, WindowButtons spec "flush with the right edge") |
+| 2026-11-13 | dev | question tester (narrow width) | decided | Fix inside the Windows 11 stylesheet: caption buttons stay flush right at every width, the rest of the bar may clip as it already overflows in the current look; no minimum window width (it would change Ubuntu, `wsl-keeps-ubuntu-working`) |
+| 2026-11-13 | dev | G5 windows-look | decided | `terminal-search.spec.ts:298` and `desktop-reconnection.spec.ts:130` failed once under full load and pass alone: outside the perimeter, rechecked in the next full run |
