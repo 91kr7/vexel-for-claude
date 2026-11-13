@@ -16,6 +16,10 @@ type: UI entry point
   - value `dark` or `light` → that theme.
   - anything else, missing, or storage not reachable → `light`.
   - effect: `data-theme` on the root and the `color-scheme` meta both carry that theme. The page never paints the other theme first.
+- the same script reads `localStorage` key `ai-client.look` (LookStore `LOOK_KEY`):
+  - value `vexel` or `windows11` → that look.
+  - anything else, missing, or storage not reachable → `vexel`.
+  - effect: `data-look` on the root carries that look. The page never paints the other look first.
 - the `color-scheme` meta is `light` in the HTML file. It only applies before the styles load: the `:root` value overrides it.
 - the script renders AppLayout in `#root`, with the global styles.
 - body → `--bg-canvas` background, `--text-primary` text, Roboto Flex 14 px, line height 1.5.
@@ -65,6 +69,7 @@ Client classes built from the mock's parts:
 - AppLayout
 - ThemeTokens
 - ThemeStore (takes over the first mark)
+- LookStore (takes over the first look mark), Windows11Look (imported by the global styles)
 - BundledFont
 
 ## Requirements served

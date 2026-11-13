@@ -52,7 +52,7 @@ Entry variants:
 | open (`aria-current="true"`) | — | `--accent-glow` background, `--text-primary`, weight 600, 2 px `--accent-primary` bar on the left (padding left 6 px); label and time in `--text-secondary` |
 | ended | `ended` | text in `--text-muted` also on hover; zinc dot. Open → `--text-secondary` |
 | external | `external` | 1 px dashed `--border-strong` border all around (padding 5 × 7 px). Open → the dashed border stays and the accent bar is drawn inside it |
-| ended hosted | `ended` | plus EndedEntryActions beside the entry button: "Dismiss" always, "Resume" only when the summary has `resumable: true` |
+| ended, hosted or external | `ended` (plus `external`) | plus EndedEntryActions beside the entry button: "Dismiss" always, "Resume" only when the summary has `resumable: true`. An ended external row keeps the dashed border |
 | external, `needs_input` | `external needs-input` | dashed row with the amber dot; the chip "External" (`.mono-chip` on surface 2) after the folder name; "Permission for **<tool>**" in mono amber-300 in place of the label when `waitingTool` is known; no "Reply" |
 
 Hosted needs-input card (look of `#permission-banner`): a block with the class `session-card`.
@@ -68,11 +68,11 @@ Favorite indicator (a marked entry, in every group):
 - an entry with `favorite: true` shows it. The entry keeps its place and its group.
 
 "Mark as Favorite" / "Remove Favorite" (every entry, rows and the needs-input card):
-- FavoriteButton on the entry, "Remove Favorite" when the entry has `favorite: true`. It sits left of "Rename". On an ended hosted row, EndedEntryActions stay left of it. Tab order: entry, EndedEntryActions, FavoriteButton, "Rename". It is hidden with "Rename" during a rename. Its error shows under the entry.
+- FavoriteButton on the entry, "Remove Favorite" when the entry has `favorite: true`. It sits left of "Rename". On an ended row, EndedEntryActions stay left of it. Tab order: entry, EndedEntryActions, FavoriteButton, "Rename". It is hidden with "Rename" during a rename. Its error shows under the entry.
 
 "Rename" (every entry, rows and the needs-input card):
 - a 20 px square icon button (pencil icon, 14 px, `--text-muted` on `--bg-surface-2`, 4 px radius), with the accessible name and the tooltip "Rename". It sits beside the entry button, not inside it, after the EndedEntryActions in the tab order.
-- place → top right of the row, over its state name; top right inside the needs-input card. On an ended hosted row, EndedEntryActions move to its left.
+- place → top right of the row, over its state name; top right inside the needs-input card. On an ended row, EndedEntryActions move to its left.
 - hidden (opacity 0) until the pointer is over the entry or the focus inside the entry is visible from the keyboard. Hover → `--bg-surface-3` and `--text-primary`. The focused button shows the focus ring.
 - pressed → the entry shows SessionNameEditor in place of its label (row line 2, or the card label). Only one entry edits at a time. The other parts of the entry stay.
 - during the edit → the entry is no longer a button: a click on it opens nothing and it cannot be dragged. "Rename" is hidden.
@@ -82,11 +82,11 @@ Actions:
 - click on an entry row → `onOpen(id)`. Ended and external sessions too.
 - click anywhere on the hosted needs-input card → `onOpen(id)`, once.
 - "Reply" → `onOpen(id)`, once.
-- "Resume" and "Dismiss" of an ended hosted entry → EndedEntryActions. A resume calls `onResumed(id)` with the new session id. They do not call `onOpen`.
+- "Resume" and "Dismiss" of an ended entry, hosted or external → EndedEntryActions. A resume calls `onResumed(id)` with the new session id. They do not call `onOpen`.
 - "Mark as Favorite" and "Remove Favorite" → FavoriteButton. They do not call `onOpen` or `onReorder`.
 - "Rename" → opens the name editor of the entry (above). It does not call `onOpen` or `onReorder`.
 - shortcut command `rename` (ShortcutChannel), only when the list has the entry of `openSessionId` → opens the name editor of that entry, as "Rename" does. The entry scrolls into view and the focus is in the "Session Name" field. When that entry already edits, nothing changes. Another entry that was editing ends its edit.
-- EndedEntryActions of an ended hosted entry get `open` → `true` only for the entry of `openSessionId`.
+- EndedEntryActions of an ended entry get `open` → `true` only for the entry of `openSessionId`.
 - every entry, row or card, is draggable with the mouse. A click with no drag still opens the session.
 - drag over an entry of the dragged session's own group → the upper half of the entry means "before it", the lower half means "after it".
 - drop on an entry of the own group → `onReorder(id, group, index)` once. `index` is the place the session takes in the group without it:
@@ -113,7 +113,7 @@ Drag feedback (the mock has no drag state):
 - No entry text wraps.
 - Only `working` entries show a tool line.
 - Only the open session's button has `aria-current="true"`.
-- Only the entries of ended hosted sessions show "Dismiss" or "Resume". Working, needs-input, idle and external entries show neither.
+- Only the entries of ended sessions, hosted or external, show "Dismiss" or "Resume". Working, needs-input and idle entries, hosted or external, show neither.
 - Every entry, hosted or external, in any state, has "Rename".
 - Every entry, hosted or external, in any state, has the favorite button.
 - Marking or unmarking never moves an entry or changes its group.

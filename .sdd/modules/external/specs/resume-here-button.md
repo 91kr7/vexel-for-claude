@@ -13,6 +13,7 @@ type: UI component
 Props:
 - `sessionId` → the Claude Code session id of the external session.
 - `onResumed(id)` → called with the id of the new hosted session.
+- `ended` → optional, default `false`. `true` when the terminal of the session has closed (state `ended`).
 
 Shows:
 - the button "Resume Here" → `.button-primary .button-bar` (32 px high, 8 px radius, 12 px weight 500, `--on-accent` text on `--accent-primary`) with the log-in icon at 14 px. While the request runs it shows the Spinner (ProgressIndicator) in place of its icon, is disabled and has `aria-busy="true"`.
@@ -23,14 +24,15 @@ Shows:
 
 Actions:
 - click → shows RunningElsewhereWarning. Nothing is sent yet.
+- click with `ended` → no warning: `POST /api/past-sessions/<sessionId>/resume` at once.
 - "Cancel" in the warning → the warning closes. Nothing is sent.
 - "Resume Anyway" → the warning closes, then `POST /api/past-sessions/<sessionId>/resume` (ResumeSessionRoute).
   - `201` → `onResumed(id)` with the `id` of the body.
-- shortcut command `resume` (ShortcutChannel), while no request runs → acts as a click: the warning shows first. While a request runs, the command does nothing.
+- shortcut command `resume` (ShortcutChannel), while no request runs → acts as a click: the warning shows first, unless `ended`. While a request runs, the command does nothing.
 
 ## Rules and invariants
 
-- It always shows the warning before the request: an external session runs in another terminal by definition.
+- It shows the warning before the request while the session runs in another terminal. An ended session runs nowhere, so it resumes with no warning.
 
 ## Dependencies
 

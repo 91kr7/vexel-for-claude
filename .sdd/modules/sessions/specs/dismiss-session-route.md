@@ -6,15 +6,15 @@ type: REST endpoint
 
 # DismissSessionRoute
 
-**Purpose** → removes an ended hosted session from the session list.
+**Purpose** → removes an ended session, hosted or external, from the session list.
 
 ## Contract
 
-- `registerDismissSessionRoute(app, tracker)` → `tracker` is the SessionStateTracker.
+- `registerDismissSessionRoute(app, tracker, scanner?)` → `tracker` is the SessionStateTracker, `scanner` the ExternalSessionScanner (module external). No scanner → only hosted sessions.
 - `POST /api/sessions/:id/dismiss` → no body.
-  - `204` → the session was ended and SessionStateTracker `dismiss(id)` removed it. Empty body.
-  - `404` → the tracker has no session `:id`. Body: `{ error: "session_not_found" }`.
-  - `409` → the session has not ended. Body: `{ error: "not_ended" }`.
+  - `204` → the session was ended and SessionStateTracker `dismiss(id)` removed it, or, when the tracker has no session `:id`, ExternalSessionScanner `dismiss(id)` removed the ended external entry. Empty body.
+  - `404` → neither the tracker nor the scanner has a session `:id`. Body: `{ error: "session_not_found" }`.
+  - `409` → the session, hosted or external, has not ended. Body: `{ error: "not_ended" }`.
 
 ## Rules and invariants
 
@@ -25,6 +25,7 @@ type: REST endpoint
 ## Dependencies
 
 - SessionStateTracker
+- ExternalSessionScanner (module external)
 
 ## Requirements served
 

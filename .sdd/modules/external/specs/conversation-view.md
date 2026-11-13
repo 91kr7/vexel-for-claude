@@ -22,7 +22,7 @@ Props:
 - `focusRef` → optional. Gets `{ focus() }`: puts the keyboard focus in the message area (the scrolling content), which then shows the focus ring inside its edge. The message area is not in the Tab order.
 
 Shows:
-- the SessionHeader with `session`: folder name, the label or name as its line, the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The actions are GitExplorerButton, then ResumeHereButton.
+- the SessionHeader with `session`: folder name, the label or name as its line, the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The actions are GitExplorerButton, then ResumeHereButton, with `ended` when `session.state` is `ended`.
 - the GitExplorerPanel, while open, at the right of the content, in the same row. The content takes the width it leaves.
 - GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known, and one more at each opening of the panel and each refresh). A click opens the panel; a second click closes it. The panel is closed when the view opens.
 - the GitExplorerPanel gets the session list of the `sessions` prop. Each opening of the panel, and each refresh the panel asks for (`onRefresh`), reads the repository again. While a lookup of a refresh is in flight, the button and the panel stay as they are.

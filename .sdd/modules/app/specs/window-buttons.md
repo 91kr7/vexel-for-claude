@@ -6,11 +6,14 @@ type: UI component
 
 # WindowButtons
 
-**Purpose** → the red, yellow and green round buttons of the desktop window, in the macOS look. They close the window to the tray, minimize it, and maximize or restore it.
+**Purpose** → the window buttons of the desktop window: red, yellow and green round buttons in the Vexel look (macOS style), or Windows 11 caption buttons in the Windows 11 look. They close the window to the tray, minimize it, and maximize or restore it.
 
 ## Contract
 
-Shows:
+Props:
+- `look` → `'vexel'` or `'windows11'` (LookStore `Look`). Default: `'vexel'`.
+
+Vexel look shows:
 - a row of three 12 px circles, 8 px apart, in this order: red `--window-close`, yellow `--window-minimize`, green `--window-maximize`. 6 px of extra space after the green one.
 - each button holds an 8 px symbol in `--window-symbol`:
   - red → a cross (`XIcon`). Yellow → a minus (`MinusIcon`).
@@ -18,8 +21,15 @@ Shows:
 - pointer over the group, gaps included → all three symbols are visible.
 - pointer away from the group → the symbols are hidden: only the colours show. Keyboard focus does not show them.
 
+Windows 11 look shows:
+- a row of three caption buttons, in this order: minimize, maximize or restore, close. Each is 46 px wide and as high as the top bar, with no gap and no radius; the row ends flush with the right edge of the window.
+- each button holds a 10 px glyph drawn with a 1 px line in `--text-primary`, always visible: a line (minimize), a square (maximize), two overlapping squares (restore, when maximized), a cross (close).
+- hover → `--caption-hover` background; pressed → `--caption-pressed`.
+- close hover → `--caption-close` (`#c42b1c`) background and a white glyph; pressed → `--caption-close-pressed`.
+- keyboard focus → the focus ring of the page, drawn inside the button.
+
 Actions:
-- red → `closeWindow()`. Yellow → `minimizeWindow()`. Green → `toggleMaximizeWindow()` (useDesktopBridge).
+- red, or close → `closeWindow()`. Yellow, or minimize → `minimizeWindow()`. Green, or maximize/restore → `toggleMaximizeWindow()` (useDesktopBridge).
 - a click does not take the focus: the focus stays where it was.
 
 Accessible names:
@@ -32,12 +42,13 @@ Keyboard:
 
 - The group is never a drag area (`-webkit-app-region: no-drag`), also in the gaps between the buttons.
 - The group sits above the dialog backdrop (z-index 120, above 100 and 110): visible and clickable while a dialog is open.
-- The colours and the symbol colour are the same in both themes.
+- Vexel look: the colours and the symbol colour are the same in both themes.
+- Windows 11 look: the glyph and hover colours follow the theme; the close red is the same in both.
 
 ## Dependencies
 
 - useDesktopBridge (`closeWindow`, `minimizeWindow`, `toggleMaximizeWindow`, `useWindowMaximized`)
-- IconSet (`XIcon`, `MinusIcon`, `Maximize2Icon`, `Minimize2Icon`), ThemeTokens
+- IconSet (`XIcon`, `MinusIcon`, `Maximize2Icon`, `Minimize2Icon`, `CaptionMinimizeGlyph`, `CaptionMaximizeGlyph`, `CaptionRestoreGlyph`, `CaptionCloseGlyph`), ThemeTokens, Windows11Look
 
 ## Requirements served
 
