@@ -21,3 +21,6 @@
 | 2026-11-13 | dev | G4 failed-notifications | pass | Build re-run green |
 | 2026-11-13 | dev | G5 failed-notifications | pass | 53 unit tests green, re-run by the gatekeeper; REQ-5 by existing tests |
 | 2026-11-13 | dev | G4 lock-file | pass | One line added, root version kept at 0.3.0 |
+| 2026-11-13 | dev | G4 ended-external-sessions | decided | `resumable` only when the conversation is saved (INT-1), unlike the branch: no "Resume" that would fail |
+| 2026-11-13 | dev | G4 ended-external-sessions | decided | `resume` shortcut served by whichever listener mounts last; both resume with no warning (REQ-13) |
+| 2026-11-13 | dev | G4 ended-external-sessions | pass | Build re-run green; diff limited to INT files and specs |

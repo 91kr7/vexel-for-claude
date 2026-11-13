@@ -22,7 +22,7 @@ Props:
 - `focusRef` → optional. Gets `{ focus() }`: puts the keyboard focus in the message area (the scrolling content), which then shows the focus ring inside its edge. The message area is not in the Tab order.
 
 Shows:
-- the SessionHeader with `session`: folder name, the label or name as its line, the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The actions are GitExplorerButton, then ResumeHereButton.
+- the SessionHeader with `session`: folder name, the label or name as its line, the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The actions are GitExplorerButton, then ResumeHereButton, with `ended` when `session.state` is `ended`.
 - the GitExplorerPanel, while open, at the right of the content, in the same row. The content takes the width it leaves.
 - GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known, and one more at each opening of the panel and each refresh). A click opens the panel; a second click closes it. The panel is closed when the view opens.
 - the GitExplorerPanel gets the session list of the `sessions` prop. Each opening of the panel, and each refresh the panel asks for (`onRefresh`), reads the repository again. While a lookup of a refresh is in flight, the button and the panel stay as they are.
@@ -91,6 +91,7 @@ Scrolling:
 - It has one socket open at a time per `sessionId`. Unmount closes it and ends the attempts.
 - The header and the footer stay in place. Only the content scrolls; the button does not.
 - It requests the full content of a part only when the user opens its card.
+- On an ended session, the shortcut command `resume` resumes once, with no warning. The command `dismiss` dismisses its list entry (EndedEntryActions of SessionList).
 
 ## Dependencies
 
@@ -108,3 +109,4 @@ Scrolling:
 - `plan-session_list_width/REQ-16`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-21`
 - `plan-keyboard_shortcuts/REQ-3`
 - `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-3`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-25`
+- `plan-wsl_support/REQ-11`, `plan-wsl_support/REQ-13`
