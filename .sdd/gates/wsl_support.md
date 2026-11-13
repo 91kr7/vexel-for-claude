@@ -19,3 +19,4 @@
 | 2026-11-13 | plan | G3 coverage | pass | Four batches, one per feature, no dependencies; lock file still lacks `license` on main |
 | 2026-11-13 | dev | G4 failed-notifications | decided | Divergence from the branch accepted: only a call the server answers clears the last reason, so an empty `close` keeps REQ-2 true |
 | 2026-11-13 | dev | G4 failed-notifications | pass | Build re-run green |
+| 2026-11-13 | dev | G5 failed-notifications | pass | 53 unit tests green, re-run by the gatekeeper; REQ-5 by existing tests |

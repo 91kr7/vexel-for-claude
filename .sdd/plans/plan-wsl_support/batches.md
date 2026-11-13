@@ -7,8 +7,8 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [failed-notifications](batches/batch-failed-notifications.md) | Failed system notifications | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6 | — | implemented | A failed notification gives one log line and the app keeps working |
-| [ended-external-sessions](batches/batch-ended-external-sessions.md) | Ended external sessions | REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15 | — | todo | A closed terminal leaves an ended entry in the list |
+| [failed-notifications](batches/batch-failed-notifications.md) | Failed system notifications | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6 | — | certified | A failed notification gives one log line and the app keeps working |
+| [ended-external-sessions](batches/batch-ended-external-sessions.md) | Ended external sessions | REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15 | — | in progress | A closed terminal leaves an ended entry in the list |
 | [windows-look](batches/batch-windows-look.md) | Windows 11 look | REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40 | — | todo | The user switches to the Windows 11 look and back |
 | [lock-file](batches/batch-lock-file.md) | Lock file | REQ-41 | — | todo | The lock file names the project license |
 
