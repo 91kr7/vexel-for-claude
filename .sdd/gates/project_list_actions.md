@@ -1,0 +1,29 @@
+# Gates — project_list_actions
+
+| Date | Phase | Gate | Verdict | Reason |
+|------|-------|------|---------|--------|
+| 2026-11-13 | analysis | question analyst Q1 | decided | Evolution: `recent_projects.md` put search, remove and favorites out of scope on purpose |
+| 2026-11-13 | analysis | question analyst Q2 | human decision | A removed project comes back with new activity in its folder |
+| 2026-11-13 | analysis | question analyst Q3 | human decision | A removed project leaves the Projects list only; "Recent" keeps it |
+| 2026-11-13 | analysis | question analyst Q4 | human decision | Favorites at the top of the list, with a star |
+| 2026-11-13 | analysis | analyst defaults | decided | Search on path, client-only remove with no confirmation, persistence and live sync accepted as proposed |
+| 2026-11-13 | analysis | G1 analysis | pass | 102 lines vs ordinary budget 200; request verbatim; no placeholders; no technical choices |
+| 2026-11-13 | plan | question planner Q1 | decided | REQ-16: any new activity in the folder, terminal-only included; source `plan-recent_projects/REQ-3` |
+| 2026-11-13 | plan | question planner Q2 | decided | REQ-2: the search matches the path as the row shows it |
+| 2026-11-13 | plan | G2 requirements | pass | REQ-1..32 cover the analysis; "Common" points split per feature |
+| 2026-11-13 | plan | G3 coverage | pass | 3 vertical batches (favorite, remove, search); every REQ in an INT and a scenario; remove INT-1/3/5 point to components of batch favorite-project, accepted |
+| 2026-11-13 | dev | interrupted run favorite-project | decided | Host process exited mid-batch; partial work kept in the tree, same developer resumed |
+| 2026-11-13 | dev | incident port 4001 | decided | Developer's `pkill -f src/server/main.ts` stopped the human's running instance; later agents told never to kill processes by pattern |
+| 2026-11-13 | dev | G4 development favorite-project | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes; SessionNameDialog.test.tsx fixture line needed by `tsc -b` (TS2741), accepted |
+| 2026-11-13 | dev | divergence route names and file format | decided | `PUT /api/projects/favorite`, WebSocket `GET /api/projects/marks`, `project-marks.json` `{ favorites }`; plan leaves them open |
+| 2026-11-13 | dev | G5 tests favorite-project (round 1) | sent back | Code defect: ProjectFavoriteButton.tsx:22 accepts any 2xx, spec wants 204 only; to developer |
+| 2026-11-13 | dev | G4 development (fix round 1) | pass | build green (rerun); one line in ProjectFavoriteButton.tsx |
+| 2026-11-13 | dev | G5 tests favorite-project (round 2) | pass | unit 264 and e2e 28 green (rerun); tests, playwright.config only |
+| 2026-11-13 | dev | G4 development remove-project | pass | build green (rerun); diff limited to INT files, styles.css, specs, indexes |
+| 2026-11-13 | dev | divergence remove route method | decided | `POST /api/projects/remove`: each call saves a new removal time; plan leaves the method open |
+| 2026-11-13 | dev | G5 tests remove-project | pass | unit 275 and e2e 28 green (rerun); tests and playwright.config only |
+| 2026-11-13 | dev | G4 development project-search | pass | build green (rerun); diff limited to ProjectList.tsx, AppLayout.tsx, styles.css, specs, index |
+| 2026-11-13 | dev | side effects of the search reset | decided | Remount on "Projects" also drops a row error; search bar hidden while loading, on error and with no project; no REQ affected |
+| 2026-11-13 | dev | G5 tests project-search | pass | unit 38 and e2e 6 green (rerun); full suites by tester: unit 3119 green, e2e 628/630 |
+| 2026-11-13 | dev | regressions plan-usage.spec.ts:247, terminal-search.spec.ts:298 | pass | Outside perimeter; pass when re-run alone (tester and gatekeeper); intermittent |
+| 2026-11-13 | closing | merge | pass | every batch certified; no source change after the full run; merged into main with --no-ff |

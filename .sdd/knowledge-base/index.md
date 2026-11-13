@@ -8,3 +8,4 @@
 | narrow-batch-tests | guideline | test | An intermediate batch runs its new tests, the tests of the files it changed and of their direct dependencies; existing e2e only when they exercise them | `entries/narrow-batch-tests.md` |
 | chat-in-italian | guideline | any | Every chat message to the human is in Italian; artifacts, code and commits keep their own rules | `entries/chat-in-italian.md` |
 | release-bumps-package-version | guideline | any | A requested new version sets `version` in `package.json` before the release is published | `entries/release-bumps-package-version.md` |
+| no-kill-by-pattern | guideline | development, test | Never stop processes by name or pattern; a process you started is stopped only by its PID | `entries/no-kill-by-pattern.md` |

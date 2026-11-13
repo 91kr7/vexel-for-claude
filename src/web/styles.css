@@ -1118,6 +1118,13 @@ input {
   gap: 2px;
 }
 
+.project-row-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .project-row-name,
 .project-row-path {
   overflow: hidden;
@@ -1150,7 +1157,7 @@ input {
 .project-row-go {
   position: absolute;
   top: 50%;
-  right: 8px;
+  right: 58px;
   transform: translateY(-50%);
   padding: 5px 8px;
   border-radius: 8px;
@@ -1165,6 +1172,25 @@ input {
 
 .project-row:hover .project-row-go,
 .project-row:focus-visible .project-row-go {
+  opacity: 1;
+}
+
+.project-list li {
+  position: relative;
+}
+
+.project-list li > .project-favorite {
+  top: 28px;
+  right: 32px;
+}
+
+.project-list li > .project-remove {
+  top: 28px;
+  right: 8px;
+}
+
+.project-list li:hover > .entry-favorite,
+.project-list li:has(:focus-visible) > .entry-favorite {
   opacity: 1;
 }
 
@@ -2835,6 +2861,10 @@ input {
 .search-field-input::placeholder {
   color: var(--text-muted);
   opacity: 1;
+}
+
+.project-search-input:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
 }
 
 .search-field-clear {
