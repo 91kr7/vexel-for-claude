@@ -36,3 +36,4 @@
 | 2026-11-13 | dev | question tester (narrow width) | decided | Fix inside the Windows 11 stylesheet: caption buttons stay flush right at every width, the rest of the bar may clip as it already overflows in the current look; no minimum window width (it would change Ubuntu, `wsl-keeps-ubuntu-working`) |
 | 2026-11-13 | dev | G5 windows-look | decided | `terminal-search.spec.ts:298` and `desktop-reconnection.spec.ts:130` failed once under full load and pass alone: outside the perimeter, rechecked in the next full run |
 | 2026-11-13 | dev | G4 windows-look fix 1 | pass | Only `windows11.css` and two specs; build re-run green |
+| 2026-11-13 | dev | G5 windows-look | pass | Green after fix 1: 21 unit, 120 browser e2e, 24 Electron (desktop-window) |
