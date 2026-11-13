@@ -37,3 +37,4 @@
 | 2026-11-13 | dev | G5 windows-look | decided | `terminal-search.spec.ts:298` and `desktop-reconnection.spec.ts:130` failed once under full load and pass alone: outside the perimeter, rechecked in the next full run |
 | 2026-11-13 | dev | G4 windows-look fix 1 | pass | Only `windows11.css` and two specs; build re-run green |
 | 2026-11-13 | dev | G5 windows-look | pass | Green after fix 1: 21 unit, 120 browser e2e, 24 Electron (desktop-window) |
+| 2026-11-13 | closing | full suites | pass | Unit 3191/3191, Electron 36/36. Browser e2e: 1 then 4 different timing failures under heavy machine load (human: parallel builds); all pass when re-run alone |
