@@ -83,6 +83,9 @@ afterEach(() => {
 });
 
 const logged = () => (['error', 'warn', 'log', 'info'] as const).some((method) => vi.mocked(console[method]).mock.calls.length > 0);
+/** Every console line, whatever the method. */
+const logLines = () =>
+  (['error', 'warn', 'log', 'info'] as const).flatMap((method) => vi.mocked(console[method]).mock.calls.map((args) => args.map(String).join(' ')));
 
 describe('SystemNotifications.show', () => {
   it('connects at the first call that needs the server, once', async () => {
@@ -251,6 +254,131 @@ describe('SystemNotifications failures', () => {
     await notifications.show(request('a'));
     server.closeNotification = () => Promise.reject(new Error('gone'));
     await expect(notifications.close('a')).resolves.toBeUndefined();
+  });
+});
+
+const NO_SERVICE = 'The name org.freedesktop.Notifications was not provided by any .service files';
+const failNotify = (reason: string) => {
+  server.notifyReply = () => Promise.reject(new Error(reason));
+};
+
+describe('SystemNotifications failure log', () => {
+  // plan-wsl_support/REQ-1
+  it('writes one line naming the reason when the server fails a notification', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    failNotify(NO_SERVICE);
+    await notifications.show(request('a'));
+    expect(logLines()).toEqual([`System notification failed: ${NO_SERVICE}`]);
+  });
+
+  // plan-wsl_support/REQ-1
+  it('writes one line naming the reason when the connection fails', async () => {
+    connect.mockRejectedValueOnce(new Error('no session bus'));
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(request('a'));
+    expect(logLines()).toEqual(['System notification failed: no session bus']);
+  });
+
+  // plan-wsl_support/REQ-1
+  it('writes one line naming the reason when closing fails', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(request('a'));
+    server.closeNotification = () => Promise.reject(new Error('gone'));
+    await notifications.close('a');
+    expect(logLines()).toEqual(['System notification failed: gone']);
+  });
+
+  // plan-wsl_support/REQ-2
+  it('writes one line only for consecutive notifications failing with the same reason', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    failNotify(NO_SERVICE);
+    await notifications.show(request('a'));
+    await notifications.show(request('b'));
+    await notifications.show(request('c'));
+    expect(logLines()).toEqual([`System notification failed: ${NO_SERVICE}`]);
+  });
+
+  // plan-wsl_support/REQ-2
+  it('writes one line only when every connection attempt fails with the same reason', async () => {
+    connect.mockRejectedValue(new Error('no session bus'));
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(request('a'));
+    await notifications.show(request('b'));
+    expect(connect).toHaveBeenCalledTimes(2);
+    expect(logLines()).toEqual(['System notification failed: no session bus']);
+  });
+
+  // plan-wsl_support/REQ-2: a close of a session with no notification is not a success
+  it('writes no new line when a close of a session with no notification sits between two failures with the same reason', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    failNotify(NO_SERVICE);
+    await notifications.show(request('a'));
+    await notifications.close('a');
+    await notifications.close('z');
+    await notifications.show(request('b'));
+    expect(logLines()).toEqual([`System notification failed: ${NO_SERVICE}`]);
+  });
+
+  // plan-wsl_support/REQ-2: the reason, not the call, decides
+  it('writes one line only when a show and a close fail in a row with the same reason', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(request('a'));
+    failNotify('gone');
+    await notifications.show(request('b'));
+    server.closeNotification = () => Promise.reject(new Error('gone'));
+    await notifications.close('a');
+    expect(logLines()).toEqual(['System notification failed: gone']);
+  });
+
+  // plan-wsl_support/REQ-3
+  it('writes a new line each time the reason differs from the previous failure', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    failNotify(NO_SERVICE);
+    await notifications.show(request('a'));
+    failNotify('Timeout was reached');
+    await notifications.show(request('b'));
+    await notifications.show(request('c'));
+    failNotify(NO_SERVICE);
+    await notifications.show(request('d'));
+    expect(logLines()).toEqual([
+      `System notification failed: ${NO_SERVICE}`,
+      'System notification failed: Timeout was reached',
+      `System notification failed: ${NO_SERVICE}`,
+    ]);
+  });
+
+  // plan-wsl_support/REQ-4
+  it('writes a new line at the first failure after a notification that succeeded, with the same reason', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    failNotify(NO_SERVICE);
+    await notifications.show(request('a'));
+    server.notifyReply = undefined;
+    await notifications.show(request('b'));
+    failNotify(NO_SERVICE);
+    await notifications.show(request('c'));
+    await notifications.show(request('d'));
+    expect(logLines()).toEqual([`System notification failed: ${NO_SERVICE}`, `System notification failed: ${NO_SERVICE}`]);
+  });
+
+  // plan-wsl_support/REQ-4: a close the server answers is a success too
+  it('writes a new line at the first failure after a close that succeeded, with the same reason', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(request('a'));
+    failNotify(NO_SERVICE);
+    await notifications.show(request('b'));
+    await notifications.close('a');
+    expect(server.closedIds).toHaveLength(1);
+    await notifications.show(request('c'));
+    expect(logLines()).toEqual([`System notification failed: ${NO_SERVICE}`, `System notification failed: ${NO_SERVICE}`]);
+  });
+
+  // plan-wsl_support/REQ-6: with a working server nothing is logged
+  it('writes nothing while the server answers', async () => {
+    const notifications = new SystemNotifications({ ...APP, connect });
+    await notifications.show(request('a'));
+    await notifications.show(request('b'));
+    await notifications.close('a');
+    expect(logLines()).toEqual([]);
   });
 });
 
