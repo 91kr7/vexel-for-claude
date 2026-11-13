@@ -150,6 +150,7 @@ export class SystemNotifications {
   readonly #closeListeners = new Set<(sessionId: string) => void>();
   #connection: Promise<Connection> | undefined;
   #queue: Promise<void> = Promise.resolve();
+  #lastFailure: string | undefined;
 
   constructor(options: SystemNotificationsOptions) {
     this.#appName = options.appName;
@@ -170,6 +171,7 @@ export class SystemNotifications {
         actions: [DEFAULT_ACTION, 'Open'],
         ...LOOK[request.kind],
       });
+      this.#lastFailure = undefined;
       this.#idsBySession.delete(replacedSessionId);
       this.#idsBySession.set(request.sessionId, id);
     });
@@ -182,6 +184,7 @@ export class SystemNotifications {
       this.#idsBySession.delete(sessionId);
       const { server } = await this.#server();
       await server.closeNotification(id);
+      this.#lastFailure = undefined;
     });
   }
 
@@ -197,7 +200,12 @@ export class SystemNotifications {
 
   #enqueue(operation: () => Promise<void>): Promise<void> {
     const run = this.#queue.then(operation).catch((error: unknown) => {
-      console.warn('System notification failed:', error);
+      const reason = error instanceof Error ? error.message : String(error);
+      // Without a notification service every call fails the same way: log each reason once.
+      if (reason !== this.#lastFailure) {
+        this.#lastFailure = reason;
+        console.warn(`System notification failed: ${reason}`);
+      }
       this.#dropConnection();
     });
     this.#queue = run;
