@@ -383,3 +383,181 @@ describe('ProjectList remove action', () => {
     expect(document.activeElement).toBe(rowOf(host, '/home/u/alpha'));
   });
 });
+
+const searchField = (host: HTMLElement) => host.querySelector<HTMLInputElement>('input[aria-label="Search projects"]');
+const clearButton = (host: HTMLElement) => [...host.querySelectorAll<HTMLButtonElement>('button')].find((b) => nameOf(b) === 'Clear Search');
+
+/** Types a whole new text in the search field, as one change of its value. */
+function type(host: HTMLElement, value: string) {
+  const field = searchField(host)!;
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+  flushSync(() => {
+    setValue.call(field, value);
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
+
+const searchGroups = [
+  { folder: '/home/dev/work/Vexel-Client', available: true, sessions: [session('2026-11-10T10:00:00.000Z')] },
+  { folder: '/home/dev/app', available: true, sessions: [session('2026-11-09T10:00:00.000Z')] },
+  { folder: '/home/dev/apex', available: false, sessions: [session('2026-11-08T10:00:00.000Z')] },
+  { folder: '/home/dev/api', available: true, sessions: [session('2026-11-07T10:00:00.000Z')] },
+  { folder: '/srv/vexel-docs', available: true, sessions: [session('2026-11-06T10:00:00.000Z')] },
+];
+
+/** A store on searchGroups with the given favorites, and the spy of its loads. */
+async function searchStore(favorites: string[] = []) {
+  const marks = { subscribe: () => () => {}, getSnapshot: () => ({ favorites: new Set(favorites) as ReadonlySet<string> }) };
+  const fetchGroups = vi.fn(async () => searchGroups as never);
+  const store = new ProjectListStore(fetchGroups, marks);
+  store.load();
+  await settle();
+  return { store, fetchGroups };
+}
+
+describe('ProjectList search', () => {
+  // plan-project_list_actions/REQ-1, REQ-11: the bar sits between the title and the rows, empty at mount, in English
+  it('shows the field "Search projects", empty, between the title and the rows, with no "Clear Search"', async () => {
+    const { store } = await searchStore();
+    const host = mount(store);
+    const field = searchField(host);
+    expect(field).not.toBeNull();
+    expect(field!.value).toBe('');
+    expect(field!.placeholder).toBe('Search projects');
+    expect(clearButton(host)).toBeUndefined();
+    const title = host.querySelector('.list-panel-title')!;
+    expect(title.compareDocumentPosition(field!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(field!.compareDocumentPosition(rows(host)[0]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows no search bar while loading, on error, or with no project', async () => {
+    expect(searchField(mount(controlledStore().store))).toBeNull();
+    expect(searchField(mount((await storeWith(new Error('down'))).store))).toBeNull();
+    const host = mount((await storeWith([])).store);
+    expect(text(host)).toContain('No projects yet');
+    expect(searchField(host)).toBeNull();
+  });
+
+  // plan-project_list_actions/REQ-2: anywhere in the full path, any case
+  it('shows only the rows whose full path contains the text, ignoring case', async () => {
+    const { store } = await searchStore();
+    const host = mount(store);
+    type(host, 'VEXEL');
+    expect(shown(host)).toEqual(['/home/dev/work/Vexel-Client', '/srv/vexel-docs']);
+    type(host, 'work/vE');
+    expect(shown(host)).toEqual(['/home/dev/work/Vexel-Client']);
+    type(host, '/SRV/');
+    expect(shown(host)).toEqual(['/srv/vexel-docs']);
+  });
+
+  // plan-project_list_actions/REQ-3: each change of the text updates the rows, with no request
+  it('updates the rows at each change of the text and sends no load', async () => {
+    const { store, fetchGroups } = await searchStore();
+    const host = mount(store);
+    const counts = ['a', 'ap', 'api'].map((value) => {
+      type(host, value);
+      return shown(host);
+    });
+    expect(counts).toEqual([
+      ['/home/dev/app', '/home/dev/apex', '/home/dev/api'],
+      ['/home/dev/app', '/home/dev/apex', '/home/dev/api'],
+      ['/home/dev/api'],
+    ]);
+    type(host, '');
+    expect(shown(host)).toHaveLength(5);
+    await settle();
+    expect(fetchGroups).toHaveBeenCalledTimes(1);
+  });
+
+  // plan-project_list_actions/REQ-4: the filtered rows keep the full list order, favorites first
+  it('keeps the store order in the filtered list, the favorite first', async () => {
+    const { store } = await searchStore(['/home/dev/api']);
+    const host = mount(store);
+    expect(shown(host)[0]).toBe('/home/dev/api');
+    type(host, 'ap');
+    expect(shown(host)).toEqual(['/home/dev/api', '/home/dev/app', '/home/dev/apex']);
+    expect(rowOf(host, '/home/dev/api').querySelector('[aria-label="Favorite"]')).not.toBeNull();
+  });
+
+  // plan-project_list_actions/REQ-5: no match gives the empty state with the text in quotes; the bar stays
+  it('shows the empty state No projects match "<text>" with the folder icon, and keeps the search bar', async () => {
+    const { store } = await searchStore();
+    const host = mount(store);
+    type(host, 'zzz');
+    expect(rows(host)).toHaveLength(0);
+    expect(text(host)).toContain('No projects match "zzz"');
+    expect(text(host)).not.toContain('No projects yet');
+    expect(host.innerHTML).toContain(renderToStaticMarkup(<FolderIcon />));
+    expect(searchField(host)!.value).toBe('zzz');
+    expect(clearButton(host)).toBeDefined();
+  });
+
+  // plan-project_list_actions/REQ-6: "Clear Search" empties the text, shows every row, focuses the field
+  it('"Clear Search" shows while the text is not empty; a press empties it, shows every row and focuses the field', async () => {
+    const { store } = await searchStore();
+    const host = mount(store);
+    type(host, 'vexel-c');
+    expect(shown(host)).toHaveLength(1);
+    const clear = clearButton(host)!;
+    expect(clear.getAttribute('title')).toBe('Clear Search');
+    clear.focus();
+    flushSync(() => clear.click());
+    expect(searchField(host)!.value).toBe('');
+    expect(shown(host)).toHaveLength(5);
+    expect(document.activeElement).toBe(searchField(host));
+    expect(clearButton(host)).toBeUndefined();
+  });
+
+  // plan-project_list_actions/REQ-9: Tab reaches the field, then "Clear Search", then the rows
+  it('puts the field, then "Clear Search", before the first row in the tab order', async () => {
+    const { store } = await searchStore();
+    const host = mount(store);
+    type(host, 'dev');
+    const focusable = [...host.querySelectorAll<HTMLElement>('input, button')].filter((el) => el.tabIndex >= 0);
+    expect(focusable[0]).toBe(searchField(host));
+    expect(focusable[1]).toBe(clearButton(host));
+    expect(focusable[2]).toBe(rows(host)[0]);
+  });
+
+  // plan-project_list_actions/REQ-8: a filtered row chooses its project as in the full list
+  it('calls onChoose with the project of a row chosen in a filtered list, and nothing for an unavailable one', async () => {
+    const { store } = await searchStore();
+    const onChoose = vi.fn();
+    const host = mount(store, onChoose);
+    type(host, 'ap');
+    flushSync(() => rowOf(host, '/home/dev/apex').click());
+    expect(onChoose).not.toHaveBeenCalled();
+    flushSync(() => rowOf(host, '/home/dev/app').click());
+    expect(onChoose).toHaveBeenCalledOnce();
+    expect(onChoose.mock.calls[0]![0]).toMatchObject({ folder: '/home/dev/app', available: true });
+  });
+
+  // ProjectList rule: the search text stays while the store gives a new list
+  it('keeps the search text and filters the new list the store gives', async () => {
+    const answers: ((body: unknown) => void)[] = [];
+    const store = new ProjectListStore((() => new Promise((resolve) => answers.push(resolve))) as never);
+    store.load();
+    answers[0]!(searchGroups);
+    await settle();
+    const host = mount(store);
+    type(host, 'vexel');
+    expect(shown(host)).toHaveLength(2);
+    flushSync(() => store.load());
+    answers[1]!([...searchGroups, { folder: '/opt/VEXEL', available: true, sessions: [session('2026-11-05T10:00:00.000Z')] }]);
+    await settle();
+    flushSync(() => {});
+    expect(searchField(host)!.value).toBe('vexel');
+    expect(shown(host)).toEqual(['/home/dev/work/Vexel-Client', '/srv/vexel-docs', '/opt/VEXEL']);
+  });
+
+  // ProjectList "Actions": the focus is not moved when a row leaves while the focus is on the search field
+  it('does not move the focus from the search field when a row leaves', async () => {
+    const { store, remove } = await removableStore();
+    const host = mount(store);
+    type(host, 'a');
+    searchField(host)!.focus();
+    await remove('/home/u/alpha');
+    expect(document.activeElement).toBe(searchField(host));
+    expect(shown(host)).toEqual(['/home/u/bravo', '/home/u/charlie']);
+  });
+});
