@@ -27,3 +27,4 @@
 | 2026-11-13 | dev | G5 lock-file | pass | No permanent test (gatekeeper decision): REQ-41 verified by read-only checks against main, re-checked by the gatekeeper |
 | 2026-11-13 | dev | G5 ended-external-sessions | sent back | Red: dismissing the open ended external session leaves it in the main area (REQ-9 via `plan-session_list_improvements/REQ-7`, REQ-13); `AppLayout.tsx` line 95 clears only hosted sessions |
 | 2026-11-13 | dev | G4 ended-external-sessions fix 1 | pass | `AppLayout.tsx` outside the INTs, justified: an external entry now leaves the list only by dismiss or resume; spec app-layout updated |
+| 2026-11-13 | dev | G5 ended-external-sessions | pass | Green after fix 1; gatekeeper re-run: 208 unit, 14 e2e. Risk noted for the closing run: ended external leftovers on the shared e2e server |
