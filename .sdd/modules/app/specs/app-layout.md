@@ -24,8 +24,8 @@ Shows:
 - the rail badge always, in both views. The counter and the list in the `sessions` view. All three stay also while a session is open. All follow LiveSessionStore (`useLiveSessions`). The rail badge gets `countNeedsInput` of the list. The list also gets its load status, and the order of `useSessionOrder` for the live sessions and their status. Its `onReorder` is the `move` of the same hook.
 - no open session → the EmptyState in the main area.
 - an open hosted session → its SessionView, with the summary (folder, label, state) of that session from LiveSessionStore. No summary while the store does not list it yet. The SessionView and the ConversationView also get the whole session list.
-- an open hosted session that the store listed and then no longer lists (dismissed, or resumed from its entry) → no open session: the EmptyState.
-- an open external session → its ConversationView with its summary, in place of the SessionView. It stays open when the entry leaves the list, with the last summary the list gave.
+- an open session, hosted or external, that the store listed and then no longer lists (dismissed, or resumed in the client) → no open session: the EmptyState. After a resume in the client, the main area shows the new hosted session.
+- an open external session → its ConversationView with its summary, in place of the SessionView.
 - an open session, hosted or external, that the list no longer has when LiveSessionStore goes from `error` to `ready` (a reload after a reconnection) → it stays open, with its last summary and the state `ended`. If the list has it again later, the view uses the listed summary.
 - the NeedsInputSnackbar of `useNeedsInputSnackbar`, when it gives a session → fixed at the bottom right of the window, whatever the main area shows.
 - the ShortMessageToast of `useShortMessage`, at the bottom centre of the window.
@@ -111,3 +111,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-recent_projects/REQ-2`, `plan-recent_projects/REQ-8`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-14`, `plan-recent_projects/REQ-17`, `plan-recent_projects/REQ-21`
 - `plan-project_list_actions/REQ-7`
 - `plan-update_check/REQ-4`, `plan-update_check/REQ-7`, `plan-update_check/REQ-8`, `plan-update_check/REQ-10`
+- `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-13`
