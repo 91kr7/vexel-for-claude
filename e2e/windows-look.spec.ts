@@ -727,6 +727,13 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
           const [min, cls] = [(await minimize.boundingBox())!, (await close.boundingBox())!];
           expect(await regionAt(page, min.x + min.width, min.y + min.height / 2), 'between Minimize and Maximize').toBe('no-drag');
           expect(cls.x + cls.width, 'Close ends at the window edge').toBeCloseTo(width, 0);
+          // WindowButtons and TopBar: the row never shrinks, has the bar background, and leaves the logo and "Vexel" visible.
+          for (const button of [minimize, maximize, close]) expect((await button.boundingBox())!.width, 'never shrinks').toBeCloseTo(46, 0);
+          const [rowBackground, barBackground] = [await minimize.evaluate((e) => getComputedStyle(e.parentElement!).backgroundColor), await bar.evaluate((e) => getComputedStyle(e).backgroundColor)];
+          expect(rowBackground, 'the row has the top bar background').toBe(barBackground);
+          const brand = (await bar.getByText('Vexel', { exact: true }).boundingBox())!;
+          expect(brand.x + brand.width, '"Vexel" is not under the buttons').toBeLessThanOrEqual(min.x);
+          await expect(bar.getByText('Vexel', { exact: true })).toBeVisible();
         }
       });
     }
