@@ -25,3 +25,4 @@
 | 2026-11-13 | dev | G4 ended-external-sessions | decided | `resume` shortcut served by whichever listener mounts last; both resume with no warning (REQ-13) |
 | 2026-11-13 | dev | G4 ended-external-sessions | pass | Build re-run green; diff limited to INT files and specs |
 | 2026-11-13 | dev | G5 lock-file | pass | No permanent test (gatekeeper decision): REQ-41 verified by read-only checks against main, re-checked by the gatekeeper |
+| 2026-11-13 | dev | G5 ended-external-sessions | sent back | Red: dismissing the open ended external session leaves it in the main area (REQ-9 via `plan-session_list_improvements/REQ-7`, REQ-13); `AppLayout.tsx` line 95 clears only hosted sessions |

@@ -3,6 +3,8 @@ import path from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { PastSession } from '../history/session-history.js';
+import type { RunningSessionFile } from '../history/external-session-check.js';
+import { ExternalSessionScanner } from '../external/external-session-scanner.js';
 import { tempDir } from '../test-support.js';
 import { registerResumeEndedSessionRoute } from './resume-ended-session-route.js';
 import type { ResumeInfo } from './session-registry.js';
@@ -57,8 +59,13 @@ beforeEach(async () => {
     if (cause.type === 'track') log.push(`track ${summary.id}`);
   });
   tracker.onRemove((id) => log.push(`remove ${id}`));
+  await register();
+});
+
+async function register(scanner?: ExternalSessionScanner): Promise<void> {
   app = Fastify();
   registerResumeEndedSessionRoute(app, {
+    ...(scanner === undefined ? {} : { scanner }),
     tracker,
     history: { get: async (id) => pastSessions[id] },
     registry: {
@@ -78,7 +85,7 @@ beforeEach(async () => {
     },
   });
   await app.ready();
-});
+}
 
 afterEach(async () => {
   await app.close();
@@ -239,5 +246,116 @@ describe('POST /api/sessions/:id/resume', () => {
 
     expect(response.statusCode).toBe(409);
     expect(response.json()).toEqual({ error: 'running_elsewhere' });
+  });
+});
+
+describe('POST /api/sessions/:id/resume, ended external entry', () => {
+  let scanner: ExternalSessionScanner;
+  let files: RunningSessionFile[];
+  const externalFile = (sessionId: string, status = 'idle'): RunningSessionFile => ({
+    pid: 500,
+    sessionId,
+    cwd: folder,
+    kind: 'interactive',
+    status,
+    updatedAt: Date.parse('2026-11-05T08:30:00.000Z'),
+  });
+
+  /** An external entry whose terminal closed: listed by one scan, gone at the next. */
+  async function endedExternal(sessionId: string): Promise<void> {
+    files = [externalFile(sessionId)];
+    await scanner.scan();
+    files = [];
+    await scanner.scan();
+    expect(scanner.get(sessionId)?.state).toBe('ended');
+  }
+
+  beforeEach(async () => {
+    files = [];
+    scanner = new ExternalSessionScanner({
+      check: { runningSessions: async () => files.map((file) => ({ ...file })) } as never,
+      history: { get: async (id: string) => pastSessions[id] } as never,
+      hostedPids: () => [],
+    });
+    await app.close();
+    await register(scanner);
+  });
+
+  // plan-wsl_support/REQ-10, REQ-12: the id of the entry is the Claude Code session id; the entry leaves on 201
+  it('201 resumes the Claude Code session of the entry and removes the ended external entry', async () => {
+    pastSessions['ext-1'] = past('ext-1', folder, 'Fix the cart');
+    await endedExternal('ext-1');
+
+    const response = await resume('ext-1', {});
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toEqual({ id: 'new-1' });
+    expect(starts).toEqual([{ cwd: folder, resume: { sessionId: 'ext-1', firstUserMessage: 'Fix the cart' } }]);
+    expect(scanner.get('ext-1')).toBeUndefined();
+    expect(tracker.list().map((s) => s.id)).toEqual(['new-1']);
+  });
+
+  // plan-wsl_support/REQ-10 with plan-session_list_improvements/REQ-3: a running external entry is not resumed here
+  it('409 not_ended for a running external entry, and no session starts', async () => {
+    pastSessions['ext-1'] = past('ext-1', folder);
+    files = [externalFile('ext-1', 'busy')];
+    await scanner.scan();
+
+    const response = await resume('ext-1', {});
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({ error: 'not_ended' });
+    expect(starts).toEqual([]);
+    expect(scanner.get('ext-1')?.state).toBe('working');
+  });
+
+  // plan-wsl_support/REQ-10 with plan-session_list_improvements/REQ-9: the running-elsewhere check applies
+  it('409 running_elsewhere without force when the check lists the conversation, and the entry stays', async () => {
+    pastSessions['ext-1'] = past('ext-1', folder);
+    await endedExternal('ext-1');
+    runningElsewhere = new Set(['ext-1']);
+
+    const response = await resume('ext-1', {});
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({ error: 'running_elsewhere' });
+    expect(starts).toEqual([]);
+    expect(scanner.get('ext-1')?.state).toBe('ended');
+  });
+
+  it('201 with force: true, without calling the running-elsewhere check', async () => {
+    pastSessions['ext-1'] = past('ext-1', folder);
+    await endedExternal('ext-1');
+    runningElsewhere = new Set(['ext-1']);
+
+    const response = await resume('ext-1', { force: true });
+
+    expect(response.statusCode).toBe(201);
+    expect(checkCalls).toEqual([]);
+    expect(scanner.get('ext-1')).toBeUndefined();
+  });
+
+  // plan-wsl_support/REQ-10 with plan-session_list_improvements/REQ-12: a failed resume keeps the entry
+  it.each([
+    ['folder_not_found', () => (pastSessions['ext-1'] = past('ext-1', path.join(root, 'deleted')))],
+    ['session_not_found', () => delete pastSessions['ext-1']],
+  ] as const)('404 %s from the resume step, and the ended entry stays', async (error, breakIt) => {
+    pastSessions['ext-1'] = past('ext-1', folder);
+    await endedExternal('ext-1');
+    breakIt();
+
+    const response = await resume('ext-1', {});
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({ error });
+    expect(starts).toEqual([]);
+    expect(scanner.get('ext-1')?.state).toBe('ended');
+  });
+
+  it('404 session_not_found for an id that neither the tracker nor the scanner knows', async () => {
+    const response = await resume('nobody', {});
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({ error: 'session_not_found' });
+    expect(starts).toEqual([]);
   });
 });
