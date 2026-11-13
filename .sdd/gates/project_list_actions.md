@@ -24,3 +24,6 @@
 | 2026-11-13 | dev | G5 tests remove-project | pass | unit 275 and e2e 28 green (rerun); tests and playwright.config only |
 | 2026-11-13 | dev | G4 development project-search | pass | build green (rerun); diff limited to ProjectList.tsx, AppLayout.tsx, styles.css, specs, index |
 | 2026-11-13 | dev | side effects of the search reset | decided | Remount on "Projects" also drops a row error; search bar hidden while loading, on error and with no project; no REQ affected |
+| 2026-11-13 | dev | G5 tests project-search | pass | unit 38 and e2e 6 green (rerun); full suites by tester: unit 3119 green, e2e 628/630 |
+| 2026-11-13 | dev | regressions plan-usage.spec.ts:247, terminal-search.spec.ts:298 | pass | Outside perimeter; pass when re-run alone (tester and gatekeeper); intermittent |
+| 2026-11-13 | closing | merge | pass | every batch certified; no source change after the full run; merged into main with --no-ff |
