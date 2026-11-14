@@ -118,7 +118,8 @@ async function runInTerminal(sessionId: string, folder: string, status = 'idle')
 }
 
 async function openFromList(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  // on the folder name: the centre of a short entry is the place of its star (plan-ui_restyle/REQ-29)
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
   await expect(entry(page, folder)).toHaveAttribute('aria-current', 'true');
 }

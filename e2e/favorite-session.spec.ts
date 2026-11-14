@@ -1,4 +1,4 @@
-// e2e of plan-favorite_session, batch favorite. The server runs the fake CLI, reads the fixture Claude Code folder E2E_CLAUDE_DIR
+// e2e of plan-favorite_session, batch favorite, and of plan-ui_restyle, batch session-star. The server runs the fake CLI, reads the fixture Claude Code folder E2E_CLAUDE_DIR
 // and keeps the favorite marks in its own data folder (playwright.config.ts). Every session gets a unique Claude Code session id,
 // so marks never collide. A mark is removed before each test ends. A restart of the client is covered by the unit tests of the store.
 /// <reference lib="dom" />
@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { type APIRequestContext, type Page, type Response, expect, test } from '@playwright/test';
+import { type APIRequestContext, type Locator, type Page, type Response, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
 
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
@@ -54,7 +54,10 @@ const entry = (page: Page, folder: string) => list(page).locator('.session-entry
 const group = (page: Page, title: string) => list(page).locator('.session-group').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
 const markButton = (page: Page, folder: string) => item(page, folder).getByRole('button', { name: 'Mark as Favorite', exact: true });
 const removeButton = (page: Page, folder: string) => item(page, folder).getByRole('button', { name: 'Remove Favorite', exact: true });
-const indicator = (page: Page, folder: string) => item(page, folder).getByRole('img', { name: 'Favorite', exact: true });
+// plan-ui_restyle/REQ-29: the list has no FavoriteIndicator any more, the filled star "Remove Favorite" shows the mark.
+const markedStar = removeButton;
+/** The marked stars of a group. */
+const markedIn = (page: Page, title: string) => group(page, title).getByRole('button', { name: 'Remove Favorite', exact: true });
 const resumeDialog = (page: Page) => page.getByRole('dialog', { name: 'Resume Session' });
 const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Session Running in a Terminal' });
 const terminal = (page: Page) => page.locator('.xterm-rows');
@@ -179,7 +182,7 @@ async function markFromList(page: Page, folder: string, claudeId: string): Promi
   const answer = page.waitForResponse((r) => isFavoriteRequest(r.request()));
   await markButton(page, folder).click();
   expect((await answer).status()).toBe(204);
-  await expect(indicator(page, folder)).toHaveCount(1);
+  await expect(markedStar(page, folder)).toHaveCount(1);
 }
 
 async function openHistory(page: Page): Promise<void> {
@@ -217,7 +220,7 @@ async function focusedShowsRing(page: Page): Promise<boolean> {
 }
 
 // plan-favorite_session/REQ-1, REQ-2, REQ-3, REQ-9, REQ-13 — scenario "The user marks a session as favorite from the list"
-test('the keyboard marks a running session: the indicator shows and the entry keeps its place and group', async ({ page, request }) => {
+test('the keyboard marks a running session: the star fills and the entry keeps its place and group', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const first = await hostedSession(request, 'alpha');
   const target = await hostedSession(request, 'release');
@@ -232,7 +235,7 @@ test('the keyboard marks a running session: the indicator shows and the entry ke
   await expect(item(page, last.folder)).toHaveCount(1);
   await expect(group(page, 'Running').getByRole('listitem')).toHaveCount(3);
   const before = await listOrder(page);
-  await expect(indicator(page, target.folder)).toHaveCount(0);
+  await expect(markedStar(page, target.folder)).toHaveCount(0);
 
   // the button is hidden until the focus inside the entry is visible from the keyboard
   await page.mouse.move(1, 1);
@@ -246,20 +249,19 @@ test('the keyboard marks a running session: the indicator shows and the entry ke
 
   await page.keyboard.press('Enter');
 
-  await expect(indicator(page, target.folder)).toHaveCount(1);
-  await expect(indicator(page, target.folder)).toHaveAttribute('title', 'Favorite');
-  await expect(removeButton(page, target.folder)).toHaveCount(1);
+  await expect(markedStar(page, target.folder)).toHaveCount(1);
+  await expect(markedStar(page, target.folder)).toHaveAttribute('title', 'Remove Favorite');
   await expect(markButton(page, target.folder)).toHaveCount(0);
   expect(sent).toEqual([{ favorite: true }]);
   expect(await listOrder(page)).toEqual(before);
   await expect(group(page, 'Running').getByRole('listitem').filter({ has: byFolder(page, target.folder) })).toHaveCount(1);
   expect((await summaryOf(request, target.id))?.favorite).toBe(true);
-  expect(await indicator(page, first.folder).count()).toBe(0);
-  expect(await indicator(page, last.folder).count()).toBe(0);
+  expect(await markedStar(page, first.folder).count()).toBe(0);
+  expect(await markedStar(page, last.folder).count()).toBe(0);
 });
 
 // plan-favorite_session/REQ-5, REQ-13 — "Remove Favorite" with the keyboard (Space)
-test('the keyboard removes the mark: the indicator is gone and the entry keeps its place', async ({ page, request }) => {
+test('the keyboard removes the mark: the star turns back to an outline and the entry keeps its place', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const session = await hostedSession(request, 'toggle');
   await hostedSession(request, 'other');
@@ -273,7 +275,7 @@ test('the keyboard removes the mark: the indicator is gone and the entry keeps i
   await expect(removeButton(page, session.folder)).toHaveAttribute('title', 'Remove Favorite');
   await page.keyboard.press('Space');
 
-  await expect(indicator(page, session.folder)).toHaveCount(0);
+  await expect(markedStar(page, session.folder)).toHaveCount(0);
   await expect(markButton(page, session.folder)).toHaveCount(1);
   expect(await listOrder(page)).toEqual(before);
   expect((await summaryOf(request, session.id))?.favorite).toBeUndefined();
@@ -303,7 +305,7 @@ test('the history shows the indicator on the marked row only, and a new history 
   await resumeDialog(page).getByRole('button', { name: 'Cancel', exact: true }).click();
 
   await removeButton(page, favorite.folder).click();
-  await expect(indicator(page, favorite.folder)).toHaveCount(0);
+  await expect(markedStar(page, favorite.folder)).toHaveCount(0);
   await openHistory(page);
   await expect(pastRow(page, favorite.folder)).toHaveCount(1);
   await expect(pastIndicator(page, favorite.folder)).toHaveCount(0);
@@ -324,13 +326,13 @@ test('an ended session and a session in another terminal can be marked, and keep
   await markFromList(page, ended.folder, ended.claudeId);
   await markFromList(page, folder, externalId);
 
-  await expect(group(page, 'Ended').getByRole('img', { name: 'Favorite', exact: true })).toHaveCount(1);
-  await expect(group(page, 'In Other Terminals').getByRole('img', { name: 'Favorite', exact: true })).toHaveCount(1);
+  await expect(markedIn(page, 'Ended')).toHaveCount(1);
+  await expect(markedIn(page, 'In Other Terminals')).toHaveCount(1);
   await expect(group(page, 'Ended').getByRole('listitem').filter({ has: byFolder(page, ended.folder) })).toHaveCount(1);
   await expect(group(page, 'In Other Terminals').getByRole('listitem').filter({ has: byFolder(page, folder) })).toHaveCount(1);
 });
 
-// plan-favorite_session/REQ-1, REQ-3 — the needs-input card has the button and the indicator
+// plan-favorite_session/REQ-1, REQ-3, plan-ui_restyle/REQ-32 — the needs-input card has the star
 test('the needs-input card marks its session', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const session = await hostedSession(request, 'card', 'needs_input');
@@ -339,7 +341,7 @@ test('the needs-input card marks its session', async ({ page, request }) => {
 
   await markFromList(page, session.folder, session.claudeId);
 
-  await expect(group(page, 'Needs Input').locator('.session-card').filter({ has: page.getByRole('img', { name: 'Favorite', exact: true }) })).toHaveCount(1);
+  await expect(group(page, 'Needs Input').locator('.session-card').getByRole('button', { name: 'Remove Favorite', exact: true })).toHaveCount(1);
   expect((await summaryOf(request, session.id))?.state).toBe('needs_input');
 });
 
@@ -354,12 +356,11 @@ test('the mark survives a reload and is saved in the data folder', async ({ page
   await page.reload();
 
   await expect(entry(page, session.folder)).toBeVisible();
-  await expect(indicator(page, session.folder)).toHaveCount(1);
-  await expect(removeButton(page, session.folder)).toHaveCount(1);
+  await expect(markedStar(page, session.folder)).toHaveCount(1);
 });
 
 // plan-favorite_session/REQ-7 — scenario "The mark survives a Resume": "Resume" of the ended entry
-test('"Resume" of a favorite ended entry starts a session that shows the indicator', async ({ page, request }) => {
+test('"Resume" of a favorite ended entry starts a session that shows the marked star', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const session = await hostedSession(request, 'list-resume', 'ended');
   await page.goto('/');
@@ -371,11 +372,11 @@ test('"Resume" of a favorite ended entry starts a session that shows the indicat
 
   expect((await summaryOf(request, newId))?.favorite).toBe(true);
   await expect(item(page, session.folder)).toHaveCount(1);
-  await expect(indicator(page, session.folder)).toHaveCount(1);
+  await expect(markedStar(page, session.folder)).toHaveCount(1);
 });
 
 // plan-favorite_session/REQ-7: "Resume" in the resume history
-test('"Resume" from the resume history starts a session that shows the indicator', async ({ page, request }) => {
+test('"Resume" from the resume history starts a session that shows the marked star', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const session = await hostedSession(request, 'history-resume', 'ended');
   await page.goto('/');
@@ -389,11 +390,11 @@ test('"Resume" from the resume history starts a session that shows the indicator
 
   await expect(terminal(page)).toContainText(`"--resume","${session.claudeId}"`);
   expect((await summaryOf(request, newId))?.favorite).toBe(true);
-  await expect(list(page).locator('li').filter({ has: page.locator('.session-entry[aria-current="true"]') }).getByRole('img', { name: 'Favorite', exact: true })).toHaveCount(1);
+  await expect(list(page).locator('li').filter({ has: page.locator('.session-entry[aria-current="true"]') }).getByRole('button', { name: 'Remove Favorite', exact: true })).toHaveCount(1);
 });
 
 // plan-favorite_session/REQ-7: "Resume Here" of an external session
-test('"Resume Here" of a favorite external session starts a hosted session that shows the indicator', async ({ page, request }) => {
+test('"Resume Here" of a favorite external session starts a hosted session that shows the marked star', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const folder = await newFolder('takeover');
   const claudeId = randomUUID();
@@ -411,7 +412,7 @@ test('"Resume Here" of a favorite external session starts a hosted session that 
 
   await expect(terminal(page)).toContainText(`"--resume","${claudeId}"`);
   expect((await summaryOf(request, newId))?.favorite).toBe(true);
-  await expect(list(page).locator('li').filter({ has: page.locator('.session-entry[aria-current="true"]') }).getByRole('img', { name: 'Favorite', exact: true })).toHaveCount(1);
+  await expect(list(page).locator('li').filter({ has: page.locator('.session-entry[aria-current="true"]') }).getByRole('button', { name: 'Remove Favorite', exact: true })).toHaveCount(1);
 });
 
 // plan-favorite_session/REQ-8 — scenario "Every open page gets the change" (the desktop window loads the same page)
@@ -426,10 +427,10 @@ test('a second page shows the mark and its removal without a reload', async ({ p
 
   await markFromList(page, session.folder, session.claudeId);
 
-  await expect(indicator(second, session.folder)).toHaveCount(1);
+  await expect(markedStar(second, session.folder)).toHaveCount(1);
   await expect(removeButton(second, session.folder)).toHaveCount(1);
   await removeButton(page, session.folder).click();
-  await expect(indicator(second, session.folder)).toHaveCount(0);
+  await expect(markedStar(second, session.folder)).toHaveCount(0);
   expect(await second.evaluate(() => (window as unknown as { noReload?: boolean }).noReload)).toBe(true);
 });
 
@@ -447,7 +448,7 @@ test('a second page shows the mark of an external session at once', async ({ pag
 
   await markFromList(page, folder, claudeId);
 
-  await expect(indicator(second, folder)).toHaveCount(1, { timeout: 1_500 });
+  await expect(markedStar(second, folder)).toHaveCount(1, { timeout: 1_500 });
 });
 
 // plan-favorite_session/REQ-10 — scenario "Dismiss keeps the mark"
@@ -466,9 +467,9 @@ test('"Dismiss" removes the entry but the history still shows the indicator on i
   expect(await savedMarks()).toHaveProperty(session.claudeId, true);
 });
 
-// plan-favorite_session/REQ-11, REQ-12 — scenario "The indicator is clear without colour and in English"
+// plan-favorite_session/REQ-11, REQ-12, plan-ui_restyle/REQ-28, REQ-30 — the mark is clear without colour and in English
 for (const theme of ['dark', 'light'] as const) {
-  test(`the indicator is a star shape with the tooltip "Favorite" in the ${theme} theme`, async ({ page, request }) => {
+  test(`the marked star is a filled star shape with the tooltip "Remove Favorite" in the ${theme} theme`, async ({ page, request }) => {
     await showOnlyOwnSessions(page);
     const session = await hostedSession(request, `look-${theme}`);
     await page.goto('/');
@@ -476,39 +477,27 @@ for (const theme of ['dark', 'light'] as const) {
       await page.getByRole('button', { name: 'Dark theme' }).click();
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     }
+    await expect(markButton(page, session.folder).locator('svg path')).toHaveCSS('fill', 'none');
     await markFromList(page, session.folder, session.claudeId);
+    await page.mouse.move(1, 1);
 
-    const star = indicator(page, session.folder);
-    await star.hover();
+    const star = markedStar(page, session.folder);
     await expect(star).toBeVisible();
-    await expect(star).toHaveAttribute('title', 'Favorite');
+    await expect(star).toHaveAttribute('title', 'Remove Favorite');
     const shape = await star.locator('svg').evaluate((svg) => ({
       paths: svg.querySelectorAll('path').length,
       color: getComputedStyle(svg).color,
-      box: svg.getBoundingClientRect().width,
+      fill: getComputedStyle(svg.querySelector('path')!).fill,
+      width: parseFloat(getComputedStyle(svg).width),
     }));
-    // one path (the star), 12 px wide, in a colour other than the page background
+    // one filled path (the star), 13 px wide (FavoriteButton spec), in a colour other than the page background
     expect(shape.paths).toBe(1);
-    expect(Math.round(shape.box)).toBe(12);
+    expect(shape.fill).toBe(shape.color);
+    expect(Math.round(shape.width)).toBe(13);
     const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     expect(shape.color).not.toBe(background);
   });
 }
-
-// FavoriteIndicator spec: "a small filled star"; IconSet: the filled variant is painted with currentColor
-test('the star of the indicator and of "Remove Favorite" is filled, as drawn in the browser', async ({ page, request }) => {
-  await showOnlyOwnSessions(page);
-  const session = await hostedSession(request, 'filled');
-  await page.goto('/');
-  await expect(markButton(page, session.folder).locator('svg path')).toHaveCSS('fill', 'none');
-  await markFromList(page, session.folder, session.claudeId);
-
-  const paint = (path: Element) => ({ fill: getComputedStyle(path).fill, color: getComputedStyle(path).color });
-  const inIndicator = await indicator(page, session.folder).locator('svg path').evaluate(paint);
-  expect(inIndicator.fill, 'indicator star fill').toBe(inIndicator.color);
-  const inButton = await removeButton(page, session.folder).locator('svg path').evaluate(paint);
-  expect(inButton.fill, '"Remove Favorite" star fill').toBe(inButton.color);
-});
 
 // FavoriteButton spec: a failed request shows the error under the entry and the entry stays unmarked
 test('a failed request shows "Could not change the favorite mark." and does not mark the session', async ({ page, request }) => {
@@ -520,7 +509,7 @@ test('a failed request shows "Could not change the favorite mark." and does not 
   await markButton(page, session.folder).click();
 
   await expect(item(page, session.folder).getByText('Could not change the favorite mark.', { exact: true })).toBeVisible();
-  await expect(indicator(page, session.folder)).toHaveCount(0);
+  await expect(markedStar(page, session.folder)).toHaveCount(0);
   await expect(markButton(page, session.folder)).toHaveCount(1);
   expect((await summaryOf(request, session.id))?.favorite).toBeUndefined();
 });
@@ -559,4 +548,213 @@ test('the route answers 204, 404 session_not_found and 400 invalid_favorite', as
   expect((await request.put(url, { data: { favorite: false } })).status()).toBe(204);
   expect((await summaryOf(request, session.id))?.favorite).toBeUndefined();
   expect(await savedMarks()).not.toHaveProperty(session.claudeId);
+});
+
+// ---- plan-ui_restyle, batch session-star ----
+
+const renameButton = (page: Page, folder: string) => item(page, folder).getByRole('button', { name: 'Rename', exact: true });
+const starOf = (page: Page, folder: string) => item(page, folder).getByRole('button', { name: /^(Mark as Favorite|Remove Favorite)$/ });
+const opacityOf = (locator: Locator) =>
+  locator.evaluate((el) => {
+    let value = 1;
+    for (let node: Element | null = el; node; node = node.parentElement) value *= Number(getComputedStyle(node).opacity);
+    return value;
+  });
+const box = async (locator: Locator) => (await locator.boundingBox())!;
+
+/** The value the browser computes for `color: value` on a probe element. */
+const colorOf = (page: Page, value: string) =>
+  page.evaluate((val) => {
+    const probe = document.createElement('div');
+    probe.style.color = val;
+    document.body.append(probe);
+    const result = getComputedStyle(probe).color;
+    probe.remove();
+    return result;
+  }, value);
+
+/** Records, from page load, every time a star button starts to carry the class "pop", with its computed animation. */
+const recordPops = () =>
+  `(() => {
+    window.__pops = [];
+    const hadPop = new WeakMap();
+    const check = (el) => {
+      const hasPop = el.classList.contains('pop');
+      if (hasPop && !hadPop.get(el)) {
+        const s = getComputedStyle(el);
+        window.__pops.push({ name: el.getAttribute('aria-label'), animation: s.animationName, duration: s.animationDuration });
+      }
+      hadPop.set(el, hasPop);
+    };
+    new MutationObserver((records) => {
+      const touched = new Set();
+      for (const r of records) {
+        if (r.type === 'attributes' && r.target instanceof Element) touched.add(r.target);
+        for (const node of r.addedNodes) if (node instanceof Element) for (const el of [node, ...node.querySelectorAll('*')]) touched.add(el);
+      }
+      for (const el of touched) if (el.classList.contains('star-button')) check(el);
+    }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+  })()`;
+type Pop = { name: string; animation: string; duration: string };
+const pops = (page: Page) => page.evaluate(() => (window as unknown as { __pops: Pop[] }).__pops);
+const seconds = (duration: string) => (duration.endsWith('ms') ? parseFloat(duration) / 1000 : parseFloat(duration));
+
+/** Checks that the star sits right after the folder name, on its line, and that the top-right corner holds only "Rename". */
+async function expectStarByNameAndRenameInCorner(page: Page, folder: string, container: Locator) {
+  await item(page, folder).getByTitle(folder, { exact: true }).hover();
+  await expect.poll(() => opacityOf(renameButton(page, folder))).toBe(1);
+  const [name, star, rename, outer] = [await box(item(page, folder).getByTitle(folder, { exact: true })), await box(starOf(page, folder)), await box(renameButton(page, folder)), await box(container)];
+  expect(star.x, 'the star is right of the name').toBeGreaterThanOrEqual(name.x + name.width - 0.5);
+  expect(star.x - (name.x + name.width), 'the star is right after the name').toBeLessThan(12);
+  expect(Math.abs(star.y + star.height / 2 - (name.y + name.height / 2)), 'the star is on the line of the name').toBeLessThanOrEqual(2);
+  expect(await starOf(page, folder).evaluate((el: HTMLElement) => el.offsetWidth), 'a 20 px button').toBe(20);
+  // "Rename" is in the top-right corner, and the star stays out of that corner
+  expect(outer.x + outer.width - (rename.x + rename.width), '"Rename" at the right end').toBeLessThan(16);
+  expect(rename.y - outer.y, '"Rename" at the top').toBeLessThan(16);
+  expect(star.x + star.width, 'the star is left of "Rename"').toBeLessThan(rename.x);
+  // no other control of the entry overlaps the corner of "Rename"
+  const others = await item(page, folder).getByRole('button').evaluateAll((buttons) =>
+    buttons
+      .filter((b) => !b.classList.contains('session-entry') && b.getAttribute('aria-label') !== 'Rename' && !b.closest('.ended-entry-actions'))
+      .map((b) => b.getBoundingClientRect().toJSON() as { x: number; y: number; width: number; height: number }),
+  );
+  for (const other of others) {
+    const overlaps = other.x < rename.x + rename.width && other.x + other.width > rename.x && other.y < rename.y + rename.height && other.y + other.height > rename.y;
+    expect(overlaps, 'only "Rename" in the top-right corner').toBe(false);
+  }
+}
+
+// plan-ui_restyle/REQ-29, REQ-31 — scenario "The user marks a session from the star next to its name"
+test('the session star sits right after the folder name on line 1 of a row, and the top-right corner holds only "Rename"', async ({ page, request }) => {
+  await showOnlyOwnSessions(page);
+  const idle = await hostedSession(request, 'star-place');
+  const ended = await hostedSession(request, 'star-ended', 'ended');
+  await page.goto('/');
+  await expect(item(page, idle.folder)).toHaveCount(1);
+  await expect(item(page, ended.folder)).toHaveCount(1);
+
+  for (const { folder, prompt } of [idle, ended]) {
+    await expectStarByNameAndRenameInCorner(page, folder, entry(page, folder));
+    const [star, label] = [await box(starOf(page, folder)), await box(entry(page, folder).getByTitle(prompt, { exact: true }))];
+    expect(star.y + star.height, `${folder}: the star is above line 2`).toBeLessThanOrEqual(label.y + 1);
+  }
+});
+
+// plan-ui_restyle/REQ-32 — scenario "The card of a session waiting for input has the same star"
+test('the needs-input card has the star right after the session name, and its top-right corner holds only "Rename"', async ({ page, request }) => {
+  await showOnlyOwnSessions(page);
+  const session = await hostedSession(request, 'star-card', 'needs_input');
+  await page.goto('/');
+  const card = group(page, 'Needs Input').locator('.session-card').filter({ has: byFolder(page, session.folder) });
+  await expect(card).toHaveCount(1);
+  await page.mouse.move(1, 1);
+  await expect.poll(() => opacityOf(markButton(page, session.folder)), 'hidden with no hover and no focus').toBe(0);
+
+  await expectStarByNameAndRenameInCorner(page, session.folder, card);
+  await expect.poll(() => opacityOf(markButton(page, session.folder)), 'outline shown on card hover').toBeCloseTo(0.7, 2);
+  await expect(card.getByRole('button', { name: 'Mark as Favorite', exact: true })).toHaveCount(1);
+});
+
+// plan-ui_restyle/REQ-29, REQ-30 — the folder name is cut first, the star never shrinks
+test('with a long folder name the name is cut and the star keeps its 20 px inside the entry', async ({ page, request }) => {
+  await showOnlyOwnSessions(page);
+  const session = await hostedSession(request, 'a-very-long-folder-name-that-never-fits-on-one-line-of-the-session-list-panel');
+  await page.goto('/');
+  await item(page, session.folder).getByTitle(session.folder, { exact: true }).hover();
+  const name = item(page, session.folder).getByTitle(session.folder, { exact: true });
+  expect(await name.evaluate((el) => el.scrollWidth > el.clientWidth), 'the folder name is cut').toBe(true);
+  const [star, row, rename] = [await box(starOf(page, session.folder)), await box(entry(page, session.folder)), await box(renameButton(page, session.folder))];
+  expect(await starOf(page, session.folder).evaluate((el: HTMLElement) => el.offsetWidth), 'the star keeps its 20 px').toBe(20);
+  expect(star.x).toBeGreaterThanOrEqual(row.x);
+  expect(star.x + star.width).toBeLessThanOrEqual(row.x + row.width);
+  expect(star.x + star.width, 'the star stays out of the corner of "Rename"').toBeLessThanOrEqual(rename.x);
+});
+
+// plan-ui_restyle/REQ-30 (as REQ-15, REQ-16, REQ-28)
+test('an unmarked session star is a hidden outline shown at 70 % on entry hover; a marked star stays shown, filled in amber', async ({ page, request }) => {
+  await showOnlyOwnSessions(page);
+  const a = await hostedSession(request, 'star-a');
+  const b = await hostedSession(request, 'star-b');
+  await page.goto('/');
+  await expect(item(page, b.folder)).toHaveCount(1);
+  await page.mouse.move(1, 1);
+  await expect.poll(() => opacityOf(markButton(page, b.folder)), 'hidden with no hover and no focus').toBe(0);
+  await item(page, b.folder).getByTitle(b.folder, { exact: true }).hover();
+  await expect.poll(() => opacityOf(markButton(page, b.folder)), 'outline at 70 % on entry hover').toBeCloseTo(0.7, 2);
+  await expect(markButton(page, b.folder).locator('svg path')).toHaveCSS('fill', 'none');
+
+  await markFromList(page, a.folder, a.claudeId);
+  await page.mouse.move(1, 1);
+  await expect.poll(() => opacityOf(removeButton(page, a.folder)), 'a marked star stays shown').toBe(1);
+  await expect.poll(() => opacityOf(markButton(page, b.folder))).toBe(0);
+  const paint = await removeButton(page, a.folder).locator('svg path').evaluate((p) => ({ fill: getComputedStyle(p).fill, color: getComputedStyle(p).color }));
+  expect(paint.fill, 'filled').toBe(paint.color);
+  const amber = await colorOf(page, 'var(--amber-400)');
+  await expect.poll(() => removeButton(page, a.folder).evaluate((el) => getComputedStyle(el).color), 'amber from the theme').toBe(amber);
+});
+
+// plan-ui_restyle/REQ-30 (as REQ-17), REQ-33 — scenario "The user marks a session from the star next to its name"
+test('a click on the outline star marks the session with a short pop and does not open it; no pop on unmark or on load', async ({ page, context, request }) => {
+  await context.addInitScript(recordPops());
+  await showOnlyOwnSessions(page);
+  const session = await hostedSession(request, 'star-pop');
+  const sent: unknown[] = [];
+  page.on('request', (r) => {
+    if (isFavoriteRequest(r)) sent.push(r.postDataJSON());
+  });
+  await page.goto('/');
+  await markFromList(page, session.folder, session.claudeId);
+
+  await expect.poll(() => pops(page)).toHaveLength(1);
+  const [pop] = await pops(page);
+  expect(pop!.name).toBe('Remove Favorite');
+  expect(pop!.animation, 'an animation runs').not.toBe('none');
+  expect(seconds(pop!.duration), 'a short animation').toBeGreaterThan(0.1);
+  expect(seconds(pop!.duration), 'a short animation').toBeLessThanOrEqual(0.6);
+  await expect(removeButton(page, session.folder)).not.toHaveClass(/\bpop\b/);
+  await page.mouse.move(1, 1);
+  await expect.poll(() => opacityOf(removeButton(page, session.folder))).toBe(1);
+  await expect(list(page).locator('.session-entry[aria-current="true"]')).toHaveCount(0);
+
+  await item(page, session.folder).hover();
+  await removeButton(page, session.folder).click();
+  await expect(markButton(page, session.folder)).toHaveCount(1);
+  expect(await pops(page), 'no pop on unmark').toHaveLength(1);
+  expect(sent).toEqual([{ favorite: true }, { favorite: false }]);
+
+  expect((await request.put(`/api/sessions/${session.id}/favorite`, { data: { favorite: true } })).status()).toBe(204);
+  await expect(removeButton(page, session.folder)).toHaveCount(1);
+  expect(await pops(page), 'no pop for a mark from elsewhere').toHaveLength(1);
+  await page.reload();
+  await expect(removeButton(page, session.folder)).toHaveCount(1);
+  expect(await pops(page), 'no pop on load').toEqual([]);
+});
+
+// plan-ui_restyle/REQ-30 (as REQ-18)
+test('with reduced motion the session star fills with no animation', async ({ page, context, request }) => {
+  await context.addInitScript(recordPops());
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await showOnlyOwnSessions(page);
+  const session = await hostedSession(request, 'star-still');
+  await page.goto('/');
+  await markFromList(page, session.folder, session.claudeId);
+  for (const pop of await pops(page)) expect(pop.animation, 'no animation under reduced motion').toBe('none');
+});
+
+// plan-ui_restyle/REQ-30 (as REQ-26, REQ-27), REQ-32 — Tab reaches the card star right after the card button
+test('Tab goes from the card button to its star, then "Reply", then "Rename"', async ({ page, request }) => {
+  await showOnlyOwnSessions(page);
+  const session = await hostedSession(request, 'star-card-keys', 'needs_input');
+  await page.goto('/');
+  await expect(entry(page, session.folder)).toHaveCount(1);
+  await page.mouse.move(1, 1);
+  await entry(page, session.folder).focus();
+  await page.keyboard.press('Tab');
+  await expect(markButton(page, session.folder)).toBeFocused();
+  await expect.poll(() => opacityOf(markButton(page, session.folder)), 'full opacity on its own focus').toBe(1);
+  expect(await focusedShowsRing(page), 'focus ring on the star').toBe(true);
+  await page.keyboard.press('Tab');
+  await expect(item(page, session.folder).getByRole('button', { name: 'Reply', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(renameButton(page, session.folder)).toBeFocused();
 });

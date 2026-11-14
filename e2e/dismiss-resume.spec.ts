@@ -397,6 +397,7 @@ test('the actions show on hover, and while "Dismiss" runs both are disabled and 
 });
 
 // plan-session_list_improvements/REQ-13 — scenario "Dismiss and Resume with the keyboard"
+// plan-ui_restyle/REQ-31: Tab goes entry, star, "Resume", "Dismiss", "Rename"
 test('Tab reaches "Resume" then "Dismiss" with the focus ring, and Enter presses them', async ({ page, request }) => {
   const first = await endedSession(request, 'keyboard-dismiss');
   const second = await endedSession(request, 'keyboard-resume');
@@ -406,6 +407,8 @@ test('Tab reaches "Resume" then "Dismiss" with the focus ring, and Enter presses
   await page.mouse.move(1, 1);
 
   await entry(page, first.folder).focus();
+  await page.keyboard.press('Tab');
+  await expect(item(page, first.folder).getByRole('button', { name: 'Mark as Favorite', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(action(page, first.folder, 'Resume')).toBeFocused();
   await expect.poll(() => opacity(page, first.folder, 'Resume'), { message: 'shown on keyboard focus' }).toBe('1');
@@ -417,6 +420,7 @@ test('Tab reaches "Resume" then "Dismiss" with the focus ring, and Enter presses
   await expect(item(page, first.folder)).toHaveCount(0);
 
   await entry(page, second.folder).focus();
+  await page.keyboard.press('Tab');
   await page.keyboard.press('Tab');
   await expect(action(page, second.folder, 'Resume')).toBeFocused();
   await expect.poll(() => focusedShowsRing(page), { message: '"Resume" shows the focus ring' }).toBe(true);
