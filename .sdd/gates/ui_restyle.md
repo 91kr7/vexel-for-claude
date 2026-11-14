@@ -13,3 +13,5 @@
 | 2026-11-15 | dev top-bar | question tester | decided | Startup bar stays 48px: request says only the five points; flagged for human review |
 | 2026-11-15 | dev window-buttons | G4 development | pass | Build green; diff limited to tokens.css, styles.css and specs |
 | 2026-11-15 | dev window-buttons | divergence developer | decided | Symbol colour 52% -> 60% black, to keep plan-mac_title_bar/REQ-26 (3:1) with the new red |
+| 2026-11-15 | dev window-buttons | G5 tests | pass | Only test files; no only/skip; re-run window-buttons.spec: 20 passed |
+| 2026-11-15 | dev window-buttons | question tester | escalated | StartupPage buttons keep old colours though its spec says same look as WindowButtons; asked together with the startup bar height |
