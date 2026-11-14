@@ -75,6 +75,18 @@ Words used below, as in the spec:
 | REQ-34 | The terminal panel has a 16px margin on all four sides. |
 | REQ-35 | The focus ring of the terminal does not overlap the session footer. |
 
+## Feature: Startup screen (desktop app)
+
+Added on 2026-11-15 by a human decision, outside the spec. The startup screen is what the desktop window shows while the backend starts, or when it cannot start.
+
+| ID | Requirement |
+|----|-------------|
+| REQ-36 | The bar of the startup screen is 44px high, like the top bar of REQ-1. |
+| REQ-37 | The window buttons of the startup screen have the size, gap, colours, light border and plain rest look of REQ-4 to REQ-7. |
+| REQ-38 | On the startup screen the button under the pointer gets brighter with a soft glow, and a pressed button gets darker, as in REQ-9 and REQ-10. |
+| REQ-39 | The window button symbols of the startup screen are black at 60%, so they keep the 3:1 contrast of `plan-mac_title_bar/REQ-26`. |
+| REQ-40 | When the app finishes loading, the bar and the window buttons keep their height, place and look. |
+
 ## Assumptions
 
 All come from the spec, where the gatekeeper decided them.
@@ -87,7 +99,7 @@ All come from the spec, where the gatekeeper decided them.
 
 These are not REQs. They apply to every REQ above.
 
-- Only the five changes above. No other visual change.
+- Only the five changes of the spec, plus the startup screen (human decision). No other visual change.
 - The favorite and remove logic, their stored data, their sync and their error messages do not change. Every requirement of `plan-project_list_actions`, `plan-favorite_session` and `plan-mac_title_bar` stays true, except the look and the place the REQs above change.
 - Out of scope: the favorite indicator in the resume history, the "+" button of the navigation rail and the new-session keyboard shortcut.
 - Every change works in the browser page and in the desktop app.

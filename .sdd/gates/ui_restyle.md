@@ -15,3 +15,5 @@
 | 2026-11-15 | dev window-buttons | divergence developer | decided | Symbol colour 52% -> 60% black, to keep plan-mac_title_bar/REQ-26 (3:1) with the new red |
 | 2026-11-15 | dev window-buttons | G5 tests | pass | Only test files; no only/skip; re-run window-buttons.spec: 20 passed |
 | 2026-11-15 | dev window-buttons | question tester | escalated | StartupPage buttons keep old colours though its spec says same look as WindowButtons; asked together with the startup bar height |
+| 2026-11-15 | dev window-buttons | StartupPage alignment | human decision | Startup bar 44px and startup window buttons in the new flat style with glow |
+| 2026-11-15 | plan | G3 coverage (startup-page) | pass | REQ-36..40 added, batch startup-page; departure recorded as human decision |

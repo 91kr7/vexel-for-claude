@@ -13,8 +13,9 @@ Requirements: `requirements.md`. Batch files: `batches/`.
 | project-row | Project row | REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28 | — | todo | The user marks a project from the star next to its name |
 | session-star | Session star | REQ-29, REQ-30, REQ-31, REQ-32, REQ-33 | project-row | todo | The user marks a session from the star next to its name |
 | terminal | Terminal | REQ-34, REQ-35 | — | todo | The terminal focus ring stays clear of the footer |
+| startup-page | Startup screen (desktop app) | REQ-36, REQ-37, REQ-38, REQ-39, REQ-40 | top-bar, window-buttons | todo | Nothing moves when the desktop app finishes loading |
 
-Execution order: top-bar, window-buttons, project-row, session-star, terminal. Only session-star has a real dependency. All batches edit `src/web/styles.css`, so they run one after the other.
+Execution order: top-bar, window-buttons, project-row, session-star, terminal, startup-page. session-star depends on project-row. startup-page depends on top-bar and window-buttons, because it copies their final values. The batches run one after the other.
 
 ## Assumptions and decisions
 
@@ -26,10 +27,12 @@ Execution order: top-bar, window-buttons, project-row, session-star, terminal. O
 - **Session name.** The star goes after the name on line 1 of the entry, where the FavoriteIndicator is today.
 - **FavoriteIndicator.** The component stays, because the resume history uses it. Rows and session entries no longer use it.
 - **Tests and Electron.** Each existing test stays in its group. A new test that launches Electron goes only in the Electron group (knowledge base `electron-e2e-separate`).
+- **Startup screen values.** The startup screen cannot import `src/web`. It repeats the top bar height and the WindowButtons styles in its own inline styles. The values are the ones certified in batches top-bar and window-buttons.
+- **Symbol colour.** Batch window-buttons already set the symbols of WindowButtons to black at 60%, for the 3:1 contrast of `plan-mac_title_bar/REQ-26`. REQ-39 brings the startup screen to the same value.
 
 ## Departures
 
-None.
+- **Startup screen (REQ-36 to REQ-40).** Departing from the spec, human decision of 2026-11-15. The spec allows only five changes and puts any other visual change out of scope. The human added the startup screen of the desktop app, so that nothing changes when the app finishes loading. The spec must be corrected.
 
 ## Coverage check
 
@@ -72,3 +75,8 @@ Every REQ is served by at least one INT, and every INT serves at least one REQ. 
 | REQ-33 | session-star | INT-3, INT-5 |
 | REQ-34 | terminal | INT-1, INT-2 |
 | REQ-35 | terminal | INT-1, INT-2 |
+| REQ-36 | startup-page | INT-1, INT-4 |
+| REQ-37 | startup-page | INT-2, INT-4 |
+| REQ-38 | startup-page | INT-3, INT-4 |
+| REQ-39 | startup-page | INT-2, INT-4 |
+| REQ-40 | startup-page | INT-1, INT-2, INT-3, INT-5 |
