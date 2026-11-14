@@ -152,3 +152,38 @@ describe('useNewerVersion', () => {
     }
   });
 });
+
+describe('useNewerVersion changelogs', () => {
+  // plan-release_changelog/REQ-7, REQ-8, REQ-13: the changelogs come in the order of the answer
+  it('keeps well-formed changelogs in the order of the answer, an empty text as absent', async () => {
+    const changelogs = [{ version: '0.5.0', text: 'five' }, { version: '0.7.0' }, { version: '0.6.0', text: '' }];
+    step = { json: { status: 'newer', ...VERSION, changelogs } };
+    mount();
+    await until(() => latest !== null);
+    expect(latest).toEqual({ ...VERSION, changelogs: [{ version: '0.5.0', text: 'five' }, { version: '0.7.0' }, { version: '0.6.0' }] });
+    expect(latest?.changelogs?.[2]?.text).toBeUndefined();
+  });
+
+  // plan-release_changelog/REQ-14: unreadable changelogs leave the notice as it was
+  it.each<[string, unknown]>([
+    ['missing', undefined],
+    ['not a list', { version: '0.2.0', text: 'x' }],
+    ['a list with a null entry', [{ version: '0.2.0', text: 'x' }, null]],
+    ['a list with a version that is not text', [{ version: 2, text: 'x' }]],
+    ['a list with an entry without version', [{ text: 'x' }]],
+    ['a list with a text that is not text', [{ version: '0.2.0', text: 5 }]],
+    ['a JSON null', null],
+  ])('gives the newer version without changelogs when they are %s', async (_name, changelogs) => {
+    step = { json: { status: 'newer', ...VERSION, ...(changelogs === undefined ? {} : { changelogs }) } };
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      mount();
+      await until(() => latest !== null);
+      expect(latest).toEqual(VERSION);
+      expect(latest?.changelogs).toBeUndefined();
+      expect(errors).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+    }
+  });
+});

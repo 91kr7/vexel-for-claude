@@ -116,6 +116,9 @@ async function waitHealthy(base: string, timeoutMs = 20_000): Promise<void> {
   throw new Error('the server did not answer');
 }
 
+/** The requests for the latest release; the release list of plan-release_changelog is asked separately. */
+const checks = (source: FakeSource) => source.seen.filter((request) => request.url.endsWith('/releases/latest'));
+
 const newerVersion = async (base: string) => (await fetch(`${base}/api/newer-version`)).json();
 
 describe('release check at server start', () => {
@@ -132,7 +135,7 @@ describe('release check at server start', () => {
       newerVersion: nextTag.slice(1),
       releaseUrl: `${source.url.replace(/\/releases\/latest$/, '')}/releases/tag/${nextTag}`,
     });
-    expect(source.seen).toHaveLength(1);
+    expect(checks(source)).toHaveLength(1);
   }, 30_000);
 
   // plan-update_check/REQ-2: reloads and new tabs of the same start read the same result; the source is asked once
@@ -147,7 +150,7 @@ describe('release check at server start', () => {
     for (const body of again) expect(body).toEqual(first);
     expect(first).toMatchObject({ newerVersion: nextTag.slice(1) });
     await delay(300);
-    expect(source.seen).toHaveLength(1);
+    expect(checks(source)).toHaveLength(1);
   }, 30_000);
 
   // plan-update_check/REQ-12: the printed request has no credentials and no user, session or folder data
@@ -156,7 +159,7 @@ describe('release check at server start', () => {
     const base = await startServer(source.url);
     await waitHealthy(base);
     await waitFor(() => source.seen.length > 0, 'the start asks the release source', 10_000);
-    const [request] = source.seen;
+    const [request] = checks(source);
     expect(request!.method).toBe('GET');
     expect(request!.url).toBe('/repos/owner/name/releases/latest');
     expect(request!.body).toBe('');
