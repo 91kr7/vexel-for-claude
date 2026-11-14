@@ -13,3 +13,7 @@
 | 2026-11-14 | plan | G3 coverage | pass | |
 | 2026-11-14 | dev | G4 release-instruction | pass | only `CLAUDE.md`; `tsc -b` green |
 | 2026-11-14 | test | G5 release-instruction | pass | prose-only batch, no tests; `CLAUDE.md` checked by the gatekeeper against REQ-1..REQ-6 |
+| 2026-11-14 | dev | divergence developer — notice timing | decided | Route waits for check + changelog list; launch and session list unaffected (REQ-16) |
+| 2026-11-14 | dev | divergence developer — INT-4 no code | decided | Route already forwards the result; spec updated only |
+| 2026-11-14 | dev | divergence developer — paging cap, duplicates | decided | 10-page cap and duplicate drop accepted: guards, no visible change |
+| 2026-11-14 | dev | G4 notice-changelogs | pass | files match INT-1..INT-8; `tsc -b` + vite build green |

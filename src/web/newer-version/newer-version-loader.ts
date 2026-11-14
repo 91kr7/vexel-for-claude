@@ -1,9 +1,28 @@
 import { useEffect, useState } from 'react';
 
+/** `text` is absent when the release has no description. */
+export interface ReleaseChangelog {
+  version: string;
+  text?: string;
+}
+
 export interface NewerVersion {
   installedVersion: string;
   newerVersion: string;
   releaseUrl: string;
+  changelogs?: ReleaseChangelog[];
+}
+
+function changelogsOf(value: unknown): ReleaseChangelog[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const changelogs: ReleaseChangelog[] = [];
+  for (const entry of value as unknown[]) {
+    if (typeof entry !== 'object' || entry === null) return undefined;
+    const { version, text } = entry as Record<string, unknown>;
+    if (typeof version !== 'string' || (text !== undefined && typeof text !== 'string')) return undefined;
+    changelogs.push(text ? { version, text } : { version });
+  }
+  return changelogs;
 }
 
 async function loadNewerVersion(signal: AbortSignal): Promise<NewerVersion | null> {
@@ -14,7 +33,8 @@ async function loadNewerVersion(signal: AbortSignal): Promise<NewerVersion | nul
     if (body?.status !== 'newer') return null;
     const { installedVersion, newerVersion, releaseUrl } = body;
     if (typeof installedVersion !== 'string' || typeof newerVersion !== 'string' || typeof releaseUrl !== 'string') return null;
-    return { installedVersion, newerVersion, releaseUrl };
+    const changelogs = changelogsOf(body.changelogs);
+    return changelogs ? { installedVersion, newerVersion, releaseUrl, changelogs } : { installedVersion, newerVersion, releaseUrl };
   } catch {
     return null;
   }
