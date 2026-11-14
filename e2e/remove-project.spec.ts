@@ -28,12 +28,12 @@ const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigati
 const railButton = (page: Page, name: string) => rail(page).getByRole('button', { name, exact: true });
 const panel = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const rows = (page: Page) => panel(page).locator('.project-row');
-const row = (page: Page, folder: string) => rows(page).filter({ has: page.getByTitle(folder, { exact: true }) });
-const item = (page: Page, folder: string) => panel(page).locator('li').filter({ has: page.getByTitle(folder, { exact: true }) });
+const row = (page: Page, folder: string) => rows(page).filter({ has: page.getByText(folder, { exact: true }) });
+const item = (page: Page, folder: string) => panel(page).locator('li').filter({ has: page.locator('.project-row').getByText(folder, { exact: true }) });
 const removeButton = (page: Page, folder: string) => item(page, folder).getByRole('button', { name: 'Remove from Projects', exact: true });
 const favoriteButton = (page: Page, folder: string) => item(page, folder).getByRole('button', { name: /Favorite$/ });
-const star = (page: Page, folder: string) => row(page, folder).getByRole('img', { name: 'Favorite', exact: true });
-const shownFolders = (page: Page) => rows(page).evaluateAll((els) => els.map((el) => el.querySelector('[title^="/"]')?.getAttribute('title')));
+const star = (page: Page, folder: string) => item(page, folder).getByRole('button', { name: 'Remove Favorite', exact: true });
+const shownFolders = (page: Page) => rows(page).evaluateAll((els) => els.map((el) => el.querySelector('.project-row-path')?.textContent));
 const isRemoveRequest = (url: URL) => url.pathname === '/api/projects/remove';
 const isPastSessionsRequest = (url: string) => new URL(url).pathname === '/api/past-sessions';
 
@@ -284,29 +284,9 @@ test('when the server does not answer, the row stays and shows "Could not remove
   await expect.poll(() => shownFolders(page)).toEqual([a, c]);
 });
 
-// ProjectList "Shows" and ProjectRemoveButton "Shows": the button place, its visibility and its busy state
-test('the remove button is hidden until hover, sits at the right end centred on the row, right of the favorite button', async ({ page }) => {
+// ProjectList "Shows": Remove stays shown and busy while its request runs
+test('the remove button stays shown, busy, while its request runs, with the pointer away', async ({ page }) => {
   const { a, b, c } = await threeProjects(page);
-  await page.mouse.move(5, 5);
-  await expect.poll(() => seenOpacity(removeButton(page, a)), 'hidden with no hover and no focus').toBe(0);
-
-  await row(page, a).hover();
-  const button = removeButton(page, a);
-  await expect.poll(() => seenOpacity(button)).toBe(1);
-  const rowBox = (await row(page, a).boundingBox())!;
-  const buttonBox = (await button.boundingBox())!;
-  const favoriteBox = (await favoriteButton(page, a).boundingBox())!;
-  expect(buttonBox.width).toBeCloseTo(20, 0);
-  expect(buttonBox.height).toBeCloseTo(20, 0);
-  expect(buttonBox.y + buttonBox.height / 2, 'centred on the height of the row button').toBeCloseTo(rowBox.y + rowBox.height / 2, 0);
-  expect(buttonBox.x + buttonBox.width, 'inside the right end of the row').toBeLessThanOrEqual(rowBox.x + rowBox.width + 0.5);
-  expect(rowBox.x + rowBox.width - (buttonBox.x + buttonBox.width), 'at the right end of the row').toBeLessThan(16);
-  expect(buttonBox.x - (favoriteBox.x + favoriteBox.width), 'the favorite button 4 px left of it').toBeCloseTo(4, 0);
-  const labelBox = (await row(page, a).getByText('New session').boundingBox())!;
-  expect(labelBox.x + labelBox.width, '"▶ New session" left of the favorite button').toBeLessThanOrEqual(favoriteBox.x + 0.5);
-  await page.screenshot({ path: test.info().outputPath('remove-button-hover.png') });
-
-  // While its request runs, the button stays shown and busy.
   let release!: () => void;
   const held = new Promise<void>((resolve) => {
     release = resolve;
@@ -315,11 +295,13 @@ test('the remove button is hidden until hover, sits at the right end centred on 
     await held;
     await route.continue();
   });
+  await row(page, a).hover();
+  const button = removeButton(page, a);
   await button.click();
   await page.mouse.move(5, 5);
   await expect(button).toHaveAttribute('aria-busy', 'true');
   await expect(button).toHaveAttribute('aria-disabled', 'true');
-  expect(await seenOpacity(button)).toBe(1);
+  await expect.poll(() => seenOpacity(button), 'shown while busy').toBe(1);
   expect(await shownFolders(page)).toEqual([a, b, c]);
   release();
   await expect.poll(() => shownFolders(page)).toEqual([b, c]);

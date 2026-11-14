@@ -37,9 +37,9 @@ const panel = (page: Page) => page.getByRole('region', { name: 'Session List' })
 const searchField = (page: Page) => panel(page).getByRole('textbox', { name: 'Search projects', exact: true });
 const clearButton = (page: Page) => panel(page).getByRole('button', { name: 'Clear Search', exact: true });
 const rows = (page: Page) => panel(page).locator('.project-row');
-const row = (page: Page, folder: string) => rows(page).filter({ has: page.getByTitle(folder, { exact: true }) });
-const item = (page: Page, folder: string) => panel(page).locator('li').filter({ has: page.getByTitle(folder, { exact: true }) });
-const shownFolders = (page: Page) => rows(page).evaluateAll((els) => els.map((el) => el.querySelector('[title^="/"]')?.getAttribute('title')));
+const row = (page: Page, folder: string) => rows(page).filter({ has: page.getByText(folder, { exact: true }) });
+const item = (page: Page, folder: string) => panel(page).locator('li').filter({ has: page.locator('.project-row').getByText(folder, { exact: true }) });
+const shownFolders = (page: Page) => rows(page).evaluateAll((els) => els.map((el) => el.querySelector('.project-row-path')?.textContent));
 const nameDialog = (page: Page) => page.getByRole('dialog', { name: 'New session' });
 const isStartRequest = (r: { url(): string; method(): string }) => r.method() === 'POST' && new URL(r.url()).pathname === '/api/sessions';
 
@@ -183,7 +183,7 @@ test('with "api" favorite, "ap" shows api, app, apex in the order of the full li
   await searchField(page).click();
   await page.keyboard.type('ap');
   await expect.poll(() => shownFolders(page)).toEqual([api, app, apex]);
-  await expect(row(page, api).getByRole('img', { name: 'Favorite', exact: true })).toBeVisible();
+  await expect(item(page, api).getByRole('button', { name: 'Remove Favorite', exact: true })).toBeVisible();
 });
 
 // plan-project_list_actions/REQ-5 — scenario "no project matches"
