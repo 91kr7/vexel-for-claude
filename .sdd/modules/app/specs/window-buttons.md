@@ -14,12 +14,15 @@ Props:
 - `look` → `'vexel'` or `'windows11'` (LookStore `Look`). Default: `'vexel'`.
 
 Current look shows:
-- a row of three 12 px circles, 8 px apart, in this order: red `--window-close`, yellow `--window-minimize`, green `--window-maximize`. 6 px of extra space after the green one.
+- a row of three flat 12 px circles, 8 px apart, in this order: red `--window-close` (`#e0443c`), yellow `--window-minimize` (`#e8b616`), green `--window-maximize` (`#25b033`). 6 px of extra space after the green one.
+- each circle has a solid fill in its colour and a 0.5 px border of its colour mixed 45 % with white (`box-shadow: 0 0 0 0.5px`). At rest: no gradient, no gloss, no other shadow, no filter.
 - each button holds an 8 px symbol in `--window-symbol`:
   - red → a cross (`XIcon`). Yellow → a minus (`MinusIcon`).
   - green, window not maximized → two arrows that point out (`Maximize2Icon`). Maximized → two arrows that point in (`Minimize2Icon`).
 - pointer over the group, gaps included → all three symbols are visible.
 - pointer away from the group → the symbols are hidden: only the colours show. Keyboard focus does not show them.
+- hovered button → `filter: brightness(1.08)` and, besides the border, a glow `0 0 8px 1px` of its colour at 60 % opacity. Both change with a 0.2 s transition.
+- pressed button → `filter: brightness(0.85)`.
 
 Windows 11 look shows:
 - a row of three buttons, in this order: minimize, maximize or restore, close. Each is 46 px wide and as high as the top bar, with no gap and no radius. The row ends flush with the right edge of the window at every window width, and never shrinks. It has the background of the top bar, so nothing shows through it.
@@ -41,7 +44,8 @@ Keyboard:
 
 - The group is never a drag area (`-webkit-app-region: no-drag`), also in the gaps between the buttons.
 - The group sits above the dialog backdrop (z-index 120, above 100 and 110): visible and clickable while a dialog is open.
-- Current look: the colours and the symbol colour are the same in both themes.
+- Current look: the colours and the symbol colour are the same in both themes. The symbol has at least 3:1 contrast on each fill.
+- Current look styles never reach the Windows 11 buttons: these keep their own look.
 - Windows 11 look: the glyph and hover colours follow the theme. The close red is the same in both.
 
 ## Dependencies
@@ -53,3 +57,4 @@ Keyboard:
 
 - `plan-mac_title_bar/REQ-15`, `plan-mac_title_bar/REQ-16`, `plan-mac_title_bar/REQ-17`, `plan-mac_title_bar/REQ-18`, `plan-mac_title_bar/REQ-19`, `plan-mac_title_bar/REQ-20`, `plan-mac_title_bar/REQ-21`, `plan-mac_title_bar/REQ-22`, `plan-mac_title_bar/REQ-24`, `plan-mac_title_bar/REQ-26`, `plan-mac_title_bar/REQ-27`, `plan-mac_title_bar/REQ-28`
 - `plan-wsl_support/REQ-28`, `plan-wsl_support/REQ-29`, `plan-wsl_support/REQ-30`, `plan-wsl_support/REQ-31`, `plan-wsl_support/REQ-34`, `plan-wsl_support/REQ-39`, `plan-wsl_support/REQ-40`
+- `plan-ui_restyle/REQ-4`, `plan-ui_restyle/REQ-5`, `plan-ui_restyle/REQ-6`, `plan-ui_restyle/REQ-7`, `plan-ui_restyle/REQ-8`, `plan-ui_restyle/REQ-9`, `plan-ui_restyle/REQ-10`, `plan-ui_restyle/REQ-11`

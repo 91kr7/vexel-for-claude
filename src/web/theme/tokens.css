@@ -63,11 +63,11 @@
   --color-focus-ring: var(--accent-primary);
   --color-backdrop: rgba(0, 0, 0, 0.65);
 
-  --window-close: #ff5f57;
-  --window-minimize: #febc2e;
-  --window-maximize: #28c840;
-  /* 52 %, not 50 %: the red needs it for 3:1. */
-  --window-symbol: rgba(0, 0, 0, 0.52);
+  --window-close: #e0443c;
+  --window-minimize: #e8b616;
+  --window-maximize: #25b033;
+  /* 60 %: the red needs at least 58 % for 3:1. */
+  --window-symbol: rgba(0, 0, 0, 0.6);
 
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;

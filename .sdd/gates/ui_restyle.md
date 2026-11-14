@@ -11,3 +11,5 @@
 | 2026-11-15 | dev top-bar | divergence developer | decided | Update notice offset follows the 44px bar per its spec; PlanUsagePopover left at 52px (still under the bar) |
 | 2026-11-15 | dev top-bar | G5 tests | pass | Only test files changed; no only/skip; re-run top-bar, studio-dark, title-bar: 55 passed |
 | 2026-11-15 | dev top-bar | question tester | decided | Startup bar stays 48px: request says only the five points; flagged for human review |
+| 2026-11-15 | dev window-buttons | G4 development | pass | Build green; diff limited to tokens.css, styles.css and specs |
+| 2026-11-15 | dev window-buttons | divergence developer | decided | Symbol colour 52% -> 60% black, to keep plan-mac_title_bar/REQ-26 (3:1) with the new red |

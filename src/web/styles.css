@@ -458,23 +458,36 @@ input {
 }
 
 .window-button {
+  --window-border: 0 0 0 0.5px color-mix(in srgb, var(--window-colour) 45%, #fff);
   flex: none;
   width: 12px;
   height: 12px;
   border-radius: 50%;
   color: var(--window-symbol);
+  background-color: var(--window-colour);
+  box-shadow: var(--window-border);
+  transition: filter 0.2s, box-shadow 0.2s;
+}
+
+.window-button:hover {
+  filter: brightness(1.08);
+  box-shadow: var(--window-border), 0 0 8px 1px color-mix(in srgb, var(--window-colour) 60%, transparent);
+}
+
+.window-button:active {
+  filter: brightness(0.85);
 }
 
 .window-close {
-  background-color: var(--window-close);
+  --window-colour: var(--window-close);
 }
 
 .window-minimize {
-  background-color: var(--window-minimize);
+  --window-colour: var(--window-minimize);
 }
 
 .window-maximize {
-  background-color: var(--window-maximize);
+  --window-colour: var(--window-maximize);
 }
 
 .window-button .icon {
