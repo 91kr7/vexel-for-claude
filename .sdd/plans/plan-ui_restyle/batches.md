@@ -11,7 +11,7 @@ Requirements: `requirements.md`. Batch files: `batches/`.
 | top-bar | Top bar | REQ-1, REQ-2, REQ-3 | — | certified | The top bar is lower and has no "New Session" button |
 | window-buttons | Window buttons (desktop app, macOS look) | REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11 | — | certified | The macOS-style window buttons are flat and glow under the pointer |
 | project-row | Project row | REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28 | — | certified | The user marks a project from the star next to its name |
-| session-star | Session star | REQ-29, REQ-30, REQ-31, REQ-32, REQ-33 | project-row | implemented | The user marks a session from the star next to its name |
+| session-star | Session star | REQ-29, REQ-30, REQ-31, REQ-32, REQ-33 | project-row | certified | The user marks a session from the star next to its name |
 | terminal | Terminal | REQ-34, REQ-35 | — | todo | The terminal focus ring stays clear of the footer |
 | startup-page | Startup screen (desktop app) | REQ-36, REQ-37, REQ-38, REQ-39, REQ-40 | top-bar, window-buttons | todo | Nothing moves when the desktop app finishes loading |
 

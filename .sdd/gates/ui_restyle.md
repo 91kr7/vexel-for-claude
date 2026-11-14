@@ -27,3 +27,4 @@
 | 2026-11-15 | dev session-star | question tester Q1 | decided | Star next to the name is the approved design: fix e2e helpers to click the folder name, test side |
 | 2026-11-15 | dev session-star | question tester Q2 | decided | REQ-33 keeps current logic (any 2xx ok): align the FavoriteButton spec to the code |
 | 2026-11-15 | dev session-star | G4 development (fix) | pass | CSS-only fix plus spec alignment; build green |
+| 2026-11-15 | dev session-star | G5 tests (round 2) | pass | 557 unit + 467 e2e green; no only/skip; re-run favorite-session 24 passed |
