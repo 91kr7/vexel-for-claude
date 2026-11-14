@@ -1,4 +1,4 @@
-// e2e of plan-mac_title_bar, batch window-buttons, in the browser: WindowButtons in the TopBar and on the StartupPage.
+// e2e of plan-mac_title_bar and plan-ui_restyle, batches window-buttons, in the browser: WindowButtons in the TopBar and on the StartupPage.
 // A fake `window.desktopBridge` records the window requests and plays the maximized state; Electron is checked in e2e/desktop-window.spec.ts.
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { startupPageUrl } from '../src/desktop/startup-page.js';
@@ -9,9 +9,12 @@ interface FakeOptions {
   withWindowFunctions?: boolean;
 }
 
-const RED = 'rgb(255, 95, 87)';
-const YELLOW = 'rgb(254, 188, 46)';
-const GREEN = 'rgb(40, 200, 64)';
+// plan-ui_restyle/REQ-5: #e0443c, #e8b616, #25b033.
+const RED = 'rgb(224, 68, 60)';
+const YELLOW = 'rgb(232, 182, 22)';
+const GREEN = 'rgb(37, 176, 51)';
+// The StartupPage spec still names the plan-mac_title_bar colours.
+const STARTUP_COLOURS = ['rgb(255, 95, 87)', 'rgb(254, 188, 46)', 'rgb(40, 200, 64)'];
 
 const topBar = (page: Page) => page.getByRole('banner');
 const newSessionDialog = (page: Page) => page.getByRole('dialog', { name: 'New Claude Code Session' });
@@ -104,7 +107,7 @@ async function boxes(buttons: Locator[]) {
 }
 
 /** The look shared by the TopBar and the StartupPage: three 12 px circles, 8 px apart, red, yellow, green, left to right. */
-async function expectMacLook(buttons: Locator[]): Promise<void> {
+async function expectMacLook(buttons: Locator[], colours = [RED, YELLOW, GREEN]): Promise<void> {
   const [close, minimize, maximize] = await boxes(buttons);
   for (const box of [close!, minimize!, maximize!]) {
     expect(box.width).toBeCloseTo(12, 0);
@@ -114,7 +117,7 @@ async function expectMacLook(buttons: Locator[]): Promise<void> {
   expect(maximize!.x - (minimize!.x + minimize!.width), 'gap yellow-green').toBeCloseTo(8, 0);
   expect(Math.abs(close!.y - maximize!.y), 'one row').toBeLessThan(1);
   const looks = await Promise.all(buttons.map((b) => b.evaluate((e) => ({ background: getComputedStyle(e).backgroundColor, radius: getComputedStyle(e).borderRadius }))));
-  expect(looks.map((look) => look.background)).toEqual([RED, YELLOW, GREEN]);
+  expect(looks.map((look) => look.background)).toEqual(colours);
   for (const look of looks) expect(['50%', '6px', '9999px', '999px', '100%']).toContain(look.radius);
 }
 
@@ -319,6 +322,128 @@ test.describe('WindowButtons in the desktop top bar', () => {
   });
 });
 
+type Rgba = [number, number, number, number];
+
+/** Splits a computed box-shadow list and reads the colour and lengths of each shadow (rgb(), rgba() or color(srgb ...)). */
+function parseShadows(value: string): { colour: Rgba; lengths: string }[] {
+  if (value === 'none') return [];
+  return value.split(/,(?![^(]*\))/).map((shadow) => {
+    const match = shadow.trim().match(/^(rgba?\([^)]*\)|color\(srgb [^)]*\))\s+(.*)$/);
+    if (!match) throw new Error(`unexpected shadow: ${shadow}`);
+    const [, colour, lengths] = match;
+    const numbers = (colour!.match(/[\d.]+/g) ?? []).map(Number);
+    const rgba: Rgba = colour!.startsWith('color(')
+      ? [numbers[0]! * 255, numbers[1]! * 255, numbers[2]! * 255, numbers[3] ?? 1]
+      : [numbers[0]!, numbers[1]!, numbers[2]!, numbers[3] ?? 1];
+    return { colour: rgba, lengths: lengths!.trim() };
+  });
+}
+
+function expectColour(actual: Rgba, expected: Rgba, label: string): void {
+  actual.slice(0, 3).forEach((channel, i) => expect(Math.abs(channel - expected[i]!), `${label}, channel ${i}: ${actual.join(' ')}`).toBeLessThanOrEqual(2));
+  expect(Math.abs(actual[3] - expected[3]), `${label}, alpha`).toBeLessThanOrEqual(0.02);
+}
+
+const rgbOf = (colour: string) => (colour.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number) as [number, number, number];
+/** The border colour of plan-ui_restyle/REQ-6: the button colour 45 % mixed with white. */
+const borderOf = (colour: string): Rgba => [...rgbOf(colour).map((c) => c * 0.45 + 255 * 0.55), 1] as Rgba;
+/** The glow colour of plan-ui_restyle/REQ-9: the button colour at 60 % opacity. */
+const glowOf = (colour: string): Rgba => [...rgbOf(colour), 0.6] as Rgba;
+
+const buttonLook = (button: Locator) =>
+  button.evaluate((e) => {
+    const s = getComputedStyle(e);
+    return { background: s.backgroundColor, image: s.backgroundImage, filter: s.filter, shadow: s.boxShadow, transitionProperty: s.transitionProperty, transitionDuration: s.transitionDuration };
+  });
+
+/** The duration of each transitioned property, as the browser pairs the two lists. */
+function transitionDurations(look: { transitionProperty: string; transitionDuration: string }): Record<string, string> {
+  const properties = look.transitionProperty.split(',').map((p) => p.trim());
+  const durations = look.transitionDuration.split(',').map((d) => d.trim());
+  return Object.fromEntries(properties.map((p, i) => [p, durations[i % durations.length]!]));
+}
+
+test.describe('Flat macOS window buttons with a hover glow (plan-ui_restyle)', () => {
+  // plan-ui_restyle/REQ-4, REQ-5, REQ-6, REQ-7: flat solid circles, thin light border, nothing else at rest
+  test('at rest each button is a flat solid circle with only a 0.5 px border of its colour mixed 45 % with white, in both themes', async ({ page }) => {
+    await installFakeBridge(page);
+    await page.goto('/');
+    const { close, minimize, maximize } = windowButtons(topBar(page));
+    const all = [close, minimize, maximize];
+    await expect(close).toBeVisible();
+    await page.mouse.move(600, 400);
+    await expectMacLook(all);
+    for (const theme of ['dark', 'light']) {
+      if (theme === 'light') {
+        await topBar(page).getByRole('button', { name: 'Dark theme', exact: true }).click();
+        await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+        await page.mouse.move(600, 400);
+      }
+      for (const [i, button] of all.entries()) {
+        const colour = [RED, YELLOW, GREEN][i]!;
+        const look = await buttonLook(button);
+        expect(look.background, `${theme}: solid fill`).toBe(colour);
+        expect(look.image, `${theme}: no gradient or gloss`).toBe('none');
+        expect(look.filter, `${theme}: no filter at rest`).toBe('none');
+        const shadows = parseShadows(look.shadow);
+        expect(shadows.length, `${theme}: only the border shadow at rest: ${look.shadow}`).toBe(1);
+        expect(shadows[0]!.lengths).toBe('0px 0px 0px 0.5px');
+        expectColour(shadows[0]!.colour, borderOf(colour), `${theme}: border of ${colour}`);
+      }
+    }
+  });
+
+  // plan-ui_restyle/REQ-8, REQ-9: all symbols on group hover; the hovered button alone gets brighter with a glow in its colour, 0.2 s transition
+  test('the hovered button gets brighter with a soft glow of its own colour beside the border, with a 0.2 s transition; the others stay at rest and all symbols show', async ({ page }) => {
+    await installFakeBridge(page);
+    await page.goto('/');
+    const { close, minimize, maximize } = windowButtons(topBar(page));
+    const all = [close, minimize, maximize];
+    await expect(close).toBeVisible();
+    for (const [i, button] of all.entries()) {
+      const colour = [RED, YELLOW, GREEN][i]!;
+      await page.mouse.move(600, 400);
+      await button.hover();
+      await expect.poll(async () => (await buttonLook(button)).filter, `${colour} hovered`).toBe('brightness(1.08)');
+      await expect.poll(async () => parseShadows((await buttonLook(button)).shadow).length, `${colour}: border and glow`).toBe(2);
+      const look = await buttonLook(button);
+      const shadows = parseShadows(look.shadow);
+      const border = shadows.find((shadow) => shadow.lengths === '0px 0px 0px 0.5px');
+      const glow = shadows.find((shadow) => shadow.lengths === '0px 0px 8px 1px');
+      expect(border, `the border stays: ${look.shadow}`).toBeDefined();
+      expect(glow, `a 0 0 8px 1px glow: ${look.shadow}`).toBeDefined();
+      expectColour(border!.colour, borderOf(colour), `border of ${colour}`);
+      expectColour(glow!.colour, glowOf(colour), `glow of ${colour}`);
+      const durations = transitionDurations(look);
+      expect(durations['filter'], `filter transition: ${look.transitionProperty} / ${look.transitionDuration}`).toBe('0.2s');
+      expect(durations['box-shadow'], `box-shadow transition: ${look.transitionProperty} / ${look.transitionDuration}`).toBe('0.2s');
+
+      for (const other of all.filter((b) => b !== button)) {
+        const rest = await buttonLook(other);
+        expect(rest.filter, 'a button not under the pointer has no filter').toBe('none');
+        expect(parseShadows(rest.shadow).length, 'a button not under the pointer has no glow').toBe(1);
+      }
+      await expect.poll(() => symbolsShown(all), { message: `symbols with the pointer over ${colour}` }).toEqual([true, true, true]);
+    }
+  });
+
+  // plan-ui_restyle/REQ-10: a pressed button gets darker
+  test('a pressed button gets darker: brightness 0.85 while the pointer button is down', async ({ page }) => {
+    await installFakeBridge(page);
+    await page.goto('/');
+    const { close, minimize, maximize } = windowButtons(topBar(page));
+    await expect(close).toBeVisible();
+    for (const button of [close, minimize, maximize]) {
+      await button.hover();
+      await page.mouse.down();
+      await expect.poll(async () => (await buttonLook(button)).filter, `${await button.getAttribute('aria-label')} pressed`).toBe('brightness(0.85)');
+      await page.mouse.move(600, 400);
+      await page.mouse.up();
+    }
+    expect(await windowCalls(page), 'releasing outside the button asks nothing').toEqual([]);
+  });
+});
+
 // useDesktopBridge contract: a bridge without the window functions leaves the buttons inert, never broken
 test('with a desktop bridge that has no window functions the buttons show "Maximize" and a click raises no error', async ({ page }) => {
   const errors: string[] = [];
@@ -364,7 +489,7 @@ test.describe('WindowButtons on the StartupPage', () => {
       await page.goto(startupPageUrl(state));
       const { close, minimize, maximize } = windowButtons(page);
       await expect(close).toBeVisible();
-      await expectMacLook([close, minimize, maximize]);
+      await expectMacLook([close, minimize, maximize], STARTUP_COLOURS);
       const [red, yellow, green] = await boxes([close, minimize, maximize]);
       expect(red!.x).toBeCloseTo(14, 0);
       expect(red!.y + red!.height / 2, 'centred in the 48 px bar').toBeCloseTo(24, 0);

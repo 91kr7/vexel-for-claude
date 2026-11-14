@@ -605,7 +605,7 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
     expect(Math.min(...controlsLeft), 'no control before the logo').toBeGreaterThan(logo.x);
     expect(await bar.getByRole('button', { name: /^(Close|Minimize|Maximize|Restore)$/ }).count(), 'one set of window buttons').toBe(3);
     const backgrounds = await Promise.all([close, minimize, maximize].map((b) => b.evaluate((e) => getComputedStyle(e).backgroundColor)));
-    expect(backgrounds, 'not the macOS colours').not.toContain('rgb(255, 95, 87)');
+    expect(backgrounds, 'not the macOS colours').not.toContain('rgb(224, 68, 60)');
   });
 
   // plan-wsl_support/REQ-28: each glyph shows without hover; REQ-31: Restore while maximized
@@ -648,6 +648,57 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
     await expect.poll(() => close.locator('svg').evaluate((e) => getComputedStyle(e).color)).toBe('rgb(255, 255, 255)');
   });
 
+  // plan-ui_restyle/REQ-11, WindowButtons "Windows 11 look shows" and rule: the macOS styles never reach the Windows-style buttons
+  for (const theme of ['dark', 'light'] as const) {
+    test(`${theme} theme: the Windows-style buttons take no macOS filter, border or glow, and keep the caption colours at rest, on hover and pressed`, async ({ page }) => {
+      await chooseLook(page, 'windows11');
+      await page.goto('/');
+      await setTheme(page, theme);
+      const { close, minimize, maximize } = windowButtons(topBar(page));
+      await expect(close).toBeVisible();
+      const colours = await page.evaluate(() => {
+        const resolve = (token: string) => {
+          const probe = document.createElement('div');
+          probe.style.backgroundColor = `var(${token})`;
+          document.body.append(probe);
+          const value = getComputedStyle(probe).backgroundColor;
+          probe.remove();
+          return value;
+        };
+        return { hover: resolve('--caption-hover'), pressed: resolve('--caption-pressed'), close: resolve('--caption-close'), closePressed: resolve('--caption-close-pressed') };
+      });
+      const looks = (button: Locator) =>
+        button.evaluate((e) => {
+          const s = getComputedStyle(e);
+          return { background: s.backgroundColor, filter: s.filter, shadow: s.boxShadow, glyph: getComputedStyle(e.querySelector('svg')!).color };
+        });
+      const states = [
+        { button: minimize, hover: colours.hover, pressed: colours.pressed },
+        { button: maximize, hover: colours.hover, pressed: colours.pressed },
+        { button: close, hover: colours.close, pressed: colours.closePressed },
+      ];
+      for (const { button, hover, pressed } of states) {
+        const name = await button.getAttribute('aria-label');
+        await page.mouse.move(5, 300);
+        await expect.poll(async () => (await looks(button)).filter, `${name} at rest`).toBe('none');
+        expect((await looks(button)).shadow, `${name} at rest`).toBe('none');
+
+        await button.hover();
+        await expect.poll(async () => (await looks(button)).background, `${name} on hover`).toBe(hover);
+        expect((await looks(button)).filter, `${name} on hover`).toBe('none');
+        expect((await looks(button)).shadow, `${name} on hover`).toBe('none');
+        if (button === close) expect((await looks(button)).glyph, 'white close glyph').toBe('rgb(255, 255, 255)');
+
+        await page.mouse.down();
+        await expect.poll(async () => (await looks(button)).background, `${name} pressed`).toBe(pressed);
+        expect((await looks(button)).filter, `${name} pressed`).toBe('none');
+        expect((await looks(button)).shadow, `${name} pressed`).toBe('none');
+        await page.mouse.move(5, 300);
+        await page.mouse.up();
+      }
+    });
+  }
+
   // plan-wsl_support/REQ-28, REQ-34, TopBar: a look change moves the buttons at once
   test('a look change moves the buttons: macOS buttons before the logo in the current look, Windows-style at the right end in the Windows 11 look', async ({ page }) => {
     await page.goto('/');
@@ -658,7 +709,7 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
     const macRed = (await close.boundingBox())!;
     expect(macRed.width, 'a 12 px macOS circle').toBeCloseTo(12, 0);
     expect(macRed.x + macRed.width).toBeLessThan(await logoX());
-    expect(await close.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe('rgb(255, 95, 87)');
+    expect(await close.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe('rgb(224, 68, 60)');
     const macOrder = await Promise.all([close, minimize, maximize].map(async (b) => (await b.boundingBox())!.x));
     expect(macOrder[0]).toBeLessThan(macOrder[1]!);
     expect(macOrder[1]).toBeLessThan(macOrder[2]!);
