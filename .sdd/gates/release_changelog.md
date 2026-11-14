@@ -12,3 +12,4 @@
 | 2026-11-14 | plan | G3 coverage | sent back | batch-notice-changelogs INT-8: styling lives in `src/web/styles.css`, not the component |
 | 2026-11-14 | plan | G3 coverage | pass | |
 | 2026-11-14 | dev | G4 release-instruction | pass | only `CLAUDE.md`; `tsc -b` green |
+| 2026-11-14 | test | G5 release-instruction | pass | prose-only batch, no tests; `CLAUDE.md` checked by the gatekeeper against REQ-1..REQ-6 |
