@@ -11,7 +11,7 @@ Requirements: `requirements.md`.
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [release-instruction](batches/batch-release-instruction.md) | Changelog instruction for releases | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6 | — | todo | A requested release carries a changelog |
+| [release-instruction](batches/batch-release-instruction.md) | Changelog instruction for releases | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6 | — | implemented | A requested release carries a changelog |
 | [notice-changelogs](batches/batch-notice-changelogs.md) | Changelogs in the newer version notice | REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17 | — | todo | The user reads what changed in the missing versions |
 
 Execution order: release-instruction, then notice-changelogs. The two batches do not depend on each other. The first one sets the markup subset that the second one renders.

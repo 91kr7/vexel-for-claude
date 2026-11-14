@@ -11,3 +11,4 @@
 | 2026-11-14 | plan | G2 requirements | pass | REQ-15, REQ-17 keep `plan-update_check` REQ-10, REQ-12 constraints; no new scope |
 | 2026-11-14 | plan | G3 coverage | sent back | batch-notice-changelogs INT-8: styling lives in `src/web/styles.css`, not the component |
 | 2026-11-14 | plan | G3 coverage | pass | |
+| 2026-11-14 | dev | G4 release-instruction | pass | only `CLAUDE.md`; `tsc -b` green |
