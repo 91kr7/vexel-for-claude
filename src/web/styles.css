@@ -423,7 +423,7 @@ input {
 
 .top-bar {
   flex: none;
-  height: 48px;
+  height: 44px;
   padding: 0 14px;
   display: flex;
   align-items: center;
@@ -905,13 +905,13 @@ input {
 
 .update-notice {
   position: fixed;
-  top: 60px;
+  top: 56px;
   right: 20px;
   z-index: 50;
   width: 320px;
   max-width: calc(100vw - 40px);
   /* The window below the 48 px top bar, minus 24 px. */
-  max-height: calc(100vh - 72px);
+  max-height: calc(100vh - 68px);
   display: flex;
   align-items: flex-start;
   gap: 12px;

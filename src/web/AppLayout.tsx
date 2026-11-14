@@ -163,7 +163,6 @@ export function AppLayout() {
   return (
     <div className="app">
       <TopBar
-        onNewSession={() => setChoosingFolder(true)}
         shortcutsPanelOpen={showingShortcuts}
         onToggleShortcutsPanel={toggleShortcuts}
         planUsageOpen={showingPlanUsage}
