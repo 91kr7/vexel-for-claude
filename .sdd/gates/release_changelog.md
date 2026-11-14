@@ -17,3 +17,5 @@
 | 2026-11-14 | dev | divergence developer — INT-4 no code | decided | Route already forwards the result; spec updated only |
 | 2026-11-14 | dev | divergence developer — paging cap, duplicates | decided | 10-page cap and duplicate drop accepted: guards, no visible change |
 | 2026-11-14 | dev | G4 notice-changelogs | pass | files match INT-1..INT-8; `tsc -b` + vite build green |
+| 2026-11-14 | test | question tester — 2 e2e failures outside perimeter | decided | `terminal-search.spec.ts:161`, `session-action-shortcuts-resume.spec.ts:165` pass on re-run on the branch: intermittent, not a regression |
+| 2026-11-14 | test | G5 notice-changelogs | pass | test files only; batch unit 145/145, batch e2e 17/17 re-run; full unit 3277 green |
