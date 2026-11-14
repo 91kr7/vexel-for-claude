@@ -1,0 +1,343 @@
+<title>Vexel Project Row</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the current app shell with only the four agreed changes, then a before/after strip for each change.
+   Tokens from src/web/theme/tokens.css (dark default, light under data-theme light). */
+:root {
+  --font-ui: 'Roboto Flex', system-ui, sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, monospace;
+  --bg-canvas: #f4f1ea; --bg-surface-1: #fcfaf5; --bg-surface-2: #efeae0; --bg-surface-3: #e4ded2;
+  --border-subtle: rgba(28,25,23,0.08); --border-strong: rgba(28,25,23,0.15);
+  --text-primary: #1c1917; --text-secondary: #57534e; --text-muted: #67625c;
+  --accent: #0065ae; --accent-glow: rgba(0,101,174,0.12); --accent-border: rgba(0,101,174,0.35); --on-accent: #fff;
+  --ok: #065f46; --ok-bg: rgba(16,185,129,0.15); --amber: #92400e; --amber-glow: rgba(146,64,14,0.35);
+  --rose: #9f1239; --rose-bg: rgba(244,63,94,0.1); --orange: #b62a12;
+  --term-bg: #0b0b0e; --term-fg: #f3f2ee; --term-dim: #898894; --term-accent: #8ccfff; --term-warn: #fb923c;
+  --dot: rgba(28,25,23,0.08); --mark: #b42318;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg-canvas: #0b0b0e; --bg-surface-1: #121216; --bg-surface-2: #18181f; --bg-surface-3: #21212b;
+  --border-subtle: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.13);
+  --text-primary: #f3f2ee; --text-secondary: #a1a0ab; --text-muted: #898894;
+  --accent: #8ccfff; --accent-glow: rgba(140,207,255,0.16); --accent-border: rgba(140,207,255,0.42); --on-accent: #0b0b0e;
+  --ok: #34d399; --amber: #fbbf24; --amber-glow: rgba(251,191,36,0.45); --rose: #fb7185; --rose-bg: rgba(244,63,94,0.15);
+  --orange: #fb923c; --dot: rgba(255,255,255,0.05); --mark: #f97066; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg-canvas: #0b0b0e; --bg-surface-1: #121216; --bg-surface-2: #18181f; --bg-surface-3: #21212b;
+  --border-subtle: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.13);
+  --text-primary: #f3f2ee; --text-secondary: #a1a0ab; --text-muted: #898894;
+  --accent: #8ccfff; --accent-glow: rgba(140,207,255,0.16); --accent-border: rgba(140,207,255,0.42); --on-accent: #0b0b0e;
+  --ok: #34d399; --amber: #fbbf24; --amber-glow: rgba(251,191,36,0.45); --rose: #fb7185; --rose-bg: rgba(244,63,94,0.15);
+  --orange: #fb923c; --dot: rgba(255,255,255,0.05); --mark: #f97066; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg-canvas); color: var(--text-primary); font-family: var(--font-ui); font-size: 13px;
+  padding-block: 24px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button { font: inherit; color: inherit; }
+svg { width: 16px; height: 16px; flex: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.page { max-width: 1320px; margin: 0 auto; display: grid; gap: 22px; }
+.intro { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+.intro h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+.intro p { margin: 0; color: var(--text-secondary); max-width: 72ch; line-height: 1.5; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 9px; background: var(--bg-surface-2); border: 1px solid var(--border-subtle); }
+.seg button { border: 0; background: transparent; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text-secondary); }
+.seg button[aria-pressed="true"] { background: var(--bg-surface-1); color: var(--text-primary); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+
+.frame-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-strong); }
+.app { min-width: 1100px; height: 720px; display: grid; grid-template-rows: 44px minmax(0, 1fr); background: var(--bg-canvas); }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px; background: var(--bg-surface-2); border-bottom: 1px solid var(--border-subtle); }
+.brand { display: flex; align-items: center; gap: 8px; }
+.logo { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+.brand b { font-weight: 600; font-size: 14px; }
+.brand span { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+.tools { display: flex; gap: 6px; }
+
+/* window buttons: glossy lights, macOS style */
+:root { --wb-symbol: rgba(0,0,0,0.55); }
+.wbs { display: flex; gap: 8px; margin-right: 6px; padding: 4px; }
+/* Golden Gate style (from reference image): flat solid circles, no gloss or shadow, faint lighter rim */
+:root { --wb-close: #e0443c; --wb-min: #e8b616; --wb-max: #25b033; }
+.wb { position: relative; width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; color: var(--wb-symbol);
+  display: grid; place-items: center; background: var(--c);
+  box-shadow: 0 0 0 0.5px color-mix(in srgb, var(--c) 45%, #fff); }
+.wb.close { --c: var(--wb-close); } .wb.min { --c: var(--wb-min); } .wb.max { --c: var(--wb-max); }
+.wb svg { width: 7px; height: 7px; opacity: 0; transition: opacity .12s; }
+.wbs:hover .wb svg, .wbs.force .wb svg { opacity: 1; }
+.wb { transition: box-shadow .2s ease, filter .2s ease; }
+.wb:hover, .wbs.force .wb.close { filter: brightness(1.08);
+  box-shadow: 0 0 0 0.5px color-mix(in srgb, var(--c) 45%, #fff), 0 0 8px 1px color-mix(in srgb, var(--c) 60%, transparent); }
+.wb:active { filter: brightness(.85); }
+.wb-old { display: flex; gap: 8px; padding: 4px; margin-right: 6px; }
+.wb-old span { width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+.tb { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--border-subtle); background: var(--bg-surface-1); color: var(--text-secondary); display: grid; place-items: center; cursor: pointer; }
+.tb:hover { background: var(--bg-surface-3); color: var(--text-primary); }
+.tb svg { width: 15px; height: 15px; }
+
+.body { display: grid; grid-template-columns: 52px 224px minmax(0, 1fr); min-height: 0; }
+.rail { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0; background: var(--bg-surface-1); border-right: 1px solid var(--border-subtle); }
+.fab { width: 34px; height: 34px; border-radius: 10px; border: 0; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; cursor: pointer; margin-bottom: 8px; }
+.rb { position: relative; width: 34px; height: 34px; border-radius: 9px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); display: grid; place-items: center; cursor: pointer; }
+.rb:hover { background: var(--bg-surface-2); }
+.rb.on { color: var(--accent); background: var(--accent-glow); border-color: var(--accent-border); }
+.rb.on::before { content: ""; position: absolute; left: -10px; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
+
+.panel { display: flex; flex-direction: column; min-height: 0; background: var(--bg-surface-1); border-right: 1px solid var(--border-subtle); overflow-y: auto; }
+.sec { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-secondary); padding: 14px 16px 6px; }
+.sec.sub { padding-top: 6px; color: var(--text-muted); }
+.search { margin: 4px 10px 8px; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 8px; background: var(--bg-surface-2); border: 1px solid var(--border-subtle); color: var(--text-muted); }
+.search input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); }
+.scroll { padding: 0 8px 12px; display: grid; align-content: start; gap: 2px; }
+
+.sitem { position: relative; }
+.sentry { display: grid; gap: 3px; width: 100%; text-align: left; padding: 8px 10px; border-radius: 8px; border: 1px solid transparent; background: transparent; cursor: pointer; }
+.sentry:hover, .force .sentry { background: var(--bg-surface-2); }
+.sentry.open { background: var(--accent-glow); border-color: var(--accent-border); }
+.line { display: flex; align-items: center; gap: 6px; min-width: 0; padding-right: 22px; }
+.sdot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+.sdot.idle { background: var(--text-muted); }
+.sname { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); min-width: 0; }
+.detail .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.detail b { font-family: var(--font-mono); font-weight: 500; color: var(--text-primary); }
+.detail .t { margin-left: auto; color: var(--text-muted); white-space: nowrap; font-family: var(--font-mono); font-size: 10px; }
+.tool { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prog { height: 3px; border-radius: 99px; background: var(--bg-surface-3); overflow: hidden; margin-top: 3px; }
+.prog i { display: block; width: 22%; height: 100%; background: var(--ok); border-radius: inherit; animation: slide 1.6s ease-in-out infinite; }
+@keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(460%); } }
+.rename { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 4px; border: 0; background: transparent; color: var(--text-muted); display: grid; place-items: center; cursor: pointer; opacity: 0; }
+.rename svg { width: 13px; height: 13px; }
+.sitem:hover .rename, .force .rename { opacity: 1; }
+.rename:hover { background: var(--bg-surface-3); color: var(--text-primary); }
+
+.star { flex: none; width: 20px; height: 20px; margin: -2px 0; padding: 0; border: 0; border-radius: 5px; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--text-muted); opacity: 0; transition: opacity .12s, color .12s, transform .12s; }
+.star svg { width: 13px; height: 13px; }
+.star .fill { fill: transparent; transition: fill .15s; }
+.sitem:hover .star, .prow:hover .star, .star:focus-visible, .force .star { opacity: .7; }
+.star:hover { opacity: 1 !important; color: var(--amber); transform: scale(1.12); }
+.star.on { opacity: 1; color: var(--amber); }
+.star.on .fill { fill: currentColor; }
+.star.pop { animation: pop .32s ease-out; }
+@keyframes pop { 50% { transform: scale(1.3); filter: drop-shadow(0 0 6px var(--amber-glow)); } }
+
+.prow { position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; padding: 9px 36px 9px 8px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; text-align: left; }
+.prow:hover, .prow.force { background: var(--bg-surface-2); border-color: var(--border-subtle); }
+.av { width: 24px; height: 24px; border-radius: 6px; background: var(--bg-surface-3); display: grid; place-items: center; font-size: 10px; font-weight: 600; margin-top: 2px; font-family: var(--font-mono); }
+.pmain { min-width: 0; display: grid; gap: 2px; }
+.phead { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.pname { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ppath { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pmeta { font-size: 11px; color: var(--text-secondary); }
+.rm { position: absolute; top: 50%; right: 8px; width: 22px; height: 22px; margin-top: -11px; padding: 0; border: 1px solid transparent; border-radius: 50%; background: transparent; color: var(--text-muted); display: grid; place-items: center; cursor: pointer; opacity: 0; transform: scale(.85); transition: opacity .12s, transform .12s, background-color .12s, color .12s; }
+.rm svg { width: 10px; height: 10px; }
+.prow:hover .rm, .prow.force .rm, .rm:focus-visible { opacity: 1; transform: scale(1); }
+.rm:hover, .force-rm .rm { background: var(--rose-bg); color: var(--rose); border-color: var(--rose-bg); }
+.gone { opacity: .4; pointer-events: none; }
+
+.area { display: flex; flex-direction: column; min-width: 0; min-height: 0;
+  background-color: var(--bg-canvas); background-image: radial-gradient(var(--dot) 1px, transparent 1px); background-size: 16px 16px; }
+.shead { flex: none; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--border-subtle); }
+.shead strong { font-weight: 600; }
+.chip { font-family: var(--font-mono); font-size: 10px; padding: 2px 6px; border-radius: 5px; border: 1px solid var(--border-strong); color: var(--text-secondary); }
+.shead .sp { flex: 1; }
+.pill { font-family: var(--font-mono); font-size: 11px; padding: 3px 9px; border-radius: 6px; border: 1px solid; display: inline-flex; align-items: center; gap: 6px; }
+.pill.run { color: var(--ok); border-color: var(--ok-bg); background: var(--ok-bg); }
+.pill.int { color: var(--orange); border-color: var(--orange); background: transparent; }
+.pill.term { color: var(--rose); border-color: var(--rose); background: var(--rose-bg); }
+.panel-term { flex: 1; min-height: 0; margin: 16px; padding: 12px 14px; border-radius: 8px; background: var(--term-bg); color: var(--term-fg);
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.6; overflow: hidden; outline: 2px solid var(--accent); outline-offset: 2px; display: flex; flex-direction: column; }
+.panel-term p { margin: 0 0 10px; white-space: pre-wrap; }
+.panel-term .d { color: var(--term-dim); }
+.panel-term .a { color: var(--term-accent); }
+.panel-term .w { color: var(--term-warn); }
+.panel-term .prompt { margin-top: auto; border-top: 1px solid rgba(255,255,255,.15); border-bottom: 1px solid rgba(255,255,255,.15); padding: 6px 0; }
+.cursor { display: inline-block; width: 7px; height: 14px; background: var(--term-accent); vertical-align: -2px; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.foot { flex: none; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: var(--bg-surface-1); border-top: 1px solid var(--border-subtle); font-size: 11px; }
+.foot .path { font-family: var(--font-mono); color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.foot .chip { white-space: nowrap; }
+.foot .z { margin-left: auto; display: flex; gap: 12px; font-family: var(--font-mono); color: var(--text-secondary); }
+
+.changes { display: grid; gap: 14px; }
+.change { display: grid; grid-template-columns: 220px minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; padding: 16px; border-radius: 12px; background: var(--bg-surface-1); border: 1px solid var(--border-subtle); }
+@media (max-width: 860px) { .change { grid-template-columns: minmax(0, 1fr); } }
+.change h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+.change p { margin: 0; color: var(--text-secondary); line-height: 1.5; font-size: 12px; }
+.lab { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+.lab.after { color: var(--accent); }
+.box { border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-surface-1); padding: 6px; min-width: 0; overflow: hidden; display: grid; gap: 2px; }
+.old-top, .new-top { display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 0 10px; background: var(--bg-surface-2); border-radius: 6px; }
+.old-top { height: 48px; } .new-top { height: 44px; }
+.btn-ns { height: 30px; padding: 0 12px; border-radius: 7px; background: var(--accent); color: var(--on-accent); border: 0; font-size: 12px; font-weight: 500; white-space: nowrap; outline: 2px dashed var(--mark); outline-offset: 2px; }
+.dim { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-right: auto; }
+.old-prow { position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; padding: 9px 8px; border-radius: 8px; background: var(--bg-surface-2); border: 1px solid var(--border-subtle); }
+.old-go { position: absolute; top: 50%; right: 58px; transform: translateY(-50%); padding: 5px 8px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.old-acts { position: absolute; top: 26px; right: 8px; display: flex; gap: 4px; color: var(--text-muted); }
+.old-acts span, .old-sicons span { width: 20px; height: 20px; border-radius: 4px; background: var(--bg-surface-3); display: grid; place-items: center; }
+.old-acts svg, .old-sicons svg { width: 12px; height: 12px; }
+.old-sentry { position: relative; display: grid; gap: 3px; padding: 8px 10px; border-radius: 8px; background: var(--accent-glow); border: 1px solid var(--accent-border); }
+.old-sicons { position: absolute; top: 6px; right: 6px; display: flex; gap: 2px; color: var(--text-muted); }
+.mini-area { height: 150px; display: flex; flex-direction: column; border-radius: 6px; overflow: hidden; background: var(--bg-canvas); }
+.mini-term { flex: 1; min-height: 0; margin: 10px 10px 0; border-radius: 6px; background: var(--term-bg); color: var(--term-dim); font-family: var(--font-mono); font-size: 10px; padding: 8px; outline: 2px solid var(--accent); outline-offset: 2px; position: relative; z-index: 1; }
+.mini-term.fixed { margin-bottom: 10px; }
+.mini-foot { flex: none; height: 28px; background: var(--bg-surface-1); border-top: 1px solid var(--border-subtle); font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); display: flex; align-items: center; padding: 0 10px; position: relative; }
+.overlap { position: absolute; left: 6px; right: 6px; top: -6px; height: 10px; border: 1.5px dashed var(--mark); border-radius: 4px; z-index: 2; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="page">
+  <div class="intro">
+    <div>
+      <h1>Vexel: modifiche concordate</h1>
+      <p>L'app com'è oggi, con solo quattro modifiche: top bar da 44 px senza "New Session", riga progetto nuova, stella accanto al nome nelle sessioni e margine sotto il terminale. Il mock è cliccabile: cambia vista dalla rail e prova stella e X.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Tema">
+      <button id="t-auto" aria-pressed="true">Sistema</button>
+      <button id="t-light" aria-pressed="false">Chiaro</button>
+      <button id="t-dark" aria-pressed="false">Scuro</button>
+    </div>
+  </div>
+
+  <div class="frame-wrap">
+    <div class="app">
+      <header class="top">
+        <div class="brand"><span class="wbs" id="wbs-main"></span><span class="logo">VX</span><b>Vexel</b><span>for Claude&nbsp;&nbsp;v0.4.0</span></div>
+        <div class="tools">
+          <button class="tb" aria-label="Shortcuts"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="4" width="13" height="8.5" rx="1.5"/><path d="M4 7h1M7 7h1M10 7h2M4.5 10h7" stroke-linecap="round"/></svg></button>
+          <button class="tb" id="theme-btn" aria-label="Theme"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg></button>
+          <button class="tb" aria-label="Layout"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M1.5 6h13"/></svg></button>
+          <button class="tb" aria-label="Plan usage"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2.5 11a5.5 5.5 0 1 1 11 0M8 11l2.5-3"/></svg></button>
+        </div>
+      </header>
+      <div class="body">
+        <nav class="rail">
+          <button class="fab" aria-label="New session"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></button>
+          <button class="rb on" id="nav-s" aria-label="Sessions"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5l3.5 3.5-3.5 3.5M8 12h5.5"/></svg></button>
+          <button class="rb" id="nav-p" aria-label="Projects"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M1.5 4.5a1 1 0 0 1 1-1h3.5l1.5 1.5h6a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"/></svg></button>
+          <button class="rb" aria-label="Resume"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v2.5H5M8 5v3l2 1.5"/></svg></button>
+        </nav>
+        <section class="panel" id="panel"></section>
+        <main class="area">
+          <div class="shead"><strong>vexel-for-claude</strong><span class="chip">Changelog</span><span class="sp"></span>
+            <span class="pill run">● Running</span><span class="pill int">◎ Interrupt</span><span class="pill term">■ Terminate</span></div>
+          <div class="panel-term">
+            <p><span class="a">●</span> Ho rifatto il mock con la tua proposta, allo stesso link.</p>
+            <p>  - <b>Clic sulla riga:</b> avvia la sessione.
+  - <b>Stella:</b> accanto al nome, si accende al clic.
+  - <b>X:</b> cerchietto da 22 px, rosso tenue in hover.</p>
+            <p class="d">✻ Brewed for 50s · done 11:33 p.m.</p>
+            <p style="background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px">› usa /sdd-auto solo per togliere il new-session e 44px topbar</p>
+            <p class="w">· Thundering… (32s · ↓ 2.0k tokens)</p>
+            <div class="prompt">› <span class="cursor"></span></div>
+            <p class="d" style="margin:8px 0 0"><span class="w">▸▸</span> auto mode on (shift+tab to cycle) · esc to interrupt</p>
+          </div>
+          <footer class="foot"><span class="path">/home/christian.mariani/.local/app/vexel-for-claude</span><span class="chip">Context 91.2k / 1M · 9%</span><span class="chip">1M tokens</span><span class="chip">$1.06</span><span class="z"><span>−</span><span>12 px</span><span>+</span></span></footer>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <div class="changes">
+    <div class="change">
+      <div><h3>1 · Top bar</h3><p>Altezza da 48 a 44 px. Il pulsante "New Session" sparisce: resta il "+" della rail.</p></div>
+      <div><div class="lab">Prima</div><div class="box"><div class="old-top"><span class="dim">48 px</span><span class="tb"></span><span class="tb"></span><span class="tb"></span><span class="tb"></span><button class="btn-ns" tabindex="-1">+ New Session</button></div></div></div>
+      <div><div class="lab after">Dopo</div><div class="box"><div class="new-top"><span class="dim">44 px</span><span class="tb"></span><span class="tb"></span><span class="tb"></span><span class="tb"></span></div></div></div>
+    </div>
+    <div class="change">
+      <div><h3>1b · Pulsanti finestra</h3><p>Solo nell'app desktop, nello stile di macOS 27 Golden Gate (dall'immagine di riferimento): cerchi piatti a tinta piena, colori più saturi, un bordino chiaro appena visibile. Nessun riflesso né ombra. In hover compaiono i simboli e il pulsante sotto il mouse si illumina con un alone del suo colore. Prova sui semafori della top bar qui sopra.</p></div>
+      <div><div class="lab">Prima</div><div class="box"><div class="new-top" style="justify-content:flex-start"><span class="wb-old"><span style="--c:#ff5f57"></span><span style="--c:#febc2e"></span><span style="--c:#28c840"></span></span><span class="logo">VX</span></div></div></div>
+      <div><div class="lab after">Dopo (hover su chiudi)</div><div class="box"><div class="new-top" style="justify-content:flex-start"><span class="wbs force" id="wbs-demo"></span><span class="logo">VX</span></div></div></div>
+    </div>
+    <div class="change">
+      <div><h3>2 · Riga progetto</h3><p>Niente pill "New session": si clicca la riga. La stella sta accanto al nome e si accende al clic. Resta solo la X rotonda, rossa tenue in hover.</p></div>
+      <div><div class="lab">Prima (hover)</div><div class="box" id="old-prow"></div></div>
+      <div><div class="lab after">Dopo (hover)</div><div class="box" id="new-prow"></div></div>
+    </div>
+    <div class="change">
+      <div><h3>3 · Stella nelle sessioni</h3><p>La stella esce dall'angolo in alto a destra e va accanto al nome, come nei progetti. In alto a destra resta solo la matita per rinominare.</p></div>
+      <div><div class="lab">Prima (hover)</div><div class="box" id="old-sentry"></div></div>
+      <div><div class="lab after">Dopo (hover)</div><div class="box" id="new-sentry"></div></div>
+    </div>
+    <div class="change">
+      <div><h3>4 · Margine del terminale</h3><p>Oggi il pannello non ha margine sotto: il bordo di focus (2 px più 2 px di distanza) finisce sopra il footer. Il margine diventa 16 px, come sugli altri lati.</p></div>
+      <div><div class="lab">Prima</div><div class="box"><div class="mini-area"><div class="mini-term">› _</div><div class="mini-foot"><span class="overlap"></span>/home/…/vexel-for-claude</div></div></div></div>
+      <div><div class="lab after">Dopo</div><div class="box"><div class="mini-area"><div class="mini-term fixed">› _</div><div class="mini-foot">/home/…/vexel-for-claude</div></div></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const IC = {
+  star: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path class="fill" d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>',
+  starO: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>',
+  x: '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 2l6 6M8 2L2 8"/></svg>',
+  x12: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
+  pen: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M10.5 2.5l3 3-8 8H2.5v-3z"/></svg>',
+  search: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3 3"/></svg>',
+};
+const S = [
+  { n: 'vexel-for-claude', l: 'Changelog', ctx: '9%', cost: '$1.06', t: 'Just now', tool: 'Bash: npm test -- ProjectList', run: true, fav: false, open: true },
+  { n: 'SP-VAPT', l: 'Refactor auth middleware', ctx: '64%', cost: '$3.41', t: '4m ago', tool: 'Read: src/auth/session.ts', run: true, fav: true },
+  { n: 'CH-VAPT', l: 'Report findings Q4', ctx: '31%', cost: '$0.72', t: '37m ago', run: false, fav: false },
+];
+const P = [
+  { n: 'vexel-for-claude', p: '/home/christian.mariani/.local/app/vexel-for-claude', t: '7m ago', fav: true, av: 'VF' },
+  { n: 'SP-VAPT', p: '/home/christian.mariani/work/vapt/SP-VAPT', t: '13/11/2026', fav: true, av: 'SV' },
+  { n: 'CH-VAPT', p: '/home/christian.mariani/work/vapt/CH-VAPT', t: '37m ago', fav: false, av: 'CV' },
+  { n: 'PT-VAPT', p: '/home/christian.mariani/work/vapt/PT-VAPT', t: '37m ago', fav: false, av: 'PV' },
+  { n: 'VAPT-Skills-E2E', p: '/home/christian.mariani/work/vapt/VAPT-Skills-E2E', t: '13/11/2026', fav: false, av: 'VS' },
+  { n: 'iiab-ch-dmm-datamigration', p: '/home/christian.mariani/work/iiab/iiab-ch-dmm-datamigration', t: '13/11/2026', fav: false, av: 'IC' },
+  { n: 'PT-anag-migration', p: '/home/christian.mariani/work/PT-anag-migration', t: '12/11/2026', fav: false, av: 'PA' },
+];
+const star = (on) => `<button class="star ${on ? 'on' : ''}" aria-pressed="${on}" aria-label="${on ? 'Remove Favorite' : 'Mark as Favorite'}">${IC.star}</button>`;
+const sentry = (s, extra = '') => `<div class="sitem ${extra}"><div class="sentry ${s.open ? 'open' : ''}" role="button" tabindex="0">
+  <span class="line"><span class="sdot ${s.run ? '' : 'idle'}"></span><span class="sname">${s.n}</span>${star(s.fav)}</span>
+  <span class="detail"><span class="lbl">${s.l}</span><b>${s.ctx}</b><span>· ${s.cost}</span><span class="t">${s.t}</span></span>
+  ${s.tool ? `<span class="tool">${s.tool}</span>` : ''}${s.run ? '<span class="prog"><i></i></span>' : ''}</div>
+  <button class="rename" aria-label="Rename">${IC.pen}</button></div>`;
+const prow = (p, extra = '') => `<div class="prow ${extra}" role="button" tabindex="0"><span class="av">${p.av}</span>
+  <span class="pmain"><span class="phead"><span class="pname">${p.n}</span>${star(p.fav)}</span><span class="ppath">${p.p}</span><span class="pmeta">Last activity ${p.t}</span></span>
+  <button class="rm" aria-label="Remove from Projects">${IC.x}</button></div>`;
+
+const WB = `<button class="wb close" aria-label="Close"><svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 2l4 4M6 2L2 6"/></svg></button>
+  <button class="wb min" aria-label="Minimize"><svg viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M1.8 4h4.4"/></svg></button>
+  <button class="wb max" aria-label="Maximize"><svg viewBox="0 0 8 8" fill="currentColor"><path d="M2 2h3L2 5zM6 6H3l3-3z"/></svg></button>`;
+document.getElementById('wbs-main').innerHTML = WB;
+document.getElementById('wbs-demo').innerHTML = WB;
+let view = 'sessions';
+function render() {
+  const el = document.getElementById('panel');
+  el.innerHTML = view === 'sessions'
+    ? `<div class="sec">Sessions</div><div class="sec sub">Running</div><div class="scroll">${S.filter((s) => s.run).map((s) => sentry(s)).join('')}</div><div class="sec sub">Idle</div><div class="scroll">${S.filter((s) => !s.run).map((s) => sentry(s)).join('')}</div>`
+    : `<div class="sec">Projects</div><label class="search">${IC.search}<input id="q" placeholder="Search projects" aria-label="Search projects"></label><div class="scroll">${P.map((p) => prow(p)).join('')}</div>`;
+  document.getElementById('nav-s').classList.toggle('on', view === 'sessions');
+  document.getElementById('nav-p').classList.toggle('on', view === 'projects');
+  const q = document.getElementById('q');
+  if (q) q.addEventListener('input', () => { const v = q.value.toLowerCase(); el.querySelectorAll('.prow').forEach((r, i) => { r.hidden = !P[i].p.toLowerCase().includes(v); }); });
+}
+document.getElementById('nav-s').onclick = () => { view = 'sessions'; render(); };
+document.getElementById('nav-p').onclick = () => { view = 'projects'; render(); };
+render();
+
+document.getElementById('old-prow').innerHTML = `<div class="old-prow"><span class="av">VF</span><span class="pmain"><span class="phead"><span class="pname">vexel-for-claude</span><span style="color:var(--amber);font-size:12px">★</span></span><span class="ppath">${P[0].p}</span><span class="pmeta">Last activity 28m ago</span></span><span class="old-go">▶ New session</span><span class="old-acts"><span>${IC.starO}</span><span>${IC.x12}</span></span></div>`;
+document.getElementById('new-prow').innerHTML = prow(P[0], 'force') + prow(P[2], 'force force-rm');
+document.getElementById('old-sentry').innerHTML = `<div class="old-sentry"><span class="line"><span class="sdot"></span><span class="sname">vexel-for-claude</span></span><span class="detail"><span class="lbl">Changelog</span><b>9%</b><span>· $1.06</span><span class="t">Just now</span></span><span class="tool">Bash: npm test -- ProjectList</span><span class="old-sicons"><span>${IC.starO}</span><span>${IC.pen}</span></span></div>`;
+document.getElementById('new-sentry').innerHTML = sentry(S[0], 'force') + sentry(S[1]);
+
+document.addEventListener('click', (e) => {
+  const st = e.target.closest('.star');
+  if (st) { e.stopPropagation(); const on = st.classList.toggle('on'); st.setAttribute('aria-pressed', String(on));
+    st.classList.remove('pop'); void st.offsetWidth; if (on) st.classList.add('pop'); return; }
+  const x = e.target.closest('.rm');
+  if (x) { e.stopPropagation(); x.parentElement.classList.add('gone'); }
+});
+const root = document.documentElement;
+const setTheme = (t) => { if (t === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', t);
+  ['auto', 'light', 'dark'].forEach((k) => document.getElementById('t-' + k).setAttribute('aria-pressed', String(k === t))); };
+['auto', 'light', 'dark'].forEach((k) => document.getElementById('t-' + k).addEventListener('click', () => setTheme(k)));
+document.getElementById('theme-btn').addEventListener('click', () => {
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  setTheme(dark ? 'light' : 'dark'); });
+</script>
