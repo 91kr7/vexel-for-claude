@@ -28,3 +28,4 @@
 | 2026-11-15 | dev session-star | question tester Q2 | decided | REQ-33 keeps current logic (any 2xx ok): align the FavoriteButton spec to the code |
 | 2026-11-15 | dev session-star | G4 development (fix) | pass | CSS-only fix plus spec alignment; build green |
 | 2026-11-15 | dev session-star | G5 tests (round 2) | pass | 557 unit + 467 e2e green; no only/skip; re-run favorite-session 24 passed |
+| 2026-11-15 | dev terminal | G4 development | pass | One CSS line plus spec; build green |

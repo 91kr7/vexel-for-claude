@@ -2048,7 +2048,7 @@ input {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  margin: 16px 16px 0;
+  margin: 16px;
   padding: 12px;
   border-radius: 8px;
   border: 1px solid var(--border-subtle);
