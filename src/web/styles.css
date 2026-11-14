@@ -1372,6 +1372,7 @@ input {
 
 .session-list li {
   position: relative;
+  anchor-scope: --session-star;
 }
 
 .session-list li.dragging {
@@ -1660,45 +1661,32 @@ input {
   height: 14px;
 }
 
-.entry-favorite {
-  position: absolute;
-  top: 5px;
-  right: 28px;
+.session-entry-star-slot {
+  flex: none;
   width: 20px;
   height: 20px;
-  border-radius: 4px;
-  color: var(--text-muted);
-  background-color: var(--bg-surface-2);
-  opacity: 0;
-  transition: opacity 0.12s ease;
+  margin: -1px auto -1px -4px;
+  anchor-name: --session-star;
 }
 
-.session-list li:hover > .entry-favorite,
-.session-list li:has(:focus-visible) > .entry-favorite,
-.entry-favorite[aria-busy] {
-  opacity: 1;
-}
-
-.entry-favorite:hover {
-  background-color: var(--bg-surface-3);
-  color: var(--text-primary);
-}
-
-.entry-favorite[aria-disabled='true'] {
-  cursor: default;
-}
-
-.entry-favorite .icon {
-  width: 14px;
-  height: 14px;
+.entry-favorite {
+  position: absolute;
+  position-anchor: --session-star;
+  top: anchor(top);
+  left: anchor(left);
 }
 
 .entry-favorite-error {
   padding: 2px 8px 0 24px;
 }
 
+.session-card > .entry-favorite-error {
+  order: 1;
+  padding: 0;
+}
+
 .session-list li:has(> .entry-rename:not([hidden])) .ended-entry-actions {
-  right: 50px;
+  right: 28px;
 }
 
 .session-list li:has(> .session-card) > .entry-rename {
@@ -1706,12 +1694,7 @@ input {
   right: 10px;
 }
 
-.session-list li:has(> .session-card) > .entry-favorite {
-  top: 10px;
-  right: 32px;
-}
-
-.session-entry-title:has(+ .favorite-indicator) {
+.session-entry-title:has(+ .session-entry-star-slot) {
   flex: 0 1 auto;
 }
 

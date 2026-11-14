@@ -5,7 +5,6 @@ import { useSessionCommand } from '../shortcut-channel';
 import { folderNameOf } from './Avatar';
 import { EndedEntryActions } from './EndedEntryActions';
 import { FavoriteButton } from './FavoriteButton';
-import { FavoriteIndicator } from './FavoriteIndicator';
 import type { ContextOccupancy, LoadStatus, RunningTool, SessionSummary, SessionUsage } from './live-session-store';
 import { ProgressBar } from './ProgressBar';
 import { RelativeTime } from './RelativeTime';
@@ -43,7 +42,7 @@ function EntryHeading({ session }: { session: SessionSummary }) {
   return (
     <>
       <EntryTitle session={session} />
-      {session.favorite === true && <FavoriteIndicator />}
+      <span className="session-entry-star-slot" aria-hidden="true" />
     </>
   );
 }
@@ -85,9 +84,10 @@ interface EntryProps {
   open: boolean;
   onOpen: (sessionId: string) => void;
   editor?: ReactNode;
+  star: ReactNode;
 }
 
-function EntryRow({ session, open, onOpen, editor }: EntryProps) {
+function EntryRow({ session, open, onOpen, editor, star }: EntryProps) {
   const externalNeedsInput = session.external === true && session.state === 'needs_input';
   const content = (
     <>
@@ -111,21 +111,23 @@ function EntryRow({ session, open, onOpen, editor }: EntryProps) {
       {session.state === 'working' && !session.external && <ProgressBar />}
     </>
   );
-  if (editor) {
-    return (
-      <div className={entryClass(session)} aria-current={open ? 'true' : undefined}>
-        {content}
-      </div>
-    );
-  }
   return (
-    <button type="button" className={entryClass(session)} aria-current={open ? 'true' : undefined} onClick={() => onOpen(session.id)}>
-      {content}
-    </button>
+    <>
+      {editor ? (
+        <div className={entryClass(session)} aria-current={open ? 'true' : undefined}>
+          {content}
+        </div>
+      ) : (
+        <button type="button" className={entryClass(session)} aria-current={open ? 'true' : undefined} onClick={() => onOpen(session.id)}>
+          {content}
+        </button>
+      )}
+      {star}
+    </>
   );
 }
 
-function NeedsInputCard({ session, open, onOpen, editor }: EntryProps) {
+function NeedsInputCard({ session, open, onOpen, editor, star }: EntryProps) {
   const lineId = useId();
   const content = (
     <>
@@ -161,6 +163,7 @@ function NeedsInputCard({ session, open, onOpen, editor }: EntryProps) {
           {content}
         </button>
       )}
+      {star}
       <span className="session-card-line" id={lineId}>
         <PermissionText session={session} /> · <RelativeTime iso={session.lastActivity} />
       </span>
@@ -282,6 +285,7 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
                 const Entry = session.state === 'needs_input' && !session.external ? NeedsInputCard : EntryRow;
                 const inDraggedGroup = draggedGroup === group;
                 const classes = [
+                  'star-host',
                   inDraggedGroup && session.id === drag?.sessionId && 'dragging',
                   inDraggedGroup && drag?.slot === entryIndex && 'drop-before',
                   inDraggedGroup && drag?.slot === entryIndex + 1 && entryIndex === group.sessions.length - 1 && 'drop-after',
@@ -290,7 +294,7 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
                 return (
                   <li
                     key={session.id}
-                    className={classes.length > 0 ? classes.join(' ') : undefined}
+                    className={classes.join(' ')}
                     draggable={!renaming}
                     onDragStart={(event) => {
                       event.dataTransfer.effectAllowed = 'move';
@@ -308,6 +312,7 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
                           <SessionNameEditor sessionId={session.id} label={session.label} onEnd={(end) => endRename(session.id, end)} />
                         ) : undefined
                       }
+                      star={<FavoriteButton sessionId={session.id} favorite={session.favorite === true} hidden={renaming} />}
                     />
                     {session.state === 'ended' && (
                       <EndedEntryActions
@@ -317,7 +322,6 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
                         onResumed={onResumed}
                       />
                     )}
-                    <FavoriteButton sessionId={session.id} favorite={session.favorite === true} hidden={renaming} />
                     <button
                       ref={(button) => {
                         if (button) renameButtons.current.set(session.id, button);
