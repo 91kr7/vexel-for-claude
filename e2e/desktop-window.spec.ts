@@ -728,8 +728,8 @@ test.describe('Frameless window', () => {
     const banner = window.getByRole('banner');
     const brand = (await banner.getByText('Vexel', { exact: true }).boundingBox())!;
     expect(await appRegionAt(window, brand.x + brand.width / 2, brand.y + brand.height / 2), 'REQ-6: the brand').toBe('drag');
-    const newSession = (await banner.getByRole('button', { name: 'New Session', exact: true }).boundingBox())!;
-    expect(await appRegionAt(window, newSession.x + newSession.width / 2, newSession.y + newSession.height / 2), 'REQ-8: "New Session"').toBe('no-drag');
+    const planUsage = (await banner.getByRole('button', { name: 'Plan Usage', exact: true }).boundingBox())!;
+    expect(await appRegionAt(window, planUsage.x + planUsage.width / 2, planUsage.y + planUsage.height / 2), 'REQ-8: "Plan Usage"').toBe('no-drag');
 
     const native = await app.evaluate(({ BrowserWindow }) => {
       const current = BrowserWindow.getAllWindows()[0]!;

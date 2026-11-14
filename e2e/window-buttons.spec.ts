@@ -241,7 +241,7 @@ test.describe('WindowButtons in the desktop top bar', () => {
   });
 
   // REQ-28, WindowButtons "Keyboard": real buttons in the Tab order, with the focus ring of the bar, Enter and Space act
-  test('Tab reaches the three buttons with the same focus ring as "New Session"; Enter and Space act; a click keeps the focus where it was', async ({ page }) => {
+  test('Tab reaches the three buttons with the same focus ring as "Plan Usage"; Enter and Space act; a click keeps the focus where it was', async ({ page }) => {
     await installFakeBridge(page);
     await page.goto('/');
     const bar = topBar(page);
@@ -264,14 +264,14 @@ test.describe('WindowButtons in the desktop top bar', () => {
     await page.keyboard.press('Space');
     expect(await windowCalls(page)).toEqual(['minimize', 'toggle-maximize']);
 
-    const newSession = bar.getByRole('button', { name: 'New Session', exact: true });
-    await tabTo(page, newSession);
-    const newSessionRing = await ring(newSession);
-    expect(minimizeRing.outline, 'same ring as "New Session"').toBe(newSessionRing.outline);
-    expect(minimizeRing.offset).toBe(newSessionRing.offset);
+    const planUsage = bar.getByRole('button', { name: 'Plan Usage', exact: true });
+    await tabTo(page, planUsage);
+    const planUsageRing = await ring(planUsage);
+    expect(minimizeRing.outline, 'same ring as "Plan Usage"').toBe(planUsageRing.outline);
+    expect(minimizeRing.offset).toBe(planUsageRing.offset);
 
     await close.click();
-    await expect(newSession, 'the click left the focus on "New Session"').toBeFocused();
+    await expect(planUsage, 'the click left the focus on "Plan Usage"').toBeFocused();
   });
 
   // WindowButtons rule: the group, gaps included, is never a drag area
@@ -293,11 +293,11 @@ test.describe('WindowButtons in the desktop top bar', () => {
   });
 
   // REQ-24, WindowButtons and Dialog rules: above the backdrop and clickable; the dialog keeps the focus and its Tab order
-  test('with "New Session" open the green button is on top and works, the dialog stays open with the focus, and Tab never reaches the buttons', async ({ page }) => {
+  test('with the new-session dialog open the green button is on top and works, the dialog stays open with the focus, and Tab never reaches the buttons', async ({ page }) => {
     await installFakeBridge(page);
     await page.goto('/');
     const { close, minimize, maximize } = windowButtons(topBar(page));
-    await topBar(page).getByRole('button', { name: 'New Session', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
     const dialog = newSessionDialog(page);
     await expect(dialog).toBeVisible();
 

@@ -39,7 +39,7 @@ test.beforeEach(async ({ page }) => {
 const banner = (page: Page) => page.getByRole('banner');
 const shortcutsButton = (page: Page) => banner(page).getByRole('button', { name: 'Keyboard Shortcuts', exact: true });
 const themeSwitch = (page: Page) => banner(page).getByRole('button', { name: 'Dark theme', exact: true });
-const newSessionButton = (page: Page) => banner(page).getByRole('button', { name: 'New Session', exact: true });
+const newSessionButton = (page: Page) => page.getByRole('main').getByRole('button', { name: 'New Session', exact: true });
 const shortcutsPanel = (page: Page) => page.getByRole('dialog', { name: 'Keyboard Shortcuts' });
 const shortcutList = (page: Page) => shortcutsPanel(page).getByRole('region', { name: 'Shortcut List' });
 const closeButton = (page: Page) => shortcutsPanel(page).getByRole('button', { name: 'Close', exact: true });

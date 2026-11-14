@@ -67,7 +67,7 @@ test.describe('TopBar in the desktop window', () => {
   });
 
   // REQ-8, TopBar "Desktop window": every control is out of the drag area, over all of its box
-  test('the theme switch, "New Session" and every other control of the bar are outside the drag area', async ({ page }) => {
+  test('the theme switch, "Plan Usage" and every other control of the bar are outside the drag area', async ({ page }) => {
     await page.goto('/');
     const controls = await controlsOf(page).all();
     expect(controls.length).toBeGreaterThanOrEqual(2);
@@ -78,16 +78,17 @@ test.describe('TopBar in the desktop window', () => {
   });
 
   // REQ-8 — scenario "The controls of the top bar do not move the window": the controls still act
-  test('a click and a double click on "New Session" open the dialog; a click on the theme switch changes the theme', async ({ page }) => {
+  test('a click on "Plan Usage" opens and closes its popover, a double click toggles it twice; a click on the theme switch changes the theme', async ({ page }) => {
     await page.goto('/');
-    const newSession = topBar(page).getByRole('button', { name: 'New Session', exact: true });
-    await newSession.click();
-    await expect(newSessionDialog(page)).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(newSessionDialog(page)).toHaveCount(0);
-    await newSession.dblclick();
-    await expect(newSessionDialog(page)).toBeVisible();
-    await page.keyboard.press('Escape');
+    const planUsage = topBar(page).getByRole('button', { name: 'Plan Usage', exact: true });
+    const popover = page.getByRole('dialog', { name: 'Plan Usage', exact: true });
+    await planUsage.click();
+    await expect(popover).toBeVisible();
+    await planUsage.click();
+    await expect(popover).toHaveCount(0);
+    await planUsage.dblclick();
+    await expect(popover).toHaveCount(0);
+    await expect(planUsage).toHaveAttribute('aria-expanded', 'false');
 
     const theme = await page.locator('html').getAttribute('data-theme');
     await topBar(page).getByRole('button', { name: 'Dark theme', exact: true }).click();
@@ -162,7 +163,7 @@ test.describe('Dialog in the desktop window', () => {
   test('with a dialog open the brand is still a drag area and the dialog frame is not', async ({ page }) => {
     await page.goto('/');
     const brand = await topBar(page).getByText('Vexel', { exact: true }).boundingBox();
-    await topBar(page).getByRole('button', { name: 'New Session', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
     await expect(newSessionDialog(page)).toBeVisible();
     expect(await regionAt(page, brand!.x + brand!.width / 2, brand!.y + brand!.height / 2)).toBe('drag');
     expect(await regionsOver(page, await newSessionDialog(page).boundingBox())).toEqual(Array(5).fill('no-drag'));
@@ -172,7 +173,7 @@ test.describe('Dialog in the desktop window', () => {
   test('a dialog frame taller than the window, over the top bar, is outside the drag area', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 260 });
     await page.goto('/');
-    await topBar(page).getByRole('button', { name: 'New Session', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
     const frame = await newSessionDialog(page).boundingBox();
     const bar = await topBar(page).boundingBox();
     expect(frame!.y, 'the frame covers part of the top bar').toBeLessThan(bar!.y + bar!.height - 4);
@@ -186,7 +187,7 @@ test.describe('Dialog in the desktop window', () => {
 test('in the browser no element of the page is a drag area', async ({ page }) => {
   await page.goto('/');
   await expect(topBar(page)).toBeVisible();
-  await topBar(page).getByRole('button', { name: 'New Session', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
   await expect(newSessionDialog(page)).toBeVisible();
   const dragging = await page.evaluate(() =>
     [...document.querySelectorAll('*')].filter((element) => getComputedStyle(element).getPropertyValue('-webkit-app-region') === 'drag').length,

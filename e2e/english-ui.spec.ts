@@ -129,7 +129,7 @@ test('the page declares English and the tab title is "Vexel for Claude"', async 
 test('the empty page shows the English frame, empty state and accessible names', async ({ page }) => {
   await showOnlyOwnSessions(page);
   await page.goto('/');
-  await expect(topBar(page).getByRole('button', { name: 'New Session', exact: true })).toBeVisible();
+  await expect(topBar(page).getByRole('button', { name: 'Plan Usage', exact: true })).toBeVisible();
   await expect(panel(page).getByRole('heading', { name: 'Sessions', exact: true })).toBeVisible();
   await expect(panel(page)).toContainText('No sessions.');
   const main = page.getByRole('main');
@@ -141,14 +141,14 @@ test('the empty page shows the English frame, empty state and accessible names',
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3, REQ-4, REQ-9, REQ-13 — scenario "The user starts a session from English dialogs"
-test('"New Session" opens the English new-session dialog, and the rail and the close control have English names', async ({ page }) => {
+test('the rail "+" opens the English new-session dialog, and the rail and the close control have English names', async ({ page }) => {
   await showOnlyOwnSessions(page);
   await page.goto('/');
   await expect(railButton(page, 'New Claude Code Session')).toBeVisible();
   await expect(railButton(page, 'Sessions')).toBeVisible();
   await expect(railButton(page, 'Resume')).toBeVisible();
 
-  await topBar(page).getByRole('button', { name: 'New Session', exact: true }).click();
+  await railButton(page, 'New Claude Code Session').click();
   await expect(chooser(page)).toBeVisible();
   await expect(chooser(page).getByRole('heading', { name: 'New Claude Code Session', exact: true })).toBeVisible();
   await expect(pathField(page)).toBeVisible();
@@ -165,7 +165,7 @@ test('"New Session" opens the English new-session dialog, and the rail and the c
 test('a relative path and a missing folder show English errors in the new-session dialog', async ({ page }) => {
   await showOnlyOwnSessions(page);
   await page.goto('/');
-  await topBar(page).getByRole('button', { name: 'New Session', exact: true }).click();
+  await railButton(page, 'New Claude Code Session').click();
   await expect(pathField(page)).toBeVisible();
   // The field shows the current folder once the first listing is in: typing earlier races it.
   await expect(pathField(page)).toHaveValue(/^\//);
@@ -215,7 +215,6 @@ test('at 1280 px the list shows "2 need input", "Needs Input", "Running" and "Ju
   for (const heading of await panel(page).getByRole('heading', { level: 2 }).all()) await expectFits(heading, panel(page), 'group title');
   await expectFits(working.locator('.state-badge'), working, '"Running" badge');
   await expectFits(working.locator('time'), working, '"Just now" time');
-  await expectFits(topBar(page).getByRole('button', { name: 'New Session', exact: true }), topBar(page), 'top bar "New Session"');
   await expectNoItalian(page, 'in the session list');
 });
 

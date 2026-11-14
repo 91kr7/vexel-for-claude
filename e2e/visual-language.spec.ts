@@ -197,7 +197,6 @@ test('with no internet connection the page and a session load their font and ico
     [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/["']/g, '')),
   );
   expect(new Set(loaded), 'Roboto Flex and Roboto Mono are loaded').toEqual(new Set(['Roboto Flex', 'Roboto Mono']));
-  await expect(page.getByRole('banner').getByRole('button', { name: 'New Session', exact: true }).locator('svg.icon')).toBeVisible();
   await expect(page.getByRole('navigation').getByRole('button', { name: 'Resume', exact: true }).locator('svg.icon')).toBeVisible();
 });
 
@@ -224,7 +223,7 @@ test('the UI uses the bundled Roboto Flex font and the terminal uses Roboto Mono
     return f && { weight: f.weight, display: f.display };
   });
   expect(face).toEqual({ weight: '400 800', display: 'swap' });
-  for (const button of [page.getByRole('banner').getByRole('button', { name: 'New Session', exact: true }), page.getByRole('navigation').getByRole('button', { name: 'Resume', exact: true })]) {
+  for (const button of [page.getByRole('navigation').getByRole('button', { name: 'Resume', exact: true })]) {
     expect(await button.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Roboto Flex/);
   }
   expect(await page.locator('body').evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^["']?Roboto Flex/);
@@ -232,11 +231,10 @@ test('the UI uses the bundled Roboto Flex font and the terminal uses Roboto Mono
 });
 
 // IconSet, NavigationRail and TopBar: each button keeps its accessible name and shows one decorative icon at its size, in its text colour
-test('the rail "Resume" and the top bar "New Session" carry decorative icons', async ({ page, request }) => {
+test('the rail "Resume" carries a decorative icon', async ({ page, request }) => {
   await openSession(page, request, 'icons');
   const buttons: [Locator, number][] = [
     [page.getByRole('navigation').getByRole('button', { name: 'Resume', exact: true }), 17],
-    [page.getByRole('banner').getByRole('button', { name: 'New Session', exact: true }), 14],
   ];
   for (const [button, size] of buttons) {
     await expect(button).toHaveCount(1);
