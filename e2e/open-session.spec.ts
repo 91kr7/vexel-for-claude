@@ -63,7 +63,7 @@ async function contentBox(locator: Locator): Promise<Box> {
   return { x: b.x + left, y: b.y + top, width: b.width - left - right, height: b.height - top - bottom };
 }
 
-/** The panel and the footer fill the main area below the header, and the terminal fills the panel inside its padding. */
+/** The panel (16 px margin on every side) and the footer fill the main area below the header, and the terminal fills the panel inside its padding. */
 async function expectPanelAndFooterFillMainBelowHeader(page: Page): Promise<void> {
   const main = await contentBox(mainArea(page));
   const head = await box(header(page));
@@ -73,7 +73,7 @@ async function expectPanelAndFooterFillMainBelowHeader(page: Page): Promise<void
   expect(Math.abs(term.y - (head.y + head.height + GAP))).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(term.x - (main.x + GAP))).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(term.width - (main.width - 2 * GAP))).toBeLessThanOrEqual(TOLERANCE);
-  expect(Math.abs(foot.y - (term.y + term.height))).toBeLessThanOrEqual(TOLERANCE);
+  expect(Math.abs(foot.y - (term.y + term.height + GAP))).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(foot.height - FOOTER_HEIGHT)).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(foot.x - main.x)).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(foot.width - main.width)).toBeLessThanOrEqual(TOLERANCE);
