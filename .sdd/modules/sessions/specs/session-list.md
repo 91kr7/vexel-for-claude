@@ -66,6 +66,7 @@ Hosted needs-input card (look of `#permission-banner`): a block with the class `
 Session star (every entry, rows and the needs-input card, in every group):
 - FavoriteButton, "Remove Favorite" when the entry has `favorite: true`. It sits right after the folder name on line 1 of a row, and right after the folder name in the needs-input card. It is a sibling of the entry button, never inside it.
 - the star place never shrinks, so the folder name is cut first. A row of an external session needing input keeps the "External" chip after it.
+- the star never enters the corner of "Rename": in a row the state name keeps it apart; in the needs-input card, line 1 leaves room for "Rename" at its right.
 - a marked entry shows the filled star always; an unmarked entry shows the outline star only on hover or visible keyboard focus (FavoriteButton). The entry keeps its place and its group.
 - Tab order of a row: entry, FavoriteButton, EndedEntryActions, "Rename". Of the needs-input card: entry, FavoriteButton, "Reply", "Rename".
 - it is hidden with "Rename" during a rename. Its error shows under the entry; in the needs-input card, at the bottom of the card.

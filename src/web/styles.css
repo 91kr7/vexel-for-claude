@@ -1694,8 +1694,12 @@ input {
   right: 10px;
 }
 
-.session-entry-title:has(+ .session-entry-star-slot) {
-  flex: 0 1 auto;
+.session-entry-title {
+  max-width: max-content;
+}
+
+.session-card > .session-entry > .session-entry-line:first-child {
+  padding-right: 20px;
 }
 
 .favorite-indicator {

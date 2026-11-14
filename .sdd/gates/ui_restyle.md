@@ -23,3 +23,7 @@
 | 2026-11-15 | dev project-row | G5 tests | pass | Test files and playwright spec group only; no only/skip; re-run folders unit + project-row e2e green |
 | 2026-11-15 | dev session-star | G4 development | pass | Build green; diff limited to sessions INT files, styles, specs, index |
 | 2026-11-15 | dev session-star | divergence developer | decided | In needs-input cards the star sits inside the card after the entry button, to keep the Tab order entry → star |
+| 2026-11-15 | dev session-star | G5 tests | sent back | Red: card star overlaps Rename (REQ-31/32); long name squeezes state name, star under Rename (REQ-31) |
+| 2026-11-15 | dev session-star | question tester Q1 | decided | Star next to the name is the approved design: fix e2e helpers to click the folder name, test side |
+| 2026-11-15 | dev session-star | question tester Q2 | decided | REQ-33 keeps current logic (any 2xx ok): align the FavoriteButton spec to the code |
+| 2026-11-15 | dev session-star | G4 development (fix) | pass | CSS-only fix plus spec alignment; build green |

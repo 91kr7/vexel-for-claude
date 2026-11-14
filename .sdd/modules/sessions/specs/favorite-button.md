@@ -30,7 +30,7 @@ Shows:
 
 Actions:
 - press → `PUT /api/sessions/:id/favorite` with `{ favorite: !favorite }`.
-  - `204` → nothing more: the change reaches the entry through the `session` event.
+  - any `2xx` answer → nothing more: the change reaches the entry through the `session` event.
   - any other answer, or a network error → the error above.
 - Enter or Space on the focused button presses it.
 
