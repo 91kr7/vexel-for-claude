@@ -106,7 +106,7 @@ test('Alt+C moves the focus from the list to the conversation of the open extern
   const folder = await newFolder('external-focus');
   await runInTerminal('e2e-nav-keys-focus', folder);
   await page.goto('/');
-  await entry(page, folder).click({ timeout: SCAN.timeout });
+  await entry(page, folder).getByTitle(folder, { exact: true }).click({ timeout: SCAN.timeout });
   await expect(messageArea(page)).toContainText('Controlla i test');
 
   await page.keyboard.press('Alt+KeyL');
@@ -126,7 +126,7 @@ test('from the terminal, Alt+Down onto an external session puts the focus in its
   await runInTerminal('e2e-nav-keys-switch', external);
   await page.goto('/');
   await expect(entry(page, external)).toBeVisible(SCAN);
-  await entry(page, hosted).click();
+  await entry(page, hosted).getByTitle(hosted, { exact: true }).click();
   await expect(terminal(page)).toContainText('READY');
   await page.locator('.xterm-screen').click();
   await expect(terminalInput(page)).toBeFocused();

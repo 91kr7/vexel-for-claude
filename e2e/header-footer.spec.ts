@@ -182,7 +182,7 @@ test.describe('Header and footer of an open session', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await mainAreaWidth(page, 700);
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await page.mouse.move(0, 0);
 
     // The header: folder name, label, state, "Search", "Interrupt" and "Terminate", and nothing else.
@@ -224,7 +224,7 @@ test.describe('Header and footer of an open session', () => {
     const folder = await newFolder('full-context');
     await hosted(request, folder, 'Explain the code', [response({ input: 4_000, output: 2_000, cacheWrite: 30_000, cacheRead: 150_000 })]);
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await page.mouse.move(0, 0);
     await expect(tokensChip(page)).toHaveText(/^\s*186k tokens/);
     await expect(tooltip(page)).toBeHidden();
@@ -263,7 +263,7 @@ test.describe('Header and footer of an open session', () => {
     await write(userText('Explain the code'), response(SOME_RESPONSES));
     await runInTerminal(sessionId, folder);
     await page.goto('/');
-    await entry(page, folder).click(SCAN);
+    await entry(page, folder).getByTitle(folder, { exact: true }).click(SCAN);
     await page.mouse.move(0, 0);
 
     const name = path.basename(folder);
@@ -289,7 +289,7 @@ test.describe('Header and footer of an open session', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await mainAreaWidth(page, 700);
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await page.mouse.move(0, 0);
 
     const line = header(page).locator('.mono-chip').filter({ hasText: label.slice(0, 30) });
@@ -336,7 +336,7 @@ test.describe('Header and footer of an open session', () => {
     const folder = await newFolder('fresh');
     await hosted(request, folder, 'Explain the code', []);
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(place(page, folder)).toHaveText(folder);
     await page.waitForTimeout(1_500);
     await expect(contextChip(page)).toHaveCount(0);
@@ -350,7 +350,7 @@ test.describe('Header and footer of an open session', () => {
     const folder = await newFolder('ended');
     await hosted(request, folder, 'Explain the code', [response(SOME_RESPONSES)], { working: true });
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(contextChip(page)).toHaveText(/45\.2k \/ 200k · 23%/);
     await expect(tokensChip(page)).toHaveText(/^\s*47\.2k tokens/);
     const cost = (await costChip(page).innerText()).trim();
@@ -412,7 +412,7 @@ test.describe('Order and look of the header actions of a hosted session', () => 
     await hosted(request, folder, label, [response(SOME_RESPONSES)], { working: true });
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await page.mouse.move(0, 0);
 
     const search = actionButton(page, 'Search');
@@ -461,7 +461,7 @@ test.describe('Order and look of the header actions of a hosted session', () => 
     const folder = await newFolder('interrupt');
     await hosted(request, folder, 'Explain the code', [], { working: true });
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     const interrupt = actionButton(page, 'Interrupt');
     await expect(interrupt).toHaveAccessibleName('Interrupt');
     await expect(interrupt).toHaveText(/^\s*Interrupt\s*$/);
@@ -482,7 +482,7 @@ test.describe('Order and look of the header actions of a hosted session', () => 
     const id = await hosted(request, folder, 'Explain the code', [], { working: true });
     await hookEvent(request, id, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     const interrupt = actionButton(page, 'Interrupt');
     const pill = statePill(page, 'Needs Input');
     await expect(pill).toBeVisible();

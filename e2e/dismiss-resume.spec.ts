@@ -275,7 +275,7 @@ test('a dismissed session stays out of the list after a reload, and the history 
 test('dismissing the open ended session brings back the "no open session" state', async ({ page, request }) => {
   const ended = await endedSession(request, 'open');
   await page.goto('/');
-  await entry(page, ended.folder).click();
+  await entry(page, ended.folder).getByTitle(ended.folder, { exact: true }).click();
   await expect(entry(page, ended.folder)).toHaveAttribute('aria-current', 'true');
   await expect(terminal(page)).toHaveCount(1);
   await expect(page.getByRole('main').getByText('No open session.')).toHaveCount(0);

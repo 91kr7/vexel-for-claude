@@ -134,7 +134,7 @@ async function openExternal(page: Page, name: string): Promise<{ sessionId: stri
   await transcript(sessionId, folder, 'Check the tests');
   await runInTerminal(sessionId, folder);
   await page.goto('/');
-  await entry(page, folder).click(SCAN);
+  await entry(page, folder).getByTitle(folder, { exact: true }).click(SCAN);
   await expect(messageArea(page)).toContainText('Check the tests');
   return { sessionId, folder };
 }
@@ -165,7 +165,7 @@ async function resumed(response: Promise<Response>): Promise<string> {
 test('Alt+R on the open ended session resumes it: the new session is open and the ended entry is gone', async ({ page, request }) => {
   const ended = await endedSession(request, 'resume-open');
   await page.goto('/');
-  await entry(page, ended.folder).click();
+  await entry(page, ended.folder).getByTitle(ended.folder, { exact: true }).click();
   await expect(entry(page, ended.folder)).toHaveAttribute('aria-current', 'true');
   const actions = recordActions(page);
 
@@ -192,7 +192,7 @@ test('Alt+R on an ended session whose conversation runs in a terminal shows the 
     if (r.method() === 'POST' && new URL(r.url()).pathname === `/api/sessions/${ended.id}/resume`) bodies.push(r.postDataJSON());
   });
   await page.goto('/');
-  await entry(page, ended.folder).click();
+  await entry(page, ended.folder).getByTitle(ended.folder, { exact: true }).click();
   await expect(entry(page, ended.folder)).toHaveAttribute('aria-current', 'true');
 
   await page.keyboard.press('Alt+KeyR');

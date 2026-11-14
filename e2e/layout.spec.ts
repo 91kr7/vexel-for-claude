@@ -67,7 +67,7 @@ async function startViaApi(request: APIRequestContext, folder: string): Promise<
 }
 
 async function openFromList(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText('READY');
 }
 

@@ -251,7 +251,7 @@ test('the order set by the user survives a reload, and a click still opens a ses
 
   await expect.poll(() => groupOrder(page, 'Running')).toEqual(['reload-c', 'reload-a', 'reload-b']);
 
-  await entry(page, a).click();
+  await entry(page, a).getByTitle(a, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${a}`);
   expect(await groupOrder(page, 'Running')).toEqual(['reload-c', 'reload-a', 'reload-b']);
 });

@@ -89,7 +89,7 @@ async function openSession(page: Page, request: APIRequestContext, name: string)
   const folder = await newFolder(name);
   const id = await startViaApi(request, folder);
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
   await expect(terminal(page)).toContainText('READY');
   return { id, folder };
@@ -212,7 +212,7 @@ test('Alt+Shift+W on the open ended session removes its entry at once and emptie
   const ended = await endedSession(request, 'dismiss-open');
   const other = await endedSession(request, 'dismiss-other');
   await page.goto('/');
-  await entry(page, ended.folder).click();
+  await entry(page, ended.folder).getByTitle(ended.folder, { exact: true }).click();
   await expect(entry(page, ended.folder)).toHaveAttribute('aria-current', 'true');
   await expect(noOpenSession(page)).toHaveCount(0);
   const actions = recordActions(page);
@@ -230,7 +230,7 @@ test('Alt+Shift+W on the open ended session removes its entry at once and emptie
 test('Alt+Shift+Q and Alt+R on an open ended session with no conversation do nothing', async ({ page, request }) => {
   const ended = await endedSession(request, 'ended-no-conversation');
   await page.goto('/');
-  await entry(page, ended.folder).click();
+  await entry(page, ended.folder).getByTitle(ended.folder, { exact: true }).click();
   await expect(entry(page, ended.folder)).toHaveAttribute('aria-current', 'true');
   await expect(item(page, ended.folder).getByRole('button', { name: 'Resume', exact: true })).toHaveCount(0);
   const actions = recordActions(page);
@@ -312,7 +312,7 @@ test('Alt+E scrolls the entry of the open session into view', async ({ page, req
     .getByRole('listitem')
     .last()
     .evaluate((li) => li.querySelector('[title^="/"]')?.getAttribute('title') ?? '');
-  await entry(page, last).click();
+  await entry(page, last).getByTitle(last, { exact: true }).click();
   await expect(entry(page, last)).toHaveAttribute('aria-current', 'true');
 
   const scrolled = await list(page).evaluate((region) => {

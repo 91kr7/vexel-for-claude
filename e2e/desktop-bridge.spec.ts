@@ -78,11 +78,11 @@ test('the page reports no open session at start, then each session the user open
   await expect(entry(page, first.folder)).toBeVisible();
   await expect.poll(() => reports(page)).toEqual([null]);
 
-  await entry(page, first.folder).click();
+  await entry(page, first.folder).getByTitle(first.folder, { exact: true }).click();
   await expectOpen(page, first.folder);
   await expect.poll(() => reports(page)).toEqual([null, first.id]);
 
-  await entry(page, second.folder).click();
+  await entry(page, second.folder).getByTitle(second.folder, { exact: true }).click();
   await expectOpen(page, second.folder);
   await expect.poll(() => reports(page)).toEqual([null, first.id, second.id]);
 });
@@ -111,7 +111,7 @@ test('"open this session" for a session the list does not have changes nothing',
   await expect(mainArea(page).getByRole('button', { name: 'Resume Session' })).toBeVisible();
   await expect(header(page)).toHaveCount(0);
 
-  await entry(page, shown.folder).click();
+  await entry(page, shown.folder).getByTitle(shown.folder, { exact: true }).click();
   await expectOpen(page, shown.folder);
   await openFromDesktop(page, 'no-such-session');
   await page.waitForTimeout(300);
@@ -126,7 +126,7 @@ test('in a browser with no desktop bridge, the page opens sessions and raises no
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
 
-  await entry(page, target.folder).click();
+  await entry(page, target.folder).getByTitle(target.folder, { exact: true }).click();
 
   await expectOpen(page, target.folder);
   expect(await page.evaluate(() => 'desktopBridge' in window)).toBe(false);

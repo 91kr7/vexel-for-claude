@@ -166,7 +166,7 @@ test('the user switches between sessions', async ({ page }) => {
   await expect(terminal(page)).toContainText('PERMISSION?(y/n)');
   await expect(entry(page, folderB)).toContainText('Needs Input');
 
-  await entry(page, folderA).click();
+  await entry(page, folderA).getByTitle(folderA, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folderA}`, { timeout: 1000 });
   await expect(terminal(page)).toContainText('LINE:WORK', { timeout: 1000 });
   await expect(terminal(page)).not.toContainText(`CWD:${folderB}`);
@@ -174,7 +174,7 @@ test('the user switches between sessions', async ({ page }) => {
   await expect(counter(page)).toBeVisible();
   const tickBeforeLeaving = await lastTick(page);
 
-  await entry(page, folderB).click();
+  await entry(page, folderB).getByTitle(folderB, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folderB}`, { timeout: 1000 });
   await expect(terminal(page)).toContainText('PERMISSION?(y/n)', { timeout: 1000 });
   await expect(terminal(page)).not.toContainText(`CWD:${folderA}`);
@@ -182,12 +182,12 @@ test('the user switches between sessions', async ({ page }) => {
   await expect(counter(page)).toHaveText('1 needs input');
   await page.waitForTimeout(1000);
 
-  await entry(page, folderA).click();
+  await entry(page, folderA).getByTitle(folderA, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folderA}`, { timeout: 1000 });
   await expect.poll(() => lastTick(page)).toBeGreaterThan(tickBeforeLeaving + 2);
   await expect(entry(page, folderA)).toContainText('Running');
 
-  await entry(page, folderB).click();
+  await entry(page, folderB).getByTitle(folderB, { exact: true }).click();
   await expect(terminal(page)).toContainText('PERMISSION?(y/n)', { timeout: 1000 });
   await page.locator('.xterm-screen').click();
   await page.keyboard.type('y');
@@ -206,7 +206,7 @@ test('sessions survive a page reload', async ({ page }) => {
   await page.reload();
   await expect(page.getByText('No open session.')).toBeVisible();
   await expect(entry(page, folder)).toContainText('Running');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
   await expect(terminal(page)).toContainText('LINE:WORK');
   const shown = await lastTick(page);
@@ -240,7 +240,7 @@ test('ten sessions at once', async ({ page, request }) => {
   for (const index of [2, 7, 0, 9]) {
     const folder = folders[index] ?? '';
     await entry(page, folder).scrollIntoViewIfNeeded();
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(terminal(page)).toContainText(`CWD:${folder}`, { timeout: 1000 });
     await expect(terminal(page)).toContainText('READY', { timeout: 1000 });
   }
@@ -256,6 +256,6 @@ test('an ended session stays in the list', async ({ page }) => {
 
   await page.reload();
   await expect(entry(page, folder)).toContainText('Ended');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText('BYE');
 });

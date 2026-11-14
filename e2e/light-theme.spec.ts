@@ -143,7 +143,7 @@ async function postHook(request: APIRequestContext, id: string, event: Record<st
 }
 
 async function openFromList(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
 }
 
@@ -749,7 +749,7 @@ test.describe('light screens', () => {
     const socket = await showOnly(page, [external]);
     await page.goto('/');
     await toLight(page);
-    await entry(page, external.folder).click();
+    await entry(page, external.folder).getByTitle(external.folder, { exact: true }).click();
     (await socket()).send(
       JSON.stringify({
         type: 'items',

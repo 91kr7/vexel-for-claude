@@ -119,7 +119,7 @@ async function stopViaApi(request: APIRequestContext, id: string): Promise<void>
 }
 
 async function openFromList(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
 }
 
@@ -569,7 +569,7 @@ test.describe('session list', () => {
     const socket = await showOnly(page, [external]);
     await page.goto('/');
     const row = entry(page, external.folder);
-    await row.click();
+    await row.getByTitle(external.folder, { exact: true }).click();
     (await socket()).send(JSON.stringify({ type: 'items', items: [] }));
     await expect(row).toHaveAttribute('aria-current', 'true');
     expect(await style(row, 'border-top-style')).toBe('dashed');
@@ -711,7 +711,7 @@ test.describe('external session view', () => {
     const external = { id: 'ext-studio-4', folder: '/srv/esterni/negozio', label: 'Aggiungi il carrello', state: 'idle', lastActivity: new Date().toISOString(), external: true };
     const socket = await showOnly(page, [external]);
     await page.goto('/');
-    await entry(page, external.folder).click();
+    await entry(page, external.folder).getByTitle(external.folder, { exact: true }).click();
     const today = `${new Date().toISOString().slice(0, 10)}T09:30:00.000Z`;
     (await socket()).send(
       JSON.stringify({
@@ -803,7 +803,7 @@ test.describe('external session view', () => {
     const external = { id: 'ext-studio-5', folder: '/srv/esterni/lungo', label: 'Molti messaggi', state: 'idle', lastActivity: new Date().toISOString(), external: true };
     const socket = await showOnly(page, [external]);
     await page.goto('/');
-    await entry(page, external.folder).click();
+    await entry(page, external.folder).getByTitle(external.folder, { exact: true }).click();
     const ws = await socket();
     ws.send(JSON.stringify({ type: 'items', items: Array.from({ length: 40 }, (_, i) => ({ kind: 'assistant', text: `messaggio ${i + 1}` })) }));
     await expect(mainArea(page).getByText('messaggio 40', { exact: true })).toBeVisible();
@@ -939,7 +939,7 @@ test.describe('dialogs', () => {
     const external = { id: 'ext-studio-6', folder: '/srv/esterni/ricerca', label: 'Analisi', state: 'idle', lastActivity: new Date().toISOString(), external: true };
     const socket = await showOnly(page, [external]);
     await page.goto('/');
-    await entry(page, external.folder).click();
+    await entry(page, external.folder).getByTitle(external.folder, { exact: true }).click();
     (await socket()).send(JSON.stringify({ type: 'items', items: [] }));
     await button(mainArea(page), 'Resume Here').click();
     const warning = page.getByRole('alertdialog', { name: 'Session Running in a Terminal' });

@@ -346,7 +346,7 @@ test.describe('Look change with an open session', () => {
     await mkdir(folder);
     await startViaApi(request, folder);
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(terminalRows(page)).toContainText(`CWD:${folder}`);
     await page.locator('.xterm-screen').click();
     await expect(terminalInput(page)).toBeFocused();

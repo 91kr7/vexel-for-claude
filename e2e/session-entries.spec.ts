@@ -506,7 +506,7 @@ test('an external session that waits for input is the amber row with "External" 
     expect(await tag.evaluate((el) => getComputedStyle(el).fontFamily), `${scheme}: mono chip`).toMatch(MONO);
   }
 
-    await row.click();
+    await row.getByTitle(outside, { exact: true }).click();
   await expect(row).toHaveAttribute('aria-current', 'true');
 });
 

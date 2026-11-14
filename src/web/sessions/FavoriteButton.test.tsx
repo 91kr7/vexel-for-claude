@@ -117,12 +117,12 @@ describe('FavoriteButton', () => {
     await settle();
   });
 
-  // FavoriteButton rule: the state comes from the props
-  it('204 shows no error and does not change the mark by itself', async () => {
+  // FavoriteButton rule: the state comes from the props; any 2xx answer is a success
+  it.each([204, 200])('%i shows no error and does not change the mark by itself', async (status) => {
     const { answers } = controlledFetch();
     const { host, button } = mount('a', false);
     button().click();
-    answers[0]!.resolve(new Response(null, { status: 204 }));
+    answers[0]!.resolve(new Response(status === 204 ? null : '', { status }));
     await settle();
     expect(alertText(host)).toBeNull();
     expect(button().getAttribute('aria-label')).toBe('Mark as Favorite');

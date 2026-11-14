@@ -404,7 +404,7 @@ test('"Resume Here" of a favorite external session starts a hosted session that 
   await expect(entry(page, folder)).toBeVisible(SCAN);
   await markFromList(page, folder, claudeId);
 
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await page.getByRole('button', { name: 'Resume Here' }).click();
   const answer = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === `/api/past-sessions/${claudeId}/resume`);
   await warning(page).getByRole('button', { name: 'Resume Anyway' }).click();

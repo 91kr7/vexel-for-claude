@@ -237,7 +237,7 @@ test.describe('open hosted session', () => {
     const backend = await fakeBackend(page, [summary(id, 'idle', { folder, label: name })]);
     const attach = await routeAttach(page);
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(terminal(page)).toContainText('READY');
     return { id, folder, backend, attach };
   }
@@ -353,7 +353,7 @@ test.describe('open external session', () => {
     let frame: Item[] = history;
     const conversation = await routeConversation(page, (ws) => send(ws, frame));
     await page.goto('/');
-    await entry(page, external.folder).click();
+    await entry(page, external.folder).getByTitle(external.folder, { exact: true }).click();
     await expect(articles(page)).toHaveCount(30);
     await scroller(page).evaluate((el) => (el.scrollTop = 0));
 
@@ -384,7 +384,7 @@ test.describe('open external session', () => {
     const backend = await fakeBackend(page, [external]);
     const conversation = await routeConversation(page, (ws) => send(ws, [user('first question'), claude('first answer')]));
     await page.goto('/');
-    await entry(page, external.folder).click();
+    await entry(page, external.folder).getByTitle(external.folder, { exact: true }).click();
     await expect(articles(page)).toHaveCount(2);
 
     conversation.mode = 4404;
@@ -410,7 +410,7 @@ test.describe('open external session', () => {
     await fakeBackend(page, [external]);
     const conversation = await routeConversation(page, (ws) => void ws.close({ code: 1011 }));
     await page.goto('/');
-    await entry(page, external.folder).click();
+    await entry(page, external.folder).getByTitle(external.folder, { exact: true }).click();
 
     await expect(view(page)).toContainText('Conversation not available.');
     await page.waitForTimeout(4500);

@@ -234,7 +234,7 @@ test('an open working session shows "Interrupt", "Terminate", no key hint and an
   const folder = await newFolder('billing-api');
   await postHook(request, await startViaApi(request, folder), { hook_event_name: 'UserPromptSubmit', prompt: 'add the invoice export' });
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
 
   const main = page.getByRole('main');

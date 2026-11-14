@@ -33,7 +33,7 @@ async function openSession(page: Page, request: APIRequestContext, name: string)
   expect(response.status()).toBe(201);
   createdIds.push(((await response.json()) as { id: string }).id);
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText('READY');
 }
 

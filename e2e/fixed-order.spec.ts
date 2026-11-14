@@ -79,7 +79,7 @@ async function startViaUi(page: Page, folder: string): Promise<void> {
 }
 
 async function open(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
   await expect(terminal(page)).toContainText('READY');
 }

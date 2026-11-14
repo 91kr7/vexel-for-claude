@@ -206,7 +206,7 @@ test('the keyboard renames an open session: the entry and the header show the na
   const last = await hostedSession(request, 'omega');
   const sent = renameRequests(page);
   await page.goto('/');
-  await entry(page, target.folder).click();
+  await entry(page, target.folder).getByTitle(target.folder, { exact: true }).click();
   await expect(header(page)).toContainText(target.prompt);
   await expect(item(page, first.folder)).toHaveCount(1);
   await expect(item(page, last.folder)).toHaveCount(1);
@@ -425,7 +425,7 @@ test('"Resume Here" of a named external session starts a hosted session with the
   await expect(entry(page, folder)).toBeVisible(SCAN);
   await renameFromList(page, folder, 'Terminal job');
 
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await page.getByRole('button', { name: 'Resume Here' }).click();
   const answer = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === `/api/past-sessions/${claudeId}/resume`);
   await warning(page).getByRole('button', { name: 'Resume Anyway' }).click();

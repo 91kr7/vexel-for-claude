@@ -85,7 +85,7 @@ const askPermission = (request: APIRequestContext, id: string) => postHook(reque
 const finishTurn = (request: APIRequestContext, id: string) => postHook(request, id, { hook_event_name: 'Stop' });
 
 async function openFromList(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
 }
 

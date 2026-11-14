@@ -81,7 +81,7 @@ async function openSession(page: Page, request: APIRequestContext, name: string)
   const folder = await newFolder(name);
   const id = await startViaApi(request, folder);
   await loadPage(page);
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
   await expect(terminal(page)).toContainText('READY');
   return { id, folder };
