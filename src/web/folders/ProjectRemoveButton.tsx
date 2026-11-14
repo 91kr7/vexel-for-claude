@@ -31,7 +31,7 @@ export function ProjectRemoveButton({ folder }: { folder: string }) {
     <>
       <button
         type="button"
-        className="entry-favorite project-remove"
+        className="project-remove"
         aria-label={LABEL}
         title={LABEL}
         aria-disabled={busy || undefined}
