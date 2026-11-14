@@ -19,3 +19,5 @@
 | 2026-11-15 | plan | G3 coverage (startup-page) | pass | REQ-36..40 added, batch startup-page; departure recorded as human decision |
 | 2026-11-15 | dev project-row | G4 development | pass | Build green; diff limited to INT files, specs and folders index |
 | 2026-11-15 | dev project-row | divergence developer | decided | Star placed after the name with CSS anchor positioning (star stays outside the row button); fine on Electron and Chromium, flagged for human review |
+| 2026-11-15 | dev | escalation policy | human decision | User away: gatekeeper decides any further business question, logged for review |
+| 2026-11-15 | dev project-row | G5 tests | pass | Test files and playwright spec group only; no only/skip; re-run folders unit + project-row e2e green |
