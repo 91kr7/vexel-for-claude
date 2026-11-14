@@ -33,6 +33,7 @@ type: configuration
 - one PlanLimitsReader with the default Claude Code folder. Registers PlanUsageRoute with it.
 - one GitRunner. Registers RepositoryRoute with it.
 - release check → at start, one checkLatestRelease with `version` of `package.json` as the installed version. The source address comes from `AI_CLIENT_RELEASE_SOURCE_URL`. Missing or empty → `latestReleaseApiUrl` of `repository.url` of `package.json` (the GitHub API). The listen does not wait for the check. Registers NewerVersionRoute with its result.
+- release changelogs → only when that check gives `newer`, one readReleaseChangelogs with the same installed version and the list address `releaseListUrl(<source address>)`. Its changelogs are added to the `newer` result as `changelogs`. No changelogs (failure, or no list address) → the result stays as the check gave it. NewerVersionRoute gets the result after this step. The listen does not wait for it.
 - registers InstalledVersionRoute with the same installed version passed to checkLatestRelease.
 - serves the files of `dist/web` when the folder exists.
 - on `SIGTERM` or `SIGINT` → it stops every running session of the SessionRegistry and waits for their exit, then closes the server and exits with code `0`. A second signal during this stop changes nothing.
@@ -40,7 +41,7 @@ type: configuration
 ## Rules and invariants
 
 - Never reachable from another machine: no other bind address.
-- The release check runs once per server start. No route starts another one.
+- The release check runs once per server start, and the changelog reading at most once. No route starts another one.
 - LocalAccessGuard covers every route, ConversationStreamRoute and ItemContentRoute included.
 
 ## Dependencies
@@ -48,7 +49,7 @@ type: configuration
 - LocalAccessGuard
 - SessionRegistry, SessionStateTracker, SessionNameStore, SessionFavoriteStore, RenameSessionRoute, FavoriteSessionRoute, HookSettings, StartSessionRoute, StopSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute, ResumeEndedSessionRoute, AttentionMonitor, AttentionRoute, RunningToolMonitor, UsageMonitor (module sessions)
 - PlanUsageRoute, PlanLimitsReader
-- checkLatestRelease, NewerVersionRoute, InstalledVersionRoute
+- checkLatestRelease, releaseListUrl, readReleaseChangelogs, NewerVersionRoute, InstalledVersionRoute
 - FolderRoute, ProjectMarkStore, ProjectFavoriteRoute, ProjectRemoveRoute, ProjectMarkEventsRoute (module folders)
 - SessionHistory, ExternalSessionCheck, PastSessionListRoute, ResumeSessionRoute (module history)
 - ExternalSessionScanner, TranscriptReader, ConversationStreamRoute, ItemContentRoute (module external)
@@ -68,3 +69,4 @@ type: configuration
 - `plan-update_check/REQ-1`, `plan-update_check/REQ-2`, `plan-update_check/REQ-10`, `plan-update_check/REQ-11`, `plan-update_check/REQ-14`, `plan-update_check/REQ-15`
 - `plan-project_list_actions/REQ-16`, `plan-project_list_actions/REQ-28`, `plan-project_list_actions/REQ-29`
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-10`, `plan-wsl_support/REQ-12`
+- `plan-release_changelog/REQ-7`, `plan-release_changelog/REQ-14`, `plan-release_changelog/REQ-15`, `plan-release_changelog/REQ-16`

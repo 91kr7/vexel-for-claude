@@ -25,7 +25,8 @@ import { registerLocalAccessGuard } from './local-access-guard.js';
 import { registerNewerVersionRoute } from './newer-version-route.js';
 import { PlanLimitsReader } from './plan-limits-reader.js';
 import { registerPlanUsageRoute } from './plan-usage-route.js';
-import { checkLatestRelease, latestReleaseApiUrl } from './release-check.js';
+import { readReleaseChangelogs } from './release-changelog-reader.js';
+import { checkLatestRelease, latestReleaseApiUrl, releaseListUrl } from './release-check.js';
 import { registerAttachSessionRoute } from './sessions/attach-session-route.js';
 import { AttentionMonitor } from './sessions/attention-monitor.js';
 import { registerAttentionRoute } from './sessions/attention-route.js';
@@ -61,11 +62,18 @@ const packageJson = JSON.parse(readFileSync(new URL('../../package.json', import
   version: string;
   repository: { url: string };
 };
-// Not awaited: the check must never delay the listen.
-const releaseCheck = checkLatestRelease({
-  sourceUrl: process.env.AI_CLIENT_RELEASE_SOURCE_URL || latestReleaseApiUrl(packageJson.repository.url),
-  installedVersion: packageJson.version,
-});
+const releaseSourceUrl = process.env.AI_CLIENT_RELEASE_SOURCE_URL || latestReleaseApiUrl(packageJson.repository.url);
+// Not awaited: the check and the changelogs must never delay the listen.
+const releaseCheck = checkLatestRelease({ sourceUrl: releaseSourceUrl, installedVersion: packageJson.version }).then(
+  async (result) => {
+    if (result.status !== 'newer') return result;
+    const changelogs = await readReleaseChangelogs({
+      listUrl: releaseListUrl(releaseSourceUrl),
+      installedVersion: packageJson.version,
+    });
+    return changelogs === undefined ? result : { ...result, changelogs };
+  },
+);
 
 const app = Fastify({ logger: true });
 const settingsPath = await writeHookSettings(`http://${HOST}:${port}`);

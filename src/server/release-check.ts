@@ -1,7 +1,13 @@
 import { newerVersionOf } from './version-rule.js';
 
+/** `text` is absent when the release has no description. */
+export interface ReleaseChangelog {
+  version: string;
+  text?: string;
+}
+
 export type ReleaseCheckResult =
-  | { status: 'newer'; installedVersion: string; newerVersion: string; releaseUrl: string }
+  | { status: 'newer'; installedVersion: string; newerVersion: string; releaseUrl: string; changelogs?: ReleaseChangelog[] }
   | { status: 'none' };
 
 export interface ReleaseCheckOptions {
@@ -18,6 +24,10 @@ const GITHUB_REPOSITORY = /^(?:git\+)?https:\/\/github\.com\/([\w.-]+)\/([\w.-]+
 export function latestReleaseApiUrl(repositoryUrl: string): string | undefined {
   const match = GITHUB_REPOSITORY.exec(repositoryUrl);
   return match ? `https://api.github.com/repos/${match[1]}/${match[2]}/releases/latest` : undefined;
+}
+
+export function releaseListUrl(sourceUrl: string | undefined): string | undefined {
+  return sourceUrl?.endsWith('/latest') ? sourceUrl.slice(0, -'/latest'.length) : undefined;
 }
 
 function isWebAddress(value: unknown): value is string {

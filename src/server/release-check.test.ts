@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { checkLatestRelease, latestReleaseApiUrl } from './release-check.js';
+import { checkLatestRelease, latestReleaseApiUrl, releaseListUrl } from './release-check.js';
 
 // Unit tests of the release check, plan-update_check/REQ-1, REQ-3, REQ-9, REQ-12: a fake fetch stands in for GitHub.
 const SOURCE = 'http://127.0.0.1:9/repos/owner/name/releases/latest';
@@ -28,6 +28,23 @@ describe('latestReleaseApiUrl', () => {
     'gives undefined for %j',
     (url) => {
       expect(latestReleaseApiUrl(url)).toBeUndefined();
+    },
+  );
+});
+
+describe('releaseListUrl', () => {
+  // plan-release_changelog/REQ-7: the list sits next to the latest release endpoint
+  it.each([
+    ['https://api.github.com/repos/owner/name/releases/latest', 'https://api.github.com/repos/owner/name/releases'],
+    ['http://127.0.0.1:9/releases/latest', 'http://127.0.0.1:9/releases'],
+  ])('strips the final /latest of %s', (source, list) => {
+    expect(releaseListUrl(source)).toBe(list);
+  });
+
+  it.each([undefined, '', 'https://api.github.com/repos/owner/name/releases', 'http://127.0.0.1:9/latest/releases'])(
+    'gives undefined for %j',
+    (source) => {
+      expect(releaseListUrl(source)).toBeUndefined();
     },
   );
 });

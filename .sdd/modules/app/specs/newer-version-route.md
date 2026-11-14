@@ -12,7 +12,7 @@ type: REST endpoint
 
 - `registerNewerVersionRoute(app, result)` → `result` is the promise of the one checkLatestRelease of the start.
 - `GET /api/newer-version` → always `200`, body the ReleaseCheckResult:
-  - `{ status: "newer", installedVersion, newerVersion, releaseUrl }`
+  - `{ status: "newer", installedVersion, newerVersion, releaseUrl, changelogs? }` → `changelogs` (a list of `{ version, text? }`) only when the result has it.
   - `{ status: "none" }`
 - while the check runs, the answer waits for it.
 - a `result` that rejects → `{ status: "none" }`.
@@ -29,3 +29,4 @@ type: REST endpoint
 ## Requirements served
 
 - `plan-update_check/REQ-2`, `plan-update_check/REQ-9`
+- `plan-release_changelog/REQ-7`
