@@ -9,3 +9,5 @@
 | 2026-11-15 | plan | question planner | decided | Mock copied to `.sdd/mockups/ui_restyle/mock.html` so it survives scratchpad cleanup |
 | 2026-11-15 | dev top-bar | G4 development | pass | Build green; diff limited to INT files and specs |
 | 2026-11-15 | dev top-bar | divergence developer | decided | Update notice offset follows the 44px bar per its spec; PlanUsagePopover left at 52px (still under the bar) |
+| 2026-11-15 | dev top-bar | G5 tests | pass | Only test files changed; no only/skip; re-run top-bar, studio-dark, title-bar: 55 passed |
+| 2026-11-15 | dev top-bar | question tester | decided | Startup bar stays 48px: request says only the five points; flagged for human review |

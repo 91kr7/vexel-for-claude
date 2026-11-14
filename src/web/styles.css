@@ -910,7 +910,7 @@ input {
   z-index: 50;
   width: 320px;
   max-width: calc(100vw - 40px);
-  /* The window below the 48 px top bar, minus 24 px. */
+  /* The window below the 44 px top bar, minus 24 px. */
   max-height: calc(100vh - 68px);
   display: flex;
   align-items: flex-start;
