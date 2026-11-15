@@ -63,7 +63,7 @@ async function contentBox(locator: Locator): Promise<Box> {
   return { x: b.x + left, y: b.y + top, width: b.width - left - right, height: b.height - top - bottom };
 }
 
-/** The panel and the footer fill the main area below the header, and the terminal fills the panel inside its padding. */
+/** The panel (16 px margin on every side) and the footer fill the main area below the header, and the terminal fills the panel inside its padding. */
 async function expectPanelAndFooterFillMainBelowHeader(page: Page): Promise<void> {
   const main = await contentBox(mainArea(page));
   const head = await box(header(page));
@@ -73,7 +73,7 @@ async function expectPanelAndFooterFillMainBelowHeader(page: Page): Promise<void
   expect(Math.abs(term.y - (head.y + head.height + GAP))).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(term.x - (main.x + GAP))).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(term.width - (main.width - 2 * GAP))).toBeLessThanOrEqual(TOLERANCE);
-  expect(Math.abs(foot.y - (term.y + term.height))).toBeLessThanOrEqual(TOLERANCE);
+  expect(Math.abs(foot.y - (term.y + term.height + GAP))).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(foot.height - FOOTER_HEIGHT)).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(foot.x - main.x)).toBeLessThanOrEqual(TOLERANCE);
   expect(Math.abs(foot.width - main.width)).toBeLessThanOrEqual(TOLERANCE);
@@ -105,12 +105,12 @@ test('with 10 sessions, opening and switching a hosted session shows its header 
   await page.goto('/');
   await expect(list(page).getByRole('button').filter({ has: page.locator(`[title^="${projectsRoot}"]`) })).toHaveCount(10);
 
-  await entry(page, first).click();
+  await entry(page, first).getByTitle(first, { exact: true }).click();
   await expectHeaderOf(page, first, path.basename(first), 'Idle');
   await expect(terminal(page)).toContainText(`CWD:${first}`, ONE_SECOND);
   await expectPanelAndFooterFillMainBelowHeader(page);
 
-  await entry(page, second).click();
+  await entry(page, second).getByTitle(second, { exact: true }).click();
   await expectHeaderOf(page, second, path.basename(second), 'Idle');
   await expect(terminal(page)).toContainText(`CWD:${second}`, ONE_SECOND);
   await expect(terminal(page)).not.toContainText(`CWD:${first}`);
@@ -122,7 +122,7 @@ test('the terminal panel and the footer fill the main area below the header afte
   await startViaApi(request, folder);
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText('READY');
   await expectPanelAndFooterFillMainBelowHeader(page);
   const rowsBefore = await terminal(page).locator(':scope > div').count();
@@ -138,7 +138,7 @@ test('a long path is cut with an ellipsis and its full text as tooltip, and the 
   await startViaApi(request, folder);
   await page.setViewportSize({ width: 1000, height: 700 });
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText('READY');
 
   const folderText = footer(page).getByTitle(folder, { exact: true });

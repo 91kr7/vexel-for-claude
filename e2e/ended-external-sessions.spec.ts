@@ -104,7 +104,8 @@ async function endedExternal(page: Page, name: string, options: { open?: boolean
   await page.goto('/');
   await expect(entry(page, folder)).toBeVisible(SCAN);
   if (options.open) {
-    await entry(page, folder).click();
+    // on the folder name: the centre of a short entry is the place of its star (plan-ui_restyle/REQ-29)
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(messageArea(page)).toContainText(`Check the ${name} tests`);
   }
   session.close();
@@ -166,7 +167,8 @@ test('a closed terminal moves the external entry to "Ended" with its name, star,
   await expect(endedItem(page, folder)).toHaveCount(1, SCAN);
   const ended = endedItem(page, folder);
   await expect(ended).toContainText('Nightly build');
-  await expect(ended.getByRole('img', { name: 'Favorite', exact: true })).toBeVisible();
+  // plan-ui_restyle/REQ-29: the filled star "Remove Favorite" shows the mark, with no pointer over the entry
+  await expect(ended.getByRole('button', { name: 'Remove Favorite', exact: true })).toBeVisible();
   await expect(action(page, folder, 'Resume')).toHaveCount(1);
   await expect(action(page, folder, 'Dismiss')).toHaveCount(1);
   await expect(entry(page, folder)).toHaveClass(/\bexternal\b/);

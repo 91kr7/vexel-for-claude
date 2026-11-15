@@ -39,7 +39,7 @@ const json = (body: unknown, status = 200) => (route: Route) => route.fulfill({ 
 const banner = (page: Page) => page.getByRole('banner');
 const usageButton = (page: Page) => banner(page).getByRole('button', { name: 'Plan Usage', exact: true });
 const themeSwitch = (page: Page) => banner(page).getByRole('button', { name: 'Dark theme', exact: true });
-const newSessionButton = (page: Page) => banner(page).getByRole('button', { name: 'New Session', exact: true });
+const newSessionButton = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true });
 const shortcutsButton = (page: Page) => banner(page).getByRole('button', { name: 'Keyboard Shortcuts', exact: true });
 const popover = (page: Page) => page.getByRole('dialog', { name: 'Plan Usage', exact: true });
 const closeButton = (page: Page) => popover(page).getByRole('button', { name: 'Close', exact: true });
@@ -80,16 +80,15 @@ const contrast = (a: string, b: string) => {
 };
 
 test.describe('the usage button', () => {
-  // plan-usage_limits/REQ-1, REQ-2, REQ-15, plan-wsl_support/REQ-18: right after the look switch that follows the theme switch, 6 px apart, before "New Session"
-  test('sits right after the look switch, 6 px apart, before New Session, named and titled "Plan Usage"', async ({ page }) => {
+  // plan-usage_limits/REQ-1, REQ-2, REQ-15, plan-wsl_support/REQ-18: right after the look switch that follows the theme switch, 6 px apart
+  test('sits right after the look switch, 6 px apart, named and titled "Plan Usage"', async ({ page }) => {
     await planUsageAnswers(page, [json({ status: 'unavailable' })]);
     await loadPage(page);
     const lookSwitch = banner(page).getByRole('button', { name: 'Windows 11 look', exact: true });
-    const [shortcuts, sw, look, usage, create] = [await box(shortcutsButton(page)), await box(themeSwitch(page)), await box(lookSwitch), await box(usageButton(page)), await box(newSessionButton(page))];
+    const [shortcuts, sw, look, usage] = [await box(shortcutsButton(page)), await box(themeSwitch(page)), await box(lookSwitch), await box(usageButton(page))];
     expect(sw.x).toBeGreaterThan(shortcuts.x);
     expect(look.x).toBeGreaterThan(sw.x + sw.width);
     expect(usage.x - (look.x + look.width)).toBeCloseTo(6, 0);
-    expect(create.x).toBeGreaterThan(usage.x + usage.width);
     expect(usage.width).toBeCloseTo(sw.width, 0);
     expect(usage.height).toBeCloseTo(sw.height, 0);
     await expect(usageButton(page)).toHaveAttribute('title', 'Plan Usage');

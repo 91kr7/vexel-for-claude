@@ -180,9 +180,10 @@ describe('SessionList', () => {
     const html = renderList([{ ...session('web-dashboard', 'needs_input', fiveMinutesAgo, 'rimuovi le dipendenze'), waitingTool: 'Bash' }]);
     const [item] = items(html);
     expect(item).toMatch(/^<div\b[^>]*\sclass="[^"]*\bsession-card\b/);
-    const [cardEntry, reply, ...rest] = buttonsIn(item ?? '');
-    // plan-session_list_improvements/REQ-25, plan-favorite_session/REQ-2: the only other buttons of the card are "Mark as Favorite" and "Rename"
-    expect(rest.map((b) => b.attributes.match(/\saria-label="([^"]*)"/)?.[1])).toEqual(['Mark as Favorite', 'Rename']);
+    const [cardEntry, star, reply, ...rest] = buttonsIn(item ?? '');
+    // plan-session_list_improvements/REQ-25, plan-favorite_session/REQ-2, plan-ui_restyle/REQ-32: the star right after the card button, then "Reply", then only "Rename"
+    expect(star?.attributes).toContain('aria-label="Mark as Favorite"');
+    expect(rest.map((b) => b.attributes.match(/\saria-label="([^"]*)"/)?.[1])).toEqual(['Rename']);
     expect(classesOf(cardEntry?.attributes ?? '')).toEqual(expect.arrayContaining(['session-entry', 'needs-input']));
     expect(hasAvatar(cardEntry?.html ?? '')).toBe(false);
     expect(cardEntry?.text).toBe('Needs Input web-dashboard rimuovi le dipendenze');

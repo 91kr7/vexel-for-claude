@@ -141,7 +141,7 @@ test.describe('Keyboard shortcuts in the desktop app', () => {
       buttons.map((b) => folders.find((f) => b.querySelector(`[title="${f}"]`) !== null)).filter((f) => f !== undefined), [first, second]);
     const [top, next] = order as [string, string];
 
-    await entry(page, top).click();
+    await entry(page, top).getByTitle(top, { exact: true }).click();
     await expect(terminal(page)).toContainText(`CWD:${top}`, { timeout: 10_000 });
     await expect(terminal(page)).toContainText('READY');
     await page.locator('.xterm-screen').click();

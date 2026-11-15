@@ -1,4 +1,4 @@
-// e2e of plan-mac_title_bar, batches title-bar and window-buttons, in the browser: the drag areas of the TopBar, the Dialog and the StartupPage.
+// e2e of plan-mac_title_bar, batches title-bar and window-buttons, and of plan-ui_restyle, batch startup-page, in the browser: the drag areas of the TopBar, the Dialog and the StartupPage.
 // A fake `window.desktopBridge` makes the page behave as in the desktop window. The window manager's drag and double click
 // are not observable here: the tests check the `-webkit-app-region` areas that Electron hands to it.
 import { type Page, expect, test } from '@playwright/test';
@@ -67,7 +67,7 @@ test.describe('TopBar in the desktop window', () => {
   });
 
   // REQ-8, TopBar "Desktop window": every control is out of the drag area, over all of its box
-  test('the theme switch, "New Session" and every other control of the bar are outside the drag area', async ({ page }) => {
+  test('the theme switch, "Plan Usage" and every other control of the bar are outside the drag area', async ({ page }) => {
     await page.goto('/');
     const controls = await controlsOf(page).all();
     expect(controls.length).toBeGreaterThanOrEqual(2);
@@ -78,16 +78,17 @@ test.describe('TopBar in the desktop window', () => {
   });
 
   // REQ-8 — scenario "The controls of the top bar do not move the window": the controls still act
-  test('a click and a double click on "New Session" open the dialog; a click on the theme switch changes the theme', async ({ page }) => {
+  test('a click on "Plan Usage" opens and closes its popover, a double click toggles it twice; a click on the theme switch changes the theme', async ({ page }) => {
     await page.goto('/');
-    const newSession = topBar(page).getByRole('button', { name: 'New Session', exact: true });
-    await newSession.click();
-    await expect(newSessionDialog(page)).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(newSessionDialog(page)).toHaveCount(0);
-    await newSession.dblclick();
-    await expect(newSessionDialog(page)).toBeVisible();
-    await page.keyboard.press('Escape');
+    const planUsage = topBar(page).getByRole('button', { name: 'Plan Usage', exact: true });
+    const popover = page.getByRole('dialog', { name: 'Plan Usage', exact: true });
+    await planUsage.click();
+    await expect(popover).toBeVisible();
+    await planUsage.click();
+    await expect(popover).toHaveCount(0);
+    await planUsage.dblclick();
+    await expect(popover).toHaveCount(0);
+    await expect(planUsage).toHaveAttribute('aria-expanded', 'false');
 
     const theme = await page.locator('html').getAttribute('data-theme');
     await topBar(page).getByRole('button', { name: 'Dark theme', exact: true }).click();
@@ -162,7 +163,7 @@ test.describe('Dialog in the desktop window', () => {
   test('with a dialog open the brand is still a drag area and the dialog frame is not', async ({ page }) => {
     await page.goto('/');
     const brand = await topBar(page).getByText('Vexel', { exact: true }).boundingBox();
-    await topBar(page).getByRole('button', { name: 'New Session', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
     await expect(newSessionDialog(page)).toBeVisible();
     expect(await regionAt(page, brand!.x + brand!.width / 2, brand!.y + brand!.height / 2)).toBe('drag');
     expect(await regionsOver(page, await newSessionDialog(page).boundingBox())).toEqual(Array(5).fill('no-drag'));
@@ -172,7 +173,7 @@ test.describe('Dialog in the desktop window', () => {
   test('a dialog frame taller than the window, over the top bar, is outside the drag area', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 260 });
     await page.goto('/');
-    await topBar(page).getByRole('button', { name: 'New Session', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
     const frame = await newSessionDialog(page).boundingBox();
     const bar = await topBar(page).boundingBox();
     expect(frame!.y, 'the frame covers part of the top bar').toBeLessThan(bar!.y + bar!.height - 4);
@@ -186,7 +187,7 @@ test.describe('Dialog in the desktop window', () => {
 test('in the browser no element of the page is a drag area', async ({ page }) => {
   await page.goto('/');
   await expect(topBar(page)).toBeVisible();
-  await topBar(page).getByRole('button', { name: 'New Session', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
   await expect(newSessionDialog(page)).toBeVisible();
   const dragging = await page.evaluate(() =>
     [...document.querySelectorAll('*')].filter((element) => getComputedStyle(element).getPropertyValue('-webkit-app-region') === 'drag').length,
@@ -195,16 +196,16 @@ test('in the browser no element of the page is a drag area', async ({ page }) =>
 });
 
 test.describe('StartupPage title bar', () => {
-  // REQ-10, REQ-23, StartupPage "Shows": a 48 px bar across the top with only the window buttons, a drag area elsewhere, in the light top bar colours
+  // REQ-10, REQ-23, plan-ui_restyle/REQ-36, StartupPage "Shows": a 44 px bar across the top with only the window buttons, a drag area elsewhere, in the light top bar colours
   for (const state of [{ kind: 'loading' as const }, { kind: 'error' as const, outputLines: ['first line', 'Backend exited with code 1.'] }]) {
-    test(`${state.kind} state: a light 48 px bar across the top with only the window buttons, a drag area elsewhere`, async ({ page }) => {
+    test(`${state.kind} state: a light 44 px bar across the top with only the window buttons, a drag area elsewhere`, async ({ page }) => {
       for (const width of [1280, 420]) {
         await page.setViewportSize({ width, height: 700 });
         await page.goto(startupPageUrl(state));
-        for (const y of [1, 24, 47]) {
+        for (const y of [1, 22, 43]) {
           for (const x of [1, width / 2, width - 1]) expect(await regionAt(page, x, y), `${width} px, at ${x}, ${y}`).toBe('drag');
         }
-        expect(await regionAt(page, width / 2, 49), 'below the bar').not.toBe('drag');
+        expect(await regionAt(page, width / 2, 45), 'below the bar').not.toBe('drag');
 
         const bar = await page.evaluate(() => {
           const element = [...document.querySelectorAll('body *')].find((e) => getComputedStyle(e).getPropertyValue('-webkit-app-region') === 'drag')!;
@@ -218,7 +219,7 @@ test.describe('StartupPage title bar', () => {
             border: [s.borderBottomWidth, s.borderBottomStyle, s.borderBottomColor],
           };
         });
-        expect(bar.box).toEqual([0, 0, width, 48]);
+        expect(bar.box).toEqual([0, 0, width, 44]);
         expect(bar.text, 'the bar holds no text').toBe('');
         expect(bar.controls, 'the window buttons are its only controls').toEqual(['Close', 'Minimize', 'Maximize']);
         expect(bar.background).toBe('rgb(239, 234, 224)');
@@ -226,7 +227,7 @@ test.describe('StartupPage title bar', () => {
 
         const message = page.getByText(state.kind === 'loading' ? 'Starting the backend…' : 'The backend could not start.', { exact: true });
         await expect(message).toBeVisible();
-        expect((await message.boundingBox())!.y, 'the message is below the bar').toBeGreaterThanOrEqual(48);
+        expect((await message.boundingBox())!.y, 'the message is below the bar').toBeGreaterThanOrEqual(44);
       }
     });
   }

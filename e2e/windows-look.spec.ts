@@ -11,7 +11,7 @@ type Rgb = [number, number, number];
 
 const LOOK_KEY = 'ai-client.look';
 const WINDOWS_BLUE = 'rgb(0, 120, 212)';
-const BUTTON_ORDER = ['Keyboard Shortcuts', 'Dark theme', 'Windows 11 look', 'Plan Usage', 'New Session'];
+const BUTTON_ORDER = ['Keyboard Shortcuts', 'Dark theme', 'Windows 11 look', 'Plan Usage'];
 
 const topBar = (page: Page) => page.getByRole('banner');
 const lookSwitch = (page: Page) => topBar(page).getByRole('button', { name: 'Windows 11 look', exact: true });
@@ -204,7 +204,7 @@ test.describe('Look switch and look store', () => {
   });
 
   // plan-wsl_support/REQ-18, TopBar "Shows": the look switch sits right after the theme switch, 6 px apart, before Plan Usage
-  test('the look switch sits right after the theme switch, 6 px apart, before "Plan Usage" and "New Session"', async ({ page }) => {
+  test('the look switch sits right after the theme switch, 6 px apart, before "Plan Usage"', async ({ page }) => {
     await page.goto('/');
     await expect(lookSwitch(page)).toBeVisible();
     const names = await topBar(page).getByRole('button').evaluateAll((all) => all.map((e) => e.getAttribute('aria-label') ?? e.textContent?.trim() ?? ''));
@@ -346,7 +346,7 @@ test.describe('Look change with an open session', () => {
     await mkdir(folder);
     await startViaApi(request, folder);
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(terminalRows(page)).toContainText(`CWD:${folder}`);
     await page.locator('.xterm-screen').click();
     await expect(terminalInput(page)).toBeFocused();
@@ -440,11 +440,11 @@ test.describe('Windows 11 look styles', () => {
   test('small controls have 4 px corners and a dialog has 8 px corners', async ({ page }) => {
     await chooseLook(page, 'windows11');
     await page.goto('/');
-    const newSession = topBar(page).getByRole('button', { name: 'New Session', exact: true });
-    await expect(newSession).toBeVisible();
-    for (const control of [newSession, lookSwitch(page), themeSwitch(page)])
-      expect(await control.evaluate((e) => getComputedStyle(e).borderTopLeftRadius), await control.getAttribute('aria-label') ?? 'New Session').toBe('4px');
-    await newSession.click();
+    const planUsage = topBar(page).getByRole('button', { name: 'Plan Usage', exact: true });
+    await expect(planUsage).toBeVisible();
+    for (const control of [planUsage, lookSwitch(page), themeSwitch(page)])
+      expect(await control.evaluate((e) => getComputedStyle(e).borderTopLeftRadius), await control.getAttribute('aria-label') ?? '').toBe('4px');
+    await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'New Claude Code Session' });
     await expect(dialog).toBeVisible();
     expect(await dialog.evaluate((e) => getComputedStyle(e).borderTopLeftRadius)).toBe('8px');
@@ -577,7 +577,7 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
   });
 
   // plan-wsl_support/REQ-28, REQ-40, WindowButtons "Windows 11 look shows"
-  test('in the Windows 11 look "Minimize", "Maximize", "Close" sit at the right end after "New Session", 46 px wide, bar high, flush with the window edge', async ({ page }) => {
+  test('in the Windows 11 look "Minimize", "Maximize", "Close" sit at the right end after "Plan Usage", 46 px wide, bar high, flush with the window edge', async ({ page }) => {
     await chooseLook(page, 'windows11');
     await page.goto('/');
     const bar = topBar(page);
@@ -585,11 +585,11 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
     await expect(close).toBeVisible();
     const [min, max, cls] = await Promise.all([minimize, maximize, close].map(async (b) => (await b.boundingBox())!));
     const barBox = (await bar.boundingBox())!;
-    const newSession = (await bar.getByRole('button', { name: 'New Session', exact: true }).boundingBox())!;
+    const planUsage = (await bar.getByRole('button', { name: 'Plan Usage', exact: true }).boundingBox())!;
     const width = page.viewportSize()!.width;
     expect(min!.x).toBeLessThan(max!.x);
     expect(max!.x).toBeLessThan(cls!.x);
-    expect(min!.x, 'after "New Session"').toBeGreaterThanOrEqual(newSession.x + newSession.width);
+    expect(min!.x, 'after "Plan Usage"').toBeGreaterThanOrEqual(planUsage.x + planUsage.width);
     expect(cls!.x + cls!.width, 'flush with the right edge of the window').toBeCloseTo(width, 0);
     for (const box of [min!, max!, cls!]) {
       expect(box.width).toBeCloseTo(46, 0);
@@ -605,7 +605,7 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
     expect(Math.min(...controlsLeft), 'no control before the logo').toBeGreaterThan(logo.x);
     expect(await bar.getByRole('button', { name: /^(Close|Minimize|Maximize|Restore)$/ }).count(), 'one set of window buttons').toBe(3);
     const backgrounds = await Promise.all([close, minimize, maximize].map((b) => b.evaluate((e) => getComputedStyle(e).backgroundColor)));
-    expect(backgrounds, 'not the macOS colours').not.toContain('rgb(255, 95, 87)');
+    expect(backgrounds, 'not the macOS colours').not.toContain('rgb(224, 68, 60)');
   });
 
   // plan-wsl_support/REQ-28: each glyph shows without hover; REQ-31: Restore while maximized
@@ -648,6 +648,57 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
     await expect.poll(() => close.locator('svg').evaluate((e) => getComputedStyle(e).color)).toBe('rgb(255, 255, 255)');
   });
 
+  // plan-ui_restyle/REQ-11, WindowButtons "Windows 11 look shows" and rule: the macOS styles never reach the Windows-style buttons
+  for (const theme of ['dark', 'light'] as const) {
+    test(`${theme} theme: the Windows-style buttons take no macOS filter, border or glow, and keep the caption colours at rest, on hover and pressed`, async ({ page }) => {
+      await chooseLook(page, 'windows11');
+      await page.goto('/');
+      await setTheme(page, theme);
+      const { close, minimize, maximize } = windowButtons(topBar(page));
+      await expect(close).toBeVisible();
+      const colours = await page.evaluate(() => {
+        const resolve = (token: string) => {
+          const probe = document.createElement('div');
+          probe.style.backgroundColor = `var(${token})`;
+          document.body.append(probe);
+          const value = getComputedStyle(probe).backgroundColor;
+          probe.remove();
+          return value;
+        };
+        return { hover: resolve('--caption-hover'), pressed: resolve('--caption-pressed'), close: resolve('--caption-close'), closePressed: resolve('--caption-close-pressed') };
+      });
+      const looks = (button: Locator) =>
+        button.evaluate((e) => {
+          const s = getComputedStyle(e);
+          return { background: s.backgroundColor, filter: s.filter, shadow: s.boxShadow, glyph: getComputedStyle(e.querySelector('svg')!).color };
+        });
+      const states = [
+        { button: minimize, hover: colours.hover, pressed: colours.pressed },
+        { button: maximize, hover: colours.hover, pressed: colours.pressed },
+        { button: close, hover: colours.close, pressed: colours.closePressed },
+      ];
+      for (const { button, hover, pressed } of states) {
+        const name = await button.getAttribute('aria-label');
+        await page.mouse.move(5, 300);
+        await expect.poll(async () => (await looks(button)).filter, `${name} at rest`).toBe('none');
+        expect((await looks(button)).shadow, `${name} at rest`).toBe('none');
+
+        await button.hover();
+        await expect.poll(async () => (await looks(button)).background, `${name} on hover`).toBe(hover);
+        expect((await looks(button)).filter, `${name} on hover`).toBe('none');
+        expect((await looks(button)).shadow, `${name} on hover`).toBe('none');
+        if (button === close) expect((await looks(button)).glyph, 'white close glyph').toBe('rgb(255, 255, 255)');
+
+        await page.mouse.down();
+        await expect.poll(async () => (await looks(button)).background, `${name} pressed`).toBe(pressed);
+        expect((await looks(button)).filter, `${name} pressed`).toBe('none');
+        expect((await looks(button)).shadow, `${name} pressed`).toBe('none');
+        await page.mouse.move(5, 300);
+        await page.mouse.up();
+      }
+    });
+  }
+
   // plan-wsl_support/REQ-28, REQ-34, TopBar: a look change moves the buttons at once
   test('a look change moves the buttons: macOS buttons before the logo in the current look, Windows-style at the right end in the Windows 11 look', async ({ page }) => {
     await page.goto('/');
@@ -658,7 +709,7 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
     const macRed = (await close.boundingBox())!;
     expect(macRed.width, 'a 12 px macOS circle').toBeCloseTo(12, 0);
     expect(macRed.x + macRed.width).toBeLessThan(await logoX());
-    expect(await close.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe('rgb(255, 95, 87)');
+    expect(await close.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe('rgb(224, 68, 60)');
     const macOrder = await Promise.all([close, minimize, maximize].map(async (b) => (await b.boundingBox())!.x));
     expect(macOrder[0]).toBeLessThan(macOrder[1]!);
     expect(macOrder[1]).toBeLessThan(macOrder[2]!);
@@ -749,8 +800,8 @@ test('in the browser the top bar shows no window buttons in either look', async 
     const logo = (await bar.getByText('VX', { exact: true }).boundingBox())!;
     const contentLeft = await bar.evaluate((e) => e.getBoundingClientRect().x + parseFloat(getComputedStyle(e).paddingLeft));
     expect(logo.x, `${look}: the logo is the first thing of the bar`).toBeCloseTo(contentLeft, 0);
-    const lastRight = await bar.getByRole('button', { name: 'New Session', exact: true }).evaluate((e) => e.getBoundingClientRect().right);
+    const lastRight = await bar.getByRole('button', { name: 'Plan Usage', exact: true }).evaluate((e) => e.getBoundingClientRect().right);
     const contentRight = await bar.evaluate((e) => e.getBoundingClientRect().right - parseFloat(getComputedStyle(e).paddingRight));
-    expect(lastRight, `${look}: "New Session" ends the bar`).toBeCloseTo(contentRight, 0);
+    expect(lastRight, `${look}: "Plan Usage" ends the bar`).toBeCloseTo(contentRight, 0);
   }
 });

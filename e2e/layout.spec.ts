@@ -67,7 +67,7 @@ async function startViaApi(request: APIRequestContext, folder: string): Promise<
 }
 
 async function openFromList(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText('READY');
 }
 
@@ -150,7 +150,7 @@ async function expectPageFits(page: Page, width: number): Promise<void> {
   expect(await horizontalOverflow(mainArea(page)), 'main content inside the main area').toEqual([]);
   const head: Record<string, Locator> = {
     brand: brand(page),
-    'top bar New Session': button(topBar(page), 'New Session'),
+    'top bar Plan Usage': button(topBar(page), 'Plan Usage'),
     title: panelTitle(page),
     'rail New Claude Code Session': button(rail(page), 'New Claude Code Session'),
     'rail Sessions': button(rail(page), 'Sessions'),
@@ -376,7 +376,7 @@ test('when the entries do not fit, only the list scrolls and the rail and the pa
 
   const top = {
     brand: brand(page),
-    'top bar new': button(topBar(page), 'New Session'),
+    'top bar usage': button(topBar(page), 'Plan Usage'),
     title: panelTitle(page),
     new: button(rail(page), 'New Claude Code Session'),
     sessions: button(rail(page), 'Sessions'),

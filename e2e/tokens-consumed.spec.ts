@@ -120,7 +120,7 @@ test.describe('Tokens consumed', () => {
     );
     await subagent('agent-a1.jsonl')(response({ input: 100, output: 900, cacheWrite: 1_000, cacheRead: 2_000 }, { sidechain: true }));
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(chipShows('24k'));
     await expect(chip(page)).toBeVisible();
     await expect(popover(page)).toBeHidden();
@@ -161,7 +161,7 @@ test.describe('Tokens consumed', () => {
       response({ input: 1_000, output: 7_000, cacheRead: 2_000 }, { key }),
     );
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(chipShows('10k'));
     await chip(page).hover();
     await expect(popover(page)).toHaveText(/Output\s*7k\s*Cache write/);
@@ -176,7 +176,7 @@ test.describe('Tokens consumed', () => {
       response({ input: 400, output: 2_000, cacheWrite: 1_000, cacheRead: 4_000 }),
     );
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(chipShows('12.4k'));
     expect((await request.post(`/api/sessions/${id}/stop`)).ok()).toBe(true);
     await expect.poll(async () => ((await (await request.get('/api/sessions')).json()) as { id: string; state: string }[]).find((s) => s.id === id)?.state).toBe('ended');
@@ -187,7 +187,7 @@ test.describe('Tokens consumed', () => {
     createdIds.push(resumedId);
     // ResumeEndedSessionRoute lists the new session before it removes the ended one: wait for the list to settle.
     await expect(entry(page, folder)).toHaveCount(1);
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(chipShows('12.4k'));
 
     await write(userText('Go on'), response({ input: 100, output: 400, cacheWrite: 0, cacheRead: 500 }));
@@ -198,7 +198,7 @@ test.describe('Tokens consumed', () => {
   test('/clear starts the tokens again from zero', async ({ page, request }) => {
     const { id, folder } = await hostedWith(request, 'clear', response({ input: 5_000, output: 10_000, cacheWrite: 10_000, cacheRead: 20_000 }));
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(chipShows('45k'));
 
     const cleared = crypto.randomUUID();
@@ -215,7 +215,7 @@ test.describe('Tokens consumed', () => {
   test('no tokens before the first response', async ({ page, request }) => {
     const { folder } = await hostedWith(request, 'fresh');
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(footer(page)).toBeVisible();
     await page.waitForTimeout(1_500);
     await expect(chip(page)).toHaveCount(0);
@@ -226,7 +226,7 @@ test.describe('Tokens consumed', () => {
   test('an ended session keeps its tokens', async ({ page, request }) => {
     const { id, folder } = await hostedWith(request, 'ended', response({ input: 5_000, output: 10_000, cacheWrite: 10_000, cacheRead: 20_000 }));
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(chipShows('45k'));
 
     expect((await request.post(`/api/sessions/${id}/stop`)).ok()).toBe(true);
@@ -251,11 +251,11 @@ test.describe('Tokens consumed', () => {
     await page.goto('/');
     const started = Date.now();
     await expect(entry(page, folder)).toBeVisible({ timeout: 5_000 });
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(header(page)).toContainText(path.basename(folder), { timeout: 2_000 });
-    await entry(page, other.folder).click();
+    await entry(page, other.folder).getByTitle(other.folder, { exact: true }).click();
     await expect(header(page)).toContainText(path.basename(other.folder), { timeout: 2_000 });
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(chipShows('510k'), { timeout: 5_000 });
     expect(Date.now() - started, 'figures within a few seconds').toBeLessThan(8_000);
   });

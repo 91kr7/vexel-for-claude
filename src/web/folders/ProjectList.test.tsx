@@ -55,6 +55,8 @@ function mount(store: ProjectListStore, onChoose?: (project: unknown) => void) {
 
 const text = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 const rows = (host: HTMLElement) => [...host.querySelectorAll<HTMLButtonElement>('button.project-row')];
+const pathOf = (row: Element) => [...row.querySelectorAll('*')].find((el) => el.children.length === 0 && el.textContent?.startsWith('/'));
+const pathTextOf = (row: Element) => pathOf(row)?.textContent;
 
 describe('ProjectList', () => {
   // ProjectList "Shows": the title row with the h1 "Projects" in .section-label
@@ -104,7 +106,7 @@ describe('ProjectList', () => {
     expect(text(first)).toContain('web-dashboard');
     expect(text(first)).toContain('/home/u/web-dashboard');
     expect(text(first)).toContain('Last activity');
-    expect(first!.querySelector('[title="/home/u/web-dashboard"]')).not.toBeNull();
+    expect(pathTextOf(first!)).toBe('/home/u/web-dashboard');
     expect(first!.querySelector('time')?.getAttribute('datetime')).toBe('2026-11-10T10:00:00.000Z');
     expect(text(list[1])).toContain('old-api');
     expect(list[1]!.querySelector('time')?.getAttribute('datetime')).toBe('2026-11-09T10:00:00.000Z');
@@ -180,14 +182,24 @@ describe('ProjectList', () => {
     expect(onChoose.mock.calls[0]![0]).toMatchObject({ folder: '/home/u/web-dashboard', available: true, lastActivity: '2026-11-10T10:00:00.000Z' });
   });
 
-  // ProjectList "Shows": the decorative "▶ New session" label only on available rows, outside the row name
-  it('gives only available rows the decorative "▶ New session" label, hidden from the row name', async () => {
+  // plan-ui_restyle/REQ-12
+  it('shows no "New session" label on any row', async () => {
     const { store } = await storeWith(groups);
-    const [available, unavailable] = rows(mount(store, vi.fn()));
-    const label = [...available!.querySelectorAll('*')].find((el) => el.children.length === 0 && text(el).includes('New session'));
-    expect(text(label)).toBe('▶ New session');
-    expect(label!.closest('[aria-hidden="true"]')).not.toBeNull();
-    expect(text(unavailable)).not.toContain('New session');
+    const host = mount(store, vi.fn());
+    expect(rows(host)).toHaveLength(2);
+    expect(text(host)).not.toContain('New session');
+  });
+
+  // plan-ui_restyle/REQ-23
+  it('gives the folder path, and the row around it, no title', async () => {
+    const { store } = await storeWith(groups);
+    for (const row of rows(mount(store))) {
+      const path = pathOf(row)!;
+      expect(path).toBeDefined();
+      for (let el: Element | null = path; el && el !== row.parentElement; el = el.parentElement) {
+        expect(el.hasAttribute('title'), `title on <${el.tagName.toLowerCase()} class="${el.className}">`).toBe(false);
+      }
+    }
   });
 });
 
@@ -200,40 +212,39 @@ async function markedStore(favorites: string[]) {
   return store;
 }
 
-const rowOf = (host: HTMLElement, folder: string) => rows(host).find((row) => row.querySelector(`[title="${folder}"]`))!;
+const rowOf = (host: HTMLElement, folder: string) => rows(host).find((row) => pathTextOf(row) === folder)!;
 const favoriteButtons = (host: HTMLElement) =>
   [...host.querySelectorAll<HTMLButtonElement>('button')].filter((b) => /^(Mark as Favorite|Remove Favorite)$/.test(b.getAttribute('aria-label') ?? b.textContent?.trim() ?? ''));
 const nameOf = (button: HTMLButtonElement) => button.getAttribute('aria-label') ?? button.textContent?.trim();
 
 describe('ProjectList favorite mark', () => {
-  // plan-project_list_actions/REQ-24, REQ-30: the star of a favorite row, told apart by shape and name
-  it('shows the FavoriteIndicator after the folder name of a favorite row only', async () => {
+  // plan-ui_restyle/REQ-14: the star button replaces the FavoriteIndicator; its host is the row item
+  it('shows no FavoriteIndicator in a row; the favorite star is the button of the row item, filled on a favorite', async () => {
     const host = mount(await markedStore(['/home/u/old-api']));
-    const favorite = rowOf(host, '/home/u/old-api');
-    const indicator = favorite.querySelector('[role="img"][aria-label="Favorite"]');
-    expect(indicator).not.toBeNull();
-    expect(indicator!.getAttribute('title')).toBe('Favorite');
-    expect(indicator!.querySelector('svg.icon-filled')).not.toBeNull();
-    const name = [...favorite.querySelectorAll('*')].find((el) => el.children.length === 0 && el.textContent === 'old-api');
-    expect(name).toBeDefined();
-    expect(name!.compareDocumentPosition(indicator!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(rowOf(host, '/home/u/web-dashboard').querySelector('[aria-label="Favorite"]')).toBeNull();
+    for (const row of rows(host)) expect(row.querySelector('[role="img"][aria-label="Favorite"]')).toBeNull();
+    const item = rowOf(host, '/home/u/old-api').closest('li')!;
+    expect(item.classList.contains('star-host')).toBe(true);
+    const star = favoriteButtons(host).find((b) => item.contains(b))!;
+    expect(nameOf(star)).toBe('Remove Favorite');
+    expect(star.querySelector('svg.icon-filled')).not.toBeNull();
+    const other = rowOf(host, '/home/u/web-dashboard').closest('li')!;
+    expect(nameOf(favoriteButtons(host).find((b) => other.contains(b))!)).toBe('Mark as Favorite');
   });
 
   // plan-project_list_actions/REQ-25
   it('shows the favorite row first, in the store order', async () => {
     const host = mount(await markedStore(['/home/u/old-api']));
-    expect(rows(host).map((row) => row.querySelector('[title^="/"]')?.getAttribute('title'))).toEqual(['/home/u/old-api', '/home/u/web-dashboard']);
+    expect(rows(host).map(pathTextOf)).toEqual(['/home/u/old-api', '/home/u/web-dashboard']);
   });
 
-  // plan-project_list_actions/REQ-23, REQ-27, REQ-31: each row, unavailable too, has its button beside the row button
+  // plan-project_list_actions/REQ-23, REQ-27, REQ-31, plan-ui_restyle/REQ-26: row, then star, then Remove in the tab order
   it('gives every row a favorite button beside the row button, not inside it, right after it in the tab order', async () => {
     const host = mount(await markedStore(['/home/u/web-dashboard']));
     const buttons = favoriteButtons(host);
     expect(buttons).toHaveLength(2);
     for (const button of buttons) expect(button.closest('.project-row')).toBeNull();
     const focusable = [...host.querySelectorAll<HTMLButtonElement>('button')].filter((b) => b.tabIndex >= 0);
-    const order = focusable.map((b) => (b.classList.contains('project-row') ? b.querySelector('[title^="/"]')?.getAttribute('title') : nameOf(b)));
+    const order = focusable.map((b) => (b.classList.contains('project-row') ? pathTextOf(b) : nameOf(b)));
     expect(order).toEqual(['/home/u/web-dashboard', 'Remove Favorite', 'Remove from Projects', '/home/u/old-api', 'Mark as Favorite', 'Remove from Projects']);
   });
 
@@ -245,6 +256,7 @@ describe('ProjectList favorite mark', () => {
     expect(unavailableButton.getAttribute('aria-disabled')).not.toBe('true');
   });
 
+  // plan-ui_restyle/REQ-24
   it('a press on the favorite button does not choose the project', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
     const onChoose = vi.fn();
@@ -286,7 +298,7 @@ async function removableStore() {
   return { store, remove };
 }
 
-const shown = (host: HTMLElement) => rows(host).map((row) => row.querySelector('[title^="/"]')?.getAttribute('title'));
+const shown = (host: HTMLElement) => rows(host).map(pathTextOf);
 
 describe('ProjectList remove action', () => {
   // plan-project_list_actions/REQ-12, REQ-18, REQ-21: each row, unavailable too, has its remove button beside the row button
@@ -303,6 +315,7 @@ describe('ProjectList remove action', () => {
     expect(rowOf(host, '/home/u/bravo').getAttribute('aria-disabled')).toBe('true');
   });
 
+  // plan-ui_restyle/REQ-24
   it('a press on the remove button does not choose the project', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
     const onChoose = vi.fn();
@@ -476,7 +489,8 @@ describe('ProjectList search', () => {
     expect(shown(host)[0]).toBe('/home/dev/api');
     type(host, 'ap');
     expect(shown(host)).toEqual(['/home/dev/api', '/home/dev/app', '/home/dev/apex']);
-    expect(rowOf(host, '/home/dev/api').querySelector('[aria-label="Favorite"]')).not.toBeNull();
+    const apiItem = rowOf(host, '/home/dev/api').closest('li')!;
+    expect(favoriteButtons(host).find((b) => apiItem.contains(b))!.querySelector('svg.icon-filled')).not.toBeNull();
   });
 
   // plan-project_list_actions/REQ-5: no match gives the empty state with the text in quotes; the bar stays

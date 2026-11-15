@@ -58,7 +58,7 @@ async function openSession(page: Page, request: APIRequestContext, name: string)
   const folder = await newFolder(name);
   const id = await startViaApi(request, folder);
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText('READY');
   return { id, folder };
 }
@@ -300,7 +300,7 @@ test.describe('open session', () => {
       };
     });
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
 
     const indicator = loading(mainArea(page));
     await expect(indicator).toBeVisible();
@@ -330,7 +330,7 @@ test.describe('open session', () => {
         ws.connectToServer();
       });
       await page.goto('/');
-      await entry(page, folder).click();
+      await entry(page, folder).getByTitle(folder, { exact: true }).click();
       await expect(terminal(page)).toContainText('READY');
       await expect(mainArea(page).getByRole('alert')).toHaveCount(0);
 
@@ -354,7 +354,7 @@ test.describe('open session', () => {
       setTimeout(() => void ws.close({ code: 4404 }), 500);
     });
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
 
     await expect(mainArea(page).getByRole('alert')).toHaveText('The session no longer exists.');
     await expect(loading(mainArea(page))).toHaveCount(0);
@@ -664,7 +664,7 @@ test.describe('external session', () => {
     let conversation: WebSocketRoute | undefined;
     await withExternalEntry(page, (ws) => (conversation = ws));
     await page.goto('/');
-    await entry(page, externalEntry.label).click();
+    await entry(page, externalEntry.label).getByTitle(externalEntry.label, { exact: true }).click();
 
     await expect(loading(mainArea(page))).toBeVisible();
     conversation!.send(JSON.stringify({ type: 'items', items: [] }));
@@ -678,7 +678,7 @@ test.describe('external session', () => {
     await withExternalEntry(page, (ws) => void setTimeout(() => void ws.close({ code: 4404 }), 300));
     await page.goto('/');
 
-    await entry(page, externalEntry.label).click();
+    await entry(page, externalEntry.label).getByTitle(externalEntry.label, { exact: true }).click();
 
     await expect(mainArea(page).getByRole('alert')).toHaveText('Conversation not available.');
     await expect(loading(mainArea(page))).toHaveCount(0);
@@ -692,7 +692,7 @@ test.describe('external session', () => {
     test(`"Resume Here" is busy while the resume runs; a ${status} ${error} shows "${message}"`, async ({ page }) => {
       await withExternalEntry(page, (ws) => ws.send(JSON.stringify({ type: 'items', items: [] })));
       await page.goto('/');
-      await entry(page, externalEntry.label).click();
+      await entry(page, externalEntry.label).getByTitle(externalEntry.label, { exact: true }).click();
       await expect(mainArea(page)).toContainText('No messages.');
       const held = await hold(page, `**/api/past-sessions/${externalEntry.id}/resume`, 'POST');
 

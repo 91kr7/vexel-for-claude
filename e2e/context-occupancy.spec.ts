@@ -124,7 +124,7 @@ test.describe('Context occupancy', () => {
     const row = entry(page, folder);
     await expect(percent(row)).toHaveText('23%');
 
-    await row.click();
+    await row.getByTitle(folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(/^Context\s*45\.2k \/ 200k · 23%$/);
     await expect(chip(page)).toBeVisible();
     const box = await row.boundingBox();
@@ -160,10 +160,10 @@ test.describe('Context occupancy', () => {
     await expect(percent(entry(page, error.folder))).toHaveText('92%');
     await expect(percent(entry(page, error.folder))).toHaveCSS('color', rose);
 
-    await entry(page, warning.folder).click();
+    await entry(page, warning.folder).getByTitle(warning.folder, { exact: true }).click();
     await expect(chipValue(page)).toHaveText('150k / 200k · 75%');
     await expect(chipValue(page)).toHaveCSS('color', amber);
-    await entry(page, error.folder).click();
+    await entry(page, error.folder).getByTitle(error.folder, { exact: true }).click();
     await expect(chipValue(page)).toHaveText('184k / 200k · 92%');
     await expect(chipValue(page)).toHaveCSS('color', rose);
   });
@@ -173,9 +173,9 @@ test.describe('Context occupancy', () => {
     const large = await hostedWith(request, 'large', response(300_000));
     const extended = await hostedWith(request, 'extended', response(150_000, { model: 'claude-haiku-5-5[1m]' }));
     await page.goto('/');
-    await entry(page, large.folder).click();
+    await entry(page, large.folder).getByTitle(large.folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(/^Context\s*300k \/ 1M · 30%$/);
-    await entry(page, extended.folder).click();
+    await entry(page, extended.folder).getByTitle(extended.folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(/^Context\s*150k \/ 1M · 15%$/);
   });
 
@@ -183,7 +183,7 @@ test.describe('Context occupancy', () => {
   test('subagents and compaction', async ({ page, request }) => {
     const { folder, write } = await hostedWith(request, 'compact', response(80_000));
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(/^Context\s*80k \/ 200k · 40%$/);
 
     await write(response(5_000, { sidechain: true }));
@@ -206,7 +206,7 @@ test.describe('Context occupancy', () => {
     await page.goto('/');
     const row = entry(page, folder);
     await expect(row).toBeVisible();
-    await row.click();
+    await row.getByTitle(folder, { exact: true }).click();
     await expect(footer(page)).toBeVisible();
     await page.waitForTimeout(1_500);
     await expect(percent(row)).toHaveCount(0);
@@ -219,7 +219,7 @@ test.describe('Context occupancy', () => {
   test('an ended session keeps its figures', async ({ page, request }) => {
     const { id, folder } = await hostedWith(request, 'ended', response(80_000));
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(/^Context\s*80k \/ 200k · 40%$/);
 
     expect((await request.post(`/api/sessions/${id}/stop`)).ok()).toBe(true);

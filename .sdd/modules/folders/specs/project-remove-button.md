@@ -11,14 +11,14 @@ type: UI component
 ## Contract
 
 Description:
-- the same look as ProjectFavoriteButton, with the X icon. ProjectList places it beside the row button. An error shows under the row.
+- a 22 px circle with a thin X icon of 10 px in `--text-muted`, no background. ProjectList places it at the right end of the row. An error shows under the row.
 
 Props:
 - `folder` → the folder of the project.
 
 Shows:
 - accessible name and tooltip "Remove from Projects".
-- hover → `--bg-surface-3` and `--text-primary`. The focused button shows the focus ring.
+- hover → soft red from the theme: `--rose-500-15` background and `--rose-400` X. The focused button shows the focus ring.
 - while a request runs → `aria-disabled="true"` and `aria-busy="true"`, and a press sends nothing more.
 - an ErrorMessage "Could not remove the project." after a failed request. A new press clears it.
 
@@ -42,3 +42,4 @@ Actions:
 ## Requirements served
 
 - `plan-project_list_actions/REQ-12`, `plan-project_list_actions/REQ-13`, `plan-project_list_actions/REQ-21`, `plan-project_list_actions/REQ-22`
+- `plan-ui_restyle/REQ-19`, `plan-ui_restyle/REQ-22`, `plan-ui_restyle/REQ-24`, `plan-ui_restyle/REQ-25`

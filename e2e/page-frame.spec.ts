@@ -85,7 +85,7 @@ const askPermission = (request: APIRequestContext, id: string) => postHook(reque
 const finishTurn = (request: APIRequestContext, id: string) => postHook(request, id, { hook_event_name: 'Stop' });
 
 async function openFromList(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
 }
 
@@ -206,7 +206,8 @@ test.describe('rail and list panel', () => {
     const brandBox = await box(brand);
     const forBox = await box(forClaude);
     expect(forBox.x, '"for Claude" follows "Vexel"').toBeGreaterThan(brandBox.x + brandBox.width - 0.5);
-    expect((await box(title)).y, 'the title row is below the top bar').toBeGreaterThanOrEqual((await box(topBar(page))).y + 48 - 0.5);
+    const bar = await box(topBar(page));
+    expect((await box(title)).y, 'the title row is below the top bar').toBeGreaterThanOrEqual(bar.y + bar.height - 0.5);
     expect(await title.evaluate((el) => getComputedStyle(el).marginTop + ' ' + getComputedStyle(el).marginBottom)).toBe('0px 0px');
   });
 

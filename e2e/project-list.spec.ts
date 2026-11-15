@@ -25,7 +25,7 @@ const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigati
 const railButton = (page: Page, name: string) => rail(page).getByRole('button', { name, exact: true });
 const panel = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const rows = (page: Page) => panel(page).locator('.project-row');
-const row = (page: Page, folder: string) => rows(page).filter({ has: page.getByTitle(folder, { exact: true }) });
+const row = (page: Page, folder: string) => rows(page).filter({ has: page.getByText(folder, { exact: true }) });
 const pastSessionsRequest = (url: string) => new URL(url).pathname === '/api/past-sessions';
 
 /** Writes a session as Claude Code leaves it after a session in the terminal, and creates its folder unless told not to. */
@@ -99,7 +99,7 @@ test('"Projects" shows every project folder, the most recent first, with path an
   await expect(panel(page).getByRole('heading', { level: 1, name: 'Projects', exact: true })).toBeVisible();
   await expect(panel(page).getByRole('heading', { name: 'Sessions', exact: true })).toHaveCount(0);
   await expect(rows(page)).toHaveCount(3);
-  const shown = await rows(page).evaluateAll((els) => els.map((el) => el.querySelector('[title]')?.getAttribute('title')));
+  const shown = await rows(page).evaluateAll((els) => els.map((el) => el.querySelector('.project-row-path')?.textContent));
   expect(shown).toEqual([newest, middle, terminalOnly]);
   for (const [folder, name] of [
     [newest, 'newest-app'],
@@ -160,7 +160,7 @@ test('after a reload the list shows its folders again, and a new folder appears 
   const third = await project('third', hoursAgo(0.1));
   await openProjects(page);
   await expect(rows(page)).toHaveCount(3);
-  const shown = await rows(page).evaluateAll((els) => els.map((el) => el.querySelector('[title]')?.getAttribute('title')));
+  const shown = await rows(page).evaluateAll((els) => els.map((el) => el.querySelector('.project-row-path')?.textContent));
   expect(shown).toEqual([third, second, first]);
 
   await railButton(page, 'Sessions').click();

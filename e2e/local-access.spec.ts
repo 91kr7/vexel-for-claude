@@ -93,7 +93,7 @@ test('a page of another local server cannot read or drive a session', async ({ p
   const id = ((await started.json()) as { id: string }).id;
   createdIds.push(id);
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText('READY');
 
   const { other, messages } = await openOtherPage(page);

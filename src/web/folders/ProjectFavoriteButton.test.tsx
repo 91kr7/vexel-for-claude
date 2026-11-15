@@ -58,6 +58,17 @@ describe('ProjectFavoriteButton', () => {
     expect(button().querySelector('svg.icon-filled')).not.toBeNull();
   });
 
+  // plan-ui_restyle/REQ-15, REQ-16, REQ-28: the shared star classes, marked only when favorite
+  it.each([
+    [false, false],
+    [true, true],
+  ])('with favorite %s it is a star-button, marked %s', (favorite, marked) => {
+    const { button } = mount('/work/a', favorite);
+    expect(button().classList.contains('star-button')).toBe(true);
+    expect(button().classList.contains('marked')).toBe(marked);
+    expect(button().classList.contains('entry-favorite')).toBe(false);
+  });
+
   it.each([
     [false, true],
     [true, false],
@@ -137,5 +148,84 @@ describe('ProjectFavoriteButton', () => {
     answers[1]!.resolve(new Response(null, { status: 204 }));
     await settle();
     expect(alertText(host)).toBeNull();
+  });
+
+  const pops = (button: HTMLButtonElement) => button.classList.contains('pop');
+  // jsdom has no AnimationEvent, so React listens to the prefixed name there.
+  const endAnimation = (button: HTMLButtonElement) =>
+    flushSync(() => ['animationend', 'webkitAnimationEnd'].forEach((name) => button.dispatchEvent(new Event(name, { bubbles: true }))));
+
+  // ProjectFavoriteButton "Shows": no pop on mount
+  it('does not pop on mount of a marked project', () => {
+    const { button } = mount('/work/a', true);
+    expect(pops(button())).toBe(false);
+  });
+
+  // plan-ui_restyle/REQ-17: a mark press, then the mark arriving, pops once
+  it('pops when favorite turns true after its own mark press, and stops at the end of the animation', async () => {
+    const { answers } = controlledFetch();
+    const { button, render } = mount('/work/a', false);
+    button().click();
+    answers[0]!.resolve(new Response(null, { status: 204 }));
+    await settle();
+    expect(pops(button())).toBe(false);
+    render(true);
+    expect(pops(button())).toBe(true);
+    endAnimation(button());
+    expect(pops(button())).toBe(false);
+  });
+
+  // plan-ui_restyle/REQ-17: the mark may reach the row before the answer
+  it('pops when the mark arrives while its own mark request still runs', async () => {
+    const { answers } = controlledFetch();
+    const { button, render } = mount('/work/a', false);
+    button().click();
+    render(true);
+    expect(pops(button())).toBe(true);
+    answers[0]!.resolve(new Response(null, { status: 204 }));
+    await settle();
+  });
+
+  // ProjectFavoriteButton "Shows": pop only once per mark press
+  it('does not pop again when the mark goes off and on from elsewhere after a popped mark', async () => {
+    const { answers } = controlledFetch();
+    const { button, render } = mount('/work/a', false);
+    button().click();
+    answers[0]!.resolve(new Response(null, { status: 204 }));
+    await settle();
+    render(true);
+    endAnimation(button());
+    render(false);
+    render(true);
+    expect(pops(button())).toBe(false);
+  });
+
+  // ProjectFavoriteButton "Shows": no pop on a mark from elsewhere
+  it('does not pop when favorite turns true with no press of this button', () => {
+    const { button, render } = mount('/work/a', false);
+    render(true);
+    expect(pops(button())).toBe(false);
+  });
+
+  // plan-ui_restyle/REQ-17 and the plan note "Unmark": only marking animates
+  it('does not pop on unmark', async () => {
+    const { answers } = controlledFetch();
+    const { button, render } = mount('/work/a', true);
+    button().click();
+    answers[0]!.resolve(new Response(null, { status: 204 }));
+    await settle();
+    render(false);
+    expect(pops(button())).toBe(false);
+  });
+
+  // ProjectFavoriteButton "Shows": no pop after a failed request
+  it('does not pop after a failed mark request, even when the mark later comes from elsewhere', async () => {
+    const { answers } = controlledFetch();
+    const { button, render } = mount('/work/a', false);
+    button().click();
+    answers[0]!.resolve(new Response('', { status: 500 }));
+    await settle();
+    render(true);
+    expect(pops(button())).toBe(false);
   });
 });

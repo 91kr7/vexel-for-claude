@@ -12,23 +12,32 @@ const STYLE = `
     font: 14px/20px 'Roboto Flex', Roboto, system-ui, sans-serif;
   }
   .title-bar {
-    position: fixed; top: 0; left: 0; right: 0; height: 48px; box-sizing: border-box;
+    position: fixed; top: 0; left: 0; right: 0; height: 44px; box-sizing: border-box;
+    display: flex; align-items: center; padding: 0 14px;
     background: #efeae0; border-bottom: 1px solid rgba(28, 25, 23, 0.08);
     -webkit-app-region: drag;
   }
   .window-buttons {
-    position: absolute; top: 18px; left: 14px; display: flex; gap: 8px;
+    display: flex; gap: 8px;
     -webkit-app-region: no-drag;
   }
   .window-button {
+    --window-border: 0 0 0 0.5px color-mix(in srgb, var(--window-colour) 45%, #fff);
     display: flex; align-items: center; justify-content: center;
     width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%;
-    color: rgba(0, 0, 0, 0.52); cursor: pointer;
+    color: rgba(0, 0, 0, 0.6); background: var(--window-colour); cursor: pointer;
+    box-shadow: var(--window-border);
+    transition: filter 0.2s, box-shadow 0.2s;
   }
+  .window-button:hover {
+    filter: brightness(1.08);
+    box-shadow: var(--window-border), 0 0 8px 1px color-mix(in srgb, var(--window-colour) 60%, transparent);
+  }
+  .window-button:active { filter: brightness(0.85); }
   .window-button:focus-visible { outline: 2px solid #0065ae; outline-offset: 2px; }
-  .window-close { background: #ff5f57; }
-  .window-minimize { background: #febc2e; }
-  .window-maximize { background: #28c840; }
+  .window-close { --window-colour: #e0443c; }
+  .window-minimize { --window-colour: #e8b616; }
+  .window-maximize { --window-colour: #25b033; }
   .window-button svg {
     width: 8px; height: 8px; fill: none; stroke: currentColor; stroke-width: 3;
     stroke-linecap: round; stroke-linejoin: round; visibility: hidden;

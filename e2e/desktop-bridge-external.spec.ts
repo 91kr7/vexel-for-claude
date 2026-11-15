@@ -101,7 +101,7 @@ test('"open this session" for an external session that left the list opens nothi
     await page.waitForTimeout(300);
     await expect(header(page)).toHaveCount(0);
 
-    await entry(page).click();
+    await entry(page).getByTitle(FOLDER, { exact: true }).click();
     await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('billing');
     await openFromDesktop(page, goneId);
     await page.waitForTimeout(300);

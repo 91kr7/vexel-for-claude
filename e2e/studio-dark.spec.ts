@@ -119,7 +119,7 @@ async function stopViaApi(request: APIRequestContext, id: string): Promise<void>
 }
 
 async function openFromList(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
 }
 
@@ -318,17 +318,18 @@ test.describe('theme and palette', () => {
 // ---------------------------------------------------------------------------------------------------------------------
 test.describe('page frame', () => {
   // REQ-13, REQ-14, REQ-53 — scenario "The user sees the client in the dark Studio look"
-  test('at 1440 x 900 the frame fills the window: 48 px top bar, 52 px rail, 224 px list panel, main to the right edge', async ({ page }) => {
+  // plan-ui_restyle/REQ-1: the bar is 44 px high.
+  test('at 1440 x 900 the frame fills the window: 44 px top bar, 52 px rail, 224 px list panel, main to the right edge', async ({ page }) => {
     await showOnly(page);
     await page.goto('/');
     const bar = await box(topBar(page));
     expect(bar.x).toBe(0);
     expect(bar.y).toBe(0);
     expect(bar.width).toBeCloseTo(1440, 0);
-    expect(bar.height).toBeCloseTo(48, 0);
+    expect(bar.height).toBeCloseTo(44, 0);
     const railBox = await box(rail(page));
     expect(railBox.x).toBe(0);
-    expect(railBox.y).toBeCloseTo(48, 0);
+    expect(railBox.y).toBeCloseTo(44, 0);
     expect(railBox.width).toBeCloseTo(52, 0);
     expect(railBox.y + railBox.height).toBeCloseTo(900, 0);
     const panelBox = await box(panel(page));
@@ -342,20 +343,20 @@ test.describe('page frame', () => {
     expect(await style(topBar(page), 'border-radius')).toBe('0px');
   });
 
-  // REQ-14, REQ-16, plan-keyboard_shortcuts/REQ-22, TopBar: logo mark, "Vexel for Claude", the shortcuts button, the theme switch and the accent "New Session", nothing else
-  test('the top bar shows the "VX" mark, "Vexel for Claude" and only the shortcuts button, the theme switch, the look switch, "Plan Usage" and "New Session"', async ({ page }) => {
+  // REQ-14, REQ-16, plan-keyboard_shortcuts/REQ-22, plan-ui_restyle/REQ-2: logo mark, "Vexel for Claude" and the four controls, nothing else
+  test('the top bar shows the "VX" mark, "Vexel for Claude" and only the shortcuts button, the theme switch, the look switch and "Plan Usage"', async ({ page }) => {
     await page.goto('/');
     expect(await style(topBar(page), 'background-color')).toBe(SURFACE_2);
     expect(await style(topBar(page), 'border-bottom-color')).toBe(BORDER_SUBTLE);
     await expect(topBar(page)).toContainText('Vexel');
     await expect(topBar(page)).toContainText('for Claude');
     // plan-usage_limits/REQ-1 and plan-wsl_support/REQ-18: the usage button and the look switch join the bar.
-    await expect(topBar(page).getByRole('button')).toHaveCount(5);
+    await expect(topBar(page).getByRole('button')).toHaveCount(4);
     await expect(button(topBar(page), 'Keyboard Shortcuts')).toBeVisible();
     await expect(button(topBar(page), 'Dark theme')).toBeVisible();
     await expect(button(topBar(page), 'Windows 11 look')).toBeVisible();
     await expect(button(topBar(page), 'Plan Usage')).toBeVisible();
-    await expect(button(topBar(page), 'New Session')).toBeVisible();
+    await expect(button(topBar(page), 'New Session')).toHaveCount(0);
 
     const mark = topBar(page).getByText('VX', { exact: true });
     await expect(mark).toBeVisible();
@@ -372,25 +373,6 @@ test.describe('page frame', () => {
     const suffix = topBar(page).getByText('for Claude', { exact: true });
     expect(await style(suffix, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     expect(await style(suffix, 'color')).toBe(TEXT_MUTED);
-  });
-
-  // REQ-14, REQ-52: the top bar button is accent with dark text reaching 4.5:1
-  test('"New Session" in the top bar is the accent button with canvas text at 4.5:1 or more', async ({ page }) => {
-    await page.goto('/');
-    const newSession = button(topBar(page), 'New Session');
-    const bg = await style(newSession, 'background-color');
-    const fg = await style(newSession, 'color');
-    expect(bg).toBe(ACCENT);
-    expect(fg).toBe(CANVAS);
-    expect(contrast(parse(fg), parse(bg))).toBeGreaterThanOrEqual(4.5);
-    expect((await box(newSession)).height).toBeCloseTo(32, 0);
-  });
-
-  // REQ-15 — scenario "The new-session dialog uses the Studio modal": the top-bar button opens the dialog
-  test('"New Session" in the top bar opens the new-session dialog', async ({ page }) => {
-    await page.goto('/');
-    await button(topBar(page), 'New Session').click();
-    await expect(chooser(page)).toBeVisible();
   });
 
   // REQ-14: the rail and the list panel no longer show the logo or the brand
@@ -587,7 +569,7 @@ test.describe('session list', () => {
     const socket = await showOnly(page, [external]);
     await page.goto('/');
     const row = entry(page, external.folder);
-    await row.click();
+    await row.getByTitle(external.folder, { exact: true }).click();
     (await socket()).send(JSON.stringify({ type: 'items', items: [] }));
     await expect(row).toHaveAttribute('aria-current', 'true');
     expect(await style(row, 'border-top-style')).toBe('dashed');
@@ -729,7 +711,7 @@ test.describe('external session view', () => {
     const external = { id: 'ext-studio-4', folder: '/srv/esterni/negozio', label: 'Aggiungi il carrello', state: 'idle', lastActivity: new Date().toISOString(), external: true };
     const socket = await showOnly(page, [external]);
     await page.goto('/');
-    await entry(page, external.folder).click();
+    await entry(page, external.folder).getByTitle(external.folder, { exact: true }).click();
     const today = `${new Date().toISOString().slice(0, 10)}T09:30:00.000Z`;
     (await socket()).send(
       JSON.stringify({
@@ -821,7 +803,7 @@ test.describe('external session view', () => {
     const external = { id: 'ext-studio-5', folder: '/srv/esterni/lungo', label: 'Molti messaggi', state: 'idle', lastActivity: new Date().toISOString(), external: true };
     const socket = await showOnly(page, [external]);
     await page.goto('/');
-    await entry(page, external.folder).click();
+    await entry(page, external.folder).getByTitle(external.folder, { exact: true }).click();
     const ws = await socket();
     ws.send(JSON.stringify({ type: 'items', items: Array.from({ length: 40 }, (_, i) => ({ kind: 'assistant', text: `messaggio ${i + 1}` })) }));
     await expect(mainArea(page).getByText('messaggio 40', { exact: true })).toBeVisible();
@@ -842,7 +824,7 @@ test.describe('dialogs', () => {
   // REQ-43, REQ-44, REQ-46, REQ-47 — scenario "The new-session dialog uses the Studio modal"
   test('the new-session dialog has the mock modal: dark backdrop with no blur, header with dot and "[Esc]", mono field, surface-1 footer', async ({ page }) => {
     await page.goto('/');
-    await button(topBar(page), 'New Session').click();
+    await railButton(page, 'New Claude Code Session').click();
     const dialog = chooser(page);
     await expect(dialog).toBeVisible();
 
@@ -903,7 +885,7 @@ test.describe('dialogs', () => {
     await startViaApi(request, folder);
     await page.goto('/');
     await openFromList(page, folder);
-    await button(topBar(page), 'New Session').click();
+    await railButton(page, 'New Claude Code Session').click();
     await expect(chooser(page)).toBeVisible();
     await button(chooser(page), 'Close (Esc)').click();
     await expect(chooser(page)).toHaveCount(0);
@@ -914,7 +896,7 @@ test.describe('dialogs', () => {
   // REQ-45, Dialog "Keyboard": "[Esc]" is in the focus trap
   test('Tab from "Start Session" wraps to "[Esc]" inside the dialog', async ({ page }) => {
     await page.goto('/');
-    await button(topBar(page), 'New Session').click();
+    await railButton(page, 'New Claude Code Session').click();
     const dialog = chooser(page);
     await button(dialog, 'Start Session').focus();
     await page.keyboard.press('Tab');
@@ -957,7 +939,7 @@ test.describe('dialogs', () => {
     const external = { id: 'ext-studio-6', folder: '/srv/esterni/ricerca', label: 'Analisi', state: 'idle', lastActivity: new Date().toISOString(), external: true };
     const socket = await showOnly(page, [external]);
     await page.goto('/');
-    await entry(page, external.folder).click();
+    await entry(page, external.folder).getByTitle(external.folder, { exact: true }).click();
     (await socket()).send(JSON.stringify({ type: 'items', items: [] }));
     await button(mainArea(page), 'Resume Here').click();
     const warning = page.getByRole('alertdialog', { name: 'Session Running in a Terminal' });

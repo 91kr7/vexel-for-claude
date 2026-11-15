@@ -177,7 +177,7 @@ test.describe('Studio layout', () => {
     const connection = await showSessions(page, [externalEntry('board-mobile-app', folder, 'i test del checkout falliscono su Android', 'working')]);
     await serveItems(page, { 300: EDIT_INPUT, 400: EDIT_OUTPUT });
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     send(await connection(), boardItems());
     await expect(articles(page)).toHaveCount(7);
     await page.mouse.move(0, 0);
@@ -236,7 +236,7 @@ test('a call and its result form one card with its name chip and outcome, and no
   const longSummary = `TODO ${'cerca in tutti i file del progetto '.repeat(3)}`.trim();
   const requested = await serveItems(page, { 10: input, 20: lines(9), 30: lines(7, 'glob') }, 600);
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   const socket = await connection();
   send(socket, [
     call('r1', 'Read', '/src/app.ts', ref(1)),
@@ -335,7 +335,7 @@ test.describe('message details', () => {
     const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
     const [year, month, day] = yesterday.split('-');
     await page.goto('/');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     send(await connection(), [
       user('Messaggio di ieri', { timestamp: `${yesterday}T08:05:00.000Z` }),
       user('Senza orario'),
@@ -377,7 +377,7 @@ test('new items while the user reads earlier content show "N new messages" at th
   const folder = await newFolder('nuovi');
   const connection = await showSessions(page, [externalEntry('new-1', folder, 'Nuovi messaggi')]);
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   const socket = await connection();
   send(socket, Array.from({ length: 20 }, (_, i) => [user(`Domanda ${i + 1}`), claude(`Risposta ${i + 1}\n${lines(3, 'dettaglio')}`)]).flat());
   await expect(articles(page)).toHaveCount(40);
@@ -461,7 +461,7 @@ test('with an external session open, the needs-input snackbar sits 20 px from th
   const connection = await showSessions(page, [externalEntry('snackbar-1', folder, 'Esterna aperta')]);
   const waitingId = await startViaApi(request, await newFolder('attende-input'));
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   send(await connection(), [user('Ciao'), claude('Ciao a te.')]);
   await expect(articles(page)).toHaveCount(2);
 

@@ -6,7 +6,7 @@ type: UI component
 
 # FavoriteIndicator
 
-**Purpose** → the sign that a session has the favorite mark, the same in the session list and in the resume history.
+**Purpose** → the sign that a session has the favorite mark, in the resume history. The session list shows FavoriteButton instead.
 
 ## Contract
 
