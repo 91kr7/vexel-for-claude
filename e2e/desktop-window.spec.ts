@@ -1,4 +1,4 @@
-// e2e of plan-desktop_app, batches desktop-window and window-tray, of plan-light_theme, batch remembered-theme, of plan-mac_title_bar, batches title-bar and window-buttons, and of plan-wsl_support, batch windows-look. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
+// e2e of plan-desktop_app, batches desktop-window and window-tray, of plan-light_theme, batch remembered-theme, of plan-mac_title_bar, batches title-bar and window-buttons, of plan-wsl_support, batch windows-look, and of plan-ui_restyle, batch startup-page. Each Electron launch gets its own HOME, free port and Claude folder: it never touches the user's app, backend or files.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -947,5 +947,52 @@ test.describe('Windows 11 look', () => {
       for (const text of ['VX', 'Vexel']) expect(await centre(text, 'text'), `${look}: ${text}`).toBe('drag');
       for (const name of ['Windows 11 look', 'Close', 'Minimize', 'Maximize']) expect(await centre(name, 'button'), `${look}: ${name}`).toBe('no-drag');
     }
+  });
+});
+
+// plan-ui_restyle, batch startup-page — scenario "Nothing moves when the desktop app finishes loading". The look of each page is checked in e2e/window-buttons.spec.ts.
+test.describe('Startup bar matches the client bar', () => {
+  test.describe.configure({ timeout: 90_000 });
+
+  test.beforeAll(buildDesktop);
+
+  /** The bar that holds the window buttons, and the place and look of the three buttons at rest. */
+  const barLook = (page: Page) =>
+    page.evaluate(() => {
+      const round = (value: number) => Math.round(value * 10) / 10;
+      const buttons = ['Close', 'Minimize', 'Maximize'].map((name) => document.querySelector(`button[aria-label="${name}"]`)!);
+      let bar: Element = buttons[0]!;
+      while (bar.parentElement !== null && bar.getBoundingClientRect().width < innerWidth) bar = bar.parentElement;
+      const barBox = bar.getBoundingClientRect();
+      return {
+        bar: { top: round(barBox.top), height: round(barBox.height) },
+        buttons: buttons.map((button) => {
+          const box = button.getBoundingClientRect();
+          const s = getComputedStyle(button);
+          return { x: round(box.x), y: round(box.y), width: round(box.width), height: round(box.height), background: s.backgroundColor, shadow: s.boxShadow, filter: s.filter, radius: s.borderRadius };
+        }),
+      };
+    });
+
+  test('REQ-40: the bar height and the place, size and look of the three buttons are the same on the startup page and on the client page', async () => {
+    const port = await freePort();
+    const env = await desktopEnv(port);
+    const slowNode = path.join(env.HOME!, 'slow-node');
+    await writeFile(slowNode, `#!/bin/sh\nsleep 3\nexec '${process.execPath}' "$@"\n`);
+    await chmod(slowNode, 0o755);
+    const app = await launchDesktop({ ...env, AI_CLIENT_NODE: slowNode });
+    const window = await app.firstWindow();
+
+    await expect(window.getByText(LOADING, { exact: true })).toBeVisible();
+    await window.mouse.move(600, 400);
+    const startup = await barLook(window);
+    expect(startup.bar, 'REQ-36: the startup bar').toEqual({ top: 0, height: 44 });
+
+    await expect(list(window)).toBeVisible({ timeout: 20_000 });
+    await window.mouse.move(600, 400);
+    await expect(window.getByRole('banner').getByRole('button', { name: 'Close', exact: true })).toBeVisible();
+    const client = await barLook(window);
+    expect(client.bar, 'the client bar').toEqual({ top: 0, height: 44 });
+    expect(startup, 'REQ-40: nothing moves or changes when the client page appears').toEqual(client);
   });
 });

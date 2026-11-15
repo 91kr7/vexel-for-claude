@@ -109,7 +109,8 @@ async function openWorkingSession(page: Page, request: APIRequestContext, name: 
   const { id } = (await response.json()) as { id: string };
   startedIds.push(id);
   await page.goto('/');
-  await listEntry(page, folder).click();
+  // Near the left edge: with a short name the star after it sits at the centre of the entry (plan-ui_restyle/REQ-29).
+  await listEntry(page, folder).click({ position: { x: 8, y: 8 } });
   await expect(terminal(page)).toContainText('READY');
   await page.locator('.xterm-screen').click();
   await page.keyboard.type('WORK');

@@ -1,4 +1,5 @@
-// Tests of plan-desktop_app, batch desktop-window: StartupPage spec (REQ-7), and of plan-mac_title_bar, batch window-buttons (REQ-23). Colours and CSP are checked in the browser by e2e/desktop-window.spec.ts.
+// Tests of plan-desktop_app, batch desktop-window: StartupPage spec (REQ-7), of plan-mac_title_bar, batch window-buttons (REQ-23), and of plan-ui_restyle, batch startup-page (REQ-36 to REQ-39).
+// The computed look is checked in the browser by e2e/window-buttons.spec.ts and e2e/title-bar.spec.ts.
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { startupPageHtml, startupPageUrl } from './startup-page.js';
@@ -68,4 +69,39 @@ describe('startupPageUrl', () => {
       expect(decodeDataUrl(url)).toBe(startupPageHtml(state));
     },
   );
+});
+
+// plan-ui_restyle/REQ-36 to REQ-39: the inline style repeats the top bar and WindowButtons values
+describe('startupPageHtml style (plan-ui_restyle)', () => {
+  const style = (html: string) => [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map((match) => match[1]).join('\n');
+  const css = style(startupPageHtml({ kind: 'loading' })).replace(/\s+/g, ' ');
+
+  it('REQ-36: the bar is 44 px high, no longer 48 px', () => {
+    expect(css).toMatch(/height: ?44px/);
+    expect(css).not.toMatch(/height: ?48px/);
+  });
+
+  it('REQ-37: the three colours of the client buttons, not the old ones', () => {
+    for (const colour of ['#e0443c', '#e8b616', '#25b033']) expect(css.toLowerCase()).toContain(colour);
+    for (const old of ['#ff5f57', '#febc2e', '#28c840']) expect(css.toLowerCase()).not.toContain(old);
+  });
+
+  it('REQ-37: a 0.5 px border of the colour mixed 45 % with white', () => {
+    expect(css).toMatch(/0 0 0 0\.5px color-mix\(in srgb, ?[^,()]+(\([^()]*\))? 45%, ?#fff(fff)?\)/i);
+  });
+
+  it('REQ-38: hover → brightness 1.08 and a 0 0 8px 1px glow of the colour at 60 %, with 0.2 s transitions', () => {
+    expect(css).toMatch(/:hover[^{]*\{[^}]*brightness\(1\.08\)/);
+    expect(css).toMatch(/:hover[^{]*\{[^}]*0 0 8px 1px color-mix\(in srgb, ?[^,()]+(\([^()]*\))? 60%, ?transparent\)/);
+    expect(css).toMatch(/transition:[^;}]*filter 0?\.2s/);
+    expect(css).toMatch(/transition:[^;}]*box-shadow 0?\.2s/);
+  });
+
+  it('REQ-38: pressed → brightness 0.85', () => {
+    expect(css).toMatch(/:active[^{]*\{[^}]*brightness\(0?\.85\)/);
+  });
+
+  it('REQ-39: the symbols are black at 60 %', () => {
+    expect(css).toMatch(/rgba\(0, ?0, ?0, ?0?\.6\)/);
+  });
 });
