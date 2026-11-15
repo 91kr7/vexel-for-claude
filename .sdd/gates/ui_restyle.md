@@ -31,3 +31,7 @@
 | 2026-11-15 | dev terminal | G4 development | pass | One CSS line plus spec; build green |
 | 2026-11-15 | dev terminal | G5 tests | pass | Test files only; no only/skip; re-run terminal-panel green |
 | 2026-11-15 | dev startup-page | G4 development | pass | Inline STYLE only, CSP hash unchanged; web + desktop build green |
+| 2026-11-15 | dev startup-page | G5 tests | pass | Full unit 3325 passed; full browser e2e green after 2 stale clicks fixed; Electron group 27 passed; re-run batch tests green |
+| 2026-11-15 | dev startup-page | question tester | decided | Star at the centre of short-name session entries is the approved design (REQ-29/30); flagged for human review |
+| 2026-11-15 | dev startup-page | question tester | decided | Electron worker teardown timeout predates the cycle (orphans 8 days old); not a defect of this plan, flagged for a separate cycle |
+| 2026-11-15 | closing | merge | pass | All 6 batches certified; no source change after the closing run |
