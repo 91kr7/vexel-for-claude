@@ -91,6 +91,16 @@ takes the look of the session cards.
 | REQ-47 | Dense technical lists, such as changed files, commit rows and shortcut rows, take the surfaces, borders, corners, hover and selected style of the session cards, without becoming cards. |
 | REQ-48 | Numbers in every list use the monospace font with tabular figures. |
 
+## Feature 7 — List spacing and card metrics
+
+Human decision, 2026-11-16.
+
+| ID | Requirement |
+|----|-------------|
+| REQ-49 | In every list of cards or rows, the session list included, a shown scrollbar leaves a gap to the right edge of the entries equal to the gap on their left. |
+| REQ-50 | In a session card, the context percentage and the cost on line 3 use a smaller text than today. |
+| REQ-51 | Withdrawn by human decision (2026-11-16): line 3 keeps its current position. |
+
 Colours of REQ-36:
 
 | Use | Colour |

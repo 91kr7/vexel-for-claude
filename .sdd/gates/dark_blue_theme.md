@@ -54,3 +54,9 @@
 | 2026-11-16 | dev list-cards | G5 tests | pass | Test files only; no only/skip; re-run list-cards, shared-shapes, board-dialogs: 43 passed |
 | 2026-11-16 | dev dark-blue | G4 development | pass | Web + desktop build green; diff limited to INT files, Icons.tsx, specs and indexes |
 | 2026-11-16 | dev dark-blue | divergence developer | decided | New tokens for terminal frame, scrollbar and fields; MoonStarIcon for the Dark Blue card; three-card grid; muted text lightened to #808fa4 for 4.5:1 (REQ-41) |
+| 2026-11-16 | dev dark-blue | scrollbar gap | human decision | In every list the scrollbar keeps a gap from the cards |
+| 2026-11-16 | dev dark-blue | card metrics | human decision | Session card line 3 (context and cost) smaller and left aligned |
+| 2026-11-16 | dev dark-blue | last batch | decided | New batch list-polish after dark-blue; dark-blue tester told to skip the full suites |
+| 2026-11-16 | plan | card metrics position | human decision | Percentage and cost smaller, same position; REQ-51 dropped |
+| 2026-11-16 | plan | question planner | decided | Last activity time keeps its size; request names only context and cost |
+| 2026-11-16 | plan | G3 coverage (list-polish) | pass | REQ-49, REQ-50 in batch list-polish; REQ-51 withdrawn; last batch moves to list-polish |

@@ -14,8 +14,9 @@ status: validated
 | session-view | Session view: header and terminal frame | REQ-1, REQ-2, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29 | shared-shapes, window-frame, session-cards | certified | The open session shows the mock's header and terminal frame |
 | list-cards | Lists aligned to the session cards | REQ-44, REQ-45, REQ-46, REQ-47, REQ-48 | shared-shapes, session-cards | certified | The Resume dialog shows its sessions as cards |
 | dark-blue | Dark Blue theme | REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42 | shared-shapes, window-frame, session-cards, session-view, list-cards | implemented | The user switches to Dark Blue |
+| list-polish | List spacing and card metrics | REQ-49, REQ-50 | session-cards, list-cards, dark-blue | todo | The scrollbar does not touch the cards |
 
-Execution order: shared-shapes → window-frame → session-cards → session-view → list-cards → dark-blue.
+Execution order: shared-shapes → window-frame → session-cards → session-view → list-cards → dark-blue → list-polish.
 session-cards depends on window-frame because both change `src/web/AppLayout.tsx`.
 
 ## Assumptions and decisions
@@ -52,6 +53,11 @@ session-cards depends on window-frame because both change `src/web/AppLayout.tsx
   shows only the first page. Selectable lists become cards; dense technical lists take the card
   styles without becoming cards. New batch list-cards. It refines REQ-3 and the analysis rule on
   screens outside the mock, so it is not a departure.
+- **Scrollbar gap and card metrics (REQ-49, REQ-50).** Human decision, 2026-11-16. A shown
+  scrollbar keeps a gap to the entries equal to the left gap, in every list. In the session card,
+  only the percentage and the cost of line 3 get smaller; position and time size stay. REQ-51 (left
+  alignment) was withdrawn by the human. New last batch list-polish. It refines the card look; it
+  is not a departure.
 - **Confirmed by the gatekeeper (2026-11-16):** the Windows 11 look rule, the toast above the
   snackbar, and the client's own text on card line 2 and in the header pill.
 - **Shortcut text.** The `toggle-theme` row reads "Light/Dark/Dark Blue theme". Keys do not change.
@@ -120,6 +126,9 @@ session-cards depends on window-frame because both change `src/web/AppLayout.tsx
 | REQ-46 | batch-list-cards/INT-1, INT-2, INT-3, INT-4, INT-6 | list-cards |
 | REQ-47 | batch-list-cards/INT-1, INT-5, INT-7, INT-8, INT-9, INT-10, INT-11, INT-12 | list-cards |
 | REQ-48 | batch-list-cards/INT-1, INT-2, INT-3, INT-9, INT-12 | list-cards |
+| REQ-49 | batch-list-polish/INT-1, INT-2, INT-3, INT-4 | list-polish |
+| REQ-50 | batch-list-polish/INT-5 | list-polish |
+| REQ-51 | withdrawn by human decision, no INT | — |
 
 - Every REQ has at least one INT. Every INT serves at least one REQ; there is no enabling-only INT.
 - REQ-1 and REQ-2 build up over four batches and close in session-view.
