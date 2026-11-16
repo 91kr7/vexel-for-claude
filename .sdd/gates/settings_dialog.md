@@ -13,3 +13,4 @@
 | 2026-11-16 | plan | question planner (row per action) | decided | Rows with several actions split to one per action; follows from the two-keys and digits decisions, no REQ changed |
 | 2026-11-16 | plan | G3 coverage | pass | 3 batches, all REQ covered, modify paths exist, acceptance covers every closed REQ |
 | 2026-11-16 | dev | G4 settings-popup | pass | Build green; deleted `ThemeSwitch.test.tsx`/`LookSwitch.test.tsx` justified by INT-8/INT-9; stale e2e specs left to the tester |
+| 2026-11-16 | dev | settings button placement | human decision | Button moves to the bottom of the navigation rail; analysis corrected, tester stopped, its partial work stashed |

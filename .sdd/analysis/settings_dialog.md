@@ -23,22 +23,23 @@ Related:
 - [wsl_support.md](wsl_support.md) → the look switch (current macOS look or Windows 11 look) in the top bar (lines 45-59).
 
 Changes (human decisions of 2026-11-16):
-- A settings button at the bottom left of the sidebar opens a settings popup.
+- A settings button at the bottom of the navigation rail opens a settings popup. The rail is the vertical icon bar with "Sessions", "Projects" and "Resume".
 - The theme switch, the look switch and the shortcuts button leave the top bar. They live only in the settings popup.
 - The "Shortcuts" section of the settings replaces the shortcuts panel.
 - The user can change every client shortcut, with the rules of today's shortcuts.
 
 ## Summary
 
-A button at the bottom left of the sidebar opens a settings popup. The popup holds the theme, the window look and the shortcuts. The user can change, restore and reset each shortcut.
+A button at the bottom of the navigation rail opens a settings popup. The popup holds the theme, the window look and the shortcuts. The user can change, restore and reset each shortcut.
 
 ## Requirements
 
 ### Functional
 
 Settings button
-- The sidebar must show a settings button at its bottom left corner.
-- The button must stay visible at every sidebar width and while the session list scrolls.
+- The navigation rail must show a settings button at its bottom, below its other buttons. The human decided this on 2026-11-16.
+- The button must not sit in the session list column.
+- The button must stay visible at every window height and every sidebar width.
 - The button must have an accessible name and a tooltip that shows its shortcut.
 - A click on the button must open the settings popup.
 
@@ -91,7 +92,6 @@ Shortcuts to the settings
 
 - This is an evolution, not a fix. The request adds what the earlier analyses left out of scope. The gatekeeper decided this.
 - "Stile dei bordi (windows, mac)" means the look of [wsl_support.md](wsl_support.md): the macOS look or the Windows 11 look.
-- The sidebar is the column of the session list. The button sits below the list, not inside it.
 - Changes apply at once. The popup has no "Save" or "Cancel" button.
 - The client remembers settings where the user made them, like the theme ([light_theme.md](light_theme.md), line 62). The desktop app and a browser can each keep different shortcuts.
 - The layout rule of [keyboard_shortcuts.md](keyboard_shortcuts.md) line 80 (no AltGr keys) binds the defaults only. A user's own key works on the user's own layout.
@@ -108,7 +108,7 @@ Shortcuts to the settings
 ## Scope
 
 In scope:
-- The settings button at the bottom left of the sidebar and the settings popup.
+- The settings button at the bottom of the navigation rail and the settings popup.
 - Theme and look choices moved from the top bar into the popup.
 - The shortcuts section that replaces the shortcuts panel, with editing, restore default and restore all.
 - Remembering the changed shortcuts.
