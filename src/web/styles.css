@@ -3153,6 +3153,13 @@ input {
   flex-direction: column;
   gap: 24px;
   padding: 20px 24px 24px;
+  /* A control scrolled to an edge keeps its whole focus ring in view. */
+  scroll-padding-block: calc(var(--focus-ring-width) + var(--focus-ring-offset));
+}
+
+/* The body touches the clipping frame: its ring stays inside its edge. */
+.settings-pane-body:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
 .settings-group-title {

@@ -17,7 +17,7 @@ Props:
 Shows:
 - role `alertdialog`, `aria-modal="true"`, the Dialog frame with no icon.
 - `error` → the description as in Dialog. The primary action is `.button-danger` (rose, look of `#subbar-stop-btn`).
-- `attn` → the description sits in a banner with the look of `#permission-banner`: `.vx-surface-2`, 1 px amber-500 border at 40 %, 12 px radius, padding 14 px, `shadow-lg`. Inside: the amber-400 triangle icon (16 px), 10 px gap, the text in weight 500 and `--text-primary`. The primary action is `.button-attn` (amber).
+- `attn` → the description sits in a banner with the look of `#permission-banner`: `.vx-surface-2`, 1 px amber-500 border at 40 %, `--radius-card` (7 px), padding 14 px, top line and `--shadow-card`. Inside: the amber-400 triangle icon (16 px), 10 px gap, the text in weight 500 and `--text-primary`. The primary action is `.button-attn` (amber).
 - "Cancel" → `.button-neutral`. While it has the focus, it shows the focus ring, whatever moved the focus there.
 
 Focus:
@@ -37,3 +37,4 @@ Focus:
 
 - `plan-claude_sessions_client-ui_redesign/REQ-28`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-48`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-49`
+- `plan-dark_blue_theme/REQ-3`
