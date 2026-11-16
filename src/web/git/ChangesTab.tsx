@@ -82,8 +82,17 @@ function GroupBody({ state, children }: { state: ChangesState; children: (change
   return children(state.changes);
 }
 
-/** `changes` holds the state of each repository, in the order of `repositories`. */
-export function ChangesTab({ repositories, changes }: { repositories: readonly CoveredRepository[]; changes: readonly ChangesState[] }) {
+interface ChangesTabProps {
+  repositories: readonly CoveredRepository[];
+  /** The state of each repository, in the order of `repositories`. */
+  changes: readonly ChangesState[];
+  /** The colour of each repository; default: repositoryColor of its position. */
+  colors?: readonly string[];
+  /** Groups by repository; default: more than one repository. */
+  several?: boolean;
+}
+
+export function ChangesTab({ repositories, changes, colors, several = repositories.length > 1 }: ChangesTabProps) {
   const [selectedKey, setSelectedKey] = useState<SelectionKey>();
   // After a refresh the selection follows the same repository, group and path, else it closes.
   const selectedIndex = selectedKey === undefined ? -1 : repositories.findIndex((repository) => repository.root === selectedKey.root);
@@ -105,7 +114,7 @@ export function ChangesTab({ repositories, changes }: { repositories: readonly C
     </div>
   );
 
-  const single = repositories.length === 1 ? repositories[0] : undefined;
+  const single = !several && repositories.length === 1 ? repositories[0] : undefined;
   if (single !== undefined) {
     return (
       <GroupBody state={changes[0] ?? LOADING}>
@@ -125,7 +134,7 @@ export function ChangesTab({ repositories, changes }: { repositories: readonly C
         {repositories.map((repository, index) => (
           <section key={repository.root} className="changes-repository" aria-label={repository.name}>
             <h4 className="changes-repository-title" title={repository.root}>
-              <span className="git-repository-mark" style={{ backgroundColor: repositoryColor(index) }} aria-hidden="true" />
+              <span className="git-repository-mark" style={{ backgroundColor: colors?.[index] ?? repositoryColor(index) }} aria-hidden="true" />
               {repository.name}
             </h4>
             <GroupBody state={changes[index] ?? LOADING}>

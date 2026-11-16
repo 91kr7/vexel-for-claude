@@ -8,6 +8,7 @@ import { useChanges, type ChangesState } from './changes-store';
 import { HistoryTab, type HistoryRepository } from './HistoryTab';
 import { useHistory, type HistoryState } from './history-store';
 import { repositoryColor } from './repository-colors';
+import { useRepositoryFilter } from './repository-filter-store';
 import type { CoveredRepository, RepositoryLookupState } from './repository-lookup-store';
 import { BranchChip, RepositoryList } from './RepositoryList';
 import { useTurnEndSignal } from './turn-end-watcher';
@@ -21,17 +22,29 @@ const TABS: { tab: Tab; title: string }[] = [
   { tab: 'history', title: 'History' },
 ];
 
-function ChangesBody({ repositories, changes }: { repositories: readonly CoveredRepository[]; changes: readonly ChangesState[] }) {
+function ChangesBody({
+  repositories,
+  changes,
+  colors,
+  several,
+}: {
+  repositories: readonly CoveredRepository[];
+  changes: readonly ChangesState[];
+  colors: readonly string[];
+  several: boolean;
+}) {
   if (changes.some((state) => state.status === 'loading')) return <ProgressIndicator className="git-explorer-message" />;
-  return <ChangesTab repositories={repositories} changes={changes} />;
+  return <ChangesTab repositories={repositories} changes={changes} colors={colors} several={several} />;
 }
 
 function HistoryBody({
   repositories,
+  several,
   history,
   onLoadMore,
 }: {
   repositories: readonly HistoryRepository[];
+  several: boolean;
   history: HistoryState;
   onLoadMore: () => void;
 }) {
@@ -41,7 +54,7 @@ function HistoryBody({
   return (
     <>
       {history.errors.map(({ root, message }) => {
-        const name = repositories.length > 1 ? nameOf(root) : undefined;
+        const name = several ? nameOf(root) : undefined;
         return (
           <ErrorMessage key={root} className="git-explorer-error">
             {name === undefined ? message : `${name}: ${message}`}
@@ -51,6 +64,7 @@ function HistoryBody({
       {history.errors.length < repositories.length && (
         <HistoryTab
           repositories={repositories}
+          several={several}
           commits={history.commits}
           hasMore={history.hasMore}
           loadingMore={history.loadingMore}
@@ -68,36 +82,48 @@ const NO_ROOTS: readonly string[] = [];
 
 interface GitExplorerPanelProps {
   lookup: RepositoryLookupState;
+  /** Project folder of the session; the repository filter is kept per folder. */
+  folder?: string;
   /** Asks the owner to read the repository again. */
   onRefresh?: () => void;
   sessions?: readonly SessionSummary[];
 }
 
-export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: GitExplorerPanelProps) {
+export function GitExplorerPanel({ lookup, folder, onRefresh, sessions = NO_SESSIONS }: GitExplorerPanelProps) {
   const repositories = lookup.status === 'repositories' ? lookup.repositories : NO_REPOSITORIES;
   const single = repositories.length === 1 ? repositories[0] : undefined;
   const errorMessage = lookup.status === 'error' ? lookup.message : single !== undefined && 'error' in single ? single.error : undefined;
   const showTabs = errorMessage === undefined && repositories.length > 0;
+  const several = repositories.length > 1;
   const roots = useMemo(() => repositories.map((repository) => repository.root), [repositories]);
+  const filter = useRepositoryFilter(folder, roots);
+  // The colour of a repository stays the one of its position in the full list.
+  const shown = useMemo(() => {
+    const colored = repositories.map((repository, index) => ({ repository, color: repositoryColor(index) }));
+    return filter.chosen.length === 0 ? colored : colored.filter(({ repository }) => filter.chosen.includes(repository.root));
+  }, [repositories, filter.chosen]);
+  const shownRepositories = useMemo(() => shown.map(({ repository }) => repository), [shown]);
+  const shownColors = useMemo(() => shown.map(({ color }) => color), [shown]);
+  const shownRoots = useMemo(() => shownRepositories.map((repository) => repository.root), [shownRepositories]);
   const historyRepositories = useMemo<HistoryRepository[]>(
     () =>
-      repositories.map((repository, index) => ({
+      shown.map(({ repository, color }) => ({
         root: repository.root,
         name: repository.name,
-        color: repositoryColor(index),
+        color,
         branch: 'branch' in repository ? repository.branch : undefined,
       })),
-    [repositories],
+    [shown],
   );
   const [revision, setRevision] = useState(0);
   const refresh = () => {
     setRevision((current) => current + 1);
     onRefresh?.();
   };
-  const changes = useChanges(showTabs ? roots : NO_ROOTS, revision);
+  const changes = useChanges(showTabs ? shownRoots : NO_ROOTS, revision);
   const [tab, setTab] = useState<Tab>('changes');
   const [historyOpened, setHistoryOpened] = useState(false);
-  const { history, loadMore } = useHistory(showTabs && historyOpened ? roots : NO_ROOTS, revision);
+  const { history, loadMore } = useHistory(showTabs && historyOpened ? shownRoots : NO_ROOTS, revision);
   useTurnEndSignal(sessions, roots, refresh);
   const idPrefix = useId();
   const tabId = (id: Tab) => `${idPrefix}-tab-${id}`;
@@ -111,7 +137,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
   return (
     <section className="git-explorer-panel" aria-label={NAME}>
       {(lookup.status === 'repositories' || lookup.status === 'error') && (
-        <header className={repositories.length > 1 ? 'git-explorer-header several' : 'git-explorer-header'}>
+        <header className={several ? 'git-explorer-header several' : 'git-explorer-header'}>
           {single !== undefined && (
             <>
               <h3 className="git-explorer-repository" title={single.root}>
@@ -120,7 +146,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
               {'branch' in single && <BranchChip branch={single.branch} className="git-explorer-branch" />}
             </>
           )}
-          {repositories.length > 1 && <RepositoryList repositories={repositories} />}
+          {several && <RepositoryList repositories={repositories} chosen={filter.chosen} onToggle={filter.toggle} onClear={filter.clear} />}
           <button type="button" className="session-search-button git-explorer-refresh" aria-label="Refresh" title="Refresh" onClick={refresh}>
             <RefreshCwIcon />
           </button>
@@ -151,7 +177,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
             aria-labelledby={tabId('changes')}
             hidden={tab !== 'changes'}
           >
-            <ChangesBody repositories={repositories} changes={changes} />
+            <ChangesBody repositories={shownRepositories} changes={changes} colors={shownColors} several={several} />
           </div>
           <div
             className="git-explorer-tabpanel"
@@ -160,7 +186,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
             aria-labelledby={tabId('history')}
             hidden={tab !== 'history'}
           >
-            <HistoryBody repositories={historyRepositories} history={history} onLoadMore={loadMore} />
+            <HistoryBody repositories={historyRepositories} several={several} history={history} onLoadMore={loadMore} />
           </div>
         </>
       )}

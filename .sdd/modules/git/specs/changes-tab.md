@@ -16,15 +16,17 @@ Description:
 Props:
 - `repositories` → the covered repositories (CoveredRepository of useRepositoryLookup), in list order.
 - `changes` → the states of useChanges, one per repository, in the same order.
+- `colors` → optional, the colour of each repository, in the same order; default: repositoryColor of its position.
+- `several` → optional, true to group by repository; default: more than one repository. GitExplorerPanel sets it when the folder covers several repositories, so a filter on one keeps its group.
 
-Shows, with one repository (no repository group, as before `plan-multi_repo_workspace`):
+Shows, with one repository and `several` false (no repository group, as before `plan-multi_repo_workspace`):
 - loading → a progress indicator "Loading…";
 - a git error → its message in an ErrorMessage;
 - no changes → "No uncommitted changes";
 - changes → the file list "Changed files" and the diff area below.
 
-Shows, with several repositories:
-- one group per repository, in list order: a region named after the repository, headed by the colour mark of repositoryColor (its position in the list) and the repository name, with the root as tooltip;
+Shows, with `several`:
+- one group per repository, in list order: a region named after the repository, headed by its colour mark (`colors`) and the repository name, with the root as tooltip;
 - inside a group, by its state:
   - loading → a progress indicator "Loading…";
   - a git error → its message in an ErrorMessage, in that group only;
@@ -66,4 +68,4 @@ After a refresh (new states):
 
 - `plan-git_graph/REQ-1`, `plan-git_graph/REQ-2`, `plan-git_graph/REQ-3`, `plan-git_graph/REQ-4`
 - `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-10`, `plan-git_explorer/REQ-11`, `plan-git_explorer/REQ-12`, `plan-git_explorer/REQ-26`
-- `plan-multi_repo_workspace/REQ-14`, `plan-multi_repo_workspace/REQ-15`, `plan-multi_repo_workspace/REQ-16`, `plan-multi_repo_workspace/REQ-17`, `plan-multi_repo_workspace/REQ-18`, `plan-multi_repo_workspace/REQ-19`, `plan-multi_repo_workspace/REQ-20`
+- `plan-multi_repo_workspace/REQ-14`, `plan-multi_repo_workspace/REQ-15`, `plan-multi_repo_workspace/REQ-16`, `plan-multi_repo_workspace/REQ-17`, `plan-multi_repo_workspace/REQ-18`, `plan-multi_repo_workspace/REQ-19`, `plan-multi_repo_workspace/REQ-20`, `plan-multi_repo_workspace/REQ-29`

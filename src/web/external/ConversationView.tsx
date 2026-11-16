@@ -314,7 +314,7 @@ export function ConversationView({ sessionId, session, sessions, onResumed, focu
             </button>
           )}
         </div>
-        {gitShown && <GitExplorerPanel lookup={repository} onRefresh={refreshGit} sessions={sessions} />}
+        {gitShown && <GitExplorerPanel lookup={repository} folder={session?.folder} onRefresh={refreshGit} sessions={sessions} />}
       </div>
       <SessionFooter session={session} lead="Open in Another Terminal · " />
     </div>

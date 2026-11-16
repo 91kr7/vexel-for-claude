@@ -436,7 +436,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
             </div>
           )}
         </div>
-        {gitShown && <GitExplorerPanel lookup={repository} onRefresh={refreshGit} sessions={sessions} />}
+        {gitShown && <GitExplorerPanel lookup={repository} folder={session?.folder} onRefresh={refreshGit} sessions={sessions} />}
       </div>
       {linkTooltip && (
         <div className="terminal-link-tooltip" role="tooltip" style={{ left: linkTooltip.left, top: linkTooltip.top }}>

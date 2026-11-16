@@ -22,3 +22,4 @@
 | 2026-11-16 | dev | G4 batch-combined-history | pass | Production code typechecks, vite build green; tsc errors only in old test files of INT-9 |
 | 2026-11-16 | dev | divergences developer: history errors inside `loaded`, "<name>: <message>" format | decided | Accepted; REQ-26 holds, single repository unchanged |
 | 2026-11-16 | dev | G5 batch-combined-history | pass | tsc clean, 573 unit + 53 e2e green, re-run by gatekeeper |
+| 2026-11-16 | dev | G4 batch-repo-filter | pass | Production code typechecks, vite build green; extra files `ChangesTab.tsx`, `HistoryTab.tsx`, `SessionView.tsx`, `ConversationView.tsx` justified (colour by full-list position, filter keyed by folder) |

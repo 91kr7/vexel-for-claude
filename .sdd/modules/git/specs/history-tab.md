@@ -14,7 +14,8 @@ Description:
 - a scrolling list of commits, one row per commit, with "Load more" at its end. The commit graph, drawn by `commit-graph`, runs down the left of the rows, one commit node per row. A click on a commit replaces the list with the CommitDetail; "Back" brings the list back, at the same scroll position.
 
 Props:
-- `repositories` → every covered repository, in the order of the repository list: `{ root, name, color, branch? }`. `color` is its repositoryColor; `branch` comes from the repository lookup.
+- `repositories` → the shown repositories, in the order of the repository list: `{ root, name, color, branch? }`. `color` is its repositoryColor; `branch` comes from the repository lookup.
+- `several` → optional, true to show the repository on each row; default: more than one repository. GitExplorerPanel sets it when the folder covers several repositories.
 - `commits`, `hasMore`, `loadingMore`, `moreError` → from the `loaded` state of useHistory, in the order given (newest first). Each commit is `{ root, commit }`.
 - `onLoadMore` → called by "Load more".
 
@@ -23,7 +24,7 @@ Shows:
 - each commit (list named "Commits") as a button on one line, in this order:
   - room on the left for the graph, as wide as the graph;
   - the short hash in mono;
-  - with more than one repository → the name of the commit's repository, after a round mark in its `color` (tooltip: its root). With one repository → nothing, as before `plan-multi_repo_workspace`;
+  - with `several` → the name of the commit's repository, after a round mark in its `color` (tooltip: its root). Without → nothing, as before `plan-multi_repo_workspace`;
   - on the first commit of each repository in the list (its tip), a label: the branch name of that repository, or "detached" on a detached HEAD; no `branch` → no label;
   - the first line of the message (tooltip: that line);
   - the author (tooltip: the author);
@@ -66,4 +67,4 @@ After a refresh (a new `commits` list):
 
 - `plan-git_explorer/REQ-17`, `plan-git_explorer/REQ-20`, `plan-git_explorer/REQ-21`, `plan-git_explorer/REQ-26`
 - `plan-git_graph/REQ-3`, `plan-git_graph/REQ-4`, `plan-git_graph/REQ-8`, `plan-git_graph/REQ-10`, `plan-git_graph/REQ-11`, `plan-git_graph/REQ-12`, `plan-git_graph/REQ-13`, `plan-git_graph/REQ-17`, `plan-git_graph/REQ-18`, `plan-git_graph/REQ-19`
-- `plan-multi_repo_workspace/REQ-22`, `plan-multi_repo_workspace/REQ-23`, `plan-multi_repo_workspace/REQ-24`, `plan-multi_repo_workspace/REQ-25`, `plan-multi_repo_workspace/REQ-27`
+- `plan-multi_repo_workspace/REQ-22`, `plan-multi_repo_workspace/REQ-23`, `plan-multi_repo_workspace/REQ-24`, `plan-multi_repo_workspace/REQ-25`, `plan-multi_repo_workspace/REQ-27`, `plan-multi_repo_workspace/REQ-29`

@@ -15,6 +15,7 @@ Description:
 
 Props:
 - `lookup` → the state of useRepositoryLookup.
+- `folder` → optional, the project folder of the session; the repository filter is kept per folder (useRepositoryFilter).
 - `onRefresh()` → optional. Called at each refresh, so the owner reads the repository again.
 - `sessions` → optional, the session list of LiveSessionStore (module sessions), for the turn-end refresh. Without it, no turn-end refresh.
 
@@ -24,22 +25,24 @@ Shows:
   - the branch chip (mono chip with the `git-branch` icon) → the branch name, or "detached <short hash>" on a detached HEAD;
   - at its right end, the icon button "Refresh" (`refresh-cw` icon, name and tooltip "Refresh").
 - with one repository that has `error` → the header with the name and "Refresh", no chip; then the message in an ErrorMessage, and no tabs.
-- with several repositories → a header at least 40 px high, with the RepositoryList and, at its right end, "Refresh".
+- with several repositories → a header at least 40 px high, with the RepositoryList (with the filter) and, at its right end, "Refresh". With one repository there is no list and no filter.
 - with `repositories` and no error message, below the header → a tab list with the tabs "Changes" (selected at first) and "History". The selected tab has `aria-selected` and an accent underline; its tab panel fills the rest of the height. The other tab panel stays mounted but hidden, so it keeps its state.
-- tab "Changes" → the changes of every covered repository, read when the panel mounts and at each refresh (useChanges on every covered root and `revision`):
+- the shown repositories → the chosen ones of the filter, in list order; with no filter, every covered repository. Each keeps the colour of its position in the full list (repositoryColor). With several covered repositories the tabs keep the look of several (repository groups, row marks, "<name>: " before a history error), also when one only is chosen.
+- tab "Changes" → the changes of the shown repositories, read when the panel mounts and at each refresh (useChanges on the shown roots and `revision`):
   - until each root has its first answer → a progress indicator "Loading…";
-  - then → the ChangesTab with the repositories and their states (groups, empty note and errors are its own).
-- tab "History" → the combined history of every covered repository (useHistory on every covered root and `revision`), whose first pages are read the first time the tab opens, not before, and again at each later refresh:
+  - then → the ChangesTab with the shown repositories, their colours and their states (groups, empty note and errors are its own).
+- tab "History" → the combined history of the shown repositories (useHistory on the shown roots and `revision`), whose first pages are read the first time the tab opens, not before, and again at each later refresh:
   - until each root has its first answer → a progress indicator "Loading…";
-  - each repository whose history failed → its git message in an ErrorMessage, above the commits, in the order of the list. With several repositories the message starts with the repository name ("<name>: <message>"); with one, the message alone;
-  - at least one repository read → the HistoryTab with the commits of the repositories read, and with every covered repository: its name, its colour (repositoryColor of its position, as in the header and the Changes tab) and the branch of the lookup ("No commits yet" when none has commits);
-  - every repository failed → only the messages.
+  - each repository whose history failed → its git message in an ErrorMessage, above the commits, in the order of the list. With several covered repositories the message starts with the repository name ("<name>: <message>"); with one, the message alone;
+  - at least one repository read → the HistoryTab with the commits of the repositories read, and with every shown repository: its name, its colour (as in the header and the Changes tab) and the branch of the lookup ("No commits yet" when none has commits);
+  - every shown repository failed → only the messages.
 - with `error` → a header with only the "Refresh" button, then the message in an ErrorMessage (announced as an alert).
 - with `loading` or `none` → an empty region.
 
 Actions:
 - click on a tab → shows its panel. Going back to a tab already opened reads nothing again.
-- "Refresh" → a refresh: the changes of every covered root and, once the tab was opened, the first history page of every covered root are read again, and `onRefresh()` is called.
+- "Refresh" → a refresh: the changes of every shown root and, once the tab was opened, the first history page of every shown root are read again, and `onRefresh()` is called.
+- a toggle of the filter in the RepositoryList, or "All repositories" → both tabs show the new shown repositories; a repository shown again is read again.
 - a session of `sessions` ends a turn in a folder at or under a covered root, or above one (useTurnEndSignal on every covered root) → the same refresh, with no click.
 
 During a refresh:
@@ -54,10 +57,10 @@ During a refresh:
 
 ## Dependencies
 
-- useRepositoryLookup, RepositoryList, repositoryColor, useChanges, ChangesTab, useHistory, HistoryTab, useTurnEndSignal
+- useRepositoryLookup, useRepositoryFilter, RepositoryList, repositoryColor, useChanges, ChangesTab, useHistory, HistoryTab, useTurnEndSignal
 - ErrorMessage, ProgressIndicator, IconSet (module app)
 
 ## Requirements served
 
 - `plan-git_explorer/REQ-4`, `plan-git_explorer/REQ-6`, `plan-git_explorer/REQ-7`, `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-13`, `plan-git_explorer/REQ-16`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-24`, `plan-git_explorer/REQ-26`, `plan-git_graph/REQ-12`
-- `plan-multi_repo_workspace/REQ-7`, `plan-multi_repo_workspace/REQ-8`, `plan-multi_repo_workspace/REQ-11`, `plan-multi_repo_workspace/REQ-13`, `plan-multi_repo_workspace/REQ-14`, `plan-multi_repo_workspace/REQ-19`, `plan-multi_repo_workspace/REQ-20`, `plan-multi_repo_workspace/REQ-21`, `plan-multi_repo_workspace/REQ-22`, `plan-multi_repo_workspace/REQ-23`, `plan-multi_repo_workspace/REQ-26`
+- `plan-multi_repo_workspace/REQ-7`, `plan-multi_repo_workspace/REQ-8`, `plan-multi_repo_workspace/REQ-11`, `plan-multi_repo_workspace/REQ-13`, `plan-multi_repo_workspace/REQ-14`, `plan-multi_repo_workspace/REQ-19`, `plan-multi_repo_workspace/REQ-20`, `plan-multi_repo_workspace/REQ-21`, `plan-multi_repo_workspace/REQ-22`, `plan-multi_repo_workspace/REQ-23`, `plan-multi_repo_workspace/REQ-26`, `plan-multi_repo_workspace/REQ-28`, `plan-multi_repo_workspace/REQ-29`, `plan-multi_repo_workspace/REQ-30`, `plan-multi_repo_workspace/REQ-31`

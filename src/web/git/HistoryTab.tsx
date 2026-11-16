@@ -81,8 +81,10 @@ export interface HistoryRepository {
 }
 
 interface HistoryTabProps {
-  /** Every covered repository; with more than one, each row shows the name of its repository. */
+  /** The repositories shown. */
   repositories: readonly HistoryRepository[];
+  /** Each row shows the name of its repository; default: more than one repository. */
+  several?: boolean;
   commits: RepositoryCommit[];
   hasMore: boolean;
   loadingMore: boolean;
@@ -92,7 +94,7 @@ interface HistoryTabProps {
 
 const tipLabelOf = (branch: BranchInfo | undefined) => (branch === undefined ? undefined : branch.kind === 'branch' ? branch.name : 'detached');
 
-export function HistoryTab({ repositories, commits, hasMore, loadingMore, moreError, onLoadMore }: HistoryTabProps) {
+export function HistoryTab({ repositories, several = repositories.length > 1, commits, hasMore, loadingMore, moreError, onLoadMore }: HistoryTabProps) {
   const [selected, setSelected] = useState<RepositoryCommit>();
   if (selected !== undefined && !commits.some(({ root, commit }) => root === selected.root && commit.hash === selected.commit.hash)) setSelected(undefined);
   const listRef = useRef<HTMLDivElement>(null);
@@ -108,7 +110,6 @@ export function HistoryTab({ repositories, commits, hasMore, loadingMore, moreEr
     setGraphWidth(Number(graphRef.current?.querySelector('svg')?.getAttribute('width') ?? 0));
   }, [graphCommits, graphStyle]);
   const byRoot = useMemo(() => new Map(repositories.map((repository) => [repository.root, repository])), [repositories]);
-  const several = repositories.length > 1;
   const tips = new Set<string>();
 
   if (commits.length === 0) return <p className="git-explorer-message">No commits yet</p>;
