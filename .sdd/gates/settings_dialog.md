@@ -6,3 +6,9 @@
 | 2026-11-16 | analysis | question analyst (top bar controls) | human decision | Theme, look and shortcuts button move from the top bar into the popup only |
 | 2026-11-16 | analysis | question analyst (key rules, restore) | human decision | Today's rules, reject with message; restore per row and restore all; all client shortcuts editable |
 | 2026-11-16 | analysis | G1 analysis | pass | 122 lines, class ordinary |
+| 2026-11-16 | plan | G2 requirements | pass | REQ-1..42 cover the spec, no addition |
+| 2026-11-16 | plan | question planner (restore default in conflict) | decided | Reject with message; source spec human decision on conflicts |
+| 2026-11-16 | plan | question planner (rows with two keys, digits 1-9) | decided | One combination replaces all keys; nine rows; touches less |
+| 2026-11-16 | plan | question planner (tooltip, reserved key message) | decided | "Settings (Alt+S)"; message names the owner, spec lists keys only |
+| 2026-11-16 | plan | question planner (row per action) | decided | Rows with several actions split to one per action; follows from the two-keys and digits decisions, no REQ changed |
+| 2026-11-16 | plan | G3 coverage | pass | 3 batches, all REQ covered, modify paths exist, acceptance covers every closed REQ |
