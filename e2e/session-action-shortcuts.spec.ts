@@ -4,6 +4,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Page, type Request, expect, test } from '@playwright/test';
+import { settingsButton, settingsPopup } from './settings';
 
 const ONE_SECOND = { timeout: 1000 };
 
@@ -48,7 +49,6 @@ const chooser = (page: Page) => page.getByRole('dialog', { name: 'New Claude Cod
 const history = (page: Page) => page.getByRole('dialog', { name: 'Resume Session' });
 const anyDialog = (page: Page) => page.locator('[role="dialog"], [role="alertdialog"]');
 const noOpenSession = (page: Page) => page.getByText('No open session.');
-const themeSwitch = (page: Page) => page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true });
 
 async function newFolder(name: string): Promise<string> {
   const folder = path.join(projectsRoot, name);
@@ -331,21 +331,20 @@ test('Alt+E scrolls the entry of the open session into view', async ({ page, req
 });
 
 // plan-keyboard_shortcuts/REQ-21 — scenario "The user switches the theme from the keyboard"
-test('Alt+A switches from the dark to the light theme and back, as the switch does', async ({ page }) => {
+// plan-settings_dialog/REQ-18: the shortcut still works without the top bar switch, and the settings popup shows its choice
+test('Alt+A switches from the dark to the light theme and back, as the settings popup does', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(themeSwitch(page)).toHaveAttribute('aria-pressed', 'true');
-  const moon = await themeSwitch(page).locator('svg').innerHTML();
 
   await page.keyboard.press('Alt+KeyA');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light', ONE_SECOND);
-  await expect(themeSwitch(page)).toHaveAttribute('aria-pressed', 'false');
-  expect(await themeSwitch(page).locator('svg').innerHTML(), 'the switch shows another icon, the sun').not.toBe(moon);
-  expect(await page.evaluate(() => localStorage.getItem('ai-client.theme')), 'the choice is saved, as the switch saves it').toBe('light');
+  expect(await page.evaluate(() => localStorage.getItem('ai-client.theme')), 'the choice is saved, as the popup saves it').toBe('light');
+  await settingsButton(page).click();
+  await expect(settingsPopup(page).getByRole('radio', { name: 'Light', exact: true })).toBeChecked();
+  await page.keyboard.press('Escape');
+  await expect(settingsPopup(page)).toHaveCount(0);
 
   await page.keyboard.press('Alt+KeyA');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark', ONE_SECOND);
-  await expect(themeSwitch(page)).toHaveAttribute('aria-pressed', 'true');
-  expect(await themeSwitch(page).locator('svg').innerHTML()).toBe(moon);
   expect(await page.evaluate(() => localStorage.getItem('ai-client.theme'))).toBe('dark');
 });

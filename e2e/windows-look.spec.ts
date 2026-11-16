@@ -1,21 +1,19 @@
-// e2e of plan-wsl_support, batch windows-look, in the browser: LookSwitch, LookStore, the early look mark, Windows11Look and
+// e2e of plan-wsl_support, batch windows-look, in the browser: the look choice of the settings popup (plan-settings_dialog), LookStore, the early look mark, Windows11Look and
 // the Windows-style WindowButtons. A fake `window.desktopBridge` makes the page behave as in the desktop window; the real
 // window is checked in e2e/desktop-window.spec.ts. The window manager's drag and double click are checked by hand.
 import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
+import { chooseInSettings, settingsButton, settingsPopup } from './settings';
 
 type Look = 'vexel' | 'windows11';
 type Rgb = [number, number, number];
 
 const LOOK_KEY = 'ai-client.look';
 const WINDOWS_BLUE = 'rgb(0, 120, 212)';
-const BUTTON_ORDER = ['Keyboard Shortcuts', 'Dark theme', 'Windows 11 look', 'Plan Usage'];
 
 const topBar = (page: Page) => page.getByRole('banner');
-const lookSwitch = (page: Page) => topBar(page).getByRole('button', { name: 'Windows 11 look', exact: true });
-const themeSwitch = (page: Page) => topBar(page).getByRole('button', { name: 'Dark theme', exact: true });
 const lookMark = (page: Page) => page.locator('html').getAttribute('data-look');
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
@@ -118,14 +116,24 @@ function hsl(colour: string): { h: number; s: number; l: number } {
 const hueGap = (a: number, b: number) => Math.min(Math.abs(a - b), 360 - Math.abs(a - b));
 
 async function setTheme(page: Page, theme: 'dark' | 'light'): Promise<void> {
-  await expect(themeSwitch(page)).toBeVisible();
-  if ((await page.locator('html').getAttribute('data-theme')) !== theme) await themeSwitch(page).click();
+  await expect(settingsButton(page)).toBeVisible();
+  if ((await page.locator('html').getAttribute('data-theme')) !== theme) await chooseInSettings(page, theme === 'light' ? 'Light' : 'Dark');
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 }
 
 async function setLook(page: Page, look: Look): Promise<void> {
-  if ((await lookMark(page)) !== look) await lookSwitch(page).click();
+  await expect(settingsButton(page)).toBeVisible();
+  if ((await lookMark(page)) !== look) await chooseInSettings(page, look === 'windows11' ? 'Windows 11' : 'macOS');
   await expect(page.locator('html')).toHaveAttribute('data-look', look);
+}
+
+/** The look the settings popup shows as chosen; the popup closes again. */
+async function expectChosenLook(page: Page, choice: 'macOS' | 'Windows 11'): Promise<void> {
+  await settingsButton(page).click();
+  await settingsPopup(page).getByRole('tab', { name: 'Window Look', exact: true }).click();
+  await expect(settingsPopup(page).getByRole('radio', { name: choice, exact: true })).toBeChecked();
+  await page.keyboard.press('Escape');
+  await expect(settingsPopup(page)).toHaveCount(0);
 }
 
 /** Presses Tab until the target has the focus, as a keyboard user does. */
@@ -191,43 +199,32 @@ function styleSnapshot(page: Page): Promise<(string | null)[]> {
 
 const differences = (a: (string | null)[], b: (string | null)[]) => a.filter((line, i) => line !== null && b[i] !== null && line !== b[i]);
 
-test.describe('Look switch and look store', () => {
+test.describe('Look choice and look store', () => {
   // plan-wsl_support/REQ-24, REQ-16: with no saved choice the client shows the current look
-  test('a first visit shows the current look: the root carries "vexel" and the switch is not pressed', async ({ page }) => {
+  test('a first visit shows the current look: the root carries "vexel" and the settings show macOS', async ({ page }) => {
     await recordLookMarks(page);
     await page.goto('/');
-    await expect(lookSwitch(page)).toBeVisible();
+    await expect(settingsButton(page)).toBeVisible();
     expect(await lookMark(page)).toBe('vexel');
-    await expect(lookSwitch(page)).toHaveAttribute('aria-pressed', 'false');
+    await expectChosenLook(page, 'macOS');
     expect(await page.evaluate((key) => localStorage.getItem(key), LOOK_KEY), 'nothing saved before a choice').toBeNull();
     expect(new Set(await lookMarks(page)), 'the page never carries the Windows 11 mark').toEqual(new Set(['vexel']));
   });
 
-  // plan-wsl_support/REQ-18, TopBar "Shows": the look switch sits right after the theme switch, 6 px apart, before Plan Usage
-  test('the look switch sits right after the theme switch, 6 px apart, before "Plan Usage"', async ({ page }) => {
+  // plan-wsl_support/REQ-19, REQ-20, REQ-22, plan-settings_dialog/REQ-13, REQ-15: a choice switches the whole page at once, no reload, and saves it
+  test('choosing "Windows 11" shows the Windows 11 look at once without a reload and saves it; choosing "macOS" brings back the current look', async ({ page }) => {
     await page.goto('/');
-    await expect(lookSwitch(page)).toBeVisible();
-    const names = await topBar(page).getByRole('button').evaluateAll((all) => all.map((e) => e.getAttribute('aria-label') ?? e.textContent?.trim() ?? ''));
-    expect(names.filter((name) => BUTTON_ORDER.includes(name))).toEqual(BUTTON_ORDER);
-    const theme = (await themeSwitch(page).boundingBox())!;
-    const look = (await lookSwitch(page).boundingBox())!;
-    expect(look.x - (theme.x + theme.width), 'gap after the theme switch').toBeCloseTo(6, 0);
-    expect(Math.abs(look.y - theme.y), 'same row').toBeLessThan(1);
-    expect(look.width).toBeCloseTo(theme.width, 0);
-    expect(look.height).toBeCloseTo(theme.height, 0);
-  });
-
-  // plan-wsl_support/REQ-19, REQ-20, REQ-22: a press switches the whole page at once, no reload, and saves the choice
-  test('a press shows the Windows 11 look at once without a reload and saves it; a second press brings back the current look', async ({ page }) => {
-    await page.goto('/');
-    await expect(lookSwitch(page)).toBeVisible();
     await page.evaluate(() => Object.assign(window, { sameDocument: true }));
-    const iconBefore = await lookSwitch(page).locator('svg').innerHTML();
+    await settingsButton(page).click();
+    await settingsPopup(page).getByRole('tab', { name: 'Window Look', exact: true }).click();
+    const windows11 = settingsPopup(page).getByRole('radio', { name: 'Windows 11', exact: true });
+    const macOS = settingsPopup(page).getByRole('radio', { name: 'macOS', exact: true });
+    await expect(macOS).toBeChecked();
 
-    const sameFrame = await lookSwitch(page).evaluate(
+    const sameFrame = await windows11.evaluate(
       (button) =>
         new Promise<{ mark: string | null; canvas: string }>((resolve) => {
-          (button as HTMLButtonElement).click();
+          (button as HTMLInputElement).click();
           requestAnimationFrame(() => {
             const probe = document.createElement('div');
             probe.style.color = 'var(--bg-canvas)';
@@ -239,17 +236,15 @@ test.describe('Look switch and look store', () => {
         }),
     );
     expect(sameFrame, 'the next frame already carries the Windows 11 mark and its dark canvas').toEqual({ mark: 'windows11', canvas: 'rgb(28, 28, 28)' });
-    await expect(lookSwitch(page)).toHaveAttribute('aria-pressed', 'true');
-    await expect(lookSwitch(page)).toHaveAttribute('title', 'Windows 11 look');
-    expect(await lookSwitch(page).locator('svg').innerHTML(), 'the icon shows the active look').not.toBe(iconBefore);
+    await expect(windows11).toBeChecked();
+    await expect(settingsPopup(page), 'the popup stays open').toBeVisible();
     expect(await page.evaluate((key) => localStorage.getItem(key), LOOK_KEY)).toBe('windows11');
     await expect.poll(() => topBar(page).evaluate((e) => getComputedStyle(e).backgroundColor), { message: 'the top bar takes the Windows 11 surface' }).toBe('rgb(43, 43, 43)');
     await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).fontFamily), { message: 'the page text takes Segoe UI' }).toContain('Segoe UI');
 
-    await lookSwitch(page).click();
-    await expect(lookSwitch(page)).toHaveAttribute('aria-pressed', 'false');
+    await macOS.check();
+    await expect(macOS).toBeChecked();
     expect(await lookMark(page)).toBe('vexel');
-    expect(await lookSwitch(page).locator('svg').innerHTML()).toBe(iconBefore);
     expect(await page.evaluate((key) => localStorage.getItem(key), LOOK_KEY)).toBe('vexel');
     expect(await page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument), 'no reload').toBe(true);
   });
@@ -260,7 +255,7 @@ test.describe('Look switch and look store', () => {
     await setLook(page, 'windows11');
     await recordLookMarks(page);
     await page.reload();
-    await expect(lookSwitch(page)).toHaveAttribute('aria-pressed', 'true');
+    await expectChosenLook(page, 'Windows 11');
     expect(new Set(await lookMarks(page)), 'only the Windows 11 mark, from the head script on').toEqual(new Set(['windows11']));
   });
 
@@ -278,7 +273,7 @@ test.describe('Look switch and look store', () => {
       }).observe(document, { childList: true, subtree: true });
     });
     await page.goto('/');
-    await expect(lookSwitch(page)).toBeVisible();
+    await expect(settingsButton(page)).toBeVisible();
     const seen = await page.evaluate(() => (window as unknown as { markAtFirstStyle: string[] }).markAtFirstStyle);
     expect(seen.length, 'the page has styles or scripts').toBeGreaterThan(0);
     expect(new Set(seen)).toEqual(new Set(['windows11']));
@@ -289,12 +284,12 @@ test.describe('Look switch and look store', () => {
     await page.addInitScript((key) => localStorage.setItem(key, 'aero'), LOOK_KEY);
     await recordLookMarks(page);
     await page.goto('/');
-    await expect(lookSwitch(page)).toHaveAttribute('aria-pressed', 'false');
+    await expectChosenLook(page, 'macOS');
     expect(new Set(await lookMarks(page))).toEqual(new Set(['vexel']));
   });
 
   // plan-wsl_support/REQ-17: look and theme change apart, and each look has both themes
-  test('the theme switch keeps the look and the look switch keeps the theme', async ({ page }) => {
+  test('the theme choice keeps the look and the look choice keeps the theme', async ({ page }) => {
     await page.goto('/');
     await setTheme(page, 'dark');
     await setLook(page, 'windows11');
@@ -303,7 +298,7 @@ test.describe('Look switch and look store', () => {
 
     await setTheme(page, 'light');
     expect(await lookMark(page), 'the theme change keeps the Windows 11 look').toBe('windows11');
-    await expect(lookSwitch(page)).toHaveAttribute('aria-pressed', 'true');
+    await expectChosenLook(page, 'Windows 11');
     expect((await tokens(page, ['--bg-canvas']))['--bg-canvas'], 'Windows 11 light canvas').toBe('rgb(238, 238, 238)');
 
     await setLook(page, 'vexel');
@@ -341,7 +336,7 @@ test.describe('Look change with an open session', () => {
     );
 
   // plan-wsl_support/REQ-20, REQ-21: same session, same scroll position, session still answers, no reload
-  test('the look switch keeps the open session, its scroll position and its connection', async ({ page, request }) => {
+  test('a look change keeps the open session, its scroll position and its connection', async ({ page, request }) => {
     const folder = path.join(await mkdtemp(path.join(projectsRoot, 'l-')), 'look');
     await mkdir(folder);
     await startViaApi(request, folder);
@@ -361,14 +356,12 @@ test.describe('Look change with an open session', () => {
     await page.evaluate(() => Object.assign(window, { sameDocument: true }));
     const before = await visibleRows(page);
 
-    await lookSwitch(page).click();
-    await expect(page.locator('html')).toHaveAttribute('data-look', 'windows11');
+    await setLook(page, 'windows11');
     await page.waitForTimeout(300);
     expect(await visibleRows(page), 'same rows on screen').toBe(before);
     expect(await page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument), 'no reload').toBe(true);
 
-    await lookSwitch(page).click();
-    await expect(page.locator('html')).toHaveAttribute('data-look', 'vexel');
+    await setLook(page, 'vexel');
     await page.waitForTimeout(300);
     expect(await visibleRows(page), 'same rows after switching back').toBe(before);
 
@@ -385,8 +378,7 @@ test.describe('Look change with an open session', () => {
     await topBar(page).getByRole('button', { name: 'Plan Usage', exact: true }).click();
     const panel = page.getByRole('dialog', { name: 'Plan Usage', exact: true });
     await expect(panel).toBeVisible();
-    await lookSwitch(page).click();
-    await expect(page.locator('html')).toHaveAttribute('data-look', 'windows11');
+    await setLook(page, 'windows11');
     await expect(panel, 'the look change keeps the panel open').toBeVisible();
     await expect.poll(() => panel.evaluate((e) => getComputedStyle(e).borderTopLeftRadius)).toBe('8px');
   });
@@ -423,7 +415,7 @@ test.describe('Windows 11 look styles', () => {
     });
     await chooseLook(page, 'windows11');
     await page.goto('/');
-    await expect(lookSwitch(page)).toBeVisible();
+    await expect(settingsButton(page)).toBeVisible();
     const families = await page.evaluate(() => [getComputedStyle(document.body).fontFamily, getComputedStyle(document.querySelector('header')!).fontFamily]);
     for (const family of families) {
       const names = family.split(',').map((name) => name.trim().replace(/^["']|["']$/g, ''));
@@ -442,7 +434,7 @@ test.describe('Windows 11 look styles', () => {
     await page.goto('/');
     const planUsage = topBar(page).getByRole('button', { name: 'Plan Usage', exact: true });
     await expect(planUsage).toBeVisible();
-    for (const control of [planUsage, lookSwitch(page), themeSwitch(page)])
+    for (const control of [planUsage, topBar(page).getByRole('button', { name: 'Keyboard Shortcuts', exact: true }), settingsButton(page)])
       expect(await control.evaluate((e) => getComputedStyle(e).borderTopLeftRadius), await control.getAttribute('aria-label') ?? '').toBe('4px');
     await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'New Claude Code Session' });
@@ -536,7 +528,8 @@ test.describe('Windows 11 look styles', () => {
     test(`${theme} theme: every computed style of the current look is the same as with no look mark, before and after a round trip`, async ({ page }) => {
       await page.goto('/');
       await setTheme(page, theme);
-      await expect(lookSwitch(page)).toHaveAttribute('aria-pressed', 'false');
+      expect(await lookMark(page)).toBe('vexel');
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
       await page.mouse.move(0, 0);
       await freezeStyles(page);
       const vexel = await styleSnapshot(page);
@@ -545,11 +538,9 @@ test.describe('Windows 11 look styles', () => {
       await page.evaluate(() => document.documentElement.setAttribute('data-look', 'vexel'));
       expect(differences(unmarked, vexel), 'differences with no look mark').toEqual([]);
 
-      await lookSwitch(page).click();
-      await expect(page.locator('html')).toHaveAttribute('data-look', 'windows11');
+      await setLook(page, 'windows11');
       expect(differences(await styleSnapshot(page), vexel).length, 'the Windows 11 look does change the page').toBeGreaterThan(0);
-      await lookSwitch(page).click();
-      await expect(page.locator('html')).toHaveAttribute('data-look', 'vexel');
+      await setLook(page, 'vexel');
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
       await page.mouse.move(0, 0);
       expect(differences(await styleSnapshot(page), vexel), 'differences after a round trip').toEqual([]);
@@ -714,32 +705,24 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
     expect(macOrder[0]).toBeLessThan(macOrder[1]!);
     expect(macOrder[1]).toBeLessThan(macOrder[2]!);
 
-    await lookSwitch(page).click();
+    await setLook(page, 'windows11');
     const windowsClose = (await close.boundingBox())!;
     expect(windowsClose.x + windowsClose.width).toBeCloseTo(page.viewportSize()!.width, 0);
     expect(windowsClose.x).toBeGreaterThan(await logoX());
 
-    await lookSwitch(page).click();
+    await setLook(page, 'vexel');
     const back = (await close.boundingBox())!;
     expect(back.x).toBeCloseTo(macRed.x, 0);
     expect(back.width).toBeCloseTo(12, 0);
   });
 
-  // plan-wsl_support/REQ-39: Tab reaches the look switch and the Windows-style buttons, with a visible focus; Enter acts
-  test('Tab reaches the look switch and the three buttons with a visible focus, and Enter acts on each', async ({ page }) => {
+  // plan-wsl_support/REQ-39: Tab reaches the Windows-style buttons, with a visible focus; Enter acts
+  test('Tab reaches the three buttons with a visible focus, and Enter acts on each', async ({ page }) => {
     await chooseLook(page, 'windows11');
     await page.goto('/');
     const bar = topBar(page);
     const { close, minimize, maximize } = windowButtons(bar);
     await expect(close).toBeVisible();
-
-    await tabTo(page, lookSwitch(page));
-    expect(await showsFocus(lookSwitch(page)), 'look switch focus').toBe(true);
-    await page.keyboard.press('Enter');
-    await expect(lookSwitch(page)).toHaveAttribute('aria-pressed', 'false');
-    await expect(lookSwitch(page)).toBeFocused();
-    await page.keyboard.press('Space');
-    await expect(lookSwitch(page)).toHaveAttribute('aria-pressed', 'true');
 
     await tabTo(page, minimize);
     expect(await showsFocus(minimize), 'Minimize focus').toBe(true);
@@ -755,15 +738,15 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
     expect(await windowCalls(page)).toEqual(['minimize', 'toggle-maximize', 'close']);
   });
 
-  // plan-wsl_support/REQ-32, REQ-33: an empty drag area at every width in both looks; the look switch and the buttons are no-drag
+  // plan-wsl_support/REQ-32, REQ-33, plan-settings_dialog/REQ-17: an empty drag area at every width in both looks; the buttons are no-drag
   for (const look of ['vexel', 'windows11'] as const)
     for (const width of [1280, 800, 560, 400, 320]) {
-      test(`${look} look at ${width} px: the logo and the brand are a drag area, the look switch and the window buttons are not`, async ({ page }) => {
+      test(`${look} look at ${width} px: the logo and the brand are a drag area, the window buttons are not`, async ({ page }) => {
         await chooseLook(page, look);
         await page.setViewportSize({ width, height: 600 });
         await page.goto('/');
         const bar = topBar(page);
-        await expect(lookSwitch(page)).toBeAttached();
+        await expect(bar.getByText('VX', { exact: true })).toBeAttached();
         for (const label of ['VX', 'Vexel']) {
           const box = (await bar.getByText(label, { exact: true }).boundingBox())!;
           const x = box.x + box.width / 2;
@@ -771,7 +754,6 @@ test.describe('Windows-style window buttons in the desktop top bar', () => {
           expect(x).toBeLessThan(width);
           expect(await regionAt(page, x, box.y + box.height / 2), label).toBe('drag');
         }
-        expect(await centreRegion(page, lookSwitch(page)), 'look switch').toBe('no-drag');
         const { close, minimize, maximize } = windowButtons(bar);
         for (const button of [close, minimize, maximize]) expect(await centreRegion(page, button), await button.getAttribute('aria-label') ?? '').toBe('no-drag');
         if (look === 'windows11') {

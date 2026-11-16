@@ -2,6 +2,7 @@
 // A fake `window.desktopBridge` records the window requests and plays the maximized state; Electron is checked in e2e/desktop-window.spec.ts.
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { startupPageUrl } from '../src/desktop/startup-page.js';
+import { chooseInSettings } from './settings';
 
 interface FakeOptions {
   maximized?: boolean;
@@ -232,7 +233,7 @@ test.describe('WindowButtons in the desktop top bar', () => {
     await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'light');
     const dark = await symbolContrasts(all);
 
-    await topBar(page).getByRole('button', { name: 'Dark theme', exact: true }).click();
+    await chooseInSettings(page, 'Light');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     const light = await symbolContrasts(all);
 
@@ -371,7 +372,7 @@ test.describe('Flat macOS window buttons with a hover glow (plan-ui_restyle)', (
     await expectMacLook(all);
     for (const theme of ['dark', 'light']) {
       if (theme === 'light') {
-        await topBar(page).getByRole('button', { name: 'Dark theme', exact: true }).click();
+        await chooseInSettings(page, 'Light');
         await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
         await page.mouse.move(600, 400);
       }

@@ -16,3 +16,5 @@
 | 2026-11-16 | dev | settings button placement | human decision | Button moves to the bottom of the navigation rail; analysis corrected, tester stopped, its partial work stashed |
 | 2026-11-16 | plan | G3 coverage (rail placement) | pass | REQ-1/REQ-2 rewritten, INT-6 rewritten, INT-10/INT-11 added to settings-popup |
 | 2026-11-16 | dev | G4 settings-popup (rail) | pass | Build green; diff limited to INT-6/10/11 files, specs and index |
+| 2026-11-16 | dev | G5 settings-popup | pass | 58 unit + 79 e2e re-run green; light-theme "theme change keeps the new-session dialog open" deleted, unreachable after REQ-16/REQ-19 |
+| 2026-11-16 | dev | question tester (Electron tests) | decided | 4 changed tests of `e2e/desktop-window.spec.ts` run at the plan's closing run |

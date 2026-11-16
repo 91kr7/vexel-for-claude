@@ -1,10 +1,11 @@
 // e2e of plan-light_theme, batch light-theme. Expected values come from the REQs, the specs ThemeTokens, ThemeStore,
-// ThemeSwitch, TopBar, WebEntry, SessionView, and the `[data-theme="editorial-light"]` block of .sdd/mockups/studio-dark/mock.html.
+// SettingsButton, ThemeSection, TopBar, WebEntry, SessionView, and the `[data-theme="editorial-light"]` block of .sdd/mockups/studio-dark/mock.html.
 /// <reference lib="dom" />
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, type WebSocketRoute, expect, test } from '@playwright/test';
+import { chooseInSettings, settingsButton, settingsPopup } from './settings';
 
 type Box = { x: number; y: number; width: number; height: number };
 type Rgba = [number, number, number, number];
@@ -84,7 +85,6 @@ test.afterEach(async ({ request }) => {
 
 const topBar = (page: Page) => page.getByRole('banner');
 const button = (scope: Locator, name: string) => scope.getByRole('button', { name, exact: true });
-const themeSwitch = (page: Page) => button(topBar(page), 'Dark theme');
 const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' });
 const panel = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const mainArea = (page: Page) => page.getByRole('main');
@@ -244,7 +244,7 @@ function hue([r, g, b]: Rgba): number {
 }
 
 async function toLight(page: Page): Promise<void> {
-  await themeSwitch(page).click();
+  await chooseInSettings(page, 'Light');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 }
 
@@ -317,79 +317,28 @@ async function audit(scope: Locator, darkOnly: string[]): Promise<{ dark: string
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-test.describe('theme switch', () => {
-  // REQ-1, TopBar: the switch on the right of the bar, on the empty screen and with a session open
-  test('the top bar shows the 32 x 32 switch on its right, before the look switch and "Plan Usage", with and without an open session', async ({ page, request }) => {
-    await showOnly(page);
-    const folder = await newFolder('switch-place');
-    await startViaApi(request, folder);
-    await page.goto('/');
-    const check = async (screen: string) => {
-      const sw = await box(themeSwitch(page));
-      // plan-usage_limits/REQ-1, plan-wsl_support/REQ-18: the look switch, then the usage button, follow the switch 6 px apart.
-      const look = await box(button(topBar(page), 'Windows 11 look'));
-      const usage = await box(button(topBar(page), 'Plan Usage'));
-      const bar = await box(topBar(page));
-      expect(sw.width, screen).toBeCloseTo(32, 0);
-      expect(sw.height, screen).toBeCloseTo(32, 0);
-      expect(usage.width, screen).toBeCloseTo(32, 0);
-      expect(look.x - (sw.x + sw.width), `${screen}: 6 px before the look switch`).toBeCloseTo(6, 0);
-      expect(usage.x - (look.x + look.width), `${screen}: the look switch 6 px before the usage button`).toBeCloseTo(6, 0);
-      expect(sw.x, `${screen}: on the right half of the bar`).toBeGreaterThan(bar.width / 2);
-      expect(Math.abs(sw.y + sw.height / 2 - (bar.y + bar.height / 2)), `${screen}: vertically centred`).toBeLessThanOrEqual(1);
-    };
-    await check('empty screen');
-    await openFromList(page, folder);
-    await check('hosted session open');
-    await toLight(page);
-    await check('light theme');
-  });
-
-  // REQ-2 — ThemeSwitch: name and tooltip "Dark theme", aria-pressed and icon follow the theme
-  test('the switch is "Dark theme", pressed with a moon in the dark theme and not pressed with a sun in the light theme', async ({ page }) => {
-    await page.goto('/');
-    const sw = themeSwitch(page);
-    await expect(sw).toBeVisible();
-    expect(await themeMark(page)).toBe('dark');
-    await expect(sw).toHaveAttribute('aria-pressed', 'true');
-    await expect(sw).toHaveAttribute('title', 'Dark theme');
-    const moon = await sw.locator('svg').evaluate((el) => el.outerHTML);
-    await expect(sw.locator('svg')).toHaveAttribute('aria-hidden', 'true');
-    expect(await style(sw, 'border-top-left-radius')).toBe('8px');
-
-    await sw.click();
-    await expect(sw).toHaveAttribute('aria-pressed', 'false');
-    expect(await themeMark(page)).toBe('light');
-    await expect(sw).toHaveAccessibleName('Dark theme');
-    await expect(sw).toHaveAttribute('title', 'Dark theme');
-    const sun = await sw.locator('svg').evaluate((el) => el.outerHTML);
-    expect(sun, 'the icon changes with the theme').not.toBe(moon);
-    expect((await box(sw)).width, 'the size does not change').toBeCloseTo(32, 0);
-
-    await sw.click();
-    await expect(sw).toHaveAttribute('aria-pressed', 'true');
-    expect(await sw.locator('svg').evaluate((el) => el.outerHTML)).toBe(moon);
-  });
-
-  // ThemeSwitch: the mock's icon-button look at rest and on hover, in the light theme
-  test('in the light theme the switch is on surface 1 with the secondary icon, and on hover on surface 3 with the strong border', async ({ page }) => {
+test.describe('theme choice', () => {
+  // plan-settings_dialog/REQ-1, SettingsButton: the rail-button look of "Resume" at rest and on hover, in the light theme
+  test('in the light theme the settings button has the rail-button look of "Resume", with surface 3 and the primary icon on hover', async ({ page }) => {
     await page.goto('/');
     await toLight(page);
-    const sw = themeSwitch(page);
+    const sw = settingsButton(page);
+    const resume = button(rail(page), 'Resume');
     await page.mouse.move(700, 600);
-    await expect.poll(() => style(sw, 'background-color')).toBe(LIGHT['--bg-surface-1']);
-    expect(await style(sw, 'border-top-color')).toBe(LIGHT['--border-subtle']);
-    expect(await style(sw, 'color')).toBe(LIGHT['--text-secondary']);
-    const icon = await box(sw.locator('svg'));
-    expect(icon.width).toBeCloseTo(16, 0);
+    await expect.poll(() => style(sw, 'color')).toBe(LIGHT['--text-secondary']);
+    expect(await style(sw, 'background-color')).toBe(await style(resume, 'background-color'));
+    const size = await box(sw);
+    expect(size.width).toBeCloseTo(34, 0);
+    expect(size.height).toBeCloseTo(34, 0);
+    expect(await style(sw, 'border-top-left-radius')).toBe('8px');
+    expect((await box(sw.locator('svg'))).width).toBeCloseTo(17, 0);
     await sw.hover();
     await expect.poll(() => style(sw, 'background-color')).toBe(LIGHT['--bg-surface-3']);
-    expect(await style(sw, 'border-top-color')).toBe(LIGHT['--border-strong']);
     expect(await style(sw, 'color')).toBe(LIGHT['--text-primary']);
   });
 
   // REQ-3: the whole client changes at once, without a reload
-  test('a click turns the whole client light at once, without a reload', async ({ page }) => {
+  test('choosing "Light" in the settings turns the whole client light at once, without a reload', async ({ page }) => {
     await showOnly(page);
     await page.goto('/');
     await expect(rail(page)).toBeVisible();
@@ -398,7 +347,8 @@ test.describe('theme switch', () => {
       if (frame === page.mainFrame()) navigations += 1;
     });
     await page.evaluate(() => ((window as unknown as { pageMarker: number }).pageMarker = 42));
-    await themeSwitch(page).click();
+    await settingsButton(page).click();
+    await settingsPopup(page).getByRole('radio', { name: 'Light', exact: true }).check();
     expect(await style(page.locator('body'), 'background-color')).toBe(LIGHT['--bg-canvas']);
     expect(await style(page.locator('body'), 'color')).toBe(LIGHT['--text-primary']);
     expect(await style(topBar(page), 'background-color')).toBe(LIGHT['--bg-surface-2']);
@@ -412,7 +362,7 @@ test.describe('theme switch', () => {
     await page.goto('/');
     await toLight(page);
     await page.reload();
-    await expect(themeSwitch(page)).toHaveAttribute('aria-pressed', 'false');
+    await expect(settingsButton(page)).toBeVisible();
     expect(await themeMark(page)).toBe('light');
   });
 
@@ -452,9 +402,7 @@ test.describe('theme switch', () => {
     const sockets = await page.evaluate(() => [...(window as unknown as { socketLog: string[] }).socketLog]);
     const regionBefore = await box(region);
 
-    await themeSwitch(page).click();
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    await expect(themeSwitch(page)).toHaveAttribute('aria-pressed', 'false');
+    await chooseInSettings(page, 'Light');
     await page.waitForTimeout(500);
 
     expect(await style(page.locator('body'), 'background-color')).toBe(LIGHT['--bg-canvas']);
@@ -472,56 +420,46 @@ test.describe('theme switch', () => {
     expect(await style(terminal(page), 'color')).toBe(DARK_TEXT_PRIMARY);
   });
 
-  // REQ-4: a theme change does not close an open dialog or lose what the user typed
-  test('a theme change keeps the new-session dialog open with the typed path', async ({ page }) => {
-    await page.goto('/');
-    await button(rail(page), 'New Claude Code Session').click();
-    const field = chooser(page).getByRole('textbox', { name: 'Working Directory Path', exact: true });
-    // The field shows the current folder once the first listing is in: typing earlier races it.
-    await expect(field).toHaveValue(/^\//);
-    await field.fill('/tmp/some-project');
-    // The modal backdrop covers the top bar, so the click is dispatched to the switch directly.
-    await themeSwitch(page).evaluate((el) => (el as HTMLButtonElement).click());
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    await expect(chooser(page)).toBeVisible();
-    await expect(field).toHaveValue('/tmp/some-project');
-    expect(await style(chooser(page), 'background-color')).toBe(LIGHT['--bg-surface-2']);
-  });
-
-  // REQ-5, REQ-13 — scenario "The user goes back to the dark theme with the keyboard"
-  test('with the keyboard the switch shows the focus ring and toggles on Enter and Space; back in dark the client looks as before', async ({ page }) => {
+  // REQ-5, REQ-13 — scenario "The user goes back to the dark theme with the keyboard", through the settings popup (plan-settings_dialog/REQ-11)
+  test('with the keyboard the settings button and the theme radios show the focus ring and change the theme; back in dark the client looks as before', async ({ page }) => {
     await showOnly(page);
     await page.goto('/');
     await expect(button(mainArea(page), 'New Session')).toBeVisible();
-    // The list must have loaded: a shot of "Loading…" would differ from the one taken after the switch.
+    // The list must have loaded: a shot of "Loading…" would differ from the one taken after the change.
     await expect(panel(page).getByText('No sessions.', { exact: true })).toBeVisible();
     const darkTokens = await allTokens(page);
     const darkShot = await page.screenshot({ animations: 'disabled' });
 
-    const sw = themeSwitch(page);
-    for (let i = 0; i < 20 && !(await sw.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press('Tab');
+    const sw = settingsButton(page);
+    for (let i = 0; i < 30 && !(await sw.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press('Tab');
     await expect(sw).toBeFocused();
     await page.keyboard.press('Enter');
+    await expect(settingsPopup(page)).toBeVisible();
+    await page.keyboard.press('Tab');
+    const dark = settingsPopup(page).getByRole('radio', { name: 'Dark', exact: true });
+    const light = settingsPopup(page).getByRole('radio', { name: 'Light', exact: true });
+    await expect(dark).toBeFocused();
+    await page.keyboard.press('ArrowUp');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    await expect(sw).toHaveAttribute('aria-pressed', 'false');
+    await expect(light).toBeChecked();
+    await expect(light).toBeFocused();
 
     // REQ-5, WebEntry: the shared 2 px accent ring, 2 px away
-    expect(await sw.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
-    expect(await style(sw, 'outline-style')).not.toBe('none');
-    expect(await style(sw, 'outline-width')).toBe('2px');
-    expect(await style(sw, 'outline-offset')).toBe('2px');
-    expect(await style(sw, 'outline-color')).toBe(LIGHT['--accent-primary']);
-    const ringOnCanvas = contrast(parse(await style(sw, 'outline-color')), parse(LIGHT['--bg-surface-2']!));
-    expect(ringOnCanvas, 'the ring stays visible on the light top bar').toBeGreaterThanOrEqual(3);
+    expect(await light.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
+    expect(await style(light, 'outline-style')).not.toBe('none');
+    expect(await style(light, 'outline-width')).toBe('2px');
+    expect(await style(light, 'outline-offset')).toBe('2px');
+    expect(await style(light, 'outline-color')).toBe(LIGHT['--accent-primary']);
 
-    await page.keyboard.press('Space');
+    await page.keyboard.press('ArrowDown');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    await page.keyboard.press('Space');
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    await page.keyboard.press('Enter');
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    await expect(sw).toHaveAttribute('aria-pressed', 'true');
-    expect(await style(sw, 'outline-color')).toBe(DARK_ACCENT);
+    await expect(dark).toBeChecked();
+    await page.keyboard.press('Escape');
+    await expect(settingsPopup(page)).toHaveCount(0);
+    await expect(sw).toBeFocused();
+    expect(await sw.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
+    // The rail buttons ease every property in 0.14 s, the ring colour included.
+    await expect.poll(() => style(sw, 'outline-color')).toBe(DARK_ACCENT);
 
     // REQ-13: the dark theme is the same as before the change
     expect(await allTokens(page)).toEqual(darkTokens);
@@ -663,7 +601,7 @@ test.describe('light palette', () => {
     expect(await style(panel(page).locator('time').first(), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     await page.emulateMedia({ colorScheme: 'light' });
     expect(await style(page.locator('html'), 'color-scheme')).toBe('light');
-    await themeSwitch(page).click();
+    await chooseInSettings(page, 'Dark');
     expect(await style(page.locator('html'), 'color-scheme'), 'dark again on a light system').toBe('dark');
   });
 });

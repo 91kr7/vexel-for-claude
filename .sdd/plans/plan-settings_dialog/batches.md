@@ -10,7 +10,7 @@ Requirements → `requirements.md`. Execution order: settings-popup → shortcut
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [settings-popup](batches/batch-settings-popup.md) | Settings popup | REQ-1, REQ-2, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20 | — | implemented | The user changes the theme and the look from the settings |
+| [settings-popup](batches/batch-settings-popup.md) | Settings popup | REQ-1, REQ-2, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20 | — | certified | The user changes the theme and the look from the settings |
 | [shortcuts-section](batches/batch-shortcuts-section.md) | Shortcuts in the settings | REQ-3, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25 | settings-popup | todo | Alt+S shows the shortcuts in the settings |
 | [editable-shortcuts](batches/batch-editable-shortcuts.md) | Editable shortcuts | REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42 | shortcuts-section | todo | The user gives a shortcut new keys and uses them at once |
 

@@ -128,7 +128,8 @@ test('"Projects" shows every project folder, the most recent first, with path an
 test('"Projects" sits between "Sessions" and "Resume" and shows its name in a tooltip on hover', async ({ page }) => {
   await page.goto('/');
   const names = await rail(page).getByRole('button').evaluateAll((els) => els.map((el) => el.getAttribute('aria-label') ?? el.textContent?.trim()));
-  expect(names).toEqual(['New Claude Code Session', 'Sessions', 'Projects', 'Resume']);
+  // plan-settings_dialog/REQ-1: "Settings" closes the rail, at its bottom.
+  expect(names).toEqual(['New Claude Code Session', 'Sessions', 'Projects', 'Resume', 'Settings']);
   const projects = railButton(page, 'Projects');
   const tooltip = projects.getByText('Projects', { exact: true });
   await projects.hover();

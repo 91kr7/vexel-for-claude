@@ -3,6 +3,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, type Request, expect, test } from '@playwright/test';
+import { chooseInSettings } from './settings';
 
 const ONE_SECOND = { timeout: 1000 };
 const GROUPS = ['Navigation', 'Sessions', 'Terminal', 'General'];
@@ -38,7 +39,7 @@ test.beforeEach(async ({ page }) => {
 
 const banner = (page: Page) => page.getByRole('banner');
 const shortcutsButton = (page: Page) => banner(page).getByRole('button', { name: 'Keyboard Shortcuts', exact: true });
-const themeSwitch = (page: Page) => banner(page).getByRole('button', { name: 'Dark theme', exact: true });
+const usageButton = (page: Page) => banner(page).getByRole('button', { name: 'Plan Usage', exact: true });
 const newSessionButton = (page: Page) => page.getByRole('main').getByRole('button', { name: 'New Session', exact: true });
 const shortcutsPanel = (page: Page) => page.getByRole('dialog', { name: 'Keyboard Shortcuts' });
 const shortcutList = (page: Page) => shortcutsPanel(page).getByRole('region', { name: 'Shortcut List' });
@@ -59,7 +60,7 @@ const searchBox = (page: Page) => page.getByRole('search', { name: 'Terminal sea
 async function loadPage(page: Page): Promise<void> {
   await page.goto('/');
   await expect(list(page)).toBeVisible();
-  await expect(themeSwitch(page)).toBeVisible();
+  await expect(shortcutsButton(page)).toBeVisible();
 }
 
 async function newFolder(name: string): Promise<string> {
@@ -136,18 +137,18 @@ const rowTexts = (page: Page, name: string) =>
       }),
     );
 
-// plan-keyboard_shortcuts/REQ-22, REQ-23: the button sits right before the switch, 6 px apart, with its look, name and tooltip
-test('the shortcuts button sits right before the switch, with the look of the switch, its name and its tooltip', async ({ page }) => {
+// plan-keyboard_shortcuts/REQ-22, REQ-23, plan-settings_dialog/REQ-16: the button sits right before "Plan Usage", 6 px apart, with the shared look, its name and tooltip
+test('the shortcuts button sits right before "Plan Usage", with the look of the top bar icon buttons, its name and its tooltip', async ({ page }) => {
   await loadPage(page);
   const names = await banner(page).getByRole('button').evaluateAll((buttons) => buttons.map((b) => b.getAttribute('aria-label') ?? b.textContent?.trim()));
-  expect(names.indexOf('Dark theme') - names.indexOf('Keyboard Shortcuts'), `buttons of the top bar: ${names.join(', ')}`).toBe(1);
+  expect(names.indexOf('Plan Usage') - names.indexOf('Keyboard Shortcuts'), `buttons of the top bar: ${names.join(', ')}`).toBe(1);
 
   await expect(shortcutsButton(page)).toHaveAttribute('title', 'Keyboard Shortcuts (Alt+S)');
   await expect(shortcutsButton(page)).toHaveAttribute('aria-expanded', 'false');
   await expect(shortcutsButton(page).locator('svg')).toBeVisible();
 
   const button = await shortcutsButton(page).boundingBox();
-  const theme = await themeSwitch(page).boundingBox();
+  const theme = await usageButton(page).boundingBox();
   expect(button && theme, 'both buttons are rendered').toBeTruthy();
   expect(theme!.x - (button!.x + button!.width)).toBeCloseTo(6, 0);
   expect(button!.width).toBeCloseTo(theme!.width, 0);
@@ -160,13 +161,13 @@ test('the shortcuts button sits right before the switch, with the look of the sw
       const s = getComputedStyle(el);
       return { background: s.backgroundColor, color: s.color, border: s.border, radius: s.borderRadius };
     });
-  expect(await look(shortcutsButton(page))).toEqual(await look(themeSwitch(page)));
+  expect(await look(shortcutsButton(page))).toEqual(await look(usageButton(page)));
 });
 
 // plan-keyboard_shortcuts/REQ-22, REQ-24, REQ-26, REQ-27, REQ-32 — scenario "The user opens the shortcuts panel and finds every shortcut"
 test('in the light theme a click opens the panel in light colours, with the four groups and every shortcut in badges', async ({ page }) => {
   await loadPage(page);
-  await themeSwitch(page).click();
+  await chooseInSettings(page, 'Light');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
   await shortcutsButton(page).click();
