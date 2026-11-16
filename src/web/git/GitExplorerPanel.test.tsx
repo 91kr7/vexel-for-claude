@@ -364,6 +364,19 @@ const several: RepositoryLookupState = {
   ],
 };
 const repositoryList = (region: HTMLElement) => region.querySelector('[aria-label="Repositories"]');
+const pathsOf = (pathname: string) =>
+  fetchMock.mock.calls
+    .map((call) => new URL(String(call[0]), 'http://localhost'))
+    .filter((url) => url.pathname === pathname)
+    .map((url) => url.searchParams.get('path'));
+/** Answers the request for the changes of `root`. */
+function answerChangesOf(root: string, body: unknown, status = 200) {
+  const index = fetchMock.mock.calls.findIndex((call) => {
+    const url = new URL(String(call[0]), 'http://localhost');
+    return url.pathname === '/api/git/changes' && url.searchParams.get('path') === root;
+  });
+  pending[index]!(new Response(JSON.stringify(body), { status }));
+}
 
 describe('GitExplorerPanel with one or several repositories', () => {
   // plan-multi_repo_workspace/REQ-13
@@ -408,15 +421,66 @@ describe('GitExplorerPanel with one or several repositories', () => {
     expect(onRefresh).toHaveBeenCalledTimes(1);
   });
 
-  // spec GitExplorerPanel: the tabs read the first repository of the list
-  it('reads the changes and the history of the first repository', async () => {
+  // plan-multi_repo_workspace/REQ-14 (spec GitExplorerPanel): "Changes" reads every covered root, "History" the first one
+  it('reads the changes of every repository and the history of the first one', async () => {
     const { region } = renderWith({ lookup: several });
-    await until(() => callsTo('/api/git/changes') === 1);
+    await until(() => callsTo('/api/git/changes') === 2);
+    expect(pathsOf('/api/git/changes').sort()).toEqual([`${WS}/api`, `${WS}/web/app`]);
     flushSync(() => tabNamed(region(), 'History').click());
     await until(() => callsTo('/api/git/history') === 1);
-    const pathOf = (pathname: string) => new URL(String(fetchMock.mock.calls[paths().indexOf(pathname)]?.[0]), 'http://localhost').searchParams.get('path');
-    expect(pathOf('/api/git/changes')).toBe(`${WS}/api`);
-    expect(pathOf('/api/git/history')).toBe(`${WS}/api`);
+    expect(pathsOf('/api/git/history')).toEqual([`${WS}/api`]);
+  });
+
+  // plan-multi_repo_workspace/REQ-14, REQ-19 (spec GitExplorerPanel)
+  it('shows "Loading…" until each repository has its first answer, then one group per repository', async () => {
+    const { region } = renderWith({ lookup: several });
+    await until(() => callsTo('/api/git/changes') === 2);
+    answerChangesOf(`${WS}/api`, { changes: [changeEntry('server.ts')] });
+    await settlePanel();
+    expect(region().textContent).toContain('Loading…');
+    expect(region().textContent).not.toContain('server.ts');
+    answerChangesOf(`${WS}/web/app`, { error: 'git_error', message: 'fatal: not a git repository' }, 500);
+    await until(() => region().querySelector('section[aria-label="app"]') !== null);
+    expect(region().textContent).not.toContain('Loading…');
+    const apiGroup = region().querySelector('section[aria-label="api"]')!;
+    const appGroup = region().querySelector('section[aria-label="app"]')!;
+    expect(apiGroup.compareDocumentPosition(appGroup) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(apiGroup.textContent).toContain('server.ts');
+    expect(appGroup.querySelector('[role="alert"]')!.textContent).toBe('fatal: not a git repository');
+    expect(apiGroup.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  // plan-multi_repo_workspace/REQ-19: a repository with a git error in the lookup is still read in "Changes"
+  it('reads the changes of a repository whose entry has a git error', async () => {
+    const lookup: RepositoryLookupState = {
+      status: 'repositories',
+      repositories: [
+        { root: `${WS}/api`, name: 'api', path: 'api', branch: { kind: 'branch', name: 'main' } },
+        { root: `${WS}/web/app`, name: 'app', path: 'web/app', error: 'fatal: bad HEAD' },
+      ],
+    };
+    renderWith({ lookup });
+    await until(() => callsTo('/api/git/changes') === 2);
+    expect(pathsOf('/api/git/changes').sort()).toEqual([`${WS}/api`, `${WS}/web/app`]);
+  });
+
+  // plan-multi_repo_workspace/REQ-20
+  it('shows the changes of one repository with no repository group', async () => {
+    const { region } = renderWith({ lookup: repository });
+    await until(() => callsTo('/api/git/changes') === 1);
+    answerLast('/api/git/changes', { changes: [changeEntry('a.ts')] });
+    await until(() => region().textContent!.includes('a.ts'));
+    expect(region().querySelector('section[aria-label="my-project"]')).toBeNull();
+    expect(region().querySelector('[role="listbox"]')!.getAttribute('aria-label')).toBe('Changed files');
+  });
+
+  // plan-multi_repo_workspace/REQ-14: "Refresh" reads every root again
+  it('reads the changes of every repository again on "Refresh"', async () => {
+    const { region } = renderWith({ lookup: several });
+    await until(() => callsTo('/api/git/changes') === 2);
+    flushSync(() => refreshButton(region())!.click());
+    await until(() => callsTo('/api/git/changes') === 4);
+    expect(pathsOf('/api/git/changes').slice(2).sort()).toEqual([`${WS}/api`, `${WS}/web/app`]);
   });
 
   // plan-multi_repo_workspace/REQ-11
@@ -427,9 +491,9 @@ describe('GitExplorerPanel with one or several repositories', () => {
     const onRefresh = vi.fn();
     const props = { lookup: several, onRefresh };
     const { update } = renderWith({ ...props, sessions: [summary('b', folder, 'working')] });
-    await until(() => callsTo('/api/git/changes') === 1);
-    update({ ...props, sessions: [summary('b', folder, 'idle')] });
     await until(() => callsTo('/api/git/changes') === 2);
+    update({ ...props, sessions: [summary('b', folder, 'idle')] });
+    await until(() => callsTo('/api/git/changes') === 4);
     expect(onRefresh).toHaveBeenCalledTimes(1);
   });
 
@@ -437,10 +501,10 @@ describe('GitExplorerPanel with one or several repositories', () => {
     const onRefresh = vi.fn();
     const props = { lookup: several, onRefresh };
     const { update } = renderWith({ ...props, sessions: [summary('b', `${WS}/web/other`, 'working')] });
-    await until(() => callsTo('/api/git/changes') === 1);
+    await until(() => callsTo('/api/git/changes') === 2);
     update({ ...props, sessions: [summary('b', `${WS}/web/other`, 'idle')] });
     await settlePanel();
-    expect(callsTo('/api/git/changes')).toBe(1);
+    expect(callsTo('/api/git/changes')).toBe(2);
     expect(onRefresh).not.toHaveBeenCalled();
   });
 });

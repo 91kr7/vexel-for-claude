@@ -2,6 +2,7 @@
 // Changes list box and diff on open-source components, light and dark: plan-git_graph, batch open-source-explorer.
 // The history as a commit graph, the branch label and the commit files list box: plan-git_graph, batch graph-history.
 // Several repositories of a workspace folder in the header: plan-multi_repo_workspace, batch repo-detection.
+// The changes of every repository, one group per repository: plan-multi_repo_workspace, batch grouped-changes.
 // Repositories are real git repositories in temp folders. External sessions use fixture files in E2E_CLAUDE_DIR.
 import { type ChildProcess, execFileSync, spawn, spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
@@ -1282,3 +1283,103 @@ test.describe('Git explorer of a workspace with several repositories', () => {
   });
 });
 
+
+const repositoryGroup = (page: Page, name: string) => explorer(page).getByRole('region', { name, exact: true });
+const groupFiles = (page: Page, repository: string, name: 'Staged' | 'Unstaged') =>
+  repositoryGroup(page, repository).getByRole('group', { name, exact: true }).getByRole('option');
+/** The colours drawn in an element and its descendants, background and text, with no transparent ones. */
+const drawnColours = (locator: Locator) =>
+  locator.evaluate((root) =>
+    [root, ...root.querySelectorAll('*')]
+      .flatMap((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el).color])
+      .filter((c) => c !== 'rgba(0, 0, 0, 0)'),
+  );
+
+test.describe('Grouped changes of a workspace with several repositories', () => {
+  // plan-multi_repo_workspace/REQ-14, REQ-15, REQ-16, REQ-17: human acceptance scenario "The user reads the changes of every repository, grouped"
+  test('shows the group api, then the group web/app, with their colours; api splits staged and unstaged, web/app has no changes', async ({ page, request }) => {
+    const ws = await newWorkspace('grouped');
+    const api = path.join(ws, 'api');
+    await writeFile(path.join(api, 'staged.ts'), 'export const staged = 1;\n');
+    git(api, 'add', 'staged.ts');
+    await writeFile(path.join(api, 'README.md'), 'hello api\n');
+    await openExplorer(page, request, ws);
+
+    const apiGroup = repositoryGroup(page, 'api');
+    const appGroup = repositoryGroup(page, 'app');
+    await expect(apiGroup).toBeVisible();
+    await expect(appGroup).toBeVisible();
+    expect((await box(apiGroup)).y, 'api comes before web/app').toBeLessThan((await box(appGroup)).y);
+
+    await expect(groupFiles(page, 'api', 'Staged')).toHaveCount(1);
+    await expect(groupFiles(page, 'api', 'Staged').first()).toContainText('staged.ts');
+    await expect(groupFiles(page, 'api', 'Unstaged')).toHaveCount(1);
+    await expect(groupFiles(page, 'api', 'Unstaged').first()).toContainText('README.md');
+    expect((await box(apiGroup.getByRole('group', { name: 'Staged', exact: true }))).y).toBeLessThan(
+      (await box(apiGroup.getByRole('group', { name: 'Unstaged', exact: true }))).y,
+    );
+    await expect(appGroup).toContainText('No uncommitted changes');
+    await expect(appGroup.getByRole('option')).toHaveCount(0);
+    await expect(apiGroup).not.toContainText('No uncommitted changes');
+
+    for (const [name, root] of [['api', api], ['app', path.join(ws, 'web', 'app')]] as const) {
+      const entryColour = await repositoryEntry(page, root).locator('.git-repository-mark').evaluate((m) => getComputedStyle(m).backgroundColor);
+      await expect(repositoryGroup(page, name).getByTitle(root, { exact: true })).toContainText(name);
+      expect(await drawnColours(repositoryGroup(page, name).getByTitle(root, { exact: true })), `${name}: header colour`).toContain(entryColour);
+    }
+  });
+
+  // plan-multi_repo_workspace/REQ-18: human acceptance scenario "The user opens a diff in a nested repository"
+  test('after an edit in web/app and "Refresh", a click on its file shows its diff in web/app below the list', async ({ page, request }) => {
+    const ws = await newWorkspace('nested-diff');
+    await writeFile(path.join(ws, 'api', 'README.md'), 'hello api\n');
+    await openExplorer(page, request, ws);
+    await expect(repositoryGroup(page, 'app')).toContainText('No uncommitted changes');
+
+    await writeFile(path.join(ws, 'web', 'app', 'README.md'), 'hello app\n');
+    await explorer(page).getByRole('button', { name: 'Refresh', exact: true }).click();
+    const appFile = groupFiles(page, 'app', 'Unstaged').filter({ hasText: 'README.md' });
+    await expect(appFile).toHaveCount(1);
+    const diffRequest = page.waitForRequest((r) => new URL(r.url()).pathname === '/api/git/diff');
+    await appFile.click();
+    expect(new URL((await diffRequest).url()).searchParams.get('path')).toBe(path.join(ws, 'web', 'app'));
+    await expect(appFile).toHaveAttribute('aria-selected', 'true');
+    await expect(groupFiles(page, 'api', 'Unstaged').filter({ hasText: 'README.md' })).toHaveAttribute('aria-selected', 'false');
+    await expect(diffLines(page).filter({ hasText: /^\+hello app$/ })).toHaveCount(1);
+    await expect(diffLines(page).filter({ hasText: /^\+hello api$/ })).toHaveCount(0);
+    const diffTop = (await box(diffLines(page).first())).y;
+    expect((await box(repositoryGroup(page, 'app'))).y, 'the diff is below the groups').toBeLessThan(diffTop);
+    expect(diffTop).toBeGreaterThan((await box(repositoryGroup(page, 'api'))).y);
+  });
+
+  // plan-multi_repo_workspace/REQ-19: human acceptance scenario "The user sees one group fail while the others still show"
+  test('a damaged web/app shows the git message in its group, and api shows its files', async ({ page, request }) => {
+    const ws = await newWorkspace('damaged-changes');
+    await writeFile(path.join(ws, 'api', 'README.md'), 'hello api\n');
+    const app = path.join(ws, 'web', 'app');
+    await rm(path.join(app, '.git'), { recursive: true, force: true });
+    await writeFile(path.join(app, '.git'), `gitdir: ${path.join(ws, 'missing-gitdir')}\n`);
+    await openExplorer(page, request, ws);
+
+    const alert = repositoryGroup(page, 'app').getByRole('alert');
+    await expect(alert).toBeVisible();
+    expect((await alert.textContent())?.trim().length, 'a git message').toBeGreaterThan(0);
+    await expect(repositoryGroup(page, 'api').getByRole('alert')).toHaveCount(0);
+    await expect(groupFiles(page, 'api', 'Unstaged').filter({ hasText: 'README.md' })).toHaveCount(1);
+  });
+
+  // plan-multi_repo_workspace/REQ-20: human acceptance scenario "The changes of a single repository look as today"
+  test('a single repository with changes shows "Staged" and "Unstaged" with no repository group', async ({ page, request }) => {
+    const repo = await newRepository('single-changes');
+    await writeFile(path.join(repo, 'added.ts'), 'export const a = 1;\n');
+    git(repo, 'add', 'added.ts');
+    await writeFile(path.join(repo, 'README.md'), 'changed\n');
+    await openExplorer(page, request, repo);
+
+    await expect(fileEntry(page, 'Staged', 'added.ts')).toContainText('Added');
+    await expect(fileEntry(page, 'Unstaged', 'README.md')).toContainText('Modified');
+    await expect(changedFiles(page)).toHaveCount(2);
+    await expect(repositoryGroup(page, 'single-changes')).toHaveCount(0);
+    await expect(explorer(page).locator('.changes-repository-title')).toHaveCount(0);
+  });
+});
