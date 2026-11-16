@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { type ElectronApplication, type Page, _electron, expect, test } from '@playwright/test';
 import type { MessageBoxOptions } from 'electron';
 import { startupPageUrl } from '../src/desktop/startup-page.js';
+import { chooseInSettings } from './settings';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
@@ -650,10 +651,8 @@ test.describe('Remembered theme in the desktop app', () => {
     const first = await launchDesktop(env);
     const firstWindow = await first.firstWindow();
     await expect(list(firstWindow)).toBeVisible({ timeout: 20_000 });
-    const themeSwitch = firstWindow.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true });
-    await expect(themeSwitch, 'REQ-19: a new profile starts light').toHaveAttribute('aria-pressed', 'false');
-    await expect(firstWindow.locator('html')).toHaveAttribute('data-theme', 'light');
-    await themeSwitch.click();
+    await expect(firstWindow.locator('html'), 'REQ-19: a new profile starts light').toHaveAttribute('data-theme', 'light');
+    await chooseInSettings(firstWindow, 'Dark');
     await expect(firstWindow.locator('html')).toHaveAttribute('data-theme', 'dark');
     await quitDesktop(first);
     await expect.poll(() => healthStatus(port), { timeout: 15_000 }).toBeUndefined();
@@ -680,12 +679,12 @@ test.describe('Remembered theme in the desktop app', () => {
     expect(startup, 'REQ-20: light startup page with dark chosen').toEqual({ canvas: LIGHT_CANVAS, scheme: 'light' });
 
     await expect(list(client)).toBeVisible({ timeout: 20_000 });
-    await expect(client.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(client.locator('html')).toHaveAttribute('data-theme', 'dark');
     const marks = await client.evaluate(() => [...new Set((window as unknown as { themeMarks: (string | null)[] }).themeMarks)]);
     expect(marks, 'REQ-18: the client page only ever carries the dark mark').toEqual(['dark']);
 
     await page.goto(`http://127.0.0.1:${port}/`);
-    await expect(page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true })).toHaveAttribute('aria-pressed', 'false');
+    await expect(list(page)).toBeVisible();
     expect(await page.locator('html').getAttribute('data-theme'), 'the browser keeps its own choice').toBe('light');
   });
 });
@@ -849,7 +848,6 @@ test.describe('Windows 11 look', () => {
   const isMaximized = (app: ElectronApplication) => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isMaximized());
   const isMinimized = async (app: ElectronApplication) => (await windowState(app))[0]?.minimized;
   const restoreFromMinimized = (app: ElectronApplication) => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.restore());
-  const lookSwitch = (page: Page) => page.getByRole('banner').getByRole('button', { name: 'Windows 11 look', exact: true });
 
   test('REQ-24, REQ-34, REQ-28 to REQ-31, REQ-40: a new profile shows macOS buttons at the left; the Windows-style buttons at the right drive the window', async () => {
     const port = await freePort();
@@ -860,15 +858,15 @@ test.describe('Windows 11 look', () => {
     const bar = window.getByRole('banner');
     const button = (name: string) => bar.getByRole('button', { name, exact: true });
 
-    await expect(lookSwitch(window), 'REQ-24: the current look on first start').toHaveAttribute('aria-pressed', 'false');
-    await expect(window.locator('html')).toHaveAttribute('data-look', 'vexel');
+    await expect(window.locator('html'), 'REQ-24: the current look on first start').toHaveAttribute('data-look', 'vexel');
     const logoX = async () => (await bar.getByText('VX', { exact: true }).boundingBox())!.x;
     const macClose = (await button('Close').boundingBox())!;
     expect(macClose.x + macClose.width, 'REQ-34: macOS buttons before the logo').toBeLessThan(await logoX());
 
     const id = await startSession(port, path.join(env.HOME!, 'project-windows-look'));
     await makeWorking(port, id);
-    await lookSwitch(window).click();
+    // plan-settings_dialog/REQ-20: the look is chosen in the settings popup of the desktop window too.
+    await chooseInSettings(window, 'Windows 11');
     await expect(window.locator('html')).toHaveAttribute('data-look', 'windows11');
     const width = (await window.evaluate(() => innerWidth)) as number;
     const close = (await button('Close').boundingBox())!;
@@ -904,7 +902,7 @@ test.describe('Windows 11 look', () => {
     const first = await launchDesktop(env);
     const firstWindow = await first.firstWindow();
     await expect(list(firstWindow)).toBeVisible({ timeout: 20_000 });
-    await lookSwitch(firstWindow).click();
+    await chooseInSettings(firstWindow, 'Windows 11');
     await expect(firstWindow.locator('html')).toHaveAttribute('data-look', 'windows11');
     await quitDesktop(first);
     await expect.poll(() => healthStatus(port), { timeout: 15_000 }).toBeUndefined();
@@ -921,12 +919,13 @@ test.describe('Windows 11 look', () => {
       });
     });
     await expect(list(client)).toBeVisible({ timeout: 20_000 });
-    await expect(lookSwitch(client)).toHaveAttribute('aria-pressed', 'true');
+    await expect(client.locator('html')).toHaveAttribute('data-look', 'windows11');
     const marks = await client.evaluate(() => [...new Set((window as unknown as { lookMarks: (string | null)[] }).lookMarks)]);
     expect(marks, 'REQ-23: the client page only ever carries the Windows 11 mark').toEqual(['windows11']);
   });
 
-  test('REQ-32, REQ-33: in a narrow window, in both looks, the logo and the brand are a drag area and the look switch and the window buttons are not', async () => {
+  // plan-settings_dialog/REQ-17: the bar keeps its drag area without the switches
+  test('REQ-32, REQ-33: in a narrow window, in both looks, the logo and the brand are a drag area and the window buttons are not', async () => {
     const port = await freePort();
     const app = await launchDesktop(await desktopEnv(port));
     const window = await app.firstWindow();
@@ -942,10 +941,10 @@ test.describe('Windows 11 look', () => {
       return appRegionAt(window, box.x + box.width / 2, box.y + box.height / 2);
     };
     for (const look of ['vexel', 'windows11'] as const) {
-      if ((await window.locator('html').getAttribute('data-look')) !== look) await lookSwitch(window).click();
+      if ((await window.locator('html').getAttribute('data-look')) !== look) await chooseInSettings(window, look === 'windows11' ? 'Windows 11' : 'macOS');
       await expect(window.locator('html')).toHaveAttribute('data-look', look);
       for (const text of ['VX', 'Vexel']) expect(await centre(text, 'text'), `${look}: ${text}`).toBe('drag');
-      for (const name of ['Windows 11 look', 'Close', 'Minimize', 'Maximize']) expect(await centre(name, 'button'), `${look}: ${name}`).toBe('no-drag');
+      for (const name of ['Close', 'Minimize', 'Maximize']) expect(await centre(name, 'button'), `${look}: ${name}`).toBe('no-drag');
     }
   });
 });

@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { chooseInSettings } from './settings';
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -489,7 +490,7 @@ test.describe('Order and look of the header actions of a hosted session', () => 
 
     for (const theme of ['dark', 'light'] as const) {
       if (theme === 'light') {
-        await page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true }).click();
+        await chooseInSettings(page, 'Light');
         await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
       }
       await page.mouse.move(0, 0);

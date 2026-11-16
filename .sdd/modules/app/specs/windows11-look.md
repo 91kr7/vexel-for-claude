@@ -49,6 +49,7 @@ type: configuration
 - `.button-primary` → flat accent fill with a darker 1 px bottom edge, a little brighter on hover.
 - "Vexel" in the top bar → no negative letter spacing.
 - `.caption-buttons`, `.caption-button`, `.caption-close`, `.caption-glyph` → the Windows-style WindowButtons, described in that spec.
+- settings popup → the menu items and the shortcut row icon buttons take `--radius-control`; the choice cards and the update card take `--radius-overlay`. The chosen menu item has the surface 3 fill and the primary text colour, with the accent bar on its left.
 
 ## Rules and invariants
 
@@ -71,4 +72,5 @@ type: configuration
 
 ## Requirements served
 
+- `plan-settings_dialog/REQ-57`, `plan-settings_dialog/REQ-60`
 - `plan-wsl_support/REQ-17`, `plan-wsl_support/REQ-25`, `plan-wsl_support/REQ-26`, `plan-wsl_support/REQ-27`, `plan-wsl_support/REQ-34`, `plan-wsl_support/REQ-36`, `plan-wsl_support/REQ-37`, `plan-wsl_support/REQ-38`

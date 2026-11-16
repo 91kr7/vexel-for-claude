@@ -1,20 +1,15 @@
 import { isDesktopWindow } from './desktop-bridge';
 import { useInstalledVersion } from './installed-version-loader';
-import { LookSwitch } from './LookSwitch';
 import { PlanUsageButton } from './PlanUsageButton';
-import { ShortcutsButton } from './ShortcutsButton';
-import { ThemeSwitch } from './ThemeSwitch';
 import { useLook } from './theme/look-store';
 import { WindowButtons } from './WindowButtons';
 
 interface TopBarProps {
-  shortcutsPanelOpen: boolean;
-  onToggleShortcutsPanel: () => void;
   planUsageOpen: boolean;
   onTogglePlanUsage: () => void;
 }
 
-export function TopBar({ shortcutsPanelOpen, onToggleShortcutsPanel, planUsageOpen, onTogglePlanUsage }: TopBarProps) {
+export function TopBar({ planUsageOpen, onTogglePlanUsage }: TopBarProps) {
   const desktop = isDesktopWindow();
   const installedVersion = useInstalledVersion();
   const { look } = useLook();
@@ -33,9 +28,6 @@ export function TopBar({ shortcutsPanelOpen, onToggleShortcutsPanel, planUsageOp
         </span>
       </div>
       <div className="top-bar-actions">
-        <ShortcutsButton open={shortcutsPanelOpen} onToggle={onToggleShortcutsPanel} />
-        <ThemeSwitch />
-        <LookSwitch />
         <PlanUsageButton open={planUsageOpen} onToggle={onTogglePlanUsage} />
         {desktop && windows11 && <WindowButtons look={look} />}
       </div>

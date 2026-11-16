@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { SessionState } from './live-session-store';
 import { CirclePauseIcon } from '../icons/Icons';
+import { pageUserShortcutKeys } from '../user-shortcut-keys';
 import { SessionView } from './SessionView';
 
 /** The visible text: the tokens tooltip shows only on hover or focus. */
@@ -71,6 +72,17 @@ describe('SessionView', () => {
     expect(tag).toContain('title="Search (Ctrl+Shift+F)"');
     const interrupt = button(html, 'Interrupt');
     if (interrupt) expect(html.indexOf(tag!)).toBeLessThan(html.indexOf(interrupt[0]));
+  });
+
+  // plan-settings_dialog/REQ-38: the "Search" tooltip shows the active keys of the row "Search"
+  it('shows the user keys of "Search" in its tooltip', () => {
+    const store = pageUserShortcutKeys();
+    store.set('terminal-search', { code: 'KeyK', modifiers: ['Alt'], character: 'k' });
+    try {
+      expect(render('idle').match(/<button\b[^>]*\saria-label="Search"[^>]*>/)?.[0]).toContain('title="Search (Alt+K)"');
+    } finally {
+      store.restoreAll();
+    }
   });
 
   // plan-session_list_width/REQ-15: the header actions are "Search", "Interrupt" and "Terminate", in this order

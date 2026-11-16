@@ -3,6 +3,7 @@
 // are not observable here: the tests check the `-webkit-app-region` areas that Electron hands to it.
 import { type Page, expect, test } from '@playwright/test';
 import { startupPageUrl } from '../src/desktop/startup-page.js';
+import { settingsButton, settingsPopup } from './settings';
 
 type Region = 'drag' | 'no-drag' | 'none';
 
@@ -67,7 +68,7 @@ test.describe('TopBar in the desktop window', () => {
   });
 
   // REQ-8, TopBar "Desktop window": every control is out of the drag area, over all of its box
-  test('the theme switch, "Plan Usage" and every other control of the bar are outside the drag area', async ({ page }) => {
+  test('"Plan Usage" and every other control of the bar are outside the drag area', async ({ page }) => {
     await page.goto('/');
     const controls = await controlsOf(page).all();
     expect(controls.length).toBeGreaterThanOrEqual(2);
@@ -78,7 +79,7 @@ test.describe('TopBar in the desktop window', () => {
   });
 
   // REQ-8 — scenario "The controls of the top bar do not move the window": the controls still act
-  test('a click on "Plan Usage" opens and closes its popover, a double click toggles it twice; a click on the theme switch changes the theme', async ({ page }) => {
+  test('a click on "Plan Usage" opens and closes its popover, a double click toggles it twice', async ({ page }) => {
     await page.goto('/');
     const planUsage = topBar(page).getByRole('button', { name: 'Plan Usage', exact: true });
     const popover = page.getByRole('dialog', { name: 'Plan Usage', exact: true });
@@ -89,10 +90,6 @@ test.describe('TopBar in the desktop window', () => {
     await planUsage.dblclick();
     await expect(popover).toHaveCount(0);
     await expect(planUsage).toHaveAttribute('aria-expanded', 'false');
-
-    const theme = await page.locator('html').getAttribute('data-theme');
-    await topBar(page).getByRole('button', { name: 'Dark theme', exact: true }).click();
-    await expect(page.locator('html')).not.toHaveAttribute('data-theme', theme ?? '');
   });
 
   // REQ-9, TopBar rule: an empty area to drag at every width, also when the window is narrow
@@ -130,13 +127,16 @@ test.describe('TopBar in the desktop window', () => {
     expect(dark.bar).toBe(dark.token);
     expect(luminance(dark.bar), 'dark bar').toBeLessThan(80);
 
-    // Frames, after the click, until the bar and the page canvas reach their light colours.
+    // Frames, after the choice of "Light" in the settings popup, until the bar and the page canvas reach their light colours.
+    await settingsButton(page).click();
+    await expect(settingsPopup(page).getByRole('radio', { name: 'Light', exact: true })).toBeVisible();
     const frames = await page.evaluate(async () => {
       const bar = document.querySelector('header')!;
       const canvasOf = () => getComputedStyle(document.body).backgroundColor;
       const startCanvas = canvasOf();
       const startBar = getComputedStyle(bar).backgroundColor;
-      (document.querySelector('header button[aria-label="Dark theme"]') as HTMLButtonElement).click();
+      const light = [...document.querySelectorAll<HTMLInputElement>('[role="dialog"] input[type="radio"]')].find((radio) => radio.closest('label')?.textContent?.trim() === 'Light');
+      light!.click();
       const seen: { bar: boolean; canvas: boolean }[] = [];
       for (let frame = 0; frame < 30; frame += 1) {
         await new Promise((resolve) => requestAnimationFrame(resolve));

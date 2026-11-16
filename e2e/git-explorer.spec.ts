@@ -12,6 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { toggleThemeInSettings } from './settings';
 
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 // The scanner reads the sessions folder every 2 seconds.
@@ -415,7 +416,6 @@ test.describe('Uncommitted changes in the git explorer', () => {
     await expect(diffLines(page).filter({ hasText: /^\+added line$/ })).toHaveCount(1);
     await page.mouse.move(0, 0);
 
-    const themeSwitch = page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true });
     const colours = async () => {
       const read = (locator: Locator, property: 'color' | 'backgroundColor') => locator.evaluate((el, p) => getComputedStyle(el)[p], property);
       return {
@@ -446,12 +446,12 @@ test.describe('Uncommitted changes in the git explorer', () => {
       return c;
     };
 
-    await themeSwitch.click();
+    await toggleThemeInSettings(page);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     await page.mouse.move(0, 0);
     const light = await expectThemeColours();
 
-    await themeSwitch.click();
+    await toggleThemeInSettings(page);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await page.mouse.move(0, 0);
     const dark = await expectThemeColours();
@@ -1069,7 +1069,6 @@ test.describe('Graph history in the git explorer', () => {
     const repo = await mergedRepository('graph-theme-repo');
     await openHistory(page, request, repo);
     await expect(commitRows(page)).toHaveCount(5);
-    const themeSwitch = page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true });
 
     const expectThemeColours = async () => {
       const graph = await readGraph(page);
@@ -1091,7 +1090,7 @@ test.describe('Graph history in the git explorer', () => {
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     const dark = await expectThemeColours();
-    await themeSwitch.click();
+    await toggleThemeInSettings(page);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     await expect.poll(async () => laneStrokes(await readGraph(page), shownNodes(await readGraph(page))[0]!.x)[0]?.colour).not.toBe(dark.primary);
     const light = await expectThemeColours();

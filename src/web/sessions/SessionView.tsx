@@ -4,7 +4,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { type ISearchOptions, SearchAddon } from '@xterm/addon-search';
 import '@xterm/xterm/css/xterm.css';
 import { desktopFilePathLookup } from '../desktop-bridge';
-import { shortcutCommandOf } from '../shortcut-map';
+import { rowKeysText, shortcutCommandOf, terminalShortcutOf } from '../shortcut-map';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { GitExplorerButton } from '../git/GitExplorerButton';
@@ -18,10 +18,11 @@ import { SessionFooter } from './SessionFooter';
 import type { SessionSummary } from './live-session-store';
 import { SessionHeader, type SessionHeaderSummary } from './SessionHeader';
 import { StopSessionButton } from './StopSessionButton';
-import { pageTerminalFontSizeStore, type TerminalFontSizeStore, useTerminalFontSize } from './terminal-font-size-store';
+import { pageTerminalFontSizeStore, useTerminalFontSize } from './terminal-font-size-store';
 import { TerminalSearchBox, type TerminalSearchResults } from './TerminalSearchBox';
 import { TerminalZoomControls } from './TerminalZoomControls';
 import { loadWebAddressLinks } from './web-address-links';
+import { useUserShortcutKeys } from '../user-shortcut-keys';
 
 const ESCAPE = '\x1b';
 const SESSION_ENDED = 1000;
@@ -49,18 +50,6 @@ interface LinkTooltip {
   address: string;
   left: number;
   top: number;
-}
-
-const isCtrlShiftKey = (event: KeyboardEvent, key: string) =>
-  event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && event.key.toLowerCase() === key;
-
-// Matched on the produced character, so Ctrl+Shift+- (undo, "_") still reaches the pty.
-function zoomShortcut(event: KeyboardEvent, store: TerminalFontSizeStore): (() => void) | null {
-  if (!event.ctrlKey || event.altKey || event.metaKey) return null;
-  if (event.key === '=' || event.key === '+') return () => store.larger();
-  if (event.key === '-') return () => store.smaller();
-  if (event.key === '0') return () => store.reset();
-  return null;
 }
 
 const isFileDrag = (event: DragEvent) => event.dataTransfer.types.includes('Files');
@@ -152,6 +141,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
   const [dropNotice, setDropNotice] = useState(0);
   const fontSizeStore = pageTerminalFontSizeStore();
   const fontSize = useTerminalFontSize(fontSizeStore);
+  useUserShortcutKeys();
   const [gitRevision, setGitRevision] = useState(0);
   const repository = useRepositoryLookup(session?.folder, gitRevision);
   const [gitOpen, setGitOpen] = useState(false);
@@ -267,12 +257,15 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
     connect(false);
     terminal.attachCustomKeyEventHandler((event) => {
       if (shortcutCommandOf(event)) return false;
-      const shortcut = isCtrlShiftKey(event, 'l')
-        ? () => onLeaveTerminalRef.current()
-        : isCtrlShiftKey(event, 'f')
-          ? openSearch
-          : zoomShortcut(event, fontSizeStore);
-      if (!shortcut) return true;
+      const terminalShortcut = terminalShortcutOf(event);
+      if (!terminalShortcut) return true;
+      const shortcut = {
+        'terminal-focus-list': () => onLeaveTerminalRef.current(),
+        'terminal-search': openSearch,
+        'terminal-larger-text': () => fontSizeStore.larger(),
+        'terminal-smaller-text': () => fontSizeStore.smaller(),
+        'terminal-default-text': () => fontSizeStore.reset(),
+      }[terminalShortcut];
       event.preventDefault();
       if (event.type === 'keydown') shortcut();
       return false;
@@ -386,7 +379,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
         leadingActions={
           <>
             <GitExplorerButton lookup={repository} open={gitShown} onToggle={toggleGit} />
-            <button type="button" className="session-search-button" aria-label="Search" title="Search (Ctrl+Shift+F)" onClick={openSearch}>
+            <button type="button" className="session-search-button" aria-label="Search" title={`Search (${rowKeysText('terminal-search')})`} onClick={openSearch}>
               <SearchIcon />
             </button>
           </>

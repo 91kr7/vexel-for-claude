@@ -12,10 +12,10 @@ import { listWidthLimit, pageListWidthStore, shownListWidth, useListWidth } from
 import { NavigationRail, type SideView } from './NavigationRail';
 import { NeedsInputSnackbar, useNeedsInputSnackbar } from './NeedsInputSnackbar';
 import { NewerVersionNotice } from './newer-version/NewerVersionNotice';
-import { useNewerVersion } from './newer-version/newer-version-loader';
+import { type NewerVersion, useNewerVersion } from './newer-version/newer-version-loader';
 import { PlanUsagePopover } from './plan-usage/PlanUsagePopover';
 import { usePlanUsage } from './plan-usage/plan-usage-store';
-import { ShortcutsPanel } from './ShortcutsPanel';
+import { type SettingsTab, SettingsDialog } from './settings/SettingsDialog';
 import { ShortMessageToast, useShortMessage } from './ShortMessageToast';
 import { countNeedsInput, NeedsInputCounter } from './sessions/NeedsInputCounter';
 import { SessionList } from './sessions/SessionList';
@@ -65,11 +65,12 @@ export function AppLayout() {
   const [sideView, setSideView] = useState<SideView>('sessions');
   const [focusRequest, setFocusRequest] = useState<{ view: SideView } | null>(null);
   const [projectsOpening, setProjectsOpening] = useState(0);
-  const [showingShortcuts, setShowingShortcuts] = useState(false);
-  const toggleShortcuts = () => setShowingShortcuts((showing) => !showing);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
   const [showingPlanUsage, setShowingPlanUsage] = useState(false);
   const planUsage = usePlanUsage(showingPlanUsage);
-  const newerVersion = useNewerVersion();
+  const launchNewerVersion = useNewerVersion();
+  const [checkedNewerVersion, setCheckedNewerVersion] = useState<NewerVersion | null>(null);
+  const newerVersion = checkedNewerVersion ?? launchNewerVersion;
   const [updateNoticeClosed, setUpdateNoticeClosed] = useState(false);
   const listPanelRef = useRef<HTMLElement>(null);
   const newSessionRef = useRef<HTMLButtonElement>(null);
@@ -147,7 +148,7 @@ export function AppLayout() {
     else if (command.kind === 'new-session') setChoosingFolder(true);
     else if (command.kind === 'resume-history') setResuming(true);
     else if (command.kind === 'toggle-theme') pageThemeStore().toggle();
-    else if (command.kind === 'toggle-shortcuts-panel') toggleShortcuts();
+    else if (command.kind === 'open-shortcut-settings') setSettingsTab('shortcuts');
     else if (command.kind === 'session-command') sendSessionCommand(command.command);
     else {
       const sessionId = sessionToOpen(sessions, sessionOrder, openSessionId, command.target);
@@ -163,8 +164,6 @@ export function AppLayout() {
   return (
     <div className="app">
       <TopBar
-        shortcutsPanelOpen={showingShortcuts}
-        onToggleShortcutsPanel={toggleShortcuts}
         planUsageOpen={showingPlanUsage}
         onTogglePlanUsage={() => setShowingPlanUsage((showing) => !showing)}
       />
@@ -176,6 +175,7 @@ export function AppLayout() {
           onShowSessions={showSessions}
           onShowProjects={showProjects}
           onResume={() => setResuming(true)}
+          onOpenSettings={() => setSettingsTab('appearance')}
           newSessionRef={newSessionRef}
           shownView={sideView}
         />
@@ -255,7 +255,16 @@ export function AppLayout() {
           onCancel={() => setResuming(false)}
         />
       )}
-      {showingShortcuts && <ShortcutsPanel onClose={() => setShowingShortcuts(false)} />}
+      {settingsTab !== null && (
+        <SettingsDialog
+          initialTab={settingsTab}
+          onClose={() => setSettingsTab(null)}
+          onNewerVersion={(version) => {
+            setCheckedNewerVersion(version);
+            setUpdateNoticeClosed(false);
+          }}
+        />
+      )}
     </div>
   );
 }

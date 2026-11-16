@@ -2,7 +2,8 @@
 import { type Page, expect, test } from '@playwright/test';
 
 const LOOK_KEY = 'ai-client.look';
-const BAR_CONTROLS = ['Keyboard Shortcuts', 'Dark theme', 'Windows 11 look', 'Plan Usage'];
+// plan-settings_dialog/REQ-16, REQ-24: the theme and look switches and the shortcuts button left the bar for the settings popup.
+const BAR_CONTROLS = ['Plan Usage'];
 
 const topBar = (page: Page) => page.getByRole('banner');
 const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' });
@@ -27,7 +28,7 @@ for (const look of ['vexel', 'windows11'] as const) {
   });
 
   // plan-ui_restyle/REQ-2
-  test(`${look} look: the top bar shows no "New Session" button and only its four controls`, async ({ page }) => {
+  test(`${look} look: the top bar shows no "New Session" button and only its two controls`, async ({ page }) => {
     await loadPage(page, look);
     await expect(topBar(page).getByRole('button', { name: 'New Session' })).toHaveCount(0);
     await expect(topBar(page)).not.toContainText('New Session');

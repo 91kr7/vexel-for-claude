@@ -30,17 +30,19 @@ Components and where the client uses them today:
 - `XIcon` → "Clear Search" in the search bar of the ResumeDialog, "Close search" in the TerminalSearchBox, the red WindowButtons button
 - `ChevronUpIcon`, `ChevronDownIcon` → "Previous match" and "Next match" in the TerminalSearchBox
 - `Maximize2Icon`, `Minimize2Icon` → the green WindowButtons button, to maximize and to restore
-- `MoonIcon`, `SunIcon` → the ThemeSwitch in the dark and in the light theme
-- `MacWindowIcon`, `WindowsLogoIcon` → the LookSwitch in the current and in the Windows 11 look. Drawn for the client, not Lucide icons: a window with three dots, and four rounded squares. Same `icon` class and stroke as the Lucide icons
 - `CaptionMinimizeGlyph`, `CaptionMaximizeGlyph`, `CaptionRestoreGlyph`, `CaptionCloseGlyph` → the WindowButtons in the Windows 11 look. Drawn for the client on a 10 × 10 grid with a 1 px line, class `caption-glyph` instead of `icon`
-- `KeyboardIcon` → the ShortcutsButton
 - `GaugeIcon` → the PlanUsageButton
+- `SettingsIcon` (Lucide "settings", a gear) → the SettingsButton
 - `GitBranchIcon` → the GitExplorerButton and the branch chip of the GitExplorerPanel (module git)
 - `RefreshCwIcon` → "Refresh" in the GitExplorerPanel (module git)
-- `PencilIcon` → "Rename" of a list entry
+- `PencilIcon` → "Rename" of a list entry, "Change Keys" of a ShortcutsSection row
+- `RotateCcwIcon` (Lucide "rotate-ccw") → "Restore Default" of a ShortcutsSection row
+- `SunIcon`, `MoonIcon` → the "Light" and "Dark" cards of ThemeSection; `MacWindowIcon`, `WindowsLogoIcon` → the "macOS" and "Windows 11" cards of LookSection
+- `MacWindowIcon` and `WindowsLogoIcon` are drawn for the client, not Lucide icons: a window with three dots, and four rounded squares.
+- `CheckIcon` → the mark of the active card in ThemeSection and LookSection
 - `StarIcon` → "Mark as Favorite" and "Remove Favorite" of a list entry (FavoriteButton), and the FavoriteIndicator. It has a filled variant (`filled`): the SVG has the class `icon-filled` and its computed `fill` is `currentColor`; the other icons keep `fill: none`
 - `CirclePauseIcon` → "Interrupt" in the SessionView subbar
-- no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, `CheckIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
+- no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
 
 ## Rules and invariants
 
@@ -63,8 +65,8 @@ Components and where the client uses them today:
 - `plan-light_theme/REQ-2`
 - `plan-mac_title_bar/REQ-19`, `plan-mac_title_bar/REQ-21`
 - `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-35`
-- `plan-keyboard_shortcuts/REQ-22`
 - `plan-usage_limits/REQ-1`
 - `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-24`
 - `plan-favorite_session/REQ-3`, `plan-favorite_session/REQ-4`, `plan-favorite_session/REQ-11`
 - `plan-wsl_support/REQ-19`, `plan-wsl_support/REQ-28`
+- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-57`, `plan-settings_dialog/REQ-58`

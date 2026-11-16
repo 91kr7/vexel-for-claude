@@ -9,6 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, type Response, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { chooseInSettings } from './settings';
 
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 const FAVORITES_FILE = path.join(os.tmpdir(), 'ai-client-e2e-data', 'session-favorites.json');
@@ -474,7 +475,7 @@ for (const theme of ['dark', 'light'] as const) {
     const session = await hostedSession(request, `look-${theme}`);
     await page.goto('/');
     if (theme === 'light') {
-      await page.getByRole('button', { name: 'Dark theme' }).click();
+      await chooseInSettings(page, 'Light');
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     }
     await expect(markButton(page, session.folder).locator('svg path')).toHaveCSS('fill', 'none');

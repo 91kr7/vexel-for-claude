@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Tests of plan-keyboard_shortcuts, batch shortcuts-panel: useShortcutKeys spec, the dialog rule and the panel exception.
+// Tests of plan-keyboard_shortcuts, batch shortcuts-panel, and plan-settings_dialog, batch shortcuts-section: useShortcutKeys spec and the dialog rule.
 import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -67,51 +67,42 @@ function press(code: string, keys: Keys = {}): KeyboardEvent {
 const altS = () => press('KeyS', { alt: true, key: 's' });
 
 describe('useShortcutKeys', () => {
-  // plan-keyboard_shortcuts/REQ-25, REQ-40, REQ-41: with no dialog, Alt+S runs, is cancelled and stopped, also inside a text field
+  // plan-settings_dialog/REQ-25, plan-keyboard_shortcuts/REQ-40, REQ-41: with no dialog, Alt+S runs, is cancelled and stopped, also inside a text field
   it('runs Alt+S with no dialog open, cancels it and keeps it from the focused element', () => {
     const event = altS();
     expect(run).toHaveBeenCalledTimes(1);
-    expect(run).toHaveBeenCalledWith({ kind: 'toggle-shortcuts-panel' });
+    expect(run).toHaveBeenCalledWith({ kind: 'open-shortcut-settings' });
     expect(event.defaultPrevented).toBe(true);
     expect(reached).not.toHaveBeenCalled();
   });
 
-  // plan-keyboard_shortcuts/REQ-29, REQ-42: over the shortcuts panel, the panel key still acts, so it closes the panel
-  it('runs Alt+S while the shortcuts panel is the open dialog, cancelled and stopped', () => {
-    openDialog('shortcuts-panel');
-    const event = altS();
-    expect(run).toHaveBeenCalledWith({ kind: 'toggle-shortcuts-panel' });
-    expect(event.defaultPrevented).toBe(true);
-    expect(reached).not.toHaveBeenCalled();
-  });
-
-  // plan-keyboard_shortcuts/REQ-42: over the shortcuts panel, any other map key does nothing and passes untouched
+  // plan-keyboard_shortcuts/REQ-42, useShortcutKeys contract: while a dialog is open, every map key does nothing and passes untouched
   it.each([
+    ['Alt+S', 'KeyS', { alt: true, key: 's' }],
     ['Alt+N', 'KeyN', { alt: true }],
     ['Alt+A', 'KeyA', { alt: true }],
     ['Alt+Down', 'ArrowDown', { alt: true }],
     ['Alt+Shift+Q', 'KeyQ', { alt: true, shift: true }],
-  ] as const)('blocks %s while the shortcuts panel is open', (_, code, keys) => {
-    openDialog('shortcuts-panel');
+  ] as const)('blocks %s while a dialog is open', (_, code, keys) => {
+    openDialog();
     const event = press(code, keys);
     expect(run).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
     expect(reached).toHaveBeenCalledTimes(1);
   });
 
-  // plan-keyboard_shortcuts/REQ-42: any other dialog blocks the panel key too, and keeps its keys
-  it('blocks Alt+S while another dialog is open', () => {
-    openDialog();
+  // plan-settings_dialog/REQ-24, useShortcutKeys contract: no exception, a dialog with the old shortcuts-panel class blocks Alt+S too
+  it('blocks Alt+S while a dialog with the class shortcuts-panel is open', () => {
+    openDialog('shortcuts-panel');
     const event = altS();
     expect(run).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
     expect(reached).toHaveBeenCalledTimes(1);
   });
 
-  // useShortcutKeys contract: the exception holds only when every open dialog is the shortcuts panel
-  it('blocks Alt+S when the shortcuts panel and another dialog are both open', () => {
-    openDialog('shortcuts-panel');
-    openDialog();
+  // plan-settings_dialog/REQ-25, SettingsDialog invariant: Alt+S does nothing while the settings popup is open
+  it('blocks Alt+S while the settings popup is open', () => {
+    openDialog('settings-dialog');
     const event = altS();
     expect(run).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
