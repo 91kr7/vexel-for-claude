@@ -1,4 +1,5 @@
-// REQ tests at the REST API of plan-git_explorer, batch history: GET /api/git/history, /api/git/commit-files and /api/git/commit-diff on real git repositories.
+// REQ tests at the REST API of plan-git_explorer batch history and plan-git_graph batch graph-history: GET /api/git/history, /api/git/commit-files and /api/git/commit-diff on real git repositories.
+import { execFileSync } from 'node:child_process';
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -79,7 +80,7 @@ describe('GET /api/git/history', () => {
     expect(body.commits.map((commit) => commit.hash)).toEqual([hashes.second, hashes.first]);
   });
 
-  // plan-git_explorer/REQ-20
+  // plan-git_explorer/REQ-20, plan-git_graph/REQ-17
   it('answers 200 with an empty page for a repository with no commits', async () => {
     const empty = path.join(dir, 'empty');
     await mkdir(empty, { recursive: true });
@@ -253,5 +254,93 @@ describe('read only', () => {
 
     expect(await snapshot(repo)).toEqual(before);
     expect(git(repo, 'status', '--porcelain=v2')).toBe(status);
+  });
+});
+
+/** A git commit with fixed author and committer dates. */
+function commitAt(folder: string, date: string, ...args: string[]): void {
+  execFileSync('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', '-c', 'commit.gpgsign=false', ...args], {
+    cwd: folder,
+    env: { ...process.env, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date },
+  });
+}
+
+describe('graph history (plan-git_graph)', () => {
+  /** main: first, main work, Merge feature; feature (from first): feature one (dated before first), feature two. */
+  let merged: string;
+  let ids: { first: string; featureOne: string; featureTwo: string; mainWork: string; merge: string };
+
+  beforeAll(async () => {
+    merged = path.join(dir, 'merged');
+    await mkdir(path.join(merged, 'sub'), { recursive: true });
+    git(merged, 'init', '-q', '-b', 'main');
+    await writeFile(path.join(merged, 'sub', 'file.txt'), 'one\n');
+    git(merged, 'add', '.');
+    commitAt(merged, '2026-01-10T10:00:00Z', 'commit', '-q', '-m', 'first');
+    const first = git(merged, 'rev-parse', 'HEAD');
+    git(merged, 'checkout', '-q', '-b', 'feature');
+    await writeFile(path.join(merged, 'feature.txt'), 'alpha\n');
+    await writeFile(path.join(merged, 'logo.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 1, 2, 0, 255]));
+    git(merged, 'add', '.');
+    commitAt(merged, '2026-01-05T10:00:00Z', 'commit', '-q', '-m', 'feature one');
+    const featureOne = git(merged, 'rev-parse', 'HEAD');
+    await writeFile(path.join(merged, 'feature.txt'), 'alpha\nbeta\n');
+    commitAt(merged, '2026-01-12T10:00:00Z', 'commit', '-q', '-a', '-m', 'feature two');
+    const featureTwo = git(merged, 'rev-parse', 'HEAD');
+    git(merged, 'checkout', '-q', 'main');
+    await writeFile(path.join(merged, 'sub', 'file.txt'), 'two\n');
+    commitAt(merged, '2026-01-11T10:00:00Z', 'commit', '-q', '-a', '-m', 'main work');
+    const mainWork = git(merged, 'rev-parse', 'HEAD');
+    commitAt(merged, '2026-01-13T10:00:00Z', 'merge', '-q', '--no-ff', '-m', 'Merge feature', 'feature');
+    ids = { first, featureOne, featureTwo, mainWork, merge: git(merged, 'rev-parse', 'HEAD') };
+  });
+
+  type Listed = { hash: string; parents: string[] };
+  const listed = async () => {
+    const response = await history(await routeWith(), { path: merged });
+    expect(response.statusCode).toBe(200);
+    return (response.json() as { commits: Listed[] }).commits;
+  };
+
+  // plan-git_graph/REQ-8, REQ-9
+  it('lists the merged commits too, in date order, a commit never after one of its parents', async () => {
+    const commits = await listed();
+    expect(commits.map((commit) => commit.hash)).toEqual([ids.merge, ids.featureTwo, ids.mainWork, ids.featureOne, ids.first]);
+    const position = new Map(commits.map((commit, index) => [commit.hash, index]));
+    for (const [index, commit] of commits.entries()) for (const parent of commit.parents) expect(position.get(parent)!).toBeGreaterThan(index);
+  });
+
+  // plan-git_graph/REQ-10
+  it('gives each commit its parents: two for the merge, first parent first, none for the root', async () => {
+    const byHash = new Map((await listed()).map((commit) => [commit.hash, commit.parents]));
+    expect(byHash.get(ids.merge)).toEqual([ids.mainWork, ids.featureTwo]);
+    expect(byHash.get(ids.featureTwo)).toEqual([ids.featureOne]);
+    expect(byHash.get(ids.first)).toEqual([]);
+  });
+
+  // plan-git_graph/REQ-14, REQ-16: the files of a merge against its first parent, a binary file included
+  it('answers the files of the merge commit against its first parent', async () => {
+    const response = await commitFiles(await routeWith(), { path: merged, hash: ids.merge });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as { files: Array<{ path: string }> };
+    expect([...body.files].sort((a, b) => a.path.localeCompare(b.path))).toEqual([
+      { kind: 'added', path: 'feature.txt', binary: false },
+      { kind: 'added', path: 'logo.png', binary: true },
+    ]);
+  });
+
+  // plan-git_graph/REQ-15, REQ-16
+  it('answers the diff of a file of the merge commit against its first parent, and a binary mark for a binary file', async () => {
+    const app = await routeWith();
+    const text = await commitDiff(app, { path: merged, hash: ids.merge, file: 'feature.txt' });
+    expect(text.statusCode).toBe(200);
+    const lines = (text.json() as { lines: Array<{ kind: string; text: string }> }).lines;
+    expect(lines.filter((line) => line.kind === 'added' || line.kind === 'removed')).toEqual([
+      { kind: 'added', text: 'alpha' },
+      { kind: 'added', text: 'beta' },
+    ]);
+    const binary = await commitDiff(app, { path: merged, hash: ids.merge, file: 'logo.png' });
+    expect(binary.statusCode).toBe(200);
+    expect((binary.json() as { binary: boolean }).binary).toBe(true);
   });
 });
