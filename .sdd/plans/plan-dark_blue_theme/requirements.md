@@ -100,6 +100,7 @@ Human decision, 2026-11-16.
 | REQ-49 | In every list of cards or rows, the session list included, a shown scrollbar leaves a gap to the right edge of the entries equal to the gap on their left. |
 | REQ-50 | In a session card, the context percentage and the cost on line 3 use a smaller text than today. |
 | REQ-51 | Withdrawn by human decision (2026-11-16): line 3 keeps its current position. |
+| REQ-52 | In every session card, the state name sits on the left of line 1, after the status dot, the session name and the star. |
 
 Colours of REQ-36:
 

@@ -60,3 +60,6 @@
 | 2026-11-16 | plan | card metrics position | human decision | Percentage and cost smaller, same position; REQ-51 dropped |
 | 2026-11-16 | plan | question planner | decided | Last activity time keeps its size; request names only context and cost |
 | 2026-11-16 | plan | G3 coverage (list-polish) | pass | REQ-49, REQ-50 in batch list-polish; REQ-51 withdrawn; last batch moves to list-polish |
+| 2026-11-16 | plan | state label | human decision | Session state name moves from the right of line 1 to the left, next to the name |
+| 2026-11-16 | plan | state label order | decided | Dot, name, star, state name; name truncates first; Rename keeps its corner |
+| 2026-11-16 | plan | G3 coverage (REQ-52) | pass | REQ-52 → list-polish INT-6; batch still last |
