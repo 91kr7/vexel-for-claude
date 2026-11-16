@@ -19,3 +19,5 @@
 | 2026-11-16 | dev | G4 batch-graph-history | sent back | Unloaded second parent of a merge draws no line: REQ-10, INT-5 |
 | 2026-11-16 | dev | divergences developer: licence text, DOM selector, optional fields | decided | Accepted; `commit-graph` chosen over `@tomplum/react-git-log` 2.x for adoption and React 18 support |
 | 2026-11-16 | dev | G4 batch-graph-history | pass | Placeholder parents fix REQ-10; tsc, vite build, build:desktop green |
+| 2026-11-16 | dev | G5 batch-graph-history | pass | 402 unit + 37 e2e + 2 desktop e2e green; one unit failure in the first gatekeeper run, not reproduced in 8 runs |
+| 2026-11-16 | dev | full suites | pass | 3345 unit green; 9 browser e2e failures outside the plan's perimeter (timeouts), all green on `--last-failed` |
