@@ -28,7 +28,7 @@ Shows:
 - an open external session → its ConversationView with its summary, in place of the SessionView.
 - an open session, hosted or external, that the list no longer has when LiveSessionStore goes from `error` to `ready` (a reload after a reconnection) → it stays open, with its last summary and the state `ended`. If the list has it again later, the view uses the listed summary.
 - the NeedsInputSnackbar of `useNeedsInputSnackbar`, when it gives a session → fixed at the bottom right of the window, whatever the main area shows.
-- the ShortMessageToast of `useShortMessage`, at the bottom centre of the window.
+- the ShortMessageToast of `useShortMessage`, at the bottom right of the window; above the NeedsInputSnackbar while that shows.
 - the NewerVersionNotice, while it has a version and the user has not closed it in this page. The version is the last `newer` result of the user's check in the SettingsDialog, else the one of `useNewerVersion`. The session list does not wait for it.
 - the SettingsDialog, while it is open. It is a dialog over the page: the open SessionView or ConversationView stays mounted under it, with its size, its scroll position and its session running.
 
@@ -81,7 +81,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 ## Rules and invariants
 
 - the top bar, the rail and the head of the list panel stay in place. Only the SessionList, or the rows of the ProjectList, scroll when they do not fit.
-- at 1440 × 900 px with no saved width → top bar 44 px high, rail 52 px wide, list panel 224 px wide.
+- at 1440 × 900 px with no saved width → top bar 38 px high, rail 52 px wide, list panel 224 px wide.
 - the first frame already shows the stored width: no jump at start or after a reload.
 - from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements, except the snackbar and the NewerVersionNotice, which may cover part of the main area.
 - the list panel has no brand, no "New Session", no "Resume Session" and no settings button.

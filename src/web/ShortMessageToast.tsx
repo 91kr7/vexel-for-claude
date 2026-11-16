@@ -17,6 +17,7 @@ export function ShortMessageToast({ text }: { text: string | null }) {
   if (text === null) return null;
   return (
     <div className="short-message vx-glass" role="status">
+      <span className="short-message-dot" aria-hidden="true" />
       {text}
     </div>
   );

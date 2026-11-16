@@ -22,3 +22,6 @@
 | 2026-11-16 | dev shared-shapes | question tester | decided | Warning banner takes the 7px card radius (REQ-3); developer aligns `warning-dialog.md`, tester aligns the two tests |
 | 2026-11-16 | dev shared-shapes | G4 development (fix) | pass | CSS-only ring fixes in styles.css; warning-dialog and settings-dialog specs aligned; build green |
 | 2026-11-16 | dev shared-shapes | G5 tests (round 2) | pass | Test files only; no only/skip; re-run shared-shapes + settings-popup: 30 passed |
+| 2026-11-16 | dev window-frame | G4 development | pass | Web + desktop build green; diff limited to INT files, windows11.css, specs and indexes |
+| 2026-11-16 | dev window-frame | divergence developer | decided | Popover and update notice follow the 38px bar; Windows buttons on role chrome to keep their spec |
+| 2026-11-16 | dev window-frame | divergence developer | decided | Footer path in a pill per REQ-12 wording though the mock shows plain text; flagged for human review |

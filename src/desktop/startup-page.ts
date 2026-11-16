@@ -12,7 +12,7 @@ const STYLE = `
     font: 14px/20px 'Roboto Flex', Roboto, system-ui, sans-serif;
   }
   .title-bar {
-    position: fixed; top: 0; left: 0; right: 0; height: 44px; box-sizing: border-box;
+    position: fixed; top: 0; left: 0; right: 0; height: 38px; box-sizing: border-box;
     display: flex; align-items: center; padding: 0 14px;
     background: #efeae0; border-bottom: 1px solid rgba(28, 25, 23, 0.08);
     -webkit-app-region: drag;

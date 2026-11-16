@@ -11,16 +11,16 @@ type: UI component
 ## Contract
 
 Description:
-- one row of three buttons, 2 px apart, in a group named "Terminal text size".
+- one row of three buttons, 4 px apart, in a group named "Terminal text size". The group is a pill: padding 2 × 4 px, `--radius-pill` corners, `--border-pill`, on `--role-raised`.
 
 Props:
 - `size` → the current terminal text size in px.
 - `onSmaller()`, `onReset()`, `onLarger()` → called by the actions below.
 
 Shows, in order:
-- "Smaller text" → an icon button (minus icon, 26 px, `--text-secondary`), tooltip "Smaller text (<keys>)". Disabled when `size` is 8 or less.
-- the default size button → 44 px wide, the text "<size> px" in mono 11 px (e.g. "12 px"). Accessible name "Default text size (<size> px)", tooltip "Default text size (<keys>)". Never disabled.
-- "Larger text" → an icon button (plus icon, 26 px, `--text-secondary`), tooltip "Larger text (<keys>)". Disabled when `size` is 32 or more.
+- "Smaller text" → a 16 px icon button with 4 px corners (minus icon, 12 px, `--text-secondary`), tooltip "Smaller text (<keys>)". Disabled when `size` is 8 or less.
+- the default size button → 16 px high, at least 38 px wide, the text "<size> px" in mono 10.5 px with tabular figures (e.g. "12 px"). Accessible name "Default text size (<size> px)", tooltip "Default text size (<keys>)". Never disabled.
+- "Larger text" → a 16 px icon button with 4 px corners (plus icon, 12 px, `--text-secondary`), tooltip "Larger text (<keys>)". Disabled when `size` is 32 or more.
 - `<keys>` → `rowKeysText` of the ShortcutMap rows "Smaller text", "Default text size" and "Larger text": by default "Ctrl+-", "Ctrl+0" and "Ctrl+= / Ctrl++". A change of these keys shows at once.
 - hover on an enabled button → `--bg-surface-3` background, `--text-primary` text.
 
@@ -43,3 +43,4 @@ Actions:
 
 - `plan-terminal_addons/REQ-35`, `plan-terminal_addons/REQ-41`, `plan-terminal_addons/REQ-45`
 - `plan-settings_dialog/REQ-38`
+- `plan-dark_blue_theme/REQ-12`, `plan-dark_blue_theme/REQ-14`
