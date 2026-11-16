@@ -1,5 +1,6 @@
 import type { NavigationTarget } from './sessions/navigation-targets';
 import type { SessionCommand } from './shortcut-channel';
+import { pageUserShortcutKeys, type UserShortcutKeysStore } from './user-shortcut-keys';
 
 export type ShortcutArea = 'navigation' | 'sessions' | 'terminal' | 'general';
 
@@ -23,9 +24,33 @@ export interface ShortcutKey {
   code: string;
   modifiers: readonly ShortcutModifier[];
   command: ShortcutCommand | TerminalCommand;
+  byCharacter?: boolean;
+  character?: string;
 }
 
+const POSITIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+
+export type TerminalShortcutId = 'terminal-search' | 'terminal-larger-text' | 'terminal-smaller-text' | 'terminal-default-text' | 'terminal-focus-list';
+
+export type ShortcutId =
+  | 'focus-list'
+  | 'focus-main-view'
+  | 'previous-session'
+  | 'next-session'
+  | `session-at-${(typeof POSITIONS)[number]}`
+  | 'next-needs-input'
+  | 'new-session'
+  | 'resume-history'
+  | 'rename-session'
+  | 'resume-session'
+  | 'stop-session'
+  | 'dismiss-session'
+  | TerminalShortcutId
+  | 'toggle-theme'
+  | 'shortcut-settings';
+
 export interface Shortcut {
+  id: ShortcutId;
   area: ShortcutArea;
   action: string;
   keys: readonly ShortcutKey[];
@@ -38,80 +63,208 @@ const terminal = (character: string, ...modifiers: ShortcutModifier[]): Shortcut
   code: character,
   modifiers,
   command: { kind: 'terminal' },
+  byCharacter: true,
 });
 
-const POSITIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
-
 export const SHORTCUTS: readonly Shortcut[] = [
-  { area: 'navigation', action: 'Focus the list', keys: [alt('KeyL', { kind: 'focus-list' })] },
-  { area: 'navigation', action: 'Focus the main view', keys: [alt('KeyC', { kind: 'focus-main-view' })] },
+  { id: 'focus-list', area: 'navigation', action: 'Focus the list', keys: [alt('KeyL', { kind: 'focus-list' })] },
+  { id: 'focus-main-view', area: 'navigation', action: 'Focus the main view', keys: [alt('KeyC', { kind: 'focus-main-view' })] },
   {
+    id: 'previous-session',
     area: 'navigation',
-    action: 'Previous / next session',
-    keys: [
-      alt('ArrowUp', { kind: 'open-session', target: { kind: 'previous' } }),
-      alt('ArrowDown', { kind: 'open-session', target: { kind: 'next' } }),
-    ],
+    action: 'Previous session',
+    keys: [alt('ArrowUp', { kind: 'open-session', target: { kind: 'previous' } })],
   },
+  { id: 'next-session', area: 'navigation', action: 'Next session', keys: [alt('ArrowDown', { kind: 'open-session', target: { kind: 'next' } })] },
+  ...POSITIONS.map(
+    (position): Shortcut => ({
+      id: `session-at-${position}`,
+      area: 'navigation',
+      action: `Session at position ${position}`,
+      keys: [alt(`Digit${position}`, { kind: 'open-session', target: { kind: 'position', position } })],
+    }),
+  ),
   {
-    area: 'navigation',
-    action: 'Session at position 1 to 9',
-    keys: POSITIONS.map((position) => alt(`Digit${position}`, { kind: 'open-session', target: { kind: 'position', position } })),
-  },
-  {
+    id: 'next-needs-input',
     area: 'navigation',
     action: 'Next session that needs input',
     keys: [alt('KeyI', { kind: 'open-session', target: { kind: 'next-needs-input' } })],
   },
-  { area: 'sessions', action: 'New session dialog', keys: [alt('KeyN', { kind: 'new-session' })] },
-  { area: 'sessions', action: 'Resume history dialog', keys: [alt('KeyH', { kind: 'resume-history' })] },
-  { area: 'sessions', action: 'Rename the open session', keys: [alt('KeyE', { kind: 'session-command', command: 'rename' })] },
+  { id: 'new-session', area: 'sessions', action: 'New session dialog', keys: [alt('KeyN', { kind: 'new-session' })] },
+  { id: 'resume-history', area: 'sessions', action: 'Resume history dialog', keys: [alt('KeyH', { kind: 'resume-history' })] },
   {
+    id: 'rename-session',
+    area: 'sessions',
+    action: 'Rename the open session',
+    keys: [alt('KeyE', { kind: 'session-command', command: 'rename' })],
+  },
+  {
+    id: 'resume-session',
     area: 'sessions',
     action: '"Resume" or "Resume Here" on the open session',
     keys: [alt('KeyR', { kind: 'session-command', command: 'resume' })],
   },
-  { area: 'sessions', action: 'Stop the open hosted session', keys: [altShift('KeyQ', { kind: 'session-command', command: 'stop' })] },
-  { area: 'sessions', action: 'Dismiss the open ended session', keys: [altShift('KeyW', { kind: 'session-command', command: 'dismiss' })] },
-  { area: 'terminal', action: 'Search', keys: [terminal('f', 'Ctrl', 'Shift')] },
   {
-    area: 'terminal',
-    action: 'Larger / smaller / default text',
-    keys: [terminal('=', 'Ctrl'), terminal('+', 'Ctrl'), terminal('-', 'Ctrl'), terminal('0', 'Ctrl')],
+    id: 'stop-session',
+    area: 'sessions',
+    action: 'Stop the open hosted session',
+    keys: [altShift('KeyQ', { kind: 'session-command', command: 'stop' })],
   },
-  { area: 'terminal', action: 'Focus the list', keys: [terminal('l', 'Ctrl', 'Shift')] },
-  { area: 'general', action: 'Light/Dark theme', keys: [alt('KeyA', { kind: 'toggle-theme' })] },
-  { area: 'general', action: 'Shortcut settings', keys: [alt('KeyS', { kind: 'open-shortcut-settings' })] },
+  {
+    id: 'dismiss-session',
+    area: 'sessions',
+    action: 'Dismiss the open ended session',
+    keys: [altShift('KeyW', { kind: 'session-command', command: 'dismiss' })],
+  },
+  { id: 'terminal-search', area: 'terminal', action: 'Search', keys: [terminal('f', 'Ctrl', 'Shift')] },
+  { id: 'terminal-larger-text', area: 'terminal', action: 'Larger text', keys: [terminal('=', 'Ctrl'), terminal('+', 'Ctrl')] },
+  { id: 'terminal-smaller-text', area: 'terminal', action: 'Smaller text', keys: [terminal('-', 'Ctrl')] },
+  { id: 'terminal-default-text', area: 'terminal', action: 'Default text size', keys: [terminal('0', 'Ctrl')] },
+  { id: 'terminal-focus-list', area: 'terminal', action: 'Focus the list', keys: [terminal('l', 'Ctrl', 'Shift')] },
+  { id: 'toggle-theme', area: 'general', action: 'Light/Dark theme', keys: [alt('KeyA', { kind: 'toggle-theme' })] },
+  { id: 'shortcut-settings', area: 'general', action: 'Shortcut settings', keys: [alt('KeyS', { kind: 'open-shortcut-settings' })] },
 ];
 
-export function keyText(key: ShortcutKey): string {
-  if (key.command.kind === 'terminal') return key.code.toUpperCase();
-  if (key.code === 'ArrowUp') return 'Up';
-  if (key.code === 'ArrowDown') return 'Down';
+const PUNCTUATION: Readonly<Record<string, string>> = {
+  Minus: '-',
+  Equal: '=',
+  BracketLeft: '[',
+  BracketRight: ']',
+  Backslash: '\\',
+  IntlBackslash: '<',
+  Semicolon: ';',
+  Quote: "'",
+  Backquote: '`',
+  Comma: ',',
+  Period: '.',
+  Slash: '/',
+};
+
+const NAMED_KEYS: Readonly<Record<string, string>> = {
+  ArrowUp: 'Up',
+  ArrowDown: 'Down',
+  ArrowLeft: 'Left',
+  ArrowRight: 'Right',
+  Escape: 'Esc',
+  Delete: 'Del',
+  Insert: 'Ins',
+  PageUp: 'Page Up',
+  PageDown: 'Page Down',
+  NumpadEnter: 'Enter',
+};
+
+export function keyText(key: Pick<ShortcutKey, 'code' | 'byCharacter'>): string {
+  if (key.byCharacter) return key.code.toUpperCase();
+  const named = NAMED_KEYS[key.code] ?? PUNCTUATION[key.code];
+  if (named) return named;
+  if (/^Numpad\d$/.test(key.code)) return `Num ${key.code.slice(6)}`;
   return key.code.replace(/^(Key|Digit)/, '');
 }
 
-export function commandKeysText(kind: ShortcutCommand['kind']): string[] {
-  return SHORTCUTS.flatMap((row) => row.keys)
-    .filter((key) => key.command.kind === kind)
-    .map((key) => [...key.modifiers, keyText(key)].join('+'));
+export function keysText(key: Pick<ShortcutKey, 'code' | 'modifiers' | 'byCharacter'>): string {
+  return [...key.modifiers, keyText(key)].join('+');
 }
 
-function matches(key: ShortcutKey, event: KeyboardEvent): boolean {
+function defaultRow(id: ShortcutId): Shortcut {
+  const row = SHORTCUTS.find((candidate) => candidate.id === id);
+  if (!row) throw new Error(`Unknown shortcut ${id}`);
+  return row;
+}
+
+function withActiveKeys(row: Shortcut, store: UserShortcutKeysStore): Shortcut {
+  const user = store.keyOf(row.id);
+  const command = row.keys[0]?.command;
+  if (!user || !command) return row;
+  return { ...row, keys: [{ code: user.code, modifiers: [...user.modifiers], command, character: user.character }] };
+}
+
+export function shortcutRows(store: UserShortcutKeysStore = pageUserShortcutKeys()): readonly Shortcut[] {
+  return SHORTCUTS.map((row) => withActiveKeys(row, store));
+}
+
+export function activeKeys(id: ShortcutId, store: UserShortcutKeysStore = pageUserShortcutKeys()): readonly ShortcutKey[] {
+  return withActiveKeys(defaultRow(id), store).keys;
+}
+
+export function defaultKeys(id: ShortcutId): readonly ShortcutKey[] {
+  return defaultRow(id).keys;
+}
+
+export function hasDefaultKeys(id: ShortcutId, store: UserShortcutKeysStore = pageUserShortcutKeys()): boolean {
+  const current = activeKeys(id, store).map(keysText);
+  const defaults = defaultKeys(id).map(keysText);
+  return current.length === defaults.length && current.every((text, index) => text === defaults[index]);
+}
+
+export function rowKeysText(id: ShortcutId, store: UserShortcutKeysStore = pageUserShortcutKeys()): string {
+  return activeKeys(id, store).map(keysText).join(' / ');
+}
+
+export function commandKeysText(kind: ShortcutCommand['kind'], store: UserShortcutKeysStore = pageUserShortcutKeys()): string[] {
+  return shortcutRows(store)
+    .flatMap((row) => row.keys)
+    .filter((key) => key.command.kind === kind)
+    .map(keysText);
+}
+
+export interface KeyPress {
+  code?: string;
+  key?: string;
+  ctrlKey: boolean;
+  altKey: boolean;
+  shiftKey: boolean;
+  metaKey: boolean;
+  altGraph?: boolean;
+}
+
+export function pressOf(event: KeyboardEvent): KeyPress {
+  return {
+    code: event.code,
+    key: event.key,
+    ctrlKey: event.ctrlKey,
+    altKey: event.altKey,
+    shiftKey: event.shiftKey,
+    metaKey: event.metaKey,
+    altGraph: event.getModifierState('AltGraph'),
+  };
+}
+
+export function keyMatches(key: ShortcutKey, press: KeyPress): boolean {
+  const shift = key.modifiers.includes('Shift');
+  if (key.byCharacter) {
+    return (
+      press.ctrlKey &&
+      !press.altKey &&
+      !press.metaKey &&
+      (!shift || press.shiftKey) &&
+      press.key !== undefined &&
+      press.key.toLowerCase() === key.code
+    );
+  }
   return (
-    event.code === key.code &&
-    event.ctrlKey === key.modifiers.includes('Ctrl') &&
-    event.altKey === key.modifiers.includes('Alt') &&
-    event.shiftKey === key.modifiers.includes('Shift') &&
-    !event.metaKey &&
-    !event.getModifierState('AltGraph')
+    press.code === key.code &&
+    press.ctrlKey === key.modifiers.includes('Ctrl') &&
+    press.altKey === key.modifiers.includes('Alt') &&
+    press.shiftKey === shift &&
+    !press.metaKey &&
+    press.altGraph !== true
   );
 }
 
-export function shortcutCommandOf(event: KeyboardEvent): ShortcutCommand | null {
-  for (const shortcut of SHORTCUTS) {
-    const key = shortcut.keys.find((candidate) => matches(candidate, event));
+export function shortcutCommandOf(event: KeyboardEvent, store: UserShortcutKeysStore = pageUserShortcutKeys()): ShortcutCommand | null {
+  const press = pressOf(event);
+  for (const shortcut of shortcutRows(store)) {
+    const key = shortcut.keys.find((candidate) => candidate.command.kind !== 'terminal' && keyMatches(candidate, press));
     if (key && key.command.kind !== 'terminal') return key.command;
+  }
+  return null;
+}
+
+export function terminalShortcutOf(event: KeyboardEvent, store: UserShortcutKeysStore = pageUserShortcutKeys()): TerminalShortcutId | null {
+  const press = pressOf(event);
+  for (const shortcut of shortcutRows(store)) {
+    if (shortcut.area !== 'terminal') continue;
+    if (shortcut.keys.some((key) => keyMatches(key, press))) return shortcut.id as TerminalShortcutId;
   }
   return null;
 }

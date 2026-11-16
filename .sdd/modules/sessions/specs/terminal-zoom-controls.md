@@ -18,9 +18,10 @@ Props:
 - `onSmaller()`, `onReset()`, `onLarger()` → called by the actions below.
 
 Shows, in order:
-- "Smaller text" → an icon button (minus icon, 26 px, `--text-secondary`), tooltip "Smaller text (Ctrl+-)". Disabled when `size` is 8 or less.
-- the default size button → 44 px wide, the text "<size> px" in mono 11 px (e.g. "12 px"). Accessible name "Default text size (<size> px)", tooltip "Default text size (Ctrl+0)". Never disabled.
-- "Larger text" → an icon button (plus icon, 26 px, `--text-secondary`), tooltip "Larger text (Ctrl+=)". Disabled when `size` is 32 or more.
+- "Smaller text" → an icon button (minus icon, 26 px, `--text-secondary`), tooltip "Smaller text (<keys>)". Disabled when `size` is 8 or less.
+- the default size button → 44 px wide, the text "<size> px" in mono 11 px (e.g. "12 px"). Accessible name "Default text size (<size> px)", tooltip "Default text size (<keys>)". Never disabled.
+- "Larger text" → an icon button (plus icon, 26 px, `--text-secondary`), tooltip "Larger text (<keys>)". Disabled when `size` is 32 or more.
+- `<keys>` → `rowKeysText` of the ShortcutMap rows "Smaller text", "Default text size" and "Larger text": by default "Ctrl+-", "Ctrl+0" and "Ctrl+= / Ctrl++". A change of these keys shows at once.
 - hover on an enabled button → `--bg-surface-3` background, `--text-primary` text.
 
 Actions:
@@ -35,8 +36,10 @@ Actions:
 ## Dependencies
 
 - TerminalFontSizeStore (the 8 and 32 px limits)
+- ShortcutMap, UserShortcutKeys (module app)
 - IconSet (`MinusIcon`, `PlusIcon`), ThemeTokens (module app)
 
 ## Requirements served
 
 - `plan-terminal_addons/REQ-35`, `plan-terminal_addons/REQ-41`, `plan-terminal_addons/REQ-45`
+- `plan-settings_dialog/REQ-38`

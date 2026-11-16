@@ -24,3 +24,5 @@
 | 2026-11-16 | plan | G3 coverage (update-check) | pass | New batch depends on shortcuts-section; modify paths exist; acceptance covers REQ-43..52 |
 | 2026-11-16 | dev | G4 shortcuts-section | pass | Build green; ShortcutsPanel moved to `settings/ShortcutsSection.tsx` (rename, no visible change) accepted; deleted tests of removed components justified by INT-1/INT-7 |
 | 2026-11-16 | dev | G5 shortcuts-section | pass | 149 unit + 51 e2e re-run green; tests only in the diff |
+| 2026-11-16 | dev | G4 editable-shortcuts | pass | Build green; INT-6..10 applied to `settings/ShortcutsSection.tsx` |
+| 2026-11-16 | dev | divergence developer (tooltips, AltGr) | decided | Tooltip lists every key of its row (REQ-38); AltGr press rejected as "no Ctrl or Alt" since it can never match |

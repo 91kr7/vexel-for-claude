@@ -3056,14 +3056,43 @@ input {
 }
 
 .shortcuts-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 4px 12px;
 }
 
 .shortcuts-keys {
-  flex: 0 0 168px;
   color: var(--text-muted);
+}
+
+.shortcuts-prompt {
+  color: var(--accent-primary);
+  font-weight: 500;
+}
+
+.shortcuts-row-actions {
+  grid-column: 2;
+  display: flex;
+  gap: 6px;
+}
+
+.shortcuts-row-button {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.shortcuts-row-message {
+  grid-column: 2;
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-error);
+}
+
+.shortcuts-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
 }
 
 .shortcuts-key {

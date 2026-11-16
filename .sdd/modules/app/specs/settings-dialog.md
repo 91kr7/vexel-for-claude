@@ -29,7 +29,7 @@ Actions:
 Keyboard:
 - on open → the focus is on the shown tab.
 - the tab list is one Tab stop: the shown tab. Right and Left arrows → the next or previous tab, wrapping; Home and End → the first or last tab. The new tab shows and takes the focus.
-- Tab and Shift+Tab → "[Esc]", the shown tab, the focusable item of the section (the checked radio, or the "Shortcut List" region) and "Close", inside the dialog only (Dialog).
+- Tab and Shift+Tab → "[Esc]", the shown tab, the focusable items of the section (the checked radio; or "Restore All", the "Shortcut List" region and the row buttons) and "Close", inside the dialog only (Dialog).
 - Esc → `onClose()`. Enter adds nothing (no primary action).
 - on close → the focus goes back where it was before the popup opened (Dialog).
 
