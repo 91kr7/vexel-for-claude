@@ -14,3 +14,4 @@
 | 2026-11-16 | plan | G3 coverage | pass | 3 batches, all REQ covered, modify paths exist, acceptance covers every closed REQ |
 | 2026-11-16 | dev | G4 settings-popup | pass | Build green; deleted `ThemeSwitch.test.tsx`/`LookSwitch.test.tsx` justified by INT-8/INT-9; stale e2e specs left to the tester |
 | 2026-11-16 | dev | settings button placement | human decision | Button moves to the bottom of the navigation rail; analysis corrected, tester stopped, its partial work stashed |
+| 2026-11-16 | plan | G3 coverage (rail placement) | pass | REQ-1/REQ-2 rewritten, INT-6 rewritten, INT-10/INT-11 added to settings-popup |

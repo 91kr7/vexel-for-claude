@@ -20,7 +20,7 @@ Requirements → `.sdd/plans/plan-settings_dialog/requirements.md`. Batch settin
 | INT-5 | modify | `src/web/AppLayout.tsx` | Run the new command of INT-3: open the popup on the "Shortcuts" tab. Remove the shortcuts panel state and its wiring to the TopBar. | REQ-24, REQ-25 | INT-3 |
 | INT-6 | modify | `src/web/TopBar.tsx` | Remove the ShortcutsButton and its props. The drag area of the desktop window stays at every width. | REQ-24 | INT-5 |
 | INT-7 | modify | `src/web/ShortcutsButton.tsx` | Delete the component. Also delete `KeyboardIcon` of IconSet when nothing else uses it. | REQ-24 | INT-6 |
-| INT-8 | modify | settings button (app area, built by batch settings-popup) | The tooltip shows the keys of the "Shortcut settings" row of the ShortcutMap: "Settings (Alt+S)". Write no key in the button itself. | REQ-3 | INT-3 |
+| INT-8 | modify | `src/web/SettingsButton.tsx` | The tooltip shows the keys of the "Shortcut settings" row of the ShortcutMap: "Settings (Alt+S)". Write no key in the button itself. | REQ-3 | INT-3 |
 
 Notes for the implementer:
 

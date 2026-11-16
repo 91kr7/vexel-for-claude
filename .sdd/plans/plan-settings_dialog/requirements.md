@@ -10,7 +10,8 @@ status: validated
 Words used below:
 
 - "Sidebar" → the column of the session list.
-- "Settings button" → the new button at the bottom left of the sidebar.
+- "Navigation rail" → the vertical icon bar with "Sessions", "Projects" and "Resume", left of the sidebar.
+- "Settings button" → the new button at the bottom of the navigation rail.
 - "Popup" → the settings popup that the settings button opens.
 - "Look" → the macOS look or the Windows 11 look of `wsl_support.md`.
 - "Shortcut" → a client shortcut, as listed today in the shortcuts panel of `keyboard_shortcuts.md`.
@@ -23,8 +24,8 @@ Words used below:
 
 | ID | Requirement |
 |----|-------------|
-| REQ-1 | The sidebar shows the settings button at its bottom left corner, below the session list and outside it. |
-| REQ-2 | The settings button stays visible at every sidebar width and while the session list scrolls. |
+| REQ-1 | The navigation rail shows the settings button at its bottom, below its other buttons, and the sidebar does not show it. |
+| REQ-2 | The settings button stays visible at every window height and every sidebar width. |
 | REQ-3 | The settings button has an accessible name and a tooltip that shows the settings shortcut. |
 | REQ-4 | A click on the settings button opens the popup on its first section. |
 | REQ-5 | The popup is a modal dialog in the style of the other dialogs of the client. |
@@ -78,6 +79,7 @@ Words used below:
 
 ## Assumptions
 
+- **Place of the settings button (REQ-1, REQ-2).** Human decision (2026-11-16): the button sits at the bottom of the navigation rail, not in the sidebar. The spec carries this decision.
 - **First section (REQ-4, REQ-25).** The settings button opens the popup on the theme section. Only the settings shortcut opens it on the shortcuts section (spec, "Assumptions").
 - **No Save button (REQ-15, REQ-26).** Every change applies at once. The popup has no "Save" or "Cancel" button (spec, "Assumptions").
 - **Tooltip of the settings button (REQ-3).** Gatekeeper decision, not a human decision (2026-11-16). Accessible name "Settings". The tooltip shows the current keys of the settings shortcut, for example "Settings (Alt+S)". Those keys open the popup on the shortcuts section, not on the first section; this is accepted.

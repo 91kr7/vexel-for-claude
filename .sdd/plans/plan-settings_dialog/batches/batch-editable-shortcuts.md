@@ -31,7 +31,7 @@ Requirements → `.sdd/plans/plan-settings_dialog/requirements.md`. Batch shortc
 | INT-10 | modify | `src/web/ShortcutsPanel.tsx` | "Restore All" at the top of the section opens a WarningDialog (amber) over the popup. Its primary action puts every row back to its defaults; "Cancel" changes nothing. | REQ-35, REQ-36, REQ-42 | INT-2 |
 | INT-11 | modify | `src/web/sessions/SessionView.tsx` | Terminal keys (search, zoom, focus the list) come from the active keys. Default keys keep today's match by character; a user key matches by physical key. The "Search" tooltip shows the active keys. | REQ-27, REQ-37, REQ-38 | INT-3 |
 | INT-12 | modify | `src/web/sessions/TerminalZoomControls.tsx` | The three tooltips show the active keys of their rows, and change at once after a save. | REQ-38 | INT-3 |
-| INT-13 | modify | settings button (app area, built by batch settings-popup) | The tooltip changes at once when the keys of "Shortcut settings" change. | REQ-38 | INT-3 |
+| INT-13 | modify | `src/web/SettingsButton.tsx` | The tooltip changes at once when the keys of "Shortcut settings" change. | REQ-38 | INT-3 |
 
 Notes for the implementer:
 
