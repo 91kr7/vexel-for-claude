@@ -26,3 +26,5 @@
 | 2026-11-16 | dev window-frame | divergence developer | decided | Popover and update notice follow the 38px bar; Windows buttons on role chrome to keep their spec |
 | 2026-11-16 | dev window-frame | divergence developer | decided | Footer path in a pill per REQ-12 wording though the mock shows plain text; flagged for human review |
 | 2026-11-16 | dev window-frame | G5 tests | sent back | Red: REQ-11 active bar 22px instead of 24px (offset measured inside the button border) |
+| 2026-11-16 | dev window-frame | G4 development (fix) | pass | One CSS rule for the rail bar offsets; build green |
+| 2026-11-16 | dev window-frame | G5 re-run | sent back | window-frame green; `e2e/studio-dark.spec.ts:698` still asserts the old 40px footer (REQ-12 says 32px): to the tester |

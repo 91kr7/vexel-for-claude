@@ -759,13 +759,13 @@ input {
   box-shadow: 0 0 14px -2px var(--accent-glow);
 }
 
-/* On the left edge of the rail. */
+/* On the left edge of the rail; offsets start inside the 1 px border. */
 .vx-rail-btn.active::before {
   content: '';
   position: absolute;
   left: -10px;
-  top: 4px;
-  bottom: 4px;
+  top: 3px;
+  bottom: 3px;
   width: 3px;
   border-radius: 0 9999px 9999px 0;
   background-color: var(--role-accent);
