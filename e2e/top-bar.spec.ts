@@ -2,8 +2,8 @@
 import { type Page, expect, test } from '@playwright/test';
 
 const LOOK_KEY = 'ai-client.look';
-// plan-settings_dialog/REQ-16: the theme and look switches left the bar for the settings popup.
-const BAR_CONTROLS = ['Keyboard Shortcuts', 'Plan Usage'];
+// plan-settings_dialog/REQ-16, REQ-24: the theme and look switches and the shortcuts button left the bar for the settings popup.
+const BAR_CONTROLS = ['Plan Usage'];
 
 const topBar = (page: Page) => page.getByRole('banner');
 const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' });

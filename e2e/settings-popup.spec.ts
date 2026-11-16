@@ -1,4 +1,4 @@
-// e2e of plan-settings_dialog, batch settings-popup: the settings button, the "Settings" popup with its "Theme" and "Window Look" tabs, and the top bar without switches.
+// e2e of plan-settings_dialog, batches settings-popup and shortcuts-section: the settings button, the "Settings" popup and its tabs, and the top bar without switches.
 import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -141,25 +141,25 @@ test.describe('settings button', () => {
     await expect(settingsButton(page)).toBeInViewport({ ratio: 1 });
   });
 
-  // plan-settings_dialog/REQ-3: name "Settings", the rail tooltip "Settings" on hover, opens a dialog
-  test('is named "Settings", shows the tooltip "Settings" on hover and announces a dialog', async ({ page }) => {
+  // plan-settings_dialog/REQ-3: name "Settings", the rail tooltip "Settings (Alt+S)" on hover, opens a dialog
+  test('is named "Settings", shows the tooltip "Settings (Alt+S)" on hover and announces a dialog', async ({ page }) => {
     await loadPage(page);
     await expect(settingsButton(page)).toHaveAccessibleName('Settings');
     await expect(settingsButton(page)).toHaveAttribute('aria-haspopup', 'dialog');
     const tooltip = settingsButton(page).locator('.vx-tooltip');
     await settingsButton(page).hover();
-    await expect(tooltip).toHaveText('Settings');
+    await expect(tooltip).toHaveText('Settings (Alt+S)');
     await expect(tooltip).toBeVisible();
     await expect.poll(() => tooltip.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
   });
 
-  // plan-settings_dialog/REQ-4, REQ-5, REQ-6: a click opens the modal popup on the "Theme" tab
-  test('a click opens the modal "Settings" popup on the "Theme" tab, with the tabs "Theme" then "Window Look"', async ({ page }) => {
+  // plan-settings_dialog/REQ-4, REQ-5, REQ-6, REQ-21: a click opens the modal popup on the "Theme" tab
+  test('a click opens the modal "Settings" popup on the "Theme" tab, with the tabs "Theme", "Window Look" and "Shortcuts"', async ({ page }) => {
     await loadPage(page);
     await settingsButton(page).click();
     await expect(popup(page)).toBeVisible();
     await expect(popup(page)).toHaveAttribute('aria-modal', 'true');
-    await expect(popup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Theme', 'Window Look']);
+    await expect(popup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Theme', 'Window Look', 'Shortcuts']);
     await expect(tab(page, 'Theme')).toHaveAttribute('aria-selected', 'true');
     await expect(tab(page, 'Theme')).toBeFocused();
     await expect(popup(page).getByRole('group', { name: 'Theme' })).toBeVisible();
@@ -279,7 +279,7 @@ test.describe('popup from the keyboard', () => {
 });
 
 // Scenario "The top bar has no theme or look switch" (browser part; the drag area check runs in the Electron group)
-// plan-settings_dialog/REQ-16, REQ-18
+// plan-settings_dialog/REQ-16, REQ-18, REQ-24
 test('the top bar has no theme or look switch, and Alt+A still switches the theme', async ({ page }) => {
   await loadPage(page);
   await expect(topBar(page).getByRole('button', { name: 'Dark theme' })).toHaveCount(0);
@@ -287,7 +287,7 @@ test('the top bar has no theme or look switch, and Alt+A still switches the them
   const names = await topBar(page)
     .getByRole('button')
     .evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label') ?? button.textContent?.trim() ?? ''));
-  expect(names).toEqual(['Keyboard Shortcuts', 'Plan Usage']);
+  expect(names).toEqual(['Plan Usage']);
   expect(await rootMark(page, 'data-theme')).toBe('dark');
   await page.keyboard.press('Alt+KeyA');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');

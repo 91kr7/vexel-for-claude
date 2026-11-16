@@ -40,7 +40,6 @@ const json = (body: unknown, status = 200) => (route: Route) => route.fulfill({ 
 const banner = (page: Page) => page.getByRole('banner');
 const usageButton = (page: Page) => banner(page).getByRole('button', { name: 'Plan Usage', exact: true });
 const newSessionButton = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true });
-const shortcutsButton = (page: Page) => banner(page).getByRole('button', { name: 'Keyboard Shortcuts', exact: true });
 const popover = (page: Page) => page.getByRole('dialog', { name: 'Plan Usage', exact: true });
 const closeButton = (page: Page) => popover(page).getByRole('button', { name: 'Close', exact: true });
 const rows = (page: Page) => popover(page).getByRole('listitem');
@@ -50,7 +49,6 @@ const box = async (locator: Locator) => (await locator.boundingBox()) as { x: nu
 
 async function loadPage(page: Page): Promise<void> {
   await page.goto('/');
-  await expect(shortcutsButton(page)).toBeVisible();
   await expect(usageButton(page)).toBeVisible();
 }
 
@@ -80,14 +78,14 @@ const contrast = (a: string, b: string) => {
 };
 
 test.describe('the usage button', () => {
-  // plan-usage_limits/REQ-1, REQ-2, REQ-15, plan-settings_dialog/REQ-16: right after the shortcuts button, 6 px apart
-  test('sits right after the shortcuts button, 6 px apart, named and titled "Plan Usage"', async ({ page }) => {
+  // plan-usage_limits/REQ-1, REQ-2, REQ-15, plan-settings_dialog/REQ-16, REQ-24: the only control on the right of the top bar, 32 x 32 px
+  test('sits at the right end of the top bar, 32 x 32 px, named and titled "Plan Usage"', async ({ page }) => {
     await planUsageAnswers(page, [json({ status: 'unavailable' })]);
     await loadPage(page);
-    const [shortcuts, usage] = [await box(shortcutsButton(page)), await box(usageButton(page))];
-    expect(usage.x - (shortcuts.x + shortcuts.width)).toBeCloseTo(6, 0);
-    expect(usage.width).toBeCloseTo(shortcuts.width, 0);
-    expect(usage.height).toBeCloseTo(shortcuts.height, 0);
+    const [bar, usage] = [await box(banner(page)), await box(usageButton(page))];
+    expect(bar.x + bar.width - (usage.x + usage.width), 'the 14 px padding of the bar').toBeCloseTo(14, 0);
+    expect(usage.width).toBeCloseTo(32, 0);
+    expect(usage.height).toBeCloseTo(32, 0);
     await expect(usageButton(page)).toHaveAttribute('title', 'Plan Usage');
     await expect(usageButton(page)).toHaveAttribute('aria-expanded', 'false');
     await expect(usageButton(page).locator('svg')).toHaveAttribute('aria-hidden', 'true');
@@ -97,8 +95,7 @@ test.describe('the usage button', () => {
   test('Tab reaches it with a visible focus, Enter opens the popover and Esc closes it', async ({ page }) => {
     await planUsageAnswers(page, [json(okBody(limitsAt(40, 50)))]);
     await loadPage(page);
-    // plan-settings_dialog/REQ-16: the shortcuts button comes right before the usage button.
-    await shortcutsButton(page).focus();
+    // plan-settings_dialog/REQ-24: the usage button is the only control of the top bar, the first Tab stop of the page.
     await page.keyboard.press('Tab');
     await expect(usageButton(page)).toBeFocused();
     expect(await hasFocusVisible(usageButton(page))).toBe(true);
@@ -432,11 +429,6 @@ test.describe('the look in both themes', () => {
       expect(contrast(await colourOf(bars(page).nth(0).locator('div'), 'backgroundColor'), track), 'fill against its track').toBeGreaterThan(1.3);
       expect(contrast(track, panelBackground), 'track against the panel').toBeGreaterThan(1.05);
 
-      await page.mouse.move(0, 400);
-      await usageButton(page).blur();
-      // The look of the shortcuts button, once the hover transition (150 ms) has ended.
-      const looks = async (button: Locator) => `${await colourOf(button, 'backgroundColor')}|${await colourOf(button, 'color')}|${await colourOf(button, 'borderColor' as 'color')}`;
-      await expect.poll(async () => (await looks(usageButton(page))) === (await looks(shortcutsButton(page)))).toBe(true);
     });
   }
 

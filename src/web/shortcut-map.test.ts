@@ -1,6 +1,6 @@
-// Tests of plan-keyboard_shortcuts, batches navigation, session-actions and shortcuts-panel: ShortcutMap spec.
+// Tests of plan-keyboard_shortcuts (batches navigation, session-actions, shortcuts-panel) and plan-settings_dialog (batch shortcuts-section): ShortcutMap spec.
 import { describe, expect, it } from 'vitest';
-import { SHORTCUTS, type ShortcutKey, shortcutCommandOf } from './shortcut-map';
+import { SHORTCUTS, type ShortcutCommand, type ShortcutKey, commandKeysText, keyText, shortcutCommandOf } from './shortcut-map';
 
 interface Pressed {
   ctrl?: boolean;
@@ -70,7 +70,7 @@ describe('SHORTCUTS', () => {
     ]);
   });
 
-  // plan-keyboard_shortcuts/REQ-12, REQ-13, REQ-14, REQ-16, REQ-17, REQ-18, REQ-19, REQ-21: the six sessions rows and the theme row
+  // plan-keyboard_shortcuts/REQ-12 to REQ-21, plan-settings_dialog/REQ-25: the six sessions rows, the theme row and the "Shortcut settings" row on Alt+S
   it('has the sessions and general rows of the key map, in order, with their keys and commands', () => {
     const rowsOf = (area: string) =>
       SHORTCUTS.filter((row) => row.area === area).map((row) => ({
@@ -90,7 +90,7 @@ describe('SHORTCUTS', () => {
     ]);
     expect(rowsOf('general')).toEqual([
       { action: 'Light/Dark theme', keys: [{ code: 'KeyA', modifiers: ['Alt'], command: { kind: 'toggle-theme' } }] },
-      { action: 'Shortcuts panel', keys: [{ code: 'KeyS', modifiers: ['Alt'], command: { kind: 'toggle-shortcuts-panel' } }] },
+      { action: 'Shortcut settings', keys: [{ code: 'KeyS', modifiers: ['Alt'], command: { kind: 'open-shortcut-settings' } }] },
     ]);
   });
 
@@ -205,7 +205,7 @@ describe('shortcutCommandOf', () => {
     ['Alt+Shift+Q', alt('KeyQ', { shift: true }), { kind: 'session-command', command: 'stop' }],
     ['Alt+Shift+W', alt('KeyW', { shift: true }), { kind: 'session-command', command: 'dismiss' }],
     ['Alt+A', alt('KeyA'), { kind: 'toggle-theme' }],
-    ['Alt+S', alt('KeyS'), { kind: 'toggle-shortcuts-panel' }],
+    ['Alt+S', alt('KeyS'), { kind: 'open-shortcut-settings' }],
   ])('gives the command of %s', (_, event, command) => {
     expect(shortcutCommandOf(event)).toEqual(command);
   });
@@ -289,7 +289,7 @@ describe('shortcutCommandOf', () => {
 
   // plan-keyboard_shortcuts/REQ-45: Alt+S is the physical S key on any layout, and never with AltGr
   it('matches Alt+S by physical key and not with AltGr', () => {
-    expect(shortcutCommandOf(alt('KeyS', { key: 'ß' }))).toEqual({ kind: 'toggle-shortcuts-panel' });
+    expect(shortcutCommandOf(alt('KeyS', { key: 'ß' }))).toEqual({ kind: 'open-shortcut-settings' });
     expect(shortcutCommandOf(alt('KeyS', { altGraph: true }))).toBeNull();
     expect(shortcutCommandOf(alt('KeyS', { shift: true }))).toBeNull();
   });
@@ -297,5 +297,65 @@ describe('shortcutCommandOf', () => {
   // ShortcutMap contract: the event type does not matter
   it('matches a keyup of a map key', () => {
     expect(shortcutCommandOf(alt('KeyI', { type: 'keyup' }))).toEqual({ kind: 'open-session', target: { kind: 'next-needs-input' } });
+  });
+});
+
+describe('keyText', () => {
+  const key = (code: string): ShortcutKey => ({ code, modifiers: ['Alt'], command: { kind: 'focus-list' } });
+  const terminal = (code: string): ShortcutKey => ({ code, modifiers: ['Ctrl'], command: { kind: 'terminal' } });
+
+  // ShortcutMap contract, keyText table: a letter key shows its letter, without modifiers
+  it.each([
+    ['KeyA', 'A'],
+    ['KeyS', 'S'],
+    ['KeyZ', 'Z'],
+  ])('gives %s as "%s"', (code, text) => {
+    expect(keyText(key(code))).toBe(text);
+  });
+
+  // ShortcutMap contract, keyText table: a digit key shows its digit
+  it.each([
+    ['Digit0', '0'],
+    ['Digit1', '1'],
+    ['Digit9', '9'],
+  ])('gives %s as "%s"', (code, text) => {
+    expect(keyText(key(code))).toBe(text);
+  });
+
+  // ShortcutMap contract, keyText table: the arrows show "Up" and "Down"
+  it('gives ArrowUp as "Up" and ArrowDown as "Down"', () => {
+    expect(keyText(key('ArrowUp'))).toBe('Up');
+    expect(keyText(key('ArrowDown'))).toBe('Down');
+  });
+
+  // ShortcutMap contract, keyText table: a terminal key shows its character in upper case
+  it.each([
+    ['f', 'F'],
+    ['l', 'L'],
+    ['=', '='],
+    ['+', '+'],
+    ['-', '-'],
+    ['0', '0'],
+  ])('gives the terminal key %s as "%s"', (code, text) => {
+    expect(keyText(terminal(code))).toBe(text);
+  });
+});
+
+describe('commandKeysText', () => {
+  // plan-settings_dialog/REQ-3, ShortcutMap contract: the settings command has the one key Alt+S
+  it('gives ["Alt+S"] for open-shortcut-settings', () => {
+    expect(commandKeysText('open-shortcut-settings')).toEqual(['Alt+S']);
+  });
+
+  // ShortcutMap contract: the modifiers, then the key text, joined by "+", one text per key in map order
+  it('gives one text per key of a command, in map order, with every modifier', () => {
+    expect(commandKeysText('toggle-theme')).toEqual(['Alt+A']);
+    expect(commandKeysText('open-session')).toEqual(['Alt+Up', 'Alt+Down', ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => `Alt+${digit}`), 'Alt+I']);
+    expect(commandKeysText('session-command')).toEqual(['Alt+E', 'Alt+R', 'Alt+Shift+Q', 'Alt+Shift+W']);
+  });
+
+  // ShortcutMap contract: a kind with no key in the map gives no text
+  it('gives [] for a kind with no key', () => {
+    expect(commandKeysText('no-such-command' as ShortcutCommand['kind'])).toEqual([]);
   });
 });

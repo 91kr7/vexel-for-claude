@@ -8,8 +8,8 @@ import { mount, run, unmountAll } from './settings/settings-test-support';
 afterEach(unmountAll);
 
 describe('SettingsButton', () => {
-  // plan-settings_dialog/REQ-1, REQ-3: one rail button named "Settings", with the gear icon and the rail tooltip, opening a dialog
-  it('is one native rail button named "Settings" with the tooltip "Settings", aria-haspopup dialog and the gear icon', () => {
+  // plan-settings_dialog/REQ-1, REQ-3: one rail button named "Settings", with the gear icon and the rail tooltip with the settings shortcut, opening a dialog
+  it('is one native rail button named "Settings" with the tooltip "Settings (Alt+S)", aria-haspopup dialog and the gear icon', () => {
     const host = mount(<SettingsButton onOpen={() => {}} />);
     const buttons = host.querySelectorAll('button');
     expect(buttons).toHaveLength(1);
@@ -20,7 +20,7 @@ describe('SettingsButton', () => {
     expect(button.getAttribute('aria-haspopup')).toBe('dialog');
     expect(button.innerHTML).toContain(renderToStaticMarkup(<SettingsIcon />));
     const tooltip = button.querySelector('.vx-tooltip');
-    expect(tooltip?.textContent).toBe('Settings');
+    expect(tooltip?.textContent).toBe('Settings (Alt+S)');
     expect(tooltip?.getAttribute('aria-hidden')).toBe('true');
   });
 

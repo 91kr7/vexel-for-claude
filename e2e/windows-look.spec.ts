@@ -434,7 +434,7 @@ test.describe('Windows 11 look styles', () => {
     await page.goto('/');
     const planUsage = topBar(page).getByRole('button', { name: 'Plan Usage', exact: true });
     await expect(planUsage).toBeVisible();
-    for (const control of [planUsage, topBar(page).getByRole('button', { name: 'Keyboard Shortcuts', exact: true }), settingsButton(page)])
+    for (const control of [planUsage, settingsButton(page)])
       expect(await control.evaluate((e) => getComputedStyle(e).borderTopLeftRadius), await control.getAttribute('aria-label') ?? '').toBe('4px');
     await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'New Claude Code Session' });

@@ -23,3 +23,4 @@
 | 2026-11-16 | plan | question planner (updates texts, notice, result) | decided | Title Case "Check for Updates" as the other buttons; notice shown after a newer result; result reset on reopening |
 | 2026-11-16 | plan | G3 coverage (update-check) | pass | New batch depends on shortcuts-section; modify paths exist; acceptance covers REQ-43..52 |
 | 2026-11-16 | dev | G4 shortcuts-section | pass | Build green; ShortcutsPanel moved to `settings/ShortcutsSection.tsx` (rename, no visible change) accepted; deleted tests of removed components justified by INT-1/INT-7 |
+| 2026-11-16 | dev | G5 shortcuts-section | pass | 149 unit + 51 e2e re-run green; tests only in the diff |

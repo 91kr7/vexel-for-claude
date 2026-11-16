@@ -178,7 +178,9 @@ describe('NavigationRail', () => {
       visible = visible.replace(/<(\w+)\b[^>]*aria-hidden="true"[^>]*>(?:(?!<\1\b)[\s\S])*?<\/\1>/, '');
     }
     expect(textOf(visible)).toBe('');
-    expect(textOf(button?.html ?? '')).toBe(name);
-    expect(button?.html).toMatch(new RegExp(`<\\w+\\b[^>]*aria-hidden="true"[^>]*>${name}</`));
+    // plan-settings_dialog/REQ-3: the "Settings" tooltip also shows the settings shortcut
+    const tooltip = name === 'Settings' ? 'Settings (Alt+S)' : name;
+    expect(textOf(button?.html ?? '')).toBe(tooltip);
+    expect(button?.html).toMatch(new RegExp(`<\\w+\\b[^>]*aria-hidden="true"[^>]*>${tooltip.replace(/[()+]/g, '\\$&')}</`));
   });
 });

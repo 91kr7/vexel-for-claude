@@ -18,6 +18,7 @@ const tabs = (dialog: HTMLElement) => [...dialog.querySelectorAll<HTMLElement>('
 const tab = (dialog: HTMLElement, name: string) => tabs(dialog).find((element) => element.textContent === name) as HTMLElement;
 const visiblePanels = (dialog: HTMLElement) => [...dialog.querySelectorAll<HTMLElement>('[role="tabpanel"]')].filter((panel) => !panel.hidden);
 const shownLegend = (dialog: HTMLElement) => visiblePanels(dialog)[0]?.querySelector('legend')?.textContent;
+const shownList = (dialog: HTMLElement) => visiblePanels(dialog)[0]?.querySelector<HTMLElement>('[role="region"][aria-label="Shortcut List"]') ?? null;
 const buttonNamed = (dialog: HTMLElement, text: string) =>
   [...dialog.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === text) as HTMLButtonElement;
 
@@ -42,11 +43,11 @@ describe('SettingsDialog', () => {
     expect(dialog.querySelector('.modal-actions')?.querySelectorAll('button')).toHaveLength(1);
   });
 
-  // plan-settings_dialog/REQ-6: a tab list "Settings sections" with "Theme" then "Window Look"
-  it('has a tab list "Settings sections" with the tabs "Theme" then "Window Look"', () => {
+  // plan-settings_dialog/REQ-6, REQ-21: a tab list "Settings sections" with "Theme", "Window Look", then "Shortcuts"
+  it('has a tab list "Settings sections" with the tabs "Theme", "Window Look" and "Shortcuts", in this order', () => {
     const { dialog } = open();
     expect(dialog.querySelector('[role="tablist"]')?.getAttribute('aria-label')).toBe('Settings sections');
-    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Theme', 'Window Look']);
+    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Theme', 'Window Look', 'Shortcuts']);
   });
 
   // plan-settings_dialog/REQ-4: default tab "Theme", selected and focused on open; one panel shown, labelled by its tab
@@ -69,6 +70,29 @@ describe('SettingsDialog', () => {
     expect(shownLegend(dialog)).toBe('Window Look');
   });
 
+  // plan-settings_dialog/REQ-25, spec SettingsDialog Props: initialTab "shortcuts" opens on the "Shortcuts" tab, with the shortcuts section only
+  it('opens on the "Shortcuts" tab when initialTab is "shortcuts", with the shortcut list shown', () => {
+    const { dialog } = open('shortcuts');
+    const shortcuts = tab(dialog, 'Shortcuts');
+    expect(shortcuts.getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(shortcuts);
+    expect(visiblePanels(dialog)).toHaveLength(1);
+    expect(visiblePanels(dialog)[0]?.getAttribute('aria-labelledby')).toBe(shortcuts.id);
+    expect(shownList(dialog)?.tabIndex, 'the "Shortcut List" region is a Tab stop').toBe(0);
+    expect(radios(visiblePanels(dialog)[0] as HTMLElement)).toHaveLength(0);
+  });
+
+  // plan-settings_dialog/REQ-21: a click on "Shortcuts" shows the shortcuts section, which has no frame, title or "Close" of its own
+  it('a click on "Shortcuts" shows the shortcuts section inside the popup, with one "Close" only', () => {
+    const { dialog } = open();
+    run(() => tab(dialog, 'Shortcuts').click());
+    expect(tab(dialog, 'Shortcuts').getAttribute('aria-selected')).toBe('true');
+    expect(shownList(dialog)).not.toBeNull();
+    expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(1);
+    expect(document.querySelector('.shortcuts-panel')).toBeNull();
+    expect([...dialog.querySelectorAll('button')].filter((button) => button.textContent?.trim() === 'Close')).toHaveLength(1);
+  });
+
   // spec SettingsDialog, Actions: a click on a tab shows its section
   it('a click on "Window Look" shows the look section, a click on "Theme" brings the theme section back', () => {
     const { dialog } = open();
@@ -82,25 +106,29 @@ describe('SettingsDialog', () => {
   // plan-settings_dialog/REQ-11: the tab list is one Tab stop, the shown tab
   it('gives tabindex 0 to the shown tab only', () => {
     const { dialog } = open();
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([0, -1]);
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([0, -1, -1]);
     run(() => tab(dialog, 'Window Look').click());
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, 0]);
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, 0, -1]);
+    run(() => tab(dialog, 'Shortcuts').click());
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, -1, 0]);
   });
 
   // plan-settings_dialog/REQ-11: arrows move to the next/previous tab, wrapping; Home/End to the first/last
   it.each([
     ['ArrowRight', 'theme', 'Window Look'],
-    ['ArrowRight', 'look', 'Theme'],
-    ['ArrowLeft', 'theme', 'Window Look'],
+    ['ArrowRight', 'look', 'Shortcuts'],
+    ['ArrowRight', 'shortcuts', 'Theme'],
+    ['ArrowLeft', 'theme', 'Shortcuts'],
     ['ArrowLeft', 'look', 'Theme'],
-    ['Home', 'look', 'Theme'],
-    ['End', 'theme', 'Window Look'],
+    ['ArrowLeft', 'shortcuts', 'Window Look'],
+    ['Home', 'shortcuts', 'Theme'],
+    ['End', 'theme', 'Shortcuts'],
   ] as const)('%s from the %s tab shows and focuses "%s"', (key, start, expected) => {
     const { dialog } = open(start);
     keydown(document.activeElement as Element, key);
     expect(tab(dialog, expected).getAttribute('aria-selected')).toBe('true');
     expect(document.activeElement).toBe(tab(dialog, expected));
-    expect(shownLegend(dialog)).toBe(expected);
+    expect(visiblePanels(dialog).map((panel) => panel.getAttribute('aria-labelledby'))).toEqual([tab(dialog, expected).id]);
   });
 
   // plan-settings_dialog/REQ-7: Esc, "[Esc]" and "Close" call onClose
