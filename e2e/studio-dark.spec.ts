@@ -694,14 +694,14 @@ test.describe('hosted session view', () => {
     expect(await box(region), 'the terminal panel does not resize for the snackbar').toEqual(before);
   });
 
-  // plan-session_list_width/REQ-28: the footer under the terminal, in place of the hint row, is 40 px high
-  test('the footer under the terminal is 40 px high', async ({ page, request }) => {
+  // plan-session_list_width/REQ-28, plan-dark_blue_theme/REQ-12: the footer under the terminal, in place of the hint row, is 32 px high
+  test('the footer under the terminal is 32 px high', async ({ page, request }) => {
     await showOnly(page);
     const folder = await newFolder('footer-row');
     await startViaApi(request, folder);
     await page.goto('/');
     await openFromList(page, folder);
-    expect((await box(mainArea(page).locator('footer'))).height).toBeCloseTo(40, 0);
+    expect((await box(mainArea(page).locator('footer'))).height).toBeCloseTo(32, 0);
   });
 });
 

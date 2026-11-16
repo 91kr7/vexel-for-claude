@@ -28,9 +28,9 @@ const header = (page: Page) => mainArea(page).locator('.session-header');
 const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
 const terminalBox = (page: Page) => panel(page).locator('.session-terminal');
 const footer = (page: Page) => mainArea(page).locator('.session-footer');
-// SessionView: the panel sits 16 px from the left, right and top; the footer under it is 40 px high.
+// SessionView: the panel sits 16 px from the left, right and top; the footer under it is 32 px high (plan-dark_blue_theme/REQ-12).
 const GAP = 16;
-const FOOTER_HEIGHT = 40;
+const FOOTER_HEIGHT = 32;
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
 async function makeFolder(name: string): Promise<string> {
@@ -116,7 +116,7 @@ test('with 10 sessions, opening and switching a hosted session shows its header 
   await expect(terminal(page)).not.toContainText(`CWD:${first}`);
 });
 
-// plan-claude_sessions_client-ui_redesign/REQ-18, plan-session_list_width/REQ-28: the panel and the 40 px footer fill the area
+// plan-claude_sessions_client-ui_redesign/REQ-18, plan-session_list_width/REQ-28, plan-dark_blue_theme/REQ-12: the panel and the 32 px footer fill the area
 test('the terminal panel and the footer fill the main area below the header after the window changes size', async ({ page, request }) => {
   const folder = await makeFolder('ridimensiona');
   await startViaApi(request, folder);

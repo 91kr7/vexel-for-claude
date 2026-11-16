@@ -28,3 +28,5 @@
 | 2026-11-16 | dev window-frame | G5 tests | sent back | Red: REQ-11 active bar 22px instead of 24px (offset measured inside the button border) |
 | 2026-11-16 | dev window-frame | G4 development (fix) | pass | One CSS rule for the rail bar offsets; build green |
 | 2026-11-16 | dev window-frame | G5 re-run | sent back | window-frame green; `e2e/studio-dark.spec.ts:698` still asserts the old 40px footer (REQ-12 says 32px): to the tester |
+| 2026-11-16 | dev window-frame | question tester | decided | Header action button radius is `--radius-pill` per `.sdd/modules/app/specs/web-entry.md`; stale assertion aligned |
+| 2026-11-16 | dev window-frame | G5 tests (round 3) | pass | Test files only; no only/skip; re-run window-frame, studio-dark, hosted-session, open-session, header-footer: 69 passed |

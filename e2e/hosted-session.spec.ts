@@ -196,12 +196,22 @@ for (const colorScheme of ['light', 'dark'] as const) {
         { action: interrupt, fill: '--orange-500-15', text: '--orange-400', line: '--orange-500-30' },
         { action: stop, fill: '--rose-500-15', text: '--rose-400', line: '--rose-500-30' },
       ];
+      // WebEntry `.button-danger` / `.button-attn` / `.button-interrupt` (plan-dark_blue_theme/REQ-3): `--radius-pill` corners.
+      const pillRadius = await page.evaluate(() => {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position: absolute; width: var(--radius-pill)';
+        document.body.append(probe);
+        const width = getComputedStyle(probe).width;
+        probe.remove();
+        return width;
+      });
+      expect(pillRadius, 'pill radius in the current look').toBe('5px');
       for (const { action, fill, text, line } of looks) {
         expect(await styles(action, [
           'background-color', 'color', 'border-top-width', 'border-top-color', 'border-top-left-radius', 'padding-top', 'padding-left', 'font-size',
         ])).toEqual({
           'background-color': await colour(fill), color: await colour(text), 'border-top-width': '1px', 'border-top-color': await colour(line),
-          'border-top-left-radius': '6px', 'padding-top': '4px', 'padding-left': '10px', 'font-size': '11px',
+          'border-top-left-radius': pillRadius, 'padding-top': '4px', 'padding-left': '10px', 'font-size': '11px',
         });
         expect(await style(action, 'font-family')).toMatch(mono);
       }
@@ -221,26 +231,26 @@ for (const colorScheme of ['light', 'dark'] as const) {
       near(termBox.x, main.x + 16, 'panel left');
       near(termBox.width, main.width - 32, 'panel width');
 
-      // the footer: 40 px, padding 0 16, surface 1, subtle line above, under the panel, down to the bottom of the main area
+      // the footer (plan-dark_blue_theme/REQ-12): 32 px, padding 0 14, title bar role surface, subtle line above, under the panel, down to the bottom of the main area
       const row = footer(page);
       const rowBox = await box(row);
       near(rowBox.y, termBox.y + termBox.height + 16, 'footer top');
-      near(rowBox.height, 40, 'footer height');
+      near(rowBox.height, 32, 'footer height');
       near(rowBox.y + rowBox.height, main.y + main.height, 'footer bottom');
       near(rowBox.x, main.x, 'footer left');
       near(rowBox.width, main.width, 'footer width');
       expect(await styles(row, ['padding-left', 'padding-right', 'background-color', 'border-top-width', 'border-top-color'])).toEqual({
-        'padding-left': '16px', 'padding-right': '16px', 'background-color': await colour('--bg-surface-1'),
-        'border-top-width': '1px', 'border-top-color': await colour('--border-subtle'),
+        'padding-left': '14px', 'padding-right': '14px', 'background-color': await colour('--role-chrome'),
+        'border-top-width': '1px', 'border-top-color': await colour('--role-border-subtle'),
       });
 
-      // the path in mono 11 px, then the zoom controls at the right end; no key hint
+      // the path in mono 10.5 px (plan-dark_blue_theme/REQ-12), then the zoom controls at the right end; no key hint
       const pathText = row.getByText(folder, { exact: true });
-      expect(await styles(pathText, ['font-size', 'color'])).toEqual({ 'font-size': '11px', color: await colour('--text-secondary') });
+      expect(await styles(pathText, ['font-size', 'color'])).toEqual({ 'font-size': '10.5px', color: await colour('--text-secondary') });
       expect(await style(pathText, 'font-family')).toMatch(mono);
       const zoom = row.getByRole('group', { name: 'Terminal text size' });
       const zoomBox = await box(zoom);
-      near(zoomBox.x + zoomBox.width, rowBox.x + rowBox.width - 16, 'zoom controls at the right end');
+      near(zoomBox.x + zoomBox.width, rowBox.x + rowBox.width - 14, 'zoom controls at the right end');
       expect((await box(pathText)).x).toBeLessThan(zoomBox.x);
       await expect(row.locator('kbd')).toHaveCount(0);
       await expect(row).not.toContainText('Ctrl');
@@ -316,12 +326,12 @@ test('Ctrl+Shift+L moves the focus to the list, and the snackbar outside the foo
   await expect(footer(page)).toBeVisible();
   await expect(footer(page)).not.toContainText('Ctrl');
   const before = await box(panel(page));
-  near((await box(footer(page))).height, 40, 'footer height without snackbar');
+  near((await box(footer(page))).height, 32, 'footer height without snackbar');
 
   await postHook(request, waitingId, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
   await expect(snackbar(page)).toBeVisible();
   await expect(footer(page).getByRole('status')).toHaveCount(0);
-  near((await box(footer(page))).height, 40, 'footer height with snackbar');
+  near((await box(footer(page))).height, 32, 'footer height with snackbar');
   expect(await box(panel(page))).toEqual(before);
 
   await page.locator('.xterm-screen').click();
@@ -342,7 +352,7 @@ test('at 1280 px a long snackbar wraps within the window minus 40 px, and the fo
   await expect(snackbar(page)).toBeVisible();
 
   const rowBox = await box(footer(page));
-  near(rowBox.height, 40, 'footer height');
+  near(rowBox.height, 32, 'footer height');
   const zoomBox = await box(zoomControls(page));
   expect(zoomBox.x + zoomBox.width, 'zoom controls inside the footer').toBeLessThanOrEqual(rowBox.x + rowBox.width + TOLERANCE);
   expect(await zoomControls(page).evaluate((el) => el.scrollWidth <= el.clientWidth), 'zoom controls not cut').toBe(true);

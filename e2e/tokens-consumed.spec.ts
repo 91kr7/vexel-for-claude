@@ -133,7 +133,7 @@ test.describe('Tokens consumed', () => {
     expect(popoverId).toBeTruthy();
     await expect(chip(page)).toHaveAttribute('aria-describedby', popoverId!);
     const footerBox = await footer(page).boundingBox();
-    expect(footerBox!.height, 'the footer stays 40 px with the popover open').toBeLessThanOrEqual(40.5);
+    expect(footerBox!.height, 'the footer stays 32 px with the popover open (plan-dark_blue_theme/REQ-12)').toBeLessThanOrEqual(32.5);
     const chipBox = await chip(page).boundingBox();
     const popoverBox = await popover(page).boundingBox();
     expect(popoverBox!.y + popoverBox!.height, 'the popover sits above the chip').toBeLessThanOrEqual(chipBox!.y + 0.5);

@@ -9,7 +9,7 @@ status: validated
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
 | shared-shapes | Shared shapes (all themes) | REQ-3, REQ-4, REQ-5 | — | certified | Dialogs and panels share the new shapes in Light and Dark |
-| window-frame | Window frame: title bar, rail, bottom bar, toast | REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15 | shared-shapes | implemented | The window frame takes the mock's layout |
+| window-frame | Window frame: title bar, rail, bottom bar, toast | REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15 | shared-shapes | certified | The window frame takes the mock's layout |
 | session-cards | Session cards | REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24 | shared-shapes, window-frame | todo | The session list shows cards like the mock |
 | session-view | Session view: header and terminal frame | REQ-1, REQ-2, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29 | shared-shapes, window-frame, session-cards | todo | The open session shows the mock's header and terminal frame |
 | dark-blue | Dark Blue theme | REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42 | shared-shapes, window-frame, session-cards, session-view | todo | The user switches to Dark Blue |
