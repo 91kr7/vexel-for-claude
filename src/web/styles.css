@@ -552,6 +552,11 @@ input {
   transition: color 150ms, background-color 150ms, border-color 150ms;
 }
 
+/* Inside the edge: the 38 px top bar would cut a ring outside the 32 px button. */
+.plan-usage-button:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
 .theme-switch:hover {
   background-color: var(--bg-surface-3);
   border-color: var(--border-strong);
@@ -1449,6 +1454,7 @@ input {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  gap: 0;
   padding: 10px 12px 10px 14.5px;
   border: 1px solid var(--role-border-subtle);
   border-radius: var(--radius-card);
@@ -1477,19 +1483,6 @@ input {
   color: var(--text-muted);
 }
 
-.session-entry.external {
-  border-style: dashed;
-  border-color: var(--role-border-strong);
-}
-
-.session-entry.external:hover:not([aria-current='true']) {
-  border-color: var(--text-muted);
-}
-
-.session-entry.external[aria-current='true'] {
-  border-color: var(--role-accent);
-  box-shadow: inset 3.5px 0 0 0 var(--role-accent), var(--shadow-card);
-}
 
 .session-entry:focus-visible {
   outline-offset: calc(-1 * var(--focus-ring-width));
@@ -1861,7 +1854,7 @@ input {
 
 .session-card.open {
   background-color: var(--role-card-active);
-  box-shadow: inset 2.5px 0 0 0 var(--role-accent), var(--shadow-card);
+  box-shadow: inset 3.5px 0 0 0 var(--role-accent), var(--shadow-card);
 }
 
 .session-card > .session-entry,

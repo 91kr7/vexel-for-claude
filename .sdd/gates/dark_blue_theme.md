@@ -39,3 +39,4 @@
 | 2026-11-16 | dev session-cards | question tester Q1 | decided | Open needs-input card shows the full 3.5px accent bar inside its amber border; source REQ-19 |
 | 2026-11-16 | dev session-cards | question tester Q2 | decided | Open card time turns secondary like the label: spec aligned to the existing behaviour, least change |
 | 2026-11-16 | dev session-cards | question tester Q3 | decided | Top bar colour asserts in light-theme and windows-look are stale (top-bar spec `--role-chrome`): tester; Plan Usage ring is a defect: developer |
+| 2026-11-16 | dev session-cards | G4 development (fix) | pass | CSS fixes and INT-9 in styles.css; session-list and plan-usage-button specs; build green |

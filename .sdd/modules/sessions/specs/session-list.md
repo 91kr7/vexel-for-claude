@@ -36,7 +36,7 @@ Entry row (every entry but the hosted needs-input card): a button with the class
 - line 1, 8 px gaps → the StateBadge `dot` (8 px), the folder name (13 px, weight 600, `folderNameOf`, tooltip: the full folder path), the star place, then on the right the StateBadge `inline` name (11 px, weight 500, in the state colour).
 - line 2, 4 px below and 16 px in from the left → the label (11.5/16 px, `--text-muted`, `--text-secondary` when open, tooltip: the full label).
 - a working entry → its tool line and its progress bar between line 2 and line 3.
-- line 3, 8 px below, 16 px in, 6 px padding over a 1 px `--role-border-subtle` top border → on the left the context percentage and the estimated cost, 6 px apart; on the right the RelativeTime of the last activity (`--text-muted`). It is there also with no usage: then only the time shows.
+- line 3, 8 px below, 16 px in, 6 px padding over a 1 px `--role-border-subtle` top border → on the left the context percentage and the estimated cost, 6 px apart; on the right the RelativeTime of the last activity (`--text-muted`, `--text-secondary` when open). It is there also with no usage: then only the time shows.
 - percentage, cost and time → mono 10.5 px with tabular figures.
 - context percentage → only when the summary has `usage.context`: "<percent>%" by `percentOf`. Colour by `usageLevelOf`: `normal` in `--text-secondary` (`--role-accent`, weight 600, when open), `warning` in amber-400, `error` in rose-400. No `usage.context` → nothing, never "0%". Every state shows it, ended included.
 - estimated cost → only when the summary has `usage.cost`: the text of `costText(usage.cost.usd)`, e.g. "$1.27", "<$0.01", or "—" when there is no `usd`. In `--text-secondary`.
@@ -55,11 +55,11 @@ Entry variants:
 
 | Entry | Classes | Look |
 |-------|---------|------|
-| open (`aria-current="true"`) | — | the open card above; label and tool line in `--text-secondary` |
+| open (`aria-current="true"`) | — | the open card above; label, tool line and line-3 time in `--text-secondary` |
 | ended | `ended` | text in `--text-muted` also on hover; zinc dot. Open → `--text-secondary` |
-| external | `external` | 1 px dashed `--role-border-strong` border all around; hover → dashed `--text-muted` border. Open → the dashed border takes `--role-accent` and the 3.5 px accent bar is drawn inside it |
-| ended, hosted or external | `ended` (plus `external`) | plus EndedEntryActions beside the entry button: "Dismiss" always, "Resume" only when the summary has `resumable: true`. An ended external row keeps the dashed border |
-| external, `needs_input` | `external needs-input` | dashed row with the amber dot; the chip "External" (`.mono-chip` on surface 2) after the folder name; "Permission for **<tool>**" in mono amber-300 in place of the label when `waitingTool` is known; no "Reply" |
+| external | `external` | the solid 1 px card border of every other card, in every state: inactive, hover, open, ended, needing input. No dashed border |
+| ended, hosted or external | `ended` (plus `external`) | plus EndedEntryActions beside the entry button: "Dismiss" always, "Resume" only when the summary has `resumable: true`. An ended external card keeps the solid card border |
+| external, `needs_input` | `external needs-input` | card with the amber dot; the chip "External" (`.mono-chip` on surface 2) after the folder name; "Permission for **<tool>**" in mono amber-300 in place of the label when `waitingTool` is known; no "Reply" |
 
 Hosted needs-input card (look of `#permission-banner`): a block with the class `session-card`.
 - a card as above, with its amber border kept: 1 px amber-500 border at 40 %, amber-400 on hover. No shadow while closed. Items 4 px apart.
@@ -67,7 +67,7 @@ Hosted needs-input card (look of `#permission-banner`): a block with the class `
 - then the needs-input line → "Permission for **<tool>** · <time>", with the tool in bold. With no `waitingTool`, the label takes the place of "Permission for <tool>". `<time>` is the RelativeTime of the last activity. Look of `#perm-cmd`: mono 12/16 px, amber-300, `--bg-canvas`, `--border-subtle` border, 4 px radius, padding 6 × 10 px, one line cut with an ellipsis.
 - then, 12 px below and on the right, "Reply" → `.button-primary` in mono weight 500, padding 6 × 14 px, scaled to 95 % while pressed.
 - the card button is described by the needs-input line (`aria-describedby`).
-- the open card has `aria-current="true"` on its button, the "active card" surface, the 3.5 px accent bar on its left edge and the card shadow. Its border stays amber.
+- the open card has `aria-current="true"` on its button, the "active card" surface, the full 3.5 px accent bar inside its 1 px amber border on the left edge, and the card shadow. Its border stays amber.
 
 Session star (every entry, rows and the needs-input card, in every group):
 - FavoriteButton, "Remove Favorite" when the entry has `favorite: true`. It sits right after the folder name on line 1 of a row, and right after the folder name in the needs-input card. It is a sibling of the entry button, never inside it.
@@ -126,7 +126,7 @@ Drag feedback (the mock has no drag state):
 - Marking or unmarking never moves an entry or changes its group.
 - Renaming never moves an entry: the order comes from `order` and the last activity, not from the label.
 - The needs-input entries are the most visible of the list: amber, first group.
-- An external entry is told apart without colour: the dashed border, and the "External" chip when it needs input.
+- An external entry is told apart without colour: its group heading, and the "External" chip when it needs input. Its border is the same as every other card.
 - The state of an entry is readable without colour: its name is always shown.
 
 ## Assumptions
@@ -157,4 +157,4 @@ Drag feedback (the mock has no drag state):
 - `plan-keyboard_shortcuts/REQ-16`, `plan-keyboard_shortcuts/REQ-17`, `plan-keyboard_shortcuts/REQ-18`
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-10`
 - `plan-ui_restyle/REQ-29`, `plan-ui_restyle/REQ-31`, `plan-ui_restyle/REQ-32`
-- `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-18` to `plan-dark_blue_theme/REQ-22`
+- `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-18` to `plan-dark_blue_theme/REQ-22`, `plan-dark_blue_theme/REQ-43`
