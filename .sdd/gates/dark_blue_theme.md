@@ -66,3 +66,5 @@
 | 2026-11-16 | plan | state label (correction) | human decision | The move is in the session header, not the cards: state pill goes left, after the session name |
 | 2026-11-16 | plan | header order | decided | Name, state pill, line pill; line pill truncates first; actions stay right |
 | 2026-11-16 | plan | G3 coverage (REQ-52 corrected) | pass | INT-6 on SessionHeader.tsx; cards unchanged; feature name left as is |
+| 2026-11-16 | plan | card divider | human decision | No horizontal divider above the metrics line of session cards; refines REQ-21 |
+| 2026-11-16 | plan | G3 coverage (REQ-53) | pass | REQ-53 → list-polish INT-7 |

@@ -44,7 +44,7 @@ spacing, corner radii, borders and shadows, unless a requirement says colours.
 | REQ-18 | Each session entry is a card with 7px corners and a 1px border. |
 | REQ-19 | The active card has an accent border, a 3.5px accent bar on its left edge, a slightly lighter surface and a soft shadow. |
 | REQ-20 | An inactive card changes its surface and border on hover. |
-| REQ-21 | A card shows the status dot, name, star and status label on line one, the last prompt on line two, and the metrics on line three with a top border. |
+| REQ-21 | A card shows the status dot, name, star and status label on line one, the last prompt on line two, and the metrics on line three; its top border was withdrawn by human decision (2026-11-16), see REQ-53. |
 | REQ-22 | Numbers in the cards use the monospace font with tabular figures. |
 | REQ-23 | The status dot of a working session pulses softly. |
 | REQ-24 | The status dot does not pulse when the system asks for reduced motion. |
@@ -101,6 +101,7 @@ Human decision, 2026-11-16.
 | REQ-50 | In a session card, the context percentage and the cost on line 3 use a smaller text than today. |
 | REQ-51 | Withdrawn by human decision (2026-11-16): line 3 keeps its current position. |
 | REQ-52 | In the session header, the state pill sits on the left, right after the session name and before the line pill, while the actions stay on the right. |
+| REQ-53 | No session card shows a horizontal divider above line 3, and the spacing stays as today. |
 
 Colours of REQ-36:
 

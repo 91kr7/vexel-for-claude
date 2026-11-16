@@ -1,7 +1,7 @@
 ---
 batch: list-polish
 feature: List spacing and card metrics
-closed_req: [REQ-49, REQ-50, REQ-52]
+closed_req: [REQ-49, REQ-50, REQ-52, REQ-53]
 depends: [session-cards, list-cards, dark-blue]
 ---
 
@@ -28,6 +28,7 @@ Human decision, 2026-11-16. Two fixes to the lists of batches session-cards and 
 | INT-4 | modify | `src/web/git/RepositoryList.tsx`, `src/web/git/ChangesTab.tsx`, `src/web/git/CommitDetail.tsx`, `src/web/git/HistoryTab.tsx`, `src/web/plan-usage/PlanUsagePopover.tsx` | The scroll areas of these lists use the rule of INT-1. | REQ-49 | INT-1 |
 | INT-5 | modify | `src/web/sessions/SessionList.tsx` | Line 3: percentage and cost use a smaller mono size (about 10 px), with tabular figures as before. Position and time size do not change. | REQ-50 | — |
 | INT-6 | modify | `src/web/sessions/SessionHeader.tsx` | The state pill moves from the right group to the left group, between the session name and the line pill. The line pill shrinks first; the state pill is never cut. | REQ-52 | — |
+| INT-7 | modify | `src/web/sessions/SessionList.tsx` | Line 3 of every card (hosted, external, needs-input) loses its top border. The spacing above it stays as today. | REQ-53 | INT-5 |
 
 ## Human acceptance
 
@@ -40,10 +41,11 @@ Human decision, 2026-11-16. Two fixes to the lists of batches session-cards and 
 
 ### Scenario: the card metrics are smaller
 
-- REQ → REQ-50
+- REQ → REQ-50, REQ-53
 - Given → a session with context usage and a cost
 - When → the user looks at its card in the session list
 - Then → line 3 shows the percentage and the cost in a smaller text, in the same place as before
+- And → no horizontal line separates line 3 from the lines above (REQ-53)
 
 ### Scenario: the state pill follows the session name in the header
 

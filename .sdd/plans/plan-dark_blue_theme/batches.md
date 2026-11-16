@@ -14,7 +14,7 @@ status: validated
 | session-view | Session view: header and terminal frame | REQ-1, REQ-2, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29 | shared-shapes, window-frame, session-cards | certified | The open session shows the mock's header and terminal frame |
 | list-cards | Lists aligned to the session cards | REQ-44, REQ-45, REQ-46, REQ-47, REQ-48 | shared-shapes, session-cards | certified | The Resume dialog shows its sessions as cards |
 | dark-blue | Dark Blue theme | REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42 | shared-shapes, window-frame, session-cards, session-view, list-cards | implemented | The user switches to Dark Blue |
-| list-polish | List spacing and card metrics | REQ-49, REQ-50, REQ-52 | session-cards, list-cards, dark-blue | todo | The scrollbar does not touch the cards |
+| list-polish | List spacing and card metrics | REQ-49, REQ-50, REQ-52, REQ-53 | session-cards, list-cards, dark-blue | todo | The scrollbar does not touch the cards |
 
 Execution order: shared-shapes → window-frame → session-cards → session-view → list-cards → dark-blue → list-polish.
 session-cards depends on window-frame because both change `src/web/AppLayout.tsx`.
@@ -63,6 +63,8 @@ session-cards depends on window-frame because both change `src/web/AppLayout.tsx
   cards do not change. Order name, state pill, line pill; the line pill is cut first (gatekeeper
   decision). It applies to hosted and external sessions, which share SessionHeader. Not a
   departure.
+- **No divider above card line 3 (REQ-53).** Human decision, 2026-11-16, in batch list-polish. It
+  refines REQ-21: the top border of line 3 is withdrawn, the spacing stays. All card variants.
 - **Confirmed by the gatekeeper (2026-11-16):** the Windows 11 look rule, the toast above the
   snackbar, and the client's own text on card line 2 and in the header pill.
 - **Shortcut text.** The `toggle-theme` row reads "Light/Dark/Dark Blue theme". Keys do not change.
@@ -135,6 +137,7 @@ session-cards depends on window-frame because both change `src/web/AppLayout.tsx
 | REQ-50 | batch-list-polish/INT-5 | list-polish |
 | REQ-51 | withdrawn by human decision, no INT | — |
 | REQ-52 | batch-list-polish/INT-6 | list-polish |
+| REQ-53 | batch-list-polish/INT-7 | list-polish |
 
 - Every REQ has at least one INT. Every INT serves at least one REQ; there is no enabling-only INT.
 - REQ-1 and REQ-2 build up over four batches and close in session-view.
