@@ -13,3 +13,4 @@
 | 2026-11-16 | plan | G3 coverage | pass | Test-file INTs follow the idiom of earlier plans; `CommitDetail.tsx` list move matches the human decision "whole explorer" |
 | 2026-11-16 | dev | question developer: licences of inlined packages | decided | Regenerate `docs/dependency-licenses.md` (existing record, "regenerate when dependencies change"); no custom Vite plugin |
 | 2026-11-16 | dev | G4 batch-open-source-explorer | pass | Build green; `docs/dependency-licenses.md` and `src/web/styles.css` explained; chunk-size warning not a REQ |
+| 2026-11-16 | dev | G5 batch-open-source-explorer | pass | 177 unit + 27 e2e green, re-run by gatekeeper |

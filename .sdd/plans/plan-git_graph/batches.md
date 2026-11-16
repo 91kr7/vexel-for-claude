@@ -8,7 +8,7 @@ Requirements: `requirements.md`. Batch files: `batches/`.
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| `batch-open-source-explorer` | Open-source explorer | REQ-1, REQ-2 | — | implemented | The user sees the uncommitted changes and their diff on the new components |
+| `batch-open-source-explorer` | Open-source explorer | REQ-1, REQ-2 | — | certified | The user sees the uncommitted changes and their diff on the new components |
 | `batch-graph-history` | Graph history | REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19 | `batch-open-source-explorer` | todo | The user reads the history of a branch with a merge as a graph |
 
 Order: `batch-open-source-explorer` → `batch-graph-history`. The second batch reuses the list component, the licence texts and the licence notices of the first.
