@@ -4,6 +4,7 @@
 // Several repositories of a workspace folder in the header: plan-multi_repo_workspace, batch repo-detection.
 // The changes of every repository, one group per repository: plan-multi_repo_workspace, batch grouped-changes.
 // The combined history of every repository in one graph: plan-multi_repo_workspace, batch combined-history.
+// The repository filter of the header: plan-multi_repo_workspace, batch repo-filter.
 // Repositories are real git repositories in temp folders. External sessions use fixture files in E2E_CLAUDE_DIR.
 import { type ChildProcess, execFileSync, spawn, spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
@@ -1164,7 +1165,7 @@ async function newWorkspace(name: string): Promise<string> {
 
 const repositoryList = (page: Page) => explorer(page).getByRole('list', { name: 'Repositories', exact: true });
 const repositoryEntries = (page: Page) => repositoryList(page).getByRole('listitem');
-const repositoryEntry = (page: Page, root: string) => repositoryEntries(page).and(page.getByTitle(root, { exact: true }));
+const repositoryEntry = (page: Page, root: string) => repositoryEntries(page).filter({ has: page.getByTitle(root, { exact: true }) });
 /** The relative path of each entry of the repository list, in order. */
 const listedPaths = (page: Page) => repositoryEntries(page).locator('.git-repository-path').allTextContents();
 
@@ -1594,5 +1595,100 @@ test.describe('Combined history of a workspace with several repositories', () =>
     await expect(explorer(page).locator('[aria-label="Commits"]')).not.toContainText('combined-single');
     await expect(commitRows(page).first().getByText('main', { exact: true })).toBeVisible();
     expect(shownNodes(await readGraph(page))).toHaveLength(5);
+  });
+});
+
+/** The workspace of the filter scenarios: `api`, `tools` and `web/app`, each with a commit `<name> commit` and an unstaged `<name>-change.ts`. */
+async function filterWorkspace(name: string): Promise<{ ws: string; api: string; tools: string; app: string }> {
+  const ws = await newPlainFolder(name);
+  const [api, tools, app] = await Promise.all(['api', 'tools', 'web/app'].map((relative) => repositoryAt(ws, relative)));
+  for (const root of [api!, tools!, app!]) {
+    const short = path.basename(root);
+    await writeFile(path.join(root, 'README.md'), `hello ${short}\n`);
+    git(root, 'commit', '-q', '-a', '-m', `${short} commit`);
+    await writeFile(path.join(root, `${short}-change.ts`), 'export {};\n');
+  }
+  return { ws, api: api!, tools: tools!, app: app! };
+}
+
+const allRepositories = (page: Page) => explorer(page).getByRole('button', { name: 'All repositories', exact: true });
+const filterToggle = (page: Page, root: string) => repositoryEntry(page, root).getByRole('button');
+/** The repository groups shown in "Changes", in order. */
+const shownGroups = (page: Page) => explorer(page).locator('.changes-repository-title').allTextContents();
+/** The repository of each commit row of "History", in order, with no repeat. */
+const historyRepositories = async (page: Page) => [...new Set(await commitRows(page).locator('.history-commit-repository').allTextContents())].sort();
+
+/** Both tabs show exactly the repositories `names` (group titles and history rows). */
+async function expectShown(page: Page, names: string[]): Promise<void> {
+  await tab(page, 'Changes').click();
+  for (const name of ['api', 'tools', 'app']) await expect(repositoryGroup(page, name)).toHaveCount(names.includes(name) ? 1 : 0);
+  for (const name of names) await expect(repositoryGroup(page, name)).toContainText(`${name}-change.ts`);
+  await tab(page, 'History').click();
+  await expect(commitRows(page)).toHaveCount(2 * names.length);
+  expect(await historyRepositories(page)).toEqual([...names].sort());
+  for (const name of names) await expect(commitRows(page).filter({ hasText: `${name} commit` })).toHaveCount(1);
+  await tab(page, 'Changes').click();
+}
+
+test.describe('Repository filter of a workspace with several repositories', () => {
+  // plan-multi_repo_workspace/REQ-28, REQ-29, REQ-30: human acceptance scenarios "The user filters the git explorer by one repository" and "The user clears the filter"
+  test('picking web/app, then api, filters both tabs; the filter survives closing the panel, and "All repositories" clears it', async ({ page, request }) => {
+    const { ws, api, tools, app } = await filterWorkspace('filtered');
+    await openExplorer(page, request, ws);
+    await expect.poll(() => listedPaths(page)).toEqual(['api', 'tools', 'web/app']);
+    await expect(allRepositories(page)).toHaveAttribute('aria-pressed', 'true');
+    await expectShown(page, ['api', 'tools', 'app']);
+    const appColour = await markColour(repositoryEntry(page, app));
+
+    await filterToggle(page, app).click();
+    await expect(filterToggle(page, app)).toHaveAttribute('aria-pressed', 'true');
+    await expect(allRepositories(page)).toHaveAttribute('aria-pressed', 'false');
+    await expectShown(page, ['app']);
+    // The chosen repository keeps the colour of its position in the full list.
+    expect(await drawnColours(repositoryGroup(page, 'app').getByTitle(app, { exact: true }))).toContain(appColour);
+
+    await filterToggle(page, api).click();
+    await expect(filterToggle(page, api)).toHaveAttribute('aria-pressed', 'true');
+    await expect(filterToggle(page, tools)).toHaveAttribute('aria-pressed', 'false');
+    await expectShown(page, ['api', 'app']);
+    expect(await shownGroups(page), 'list order').toEqual(['api', 'app']);
+
+    // The filter lasts while the page stays open.
+    await explorerButton(page).click();
+    await expect(explorer(page)).toHaveCount(0);
+    await explorerButton(page).click();
+    await expect(filterToggle(page, app)).toHaveAttribute('aria-pressed', 'true');
+    await expect(filterToggle(page, api)).toHaveAttribute('aria-pressed', 'true');
+    await expectShown(page, ['api', 'app']);
+
+    await allRepositories(page).click();
+    await expect(allRepositories(page)).toHaveAttribute('aria-pressed', 'true');
+    for (const root of [api, tools, app]) await expect(filterToggle(page, root)).toHaveAttribute('aria-pressed', 'false');
+    await expectShown(page, ['api', 'tools', 'app']);
+  });
+
+  // plan-multi_repo_workspace/REQ-28, REQ-30 (Filter life): a repository that a refresh removes leaves the filter
+  test('a chosen repository deleted from the folder leaves the filter after "Refresh", and every other repository shows', async ({ page, request }) => {
+    const { ws, app } = await filterWorkspace('filter-removed');
+    await openExplorer(page, request, ws);
+    await expect.poll(() => listedPaths(page)).toEqual(['api', 'tools', 'web/app']);
+    await filterToggle(page, app).click();
+    await expectShown(page, ['app']);
+
+    await rm(app, { recursive: true, force: true });
+    await refreshButton(page).click();
+    await expect.poll(() => listedPaths(page)).toEqual(['api', 'tools']);
+    await expect(allRepositories(page)).toHaveAttribute('aria-pressed', 'true');
+    await expectShown(page, ['api', 'tools']);
+  });
+
+  // plan-multi_repo_workspace/REQ-31: human acceptance scenario "A single repository has no filter"
+  test('a single repository shows no repository list and no filter control', async ({ page, request }) => {
+    const repo = await newRepository('filter-single');
+    await openExplorer(page, request, repo);
+    await expectRepositoryShown(page, repo, 'main');
+    await expect(repositoryList(page)).toHaveCount(0);
+    await expect(allRepositories(page)).toHaveCount(0);
+    await expect(explorer(page).locator('[aria-pressed]')).toHaveCount(0);
   });
 });

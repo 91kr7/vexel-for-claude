@@ -412,7 +412,7 @@ describe('GitExplorerPanel with one or several repositories', () => {
     const { region } = renderWith({ lookup: several, onRefresh });
     const list = repositoryList(region());
     expect(list, 'a list named "Repositories"').not.toBeNull();
-    const entries = [...list!.querySelectorAll('li')];
+    const entries = [...list!.querySelectorAll('li button')];
     expect(entries.map((e) => e.getAttribute('title'))).toEqual([`${WS}/api`, `${WS}/web/app`]);
     expect(entries[0]!.textContent).toContain('api');
     expect(entries[1]!.textContent).toContain('web/app');
@@ -634,5 +634,253 @@ describe('GitExplorerPanel combined history', () => {
     await until(() => callsTo('/api/git/history') === 4);
     expect(pathsOf('/api/git/history').slice(2).sort()).toEqual([`${WS}/api`, `${WS}/web/app`]);
     expect(historyRows(region()), 'the commits stay until the refresh answers').toHaveLength(2);
+  });
+});
+
+const three: RepositoryLookupState = {
+  status: 'repositories',
+  repositories: [
+    { root: `${WS}/api`, name: 'api', path: 'api', branch: { kind: 'branch', name: 'main' } },
+    { root: `${WS}/tools`, name: 'tools', path: 'tools', branch: { kind: 'branch', name: 'main' } },
+    { root: `${WS}/web/app`, name: 'app', path: 'web/app', branch: { kind: 'branch', name: 'main' } },
+  ],
+};
+const THREE_ROOTS = [`${WS}/api`, `${WS}/tools`, `${WS}/web/app`];
+const NAMES: Record<string, string> = { [`${WS}/api`]: 'api', [`${WS}/tools`]: 'tools', [`${WS}/web/app`]: 'app' };
+const COMMIT_CHAR: Record<string, string> = { [`${WS}/api`]: 'a', [`${WS}/tools`]: 'b', [`${WS}/web/app`]: 'c' };
+// The filter is kept per folder for the life of the module, so each test uses its own folder.
+let filterFolderCount = 0;
+const newFilterFolder = () => `/home/dev/ws-filter-${++filterFolderCount}`;
+/** Answers every request to `pathname` for `root`, the ones already answered included (a no-op for those). */
+function answerAllOf(pathname: string, root: string, body: unknown) {
+  fetchMock.mock.calls.forEach((call, index) => {
+    const url = new URL(String(call[0]), 'http://localhost');
+    if (url.pathname === pathname && url.searchParams.get('path') === root) pending[index]!(new Response(JSON.stringify(body)));
+  });
+}
+const answerChangesOfAll = () => THREE_ROOTS.forEach((root) => answerAllOf('/api/git/changes', root, { changes: [changeEntry(`${NAMES[root]}.ts`)] }));
+const answerHistoryOfAll = () =>
+  THREE_ROOTS.forEach((root) =>
+    answerAllOf('/api/git/history', root, { commits: [dated(COMMIT_CHAR[root]!, 5, `${NAMES[root]} commit`)], hasMore: false }),
+  );
+const filterEntries = (region: HTMLElement) => [...repositoryList(region)!.querySelectorAll<HTMLElement>('li button')];
+const entryOf = (region: HTMLElement, root: string) => filterEntries(region).find((b) => b.getAttribute('title') === root)!;
+const allRepositories = (region: HTMLElement) => [...region.querySelectorAll<HTMLElement>('button')].find((b) => b.textContent?.trim() === 'All repositories');
+const groupNames = (region: HTMLElement) =>
+  ['api', 'tools', 'app'].filter((name) => region.querySelector(`section[aria-label="${name}"]`) !== null);
+const pathsAfter = (pathname: string, start: number) => pathsOf(pathname).slice(start);
+
+describe('GitExplorerPanel repository filter', () => {
+  async function openFiltered(folder = newFilterFolder(), extra: Partial<React.ComponentProps<typeof GitExplorerPanel>> = {}) {
+    const view = renderWith({ lookup: three, folder, ...extra });
+    await until(() => callsTo('/api/git/changes') === 3);
+    answerChangesOfAll();
+    await until(() => groupNames(view.region()).length === 3);
+    return view;
+  }
+  async function showHistory(region: () => HTMLElement) {
+    flushSync(() => tabNamed(region(), 'History').click());
+    await until(() => pending.length === fetchMock.mock.calls.length && paths().includes('/api/git/history'));
+    answerHistoryOfAll();
+    await settlePanel();
+  }
+  const historyTexts = (region: HTMLElement) => historyRows(region).map((row) => row.textContent ?? '');
+
+  // plan-multi_repo_workspace/REQ-28, REQ-29
+  it('shows only the chosen repository in "Changes" and reads only its history in "History"', async () => {
+    const { region } = await openFiltered();
+    flushSync(() => entryOf(region(), `${WS}/web/app`).click());
+    answerChangesOfAll();
+    await until(() => groupNames(region()).join() === 'app');
+    expect(region().textContent).not.toContain('api.ts');
+    expect(region().textContent).not.toContain('tools.ts');
+    expect(entryOf(region(), `${WS}/web/app`).getAttribute('aria-pressed')).toBe('true');
+    expect(allRepositories(region())!.getAttribute('aria-pressed')).toBe('false');
+
+    flushSync(() => tabNamed(region(), 'History').click());
+    await until(() => callsTo('/api/git/history') >= 1);
+    await settlePanel();
+    expect(pathsOf('/api/git/history')).toEqual([`${WS}/web/app`]);
+    answerHistoryOfAll();
+    await until(() => historyRows(region()).length === 1);
+    expect(historyTexts(region())[0]).toContain('app commit');
+  });
+
+  // plan-multi_repo_workspace/REQ-28, REQ-29
+  it('shows two chosen repositories in both tabs, in list order', async () => {
+    const { region } = await openFiltered();
+    flushSync(() => entryOf(region(), `${WS}/web/app`).click());
+    flushSync(() => entryOf(region(), `${WS}/api`).click());
+    answerChangesOfAll();
+    await until(() => groupNames(region()).join() === 'api,app');
+    const apiGroup = region().querySelector('section[aria-label="api"]')!;
+    const appGroup = region().querySelector('section[aria-label="app"]')!;
+    expect(apiGroup.compareDocumentPosition(appGroup) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    await showHistory(region);
+    expect([...pathsOf('/api/git/history')].sort()).toEqual([`${WS}/api`, `${WS}/web/app`]);
+    await until(() => historyRows(region()).length === 2);
+    const texts = historyTexts(region()).join('|');
+    expect(texts).toContain('api commit');
+    expect(texts).toContain('app commit');
+    expect(texts).not.toContain('tools commit');
+  });
+
+  // plan-multi_repo_workspace/REQ-23 with the filter: the colour of the position in the full list
+  it('keeps the colour of the chosen repository from its position in the full list', async () => {
+    const { region } = await openFiltered();
+    const headerColor = markColor(entryOf(region(), `${WS}/web/app`));
+    const firstColor = markColor(entryOf(region(), `${WS}/api`));
+    flushSync(() => entryOf(region(), `${WS}/web/app`).click());
+    answerChangesOfAll();
+    await until(() => groupNames(region()).join() === 'app');
+    expect(headerColor).toBeTruthy();
+    expect(headerColor).not.toBe(firstColor);
+    expect(markColor(region().querySelector('section[aria-label="app"]'))).toBe(headerColor);
+
+    await showHistory(region);
+    await until(() => historyRows(region()).length === 1);
+    expect(markColor(historyRows(region())[0])).toBe(headerColor);
+  });
+
+  // plan-multi_repo_workspace/REQ-28 (spec GitExplorerPanel): one chosen repository keeps the look of several
+  it('keeps the repository group and the row mark with one chosen repository', async () => {
+    const { region } = await openFiltered();
+    flushSync(() => entryOf(region(), `${WS}/tools`).click());
+    answerChangesOfAll();
+    await until(() => groupNames(region()).join() === 'tools');
+    await showHistory(region);
+    await until(() => historyRows(region()).length === 1);
+    const row = historyRows(region())[0]!;
+    expect(row.querySelector('.git-repository-mark')).not.toBeNull();
+    expect(row.querySelector(`[title="${WS}/tools"]`)?.textContent).toBe('tools');
+  });
+
+  it('shows a history error of the one chosen repository as "<name>: <message>"', async () => {
+    const { region } = await openFiltered();
+    flushSync(() => entryOf(region(), `${WS}/tools`).click());
+    flushSync(() => tabNamed(region(), 'History').click());
+    await until(() => callsTo('/api/git/history') === 1);
+    answerPathOf('/api/git/history', `${WS}/tools`, { error: 'git_error', message: 'fatal: bad object HEAD' }, 500);
+    await until(() => historyPanelOf(region()).querySelector('[role="alert"]') !== null);
+    expect(historyPanelOf(region()).querySelector('[role="alert"]')!.textContent).toBe('tools: fatal: bad object HEAD');
+  });
+
+  // plan-multi_repo_workspace/REQ-30
+  it('shows every repository again in both tabs on "All repositories", reading again the ones shown again', async () => {
+    const { region } = await openFiltered();
+    flushSync(() => entryOf(region(), `${WS}/web/app`).click());
+    answerChangesOfAll();
+    await until(() => groupNames(region()).join() === 'app');
+    await showHistory(region);
+    await until(() => historyRows(region()).length === 1);
+    const changesBefore = callsTo('/api/git/changes');
+
+    flushSync(() => allRepositories(region())!.click());
+    expect(allRepositories(region())!.getAttribute('aria-pressed')).toBe('true');
+    expect(filterEntries(region()).map((e) => e.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false']);
+    await until(() => pathsAfter('/api/git/changes', changesBefore).includes(`${WS}/tools`));
+    expect(pathsAfter('/api/git/changes', changesBefore)).toContain(`${WS}/api`);
+    await until(() => pathsOf('/api/git/history').includes(`${WS}/api`) && pathsOf('/api/git/history').includes(`${WS}/tools`));
+    answerChangesOfAll();
+    answerHistoryOfAll();
+    await until(() => historyRows(region()).length === 3);
+    expect(groupNames(region())).toEqual(['api', 'tools', 'app']);
+  });
+
+  // plan-multi_repo_workspace/REQ-30: a filter left with no repository counts as no filter
+  it('shows every repository when the chosen ones are all toggled off', async () => {
+    const { region } = await openFiltered();
+    flushSync(() => entryOf(region(), `${WS}/web/app`).click());
+    answerChangesOfAll();
+    await until(() => groupNames(region()).join() === 'app');
+    flushSync(() => entryOf(region(), `${WS}/web/app`).click());
+    expect(allRepositories(region())!.getAttribute('aria-pressed')).toBe('true');
+    await until(() => callsTo('/api/git/changes') > 4);
+    answerChangesOfAll();
+    await until(() => groupNames(region()).length === 3);
+  });
+
+  // plan-multi_repo_workspace/REQ-28 (Filter life): a repository that a refresh removes leaves the filter
+  it('shows every remaining repository when the chosen one is gone from a new lookup', async () => {
+    const folder = newFilterFolder();
+    const { region, update } = await openFiltered(folder);
+    flushSync(() => entryOf(region(), `${WS}/web/app`).click());
+    answerChangesOfAll();
+    await until(() => groupNames(region()).join() === 'app');
+    const lookup: RepositoryLookupState = { status: 'repositories', repositories: three.status === 'repositories' ? three.repositories.slice(0, 2) : [] };
+    update({ lookup, folder });
+    expect(filterEntries(region())).toHaveLength(2);
+    expect(allRepositories(region())!.getAttribute('aria-pressed')).toBe('true');
+    await until(() => pathsOf('/api/git/changes').filter((p) => p === `${WS}/tools`).length >= 2);
+    answerChangesOfAll();
+    await until(() => groupNames(region()).join() === 'api,tools');
+  });
+
+  // plan-multi_repo_workspace/REQ-28 (Filter life): the filter survives closing and opening the panel
+  it('keeps the filter of the folder when the panel is closed and opened again', async () => {
+    const folder = newFilterFolder();
+    const first = await openFiltered(folder);
+    flushSync(() => entryOf(first.region(), `${WS}/web/app`).click());
+    first.unmount();
+    const before = callsTo('/api/git/changes');
+    const second = renderWith({ lookup: three, folder });
+    expect(entryOf(second.region(), `${WS}/web/app`).getAttribute('aria-pressed')).toBe('true');
+    await until(() => callsTo('/api/git/changes') > before);
+    await settlePanel();
+    expect(pathsAfter('/api/git/changes', before)).toEqual([`${WS}/web/app`]);
+    answerChangesOfAll();
+    await until(() => groupNames(second.region()).join() === 'app');
+  });
+
+  it('starts with no filter on another folder', async () => {
+    const first = await openFiltered();
+    flushSync(() => entryOf(first.region(), `${WS}/web/app`).click());
+    first.unmount();
+    const second = renderWith({ lookup: three, folder: newFilterFolder() });
+    expect(allRepositories(second.region())!.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  // plan-multi_repo_workspace/REQ-28, REQ-29: "Refresh" reads only the chosen repositories
+  it('reads only the chosen repositories again on "Refresh"', async () => {
+    const onRefresh = vi.fn();
+    const { region } = await openFiltered(undefined, { onRefresh });
+    flushSync(() => entryOf(region(), `${WS}/web/app`).click());
+    answerChangesOfAll();
+    await showHistory(region);
+    await until(() => historyRows(region()).length === 1);
+    const changesBefore = callsTo('/api/git/changes');
+    const historyBefore = callsTo('/api/git/history');
+    flushSync(() => refreshButton(region())!.click());
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+    await until(() => callsTo('/api/git/changes') > changesBefore && callsTo('/api/git/history') > historyBefore);
+    await settlePanel();
+    expect(pathsAfter('/api/git/changes', changesBefore)).toEqual([`${WS}/web/app`]);
+    expect(pathsAfter('/api/git/history', historyBefore)).toEqual([`${WS}/web/app`]);
+  });
+
+  // plan-multi_repo_workspace/REQ-11 with the filter: the turn end still watches every covered root
+  it('refreshes on a turn end in a repository left out of the filter', async () => {
+    const onRefresh = vi.fn();
+    const folder = newFilterFolder();
+    const props = { lookup: three, folder, onRefresh };
+    const { region, update } = await openFiltered(folder, { onRefresh, sessions: [summary('b', `${WS}/api/src`, 'working')] });
+    flushSync(() => entryOf(region(), `${WS}/web/app`).click());
+    answerChangesOfAll();
+    await settlePanel();
+    const before = callsTo('/api/git/changes');
+    update({ ...props, sessions: [summary('b', `${WS}/api/src`, 'idle')] });
+    await until(() => callsTo('/api/git/changes') > before);
+    await settlePanel();
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+    expect(pathsAfter('/api/git/changes', before)).toEqual([`${WS}/web/app`]);
+  });
+
+  // plan-multi_repo_workspace/REQ-31
+  it('offers no repository list and no "All repositories" with a single repository', () => {
+    const { region } = renderWith({ lookup: repository, folder: newFilterFolder() });
+    expect(repositoryList(region())).toBeNull();
+    expect(allRepositories(region())).toBeUndefined();
+    expect([...region().querySelectorAll('button')].some((b) => b.hasAttribute('aria-pressed'))).toBe(false);
   });
 });
