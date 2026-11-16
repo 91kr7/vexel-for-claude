@@ -21,7 +21,7 @@ Description:
 - the frame is 760 × 540 px; each side is at most the window minus 32 px. The size does not change with the menu.
 
 Shows:
-- on the left, a vertical tab list named "Settings sections" (`aria-orientation="vertical"`) with the items "Appearance", "Shortcuts" and "Updates", in this order. The chosen item has `aria-selected="true"`, an accent fill, an accent bar on its left and bold text.
+- on the left, a vertical tab list named "Settings sections" (`aria-orientation="vertical"`) with the items "Appearance", "Shortcuts" and "Updates", in this order. Each item has `--radius-card` corners; on hover → `--role-card` fill and a `--role-border-strong` border. The chosen item has `aria-selected="true"`, an accent fill with a `--role-accent-border` border, an accent bar on its left and bold text. The menu column is on `--role-list`.
 - on the right, one tab panel, labelled by its item. It has a header with the menu title and an optional action, and a body that scrolls on its own when the content does not fit. The popup itself never scrolls.
   - "Appearance" → title "Appearance"; the body holds ThemeSection, then LookSection.
   - "Shortcuts" → ShortcutsSection: title "Shortcuts" and the action "Restore All" in the header, the "Shortcut List" region as body.
@@ -54,3 +54,4 @@ Keyboard:
 ## Requirements served
 
 - `plan-settings_dialog/REQ-5`, `plan-settings_dialog/REQ-6`, `plan-settings_dialog/REQ-7`, `plan-settings_dialog/REQ-8`, `plan-settings_dialog/REQ-10`, `plan-settings_dialog/REQ-11`, `plan-settings_dialog/REQ-19`, `plan-settings_dialog/REQ-20`, `plan-settings_dialog/REQ-21`, `plan-settings_dialog/REQ-43`, `plan-settings_dialog/REQ-51`, `plan-settings_dialog/REQ-53`, `plan-settings_dialog/REQ-54`, `plan-settings_dialog/REQ-55`, `plan-settings_dialog/REQ-56`, `plan-settings_dialog/REQ-59`
+- `plan-dark_blue_theme/REQ-3`

@@ -10,6 +10,11 @@
 
   --radius-control: 4px;
   --radius-overlay: 8px;
+
+  /* The mock's shapes keep the Windows corners. The role tokens follow the levels below. */
+  --radius-pill: var(--radius-control);
+  --radius-card: var(--radius-overlay);
+  --radius-frame: var(--radius-overlay);
 }
 
 :root[data-look='windows11']:not([data-theme='light']) {

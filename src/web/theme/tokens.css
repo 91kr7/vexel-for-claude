@@ -93,6 +93,27 @@
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+  /* Surface roles of the mock: each points to a level of the active set. */
+  --role-canvas: var(--bg-canvas);
+  --role-list: var(--bg-surface-1);
+  --role-chrome: var(--bg-surface-1);
+  --role-card: var(--bg-surface-2);
+  --role-raised: var(--bg-surface-2);
+  --role-card-active: var(--bg-surface-3);
+  --role-border-subtle: var(--border-subtle);
+  --role-border-strong: var(--border-strong);
+  --role-accent: var(--accent-primary);
+  --role-accent-glow: var(--accent-glow);
+  --role-accent-border: var(--accent-border);
+
+  /* Shapes of the mock, the same in every theme. */
+  --radius-pill: 5px;
+  --radius-card: 7px;
+  --radius-frame: 8px;
+  --border-pill: 1px solid var(--role-border-strong);
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.28);
+  --shadow-frame: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
 }
 
 :root[data-theme='light'] {

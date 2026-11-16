@@ -33,7 +33,8 @@ Shows:
   - a right column of 36 px kept free for the ProjectRemoveButton: the text never runs under it.
   - no "New session" label.
 - a row with `available` false → `aria-disabled="true"`, opacity 0.55, the `not-allowed` cursor, no hover style. Before "Last activity" it shows "Folder not found" in `--amber-400`, then " · ".
-- an available row on hover → `--bg-surface-2` background and a 1 px `--border-subtle` border.
+- each row is a card like the session cards: `--radius-card`, `--role-card` background, 1 px `--role-border-subtle` border.
+- an available row on hover → `--role-card-active` background and a `--role-border-strong` border.
 - the ProjectRemoveButton → in the right column of the row, 8 px from the right edge, centred on the height of the row button. It shows while the pointer is over the row, while the keyboard focus is visible on the row or on a control of the row, and while its request runs; else it is hidden (opacity 0).
 - the ProjectFavoriteButton → its visibility rules are in its spec; the row is the area whose hover or keyboard focus shows an outline star.
 - the errors of both buttons show under the row button. Unavailable rows have both buttons too. They are not dimmed there, and they work.
@@ -68,3 +69,4 @@ Actions:
 - `plan-project_list_actions/REQ-12`, `plan-project_list_actions/REQ-18`, `plan-project_list_actions/REQ-21`, `plan-project_list_actions/REQ-22`
 - `plan-project_list_actions/REQ-23`, `plan-project_list_actions/REQ-24`, `plan-project_list_actions/REQ-27`, `plan-project_list_actions/REQ-30`, `plan-project_list_actions/REQ-31`, `plan-project_list_actions/REQ-32`
 - `plan-ui_restyle/REQ-12`, `plan-ui_restyle/REQ-13`, `plan-ui_restyle/REQ-14`, `plan-ui_restyle/REQ-19`, `plan-ui_restyle/REQ-20`, `plan-ui_restyle/REQ-21`, `plan-ui_restyle/REQ-23`, `plan-ui_restyle/REQ-24`, `plan-ui_restyle/REQ-26`
+- `plan-dark_blue_theme/REQ-3`

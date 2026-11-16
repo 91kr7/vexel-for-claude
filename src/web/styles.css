@@ -112,20 +112,20 @@ input {
 }
 
 .vx-surface-1 {
-  background-color: var(--bg-surface-1);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--role-chrome);
+  border: 1px solid var(--role-border-subtle);
   box-shadow: inset 0 1px 0 0 var(--specular-top);
 }
 
 .vx-surface-2 {
-  background-color: var(--bg-surface-2);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--role-raised);
+  border: 1px solid var(--role-border-subtle);
   box-shadow: inset 0 1px 0 0 var(--specular-top);
 }
 
 .vx-surface-3 {
-  background-color: var(--bg-surface-3);
-  border: 1px solid var(--border-strong);
+  background-color: var(--role-card-active);
+  border: 1px solid var(--role-border-strong);
 }
 
 .vx-glass {
@@ -144,16 +144,17 @@ input {
   font-family: var(--font-mono);
   font-size: 10px;
   padding: 1px 5px;
-  border-radius: 4px;
-  background-color: var(--bg-surface-3);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background-color: var(--role-raised);
+  border: var(--border-pill);
   color: var(--text-muted);
 }
 
 .accent-pill {
-  background-color: var(--accent-glow);
-  color: var(--accent-primary);
-  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-pill);
+  background-color: var(--role-accent-glow);
+  color: var(--role-accent);
+  border: 1px solid var(--role-accent-border);
 }
 
 @keyframes vx-pulse {
@@ -187,7 +188,9 @@ input {
   align-items: center;
   gap: 4px;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
+  background-color: var(--role-raised);
+  border: var(--border-pill);
   font-family: var(--font-mono);
   font-size: 10px;
   line-height: 15px;
@@ -203,27 +206,27 @@ input {
 .button-neutral,
 .button-primary {
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-frame);
   font-size: 12px;
   line-height: 16px;
 }
 
 .button-neutral {
-  background-color: var(--bg-surface-2);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--role-raised);
+  border: var(--border-pill);
   box-shadow: inset 0 1px 0 0 var(--specular-top);
   color: var(--text-primary);
 }
 
 .button-neutral:hover:not(:disabled) {
-  background-color: var(--bg-surface-3);
-  border-color: var(--border-strong);
+  background-color: var(--role-card-active);
+  border-color: var(--role-accent-border);
 }
 
 .button-primary {
   padding: 6px 16px;
   font-weight: 500;
-  background-color: var(--accent-primary);
+  background-color: var(--role-accent);
   color: var(--on-accent);
   box-shadow: var(--shadow);
 }
@@ -249,7 +252,7 @@ input {
 .button-attn,
 .button-interrupt {
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   border: 1px solid;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -566,8 +569,10 @@ input {
   max-height: calc(100vh - 64px);
   overflow-y: auto;
   padding: 12px 14px 14px;
-  border-radius: 12px;
-  box-shadow: var(--shadow-2xl);
+  border-radius: var(--radius-frame);
+  background-color: var(--role-raised);
+  border-color: var(--role-border-strong);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-frame);
   color: var(--text-primary);
 }
 
@@ -888,7 +893,9 @@ input {
   align-items: center;
   gap: 12px;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-frame);
+  border-color: var(--role-border-strong);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-frame);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
@@ -927,7 +934,9 @@ input {
   align-items: flex-start;
   gap: 12px;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-frame);
+  border-color: var(--role-border-strong);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-frame);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
@@ -1151,16 +1160,17 @@ input {
   justify-content: stretch;
   gap: 10px;
   padding: 9px 36px 9px 8px;
-  border: 1px solid transparent;
-  border-radius: 10px;
+  border: 1px solid var(--role-border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
   text-align: left;
   anchor-name: --project-row;
   transition: background-color 0.12s ease, border-color 0.12s ease;
 }
 
 .project-row:not(.unavailable):hover {
-  background-color: var(--bg-surface-2);
-  border-color: var(--border-subtle);
+  background-color: var(--role-card-active);
+  border-color: var(--role-border-strong);
 }
 
 .project-row:focus-visible {
@@ -2088,8 +2098,8 @@ input {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-surface-1);
-  border-left: 1px solid var(--border-subtle);
+  background-color: var(--role-list);
+  border-left: 1px solid var(--role-border-subtle);
 }
 
 .git-explorer-header {
@@ -2099,7 +2109,7 @@ input {
   display: flex;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--role-border-subtle);
 }
 
 .git-explorer-repository {
@@ -2146,7 +2156,7 @@ input {
 .git-repository-all {
   height: 24px;
   padding: 0 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
   font-size: 12px;
   line-height: 16px;
   color: var(--text-secondary);
@@ -2170,7 +2180,7 @@ input {
   min-width: 0;
   height: 24px;
   padding: 0 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
   justify-content: flex-start;
   gap: 8px;
   font-size: 12px;
@@ -2181,13 +2191,19 @@ input {
 
 .git-repository-entry:hover,
 .git-repository-all:hover {
-  background-color: var(--bg-surface-2);
+  background-color: var(--role-card);
 }
 
 .git-repository-entry[aria-pressed='true'],
 .git-repository-all[aria-pressed='true'] {
-  background-color: var(--bg-surface-3);
+  background-color: var(--role-card-active);
   color: var(--text-primary);
+}
+
+/* The list scrolls: an inner ring stays inside it. */
+.git-repository-entry:focus-visible,
+.history-commit:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
 .git-repository-mark {
@@ -2258,7 +2274,7 @@ input {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--role-border-subtle);
 }
 
 .changes-repository + .changes-repository {
@@ -2378,7 +2394,7 @@ input {
   display: flex;
   align-items: stretch;
   gap: 4px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--role-border-subtle);
 }
 
 .git-explorer-tab {
@@ -2394,7 +2410,7 @@ input {
 }
 
 .git-explorer-tab.selected {
-  border-bottom-color: var(--accent-primary);
+  border-bottom-color: var(--role-accent);
   color: var(--text-primary);
   font-weight: 600;
 }
@@ -2454,7 +2470,7 @@ input {
 }
 
 .history-graph circle[stroke] {
-  stroke: var(--bg-surface-1);
+  stroke: var(--role-list);
   stroke-width: 1.5;
 }
 
@@ -2499,8 +2515,8 @@ input {
   padding: 0 6px;
   overflow: hidden;
   text-overflow: ellipsis;
-  border: 1px solid var(--accent-border);
-  border-radius: 4px;
+  border: 1px solid var(--role-accent-border);
+  border-radius: var(--radius-pill);
   background-color: var(--accent-selection);
   color: var(--text-primary);
   font-family: var(--font-mono);
@@ -2816,21 +2832,23 @@ input {
 
 .message-user .message-text {
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
+  border-color: var(--role-border-strong);
 }
 
 .inline-code {
   padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid var(--border-subtle);
-  background-color: var(--bg-surface-2);
+  border-radius: var(--radius-pill);
+  border: var(--border-pill);
+  background-color: var(--role-raised);
   font-family: var(--font-mono);
   font-size: 12px;
 }
 
 .tool-card {
   margin-left: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
   overflow: hidden;
 }
 
@@ -2855,7 +2873,7 @@ input {
 }
 
 .tool-card-toggle:hover {
-  background-color: var(--bg-surface-2);
+  background-color: var(--role-card-active);
 }
 
 .tool-card-toggle:focus-visible {
@@ -2865,9 +2883,9 @@ input {
 .tool-card-name {
   flex: none;
   padding: 0 6px;
-  border-radius: 4px;
-  background-color: var(--bg-surface-3);
-  color: var(--accent-primary);
+  border-radius: var(--radius-pill);
+  background-color: var(--role-card-active);
+  color: var(--role-accent);
   font-weight: 500;
 }
 
@@ -2906,8 +2924,8 @@ input {
 .tool-card-output {
   margin: 0;
   padding: 8px 12px;
-  border-top: 1px solid var(--border-subtle);
-  background-color: var(--bg-canvas);
+  border-top: 1px solid var(--role-border-subtle);
+  background-color: var(--role-canvas);
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: var(--term-size);
@@ -2918,7 +2936,7 @@ input {
 
 .tool-card-state {
   padding: 6px 12px;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--role-border-subtle);
   font-size: 11px;
 }
 
@@ -2928,7 +2946,8 @@ input {
   bottom: 20px;
   transform: translateX(-50%);
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-frame);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-frame);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
@@ -2962,9 +2981,9 @@ input {
   width: 100%;
   max-width: 448px;
   max-height: 100%;
-  border-radius: 12px;
-  border-color: var(--border-strong);
-  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-2xl);
+  border-radius: var(--radius-frame);
+  border-color: var(--role-border-strong);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-frame);
   overflow: hidden;
 }
 
@@ -2974,7 +2993,8 @@ input {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--role-border-subtle);
+  background-color: var(--role-raised);
 }
 
 .dialog-dot {
@@ -3054,15 +3074,16 @@ input {
   flex-direction: column;
   gap: 2px;
   padding: 12px 8px;
-  border-right: 1px solid var(--border-subtle);
-  background-color: var(--bg-surface-1);
+  border-right: 1px solid var(--role-border-subtle);
+  background-color: var(--role-list);
 }
 
 .settings-menu-item {
   position: relative;
   height: 32px;
   padding: 0 12px;
-  border-radius: 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-card);
   color: var(--text-secondary);
   justify-content: flex-start;
   font-size: 13px;
@@ -3071,13 +3092,15 @@ input {
 }
 
 .settings-menu-item:hover {
-  background-color: var(--bg-surface-3);
+  background-color: var(--role-card);
+  border-color: var(--role-border-strong);
   color: var(--text-primary);
 }
 
 .settings-menu-item.selected {
-  background-color: var(--accent-glow);
-  color: var(--accent-primary);
+  background-color: var(--role-accent-glow);
+  border-color: var(--role-accent-border);
+  color: var(--role-accent);
   font-weight: 600;
 }
 
@@ -3112,7 +3135,7 @@ input {
   gap: 12px;
   min-height: 52px;
   padding: 10px 24px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--role-border-subtle);
 }
 
 .settings-pane-title {
@@ -3160,21 +3183,21 @@ input {
   position: relative;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border-strong);
-  border-radius: 12px;
-  background-color: var(--bg-surface-1);
+  border: 1px solid var(--role-border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
   overflow: hidden;
   cursor: pointer;
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .settings-card:hover {
-  border-color: var(--accent-border);
+  border-color: var(--role-border-strong);
 }
 
 .settings-card.checked {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 1px var(--accent-primary);
+  border-color: var(--role-accent);
+  box-shadow: 0 0 0 1px var(--role-accent), var(--shadow-card);
 }
 
 .settings-card:has(.settings-card-input:focus-visible) {
@@ -3195,8 +3218,8 @@ input {
   display: flex;
   height: 84px;
   padding: 12px 14px 0;
-  background-color: var(--bg-surface-3);
-  border-bottom: 1px solid var(--border-subtle);
+  background-color: var(--role-card-active);
+  border-bottom: 1px solid var(--role-border-subtle);
 }
 
 .settings-card-footer {
@@ -3449,12 +3472,12 @@ input {
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   color: var(--text-secondary);
 }
 
 .shortcuts-row-button:hover:not(:disabled) {
-  background-color: var(--bg-surface-3);
+  background-color: var(--role-card-active);
   color: var(--text-primary);
 }
 
@@ -3483,9 +3506,9 @@ input {
 .updates-card {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border-strong);
-  border-radius: 12px;
-  background-color: var(--bg-surface-1);
+  border: 1px solid var(--role-border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
 }
 
 .updates-card-row {
@@ -3506,7 +3529,7 @@ input {
 .updates-card > .error-message {
   margin: 0;
   padding: 14px 18px;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--role-border-subtle);
 }
 
 .updates-result {
@@ -3527,9 +3550,9 @@ input {
   align-items: flex-start;
   gap: 10px;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   border-color: var(--amber-500-40);
-  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-lg);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-card);
 }
 
 .dialog-banner .icon {
@@ -3548,8 +3571,8 @@ input {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 16px;
-  border-top: 1px solid var(--border-subtle);
-  background-color: var(--bg-surface-1);
+  border-top: 1px solid var(--role-border-subtle);
+  background-color: var(--role-chrome);
 }
 
 .dialog-warning .dialog-cancel:focus {
@@ -3573,9 +3596,9 @@ input {
   display: block;
   width: 100%;
   padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border-subtle);
-  background-color: var(--bg-canvas);
+  border-radius: var(--radius-frame);
+  border: 1px solid var(--role-border-strong);
+  background-color: var(--role-canvas);
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -3584,7 +3607,8 @@ input {
 
 .field-input:focus {
   outline: none;
-  border-color: var(--accent-border);
+  border-color: var(--role-accent);
+  box-shadow: 0 0 0 1px var(--role-accent);
 }
 
 .search-field {
@@ -3699,6 +3723,32 @@ button.dialog-row {
 
 .dialog-row:focus-visible {
   outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+.past-session-group .dialog-rows {
+  gap: 6px;
+}
+
+.past-session-group .dialog-row {
+  padding: 6px 10px;
+  border: 1px solid var(--role-border-subtle);
+  border-left-width: 3px;
+  border-left-color: transparent;
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
+}
+
+.past-session-group .dialog-row:hover {
+  background-color: var(--role-card-active);
+  border-color: var(--role-border-strong);
+  border-left-color: transparent;
+}
+
+.past-session-group .dialog-row-checked,
+.past-session-group .dialog-row-checked:hover {
+  background-color: var(--role-card-active);
+  border-color: var(--role-accent);
+  box-shadow: var(--shadow-card);
 }
 
 .dialog-row-icon {

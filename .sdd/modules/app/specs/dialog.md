@@ -26,10 +26,10 @@ Props:
 
 Shows (sizes in px):
 - the backdrop → the whole page, black at 65 % (`--color-backdrop`), no blur, padding 16. The frame sits centred in it.
-- the frame → `.vx-surface-2` with a 1 `--border-strong` border, 12 radius, `shadow-2xl`, full width up to 448, as tall as the backdrop allows. No icon.
-- the header → padding 12 × 16, 1 `--border-subtle` line below. From the left: an 8 accent dot (decorative), the title (14/20, weight 600), and on the right the button "[Esc]" (mono 12/16, `--text-muted`, `--text-primary` on hover).
+- the frame → `.vx-surface-2` (`--role-raised`) with a 1 `--role-border-strong` border, `--radius-frame`, top line and `--shadow-frame`, full width up to 448, as tall as the backdrop allows. No icon.
+- the header → `--role-raised`, padding 12 × 16, 1 `--role-border-subtle` line below. From the left: an 8 accent dot (decorative), the title (14/20, weight 600), and on the right the button "[Esc]" (mono 12/16, `--text-muted`, `--text-primary` on hover).
 - the body → padding 16, items 14 apart, text 12/16. The description first, in `--text-secondary`; bold parts in `--text-primary`.
-- the footer → `--bg-surface-1`, 1 `--border-subtle` line above, padding 12 × 16, buttons on the right, 8 apart: "Cancel" (`.button-neutral`), then the primary action. `default` tone → `.button-primary`. No primary action → one button "Close" (`.button-neutral`) in place of "Cancel".
+- the footer → `--role-chrome`, 1 `--role-border-subtle` line above, padding 12 × 16, buttons on the right, 8 apart: "Cancel" (`.button-neutral`), then the primary action. `default` tone → `.button-primary`. No primary action → one button "Close" (`.button-neutral`) in place of "Cancel".
 - `tone` `default` → role `dialog`. `tone` `warning` → role `alertdialog`, see WarningDialog.
 - `aria-modal="true"`.
 
@@ -69,3 +69,4 @@ Focus:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`
 - `plan-mac_title_bar/REQ-8`, `plan-mac_title_bar/REQ-11`, `plan-mac_title_bar/REQ-24`
 - `plan-keyboard_shortcuts/REQ-29`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-33`
+- `plan-dark_blue_theme/REQ-3`

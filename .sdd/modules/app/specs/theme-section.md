@@ -16,7 +16,8 @@ Props:
 Shows:
 - a group named "Theme" (`fieldset` with its legend as heading) with two cards side by side, in this order: "Light", "Dark".
 - each card is a radio named by its text. It shows a small preview of its theme colours (fixed preview tokens: each card shows its own theme, whatever the active one), then its icon (sun or moon) and its text.
-- the card of the active theme is checked: accent border, bold text and a check mark. It follows the store, also when the theme changes from elsewhere (e.g. Alt+A).
+- each card (ChoiceCard, also used by LookSection) → `--radius-card`, `--role-card` fill, 1 px `--role-border-subtle` border, `--role-border-strong` on hover; its preview area on `--role-card-active`.
+- the card of the active theme is checked: `--role-accent` border with a 1 px ring and `--shadow-card`, bold text and a check mark. It follows the store, also when the theme changes from elsewhere (e.g. Alt+A).
 
 Actions:
 - choosing the card that is not checked (click, Space, arrow keys) → `store.toggle()` once. The theme applies to the whole page and is saved (ThemeStore).
@@ -32,3 +33,4 @@ Keyboard:
 ## Requirements served
 
 - `plan-settings_dialog/REQ-12`, `plan-settings_dialog/REQ-14`, `plan-settings_dialog/REQ-15`, `plan-settings_dialog/REQ-57`
+- `plan-dark_blue_theme/REQ-3`

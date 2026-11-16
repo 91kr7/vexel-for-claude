@@ -14,6 +14,8 @@ type: configuration
 - Both themes:
   - `--font-ui` → Segoe UI Variable Text, Segoe UI Variable, Segoe UI, Selawik, then `system-ui` and `sans-serif`.
   - `--caption-close` `#c42b1c`, `--caption-close-pressed` `#b3261a`, `--radius-control` 4 px, `--radius-overlay` 8 px.
+  - shape tokens of ThemeTokens → `--radius-pill` takes `--radius-control` (4 px); `--radius-card` and `--radius-frame` take `--radius-overlay` (8 px).
+  - role tokens of ThemeTokens → they follow the Windows 11 levels below with the same mapping as in ThemeTokens.
   - `--accent-deep` → `#0078d4`, the Windows 11 default accent blue.
 - Dark theme (any `data-theme` other than `light`):
 
@@ -73,4 +75,5 @@ type: configuration
 ## Requirements served
 
 - `plan-settings_dialog/REQ-57`, `plan-settings_dialog/REQ-60`
+- `plan-dark_blue_theme/REQ-2`
 - `plan-wsl_support/REQ-17`, `plan-wsl_support/REQ-25`, `plan-wsl_support/REQ-26`, `plan-wsl_support/REQ-27`, `plan-wsl_support/REQ-34`, `plan-wsl_support/REQ-36`, `plan-wsl_support/REQ-37`, `plan-wsl_support/REQ-38`

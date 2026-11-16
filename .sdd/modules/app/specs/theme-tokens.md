@@ -51,6 +51,34 @@ type: configuration
 - Window button tokens, the same in both sets: `--window-close` `#e0443c`, `--window-minimize` `#e8b616`, `--window-maximize` `#25b033`, `--window-symbol` black at 60 %.
 - Terminal search tokens, the same in both sets, in `#RRGGBB` form: `--term-match-bg` `#713f12` (a match), `--term-match-current-bg` `#92400e` and `--term-match-current-border` `#fcd34d` (the current match).
 - Other groups, the same in both sets: `--font-ui` (Roboto Flex), `--font-mono` (Roboto Mono), `--focus-ring-width` and `--focus-ring-offset` (2 px), and the Tailwind shadows `--shadow-sm`, `--shadow`, `--shadow-lg`, `--shadow-2xl`.
+
+### Role tokens
+
+- One token per surface role of `.sdd/mockups/dark_blue_theme/mock.html`. Each one points to a level of the active set, so it takes the light or dark value:
+
+| Role token | Mock use | Level |
+|------------|----------|-------|
+| `--role-canvas` | canvas and rail | `--bg-canvas` |
+| `--role-list` | session list | `--bg-surface-1` |
+| `--role-chrome` | title bar, session header, bottom bar | `--bg-surface-1` |
+| `--role-card` | card | `--bg-surface-2` |
+| `--role-raised` | raised surface and pill | `--bg-surface-2` |
+| `--role-card-active` | active card | `--bg-surface-3` |
+| `--role-border-subtle` / `--role-border-strong` | subtle / strong border | `--border-subtle` / `--border-strong` |
+| `--role-accent` / `--role-accent-glow` / `--role-accent-border` | accent | `--accent-primary` / `--accent-glow` / `--accent-border` |
+
+### Shape tokens
+
+- The mock's shapes, the same in both sets:
+
+| Token | Value | Use |
+|-------|-------|-----|
+| `--radius-pill` | 5 px | pills, chips, key badges, small buttons |
+| `--radius-card` | 7 px | cards and list rows |
+| `--radius-frame` | 8 px | frames, dialogs, floating panels, buttons, fields |
+| `--border-pill` | 1 px `--role-border-strong` | pill border |
+| `--shadow-card` | `0 2px 10px` black at 28 % | raised or chosen card |
+| `--shadow-frame` | `0 8px 24px -4px` black at 45 % | frames and floating panels |
 ### Light set
 
 - Mock tokens, with the mock's editorial-light values:
@@ -107,6 +135,7 @@ type: configuration
 - `--window-symbol` over each window button colour reaches 3:1 (about 3.16:1 on the red, the lowest). 52 % would give 2.72:1.
 - `--term-fg` reaches 4.5:1 on `--term-match-bg` (about 7.7:1) and on `--term-match-current-bg` (about 6.3:1). `--term-match-current-border` reaches 3:1 on `--term-bg` (about 13.6:1).
 - `--font-ui` and `--font-mono` load the BundledFont files.
+- A role token never has a value of its own in Light and Dark: it always equals its level.
 
 ## Dependencies
 
@@ -121,3 +150,4 @@ type: configuration
 - `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-31`
 - `plan-session_list_width/REQ-34`, `plan-session_list_width/REQ-35`
 - `plan-ui_restyle/REQ-5`
+- `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-5`

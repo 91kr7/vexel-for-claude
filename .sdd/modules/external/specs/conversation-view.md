@@ -33,9 +33,9 @@ Shows:
 - one `article` per entry, in the order received:
   - `user` item (`aria-label` "You") and `assistant` item (`aria-label` "Claude") → both on the left. A 24 px avatar 2 px lower, 12 px gap, then:
     - the name line, 8 px gap → "You" or "Claude" (12/16 px, weight 600); for a user item with a valid `timestamp`, the time (mono 10 px, `--text-muted`).
-    - the text, 14 px, line height 1.625, `--text-primary`. A user text sits in a `.vx-surface-2` box with 8 px radius and 12 px padding, 4 px under the name line. A Claude text is 10 px under the name line, with no box.
+    - the text, 14 px, line height 1.625, `--text-primary`. A user text sits in a `.vx-surface-2` box with a `--role-border-strong` border, `--radius-card` and 12 px padding, 4 px under the name line. A Claude text is 10 px under the name line, with no box.
   - user avatar → the neutral square of Avatar with "U". Claude avatar → a 24 px square, 6 px radius, `--accent-primary` fill, "✦" in mono 11 px and `--on-accent`. Both decorative.
-  - in Claude text, text between single backticks on one line shows without the backticks as a mono chip: 12 px, padding 2 × 6 px, 4 px radius, `--bg-surface-2`, 1 px `--border-subtle`.
+  - in Claude text, text between single backticks on one line shows without the backticks as a mono chip: 12 px, padding 2 × 6 px, the pill shape (`--radius-pill`, `--role-raised`, `--border-pill`).
   - tool card → see "Tool cards".
 - user and Claude text keeps its line breaks.
 
@@ -49,9 +49,9 @@ any other day                 → "DD/MM/YYYY HH:MM"
 
 Tool cards (look of the tool card built by `selectSession()`):
 - a `tool_call` and the first later `tool_result` whose `toolUseId` equals its `id` form one card, at the place of the call. A `tool_result` with no such call is a card of its own, named "Result".
-- the card (`aria-label` "Tool: <name>"): 36 px from the left, so it lines up with the message text. `.vx-surface-1`, 8 px radius. Two cards in a row are 8 px apart.
+- the card (`aria-label` "Tool: <name>"): 36 px from the left, so it lines up with the message text. `--role-card` fill, 1 px `--role-border-subtle` border, `--radius-card`; the row turns `--role-card-active` on hover. Two cards in a row are 8 px apart.
 - its row is one button (`aria-expanded`), padding 6 × 12 px, 8 px gaps, mono 11 px; surface 2 on hover:
-  - the name chip → padding 0 × 6 px, 4 px radius, `--bg-surface-3`, `--accent-primary`, weight 500.
+  - the name chip → padding 0 × 6 px, `--radius-pill`, `--role-card-active`, `--role-accent`, weight 500.
   - the summary → `--text-primary`, one line cut with an ellipsis, full text as tooltip.
   - the outcome, 8 px after, mono 10 px: no result yet → "▾" alone in `--text-muted`; result with `isError` → "Error ▾" in rose-400; any other result → "Completed ▾" in emerald-400. "▾" is decorative.
 - no tool icon.
@@ -81,7 +81,7 @@ Scrolling:
 - the first frame always shows the last entry.
 - new entries arrive while the view is at the end → the content scrolls to the last entry.
 - new entries arrive while the user has scrolled up → the view does not move, and N grows by the number of new entries. A result that joins an existing card adds nothing.
-- N > 0 → a `.vx-glass` button at the bottom centre of the content area, 20 px from its bottom, floating over the content: 8 px radius, padding 8 × 14 px, mono 12 px, arrow-down icon at 14 px. Text "N new messages", or "1 new message".
+- N > 0 → a `.vx-glass` button at the bottom centre of the content area, 20 px from its bottom, floating over the content: `--radius-frame`, `--shadow-frame`, padding 8 × 14 px, mono 12 px, arrow-down icon at 14 px. Text "N new messages", or "1 new message".
 - click on the button → the content scrolls to the end, the button disappears and N goes back to 0.
 - the user scrolls to the end → the button disappears and N goes back to 0.
 
@@ -110,3 +110,4 @@ Scrolling:
 - `plan-keyboard_shortcuts/REQ-3`
 - `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-3`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-25`
 - `plan-wsl_support/REQ-11`, `plan-wsl_support/REQ-13`
+- `plan-dark_blue_theme/REQ-3`
