@@ -8,3 +8,11 @@
 | 2026-11-16 | analysis | question analyst Q7 | decided | Dark Blue terminal frame from mock, ANSI unchanged, Light keeps dark terminal; source `.sdd/analysis/light_theme.md` |
 | 2026-11-16 | analysis | mock copy | decided | Mock copied to `.sdd/mockups/dark_blue_theme/mock.html` so it lives in the repository |
 | 2026-11-16 | analysis | G1 analysis | pass | 126 lines, ordinary budget; no placeholders; scope matches human decisions |
+| 2026-11-16 | plan | G2 requirements | pass | REQ-1..42 cover the analysis; REQ-8, REQ-29, REQ-31 traced to analysis risk and `light_theme.md` |
+| 2026-11-16 | plan | question planner Q1 | escalated | Analysis says Dark default, code starts in Light (`src/web/theme/theme-store.ts` START_THEME) |
+| 2026-11-16 | plan | first-start theme | human decision | Dark Blue becomes the first-start theme; departure from the analysis, REQ-35 rewritten |
+| 2026-11-16 | plan | question planner Q2 | decided | Windows 11 dark colours only for Dark; Dark Blue keeps mock colours; Windows 11 keeps its corners |
+| 2026-11-16 | plan | question planner Q3 | decided | Toast stacks above the needs-input snackbar |
+| 2026-11-16 | plan | question planner Q4 | decided | Card line 2 and header pill keep client text; source analysis assumptions |
+| 2026-11-16 | plan | theme persistence | human decision | Active theme saved for every theme and kept at next start; REQ-32 widened to Light, Dark, Dark Blue |
+| 2026-11-16 | plan | G3 coverage | pass | 42 REQ / 5 batches; cited paths exist; no cycles; acceptance sections present; REQ-32 change sent with validation |
