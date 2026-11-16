@@ -720,6 +720,10 @@ input {
   transform: scale(0.95);
 }
 
+.nav-rail-bottom {
+  margin-top: auto;
+}
+
 .nav-rail-divider {
   width: 20px;
   height: 1px;
@@ -863,13 +867,6 @@ input {
   justify-content: space-between;
   gap: 8px;
   padding: 0 6px;
-}
-
-.list-panel-footer {
-  flex: none;
-  margin-top: auto;
-  display: flex;
-  align-items: center;
 }
 
 .needs-input-counter {

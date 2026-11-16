@@ -15,7 +15,6 @@ import { NewerVersionNotice } from './newer-version/NewerVersionNotice';
 import { useNewerVersion } from './newer-version/newer-version-loader';
 import { PlanUsagePopover } from './plan-usage/PlanUsagePopover';
 import { usePlanUsage } from './plan-usage/plan-usage-store';
-import { SettingsButton } from './SettingsButton';
 import { type SettingsTab, SettingsDialog } from './settings/SettingsDialog';
 import { ShortcutsPanel } from './ShortcutsPanel';
 import { ShortMessageToast, useShortMessage } from './ShortMessageToast';
@@ -179,6 +178,7 @@ export function AppLayout() {
           onShowSessions={showSessions}
           onShowProjects={showProjects}
           onResume={() => setResuming(true)}
+          onOpenSettings={() => setSettingsTab('theme')}
           newSessionRef={newSessionRef}
           shownView={sideView}
         />
@@ -202,9 +202,6 @@ export function AppLayout() {
               />
             </>
           )}
-          <div className="list-panel-footer">
-            <SettingsButton onOpen={() => setSettingsTab('theme')} />
-          </div>
         </ListPanel>
         <main className="session-area vx-dot-grid" ref={mainRef}>
           {openSessionId && openIsExternal ? (

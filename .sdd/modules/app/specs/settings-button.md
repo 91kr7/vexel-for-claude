@@ -6,7 +6,7 @@ type: UI component
 
 # SettingsButton
 
-**Purpose** → the gear icon button at the bottom left of the list panel that opens the settings popup.
+**Purpose** → the gear icon button at the bottom of the NavigationRail that opens the settings popup.
 
 ## Contract
 
@@ -14,18 +14,19 @@ Props:
 - `onOpen()` → called by a click, Enter or Space.
 
 Shows:
-- one button with the look of the other icon buttons of the page: 32 × 32 px, 8 px radius, `.vx-surface-1`, the gear icon at 16 px in `--text-secondary`. Hover → `--bg-surface-3`, `--border-strong` border, `--text-primary` icon.
-- accessible name "Settings", tooltip (`title`) "Settings", `aria-haspopup="dialog"`.
+- one button with the look of the rail buttons (`.vx-rail-btn`), as "Resume": 34 × 34 px, 8 px radius, the gear icon at 17 px in `--text-secondary`, never the active style. Hover → `--bg-surface-3` and `--text-primary`.
+- accessible name "Settings", `aria-haspopup="dialog"`.
+- the rail tooltip "Settings" on hover, as the other rail buttons. Hidden from assistive technology. No shortcut yet.
 - keyboard focus → the focus ring of the page.
 
 ## Rules and invariants
 
-- The icon is decorative: it adds nothing to the accessible name.
+- The icon and the tooltip are decorative: they add nothing to the accessible name.
 - The button keeps the focus after a click, so a dialog that closes can give it back.
 
 ## Dependencies
 
-- IconSet (`SettingsIcon`), ThemeTokens, WebEntry, Windows11Look
+- IconSet (`SettingsIcon`), NavigationRail (rail button and tooltip look), ThemeTokens, WebEntry, Windows11Look
 
 ## Requirements served
 

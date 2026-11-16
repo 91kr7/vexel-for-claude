@@ -6,13 +6,14 @@ type: UI component
 
 # NavigationRail
 
-**Purpose** → the 52 px column on the left: "New Claude Code Session", then the destinations "Sessions", "Projects" and "Resume". It copies the top group of `#primary-rail` in `.sdd/mockups/studio-dark/mock.html`.
+**Purpose** → the 52 px column on the left: "New Claude Code Session", then the destinations "Sessions", "Projects" and "Resume", and the SettingsButton at the bottom. It copies the top group of `#primary-rail` in `.sdd/mockups/studio-dark/mock.html`.
 
 ## Contract
 
 Props:
 - `needsInputCount` → the number of sessions in `needs_input`.
 - `onNewSession()`, `onShowSessions()`, `onShowProjects()`, `onResume()` → called on a click of the matching button. `onShowProjects` is optional.
+- `onOpenSettings()` → optional, called by a click on the SettingsButton.
 - `newSessionRef` → optional ref that receives the "New Claude Code Session" button.
 - `shownView` → `sessions` or `projects`: the side view on screen. Default `sessions`.
 
@@ -25,22 +26,24 @@ Shows, top to bottom:
 - "Sessions", "Projects" and "Resume" (`.vx-rail-btn`), in this order → 34 × 34 px, 8 px radius, the icon at 17 px (terminal, folder, history) in `--text-secondary`, no text under it. Hover → `--bg-surface-3` and `--text-primary`.
 - the button of `shownView` ("Sessions" or "Projects") → the active style. The other one and "Resume" have none. The active style: `aria-current="page"`, `--accent-glow` background, `--accent-primary` icon, 1 px `--accent-border` border, glow `0 0 14px -2px`. A bar 2.5 px wide, rounded on the right, in `--accent-primary`, 8 px left of the button and 8 px from its top and bottom.
 - the badge on "Sessions" → shown in both views. The number `needsInputCount` in a pill on the top-right corner (4 px out on each side): at least 14 px wide, 14 px high, padding 0 × 3 px, `--amber-400` fill, mono 10 px weight 500 in `--bg-canvas`. Not shown when the number is 0. Hidden from assistive technology.
-- a tooltip per button → on hover, its name ("New Claude Code Session", "Sessions", "Projects", "Resume") 44 px from the button's left edge: `--bg-surface-3`, 1 px `--border-strong`, padding 3 × 8 px, 6 px radius, 11 px weight 500, shadow `0 6px 16px` black at 40 %. It fades in and slides 4 px in 0.12 s. No shortcut. Hidden from assistive technology.
+- the SettingsButton → at the bottom of the rail, apart from the top group, under the free space. It stays visible at every window height and every list panel width.
+- a tooltip per button → on hover, its name ("New Claude Code Session", "Sessions", "Projects", "Resume", "Settings") 44 px from the button's left edge: `--bg-surface-3`, 1 px `--border-strong`, padding 3 × 8 px, 6 px radius, 11 px weight 500, shadow `0 6px 16px` black at 40 %. It fades in and slides 4 px in 0.12 s. No shortcut, for every button; the SettingsButton is the exception that gets its keys in batch shortcuts-section of `plan-settings_dialog`. Hidden from assistive technology.
 
 Actions:
 - click on "New Claude Code Session" → `onNewSession()`.
 - click on "Sessions" → `onShowSessions()`.
 - click on "Projects" → `onShowProjects()`.
 - click on "Resume" → `onResume()`.
+- click on "Settings" → `onOpenSettings()`.
 
 ## Rules and invariants
 
-- The icons are decorative. The accessible names are "New Claude Code Session", "Sessions", "Projects" and "Resume".
+- The icons are decorative. The accessible names are "New Claude Code Session", "Sessions", "Projects", "Resume" and "Settings".
 - The rail sits above the list panel, so a tooltip is never hidden by it.
 
 ## Dependencies
 
-- IconSet (`PlusIcon`, `TerminalIcon`, `FolderIcon`, `HistoryIcon`), ThemeTokens
+- IconSet (`PlusIcon`, `TerminalIcon`, `FolderIcon`, `HistoryIcon`), SettingsButton, ThemeTokens
 
 ## Requirements served
 
@@ -48,3 +51,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-9`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-recent_projects/REQ-1`, `plan-recent_projects/REQ-2`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-13`
+- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-2`, `plan-settings_dialog/REQ-4`

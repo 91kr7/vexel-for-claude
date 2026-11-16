@@ -16,7 +16,6 @@ Description:
 - the list panel → a `section` with the label "Session List", in both views. Padding 10 px, `--bg-surface-1`, 1 px `--border-subtle` line on the right. One column with a 10 px gap. View `projects` → the ProjectList. View `sessions` →
   - the title row (padding 0 × 6 px, centred, space between) → the `h1` "Sessions" in `.section-label` on the left, the NeedsInputCounter on the right.
   - the SessionList.
-- the list panel footer, in both views → pinned at the bottom left of the list panel, under the view content and outside the part that scrolls. It holds the SettingsButton.
 - the list panel width → `shownListWidth` of the ListWidthStore width and the window width: the stored width, narrowed so that the main area keeps 700 px, never under 180 px. A window resize computes it again; the stored width does not change.
 - the ListPanelEdge on the right border of the list panel, after the list in the Tab order → it gets the shown width and `listWidthLimit` of the window width. A drag move calls the store `preview`; the end of a drag and an arrow key call `commit`.
 - the main area (`main`) → takes the rest of the width, with the `.vx-dot-grid` background.
@@ -60,7 +59,7 @@ else → "New Claude Code Session" in the rail
 - "open this session" from the desktop app (useDesktopBridge) → when LiveSessionStore lists the session, it becomes the open one, hosted or external as for a list click. Else nothing changes.
 - each change of the open session is reported to the desktop app (useDesktopBridge).
 - the ShortcutsButton of the TopBar → opens the ShortcutsPanel, or closes it when it is open.
-- the SettingsButton → opens the SettingsDialog on the "Theme" tab. The popup closes ("[Esc]", "Close", Esc) → it goes; the focus goes back to where it was before it opened (Dialog). The side view, the open session and the list scroll do not change.
+- the SettingsButton at the bottom of the NavigationRail (`onOpenSettings`) → opens the SettingsDialog on the "Theme" tab. The popup closes ("[Esc]", "Close", Esc) → it goes; the focus goes back to where it was before it opened (Dialog). The side view, the open session and the list scroll do not change.
 - the panel closes ("[Esc]", "Close", Esc) → it goes; the focus goes back where it was before it opened (Dialog).
 - "Close Update Notice" → the notice goes, and nothing else changes. The closed state lives only in this page: a reload or a new tab shows it again.
 - the PlanUsageButton of the TopBar → opens the PlanUsagePopover, or closes it when it is open. The popover shows the state of `usePlanUsage(open)`: the figures load once when it opens and are not refreshed while it is open. Its close button and Esc close it. It is not a dialog: the open session, its terminal focus and scroll, and any open dialog stay as they are.
@@ -82,15 +81,15 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 
 ## Rules and invariants
 
-- the top bar, the rail, the head and the footer of the list panel stay in place, at every list panel width. Only the SessionList, or the rows of the ProjectList, scroll when they do not fit.
+- the top bar, the rail and the head of the list panel stay in place. Only the SessionList, or the rows of the ProjectList, scroll when they do not fit.
 - at 1440 × 900 px with no saved width → top bar 44 px high, rail 52 px wide, list panel 224 px wide.
 - the first frame already shows the stored width: no jump at start or after a reload.
 - from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements, except the snackbar and the NewerVersionNotice, which may cover part of the main area.
-- the list panel has no brand, no "New Session" and no "Resume Session" button.
+- the list panel has no brand, no "New Session", no "Resume Session" and no settings button.
 
 ## Dependencies
 
-- TopBar, ShortcutsPanel, SettingsButton, SettingsDialog, PlanUsagePopover, PlanUsageStore, NewerVersionNotice, useNewerVersion, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
+- TopBar, ShortcutsPanel, SettingsDialog, PlanUsagePopover, PlanUsageStore, NewerVersionNotice, useNewerVersion, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
 - useShortcutKeys, ShortcutMap, ShortcutChannel, ShortMessageToast, ThemeStore
 - FolderChooser, ProjectList, ProjectListStore, SessionNameDialog (module folders)
 - ResumeDialog (module history)
@@ -115,4 +114,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-update_check/REQ-4`, `plan-update_check/REQ-7`, `plan-update_check/REQ-8`, `plan-update_check/REQ-10`
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-13`
 - `plan-ui_restyle/REQ-1`, `plan-ui_restyle/REQ-2`, `plan-ui_restyle/REQ-3`
-- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-2`, `plan-settings_dialog/REQ-4`, `plan-settings_dialog/REQ-9`, `plan-settings_dialog/REQ-18`
+- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-4`, `plan-settings_dialog/REQ-9`, `plan-settings_dialog/REQ-18`

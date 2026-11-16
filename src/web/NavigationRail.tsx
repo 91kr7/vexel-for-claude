@@ -1,5 +1,6 @@
 import type { Ref } from 'react';
 import { FolderIcon, HistoryIcon, PlusIcon, TerminalIcon } from './icons/Icons';
+import { SettingsButton } from './SettingsButton';
 
 export type SideView = 'sessions' | 'projects';
 
@@ -9,6 +10,7 @@ interface NavigationRailProps {
   onShowSessions: () => void;
   onShowProjects?: () => void;
   onResume: () => void;
+  onOpenSettings?: () => void;
   newSessionRef?: Ref<HTMLButtonElement>;
   shownView?: SideView;
 }
@@ -31,6 +33,7 @@ export function NavigationRail({
   onShowSessions,
   onShowProjects,
   onResume,
+  onOpenSettings,
   newSessionRef,
   shownView = 'sessions',
 }: NavigationRailProps) {
@@ -58,6 +61,9 @@ export function NavigationRail({
         <HistoryIcon />
         <Tooltip text="Resume" />
       </button>
+      <div className="nav-rail-bottom">
+        <SettingsButton onOpen={() => onOpenSettings?.()} />
+      </div>
     </nav>
   );
 }
