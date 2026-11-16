@@ -23,3 +23,6 @@
 | 2026-11-16 | dev | divergences developer: history errors inside `loaded`, "<name>: <message>" format | decided | Accepted; REQ-26 holds, single repository unchanged |
 | 2026-11-16 | dev | G5 batch-combined-history | pass | tsc clean, 573 unit + 53 e2e green, re-run by gatekeeper |
 | 2026-11-16 | dev | G4 batch-repo-filter | pass | Production code typechecks, vite build green; extra files `ChangesTab.tsx`, `HistoryTab.tsx`, `SessionView.tsx`, `ConversationView.tsx` justified (colour by full-list position, filter keyed by folder) |
+| 2026-11-16 | dev | G5 batch-repo-filter: `e2e/colours-type.spec.ts:160` | decided | Code defect: `--repo-color-4..6` are pink, violet, orange; palette moves to allowed hues, the ThemeTokens rule stays |
+| 2026-11-16 | dev | G5 batch-repo-filter: `e2e/project-search.spec.ts:117` | decided | Passes on `main`, fails from `42a2a55`; race in the test (log read before the last frame when the count does not change); test fix sent to the tester |
+| 2026-11-16 | dev | G4 batch-repo-filter palette fix | pass | Only `tokens.css` and `repository-colors.md`; sky/blue closeness accepted |

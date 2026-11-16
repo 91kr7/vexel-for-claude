@@ -17,7 +17,8 @@ type: frontend function
 ## Rules and invariants
 
 - Each token has a dark value and a light value (`data-theme='light'`). Both look modes use them.
-- Dark values: sky, emerald, amber, pink, violet, orange. Light values: darker shades of the same hues, readable on the light surfaces.
+- Dark values: sky, emerald, amber, rose, lime, blue. Light values: darker shades of the same hues, readable on the light surfaces.
+- No value is orange, indigo, violet or pink (rule of ThemeTokens): every HSL hue is outside 5–35 and 235–345.
 
 ## Requirements served
 
