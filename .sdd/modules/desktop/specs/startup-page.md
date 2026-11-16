@@ -20,7 +20,7 @@ Description:
 Shows:
 - both states → the top bar, in the light top bar colours (`#efeae0`, 1 px line `rgba(28, 25, 23, 0.08)` at the bottom). It is a drag area (`-webkit-app-region: drag`): it moves the window, and a double click maximizes or restores it.
 - both states → the three window buttons at the left of the bar, 14 px from the edge and centred in its height. Same look, symbols, names and hover rule as the WindowButtons (module app): flat 12 px circles 8 px apart, `#e0443c`, `#e8b616`, `#25b033`, symbols in black at 60 %. Focus from the keyboard shows a 2 px `#0065ae` ring 2 px away. The group is not a drag area.
-- at rest → each button has only a 0.5 px light border, `color-mix(in srgb, <colour> 45%, #fff)`: no gloss, no shadow.
+- at rest → each button has only a 0.5 px dark border, `color-mix(in srgb, <colour> 45%, #000)`: no gloss, no shadow.
 - pointer over a button → `brightness(1.08)` and a glow `0 0 8px 1px color-mix(in srgb, <colour> 60%, transparent)` added to the border, with a 0.2 s transition. Pressed → `brightness(0.85)`.
 - loading → "Starting the backend…" with a rotating indicator.
 - error → "The backend could not start." in the error colour. Below it, the output lines in a monospace block, one per row, in the order given.

@@ -15,7 +15,7 @@ Props:
 
 Current look shows:
 - a row of three flat 12 px circles, 8 px apart, in this order: red `--window-close` (`#e0443c`), yellow `--window-minimize` (`#e8b616`), green `--window-maximize` (`#25b033`). 6 px of extra space after the green one.
-- each circle has a solid fill in its colour and a 0.5 px border of its colour mixed 45 % with white (`box-shadow: 0 0 0 0.5px`). At rest: no gradient, no gloss, no other shadow, no filter.
+- each circle has a solid fill in its colour and a 0.5 px border of its colour mixed 45 % with black (`box-shadow: 0 0 0 0.5px`). At rest: no gradient, no gloss, no other shadow, no filter.
 - each button holds an 8 px symbol in `--window-symbol`:
   - red → a cross (`XIcon`). Yellow → a minus (`MinusIcon`).
   - green, window not maximized → two arrows that point out (`Maximize2Icon`). Maximized → two arrows that point in (`Minimize2Icon`).

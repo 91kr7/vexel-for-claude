@@ -458,7 +458,7 @@ input {
 }
 
 .window-button {
-  --window-border: 0 0 0 0.5px color-mix(in srgb, var(--window-colour) 45%, #fff);
+  --window-border: 0 0 0 0.5px color-mix(in srgb, var(--window-colour) 45%, #000);
   flex: none;
   width: 12px;
   height: 12px;
