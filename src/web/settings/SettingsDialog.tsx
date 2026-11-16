@@ -1,17 +1,20 @@
 import { type KeyboardEvent, useId, useRef, useState } from 'react';
 import { Dialog } from '../dialogs/Dialog';
+import type { NewerVersion } from '../newer-version/newer-version-loader';
 import type { LookStore } from '../theme/look-store';
 import type { ThemeStore } from '../theme/theme-store';
 import { LookSection } from './LookSection';
 import { ShortcutsSection } from './ShortcutsSection';
 import { ThemeSection } from './ThemeSection';
+import { UpdatesSection } from './UpdatesSection';
 
-export type SettingsTab = 'theme' | 'look' | 'shortcuts';
+export type SettingsTab = 'theme' | 'look' | 'shortcuts' | 'updates';
 
 const TABS: { tab: SettingsTab; title: string }[] = [
   { tab: 'theme', title: 'Theme' },
   { tab: 'look', title: 'Window Look' },
   { tab: 'shortcuts', title: 'Shortcuts' },
+  { tab: 'updates', title: 'Updates' },
 ];
 
 interface SettingsDialogProps {
@@ -19,15 +22,19 @@ interface SettingsDialogProps {
   onClose: () => void;
   themeStore?: ThemeStore;
   lookStore?: LookStore;
+  onNewerVersion?: (version: NewerVersion) => void;
 }
 
-function Section({ tab, themeStore, lookStore }: { tab: SettingsTab; themeStore?: ThemeStore; lookStore?: LookStore }) {
+type SectionProps = Pick<SettingsDialogProps, 'themeStore' | 'lookStore' | 'onNewerVersion'> & { tab: SettingsTab };
+
+function Section({ tab, themeStore, lookStore, onNewerVersion }: SectionProps) {
   if (tab === 'theme') return <ThemeSection store={themeStore} />;
   if (tab === 'look') return <LookSection store={lookStore} />;
+  if (tab === 'updates') return <UpdatesSection onNewerVersion={onNewerVersion ?? (() => undefined)} />;
   return <ShortcutsSection />;
 }
 
-export function SettingsDialog({ initialTab = 'theme', onClose, themeStore, lookStore }: SettingsDialogProps) {
+export function SettingsDialog({ initialTab = 'theme', onClose, themeStore, lookStore, onNewerVersion }: SettingsDialogProps) {
   const [tab, setTab] = useState<SettingsTab>(initialTab);
   const baseId = useId();
   const tabRefs = useRef(new Map<SettingsTab, HTMLButtonElement>());
@@ -77,7 +84,9 @@ export function SettingsDialog({ initialTab = 'theme', onClose, themeStore, look
       </div>
       {TABS.map(({ tab: id }) => (
         <div key={id} className="settings-tabpanel" role="tabpanel" id={panelId(id)} aria-labelledby={tabId(id)} hidden={tab !== id}>
-          {tab === id && <Section tab={id} themeStore={themeStore} lookStore={lookStore} />}
+          {(tab === id || id === 'updates') && (
+            <Section tab={id} themeStore={themeStore} lookStore={lookStore} onNewerVersion={onNewerVersion} />
+          )}
         </div>
       ))}
     </Dialog>

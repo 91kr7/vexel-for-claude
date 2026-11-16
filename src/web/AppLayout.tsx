@@ -12,7 +12,7 @@ import { listWidthLimit, pageListWidthStore, shownListWidth, useListWidth } from
 import { NavigationRail, type SideView } from './NavigationRail';
 import { NeedsInputSnackbar, useNeedsInputSnackbar } from './NeedsInputSnackbar';
 import { NewerVersionNotice } from './newer-version/NewerVersionNotice';
-import { useNewerVersion } from './newer-version/newer-version-loader';
+import { type NewerVersion, useNewerVersion } from './newer-version/newer-version-loader';
 import { PlanUsagePopover } from './plan-usage/PlanUsagePopover';
 import { usePlanUsage } from './plan-usage/plan-usage-store';
 import { type SettingsTab, SettingsDialog } from './settings/SettingsDialog';
@@ -68,7 +68,9 @@ export function AppLayout() {
   const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
   const [showingPlanUsage, setShowingPlanUsage] = useState(false);
   const planUsage = usePlanUsage(showingPlanUsage);
-  const newerVersion = useNewerVersion();
+  const launchNewerVersion = useNewerVersion();
+  const [checkedNewerVersion, setCheckedNewerVersion] = useState<NewerVersion | null>(null);
+  const newerVersion = checkedNewerVersion ?? launchNewerVersion;
   const [updateNoticeClosed, setUpdateNoticeClosed] = useState(false);
   const listPanelRef = useRef<HTMLElement>(null);
   const newSessionRef = useRef<HTMLButtonElement>(null);
@@ -253,7 +255,16 @@ export function AppLayout() {
           onCancel={() => setResuming(false)}
         />
       )}
-      {settingsTab !== null && <SettingsDialog initialTab={settingsTab} onClose={() => setSettingsTab(null)} />}
+      {settingsTab !== null && (
+        <SettingsDialog
+          initialTab={settingsTab}
+          onClose={() => setSettingsTab(null)}
+          onNewerVersion={(version) => {
+            setCheckedNewerVersion(version);
+            setUpdateNoticeClosed(false);
+          }}
+        />
+      )}
     </div>
   );
 }

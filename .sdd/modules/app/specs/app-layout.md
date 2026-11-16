@@ -29,7 +29,7 @@ Shows:
 - an open session, hosted or external, that the list no longer has when LiveSessionStore goes from `error` to `ready` (a reload after a reconnection) → it stays open, with its last summary and the state `ended`. If the list has it again later, the view uses the listed summary.
 - the NeedsInputSnackbar of `useNeedsInputSnackbar`, when it gives a session → fixed at the bottom right of the window, whatever the main area shows.
 - the ShortMessageToast of `useShortMessage`, at the bottom centre of the window.
-- the NewerVersionNotice, while `useNewerVersion` gives a version and the user has not closed it in this page. The session list does not wait for it.
+- the NewerVersionNotice, while it has a version and the user has not closed it in this page. The version is the last `newer` result of the user's check in the SettingsDialog, else the one of `useNewerVersion`. The session list does not wait for it.
 - the SettingsDialog, while it is open. It is a dialog over the page: the open SessionView or ConversationView stays mounted under it, with its size, its scroll position and its session running.
 
 Actions:
@@ -60,6 +60,7 @@ else → "New Claude Code Session" in the rail
 - each change of the open session is reported to the desktop app (useDesktopBridge).
 - the SettingsButton at the bottom of the NavigationRail (`onOpenSettings`) → opens the SettingsDialog on the "Theme" tab. The popup closes ("[Esc]", "Close", Esc) → it goes; the focus goes back to where it was before it opened (Dialog). The side view, the open session and the list scroll do not change.
 - "Close Update Notice" → the notice goes, and nothing else changes. The closed state lives only in this page: a reload or a new tab shows it again.
+- a `newer` result of the user's check in the SettingsDialog (`onNewerVersion`) → the notice shows that version and its closed state is cleared, so it shows again, also when the launch check found nothing. It stays under the popup and is visible when the popup closes.
 - the PlanUsageButton of the TopBar → opens the PlanUsagePopover, or closes it when it is open. The popover shows the state of `usePlanUsage(open)`: the figures load once when it opens and are not refreshed while it is open. Its close button and Esc close it. It is not a dialog: the open session, its terminal focus and scroll, and any open dialog stay as they are.
 
 Shortcuts (useShortcutKeys, while the page is mounted):
@@ -112,4 +113,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-update_check/REQ-4`, `plan-update_check/REQ-7`, `plan-update_check/REQ-8`, `plan-update_check/REQ-10`
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-13`
 - `plan-ui_restyle/REQ-1`, `plan-ui_restyle/REQ-2`, `plan-ui_restyle/REQ-3`
-- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-4`, `plan-settings_dialog/REQ-9`, `plan-settings_dialog/REQ-18`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-25`
+- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-4`, `plan-settings_dialog/REQ-9`, `plan-settings_dialog/REQ-18`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-25`, `plan-settings_dialog/REQ-49`

@@ -3162,6 +3162,30 @@ input {
   cursor: pointer;
 }
 
+.updates-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.updates-section .section-label {
+  margin: 0;
+}
+
+.updates-installed,
+.updates-result p {
+  margin: 0;
+}
+
+.updates-result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
 .dialog-banner {
   display: flex;
   align-items: flex-start;

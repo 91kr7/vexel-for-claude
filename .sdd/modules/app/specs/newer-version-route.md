@@ -11,9 +11,9 @@ type: REST endpoint
 ## Contract
 
 - `registerNewerVersionRoute(app, result)` → `result` is the promise of the one checkLatestRelease of the start.
-- `GET /api/newer-version` → always `200`, body the ReleaseCheckResult:
+- `GET /api/newer-version` → always `200`, body:
   - `{ status: "newer", installedVersion, newerVersion, releaseUrl, changelogs? }` → `changelogs` (a list of `{ version, text? }`) only when the result has it.
-  - `{ status: "none" }`
+  - `{ status: "none" }` → also when the check gave `failed`: the page sees no failure at launch.
 - while the check runs, the answer waits for it.
 - a `result` that rejects → `{ status: "none" }`.
 
@@ -30,3 +30,4 @@ type: REST endpoint
 
 - `plan-update_check/REQ-2`, `plan-update_check/REQ-9`
 - `plan-release_changelog/REQ-7`
+- `plan-settings_dialog/REQ-52`
