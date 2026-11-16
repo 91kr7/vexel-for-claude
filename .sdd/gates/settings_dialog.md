@@ -28,3 +28,4 @@
 | 2026-11-16 | dev | divergence developer (tooltips, AltGr) | decided | Tooltip lists every key of its row (REQ-38); AltGr press rejected as "no Ctrl or Alt" since it can never match |
 | 2026-11-16 | dev | G5 editable-shortcuts round 1 | sent back | ReservedKeys gave "Claude Code" for Meta+Ctrl/Alt presses (REQ-29); e2e denied to the tester, human chose to re-delegate |
 | 2026-11-16 | dev | G4 editable-shortcuts fix | pass | Only `reserved-keys.ts` and its spec changed; build green |
+| 2026-11-16 | dev | G5 editable-shortcuts round 2 | pass | 519 unit + 16 batch e2e re-run green; tester ran 73 e2e |

@@ -4,8 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SettingsIcon } from './icons/Icons';
 import { SettingsButton } from './SettingsButton';
 import { mount, run, unmountAll } from './settings/settings-test-support';
+import { pageUserShortcutKeys } from './user-shortcut-keys';
 
-afterEach(unmountAll);
+afterEach(() => {
+  unmountAll();
+  pageUserShortcutKeys().restoreAll();
+});
 
 describe('SettingsButton', () => {
   // plan-settings_dialog/REQ-1, REQ-3: one rail button named "Settings", with the gear icon and the rail tooltip with the settings shortcut, opening a dialog
@@ -45,5 +49,15 @@ describe('SettingsButton', () => {
     const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
     button.dispatchEvent(press);
     expect(press.defaultPrevented, 'a mouse press does not move the focus away').toBe(false);
+  });
+
+  // plan-settings_dialog/REQ-37, REQ-38: the tooltip follows the keys of "Shortcut settings" at once
+  it('changes the tooltip at once when the keys of "Shortcut settings" change', () => {
+    const host = mount(<SettingsButton onOpen={() => {}} />);
+    const tooltip = () => host.querySelector('.vx-tooltip')?.textContent;
+    run(() => pageUserShortcutKeys().set('shortcut-settings', { code: 'F2', modifiers: ['Ctrl', 'Shift'] }));
+    expect(tooltip()).toBe('Settings (Ctrl+Shift+F2)');
+    run(() => pageUserShortcutKeys().restore('shortcut-settings'));
+    expect(tooltip()).toBe('Settings (Alt+S)');
   });
 });

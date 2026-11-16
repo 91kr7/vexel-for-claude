@@ -1,4 +1,4 @@
-// e2e of plan-settings_dialog, batch shortcuts-section: the "Shortcuts" tab of the settings popup, Alt+S, and the shortcuts panel gone.
+// e2e of plan-settings_dialog, batches shortcuts-section and editable-shortcuts: the "Shortcuts" tab of the settings popup, Alt+S, and the shortcuts panel gone.
 // It carries the panel tests of plan-keyboard_shortcuts, batch shortcuts-panel, over to the tab.
 import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
@@ -44,7 +44,6 @@ const newSessionButton = (page: Page) => page.getByRole('main').getByRole('butto
 const popup = settingsPopup;
 const tab = (page: Page, name: string) => popup(page).getByRole('tab', { name, exact: true });
 const shortcutList = (page: Page) => popup(page).getByRole('region', { name: 'Shortcut List' });
-const closeButton = (page: Page) => popup(page).getByRole('button', { name: 'Close', exact: true });
 const anyDialog = (page: Page) => page.locator('[role="dialog"], [role="alertdialog"]');
 const group = (page: Page, name: string) => shortcutList(page).locator('section').filter({ has: page.getByRole('heading', { name, exact: true }) });
 const chooser = (page: Page) => page.getByRole('dialog', { name: 'New Claude Code Session' });
@@ -133,6 +132,7 @@ const rowTexts = (page: Page, name: string) =>
       rows.map((row) => {
         const clone = row.cloneNode(true) as HTMLElement;
         for (const badge of clone.querySelectorAll('.kbd-badge')) badge.textContent = `[${badge.textContent ?? ''}]`;
+        for (const el of clone.querySelectorAll('button, [role="alert"]')) el.remove();
         for (const el of clone.querySelectorAll('*')) el.append(' ');
         return (clone.textContent ?? '').replace(/\s+/g, ' ').replace(/\]\s*\+\s*\[/g, ']+[').trim();
       }),
@@ -150,8 +150,9 @@ const ROWS = {
   Navigation: [
     '[Alt]+[L] Focus the list',
     '[Alt]+[C] Focus the main view',
-    '[Alt]+[Up] / [Alt]+[Down] Previous / next session',
-    '[Alt]+[1] … [Alt]+[9] Session at position 1 to 9',
+    '[Alt]+[Up] Previous session',
+    '[Alt]+[Down] Next session',
+    ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((position) => `[Alt]+[${position}] Session at position ${position}`),
     '[Alt]+[I] Next session that needs input',
   ],
   Sessions: [
@@ -164,7 +165,9 @@ const ROWS = {
   ],
   Terminal: [
     '[Ctrl]+[Shift]+[F] Search',
-    '[Ctrl]+[=] / [Ctrl]+[+] / [Ctrl]+[-] / [Ctrl]+[0] Larger / smaller / default text',
+    '[Ctrl]+[=] / [Ctrl]+[+] Larger text',
+    '[Ctrl]+[-] Smaller text',
+    '[Ctrl]+[0] Default text size',
     '[Ctrl]+[Shift]+[L] Focus the list',
   ],
   General: ['[Alt]+[A] Light/Dark theme', '[Alt]+[S] Shortcut settings'],
@@ -230,20 +233,18 @@ test('the shortcuts section is light in the light theme and dark in the dark the
   await expect(shortcutList(page).locator('.kbd-badge').first()).toBeVisible();
 });
 
-// plan-settings_dialog/REQ-11, REQ-19, plan-keyboard_shortcuts/REQ-33: Tab reaches the list with a visible focus, Enter adds nothing, the arrows scroll it, Alt+S does nothing
-test('in a short window, Tab reaches the list, the arrows scroll it, Enter and Alt+S do nothing, and the popup stays inside the window', async ({ page }) => {
+// plan-settings_dialog/REQ-11, REQ-19, REQ-35, plan-keyboard_shortcuts/REQ-33: Tab reaches "Restore All", then the list with a visible focus, Enter adds nothing, the arrows scroll it, Alt+S does nothing
+test('in a short window, Tab reaches "Restore All" then the list, the arrows scroll it, Enter and Alt+S do nothing, and the popup stays inside the window', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 420 });
   await loadPage(page);
   await newSessionButton(page).focus();
   await openWithAltS(page);
 
   await page.keyboard.press('Tab');
+  await expect(popup(page).getByRole('button', { name: 'Restore All', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(shortcutList(page)).toBeFocused();
   expect(await hasFocusVisible(shortcutList(page)), 'focus ring on the list').toBe(true);
-  await page.keyboard.press('Tab');
-  await expect(closeButton(page)).toBeFocused();
-  await page.keyboard.press('Shift+Tab');
-  await expect(shortcutList(page)).toBeFocused();
 
   await page.keyboard.press('Enter');
   await page.keyboard.press('Alt+KeyS');
