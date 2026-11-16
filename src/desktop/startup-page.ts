@@ -22,16 +22,15 @@ const STYLE = `
     -webkit-app-region: no-drag;
   }
   .window-button {
-    --window-border: 0 0 0 0.5px color-mix(in srgb, var(--window-colour) 45%, #fff);
     display: flex; align-items: center; justify-content: center;
     width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%;
     color: rgba(0, 0, 0, 0.6); background: var(--window-colour); cursor: pointer;
-    box-shadow: var(--window-border);
+    box-shadow: none;
     transition: filter 0.2s, box-shadow 0.2s;
   }
   .window-button:hover {
     filter: brightness(1.08);
-    box-shadow: var(--window-border), 0 0 8px 1px color-mix(in srgb, var(--window-colour) 60%, transparent);
+    box-shadow: 0 0 8px 1px color-mix(in srgb, var(--window-colour) 60%, transparent);
   }
   .window-button:active { filter: brightness(0.85); }
   .window-button:focus-visible { outline: 2px solid #0065ae; outline-offset: 2px; }

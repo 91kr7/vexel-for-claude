@@ -343,8 +343,6 @@ function expectColour(actual: Rgba, expected: Rgba, label: string): void {
 }
 
 const rgbOf = (colour: string) => (colour.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number) as [number, number, number];
-/** The border colour of plan-ui_restyle/REQ-6: the button colour 45 % mixed with white. */
-const borderOf = (colour: string): Rgba => [...rgbOf(colour).map((c) => c * 0.45 + 255 * 0.55), 1] as Rgba;
 /** The glow colour of plan-ui_restyle/REQ-9: the button colour at 60 % opacity. */
 const glowOf = (colour: string): Rgba => [...rgbOf(colour), 0.6] as Rgba;
 
@@ -362,8 +360,8 @@ function transitionDurations(look: { transitionProperty: string; transitionDurat
 }
 
 test.describe('Flat macOS window buttons with a hover glow (plan-ui_restyle)', () => {
-  // plan-ui_restyle/REQ-4, REQ-5, REQ-6, REQ-7: flat solid circles, thin light border, nothing else at rest
-  test('at rest each button is a flat solid circle with only a 0.5 px border of its colour mixed 45 % with white, in both themes', async ({ page }) => {
+  // plan-ui_restyle/REQ-4, REQ-5, REQ-6, REQ-7: flat solid circles, no border, nothing else at rest (border removed on the human request of 2026-11-16)
+  test('at rest each button is a flat solid circle with no border or shadow, in both themes', async ({ page }) => {
     await installFakeBridge(page);
     await page.goto('/');
     const { close, minimize, maximize } = windowButtons(topBar(page));
@@ -383,16 +381,13 @@ test.describe('Flat macOS window buttons with a hover glow (plan-ui_restyle)', (
         expect(look.background, `${theme}: solid fill`).toBe(colour);
         expect(look.image, `${theme}: no gradient or gloss`).toBe('none');
         expect(look.filter, `${theme}: no filter at rest`).toBe('none');
-        const shadows = parseShadows(look.shadow);
-        expect(shadows.length, `${theme}: only the border shadow at rest: ${look.shadow}`).toBe(1);
-        expect(shadows[0]!.lengths).toBe('0px 0px 0px 0.5px');
-        expectColour(shadows[0]!.colour, borderOf(colour), `${theme}: border of ${colour}`);
+        expect(look.shadow, `${theme}: no border or shadow at rest`).toBe('none');
       }
     }
   });
 
   // plan-ui_restyle/REQ-8, REQ-9: all symbols on group hover; the hovered button alone gets brighter with a glow in its colour, 0.2 s transition
-  test('the hovered button gets brighter with a soft glow of its own colour beside the border, with a 0.2 s transition; the others stay at rest and all symbols show', async ({ page }) => {
+  test('the hovered button gets brighter with a soft glow of its own colour, with a 0.2 s transition; the others stay at rest and all symbols show', async ({ page }) => {
     await installFakeBridge(page);
     await page.goto('/');
     const { close, minimize, maximize } = windowButtons(topBar(page));
@@ -403,14 +398,11 @@ test.describe('Flat macOS window buttons with a hover glow (plan-ui_restyle)', (
       await page.mouse.move(600, 400);
       await button.hover();
       await expect.poll(async () => (await buttonLook(button)).filter, `${colour} hovered`).toBe('brightness(1.08)');
-      await expect.poll(async () => parseShadows((await buttonLook(button)).shadow).length, `${colour}: border and glow`).toBe(2);
+      await expect.poll(async () => parseShadows((await buttonLook(button)).shadow).length, `${colour}: glow only`).toBe(1);
       const look = await buttonLook(button);
       const shadows = parseShadows(look.shadow);
-      const border = shadows.find((shadow) => shadow.lengths === '0px 0px 0px 0.5px');
       const glow = shadows.find((shadow) => shadow.lengths === '0px 0px 8px 1px');
-      expect(border, `the border stays: ${look.shadow}`).toBeDefined();
-      expect(glow, `a 0 0 8px 1px glow: ${look.shadow}`).toBeDefined();
-      expectColour(border!.colour, borderOf(colour), `border of ${colour}`);
+      expect(glow, `a 0 0 8px 1px glow and no border: ${look.shadow}`).toBeDefined();
       expectColour(glow!.colour, glowOf(colour), `glow of ${colour}`);
       const durations = transitionDurations(look);
       expect(durations['filter'], `filter transition: ${look.transitionProperty} / ${look.transitionDuration}`).toBe('0.2s');
@@ -419,7 +411,7 @@ test.describe('Flat macOS window buttons with a hover glow (plan-ui_restyle)', (
       for (const other of all.filter((b) => b !== button)) {
         const rest = await buttonLook(other);
         expect(rest.filter, 'a button not under the pointer has no filter').toBe('none');
-        expect(parseShadows(rest.shadow).length, 'a button not under the pointer has no glow').toBe(1);
+        expect(rest.shadow, 'a button not under the pointer has no glow').toBe('none');
       }
       await expect.poll(() => symbolsShown(all), { message: `symbols with the pointer over ${colour}` }).toEqual([true, true, true]);
     }
@@ -444,9 +436,9 @@ test.describe('Flat macOS window buttons with a hover glow (plan-ui_restyle)', (
 
 // plan-ui_restyle, batch startup-page: the StartupPage repeats the flat look, hover and press of the client buttons
 test.describe('Flat window buttons on the StartupPage (plan-ui_restyle)', () => {
-  // REQ-37, REQ-39: flat circles in the client colours, only the light border at rest, symbols black at 60 % with 3:1 contrast
+  // REQ-37, REQ-39: flat circles in the client colours, no border at rest, symbols black at 60 % with 3:1 contrast
   for (const state of [{ kind: 'loading' as const }, { kind: 'error' as const, outputLines: ['first line'] }]) {
-    test(`${state.kind} state: at rest each button has only the 0.5 px light border, no gloss, no filter; symbols black at 60 %`, async ({ page }) => {
+    test(`${state.kind} state: at rest each button has no border, no gloss, no filter; symbols black at 60 %`, async ({ page }) => {
       await installFakeBridge(page);
       await page.goto(startupPageUrl(state));
       const { close, minimize, maximize } = windowButtons(page);
@@ -459,10 +451,7 @@ test.describe('Flat window buttons on the StartupPage (plan-ui_restyle)', () => 
         const look = await buttonLook(button);
         expect(look.image, `${colour}: no gradient or gloss`).toBe('none');
         expect(look.filter, `${colour}: no filter at rest`).toBe('none');
-        const shadows = parseShadows(look.shadow);
-        expect(shadows.length, `${colour}: only the border shadow at rest: ${look.shadow}`).toBe(1);
-        expect(shadows[0]!.lengths).toBe('0px 0px 0px 0.5px');
-        expectColour(shadows[0]!.colour, borderOf(colour), `border of ${colour}`);
+        expect(look.shadow, `${colour}: no border or shadow at rest`).toBe('none');
       }
       await maximize.hover();
       const contrasts = await symbolContrasts(all);
@@ -473,8 +462,8 @@ test.describe('Flat window buttons on the StartupPage (plan-ui_restyle)', () => 
     });
   }
 
-  // REQ-38: the hovered button gets brighter with a glow of its colour beside the border, 0.2 s transition; the others stay at rest
-  test('the hovered button gets brighter with a soft glow of its own colour beside the border, with a 0.2 s transition', async ({ page }) => {
+  // REQ-38: the hovered button gets brighter with a glow of its colour, 0.2 s transition; the others stay at rest
+  test('the hovered button gets brighter with a soft glow of its own colour, with a 0.2 s transition', async ({ page }) => {
     await installFakeBridge(page);
     await page.goto(startupPageUrl({ kind: 'loading' }));
     const { close, minimize, maximize } = windowButtons(page);
@@ -485,14 +474,11 @@ test.describe('Flat window buttons on the StartupPage (plan-ui_restyle)', () => 
       await page.mouse.move(600, 400);
       await button.hover();
       await expect.poll(async () => (await buttonLook(button)).filter, `${colour} hovered`).toBe('brightness(1.08)');
-      await expect.poll(async () => parseShadows((await buttonLook(button)).shadow).length, `${colour}: border and glow`).toBe(2);
+      await expect.poll(async () => parseShadows((await buttonLook(button)).shadow).length, `${colour}: glow only`).toBe(1);
       const look = await buttonLook(button);
       const shadows = parseShadows(look.shadow);
-      const border = shadows.find((shadow) => shadow.lengths === '0px 0px 0px 0.5px');
       const glow = shadows.find((shadow) => shadow.lengths === '0px 0px 8px 1px');
-      expect(border, `the border stays: ${look.shadow}`).toBeDefined();
-      expect(glow, `a 0 0 8px 1px glow: ${look.shadow}`).toBeDefined();
-      expectColour(border!.colour, borderOf(colour), `border of ${colour}`);
+      expect(glow, `a 0 0 8px 1px glow and no border: ${look.shadow}`).toBeDefined();
       expectColour(glow!.colour, glowOf(colour), `glow of ${colour}`);
       const durations = transitionDurations(look);
       expect(durations['filter'], `filter transition: ${look.transitionProperty} / ${look.transitionDuration}`).toBe('0.2s');
@@ -500,7 +486,7 @@ test.describe('Flat window buttons on the StartupPage (plan-ui_restyle)', () => 
       for (const other of all.filter((b) => b !== button)) {
         const rest = await buttonLook(other);
         expect(rest.filter, 'a button not under the pointer has no filter').toBe('none');
-        expect(parseShadows(rest.shadow).length, 'a button not under the pointer has no glow').toBe(1);
+        expect(rest.shadow, 'a button not under the pointer has no glow').toBe('none');
       }
     }
   });

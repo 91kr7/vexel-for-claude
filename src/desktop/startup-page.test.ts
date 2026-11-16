@@ -86,8 +86,9 @@ describe('startupPageHtml style (plan-ui_restyle)', () => {
     for (const old of ['#ff5f57', '#febc2e', '#28c840']) expect(css.toLowerCase()).not.toContain(old);
   });
 
-  it('REQ-37: a 0.5 px border of the colour mixed 45 % with white', () => {
-    expect(css).toMatch(/0 0 0 0\.5px color-mix\(in srgb, ?[^,()]+(\([^()]*\))? 45%, ?#fff(fff)?\)/i);
+  it('REQ-37, changed on the human request of 2026-11-16: no border at rest', () => {
+    expect(css).not.toMatch(/0 0 0 0\.5px/);
+    expect(css).toMatch(/\.window-button \{[^}]*box-shadow: ?none/);
   });
 
   it('REQ-38: hover → brightness 1.08 and a 0 0 8px 1px glow of the colour at 60 %, with 0.2 s transitions', () => {
