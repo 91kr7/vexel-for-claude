@@ -1,13 +1,14 @@
-import { useId, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
-import { GitBranchIcon, RefreshCwIcon } from '../icons/Icons';
+import { RefreshCwIcon } from '../icons/Icons';
 import type { SessionSummary } from '../sessions/live-session-store';
 import { ChangesTab } from './ChangesTab';
 import { useChanges, type ChangesState } from './changes-store';
 import { HistoryTab } from './HistoryTab';
 import { useHistory, type HistoryState } from './history-store';
-import type { BranchInfo, RepositoryLookupState } from './repository-lookup-store';
+import type { BranchInfo, CoveredRepository, RepositoryLookupState } from './repository-lookup-store';
+import { BranchChip, RepositoryList } from './RepositoryList';
 import { useTurnEndSignal } from './turn-end-watcher';
 
 const NAME = 'Git Explorer';
@@ -18,10 +19,6 @@ const TABS: { tab: Tab; title: string }[] = [
   { tab: 'changes', title: 'Changes' },
   { tab: 'history', title: 'History' },
 ];
-
-const folderNameOf = (root: string) => root.split('/').filter(Boolean).pop() ?? root;
-
-const branchText = (branch: BranchInfo) => (branch.kind === 'branch' ? branch.name : `detached ${branch.hash}`);
 
 function ChangesBody({ root, changes }: { root: string; changes: ChangesState }) {
   if (changes.status === 'loading') return <ProgressIndicator className="git-explorer-message" />;
@@ -48,6 +45,7 @@ function HistoryBody({ root, branch, history, onLoadMore }: { root: string; bran
 }
 
 const NO_SESSIONS: readonly SessionSummary[] = [];
+const NO_REPOSITORIES: readonly CoveredRepository[] = [];
 
 interface GitExplorerPanelProps {
   lookup: RepositoryLookupState;
@@ -57,8 +55,14 @@ interface GitExplorerPanelProps {
 }
 
 export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: GitExplorerPanelProps) {
-  const root = lookup.status === 'repository' ? lookup.root : undefined;
-  const branch = lookup.status === 'repository' ? lookup.branch : undefined;
+  const repositories = lookup.status === 'repositories' ? lookup.repositories : NO_REPOSITORIES;
+  const single = repositories.length === 1 ? repositories[0] : undefined;
+  const errorMessage = lookup.status === 'error' ? lookup.message : single !== undefined && 'error' in single ? single.error : undefined;
+  // The tabs read the first repository until they cover the whole list.
+  const first = errorMessage === undefined ? repositories[0] : undefined;
+  const root = first?.root;
+  const branch = first !== undefined && 'branch' in first ? first.branch : undefined;
+  const roots = useMemo(() => repositories.map((repository) => repository.root), [repositories]);
   const [revision, setRevision] = useState(0);
   const refresh = () => {
     setRevision((current) => current + 1);
@@ -68,7 +72,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
   const [tab, setTab] = useState<Tab>('changes');
   const [historyOpened, setHistoryOpened] = useState(false);
   const { history, loadMore } = useHistory(historyOpened ? root : undefined, revision);
-  useTurnEndSignal(sessions, root, refresh);
+  useTurnEndSignal(sessions, roots, refresh);
   const idPrefix = useId();
   const tabId = (id: Tab) => `${idPrefix}-tab-${id}`;
   const panelId = (id: Tab) => `${idPrefix}-tabpanel-${id}`;
@@ -80,19 +84,17 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
 
   return (
     <section className="git-explorer-panel" aria-label={NAME}>
-      {(lookup.status === 'repository' || lookup.status === 'error') && (
-        <header className="git-explorer-header">
-          {lookup.status === 'repository' && (
+      {(lookup.status === 'repositories' || lookup.status === 'error') && (
+        <header className={repositories.length > 1 ? 'git-explorer-header several' : 'git-explorer-header'}>
+          {single !== undefined && (
             <>
-              <h3 className="git-explorer-repository" title={lookup.root}>
-                {folderNameOf(lookup.root)}
+              <h3 className="git-explorer-repository" title={single.root}>
+                {single.name}
               </h3>
-              <span className="mono-chip vx-surface-2 git-explorer-branch">
-                <GitBranchIcon />
-                {branchText(lookup.branch)}
-              </span>
+              {'branch' in single && <BranchChip branch={single.branch} className="git-explorer-branch" />}
             </>
           )}
+          {repositories.length > 1 && <RepositoryList repositories={repositories} />}
           <button type="button" className="session-search-button git-explorer-refresh" aria-label="Refresh" title="Refresh" onClick={refresh}>
             <RefreshCwIcon />
           </button>
@@ -136,7 +138,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
           </div>
         </>
       )}
-      {lookup.status === 'error' && <ErrorMessage className="git-explorer-error">{lookup.message}</ErrorMessage>}
+      {errorMessage !== undefined && <ErrorMessage className="git-explorer-error">{errorMessage}</ErrorMessage>}
     </section>
   );
 }

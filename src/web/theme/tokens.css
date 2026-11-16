@@ -63,6 +63,13 @@
   --color-focus-ring: var(--accent-primary);
   --color-backdrop: rgba(0, 0, 0, 0.65);
 
+  --repo-color-1: #7dd3fc;
+  --repo-color-2: #34d399;
+  --repo-color-3: #fbbf24;
+  --repo-color-4: #f472b6;
+  --repo-color-5: #a78bfa;
+  --repo-color-6: #fb923c;
+
   --window-close: #e0443c;
   --window-minimize: #e8b616;
   --window-maximize: #25b033;
@@ -108,4 +115,11 @@
   /* OKLCH hue 32, between rose (14) and amber (46). */
   --orange-400: #b62a12;
   --zinc-400: #52525b;
+
+  --repo-color-1: #0369a1;
+  --repo-color-2: #047857;
+  --repo-color-3: #a16207;
+  --repo-color-4: #be185d;
+  --repo-color-5: #6d28d9;
+  --repo-color-6: #c2410c;
 }

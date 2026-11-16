@@ -196,7 +196,7 @@ export function ConversationView({ sessionId, session, sessions, onResumed, focu
   const [gitRevision, setGitRevision] = useState(0);
   const repository = useRepositoryLookup(session?.folder, gitRevision);
   const [gitOpen, setGitOpen] = useState(false);
-  const gitShown = gitOpen && (repository.status === 'repository' || repository.status === 'error');
+  const gitShown = gitOpen && (repository.status === 'repositories' || repository.status === 'error');
   const refreshGit = () => setGitRevision((revision) => revision + 1);
   const toggleGit = () => {
     if (!gitShown) refreshGit();
