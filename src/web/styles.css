@@ -2204,7 +2204,10 @@ input {
   min-width: 0;
 }
 
+/* Stacked above the terminal frame, so the frame shadow does not reach it. */
 .git-explorer-panel {
+  position: relative;
+  z-index: 1;
   flex: 0 0 50%;
   min-width: 360px;
   min-height: 0;

@@ -47,3 +47,5 @@
 | 2026-11-16 | dev session-view | G4 development | pass | CSS only plus sessions specs and index; build green |
 | 2026-11-16 | dev session-view | divergence developer | decided | Frame inner padding stays 12px (terminal rows); no darker focus shadow; stale 40px footer line in session-view spec fixed |
 | 2026-11-16 | dev session-view | G5 tests | sent back | Red: frame shadow paints 8px over the git explorer (session-view spec, REQ-26) |
+| 2026-11-16 | dev session-view | G4 development (fix) | pass | Git explorer panel stacks above the frame; build green |
+| 2026-11-16 | dev session-view | G5 tests (round 2) | pass | Re-run session-view, git-explorer, terminal-panel, hosted-session: 77 passed |
