@@ -201,7 +201,7 @@ test.describe('Header and footer of an open session', () => {
 
     // The footer: path, context, total tokens, cost, then the text size controls at the right end; no key hint.
     const foot = await box(footer(page));
-    near(foot.height, 40, 'footer height');
+    near(foot.height, 32, 'footer height');
     await expect(place(page, folder)).toHaveText(folder);
     await expect(contextChip(page)).toHaveText(/^\s*Context\s*45\.2k \/ 200k · 23%\s*$/);
     await expect(tokensChip(page)).toHaveText(/^\s*47\.2k tokens/);
@@ -215,7 +215,8 @@ test.describe('Header and footer of an open session', () => {
       if (next) expect(item.x + item.width, `footer item ${n} before the next one`).toBeLessThanOrEqual(next.x + TOLERANCE);
     }
     const zoom = boxes[4]!;
-    near(zoom.x + zoom.width, foot.x + foot.width - 16, 'text size controls at the right end');
+    // SessionFooter "Shows" (plan-dark_blue_theme): 14 px side padding.
+    near(zoom.x + zoom.width, foot.x + foot.width - 14, 'text size controls at the right end');
     await expect(footer(page).locator('kbd')).toHaveCount(0);
     await expect(mainArea(page)).not.toContainText('back to the list');
   });
@@ -237,7 +238,7 @@ test.describe('Header and footer of an open session', () => {
     await expect(tooltip(page)).toBeVisible();
     await expect(tooltip(page)).toHaveText(/^\s*Input\s*4k\s*Output\s*2k\s*Cache write\s*30k\s*Cache read\s*150k\s*$/);
     await expect(tokensChip(page)).toHaveAttribute('aria-describedby', (await tooltip(page).getAttribute('id'))!);
-    near((await box(footer(page))).height, 40, 'footer height with the tooltip open');
+    near((await box(footer(page))).height, 32, 'footer height with the tooltip open');
     const chip = await box(tokensChip(page));
     const tip = await box(tooltip(page));
     expect(tip.y + tip.height, 'the tooltip sits above the chip').toBeLessThanOrEqual(chip.y + TOLERANCE);
@@ -276,7 +277,7 @@ test.describe('Header and footer of an open session', () => {
     await expect(contextChip(page)).toHaveText(/^\s*Context\s*45\.2k \/ 200k · 23%\s*$/);
     await expect(tokensChip(page)).toHaveText(/^\s*47\.2k tokens/);
     await expect(costChip(page)).toHaveText(/^\s*<?\$\d+\.\d\d\s*$/);
-    near((await box(footer(page))).height, 40, 'footer height');
+    near((await box(footer(page))).height, 32, 'footer height');
     await expect(zoomControls(page)).toHaveCount(0);
   });
 
@@ -325,7 +326,7 @@ test.describe('Header and footer of an open session', () => {
     // The path in the footer: cut with "…", the full path as tooltip, the figures whole.
     await expect(place(page, folder)).toHaveText(folder);
     expect(await isCutWithEllipsis(place(page, folder)), 'the path ends with "…"').toBe(true);
-    near((await box(footer(page))).height, 40, 'footer height');
+    near((await box(footer(page))).height, 32, 'footer height');
     for (const figure of [contextChip(page), tokensChip(page), costChip(page), zoomControls(page)]) {
       await expect(figure).toBeInViewport({ ratio: 1 });
       expect(await figure.evaluate((el) => el.scrollWidth <= el.clientWidth), 'figure not cut').toBe(true);

@@ -256,7 +256,8 @@ test('Alt+I with no session that needs input keeps the open session and shows a 
 
   const box = await toast(page).boundingBox();
   expect(box, 'the message is rendered').not.toBeNull();
-  expect(Math.abs(box!.x + box!.width / 2 - 640), 'the message is centred').toBeLessThanOrEqual(2);
+  // plan-dark_blue_theme/REQ-15: the message sits at the bottom right.
+  expect(Math.abs(1280 - (box!.x + box!.width) - 20), 'the message is 20 px from the right').toBeLessThanOrEqual(2);
   expect(Math.abs(800 - (box!.y + box!.height) - 20), 'the message is 20 px from the bottom').toBeLessThanOrEqual(2);
 
   await page.waitForTimeout(2500);

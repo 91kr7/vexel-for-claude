@@ -328,10 +328,11 @@ test.describe('theme choice', () => {
     await expect.poll(() => style(sw, 'color')).toBe(LIGHT['--text-secondary']);
     expect(await style(sw, 'background-color')).toBe(await style(resume, 'background-color'));
     const size = await box(sw);
-    expect(size.width).toBeCloseTo(34, 0);
-    expect(size.height).toBeCloseTo(34, 0);
+    // plan-dark_blue_theme/REQ-9: 32 px square, 16 px icon.
+    expect(size.width).toBeCloseTo(32, 0);
+    expect(size.height).toBeCloseTo(32, 0);
     expect(await style(sw, 'border-top-left-radius')).toBe('8px');
-    expect((await box(sw.locator('svg'))).width).toBeCloseTo(17, 0);
+    expect((await box(sw.locator('svg'))).width).toBeCloseTo(16, 0);
     await sw.hover();
     await expect.poll(() => style(sw, 'background-color')).toBe(LIGHT['--bg-surface-3']);
     expect(await style(sw, 'color')).toBe(LIGHT['--text-primary']);

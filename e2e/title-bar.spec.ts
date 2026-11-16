@@ -113,7 +113,8 @@ test.describe('TopBar in the desktop window', () => {
     const colours = () =>
       page.evaluate(() => {
         const probe = document.createElement('div');
-        probe.style.color = 'var(--bg-surface-2)';
+        // plan-dark_blue_theme/REQ-6: the title bar role surface.
+        probe.style.color = 'var(--role-chrome)';
         document.body.append(probe);
         const token = getComputedStyle(probe).color;
         probe.remove();
@@ -196,16 +197,16 @@ test('in the browser no element of the page is a drag area', async ({ page }) =>
 });
 
 test.describe('StartupPage title bar', () => {
-  // REQ-10, REQ-23, plan-ui_restyle/REQ-36, StartupPage "Shows": a 44 px bar across the top with only the window buttons, a drag area elsewhere, in the light top bar colours
+  // REQ-10, REQ-23, plan-ui_restyle/REQ-36, plan-dark_blue_theme/REQ-6, REQ-8, StartupPage "Shows": a 38 px bar across the top with only the window buttons, a drag area elsewhere, in the light top bar colours
   for (const state of [{ kind: 'loading' as const }, { kind: 'error' as const, outputLines: ['first line', 'Backend exited with code 1.'] }]) {
-    test(`${state.kind} state: a light 44 px bar across the top with only the window buttons, a drag area elsewhere`, async ({ page }) => {
+    test(`${state.kind} state: a light 38 px bar across the top with only the window buttons, a drag area elsewhere`, async ({ page }) => {
       for (const width of [1280, 420]) {
         await page.setViewportSize({ width, height: 700 });
         await page.goto(startupPageUrl(state));
-        for (const y of [1, 22, 43]) {
+        for (const y of [1, 19, 37]) {
           for (const x of [1, width / 2, width - 1]) expect(await regionAt(page, x, y), `${width} px, at ${x}, ${y}`).toBe('drag');
         }
-        expect(await regionAt(page, width / 2, 45), 'below the bar').not.toBe('drag');
+        expect(await regionAt(page, width / 2, 39), 'below the bar').not.toBe('drag');
 
         const bar = await page.evaluate(() => {
           const element = [...document.querySelectorAll('body *')].find((e) => getComputedStyle(e).getPropertyValue('-webkit-app-region') === 'drag')!;
@@ -219,7 +220,7 @@ test.describe('StartupPage title bar', () => {
             border: [s.borderBottomWidth, s.borderBottomStyle, s.borderBottomColor],
           };
         });
-        expect(bar.box).toEqual([0, 0, width, 44]);
+        expect(bar.box).toEqual([0, 0, width, 38]);
         expect(bar.text, 'the bar holds no text').toBe('');
         expect(bar.controls, 'the window buttons are its only controls').toEqual(['Close', 'Minimize', 'Maximize']);
         expect(bar.background).toBe('rgb(239, 234, 224)');
@@ -227,7 +228,7 @@ test.describe('StartupPage title bar', () => {
 
         const message = page.getByText(state.kind === 'loading' ? 'Starting the backend…' : 'The backend could not start.', { exact: true });
         await expect(message).toBeVisible();
-        expect((await message.boundingBox())!.y, 'the message is below the bar').toBeGreaterThanOrEqual(44);
+        expect((await message.boundingBox())!.y, 'the message is below the bar').toBeGreaterThanOrEqual(38);
       }
     });
   }

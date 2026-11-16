@@ -985,13 +985,49 @@ test.describe('Startup bar matches the client bar', () => {
     await expect(window.getByText(LOADING, { exact: true })).toBeVisible();
     await window.mouse.move(600, 400);
     const startup = await barLook(window);
-    expect(startup.bar, 'REQ-36: the startup bar').toEqual({ top: 0, height: 44 });
+    expect(startup.bar, 'plan-dark_blue_theme/REQ-8: the startup bar').toEqual({ top: 0, height: 38 });
 
     await expect(list(window)).toBeVisible({ timeout: 20_000 });
     await window.mouse.move(600, 400);
     await expect(window.getByRole('banner').getByRole('button', { name: 'Close', exact: true })).toBeVisible();
     const client = await barLook(window);
-    expect(client.bar, 'the client bar').toEqual({ top: 0, height: 44 });
+    expect(client.bar, 'plan-dark_blue_theme/REQ-6: the client bar').toEqual({ top: 0, height: 38 });
     expect(startup, 'REQ-40: nothing moves or changes when the client page appears').toEqual(client);
+  });
+});
+
+// plan-dark_blue_theme, batch window-frame — scenario "the desktop window still moves and its buttons still work".
+// The buttons acting in each look are checked in "Window buttons" and "Windows 11 look"; the window manager's drag by hand.
+test.describe('38 px title bar', () => {
+  test.describe.configure({ timeout: 90_000 });
+
+  test.beforeAll(buildDesktop);
+
+  test('plan-dark_blue_theme/REQ-8: in both looks the 38 px bar is a drag area over its whole height, and its window buttons are not', async () => {
+    const app = await launchDesktop(await desktopEnv(await freePort()));
+    const window = await app.firstWindow();
+    await expect(list(window)).toBeVisible({ timeout: 20_000 });
+    const bar = window.getByRole('banner');
+    for (const look of ['vexel', 'windows11'] as const) {
+      if ((await window.locator('html').getAttribute('data-look')) !== look) await chooseInSettings(window, look === 'windows11' ? 'Windows 11' : 'macOS');
+      await expect(window.locator('html')).toHaveAttribute('data-look', look);
+      await window.mouse.move(600, 400);
+      const barBox = (await bar.boundingBox())!;
+      expect([barBox.y, barBox.height], `${look}: the bar is 38 px high at the top`).toEqual([0, 38]);
+
+      const brand = (await bar.getByText('Vexel', { exact: true }).boundingBox())!;
+      const planUsage = (await bar.getByRole('button', { name: 'Plan Usage', exact: true }).boundingBox())!;
+      const gap = (brand.x + brand.width + planUsage.x) / 2;
+      for (const y of [1, 19, 37]) expect(await appRegionAt(window, gap, y), `${look}: the space between the two ends at y ${y}`).toBe('drag');
+      expect(await appRegionAt(window, gap, 40), `${look}: below the bar`).not.toBe('drag');
+
+      for (const name of ['Close', 'Minimize', 'Maximize']) {
+        const button = (await bar.getByRole('button', { name, exact: true }).boundingBox())!;
+        expect(await appRegionAt(window, button.x + button.width / 2, button.y + button.height / 2), `${look}: ${name}`).toBe('no-drag');
+        expect(button.y + button.height, `${look}: ${name} inside the bar`).toBeLessThanOrEqual(38 + 0.5);
+        // The bar's 1 px bottom line may stay under the buttons, as in e2e/windows-look.spec.ts.
+        if (look === 'windows11') expect(button.height, `${look}: ${name} as high as the bar`).toBeGreaterThanOrEqual(37);
+      }
+    }
   });
 });

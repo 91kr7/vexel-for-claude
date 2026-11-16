@@ -160,21 +160,18 @@ test.describe('rail and list panel', () => {
     expect(mainBox.x + mainBox.width).toBeCloseTo(1440, 0);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-6, REQ-17, NavigationRail "Shows": "New Claude Code Session" as `.vx-rail-fab`
-  test('the rail "New Claude Code Session" is the 34 px gradient button with the 16 px plus icon in the text-on-accent colour', async ({ page }) => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-6, plan-dark_blue_theme/REQ-9, REQ-10, NavigationRail "Shows": "New Claude Code Session" as `.vx-rail-fab`
+  test('the rail "New Claude Code Session" is the 32 px square tinted with the accent, with the 16 px plus icon in the accent', async ({ page }) => {
     await page.goto('/');
     const fab = railButton(page, 'New Claude Code Session');
     await page.mouse.move(0, 899);
     const fabBox = await box(fab);
-    expect([fabBox.width, fabBox.height]).toEqual([34, 34]);
+    expect([fabBox.width, fabBox.height]).toEqual([32, 32]);
     expect(await style(fab, 'border-radius')).toBe('8px');
-    const accent = await computedColour(page, 'var(--accent-primary)');
-    const deep = await computedColour(page, 'var(--accent-deep)');
-    const gradient = await style(fab, 'background-image');
-    expect(gradient).toContain('linear-gradient(135deg');
-    expect(gradient).toContain(accent);
-    expect(gradient).toContain(deep);
-    expect(await style(fab, 'color')).toBe(await computedColour(page, 'var(--on-accent)'));
+    expect(await style(fab, 'background-image')).toBe('none');
+    expect(await style(fab, 'background-color')).toBe(await computedColour(page, 'color-mix(in srgb, var(--role-accent) 20%, transparent)'));
+    expect(await style(fab, 'border-top-color')).toBe(await computedColour(page, 'var(--role-accent-border)'));
+    expect(await style(fab, 'color')).toBe(await computedColour(page, 'var(--role-accent)'));
     expect(await fab.locator('svg').evaluate((svg) => [svg.getBoundingClientRect().width, svg.getBoundingClientRect().height])).toEqual([16, 16]);
   });
 
@@ -199,7 +196,7 @@ test.describe('rail and list panel', () => {
     const brand = topBar(page).getByText('Vexel', { exact: true });
     const forClaude = topBar(page).getByText('for Claude', { exact: true });
     const title = panel(page).getByRole('heading', { level: 1, name: 'Sessions', exact: true });
-    expect(await style(brand, 'font-size')).toBe('14px');
+    expect(await style(brand, 'font-size'), 'TopBar "Shows" (plan-dark_blue_theme): 13 px').toBe('13px');
     expect(await style(brand, 'font-weight')).toBe('600');
     expect(await style(forClaude, 'color')).toBe(await computedColour(page, 'var(--text-muted)'));
     expect(await style(forClaude, 'font-size')).toBe('10px');
