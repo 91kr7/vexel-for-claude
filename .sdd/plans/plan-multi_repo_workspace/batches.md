@@ -8,8 +8,8 @@ Requirements: `requirements.md`. Batch files: `batches/`.
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| `batch-repo-detection` | Repository detection | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | — | implemented | The user sees every repository of a workspace folder |
-| `batch-grouped-changes` | Grouped changes | REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20 | `batch-repo-detection` | todo | The user reads the changes of every repository, grouped |
+| `batch-repo-detection` | Repository detection | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | — | certified | The user sees every repository of a workspace folder |
+| `batch-grouped-changes` | Grouped changes | REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20 | `batch-repo-detection` | in progress | The user reads the changes of every repository, grouped |
 | `batch-combined-history` | Combined history | REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27 | `batch-grouped-changes` | todo | The user reads the history of every repository in one graph |
 | `batch-repo-filter` | Repository filter | REQ-28, REQ-29, REQ-30, REQ-31 | `batch-combined-history` | todo | The user filters the git explorer by one repository |
 
