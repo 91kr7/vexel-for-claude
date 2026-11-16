@@ -343,8 +343,8 @@ function expectColour(actual: Rgba, expected: Rgba, label: string): void {
 }
 
 const rgbOf = (colour: string) => (colour.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number) as [number, number, number];
-/** The border colour of plan-ui_restyle/REQ-6: the button colour 45 % mixed with white. */
-const borderOf = (colour: string): Rgba => [...rgbOf(colour).map((c) => c * 0.45 + 255 * 0.55), 1] as Rgba;
+/** The border colour of plan-ui_restyle/REQ-6, made dark on the human request of 2026-11-16: the button colour 45 % mixed with black. */
+const borderOf = (colour: string): Rgba => [...rgbOf(colour).map((c) => c * 0.45), 1] as Rgba;
 /** The glow colour of plan-ui_restyle/REQ-9: the button colour at 60 % opacity. */
 const glowOf = (colour: string): Rgba => [...rgbOf(colour), 0.6] as Rgba;
 
@@ -362,8 +362,8 @@ function transitionDurations(look: { transitionProperty: string; transitionDurat
 }
 
 test.describe('Flat macOS window buttons with a hover glow (plan-ui_restyle)', () => {
-  // plan-ui_restyle/REQ-4, REQ-5, REQ-6, REQ-7: flat solid circles, thin light border, nothing else at rest
-  test('at rest each button is a flat solid circle with only a 0.5 px border of its colour mixed 45 % with white, in both themes', async ({ page }) => {
+  // plan-ui_restyle/REQ-4, REQ-5, REQ-6, REQ-7: flat solid circles, thin dark border, nothing else at rest
+  test('at rest each button is a flat solid circle with only a 0.5 px border of its colour mixed 45 % with black, in both themes', async ({ page }) => {
     await installFakeBridge(page);
     await page.goto('/');
     const { close, minimize, maximize } = windowButtons(topBar(page));
@@ -444,9 +444,9 @@ test.describe('Flat macOS window buttons with a hover glow (plan-ui_restyle)', (
 
 // plan-ui_restyle, batch startup-page: the StartupPage repeats the flat look, hover and press of the client buttons
 test.describe('Flat window buttons on the StartupPage (plan-ui_restyle)', () => {
-  // REQ-37, REQ-39: flat circles in the client colours, only the light border at rest, symbols black at 60 % with 3:1 contrast
+  // REQ-37, REQ-39: flat circles in the client colours, only the dark border at rest, symbols black at 60 % with 3:1 contrast
   for (const state of [{ kind: 'loading' as const }, { kind: 'error' as const, outputLines: ['first line'] }]) {
-    test(`${state.kind} state: at rest each button has only the 0.5 px light border, no gloss, no filter; symbols black at 60 %`, async ({ page }) => {
+    test(`${state.kind} state: at rest each button has only the 0.5 px dark border, no gloss, no filter; symbols black at 60 %`, async ({ page }) => {
       await installFakeBridge(page);
       await page.goto(startupPageUrl(state));
       const { close, minimize, maximize } = windowButtons(page);

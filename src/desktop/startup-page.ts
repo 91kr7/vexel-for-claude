@@ -22,7 +22,7 @@ const STYLE = `
     -webkit-app-region: no-drag;
   }
   .window-button {
-    --window-border: 0 0 0 0.5px color-mix(in srgb, var(--window-colour) 45%, #fff);
+    --window-border: 0 0 0 0.5px color-mix(in srgb, var(--window-colour) 45%, #000);
     display: flex; align-items: center; justify-content: center;
     width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%;
     color: rgba(0, 0, 0, 0.6); background: var(--window-colour); cursor: pointer;
