@@ -201,11 +201,11 @@ test('choosing "Light" and "Windows 11" restyles the whole client at once, keeps
   expect(await page.evaluate(() => localStorage.getItem('ai-client.theme'))).toBe('light');
 
   await expect(radio(page, 'macOS')).toBeChecked();
-  const macRadius = await popup(page).evaluate((element) => getComputedStyle(element).borderRadius);
+  const macBackground = await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor);
   await cardOf(radio(page, 'Windows 11')).click();
   expect(await rootMark(page, 'data-look')).toBe('windows11');
   await expect(radio(page, 'Windows 11')).toBeChecked();
-  expect(await popup(page).evaluate((element) => getComputedStyle(element).borderRadius), 'the popup takes the Windows 11 look').not.toBe(macRadius);
+  expect(await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor), 'the popup takes the Windows 11 look').not.toBe(macBackground);
   expect(await page.evaluate(() => localStorage.getItem('ai-client.look'))).toBe('windows11');
   // In the browser the Windows 11 look shows no window buttons.
   await expect(topBar(page).getByRole('button', { name: 'Minimize' })).toHaveCount(0);

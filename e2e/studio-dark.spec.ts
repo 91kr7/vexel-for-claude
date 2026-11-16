@@ -770,7 +770,7 @@ test.describe('external session view', () => {
     const code = claudeMessage.getByText('npm test', { exact: true });
     expect(await style(code, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     expect(await style(code, 'background-color')).toBe(SURFACE_2);
-    expect(await style(code, 'border-top-left-radius')).toBe('4px');
+    expect(await style(code, 'border-top-left-radius')).toBe('5px');
     await expect(claudeMessage).not.toContainText('`');
 
     // REQ-39: the tool card row, then the open output on canvas
@@ -832,7 +832,7 @@ test.describe('dialogs', () => {
     expect(await style(backdrop, 'backdrop-filter')).toBe('none');
     expect(await style(dialog, 'background-color')).toBe(SURFACE_2);
     expect(await style(dialog, 'border-top-color')).toBe(BORDER_STRONG);
-    expect(await style(dialog, 'border-top-left-radius')).toBe('12px');
+    expect(await style(dialog, 'border-top-left-radius')).toBe('8px');
     expect((await box(dialog)).width).toBeLessThanOrEqual(448 + TOLERANCE);
 
     // REQ-44: the accent dot, the title and the mono "[Esc]"
@@ -860,7 +860,7 @@ test.describe('dialogs', () => {
     expect(await style(field, 'background-color')).toBe(CANVAS);
     expect(await style(field, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     await expect(field).toBeFocused();
-    expect(await style(field, 'border-top-color')).toBe(ACCENT_BORDER);
+    expect(await style(field, 'border-top-color')).toBe(ACCENT);
     expect((await box(label)).y).toBeLessThan((await box(field)).y);
 
     // REQ-47: surface-1 footer, neutral "Cancel", accent "Start Session"

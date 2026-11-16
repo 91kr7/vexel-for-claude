@@ -18,3 +18,5 @@
 | 2026-11-16 | plan | G3 coverage | pass | 42 REQ / 5 batches; cited paths exist; no cycles; acceptance sections present; REQ-32 change sent with validation |
 | 2026-11-16 | dev shared-shapes | G4 development | pass | Build green; diff limited to tokens.css, windows11.css, styles.css, specs and index |
 | 2026-11-16 | dev shared-shapes | divergence developer | decided | INT-6..10 done in styles.css, no TSX change; role tokens alias level tokens so Windows 11 needs no duplicate mapping |
+| 2026-11-16 | dev shared-shapes | G5 tests | sent back | Red: REQ-4 focus rings cut in Settings > Shortcuts (pane body, list bottom); banner radius spec mismatch |
+| 2026-11-16 | dev shared-shapes | question tester | decided | Warning banner takes the 7px card radius (REQ-3); developer aligns `warning-dialog.md`, tester aligns the two tests |
