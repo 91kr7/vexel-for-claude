@@ -10,6 +10,7 @@ export default defineConfig({
   build: {
     outDir: fileURLToPath(new URL('./dist/web', import.meta.url)),
     emptyOutDir: true,
+    license: { fileName: 'third-party-licenses.md' },
   },
   server: {
     host: '127.0.0.1',

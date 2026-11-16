@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Unit tests of ChangesTab (plan-git_explorer, batch uncommitted-changes).
+// Unit tests of ChangesTab (plan-git_explorer, batch uncommitted-changes; list box of plan-git_graph, batch open-source-explorer).
 import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -41,9 +41,9 @@ function render(entries: ChangeEntry[] = changes): HTMLElement {
   return container;
 }
 
-const group = (view: HTMLElement, name: string) => view.querySelector<HTMLElement>(`section[aria-label="${name}"]`);
-const buttons = (scope: HTMLElement) => [...scope.querySelectorAll<HTMLButtonElement>('button')];
-const button = (scope: HTMLElement, text: string) => buttons(scope).find((b) => b.textContent?.includes(text));
+const group = (view: HTMLElement, name: string) => view.querySelector<HTMLElement>(`[role="group"][aria-label="${name}"]`);
+const options = (scope: HTMLElement) => [...scope.querySelectorAll<HTMLElement>('[role="option"]')];
+const option = (scope: HTMLElement, text: string) => options(scope).find((o) => o.textContent?.includes(text));
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 const until = (check: () => boolean) => vi.waitFor(() => expect(check()).toBe(true));
 const requestedUrl = (call: number) => new URL(String(fetchMock.mock.calls[call]?.[0]), 'http://localhost');
@@ -58,14 +58,14 @@ describe('ChangesTab', () => {
     expect(staged).not.toBeNull();
     expect(unstaged).not.toBeNull();
     expect(staged!.compareDocumentPosition(unstaged!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(buttons(staged!)).toHaveLength(3);
-    expect(buttons(unstaged!)).toHaveLength(3);
+    expect(options(staged!)).toHaveLength(3);
+    expect(options(unstaged!)).toHaveLength(3);
   });
 
   // plan-git_explorer/REQ-10: the kind label of each file
   it('labels each file with its kind', () => {
     const view = render();
-    const label = (scope: HTMLElement, text: string) => button(scope, text)!.textContent;
+    const label = (scope: HTMLElement, text: string) => option(scope, text)!.textContent;
     expect(label(group(view, 'Staged')!, 'src/new.ts')).toContain('Added');
     expect(label(group(view, 'Staged')!, 'src/both.ts')).toContain('Modified');
     expect(label(group(view, 'Staged')!, 'new-name.md')).toContain('Renamed');
@@ -75,13 +75,13 @@ describe('ChangesTab', () => {
   });
 
   it('shows a rename as "<old path> → <new path>", with the full path text as tooltip', () => {
-    const rename = button(group(render(), 'Staged')!, 'new-name.md')!;
+    const rename = option(group(render(), 'Staged')!, 'new-name.md')!;
     expect(rename.textContent).toContain('docs/old-name.md → docs/new-name.md');
     expect(rename.querySelector('[title="docs/old-name.md → docs/new-name.md"]')).not.toBeNull();
   });
 
   it('gives each path its full text as tooltip', () => {
-    const entry = button(group(render(), 'Unstaged')!, 'notes.txt')!;
+    const entry = option(group(render(), 'Unstaged')!, 'notes.txt')!;
     expect(entry.querySelector('[title="notes.txt"]')).not.toBeNull();
   });
 
@@ -94,13 +94,13 @@ describe('ChangesTab', () => {
   // plan-git_explorer/REQ-12: a click shows the diff of that file in that group
   it('loads the diff of the clicked file in its group, shows "Loading…", then the diff', async () => {
     const view = render();
-    const staged = button(group(view, 'Staged')!, 'src/both.ts')!;
-    const unstaged = button(group(view, 'Unstaged')!, 'src/both.ts')!;
-    expect(staged.getAttribute('aria-pressed')).toBe('false');
+    const staged = option(group(view, 'Staged')!, 'src/both.ts')!;
+    const unstaged = option(group(view, 'Unstaged')!, 'src/both.ts')!;
+    expect(staged.getAttribute('aria-selected')).toBe('false');
     flushSync(() => staged.click());
     await until(() => fetchMock.mock.calls.length === 1);
-    expect(staged.getAttribute('aria-pressed')).toBe('true');
-    expect(unstaged.getAttribute('aria-pressed')).toBe('false');
+    expect(staged.getAttribute('aria-selected')).toBe('true');
+    expect(unstaged.getAttribute('aria-selected')).toBe('false');
     expect(requestedUrl(0).searchParams.get('path')).toBe(ROOT);
     expect(requestedUrl(0).searchParams.get('group')).toBe('staged');
     expect(requestedUrl(0).searchParams.get('file')).toBe('src/both.ts');
@@ -113,7 +113,7 @@ describe('ChangesTab', () => {
 
   it('sends the old path of a clicked rename', async () => {
     const view = render();
-    flushSync(() => button(group(view, 'Staged')!, 'new-name.md')!.click());
+    flushSync(() => option(group(view, 'Staged')!, 'new-name.md')!.click());
     await until(() => fetchMock.mock.calls.length === 1);
     expect(requestedUrl(0).searchParams.get('file')).toBe('docs/new-name.md');
     expect(requestedUrl(0).searchParams.get('oldPath')).toBe('docs/old-name.md');
@@ -121,19 +121,19 @@ describe('ChangesTab', () => {
 
   it('shows the unstaged diff after a click on the same file in the other group', async () => {
     const view = render();
-    flushSync(() => button(group(view, 'Staged')!, 'src/both.ts')!.click());
+    flushSync(() => option(group(view, 'Staged')!, 'src/both.ts')!.click());
     await until(() => fetchMock.mock.calls.length === 1);
-    flushSync(() => button(group(view, 'Unstaged')!, 'src/both.ts')!.click());
+    flushSync(() => option(group(view, 'Unstaged')!, 'src/both.ts')!.click());
     await until(() => fetchMock.mock.calls.length === 2);
     expect(requestedUrl(1).searchParams.get('group')).toBe('unstaged');
-    expect(button(group(view, 'Staged')!, 'src/both.ts')!.getAttribute('aria-pressed')).toBe('false');
-    expect(button(group(view, 'Unstaged')!, 'src/both.ts')!.getAttribute('aria-pressed')).toBe('true');
+    expect(option(group(view, 'Staged')!, 'src/both.ts')!.getAttribute('aria-selected')).toBe('false');
+    expect(option(group(view, 'Unstaged')!, 'src/both.ts')!.getAttribute('aria-selected')).toBe('true');
   });
 
   // plan-git_explorer/REQ-14
   it('shows the binary note for a binary file', async () => {
     const view = render();
-    flushSync(() => button(group(view, 'Unstaged')!, 'notes.txt')!.click());
+    flushSync(() => option(group(view, 'Unstaged')!, 'notes.txt')!.click());
     await until(() => pending.length === 1);
     answer(0, { binary: true, cut: false, lines: [] });
     await until(() => view.textContent!.includes('Binary file, no diff shown'));
@@ -141,11 +141,56 @@ describe('ChangesTab', () => {
 
   it('shows a diff error in an alert with its message', async () => {
     const view = render();
-    flushSync(() => button(group(view, 'Unstaged')!, 'gone.txt')!.click());
+    flushSync(() => option(group(view, 'Unstaged')!, 'gone.txt')!.click());
     await until(() => pending.length === 1);
     answer(0, { error: 'git_error', message: 'fatal: bad revision' }, 500);
     await until(() => view.querySelector('[role="alert"]') !== null);
     expect(view.querySelector('[role="alert"]')!.textContent).toBe('fatal: bad revision');
+  });
+
+  // plan-git_graph/REQ-1: the files sit in a list box "Changed files"
+  it('shows the files as options of a list box "Changed files"', () => {
+    const view = render();
+    const listbox = view.querySelector<HTMLElement>('[role="listbox"]');
+    expect(listbox?.getAttribute('aria-label')).toBe('Changed files');
+    expect(options(listbox!)).toHaveLength(6);
+  });
+
+  it('keeps the selected entry selected after a click on it', async () => {
+    const view = render();
+    const entry = option(group(view, 'Staged')!, 'src/new.ts')!;
+    flushSync(() => entry.click());
+    await until(() => fetchMock.mock.calls.length === 1);
+    flushSync(() => entry.click());
+    await settle();
+    expect(entry.getAttribute('aria-selected')).toBe('true');
+    expect(selectedOptions(view)).toHaveLength(1);
+  });
+
+  it('moves the focus with the arrow keys and selects the focused entry with Enter or Space', async () => {
+    const view = render();
+    const first = option(group(view, 'Staged')!, 'src/new.ts')!;
+    const second = option(group(view, 'Staged')!, 'new-name.md')!;
+    const third = option(group(view, 'Staged')!, 'src/both.ts')!;
+    flushSync(() => first.click());
+    await until(() => fetchMock.mock.calls.length === 1);
+    flushSync(() => first.focus());
+    flushSync(() => first.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })));
+    await until(() => document.activeElement === second);
+    flushSync(() => second.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })));
+    flushSync(() => second.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true })));
+    await until(() => second.getAttribute('aria-selected') === 'true');
+    expect(first.getAttribute('aria-selected')).toBe('false');
+    await until(() => fetchMock.mock.calls.length === 2);
+    expect(requestedUrl(1).searchParams.get('file')).toBe('docs/new-name.md');
+    flushSync(() => second.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })));
+    await until(() => document.activeElement === third);
+    flushSync(() => third.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })));
+    flushSync(() => third.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', bubbles: true })));
+    await until(() => third.getAttribute('aria-selected') === 'true');
+    await until(() => fetchMock.mock.calls.length === 3);
+    expect(requestedUrl(2).searchParams.get('group')).toBe('staged');
+    expect(requestedUrl(2).searchParams.get('file')).toBe('src/both.ts');
   });
 
   it('asks for no diff before a click', async () => {
@@ -164,18 +209,18 @@ function renderUpdatable(entries: ChangeEntry[]) {
   return { view: container, update: (next: ChangeEntry[]) => flushSync(() => root.render(<ChangesTab root={ROOT} changes={next} />)) };
 }
 
-const pressed = (view: HTMLElement) => buttons(view).filter((b) => b.getAttribute('aria-pressed') === 'true');
+const selectedOptions = (view: HTMLElement) => options(view).filter((o) => o.getAttribute('aria-selected') === 'true');
 
 describe('ChangesTab after a refresh', () => {
   // plan-git_explorer/REQ-26
   it('keeps the entry with the same group and path selected and loads its diff again', async () => {
     const { view, update } = renderUpdatable(changes);
-    flushSync(() => button(group(view, 'Unstaged')!, 'src/both.ts')!.click());
+    flushSync(() => option(group(view, 'Unstaged')!, 'src/both.ts')!.click());
     await until(() => pending.length === 1);
     answer(0, { binary: false, cut: false, lines: [{ kind: 'added', text: 'old content' }] });
     await until(() => view.textContent!.includes('+old content'));
     update(changes.map((entry) => ({ ...entry })));
-    const selected = pressed(view);
+    const selected = selectedOptions(view);
     expect(selected).toHaveLength(1);
     expect(group(view, 'Unstaged')!.contains(selected[0]!)).toBe(true);
     expect(selected[0]!.textContent).toContain('src/both.ts');
@@ -190,10 +235,10 @@ describe('ChangesTab after a refresh', () => {
 
   it('keeps the selection when the entry changes kind in the same group', async () => {
     const { view, update } = renderUpdatable(changes);
-    flushSync(() => button(group(view, 'Staged')!, 'src/new.ts')!.click());
+    flushSync(() => option(group(view, 'Staged')!, 'src/new.ts')!.click());
     await until(() => pending.length === 1);
     update(changes.map((entry) => (entry.path === 'src/new.ts' ? { ...entry, kind: 'modified' as const } : { ...entry })));
-    const selected = pressed(view);
+    const selected = selectedOptions(view);
     expect(selected).toHaveLength(1);
     expect(selected[0]!.textContent).toContain('src/new.ts');
     await until(() => pending.length === 2);
@@ -201,12 +246,12 @@ describe('ChangesTab after a refresh', () => {
 
   it('closes the selection and the diff when the file is no longer in the same group', async () => {
     const { view, update } = renderUpdatable(changes);
-    flushSync(() => button(group(view, 'Staged')!, 'src/both.ts')!.click());
+    flushSync(() => option(group(view, 'Staged')!, 'src/both.ts')!.click());
     await until(() => pending.length === 1);
     answer(0, { binary: false, cut: false, lines: [{ kind: 'added', text: 'staged line' }] });
     await until(() => view.textContent!.includes('+staged line'));
     update(changes.filter((entry) => !(entry.group === 'staged' && entry.path === 'src/both.ts')));
-    expect(pressed(view)).toHaveLength(0);
+    expect(selectedOptions(view)).toHaveLength(0);
     expect(view.textContent).not.toContain('+staged line');
     await settle();
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -215,12 +260,12 @@ describe('ChangesTab after a refresh', () => {
 
   it('keeps the selection closed when the file comes back in a later refresh', async () => {
     const { view, update } = renderUpdatable(changes);
-    flushSync(() => button(group(view, 'Unstaged')!, 'notes.txt')!.click());
+    flushSync(() => option(group(view, 'Unstaged')!, 'notes.txt')!.click());
     await until(() => pending.length === 1);
     update(changes.filter((entry) => entry.path !== 'notes.txt'));
-    expect(pressed(view)).toHaveLength(0);
+    expect(selectedOptions(view)).toHaveLength(0);
     update(changes.map((entry) => ({ ...entry })));
-    expect(pressed(view)).toHaveLength(0);
+    expect(selectedOptions(view)).toHaveLength(0);
     await settle();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

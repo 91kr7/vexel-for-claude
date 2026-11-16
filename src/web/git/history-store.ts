@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export interface Commit {
   hash: string;
   shortHash: string;
+  /** Full hashes of the parents, first parent first; empty or absent for a root commit. */
+  parents?: string[];
   message: string;
   author: string;
   /** Author date, ISO 8601. */

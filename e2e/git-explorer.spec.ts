@@ -1,4 +1,6 @@
 // e2e of plan-git_explorer, batches explorer-access, uncommitted-changes, history and refresh: the "Git Explorer" button, the panel, its uncommitted changes, the history and the refresh.
+// Changes list box and diff on open-source components, light and dark: plan-git_graph, batch open-source-explorer.
+// The history as a commit graph, the branch label and the commit files list box: plan-git_graph, batch graph-history.
 // Repositories are real git repositories in temp folders. External sessions use fixture files in E2E_CLAUDE_DIR.
 import { type ChildProcess, execFileSync, spawn, spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
@@ -255,9 +257,10 @@ test.describe('Git explorer of an external session', () => {
   });
 });
 
-const group = (page: Page, name: 'Staged' | 'Unstaged') => explorer(page).getByRole('region', { name, exact: true });
-const fileEntry = (page: Page, name: 'Staged' | 'Unstaged', file: string) => group(page, name).getByRole('button').filter({ hasText: file });
-const diffLines = (page: Page) => explorer(page).locator('.diff-line');
+const group = (page: Page, name: 'Staged' | 'Unstaged') => explorer(page).getByRole('group', { name, exact: true });
+const fileEntry = (page: Page, name: 'Staged' | 'Unstaged', file: string) => group(page, name).getByRole('option').filter({ hasText: file });
+// DiffView draws one table row per line, each with a single cell.
+const diffLines = (page: Page) => explorer(page).locator('.diff-view td');
 const isChanges = (url: string) => new URL(url).pathname === '/api/git/changes';
 
 /** The computed colour of a CSS variable, as the browser writes colours (rgb). */
@@ -300,14 +303,14 @@ test.describe('Uncommitted changes in the git explorer', () => {
     await expect(fileEntry(page, 'Staged', 'app/feature.ts')).toContainText('Added');
     await expect(fileEntry(page, 'Unstaged', 'lib/util.ts')).toContainText('Modified');
     await expect(fileEntry(page, 'Unstaged', 'todo.md')).toContainText('Untracked');
-    await expect(group(page, 'Staged').getByRole('button')).toHaveCount(1);
-    await expect(group(page, 'Unstaged').getByRole('button')).toHaveCount(2);
+    await expect(group(page, 'Staged').getByRole('option')).toHaveCount(1);
+    await expect(group(page, 'Unstaged').getByRole('option')).toHaveCount(2);
     const stagedBox = await box(group(page, 'Staged'));
     const unstagedBox = await box(group(page, 'Unstaged'));
     expect(stagedBox.y, '"Staged" is above "Unstaged"').toBeLessThan(unstagedBox.y);
 
     await fileEntry(page, 'Unstaged', 'lib/util.ts').click();
-    await expect(fileEntry(page, 'Unstaged', 'lib/util.ts')).toHaveAttribute('aria-pressed', 'true');
+    await expect(fileEntry(page, 'Unstaged', 'lib/util.ts')).toHaveAttribute('aria-selected', 'true');
     const removed = diffLines(page).filter({ hasText: /^-export const b = 2;$/ });
     const added = diffLines(page).filter({ hasText: /^\+export const b = 20;$/ });
     await expect(removed).toHaveCount(1);
@@ -382,9 +385,124 @@ test.describe('Uncommitted changes in the git explorer', () => {
 
     const clicked = Date.now();
     await fileEntry(page, 'Unstaged', 'logo.png').click();
-    await expect(fileEntry(page, 'Unstaged', 'logo.png')).toHaveAttribute('aria-pressed', 'true');
+    await expect(fileEntry(page, 'Unstaged', 'logo.png')).toHaveAttribute('aria-selected', 'true');
     await expect(explorer(page)).toContainText('Binary file, no diff shown');
     expect(Date.now() - clicked, 'a click after the large diff answers within 2 s').toBeLessThan(2_000);
+  });
+
+  // plan-git_graph/REQ-1, REQ-2, REQ-3, REQ-4: human acceptance scenario "The user sees the uncommitted changes and their diff on the new components"
+  test('the list box and the diff take their colours from the theme tokens, in the light and in the dark theme', async ({ page, request }) => {
+    const repo = await newRepository('theme-repo');
+    await writeFile(path.join(repo, 'notes.md'), 'keep\nold\n');
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'notes');
+    await writeFile(path.join(repo, 'staged.ts'), 'export const staged = 1;\n');
+    git(repo, 'add', 'staged.ts');
+    await writeFile(path.join(repo, 'notes.md'), 'keep\nadded line\n');
+    await writeFile(path.join(repo, 'loose.txt'), 'loose\n');
+
+    await openExplorer(page, request, repo);
+    await expect(explorer(page).getByRole('listbox', { name: 'Changed files', exact: true })).toBeVisible();
+    await expect(fileEntry(page, 'Staged', 'staged.ts')).toContainText('Added');
+    await expect(fileEntry(page, 'Unstaged', 'notes.md')).toContainText('Modified');
+    await expect(fileEntry(page, 'Unstaged', 'loose.txt')).toContainText('Untracked');
+    await fileEntry(page, 'Unstaged', 'notes.md').click();
+    await expect(fileEntry(page, 'Unstaged', 'notes.md')).toHaveAttribute('aria-selected', 'true');
+    await expect(diffLines(page).filter({ hasText: /^\+added line$/ })).toHaveCount(1);
+    await page.mouse.move(0, 0);
+
+    const themeSwitch = page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true });
+    const colours = async () => {
+      const read = (locator: Locator, property: 'color' | 'backgroundColor') => locator.evaluate((el, p) => getComputedStyle(el)[p], property);
+      return {
+        added: await read(diffLines(page).filter({ hasText: /^\+added line$/ }), 'color'),
+        addedTint: await read(diffLines(page).filter({ hasText: /^\+added line$/ }), 'backgroundColor'),
+        removed: await read(diffLines(page).filter({ hasText: /^-old$/ }), 'color'),
+        context: await read(diffLines(page).filter({ hasText: /^\s?keep$/ }), 'color'),
+        hunk: await read(diffLines(page).filter({ hasText: /^@@ / }), 'color'),
+        selected: await read(fileEntry(page, 'Unstaged', 'notes.md'), 'backgroundColor'),
+      };
+    };
+    const tokens = async () => ({
+      green: await cssColour(page, '--emerald-400'),
+      red: await cssColour(page, '--color-error'),
+      text: await cssColour(page, '--text-primary'),
+      muted: await cssColour(page, '--text-muted'),
+      surface3: await cssColour(page, '--bg-surface-3'),
+    });
+    const expectThemeColours = async () => {
+      const t = await tokens();
+      const c = await colours();
+      expect(c.added, 'added line in the success colour').toBe(t.green);
+      expect(c.removed, 'removed line in the error colour').toBe(t.red);
+      expect(c.context, 'context line in the normal text colour').toBe(t.text);
+      expect(c.hunk, 'hunk header muted').toBe(t.muted);
+      expect(c.selected, 'selected entry on surface 3').toBe(t.surface3);
+      expect(c.addedTint, 'added line on a tint').not.toBe('rgba(0, 0, 0, 0)');
+      return c;
+    };
+
+    await themeSwitch.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await page.mouse.move(0, 0);
+    const light = await expectThemeColours();
+
+    await themeSwitch.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.mouse.move(0, 0);
+    const dark = await expectThemeColours();
+    expect(dark.added, 'the added colour changes with the theme').not.toBe(light.added);
+    expect(dark.selected, 'the selected entry changes with the theme').not.toBe(light.selected);
+    expect(dark.context, 'the text colour changes with the theme').not.toBe(light.context);
+  });
+
+  // plan-git_graph/REQ-2: the keyboard moves through the list box and selects an entry
+  test('the arrow keys move between the entries and Enter shows the diff of the focused one', async ({ page, request }) => {
+    const repo = await newRepository('keyboard-repo');
+    await writeFile(path.join(repo, 'README.md'), 'hello\nmore\n');
+    await writeFile(path.join(repo, 'a.txt'), 'alpha\n');
+    await writeFile(path.join(repo, 'b.txt'), 'beta\n');
+    await openExplorer(page, request, repo);
+
+    const entries = group(page, 'Unstaged').getByRole('option');
+    await expect(entries).toHaveCount(3);
+    await entries.nth(0).click();
+    await expect(entries.nth(0)).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('ArrowDown');
+    await expect(entries.nth(1)).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(entries.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(entries.nth(0)).toHaveAttribute('aria-selected', 'false');
+    const name = (await entries.nth(1).getByTitle(/./).textContent()) ?? '';
+    const expected = { 'README.md': /^\+more$/, 'a.txt': /^\+alpha$/, 'b.txt': /^\+beta$/ }[name];
+    expect(expected, `known entry ${name}`).toBeDefined();
+    await expect(diffLines(page).filter({ hasText: expected! })).toHaveCount(1);
+    await page.keyboard.press('ArrowDown');
+    await expect(entries.nth(2)).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(entries.nth(2)).toHaveAttribute('aria-selected', 'true');
+    await expect(group(page, 'Unstaged').getByRole('option', { selected: true })).toHaveCount(1);
+  });
+
+  // plan-git_graph/REQ-2: human acceptance scenario "The user sees a binary file and a clean repository"
+  test('a binary file shows its note, and after a commit of every change "Refresh" shows "No uncommitted changes"', async ({ page, request }) => {
+    const repo = await newRepository('binary-clean-repo');
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 1]);
+    await writeFile(path.join(repo, 'icon.png'), png);
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'icon');
+    await writeFile(path.join(repo, 'icon.png'), Buffer.concat([png, Buffer.from([0, 3, 0, 5])]));
+
+    await openExplorer(page, request, repo);
+    await fileEntry(page, 'Unstaged', 'icon.png').click();
+    await expect(explorer(page)).toContainText('Binary file, no diff shown');
+    await expect(diffLines(page)).toHaveCount(0);
+
+    git(repo, 'commit', '-q', '-a', '-m', 'icon again');
+    await explorer(page).getByRole('button', { name: 'Refresh', exact: true }).click();
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+    await expect(explorer(page)).not.toContainText('Binary file, no diff shown');
+    await expect(explorer(page).getByRole('listbox', { name: 'Changed files', exact: true })).toHaveCount(0);
   });
 
   // plan-git_explorer/REQ-6 (served here): a git error of the changes appears in the panel
@@ -401,7 +519,7 @@ test.describe('Uncommitted changes in the git explorer', () => {
 
 const tab = (page: Page, name: 'Changes' | 'History') => explorer(page).getByRole('tab', { name, exact: true });
 const commitRows = (page: Page) => explorer(page).locator('[aria-label="Commits"]').getByRole('button');
-const changedFiles = (page: Page) => explorer(page).locator('[aria-label="Changed files"]').getByRole('button');
+const changedFiles = (page: Page) => explorer(page).getByRole('listbox', { name: 'Changed files', exact: true }).getByRole('option');
 const backButton = (page: Page) => explorer(page).getByRole('button', { name: /^Back/ });
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 1, 0, 0, 0, 1]);
 
@@ -443,7 +561,8 @@ test.describe('History in the git explorer', () => {
       const row = commitRows(page).nth(index);
       await expect(row).toContainText(shortHash!);
       await expect(row).toContainText(subject);
-      await expect(row).toContainText(`${author} · ${localDate(date!)}`);
+      await expect(row).toContainText(author!);
+      await expect(row).toContainText(localDate(date!));
     }
     await expect(commitRows(page).first()).not.toContainText('Also add notes.');
 
@@ -454,7 +573,7 @@ test.describe('History in the git explorer', () => {
     await expect(changedFiles(page).filter({ hasText: 'notes.md' })).toContainText('Added');
 
     await changedFiles(page).filter({ hasText: 'app.ts' }).click();
-    await expect(changedFiles(page).filter({ hasText: 'app.ts' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(changedFiles(page).filter({ hasText: 'app.ts' })).toHaveAttribute('aria-selected', 'true');
     await expect(diffLines(page).filter({ hasText: /^-export const version = 1;$/ })).toHaveCount(1);
     await expect(diffLines(page).filter({ hasText: /^\+export const version = 2;$/ })).toHaveCount(1);
 
@@ -590,7 +709,7 @@ test.describe('Refresh of the git explorer', () => {
     await setStatus('idle');
     await expect(entry(page, path.join(repo, 'frontend'))).toContainText('Idle', SCAN);
     await expect(fileEntry(page, 'Unstaged', 'frontend/new.ts')).toContainText('Untracked');
-    await expect(fileEntry(page, 'Unstaged', 'README.md')).toHaveAttribute('aria-pressed', 'true');
+    await expect(fileEntry(page, 'Unstaged', 'README.md')).toHaveAttribute('aria-selected', 'true');
     await expect(diffLines(page).filter({ hasText: /^\+second edit$/ })).toHaveCount(1);
     await expect(diffLines(page).filter({ hasText: /^\+first edit$/ })).toHaveCount(1);
   });
@@ -632,7 +751,7 @@ test.describe('Refresh of the git explorer', () => {
     await expect(fileEntry(page, 'Unstaged', 'README.md')).toHaveCount(0);
     await expect(fileEntry(page, 'Unstaged', 'other.txt')).toBeVisible();
     await expect(diffLines(page)).toHaveCount(0);
-    await expect(group(page, 'Unstaged').getByRole('button', { pressed: true })).toHaveCount(0);
+    await expect(group(page, 'Unstaged').getByRole('option', { selected: true })).toHaveCount(0);
   });
 
   // plan-git_explorer/REQ-24: "Refresh" reads the history and the branch again
@@ -704,5 +823,311 @@ test.describe('Refresh of the git explorer', () => {
     await expect(backButton(page)).toHaveCount(0);
     await expect(commitRows(page)).toHaveCount(1);
     await expect(commitRows(page).first()).toContainText('first');
+  });
+});
+
+type Point = { x: number; y: number };
+type Stroke = { from: Point; to: Point; colour: string; width: string; curve: boolean };
+type GraphView = {
+  rows: Array<{ top: number; bottom: number }>;
+  /** Commit nodes in page coordinates, top to bottom; `shown` is false when a clipping box hides the node. */
+  nodes: Array<Point & { shown: boolean; ring: string }>;
+  strokes: Stroke[];
+  shadows: number;
+};
+
+/** The commit graph of the History tab as drawn on the page: rows, nodes and lines in page coordinates. */
+async function readGraph(page: Page): Promise<GraphView> {
+  return explorer(page).evaluate((panel) => {
+    const list = panel.querySelector('[aria-label="Commits"]')!;
+    const rows = [...list.querySelectorAll('button')].map((row) => {
+      const r = row.getBoundingClientRect();
+      return { top: r.top, bottom: r.bottom };
+    });
+    const svg = panel.querySelector<SVGSVGElement>('[aria-hidden="true"] svg');
+    if (svg === null) return { rows, nodes: [], strokes: [], shadows: 0 };
+    const ctm = svg.getScreenCTM()!;
+    const toPage = (x: number, y: number) => {
+      const p = new DOMPoint(x, y).matrixTransform(ctm);
+      return { x: p.x, y: p.y };
+    };
+    let scroller: Element | null = list.parentElement;
+    while (scroller !== null && !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement;
+    // Clipping boxes up to the scroller of the list only: the boxes above it clip the rows as well.
+    const clipped = (el: Element, p: { x: number; y: number }) => {
+      for (let node = el.parentElement; node !== null && node !== scroller; node = node.parentElement) {
+        const style = getComputedStyle(node);
+        if (![style.overflowX, style.overflowY].some((o) => o !== 'visible')) continue;
+        const r = node.getBoundingClientRect();
+        if (p.x < r.left || p.x > r.right || p.y < r.top || p.y > r.bottom) return true;
+      }
+      return false;
+    };
+    const nodes = [...svg.querySelectorAll('g')]
+      .map((g) => [...g.querySelectorAll('circle')])
+      .filter((circles) => circles.length > 0)
+      .map((circles) => {
+        const centre = toPage(circles[0]!.cx.baseVal.value, circles[0]!.cy.baseVal.value);
+        const ring = circles.find((c) => c.hasAttribute('stroke')) ?? circles[0]!;
+        return { ...centre, shown: !clipped(svg, centre), ring: getComputedStyle(ring).stroke };
+      })
+      .sort((a, b) => a.y - b.y);
+    const strokes = [...svg.querySelectorAll<SVGGeometryElement>('line, path')].map((el) => {
+      const length = el.getTotalLength();
+      const start = el.getPointAtLength(0);
+      const end = el.getPointAtLength(length);
+      const style = getComputedStyle(el);
+      return { from: toPage(start.x, start.y), to: toPage(end.x, end.y), colour: style.stroke, width: style.strokeWidth, curve: el.tagName === 'path' };
+    });
+    const shadows = [...svg.querySelectorAll('g')].filter((g) => getComputedStyle(g).filter !== 'none').length;
+    return { rows, nodes, strokes, shadows };
+  });
+}
+
+const NEAR = 6;
+const close = (a: Point, b: Point) => Math.abs(a.x - b.x) <= NEAR && Math.abs(a.y - b.y) <= NEAR;
+/** Vertical strokes of the lane at x. */
+const laneStrokes = (graph: GraphView, x: number) => graph.strokes.filter((s) => !s.curve && Math.abs(s.from.x - x) <= 2 && Math.abs(s.to.x - x) <= 2);
+/** The lane at x is drawn with no gap from y1 to y2. */
+function laneCovers(graph: GraphView, x: number, y1: number, y2: number): boolean {
+  const spans = laneStrokes(graph, x)
+    .map((s) => [Math.min(s.from.y, s.to.y), Math.max(s.from.y, s.to.y)] as const)
+    .sort((a, b) => a[0] - b[0]);
+  let reached = y1;
+  for (const [top, bottom] of spans) if (top <= reached + 2) reached = Math.max(reached, bottom);
+  return reached >= y2 - 2;
+}
+/** A stroke joins the two nodes: its ends sit on them, or a vertical lane runs through both. */
+const joined = (graph: GraphView, a: Point, b: Point) =>
+  graph.strokes.some((s) => (close(s.from, a) && close(s.to, b)) || (close(s.from, b) && close(s.to, a))) ||
+  (Math.abs(a.x - b.x) <= 2 && laneCovers(graph, a.x, Math.min(a.y, b.y), Math.max(a.y, b.y)));
+const shownNodes = (graph: GraphView) => graph.nodes.filter((n) => n.shown);
+
+/** A commit with fixed author and committer dates. */
+function commitAt(folder: string, date: string, ...args: string[]): void {
+  execFileSync('git', ['-c', 'user.name=Grace Hopper', '-c', 'user.email=test@example.com', '-c', 'commit.gpgsign=false', ...args], {
+    cwd: folder,
+    env: { ...process.env, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date },
+  });
+}
+
+/**
+ * main: "first", "main work", "Merge feature" (newest); feature, from "first": "feature one" (logo.png, feature.txt),
+ * "feature two". In date order: Merge feature, feature two, main work, feature one, first.
+ */
+async function mergedRepository(name: string): Promise<string> {
+  const root = path.join(await mkdtemp(path.join(projectsRoot, 'r-')), name);
+  await mkdir(root);
+  git(root, 'init', '-q', '-b', 'main');
+  await writeFile(path.join(root, 'README.md'), 'hello\n');
+  git(root, 'add', '.');
+  commitAt(root, '2026-01-10T10:00:00Z', 'commit', '-q', '-m', 'first');
+  git(root, 'checkout', '-q', '-b', 'feature');
+  await writeFile(path.join(root, 'feature.txt'), 'alpha\n');
+  await writeFile(path.join(root, 'logo.png'), PNG);
+  git(root, 'add', '.');
+  commitAt(root, '2026-01-11T10:00:00Z', 'commit', '-q', '-m', 'feature one');
+  await writeFile(path.join(root, 'feature.txt'), 'alpha\nbeta\n');
+  commitAt(root, '2026-01-13T10:00:00Z', 'commit', '-q', '-a', '-m', 'feature two');
+  git(root, 'checkout', '-q', 'main');
+  await writeFile(path.join(root, 'README.md'), 'hello again\n');
+  commitAt(root, '2026-01-12T10:00:00Z', 'commit', '-q', '-a', '-m', 'main work');
+  commitAt(root, '2026-01-14T10:00:00Z', 'merge', '-q', '--no-ff', '-m', 'Merge feature', 'feature');
+  return root;
+}
+
+async function openHistory(page: Page, request: APIRequestContext, repo: string): Promise<void> {
+  await openExplorer(page, request, repo);
+  await tab(page, 'History').click();
+  await expect(tab(page, 'History')).toHaveAttribute('aria-selected', 'true');
+}
+
+test.describe('Graph history in the git explorer', () => {
+  // plan-git_graph/REQ-3, REQ-8, REQ-9, REQ-10, REQ-12, REQ-13: human acceptance scenario "The user reads the history of a branch with a merge as a graph"
+  test('shows the history with a merge as a graph, newest first, with "main" on the tip and a line from the merge to each parent', async ({ page, request }) => {
+    const repo = await mergedRepository('graph-repo');
+    const log = git(repo, 'log', '--date-order', '--format=%h|%s|%an|%aI').split('\n').map((line) => line.split('|'));
+    expect(log.map((entry) => entry[1])).toEqual(['Merge feature', 'feature two', 'main work', 'feature one', 'first']);
+
+    await openHistory(page, request, repo);
+    await expect(commitRows(page)).toHaveCount(5);
+    for (const [index, [shortHash, subject, author, date]] of log.entries()) {
+      const row = commitRows(page).nth(index);
+      await expect(row).toContainText(shortHash!);
+      await expect(row).toContainText(subject!);
+      await expect(row).toContainText(author!);
+      await expect(row).toContainText(localDate(date!));
+    }
+    await expect(commitRows(page).first().getByText('main', { exact: true })).toBeVisible();
+    for (let index = 1; index < 5; index++) await expect(commitRows(page).nth(index).getByText('main', { exact: true })).toHaveCount(0);
+
+    const graph = await readGraph(page);
+    const nodes = shownNodes(graph);
+    expect(nodes, 'one node per row').toHaveLength(5);
+    for (const [index, node] of nodes.entries()) {
+      const row = graph.rows[index]!;
+      expect(Math.abs(node.y - (row.top + row.bottom) / 2), `node ${index} in the middle of its row`).toBeLessThanOrEqual(3);
+    }
+    const [merge, featureTwo, mainWork, featureOne, first] = nodes;
+    expect(featureTwo!.x, 'the second parent in a lane to the right').toBeGreaterThan(merge!.x);
+    expect(joined(graph, merge!, mainWork!), 'merge → first parent "main work"').toBe(true);
+    expect(joined(graph, merge!, featureTwo!), 'merge → second parent "feature two"').toBe(true);
+    expect(joined(graph, featureTwo!, featureOne!), 'feature two → feature one').toBe(true);
+    expect(joined(graph, mainWork!, first!), 'main work → first').toBe(true);
+    await expect(explorer(page).getByRole('alert')).toHaveCount(0);
+  });
+
+  // plan-git_graph/REQ-12: on a detached HEAD the tip says "detached"
+  test('labels the tip "detached" on a detached HEAD', async ({ page, request }) => {
+    const repo = await newRepository('graph-detached-repo');
+    git(repo, 'commit', '-q', '--allow-empty', '-m', 'second');
+    git(repo, 'checkout', '-q', '--detach');
+    await openHistory(page, request, repo);
+    await expect(commitRows(page)).toHaveCount(2);
+    await expect(commitRows(page).first().getByText('detached', { exact: true })).toBeVisible();
+    await expect(commitRows(page).nth(1).getByText('detached', { exact: true })).toHaveCount(0);
+  });
+
+  // plan-git_graph/REQ-14, REQ-15, REQ-16: human acceptance scenario "The user opens the files and a diff of a merge commit"
+  test('the merge commit lists its files against the first parent, shows the diff of one and the binary note of an image', async ({ page, request }) => {
+    const repo = await mergedRepository('graph-merge-files-repo');
+    await openHistory(page, request, repo);
+    await commitRows(page).filter({ hasText: 'Merge feature' }).click();
+    await expect(backButton(page)).toBeVisible();
+    await expect(changedFiles(page)).toHaveCount(2);
+    await expect(changedFiles(page).filter({ hasText: 'feature.txt' })).toContainText('Added');
+    const logo = changedFiles(page).filter({ hasText: 'logo.png' });
+    await expect(logo).toContainText('Added');
+    await expect(logo).toContainText('Binary');
+    await expect(changedFiles(page).filter({ hasText: 'README.md' }), 'a change of the first parent is not a change of the merge').toHaveCount(0);
+
+    await changedFiles(page).filter({ hasText: 'feature.txt' }).click();
+    await expect(changedFiles(page).filter({ hasText: 'feature.txt' })).toHaveAttribute('aria-selected', 'true');
+    await expect(diffLines(page).filter({ hasText: /^\+alpha$/ })).toHaveCount(1);
+    await expect(diffLines(page).filter({ hasText: /^\+beta$/ })).toHaveCount(1);
+    await expect(diffLines(page).filter({ hasText: /^-/ })).toHaveCount(0);
+
+    await logo.click();
+    await expect(logo).toHaveAttribute('aria-selected', 'true');
+    await expect(explorer(page)).toContainText('Binary file, no diff shown');
+    await expect(diffLines(page)).toHaveCount(0);
+  });
+
+  // plan-git_graph/REQ-11, REQ-18, REQ-19: human acceptance scenario "The user loads a long history"
+  test('a long history with no merges stays one straight line, and "Load more" joins the line with no gap', async ({ page, request }) => {
+    test.setTimeout(90_000);
+    const repo = await newRepository('graph-long-repo');
+    for (let i = 2; i <= 150; i++) git(repo, 'commit', '-q', '--allow-empty', '-m', `commit ${i}`);
+    await openHistory(page, request, repo);
+    await expect(commitRows(page)).toHaveCount(100);
+
+    const before = await readGraph(page);
+    const firstPage = shownNodes(before);
+    expect(firstPage, 'one node per row, no node for the unloaded parent').toHaveLength(100);
+    expect(new Set(firstPage.map((n) => Math.round(n.x))).size, 'one lane').toBe(1);
+    expect(before.strokes.filter((s) => s.curve), 'no curves').toHaveLength(0);
+    const lastRow = before.rows[99]!;
+    expect(laneCovers(before, firstPage[0]!.x, firstPage[0]!.y, lastRow.bottom), 'the line runs to the bottom edge of the last row').toBe(true);
+
+    const started = Date.now();
+    await explorer(page).getByRole('button', { name: 'Load more', exact: true }).click();
+    await expect(commitRows(page)).toHaveCount(150);
+    await commitRows(page).nth(120).click();
+    await expect(backButton(page)).toBeVisible();
+    expect(Date.now() - started, 'the page answers within 5 s').toBeLessThan(5_000);
+    await backButton(page).click();
+
+    const after = await readGraph(page);
+    const all = shownNodes(after);
+    expect(all).toHaveLength(150);
+    expect(new Set(all.map((n) => Math.round(n.x))).size, 'still one lane').toBe(1);
+    expect(after.strokes.filter((s) => s.curve)).toHaveLength(0);
+    for (const index of [0, 99, 100, 149]) {
+      const row = after.rows[index]!;
+      expect(Math.abs(all[index]!.y - (row.top + row.bottom) / 2), `node ${index} in the middle of its row`).toBeLessThanOrEqual(3);
+    }
+    expect(laneCovers(after, all[0]!.x, all[0]!.y, all[149]!.y), 'no gap across the page border').toBe(true);
+  });
+
+  // plan-git_graph/REQ-17: human acceptance scenario "The user opens the history of a repository with no commits"
+  test('a repository with no commits shows "No commits yet", no rows and no error', async ({ page, request }) => {
+    const repo = path.join(await mkdtemp(path.join(projectsRoot, 'r-')), 'graph-unborn-repo');
+    await mkdir(repo);
+    git(repo, 'init', '-q', '-b', 'main');
+    await openHistory(page, request, repo);
+    await expect(explorer(page)).toContainText('No commits yet');
+    await expect(explorer(page).getByRole('alert')).toHaveCount(0);
+    await expect(commitRows(page)).toHaveCount(0);
+  });
+
+  // plan-git_graph/REQ-4: lane colours from the theme tokens, in the dark and in the light theme
+  test('the graph lanes take the theme colours, 2 px with no shadow, and follow a theme switch', async ({ page, request }) => {
+    const repo = await mergedRepository('graph-theme-repo');
+    await openHistory(page, request, repo);
+    await expect(commitRows(page)).toHaveCount(5);
+    const themeSwitch = page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true });
+
+    const expectThemeColours = async () => {
+      const graph = await readGraph(page);
+      const [merge, featureTwo] = shownNodes(graph);
+      const primary = await cssColour(page, '--accent-primary');
+      const second = await cssColour(page, '--emerald-400');
+      const panel = await cssColour(page, '--bg-surface-1');
+      const firstLane = laneStrokes(graph, merge!.x);
+      const secondLane = laneStrokes(graph, featureTwo!.x);
+      expect(firstLane.length, 'a line in the first lane').toBeGreaterThan(0);
+      expect(secondLane.length, 'a line in the second lane').toBeGreaterThan(0);
+      for (const s of firstLane) expect(s.colour, 'first lane in accent primary').toBe(primary);
+      for (const s of secondLane) expect(s.colour, 'second lane in emerald 400').toBe(second);
+      for (const s of graph.strokes) expect(s.width).toBe('2px');
+      expect(graph.shadows, 'no shadow').toBe(0);
+      for (const n of shownNodes(graph)) expect(n.ring, 'node ring in the panel colour').toBe(panel);
+      return { primary, second };
+    };
+
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    const dark = await expectThemeColours();
+    await themeSwitch.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await expect.poll(async () => laneStrokes(await readGraph(page), shownNodes(await readGraph(page))[0]!.x)[0]?.colour).not.toBe(dark.primary);
+    const light = await expectThemeColours();
+    expect(light.primary, 'the lane colour changes with the theme').not.toBe(dark.primary);
+  });
+});
+
+const repoRoot = path.dirname(path.dirname(new URL(import.meta.url).pathname));
+const PERMISSIVE = /^(MIT|ISC|Apache-2\.0|BSD-2-Clause|BSD-3-Clause|0BSD)$/;
+
+test.describe('Licences of the git explorer components', () => {
+  // plan-git_graph/REQ-6, REQ-7: human acceptance scenario "The user finds the licences of the new components"
+  for (const name of ['react-diff-view', 'react-aria-components', 'commit-graph']) {
+    test(`${name} has a permissive licence, a notice with its version and licence text, and an entry in the licences of the build`, async ({ request }) => {
+      const manifest = JSON.parse(await readFile(path.join(repoRoot, 'node_modules', name, 'package.json'), 'utf8')) as { version: string; license: string };
+      expect(manifest.license, 'permissive licence').toMatch(PERMISSIVE);
+
+      const notices = await readFile(path.join(repoRoot, 'THIRD-PARTY-NOTICES.md'), 'utf8');
+      const entry = notices.split(/^## /m).find((section) => section.includes(`${name} ${manifest.version}`));
+      expect(entry, `a notice of ${name} ${manifest.version}`).toBeDefined();
+      expect(entry).toContain(manifest.license);
+      const licenceFile = [...entry!.matchAll(/`([^`]+\.LICENSE)`/g)].map((m) => m[1]!)[0];
+      expect(licenceFile, 'the path of its licence text').toBeDefined();
+      const shipped = await readFile(path.join(repoRoot, licenceFile!), 'utf8');
+      const original = await readFile(path.join(repoRoot, 'node_modules', name, 'LICENSE'), 'utf8');
+      expect(shipped.trim(), 'the licence text of the package').toBe(original.trim());
+
+      // The browser page and the desktop window load the same web build.
+      const built = await request.get('/third-party-licenses.md');
+      expect(built.status()).toBe(200);
+      expect(await built.text()).toContain(`## ${name} - ${manifest.version} (${manifest.license})`);
+    });
+  }
+
+  // plan-git_graph/REQ-7: the packages commit-graph copies into its bundle
+  test('the dependency licence list names the packages that commit-graph bundles', async () => {
+    const manifest = JSON.parse(await readFile(path.join(repoRoot, 'node_modules', 'commit-graph', 'package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>;
+    };
+    const list = await readFile(path.join(repoRoot, 'docs', 'dependency-licenses.md'), 'utf8');
+    for (const dependency of Object.keys(manifest.dependencies ?? {})) expect(list, dependency).toContain(`| ${dependency}@`);
   });
 });

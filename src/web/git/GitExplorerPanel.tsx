@@ -30,13 +30,14 @@ function ChangesBody({ root, changes }: { root: string; changes: ChangesState })
   return <ChangesTab root={root} changes={changes.changes} />;
 }
 
-function HistoryBody({ root, history, onLoadMore }: { root: string; history: HistoryState; onLoadMore: () => void }) {
+function HistoryBody({ root, branch, history, onLoadMore }: { root: string; branch?: BranchInfo; history: HistoryState; onLoadMore: () => void }) {
   if (history.status === 'idle') return null;
   if (history.status === 'loading') return <ProgressIndicator className="git-explorer-message" />;
   if (history.status === 'error') return <ErrorMessage className="git-explorer-error">{history.message}</ErrorMessage>;
   return (
     <HistoryTab
       root={root}
+      branch={branch}
       commits={history.commits}
       hasMore={history.hasMore}
       loadingMore={history.loadingMore}
@@ -57,6 +58,7 @@ interface GitExplorerPanelProps {
 
 export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: GitExplorerPanelProps) {
   const root = lookup.status === 'repository' ? lookup.root : undefined;
+  const branch = lookup.status === 'repository' ? lookup.branch : undefined;
   const [revision, setRevision] = useState(0);
   const refresh = () => {
     setRevision((current) => current + 1);
@@ -130,7 +132,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
             aria-labelledby={tabId('history')}
             hidden={tab !== 'history'}
           >
-            <HistoryBody root={root} history={history} onLoadMore={loadMore} />
+            <HistoryBody root={root} branch={branch} history={history} onLoadMore={loadMore} />
           </div>
         </>
       )}

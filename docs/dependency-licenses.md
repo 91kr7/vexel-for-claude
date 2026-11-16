@@ -8,13 +8,14 @@ Generated from the installed dependency tree (`npm ls --omit=dev --all`). Regene
 
 | License | Packages |
 |---------|----------|
-| MIT | 99 |
+| MIT | 120 |
+| Apache-2.0 | 10 |
 | ISC | 8 |
 | BlueOak-1.0.0 | 6 |
 | BSD-3-Clause | 4 |
-| Apache-2.0 | 1 |
+| 0BSD | 1 |
 
-Total: 118 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) license is declared.
+Total: 149 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) license is declared.
 
 ## Packages
 
@@ -34,11 +35,19 @@ Total: 118 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | @fastify/send@4.2.1 | MIT |
 | @fastify/static@10.1.10 | MIT |
 | @fastify/websocket@11.3.7 | MIT |
+| @floating-ui/core@1.8.0 | MIT |
+| @floating-ui/dom@1.8.0 | MIT |
+| @floating-ui/utils@0.2.12 | MIT |
+| @internationalized/date@3.12.4 | Apache-2.0 |
+| @internationalized/number@3.6.9 | Apache-2.0 |
+| @internationalized/string@3.2.10 | Apache-2.0 |
 | @isaacs/nonrecursive-glob-match@1.0.3 | BlueOak-1.0.0 |
 | @jellybrick/dbus-next@0.11.4 | MIT |
 | @lukeed/ms@2.0.2 | MIT |
 | @nodable/entities@3.1.0 | MIT |
 | @pinojs/redact@0.4.0 | MIT |
+| @react-types/shared@3.37.0 | Apache-2.0 |
+| @swc/helpers@0.5.24 | Apache-2.0 |
 | @types/node@24.19.2 | MIT |
 | @xterm/addon-fit@0.11.0 | MIT |
 | @xterm/addon-search@0.16.0 | MIT |
@@ -50,15 +59,21 @@ Total: 118 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | ajv-formats@3.0.1 | MIT |
 | ajv@8.20.0 | MIT |
 | anynum@1.0.1 | MIT |
+| aria-hidden@1.2.6 | MIT |
 | atomic-sleep@1.0.0 | MIT |
 | avvio@9.3.1 | MIT |
 | balanced-match@4.0.4 | MIT |
 | brace-expansion@5.0.12 | MIT |
+| classnames@2.5.1 | MIT |
+| client-only@0.0.1 | MIT |
+| clsx@2.1.1 | MIT |
+| commit-graph@2.4.0 | MIT |
 | content-disposition@3.0.0 | MIT |
 | cookie@2.0.1 | MIT |
 | debug@4.4.3 | MIT |
 | depd@2.0.0 | MIT |
 | dequal@2.0.3 | MIT |
+| diff-match-patch@1.0.5 | Apache-2.0 |
 | duplexify@4.1.3 | MIT |
 | electron@45.2.3 | MIT |
 | end-of-stream@1.4.5 | MIT |
@@ -77,6 +92,7 @@ Total: 118 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | fastify@5.12.8 | MIT |
 | fastq@1.20.3 | ISC |
 | find-my-way@9.10.0 | MIT |
+| gitdiff-parser@0.3.1 | MIT |
 | glob@14.0.3 | BlueOak-1.0.0 |
 | graceful-fs@4.2.11 | ISC |
 | http-errors@2.0.1 | MIT |
@@ -87,6 +103,7 @@ Total: 118 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | json-schema-ref-resolver@3.0.1 | MIT |
 | json-schema-traverse@1.0.0 | MIT |
 | light-my-request@6.8.0 | BSD-3-Clause |
+| lodash@4.18.1 | MIT |
 | loose-envify@1.4.0 | MIT |
 | lru-cache@11.5.3 | BlueOak-1.0.0 |
 | mime@3.0.0 | MIT |
@@ -95,6 +112,7 @@ Total: 118 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | ms@2.1.3 | MIT |
 | node-addon-api@7.1.1 | MIT |
 | node-pty@1.1.0 | MIT |
+| object-assign@4.1.1 | MIT |
 | on-exit-leak-free@2.1.2 | MIT |
 | once@1.4.0 | ISC |
 | path-expression-matcher@1.6.2 | MIT |
@@ -104,9 +122,19 @@ Total: 118 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | pino@10.4.0 | MIT |
 | process-warning@5.1.1 | MIT |
 | progress@2.0.3 | MIT |
+| prop-types@15.8.1 | MIT |
 | quick-format-unescaped@4.0.4 | MIT |
+| react-aria-components@1.22.1 | Apache-2.0 |
+| react-aria@3.53.1 | Apache-2.0 |
+| react-diff-view@3.3.3 | MIT |
 | react-dom@18.3.1 | MIT |
+| react-icons@5.7.0 | MIT |
+| react-infinite-scroller@1.2.6 | MIT |
+| react-is@16.13.1 | MIT |
+| react-stately@3.51.0 | Apache-2.0 |
+| react-tooltip@5.30.1 | MIT |
 | react@18.3.1 | MIT |
+| reactjs-popup@2.0.6 | MIT |
 | readable-stream@3.6.2 | MIT |
 | real-require@1.0.0 | MIT |
 | require-from-string@2.0.2 | MIT |
@@ -121,6 +149,7 @@ Total: 118 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | semver@7.8.6 | ISC |
 | set-cookie-parser@3.2.2 | MIT |
 | setprototypeof@1.2.0 | ISC |
+| shallow-equal@3.1.0 | MIT |
 | sonic-boom@4.2.1 | MIT |
 | split2@4.2.0 | ISC |
 | statuses@2.0.2 | MIT |
@@ -131,10 +160,13 @@ Total: 118 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | thread-stream@4.2.1 | MIT |
 | toad-cache@3.7.4 | MIT |
 | toidentifier@1.0.1 | MIT |
+| tslib@2.9.1 | 0BSD |
 | tsx@4.23.15 | MIT |
 | undici-types@7.24.6 | MIT |
 | undici@7.30.2 | MIT |
+| use-sync-external-store@1.7.0 | MIT |
 | util-deprecate@1.0.2 | MIT |
+| warning@4.0.3 | MIT |
 | wrappy@1.0.2 | ISC |
 | ws@8.22.1 | MIT |
 | xml-naming@0.3.0 | MIT |

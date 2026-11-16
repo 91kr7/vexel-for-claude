@@ -42,7 +42,7 @@ A local web application for the developer's own Linux machine. One browser page 
         └── icons/           app icon, SVG and 256 px PNG
 ```
 
-Generated output, not versioned: `dist/web/` (frontend build), `dist/desktop/` (desktop build), `test-results/`, `playwright-report/`.
+Generated output, not versioned: `dist/web/` (frontend build, with `third-party-licenses.md` for the bundled npm packages), `dist/desktop/` (desktop build), `test-results/`, `playwright-report/`.
 
 ## Dependencies
 
@@ -55,6 +55,9 @@ Generated output, not versioned: `dist/web/` (frontend build), `dist/desktop/` (
 | tsx | runtime | Runs the TypeScript server in `dev` and `start` |
 | electron | runtime | Desktop window; the app runs it from the repository |
 | react, react-dom | runtime | UI |
+| react-diff-view | runtime | Unified diff view of the git explorer (MIT). Takes hunks; the frontend adapts the lines of `parseDiff` |
+| react-aria-components | runtime | Accessible list of the changed files in the git explorer, styled by plain CSS on its `data-*` states (Apache-2.0) |
+| commit-graph | runtime | Commit graph of the git explorer history (MIT in `package.json`; its `LICENSE` file holds the Apache-2.0 text). Draws only the graph layer; the rows are the app's own buttons. Lane colours are theme tokens resolved to `rgb(...)` at runtime, because the package parses its colours |
 | @xterm/xterm, @xterm/addon-fit | runtime | Terminal view and resize to container |
 | @xterm/addon-web-links | runtime | Web addresses of the terminal rows as links (same major line as `@xterm/xterm` 6) |
 | @xterm/addon-search | runtime | Search of the terminal text, scrollback included, with match highlights (same major line as `@xterm/xterm` 6) |
@@ -125,3 +128,5 @@ Two environment variables let parallel cycles run e2e side by side. Their defaul
 - **Node for the desktop app.** The desktop session has no nvm `PATH`. The menu entry passes the absolute Node path in `AI_CLIENT_NODE`. `npm run desktop` uses `node` from the shell.
 - **Menu entry folder.** `npm run desktop:install` writes to `AI_CLIENT_APPLICATIONS_DIR` when set, else to `$XDG_DATA_HOME/applications` (default `~/.local/share/applications`).
 - **`NODE_ENV=production` in the shell** makes npm skip dev dependencies. Install with `npm install --include=dev`.
+- **Licences of inlined packages.** Vite's build licence file (`dist/web/third-party-licenses.md`) names only the packages it bundles as separate modules. It misses the packages that react-diff-view and react-aria copy into their own code (lodash, classnames, diff-match-patch, gitdiff-parser, `@internationalized/*`, …). No custom Vite plugin covers them: `docs/dependency-licenses.md`, regenerated from `npm ls --omit=dev --all`, lists them, and `THIRD-PARTY-NOTICES.md` links to it. Gatekeeper decision, 2026-11-16.
+- **Commit graph component.** The history graph uses `commit-graph` (2.4.0, about 11.8k npm downloads a month, used by DoltHub), not `@wexample/js-graph-log`: human decision, 2026-11-16 (a more stable and well-known library). Chosen over `@tomplum/react-git-log` 2.x (about 1.4k downloads a month; its React 18 line stopped at 2.5.0 in April 2025): gatekeeper decision, 2026-11-16. The package parses its colours, so the theme tokens are resolved to concrete colours at runtime and read again when the theme or look changes; CSS fits the drawing to the 28 px rows of the narrow panel (gatekeeper decision, 2026-11-16).

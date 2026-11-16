@@ -31,7 +31,7 @@ Shows:
   - a git error → its message in an ErrorMessage.
 - tab "History" → the history of the repository (useHistory on `root` and `revision`), whose first page is read the first time the tab opens, not before, and again at each later refresh:
   - while loading → a progress indicator "Loading…";
-  - loaded → the HistoryTab ("No commits yet" for a repository with no commits);
+  - loaded → the HistoryTab, with the branch of the lookup, so its first commit carries the branch name or "detached" ("No commits yet" for a repository with no commits);
   - a git error → its message in an ErrorMessage.
 - with `error` → a header with only the "Refresh" button, then the message in an ErrorMessage (announced as an alert).
 - with `loading` or `none` → an empty region.
@@ -58,4 +58,4 @@ During a refresh:
 
 ## Requirements served
 
-- `plan-git_explorer/REQ-4`, `plan-git_explorer/REQ-6`, `plan-git_explorer/REQ-7`, `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-13`, `plan-git_explorer/REQ-16`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-24`, `plan-git_explorer/REQ-25`, `plan-git_explorer/REQ-26`
+- `plan-git_explorer/REQ-4`, `plan-git_explorer/REQ-6`, `plan-git_explorer/REQ-7`, `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-13`, `plan-git_explorer/REQ-16`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-24`, `plan-git_explorer/REQ-25`, `plan-git_explorer/REQ-26`, `plan-git_graph/REQ-12`
