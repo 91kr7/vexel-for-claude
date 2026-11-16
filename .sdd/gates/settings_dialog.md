@@ -19,3 +19,6 @@
 | 2026-11-16 | dev | G5 settings-popup | pass | 58 unit + 79 e2e re-run green; light-theme "theme change keeps the new-session dialog open" deleted, unreachable after REQ-16/REQ-19 |
 | 2026-11-16 | dev | question tester (Electron tests) | decided | 4 changed tests of `e2e/desktop-window.spec.ts` run at the plan's closing run |
 | 2026-11-16 | analysis | G1 analysis (updates section) | pass | Human decisions on the Updates section; 138 lines |
+| 2026-11-16 | plan | G2 requirements (updates) | pass | REQ-43..52 cover the Updates block of the spec |
+| 2026-11-16 | plan | question planner (updates texts, notice, result) | decided | Title Case "Check for Updates" as the other buttons; notice shown after a newer result; result reset on reopening |
+| 2026-11-16 | plan | G3 coverage (update-check) | pass | New batch depends on shortcuts-section; modify paths exist; acceptance covers REQ-43..52 |

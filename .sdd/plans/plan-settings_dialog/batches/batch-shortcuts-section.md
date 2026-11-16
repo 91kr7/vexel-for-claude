@@ -14,7 +14,7 @@ Requirements → `.sdd/plans/plan-settings_dialog/requirements.md`. Batch settin
 | ID | Type | Where | What | REQ | Depends |
 |----|------|-------|------|-----|---------|
 | INT-1 | modify | `src/web/ShortcutsPanel.tsx` | Turn the panel into the "Shortcuts" section of the popup. It keeps the same groups, rows and key badges. It loses its own Dialog frame, its "Close" and the `shortcuts-panel` class. | REQ-22, REQ-23, REQ-24 | — |
-| INT-2 | modify | settings popup (app area, built by batch settings-popup) | Add the "Shortcuts" tab after "Window Look", with the section of INT-1. | REQ-21 | INT-1 |
+| INT-2 | modify | `src/web/settings/SettingsDialog.tsx` | Add the "Shortcuts" tab after "Window Look", with the section of INT-1. | REQ-21 | INT-1 |
 | INT-3 | modify | `src/web/shortcut-map.ts` | The "general" row "Shortcuts panel" becomes "Shortcut settings", with a new command that opens the popup on the "Shortcuts" tab. The key stays Alt+S. | REQ-25 | — |
 | INT-4 | modify | `src/web/shortcut-keys.ts` | Remove the exception for the `shortcuts-panel` dialog. While any dialog is open, every key does nothing, Alt+S included. | REQ-24, REQ-25 | INT-3 |
 | INT-5 | modify | `src/web/AppLayout.tsx` | Run the new command of INT-3: open the popup on the "Shortcuts" tab. Remove the shortcuts panel state and its wiring to the TopBar. | REQ-24, REQ-25 | INT-3 |

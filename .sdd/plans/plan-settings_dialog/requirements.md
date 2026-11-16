@@ -77,6 +77,23 @@ Words used below:
 | REQ-41 | A key press during editing does not reach Claude Code and does not start another shortcut. |
 | REQ-42 | Editing a row, "restore default" and "restore all" work with the keyboard, with a visible focus. |
 
+## Feature: Update check in the settings
+
+Human decisions of 2026-11-16 (spec, "Updates section"). "Launch check" → the release check of `update_check.md`, lines 35-39. "Launch notice" → the "Update Available" notice of `update_check.md`.
+
+| ID | Requirement |
+|----|-------------|
+| REQ-43 | The popup has an updates section, after the shortcuts section. |
+| REQ-44 | The updates section shows the installed version and a "Check for updates" button. |
+| REQ-45 | The button runs the same release check as the launch check. |
+| REQ-46 | During the check, the button is disabled and shows "Checking…". |
+| REQ-47 | With no newer version, the section shows a message with the installed version, for example "You are up to date (v0.6.1)". |
+| REQ-48 | With a newer version, the section shows the installed version, the newer version and a link to the release page. |
+| REQ-49 | With a newer version, the launch notice shows again, also when the user closed it. |
+| REQ-50 | When GitHub cannot be reached or refuses the request, the section shows a short error, for example "Could not check for updates. Try again later." |
+| REQ-51 | The popup stays open after the check. |
+| REQ-52 | The launch check stays silent on failure, as today. |
+
 ## Assumptions
 
 - **Place of the settings button (REQ-1, REQ-2).** Human decision (2026-11-16): the button sits at the bottom of the navigation rail, not in the sidebar. The spec carries this decision.
@@ -92,6 +109,11 @@ Words used below:
 - **Name in the message (REQ-32).** Gatekeeper decision, not a human decision (2026-11-16). Only a conflict with another client shortcut names an action. A reserved key is rejected with a message that names its owner: Claude Code, the desktop or the browser.
 - **Restore default in conflict (REQ-30, REQ-34).** Gatekeeper decision, not a human decision (2026-11-16). If the default keys of a row are now used by another shortcut, "restore default" is rejected like an edit, with the same message. The two keys are not swapped.
 - **Layout (REQ-26).** The AltGr rule of `keyboard_shortcuts.md`, line 80, binds the defaults only. A user's own key works on the user's own layout (spec, "Assumptions").
+
+- **Four sections (REQ-6, REQ-21, REQ-43).** The popup now has four sections: theme, look, shortcuts, updates. Each REQ places one section, so REQ-6 does not change.
+- **Updates texts (REQ-44 to REQ-50).** Gatekeeper decision, not a human decision (2026-11-16). The button reads "Check for Updates", in the Title Case of the other client buttons. The newer version text and the link follow the launch notice: "Version <newer> is available. You have <installed>." and "View Release".
+- **Notice after a check (REQ-49).** Gatekeeper decision, not a human decision (2026-11-16). The launch notice shows the result of the user's check, also when the launch check found nothing. It stays under the popup, like every dialog, and is visible when the popup closes.
+- **Result while the popup is open (REQ-51).** Gatekeeper decision, not a human decision (2026-11-16). The section keeps its last result while the popup stays open. A new opening of the popup shows the section with no result.
 
 ## Constraints on the whole plan
 
