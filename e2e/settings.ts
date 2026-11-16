@@ -8,7 +8,7 @@ export const settingsPopup = (page: Page) => page.getByRole('dialog', { name: 'S
 /** The card of a theme or look radio: the user clicks the card, the radio inside it is not a target of its own. */
 export const cardOf = (radio: Locator) => radio.locator('xpath=ancestor::label[1]');
 
-export type SettingsChoice = 'Light' | 'Dark' | 'macOS' | 'Windows 11';
+export type SettingsChoice = 'Light' | 'Dark' | 'Dark Blue' | 'macOS' | 'Windows 11';
 
 /** Opens the settings popup, chooses `choice` in its tab and closes the popup. */
 export async function chooseInSettings(page: Page, choice: SettingsChoice): Promise<void> {
@@ -21,7 +21,7 @@ export async function chooseInSettings(page: Page, choice: SettingsChoice): Prom
   await expect(popup).toHaveCount(0);
 }
 
-/** The other theme than the active one: what the old top bar switch gave with one press. */
+/** Light from Dark or Dark Blue, Dark from Light: what the old top bar switch gave with one press. */
 export async function toggleThemeInSettings(page: Page): Promise<void> {
   const theme = await page.locator('html').getAttribute('data-theme');
   await chooseInSettings(page, theme === 'light' ? 'Dark' : 'Light');

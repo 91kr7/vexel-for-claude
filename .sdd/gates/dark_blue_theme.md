@@ -68,3 +68,4 @@
 | 2026-11-16 | plan | G3 coverage (REQ-52 corrected) | pass | INT-6 on SessionHeader.tsx; cards unchanged; feature name left as is |
 | 2026-11-16 | plan | card divider | human decision | No horizontal divider above the metrics line of session cards; refines REQ-21 |
 | 2026-11-16 | plan | G3 coverage (REQ-53) | pass | REQ-53 → list-polish INT-7 |
+| 2026-11-16 | dev dark-blue | G5 tests (partial) | human decision | Tests stopped to implement list-polish first; one combined test round for dark-blue and list-polish |

@@ -23,6 +23,7 @@ import {
   LogInIcon,
   MinusIcon,
   MoonIcon,
+  MoonStarIcon,
   PencilIcon,
   PlusIcon,
   PowerIcon,
@@ -61,6 +62,7 @@ const icons: [string, ComponentType][] = [
   ['FolderPlusIcon', FolderPlusIcon],
   ['SunIcon', SunIcon],
   ['MoonIcon', MoonIcon],
+  ['MoonStarIcon', MoonStarIcon],
   ['Maximize2Icon', Maximize2Icon],
   ['Minimize2Icon', Minimize2Icon],
 ];

@@ -38,13 +38,13 @@ describe('ThemeStore', () => {
     vi.unstubAllGlobals();
   });
 
-  // plan-light_theme/REQ-19: with no remembered choice the client starts light
-  it('starts from the light theme by default', () => {
-    expect(START_THEME).toBe('light');
+  // plan-dark_blue_theme/REQ-35: with no saved theme the client starts in Dark Blue
+  it('starts from the dark-blue theme by default', () => {
+    expect(START_THEME).toBe('dark-blue');
     const root = fakeRoot();
     const store = new ThemeStore(root);
-    expect(store.getSnapshot()).toBe('light');
-    expect(root.attributes.get('data-theme')).toBe('light');
+    expect(store.getSnapshot()).toBe('dark-blue');
+    expect(root.attributes.get('data-theme')).toBe('dark-blue');
   });
 
   it('uses the key ai-client.theme', () => {
@@ -54,7 +54,10 @@ describe('ThemeStore', () => {
   it.each<[unknown, boolean]>([
     ['dark', true],
     ['light', true],
+    ['dark-blue', true],
     ['Dark', false],
+    ['dark blue', false],
+    ['darkblue', false],
     ['', false],
     [null, false],
     [undefined, false],
@@ -72,27 +75,101 @@ describe('ThemeStore', () => {
     expect(storage.setItem).not.toHaveBeenCalled();
   });
 
-  // plan-light_theme/REQ-3: toggle() switches light to dark and back, moving the mark
-  it('toggles light to dark and back, moving the data-theme mark', () => {
+  // plan-dark_blue_theme/REQ-34: toggle() cycles Light, Dark, Dark Blue, then Light, moving the mark
+  it('toggles light to dark to dark-blue and back to light, moving the data-theme mark', () => {
     const root = fakeRoot();
-    const store = new ThemeStore(root);
-    store.toggle();
-    expect(store.getSnapshot()).toBe('dark');
-    expect(root.attributes.get('data-theme')).toBe('dark');
-    store.toggle();
-    expect(store.getSnapshot()).toBe('light');
-    expect(root.attributes.get('data-theme')).toBe('light');
+    const store = new ThemeStore(root, 'light');
+    const seen: (string | undefined)[] = [];
+    for (let step = 0; step < 3; step += 1) {
+      store.toggle();
+      expect(root.attributes.get('data-theme')).toBe(store.getSnapshot());
+      seen.push(store.getSnapshot());
+    }
+    expect(seen).toEqual(['dark', 'dark-blue', 'light']);
   });
 
-  // plan-light_theme/REQ-17: each toggle saves the new theme
+  // plan-dark_blue_theme/REQ-34, REQ-35: from the first-start theme the next toggle gives Light
+  it('toggles the first-start theme to light', () => {
+    const store = new ThemeStore(fakeRoot());
+    store.toggle();
+    expect(store.getSnapshot()).toBe('light');
+  });
+
+  // plan-dark_blue_theme/REQ-32: each toggle saves the new theme, dark-blue included
   it('saves the new theme under THEME_KEY on each toggle', () => {
     const storage = fakeStorage();
     const store = new ThemeStore(fakeRoot(), 'light', storage);
     store.toggle();
     expect(storage.setItem).toHaveBeenLastCalledWith(THEME_KEY, 'dark');
     store.toggle();
+    expect(storage.setItem).toHaveBeenLastCalledWith(THEME_KEY, 'dark-blue');
+    store.toggle();
     expect(storage.setItem).toHaveBeenLastCalledWith(THEME_KEY, 'light');
-    expect(storage.setItem).toHaveBeenCalledTimes(2);
+    expect(storage.setItem).toHaveBeenCalledTimes(3);
+  });
+
+  // plan-dark_blue_theme/REQ-31, REQ-32: setTheme marks, saves, then notifies
+  it.each<[Theme, Theme]>([
+    ['dark', 'dark-blue'],
+    ['dark-blue', 'light'],
+    ['light', 'dark'],
+    ['light', 'dark-blue'],
+  ])('setTheme from %s to %s marks, saves and then notifies', (from, to) => {
+    const root = fakeRoot();
+    const storage = fakeStorage();
+    const store = new ThemeStore(root, from, storage);
+    const seen: (string | undefined)[] = [];
+    store.subscribe(() => seen.push(root.attributes.get('data-theme'), storage.items.get(THEME_KEY), store.getSnapshot()));
+    store.setTheme(to);
+    expect(seen).toEqual([to, to, to]);
+    expect(storage.setItem).toHaveBeenCalledTimes(1);
+  });
+
+  // ThemeStore contract: setTheme of the active theme saves it again and notifies
+  it('setTheme of the active theme saves it again and calls the listeners', () => {
+    const storage = fakeStorage();
+    const store = new ThemeStore(fakeRoot(), 'dark-blue', storage);
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setTheme('dark-blue');
+    expect(storage.setItem).toHaveBeenCalledWith(THEME_KEY, 'dark-blue');
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot()).toBe('dark-blue');
+  });
+
+  // plan-dark_blue_theme/REQ-32: the first-start theme is saved once chosen
+  it('saves the first-start theme when it is chosen', () => {
+    const storage = fakeStorage();
+    const store = new ThemeStore(fakeRoot(), START_THEME, storage);
+    store.setTheme(START_THEME);
+    expect(storage.items.get(THEME_KEY)).toBe('dark-blue');
+  });
+
+  it('setTheme changes the theme and calls the listeners when setItem throws', () => {
+    const root = fakeRoot();
+    const storage = {
+      setItem: () => {
+        throw new Error('QuotaExceededError');
+      },
+    };
+    const store = new ThemeStore(root, 'light', storage);
+    const listener = vi.fn();
+    store.subscribe(listener);
+    expect(() => store.setTheme('dark-blue')).not.toThrow();
+    expect(store.getSnapshot()).toBe('dark-blue');
+    expect(root.attributes.get('data-theme')).toBe('dark-blue');
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('setTheme changes the theme and calls the listeners with no storage', () => {
+    const root = fakeRoot();
+    const store = new ThemeStore(root, 'light');
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setTheme('dark-blue');
+    expect(store.getSnapshot()).toBe('dark-blue');
+    expect(root.attributes.get('data-theme')).toBe('dark-blue');
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 
   // ThemeStore contract: mark, then save, then listeners
@@ -129,8 +206,8 @@ describe('ThemeStore', () => {
     const listener = vi.fn();
     store.subscribe(listener);
     store.toggle();
-    expect(store.getSnapshot()).toBe('light');
-    expect(root.attributes.get('data-theme')).toBe('light');
+    expect(store.getSnapshot()).toBe('dark-blue');
+    expect(root.attributes.get('data-theme')).toBe('dark-blue');
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
@@ -162,17 +239,17 @@ describe('pageThemeStore', () => {
   });
 
   // plan-light_theme/REQ-18: the store takes over the mark set before the first paint
-  it.each<Theme>(['dark', 'light'])('starts from the "%s" mark already on the root', async (theme) => {
+  it.each<Theme>(['dark', 'light', 'dark-blue'])('starts from the "%s" mark already on the root', async (theme) => {
     stubPage(fakeRoot(theme));
     const { pageThemeStore } = await freshModule();
     expect(pageThemeStore().getSnapshot()).toBe(theme);
   });
 
-  // plan-light_theme/REQ-19
-  it.each([undefined, 'blue', ''])('starts light when the root mark is %j', async (mark) => {
+  // plan-dark_blue_theme/REQ-35
+  it.each([undefined, 'blue', ''])('starts dark-blue when the root mark is %j', async (mark) => {
     stubPage(fakeRoot(mark));
     const { pageThemeStore } = await freshModule();
-    expect(pageThemeStore().getSnapshot()).toBe('light');
+    expect(pageThemeStore().getSnapshot()).toBe('dark-blue');
   });
 
   // plan-light_theme/REQ-17
@@ -194,27 +271,38 @@ describe('pageThemeStore', () => {
     const { pageThemeStore } = await freshModule();
     const store = pageThemeStore();
     expect(() => store.toggle()).not.toThrow();
-    expect(store.getSnapshot()).toBe('light');
-    expect(root.attributes.get('data-theme')).toBe('light');
+    expect(store.getSnapshot()).toBe('dark-blue');
+    expect(root.attributes.get('data-theme')).toBe('dark-blue');
   });
 });
 
 describe('useTheme', () => {
   let toggleTheme: (() => void) | undefined;
+  let setTheme: ((theme: Theme) => void) | undefined;
   function Probe({ store }: { store: ThemeStore }) {
     const result = useTheme(store);
     toggleTheme = result.toggleTheme;
+    setTheme = result.setTheme;
     return createElement('span', null, result.theme);
   }
 
-  it.each<Theme>(['dark', 'light'])('gives the active theme "%s" in a server render', (theme) => {
+  it.each<Theme>(['dark', 'light', 'dark-blue'])('gives the active theme "%s" in a server render', (theme) => {
     expect(renderToStaticMarkup(createElement(Probe, { store: new ThemeStore(fakeRoot(), theme) }))).toBe(`<span>${theme}</span>`);
   });
 
   it('toggleTheme() toggles the store', () => {
-    const store = new ThemeStore(fakeRoot());
+    const store = new ThemeStore(fakeRoot(), 'light');
     renderToStaticMarkup(createElement(Probe, { store }));
     toggleTheme!();
     expect(store.getSnapshot()).toBe('dark');
+  });
+
+  it('setTheme() sets the theme of the store', () => {
+    const store = new ThemeStore(fakeRoot(), 'light');
+    const spy = vi.spyOn(store, 'setTheme');
+    renderToStaticMarkup(createElement(Probe, { store }));
+    setTheme!('dark-blue');
+    expect(spy).toHaveBeenCalledWith('dark-blue');
+    expect(store.getSnapshot()).toBe('dark-blue');
   });
 });

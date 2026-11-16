@@ -79,7 +79,7 @@ const ROWS = [
     'Default text size [Ctrl]+[0]',
     'Focus the list [Ctrl]+[Shift]+[L]',
   ],
-  ['Light/Dark theme [Alt]+[A]', 'Shortcut settings [Alt]+[S]'],
+  ['Light/Dark/Dark Blue theme [Alt]+[A]', 'Shortcut settings [Alt]+[S]'],
 ];
 
 describe('ShortcutsSection', () => {
@@ -341,6 +341,6 @@ describe('ShortcutsSection', () => {
   it('shows a change of the store at once', () => {
     const { host, store } = render();
     run(() => store.set('toggle-theme', { code: 'KeyG', modifiers: ['Alt', 'Shift'], character: 'G' }));
-    expect(rowText(rowOf(host, 'Light/Dark theme'))).toBe('Light/Dark theme [Alt]+[Shift]+[G]');
+    expect(rowText(rowOf(host, 'Light/Dark/Dark Blue theme'))).toBe('Light/Dark/Dark Blue theme [Alt]+[Shift]+[G]');
   });
 });

@@ -14,7 +14,7 @@ const electron = process.env.E2E_DESKTOP === '1';
 // No e2e server asks GitHub for releases: port 9 refuses, unless a spec points this at a fake source.
 const releaseSource = (process.env.AI_CLIENT_RELEASE_SOURCE_URL ??= 'http://127.0.0.1:9/releases/latest');
 // The specs of earlier plans were written for a client that started dark: the browser runs as a user who chose dark.
-// e2e/remembered-theme.spec.ts clears this choice to test the light default.
+// e2e/remembered-theme.spec.ts and e2e/dark-blue-theme.spec.ts clear this choice to test the first-start theme.
 const darkChoice = { cookies: [], origins: [{ origin: baseURL, localStorage: [{ name: 'ai-client.theme', value: 'dark' }] }] };
 
 export default defineConfig({

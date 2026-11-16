@@ -98,7 +98,7 @@ describe('SHORTCUTS', () => {
       { action: 'Dismiss the open ended session', keys: [{ code: 'KeyW', modifiers: ['Alt', 'Shift'], command: { kind: 'session-command', command: 'dismiss' } }] },
     ]);
     expect(rowsOf('general')).toEqual([
-      { action: 'Light/Dark theme', keys: [{ code: 'KeyA', modifiers: ['Alt'], command: { kind: 'toggle-theme' } }] },
+      { action: 'Light/Dark/Dark Blue theme', keys: [{ code: 'KeyA', modifiers: ['Alt'], command: { kind: 'toggle-theme' } }] },
       { action: 'Shortcut settings', keys: [{ code: 'KeyS', modifiers: ['Alt'], command: { kind: 'open-shortcut-settings' } }] },
     ]);
   });
