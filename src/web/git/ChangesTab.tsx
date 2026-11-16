@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Header, ListBox, ListBoxItem, ListBoxSection, type Selection } from 'react-aria-components';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import type { ChangeEntry, ChangeGroup, ChangeKind } from './changes-store';
@@ -20,6 +21,8 @@ export const KIND_LABEL: Record<ChangeKind, string> = {
 
 const pathText = ({ path, oldPath }: ChangeEntry) => (oldPath === undefined ? path : `${oldPath} → ${path}`);
 
+const entryKey = ({ group, path }: Pick<ChangeEntry, 'group' | 'path'>) => `${group}:${path}`;
+
 export function ChangesTab({ root, changes }: { root: string; changes: ChangeEntry[] }) {
   const [selectedKey, setSelectedKey] = useState<Pick<ChangeEntry, 'group' | 'path'>>();
   // After a refresh the selection follows the same group and path, else it closes.
@@ -29,34 +32,35 @@ export function ChangesTab({ root, changes }: { root: string; changes: ChangeEnt
 
   return (
     <div className="changes-tab">
-      <div className="changes-list">
+      <ListBox
+        className="changes-list"
+        aria-label="Changed files"
+        selectionMode="single"
+        disallowEmptySelection
+        selectedKeys={selected === undefined ? [] : [entryKey(selected)]}
+        onSelectionChange={(keys: Selection) => {
+          const entry = keys === 'all' ? undefined : changes.find((candidate) => keys.has(entryKey(candidate)));
+          if (entry !== undefined) setSelectedKey({ group: entry.group, path: entry.path });
+        }}
+      >
         {GROUPS.map(({ group, title }) => {
           const entries = changes.filter((entry) => entry.group === group);
           if (entries.length === 0) return null;
           return (
-            <section key={group} className="changes-group" aria-label={title}>
-              <h4 className="changes-group-title">{title}</h4>
-              <ul>
-                {entries.map((entry) => (
-                  <li key={entry.path}>
-                    <button
-                      type="button"
-                      className={entry === selected ? 'changes-file selected' : 'changes-file'}
-                      aria-pressed={entry === selected}
-                      onClick={() => setSelectedKey({ group: entry.group, path: entry.path })}
-                    >
-                      <span className="changes-file-path" title={pathText(entry)}>
-                        {pathText(entry)}
-                      </span>
-                      <span className={`changes-kind changes-kind-${entry.kind}`}>{KIND_LABEL[entry.kind]}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <ListBoxSection key={group} id={group} className="changes-group" aria-label={title}>
+              <Header className="changes-group-title">{title}</Header>
+              {entries.map((entry) => (
+                <ListBoxItem key={entryKey(entry)} id={entryKey(entry)} textValue={pathText(entry)} className="changes-item">
+                  <span className="changes-file-path" title={pathText(entry)}>
+                    {pathText(entry)}
+                  </span>
+                  <span className={`changes-kind changes-kind-${entry.kind}`}>{KIND_LABEL[entry.kind]}</span>
+                </ListBoxItem>
+              ))}
+            </ListBoxSection>
           );
         })}
-      </div>
+      </ListBox>
       {diff.status !== 'idle' && (
         <div className="changes-diff">
           {diff.status === 'loading' && <ProgressIndicator />}

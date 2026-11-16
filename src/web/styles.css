@@ -2161,12 +2161,6 @@ input {
   border-top: 1px solid var(--border-subtle);
 }
 
-.changes-group ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 .changes-group-title {
   margin: 0;
   padding: 4px 16px;
@@ -2201,6 +2195,31 @@ input {
   background-color: var(--bg-surface-3);
 }
 
+.changes-item {
+  padding: 4px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 12px;
+  line-height: 16px;
+  cursor: pointer;
+  outline: none;
+}
+
+.changes-item[data-hovered] {
+  background-color: var(--bg-surface-2);
+}
+
+.changes-item[data-selected] {
+  background-color: var(--bg-surface-3);
+}
+
+.changes-item[data-focus-visible] {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
 .changes-file-path {
   flex: 1;
   min-width: 0;
@@ -2217,32 +2236,40 @@ input {
 }
 
 .diff-view {
-  font-family: var(--font-mono);
+  --diff-background-color: transparent;
+  --diff-text-color: var(--text-primary);
+  --diff-font-family: var(--font-mono);
+  --diff-selection-background-color: var(--accent-selection);
+  --diff-code-insert-background-color: color-mix(in srgb, var(--emerald-400) 10%, transparent);
+  --diff-code-insert-text-color: var(--emerald-400);
+  --diff-code-delete-background-color: color-mix(in srgb, var(--color-error) 10%, transparent);
+  --diff-code-delete-text-color: var(--color-error);
   font-size: 12px;
   line-height: 18px;
 }
 
-.diff-lines {
+.diff-view .diff {
   width: max-content;
   min-width: 100%;
-  padding: 8px 0;
+  table-layout: auto;
+  margin: 8px 0;
 }
 
-.diff-line {
+.diff-view .diff-line {
+  line-height: 18px;
+}
+
+.diff-view .diff-code {
   padding: 0 16px;
   white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
-.diff-line-added {
-  color: var(--emerald-400);
-}
-
-.diff-line-removed {
-  color: var(--color-error);
-}
-
-.diff-line-hunk {
+.diff-view .diff-decoration-content {
+  padding: 0 16px;
   color: var(--text-muted);
+  white-space: pre;
 }
 
 .diff-note {

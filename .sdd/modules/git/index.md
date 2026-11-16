@@ -20,8 +20,8 @@
 | GitExplorerPanel | UI component | `src/web/git/GitExplorerPanel.tsx` | Right panel of the session content: repository name with its path as tooltip, branch chip, "Refresh", tabs "Changes" and "History", git error; refreshes on a turn end in the repository | `specs/git-explorer-panel.md` |
 | useChanges | frontend hook | `src/web/git/changes-store.ts` | Uncommitted changes of a repository root, once per root and again at each new revision: loading, loaded, error | `specs/changes-store.md` |
 | useFileDiff | frontend hook | `src/web/git/diff-store.ts` | Diff of one changed file, or of one file in a commit (`useCommitFileDiff`): idle, loading, loaded, error | `specs/diff-store.md` |
-| DiffView | UI component | `src/web/git/DiffView.tsx` | Diff of one file in Roboto Mono: coloured "+" and "-" lines, muted hunk headers, binary and cut notes | `specs/diff-view.md` |
-| ChangesTab | UI component | `src/web/git/ChangesTab.tsx` | Changed files in the groups "Staged" and "Unstaged" with kind labels; a click shows the file diff | `specs/changes-tab.md` |
+| DiffView | UI component | `src/web/git/DiffView.tsx` | Diff of one file in Roboto Mono, unified view drawn by react-diff-view: coloured "+" and "-" lines, muted hunk headers, binary and cut notes | `specs/diff-view.md` |
+| ChangesTab | UI component | `src/web/git/ChangesTab.tsx` | Changed files in a react-aria-components list box, groups "Staged" and "Unstaged" with kind labels; selecting a file shows its diff | `specs/changes-tab.md` |
 | useHistory | frontend hook | `src/web/git/history-store.ts` | History of a repository root in pages, first page read again at each new revision: idle, loading, loaded with "load more", error | `specs/history-store.md` |
 | useCommitFiles | frontend hook | `src/web/git/commit-files-store.ts` | Files of one commit: loading, loaded, error | `specs/commit-files-store.md` |
 | HistoryTab | UI component | `src/web/git/HistoryTab.tsx` | Commit rows with short hash, subject, author and date; "Load more"; "No commits yet"; opens the commit detail | `specs/history-tab.md` |

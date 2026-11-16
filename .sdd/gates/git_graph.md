@@ -11,3 +11,5 @@
 | 2026-11-16 | analysis | G1 analysis | pass | 91 lines, class ordinary |
 | 2026-11-16 | plan | G2 requirements | pass | REQ-5 overlaps REQ-3 via `plan-git_explorer/REQ-7`, harmless |
 | 2026-11-16 | plan | G3 coverage | pass | Test-file INTs follow the idiom of earlier plans; `CommitDetail.tsx` list move matches the human decision "whole explorer" |
+| 2026-11-16 | dev | question developer: licences of inlined packages | decided | Regenerate `docs/dependency-licenses.md` (existing record, "regenerate when dependencies change"); no custom Vite plugin |
+| 2026-11-16 | dev | G4 batch-open-source-explorer | pass | Build green; `docs/dependency-licenses.md` and `src/web/styles.css` explained; chunk-size warning not a REQ |
