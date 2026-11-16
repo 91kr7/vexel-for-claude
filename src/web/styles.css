@@ -627,10 +627,15 @@ input {
 .plan-limits {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.plan-limit {
+  margin: 0 -9px;
+  padding: 4px 8px;
 }
 
 .plan-limit-head {
@@ -646,7 +651,6 @@ input {
 }
 
 .plan-limit-percent {
-  font-family: var(--font-mono);
   font-size: 13px;
   line-height: 20px;
   color: var(--text-secondary);
@@ -1201,21 +1205,8 @@ input {
   justify-content: stretch;
   gap: 10px;
   padding: 9px 36px 9px 8px;
-  border: 1px solid var(--role-border-subtle);
-  border-radius: var(--radius-card);
-  background-color: var(--role-card);
   text-align: left;
   anchor-name: --project-row;
-  transition: background-color 0.12s ease, border-color 0.12s ease;
-}
-
-.project-row:not(.unavailable):hover {
-  background-color: var(--role-card-active);
-  border-color: var(--role-border-strong);
-}
-
-.project-row:focus-visible {
-  outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
 .project-row.unavailable {
@@ -1259,7 +1250,6 @@ input {
 .project-row-meta {
   font-size: 11px;
   color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
 }
 
 .project-row-missing {
@@ -1897,6 +1887,43 @@ input {
   color: var(--text-secondary);
 }
 
+/* Shared list look: the values of the session cards. A dense row is a card only on hover and when active. */
+.list-card,
+.list-row {
+  border: 1px solid var(--role-border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.list-row {
+  border-color: transparent;
+  background-color: transparent;
+}
+
+:is(.list-card, .list-row):hover:not(.list-active, .unavailable) {
+  background-color: var(--role-card-active);
+  border-color: var(--role-border-strong);
+  color: var(--text-primary);
+}
+
+:is(.list-card, .list-row).list-active {
+  background-color: var(--role-card-active);
+  border-color: var(--role-accent);
+  box-shadow: inset 2.5px 0 0 0 var(--role-accent), var(--shadow-card);
+  color: var(--text-primary);
+}
+
+/* Lists clip and scroll: the ring stays inside the edge. */
+:is(.list-card, .list-row):focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+.list-number {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .perm-tag {
   flex: none;
   padding: 2px 6px;
@@ -2295,7 +2322,6 @@ input {
   min-width: 0;
   height: 24px;
   padding: 0 6px;
-  border-radius: var(--radius-pill);
   justify-content: flex-start;
   gap: 8px;
   font-size: 12px;
@@ -2304,21 +2330,13 @@ input {
   white-space: nowrap;
 }
 
-.git-repository-entry:hover,
 .git-repository-all:hover {
   background-color: var(--role-card);
 }
 
-.git-repository-entry[aria-pressed='true'],
 .git-repository-all[aria-pressed='true'] {
   background-color: var(--role-card-active);
   color: var(--text-primary);
-}
-
-/* The list scrolls: an inner ring stays inside it. */
-.git-repository-entry:focus-visible,
-.history-commit:focus-visible {
-  outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
 .git-repository-mark {
@@ -2419,7 +2437,8 @@ input {
 }
 
 .changes-item {
-  padding: 4px 16px;
+  margin: 0 6px;
+  padding: 4px 9px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2428,14 +2447,6 @@ input {
   line-height: 16px;
   cursor: pointer;
   outline: none;
-}
-
-.changes-item[data-hovered] {
-  background-color: var(--bg-surface-2);
-}
-
-.changes-item[data-selected] {
-  background-color: var(--bg-surface-3);
 }
 
 .changes-item[data-focus-visible] {
@@ -2590,9 +2601,10 @@ input {
 }
 
 .history-commit {
-  width: 100%;
+  width: calc(100% - 12px);
   height: 28px;
-  padding: 0 16px 0 calc(var(--history-graph-width) + 16px);
+  margin: 0 6px;
+  padding: 0 9px 0 calc(var(--history-graph-width) + 9px);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2602,13 +2614,8 @@ input {
   white-space: nowrap;
 }
 
-.history-commit:hover {
-  background-color: var(--bg-surface-2);
-}
-
 .history-commit-hash {
   flex: none;
-  font-family: var(--font-mono);
   color: var(--accent-primary);
 }
 
@@ -3216,11 +3223,8 @@ input {
 }
 
 .settings-menu-item {
-  position: relative;
   height: 32px;
   padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-card);
   color: var(--text-secondary);
   justify-content: flex-start;
   font-size: 13px;
@@ -3228,28 +3232,8 @@ input {
   text-align: left;
 }
 
-.settings-menu-item:hover {
-  background-color: var(--role-card);
-  border-color: var(--role-border-strong);
-  color: var(--text-primary);
-}
-
 .settings-menu-item.selected {
-  background-color: var(--role-accent-glow);
-  border-color: var(--role-accent-border);
-  color: var(--role-accent);
   font-weight: 600;
-}
-
-.settings-menu-item.selected::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 9999px;
-  background-color: var(--accent-primary);
 }
 
 .settings-pane {
@@ -3581,12 +3565,9 @@ input {
   align-items: center;
   column-gap: 16px;
   min-height: 36px;
-  padding: 4px 4px 4px 0;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.shortcuts-row:last-child {
-  border-bottom: none;
+  /* Out by the padding and border, so the text stays aligned with the group title. */
+  margin: 0 -9px;
+  padding: 4px 12px 4px 8px;
 }
 
 .shortcuts-action {
@@ -3836,13 +3817,11 @@ input {
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
-  border-radius: 6px;
   font-size: 12px;
   line-height: 18px;
   color: var(--text-secondary);
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 button.dialog-row {
@@ -3851,48 +3830,16 @@ button.dialog-row {
   text-align: left;
 }
 
-.dialog-row:hover {
-  background-color: var(--bg-surface-3);
-  color: var(--text-primary);
-}
-
-.dialog-row-checked,
-.dialog-row-checked:hover {
-  background-color: var(--accent-glow);
-  color: var(--text-primary);
+.dialog-row-checked {
   font-weight: 600;
-  border-left: 2px solid var(--accent-primary);
-  padding-left: 6px;
 }
 
-.dialog-row:focus-visible {
-  outline-offset: calc(-1 * var(--focus-ring-width));
-}
-
-.past-session-group .dialog-rows {
+.dialog-rows:has(> .list-card) {
   gap: 6px;
 }
 
-.past-session-group .dialog-row {
+.dialog-row.list-card {
   padding: 6px 10px;
-  border: 1px solid var(--role-border-subtle);
-  border-left-width: 3px;
-  border-left-color: transparent;
-  border-radius: var(--radius-card);
-  background-color: var(--role-card);
-}
-
-.past-session-group .dialog-row:hover {
-  background-color: var(--role-card-active);
-  border-color: var(--role-border-strong);
-  border-left-color: transparent;
-}
-
-.past-session-group .dialog-row-checked,
-.past-session-group .dialog-row-checked:hover {
-  background-color: var(--role-card-active);
-  border-color: var(--role-accent);
-  box-shadow: var(--shadow-card);
 }
 
 .dialog-row-icon {

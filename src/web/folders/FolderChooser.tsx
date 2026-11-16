@@ -50,7 +50,7 @@ interface FolderRowProps {
 function FolderRow({ id, name, path, onOpen }: FolderRowProps) {
   return (
     <li>
-      <button type="button" className="dialog-row" aria-labelledby={`${id}-name`} aria-describedby={`${id}-path`} onClick={onOpen}>
+      <button type="button" className="dialog-row list-row" aria-labelledby={`${id}-name`} aria-describedby={`${id}-path`} onClick={onOpen}>
         <span className="dialog-row-icon vx-surface-3">
           <FolderIcon />
         </span>
@@ -192,7 +192,7 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
                 const checked = pathInput.trim() === folder;
                 const id = `${rowId}-recent-${index}`;
                 return (
-                  <label key={folder} className={checked ? 'dialog-row dialog-row-checked' : 'dialog-row'}>
+                  <label key={folder} className={checked ? 'dialog-row list-card list-active dialog-row-checked' : 'dialog-row list-card'}>
                     <Avatar folder={folder} />
                     <span className="dialog-row-text">
                       <span id={`${id}-name`} className="dialog-row-title">

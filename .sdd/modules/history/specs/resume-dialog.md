@@ -26,12 +26,12 @@ Shows:
 - on open → loads PastSessionListRoute. While it loads → a compact AreaState `loading` "Loading…".
 - the past sessions → one `radiogroup` named "Past Sessions". When the content is taller than the dialog allows, only this area scrolls.
 - one section per visible group, in the order of the route, named by the folder path. Its heading is the full folder path in `.section-label .section-label-path`: mono 10 px, `--text-muted`, not uppercase, wrapping.
-- one radio row per visible session, in the order of the route, drawn as a "Recent" row of FolderChooser: the Avatar of the folder, the label (12 px) above its date and time ("DD/MM/YYYY HH:MM:SS", 24-hour clock, mono 11 px, `--text-muted`), and the radio.
+- one radio row per visible session, in the order of the route, drawn as a "Recent" row of FolderChooser: the Avatar of the folder, the label (12 px) above its date and time ("DD/MM/YYYY HH:MM:SS", 24-hour clock, mono 11 px with tabular figures, `--text-muted`), and the radio.
   - the radio is named by the label and described by the date and time.
   - a session with `favorite` → FavoriteIndicator right after the label, on the same line. The radio is also described by "Favorite". The dialog offers no action to mark or unmark. The mark is read when the dialog opens.
   - a session with `runningElsewhere` → the amber pill "Running in a terminal" (the StateBadge `chip` look in amber, with `TerminalIcon` at 12 px), 4 px under the date. The radio is also described by the pill.
-  - each row is a card like the session cards, 6 px apart: `--radius-card`, `--role-card`, 1 px `--role-border-subtle` border with a 3 px left edge; on hover `--role-card-active` and a `--role-border-strong` border.
-  - the selected session → its radio is checked and its row has the checked look of a "Recent" row on a card: `--role-card-active`, `--role-accent` border, 3 px accent left edge and `--shadow-card`. On open no session is selected.
+  - each row, search results included, is a card of ListStyles (`.list-card`), 6 px apart, with its hover.
+  - the selected session → its radio is checked and its row is the active card of ListStyles (`.list-active`), weight 600. On open no session is selected.
 - "Resume" → disabled while no session is selected. While a resume runs it is busy (Dialog `primaryBusy`): Spinner, disabled, same name.
 - no group → a compact AreaState `empty` "No sessions to resume." with the history icon, and no radiogroup.
 - groups exist but no session is visible → a compact AreaState `empty` `No sessions match "<search text>".` with the history icon, and no radiogroup.
@@ -74,7 +74,7 @@ Errors (an ErrorMessage under the scrolling area, the dialog stays open):
 
 ## Dependencies
 
-- Dialog, AreaState, ErrorMessage, IconSet (`HistoryIcon`, `TerminalIcon`, `SearchIcon`, `XIcon`), ThemeTokens, WebEntry (module app)
+- Dialog, AreaState, ErrorMessage, IconSet (`HistoryIcon`, `TerminalIcon`, `SearchIcon`, `XIcon`), ThemeTokens, ListStyles, WebEntry (module app)
 - Avatar, FavoriteIndicator (module sessions)
 - FolderChooser (module folders), for the row and heading look
 - RunningElsewhereWarning, PastSessionListRoute, ResumeSessionRoute
@@ -86,4 +86,4 @@ Errors (an ErrorMessage under the scrolling area, the dialog stays open):
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-2`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-6`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-10`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-14`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-15`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-16`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search/REQ-17`
-- `plan-dark_blue_theme/REQ-3`
+- `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-45`, `plan-dark_blue_theme/REQ-46`, `plan-dark_blue_theme/REQ-48`

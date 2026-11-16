@@ -126,7 +126,7 @@ export function ShortcutsSection({ store = pageUserShortcutKeys() }: { store?: U
     const message = messages[row.id];
     const messageId = `${groupId}-${row.id}-message`;
     return (
-      <li key={row.id} className={editing === row.id ? 'shortcuts-row editing' : 'shortcuts-row'}>
+      <li key={row.id} className={editing === row.id ? 'shortcuts-row list-row editing' : 'shortcuts-row list-row'}>
         <span className="shortcuts-action">{row.action}</span>
         <span className="shortcuts-keys">
           {editing === row.id ? <span className="shortcuts-prompt">Press new keys, Esc to cancel</span> : <RowKeys keys={row.keys} />}

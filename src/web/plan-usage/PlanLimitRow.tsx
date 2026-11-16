@@ -7,10 +7,10 @@ export function PlanLimitRow({ limit, nowMs }: { limit: PlanLimit; nowMs: number
   const barPercent = Math.min(100, Math.max(0, limit.percent));
   const resetsAt = limit.resetsAt !== null && isValidResetTime(limit.resetsAt) ? limit.resetsAt : undefined;
   return (
-    <li className="plan-limit">
+    <li className="plan-limit list-row">
       <div className="plan-limit-head">
         <span className="plan-limit-label">{limit.label}</span>
-        <span className={`plan-limit-percent usage-${level}`}>{`${limit.percent}%`}</span>
+        <span className={`plan-limit-percent list-number usage-${level}`}>{`${limit.percent}%`}</span>
       </div>
       <div
         className="plan-limit-bar"
@@ -23,7 +23,7 @@ export function PlanLimitRow({ limit, nowMs }: { limit: PlanLimit; nowMs: number
         <div className={`plan-limit-fill usage-${level}`} style={{ width: `${barPercent}%` }} />
       </div>
       {resetsAt !== undefined && (
-        <p className="plan-limit-reset">{`Resets in ${remainingText(resetsAt, nowMs)} · ${resetDateText(resetsAt)}`}</p>
+        <p className="plan-limit-reset list-number">{`Resets in ${remainingText(resetsAt, nowMs)} · ${resetDateText(resetsAt)}`}</p>
       )}
     </li>
   );

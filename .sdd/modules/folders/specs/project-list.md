@@ -29,12 +29,12 @@ Shows:
   - the Avatar of the folder;
   - line 1: the folder name (`folderNameOf`), weight 600, 13 px, cut with an ellipsis; the ProjectFavoriteButton shows right after the name, on the same line, on every row;
   - the full path, mono 11 px, `--text-muted`, cut with an ellipsis, with no `title`;
-  - "Last activity" and the RelativeTime of `lastActivity`, 11 px, `--text-secondary`.
+  - "Last activity" and the RelativeTime of `lastActivity`, 11 px, `--text-secondary`; the time in mono with tabular figures.
   - a right column of 36 px kept free for the ProjectRemoveButton: the text never runs under it.
   - no "New session" label.
 - a row with `available` false → `aria-disabled="true"`, opacity 0.55, the `not-allowed` cursor, no hover style. Before "Last activity" it shows "Folder not found" in `--amber-400`, then " · ".
-- each row is a card like the session cards: `--radius-card`, `--role-card` background, 1 px `--role-border-subtle` border.
-- an available row on hover → `--role-card-active` background and a `--role-border-strong` border.
+- each row is a card of ListStyles (`.list-card`): `--radius-card`, `--role-card` background, 1 px `--role-border-subtle` border.
+- an available row on hover → the hover of ListStyles: `--role-card-active` background, `--role-border-strong` border.
 - the ProjectRemoveButton → in the right column of the row, 8 px from the right edge, centred on the height of the row button. It shows while the pointer is over the row, while the keyboard focus is visible on the row or on a control of the row, and while its request runs; else it is hidden (opacity 0).
 - the ProjectFavoriteButton → its visibility rules are in its spec; the row is the area whose hover or keyboard focus shows an outline star.
 - the errors of both buttons show under the row button. Unavailable rows have both buttons too. They are not dimmed there, and they work.
@@ -59,7 +59,7 @@ Actions:
 - ProjectListStore
 - ProjectFavoriteButton
 - ProjectRemoveButton
-- AreaState, IconSet (`FolderIcon`, `SearchIcon`, `XIcon`) (module app)
+- AreaState, IconSet (`FolderIcon`, `SearchIcon`, `XIcon`), ListStyles (module app)
 - Avatar, `folderNameOf`, RelativeTime (module sessions)
 
 ## Requirements served
@@ -69,4 +69,4 @@ Actions:
 - `plan-project_list_actions/REQ-12`, `plan-project_list_actions/REQ-18`, `plan-project_list_actions/REQ-21`, `plan-project_list_actions/REQ-22`
 - `plan-project_list_actions/REQ-23`, `plan-project_list_actions/REQ-24`, `plan-project_list_actions/REQ-27`, `plan-project_list_actions/REQ-30`, `plan-project_list_actions/REQ-31`, `plan-project_list_actions/REQ-32`
 - `plan-ui_restyle/REQ-12`, `plan-ui_restyle/REQ-13`, `plan-ui_restyle/REQ-14`, `plan-ui_restyle/REQ-19`, `plan-ui_restyle/REQ-20`, `plan-ui_restyle/REQ-21`, `plan-ui_restyle/REQ-23`, `plan-ui_restyle/REQ-24`, `plan-ui_restyle/REQ-26`
-- `plan-dark_blue_theme/REQ-3`
+- `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-46`, `plan-dark_blue_theme/REQ-48`

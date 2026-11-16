@@ -36,7 +36,7 @@ Shows, with `several`:
 
 A file list:
 - drawn by the open-source list component, with the group "Staged", then the group "Unstaged" (each a group named after its title, with the title as header); a group with no entries is not shown.
-- each entry as an option: the path in mono, then the kind label "Added", "Modified", "Deleted", "Renamed" or "Untracked". A rename shows "<old path> → <new path>". The full path text is the tooltip.
+- each entry as an option, a dense row of ListStyles (`.list-row`, 6 px in from the list sides), with its hover: the path in mono, then the kind label "Added", "Modified", "Deleted", "Renamed" or "Untracked". A rename shows "<old path> → <new path>". The full path text is the tooltip.
 - a file with staged and unstaged changes appears in both groups.
 
 The diff area, after a click:
@@ -47,7 +47,7 @@ The diff area, after a click:
 Every colour comes from the theme tokens, so the tab follows the light and the dark theme.
 
 Actions:
-- click on an entry, or Enter or Space on the focused entry → it becomes the only selected one of the whole tab (`aria-selected`, surface 3 background) and its diff loads. The arrow keys move the focus between the entries of one list.
+- click on an entry, or Enter or Space on the focused entry → it becomes the only selected one of the whole tab (`aria-selected`, the active look of ListStyles) and its diff loads. The arrow keys move the focus between the entries of one list.
 - click on the selected entry → it stays selected.
 
 After a refresh (new states):
@@ -61,7 +61,7 @@ After a refresh (new states):
 ## Dependencies
 
 - useFileDiff, DiffView, repositoryColor
-- ErrorMessage, ProgressIndicator (module app)
+- ErrorMessage, ProgressIndicator, ListStyles (module app)
 - react-aria-components (npm): ListBox, with one section per group
 
 ## Requirements served
@@ -69,3 +69,4 @@ After a refresh (new states):
 - `plan-git_graph/REQ-1`, `plan-git_graph/REQ-2`, `plan-git_graph/REQ-3`, `plan-git_graph/REQ-4`
 - `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-10`, `plan-git_explorer/REQ-11`, `plan-git_explorer/REQ-12`, `plan-git_explorer/REQ-26`
 - `plan-multi_repo_workspace/REQ-14`, `plan-multi_repo_workspace/REQ-15`, `plan-multi_repo_workspace/REQ-16`, `plan-multi_repo_workspace/REQ-17`, `plan-multi_repo_workspace/REQ-18`, `plan-multi_repo_workspace/REQ-19`, `plan-multi_repo_workspace/REQ-20`, `plan-multi_repo_workspace/REQ-29`
+- `plan-dark_blue_theme/REQ-47`

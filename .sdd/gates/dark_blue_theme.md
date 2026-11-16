@@ -49,3 +49,5 @@
 | 2026-11-16 | dev session-view | G5 tests | sent back | Red: frame shadow paints 8px over the git explorer (session-view spec, REQ-26) |
 | 2026-11-16 | dev session-view | G4 development (fix) | pass | Git explorer panel stacks above the frame; build green |
 | 2026-11-16 | dev session-view | G5 tests (round 2) | pass | Re-run session-view, git-explorer, terminal-panel, hosted-session: 77 passed |
+| 2026-11-16 | dev list-cards | G4 development | pass | Build green; diff limited to INT files, windows11.css, specs and indexes; ListStyles spec and index row present |
+| 2026-11-16 | dev list-cards | divergence developer | decided | ListStyles shared CSS group documented as a component; windows11.css keeps 4px list corners; commit rows show no selected style (list hidden while a commit is open) |

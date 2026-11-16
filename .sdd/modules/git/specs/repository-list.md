@@ -24,7 +24,8 @@ Shows:
   - the branch chip (the `git-branch` icon and the branch name, or "detached <short hash>");
   - or, for an entry with `error`, the git message in the error colour in place of the chip.
 - with many entries the list scrolls inside the header.
-- a pressed control has a stronger background.
+- each entry → a 24 px card of ListStyles (`.list-card`), with its hover; a pressed entry is the active card (`.list-active`).
+- "All repositories" pressed → a stronger background.
 
 Actions:
 - click on an entry → `onToggle(<its root>)`.
@@ -36,8 +37,9 @@ Also exports:
 ## Dependencies
 
 - repositoryColor, useRepositoryLookup
-- IconSet (module app)
+- IconSet, ListStyles (module app)
 
 ## Requirements served
 
 - `plan-multi_repo_workspace/REQ-7`, `plan-multi_repo_workspace/REQ-9`, `plan-multi_repo_workspace/REQ-28`, `plan-multi_repo_workspace/REQ-30`
+- `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-45`, `plan-dark_blue_theme/REQ-46`
