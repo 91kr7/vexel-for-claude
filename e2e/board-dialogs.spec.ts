@@ -355,9 +355,10 @@ async function expectWarningFrame(page: Page, dialog: Locator, accent: 'error' |
     const banner = text.locator('xpath=ancestor::*[contains(@class, "vx-surface-2")][1]');
     await expectStyles(
       banner,
-      { 'border-top-color': 'rgba(245, 158, 11, 0.4)', 'border-top-left-radius': '12px', 'padding-top': '14px', 'padding-left': '14px' },
+      { 'border-top-color': 'rgba(245, 158, 11, 0.4)', 'border-top-left-radius': '7px', 'padding-top': '14px', 'padding-left': '14px' },
       `${what} amber banner`,
     );
+    expect((await styles(banner, ['box-shadow']))['box-shadow'], `${what} banner card shadow`).toContain('rgba(0, 0, 0, 0.28) 0px 2px 10px 0px');
     const triangle = banner.locator('svg');
     await expect(triangle, `${what}: one triangle`).toHaveCount(1);
     near((await box(triangle)).width, 16, `${what} triangle width`);

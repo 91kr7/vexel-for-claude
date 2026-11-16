@@ -945,7 +945,8 @@ test.describe('dialogs', () => {
     const text = warning.getByText(/This session is still running/);
     const banner = text.locator('xpath=ancestor::*[contains(@class, "vx-surface-2")][1]');
     expect(await style(banner, 'border-top-color')).toBe(AMBER_500_40);
-    expect(await style(banner, 'border-top-left-radius')).toBe('12px');
+    expect(await style(banner, 'border-top-left-radius')).toBe('7px');
+    expect(await style(banner, 'box-shadow')).toContain('rgba(0, 0, 0, 0.28) 0px 2px 10px 0px');
     expect(await style(banner.locator('svg'), 'color')).toBe(AMBER_400);
     const primary = button(warning, 'Resume Anyway');
     expect(await style(primary, 'color')).toBe(AMBER_400);
