@@ -2450,6 +2450,18 @@ input {
   color: var(--accent-primary);
 }
 
+.history-commit-repository {
+  flex: none;
+  max-width: 25%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
 .history-branch-label {
   flex: none;
   max-width: 40%;

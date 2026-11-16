@@ -3,7 +3,7 @@ import { CommitGraph, type Commit as GraphCommit, type GraphStyle } from 'commit
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { CommitDetail } from './CommitDetail';
 import { firstLineOf, formatCommitDate } from './commit-format';
-import type { Commit } from './history-store';
+import type { RepositoryCommit } from './history-merge';
 import type { BranchInfo } from './repository-lookup-store';
 
 const LANE_TOKENS = ['--accent-primary', '--emerald-400', '--amber-400', '--rose-400', '--accent-secondary', '--orange-400'];
@@ -45,17 +45,22 @@ function useLaneColors(ref: RefObject<HTMLElement | null>, mounted: boolean): st
   return colors;
 }
 
+/** Graph id of a commit: the hash qualified by its repository, so no line joins two repositories. */
+const graphId = (root: string, hash: string) => `${root}\0${hash}`;
+
 /**
- * The data of commit-graph. Dates that count down keep it in the order of the list (git --date-order), one
- * commit per row; message and author stay empty, the rows show them. Each parent not loaded yet gets a
- * placeholder after the last commit, so its line runs past the last row, where the list clips the drawing.
+ * The data of commit-graph. Dates that count down keep it in the order of the list, one commit per row;
+ * message and author stay empty, the rows show them. Each parent not loaded yet gets a placeholder after the
+ * last commit, so its line runs past the last row, where the list clips the drawing.
  */
-function toGraphCommits(commits: Commit[]): GraphCommit[] {
-  const loaded = new Set(commits.map((commit) => commit.hash));
+function toGraphCommits(commits: RepositoryCommit[]): GraphCommit[] {
+  const loaded = new Set(commits.map(({ root, commit }) => graphId(root, commit.hash)));
   const missing = new Set<string>();
-  for (const commit of commits) for (const parent of commit.parents ?? []) if (!loaded.has(parent)) missing.add(parent);
+  for (const { root, commit } of commits) {
+    for (const parent of commit.parents ?? []) if (!loaded.has(graphId(root, parent))) missing.add(graphId(root, parent));
+  }
   const nodes = [
-    ...commits.map((commit) => ({ sha: commit.hash, parents: commit.parents ?? [] })),
+    ...commits.map(({ root, commit }) => ({ sha: graphId(root, commit.hash), parents: (commit.parents ?? []).map((parent) => graphId(root, parent)) })),
     ...[...missing].map((sha) => ({ sha, parents: [] })),
   ];
   return nodes.map(({ sha, parents }, index) => ({
@@ -65,20 +70,31 @@ function toGraphCommits(commits: Commit[]): GraphCommit[] {
   }));
 }
 
-interface HistoryTabProps {
+/** A covered repository as the History tab shows it. */
+export interface HistoryRepository {
   root: string;
-  commits: Commit[];
+  name: string;
+  /** CSS colour of its mark. */
+  color: string;
+  /** Its branch; the name, or "detached", labels its newest commit. */
+  branch?: BranchInfo;
+}
+
+interface HistoryTabProps {
+  /** Every covered repository; with more than one, each row shows the name of its repository. */
+  repositories: readonly HistoryRepository[];
+  commits: RepositoryCommit[];
   hasMore: boolean;
   loadingMore: boolean;
   moreError?: string;
   onLoadMore: () => void;
-  /** Branch of the repository; its name, or "detached", labels the first commit. */
-  branch?: BranchInfo;
 }
 
-export function HistoryTab({ root, commits, hasMore, loadingMore, moreError, onLoadMore, branch }: HistoryTabProps) {
-  const [selected, setSelected] = useState<Commit>();
-  if (selected !== undefined && !commits.some((commit) => commit.hash === selected.hash)) setSelected(undefined);
+const tipLabelOf = (branch: BranchInfo | undefined) => (branch === undefined ? undefined : branch.kind === 'branch' ? branch.name : 'detached');
+
+export function HistoryTab({ repositories, commits, hasMore, loadingMore, moreError, onLoadMore }: HistoryTabProps) {
+  const [selected, setSelected] = useState<RepositoryCommit>();
+  if (selected !== undefined && !commits.some(({ root, commit }) => root === selected.root && commit.hash === selected.commit.hash)) setSelected(undefined);
   const listRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<HTMLDivElement>(null);
   const colors = useLaneColors(listRef, commits.length > 0);
@@ -91,7 +107,9 @@ export function HistoryTab({ root, commits, hasMore, loadingMore, moreError, onL
   useLayoutEffect(() => {
     setGraphWidth(Number(graphRef.current?.querySelector('svg')?.getAttribute('width') ?? 0));
   }, [graphCommits, graphStyle]);
-  const tipLabel = branch === undefined ? undefined : branch.kind === 'branch' ? branch.name : 'detached';
+  const byRoot = useMemo(() => new Map(repositories.map((repository) => [repository.root, repository])), [repositories]);
+  const several = repositories.length > 1;
+  const tips = new Set<string>();
 
   if (commits.length === 0) return <p className="git-explorer-message">No commits yet</p>;
   return (
@@ -107,21 +125,34 @@ export function HistoryTab({ root, commits, hasMore, loadingMore, moreError, onL
             {graphStyle !== undefined && <Graph commits={graphCommits} branchHeads={NO_BRANCH_HEADS} graphStyle={graphStyle} />}
           </div>
           <ul className="history-list" aria-label="Commits">
-            {commits.map((commit, index) => (
-              <li key={commit.hash}>
-                <button type="button" className="history-commit" onClick={() => setSelected(commit)}>
-                  <span className="history-commit-hash">{commit.shortHash}</span>
-                  {index === 0 && tipLabel !== undefined && <span className="history-branch-label">{tipLabel}</span>}
-                  <span className="history-commit-subject" title={firstLineOf(commit.message)}>
-                    {firstLineOf(commit.message)}
-                  </span>
-                  <span className="history-commit-author" title={commit.author}>
-                    {commit.author}
-                  </span>
-                  <span className="history-commit-date">{formatCommitDate(commit.date)}</span>
-                </button>
-              </li>
-            ))}
+            {commits.map((entry) => {
+              const { root, commit } = entry;
+              const repository = byRoot.get(root);
+              const tip = !tips.has(root);
+              tips.add(root);
+              const tipLabel = tip ? tipLabelOf(repository?.branch) : undefined;
+              return (
+                <li key={graphId(root, commit.hash)}>
+                  <button type="button" className="history-commit" onClick={() => setSelected(entry)}>
+                    <span className="history-commit-hash">{commit.shortHash}</span>
+                    {several && repository !== undefined && (
+                      <span className="history-commit-repository" title={repository.root}>
+                        <span className="git-repository-mark" style={{ backgroundColor: repository.color }} aria-hidden="true" />
+                        {repository.name}
+                      </span>
+                    )}
+                    {tipLabel !== undefined && <span className="history-branch-label">{tipLabel}</span>}
+                    <span className="history-commit-subject" title={firstLineOf(commit.message)}>
+                      {firstLineOf(commit.message)}
+                    </span>
+                    <span className="history-commit-author" title={commit.author}>
+                      {commit.author}
+                    </span>
+                    <span className="history-commit-date">{formatCommitDate(commit.date)}</span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
         {moreError !== undefined && <ErrorMessage className="git-explorer-error">{moreError}</ErrorMessage>}
@@ -133,7 +164,9 @@ export function HistoryTab({ root, commits, hasMore, loadingMore, moreError, onL
           </div>
         )}
       </div>
-      {selected !== undefined && <CommitDetail key={selected.hash} root={root} commit={selected} onBack={() => setSelected(undefined)} />}
+      {selected !== undefined && (
+        <CommitDetail key={graphId(selected.root, selected.commit.hash)} root={selected.root} commit={selected.commit} onBack={() => setSelected(undefined)} />
+      )}
     </>
   );
 }

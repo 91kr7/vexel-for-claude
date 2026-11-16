@@ -5,9 +5,10 @@ import { RefreshCwIcon } from '../icons/Icons';
 import type { SessionSummary } from '../sessions/live-session-store';
 import { ChangesTab } from './ChangesTab';
 import { useChanges, type ChangesState } from './changes-store';
-import { HistoryTab } from './HistoryTab';
+import { HistoryTab, type HistoryRepository } from './HistoryTab';
 import { useHistory, type HistoryState } from './history-store';
-import type { BranchInfo, CoveredRepository, RepositoryLookupState } from './repository-lookup-store';
+import { repositoryColor } from './repository-colors';
+import type { CoveredRepository, RepositoryLookupState } from './repository-lookup-store';
 import { BranchChip, RepositoryList } from './RepositoryList';
 import { useTurnEndSignal } from './turn-end-watcher';
 
@@ -25,20 +26,39 @@ function ChangesBody({ repositories, changes }: { repositories: readonly Covered
   return <ChangesTab repositories={repositories} changes={changes} />;
 }
 
-function HistoryBody({ root, branch, history, onLoadMore }: { root: string; branch?: BranchInfo; history: HistoryState; onLoadMore: () => void }) {
+function HistoryBody({
+  repositories,
+  history,
+  onLoadMore,
+}: {
+  repositories: readonly HistoryRepository[];
+  history: HistoryState;
+  onLoadMore: () => void;
+}) {
   if (history.status === 'idle') return null;
   if (history.status === 'loading') return <ProgressIndicator className="git-explorer-message" />;
-  if (history.status === 'error') return <ErrorMessage className="git-explorer-error">{history.message}</ErrorMessage>;
+  const nameOf = (root: string) => repositories.find((repository) => repository.root === root)?.name;
   return (
-    <HistoryTab
-      root={root}
-      branch={branch}
-      commits={history.commits}
-      hasMore={history.hasMore}
-      loadingMore={history.loadingMore}
-      moreError={history.moreError}
-      onLoadMore={onLoadMore}
-    />
+    <>
+      {history.errors.map(({ root, message }) => {
+        const name = repositories.length > 1 ? nameOf(root) : undefined;
+        return (
+          <ErrorMessage key={root} className="git-explorer-error">
+            {name === undefined ? message : `${name}: ${message}`}
+          </ErrorMessage>
+        );
+      })}
+      {history.errors.length < repositories.length && (
+        <HistoryTab
+          repositories={repositories}
+          commits={history.commits}
+          hasMore={history.hasMore}
+          loadingMore={history.loadingMore}
+          moreError={history.moreError}
+          onLoadMore={onLoadMore}
+        />
+      )}
+    </>
   );
 }
 
@@ -57,20 +77,27 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
   const repositories = lookup.status === 'repositories' ? lookup.repositories : NO_REPOSITORIES;
   const single = repositories.length === 1 ? repositories[0] : undefined;
   const errorMessage = lookup.status === 'error' ? lookup.message : single !== undefined && 'error' in single ? single.error : undefined;
-  // The Changes tab reads every covered root; History reads the first one.
-  const first = errorMessage === undefined ? repositories[0] : undefined;
-  const root = first?.root;
-  const branch = first !== undefined && 'branch' in first ? first.branch : undefined;
+  const showTabs = errorMessage === undefined && repositories.length > 0;
   const roots = useMemo(() => repositories.map((repository) => repository.root), [repositories]);
+  const historyRepositories = useMemo<HistoryRepository[]>(
+    () =>
+      repositories.map((repository, index) => ({
+        root: repository.root,
+        name: repository.name,
+        color: repositoryColor(index),
+        branch: 'branch' in repository ? repository.branch : undefined,
+      })),
+    [repositories],
+  );
   const [revision, setRevision] = useState(0);
   const refresh = () => {
     setRevision((current) => current + 1);
     onRefresh?.();
   };
-  const changes = useChanges(errorMessage === undefined ? roots : NO_ROOTS, revision);
+  const changes = useChanges(showTabs ? roots : NO_ROOTS, revision);
   const [tab, setTab] = useState<Tab>('changes');
   const [historyOpened, setHistoryOpened] = useState(false);
-  const { history, loadMore } = useHistory(historyOpened ? root : undefined, revision);
+  const { history, loadMore } = useHistory(showTabs && historyOpened ? roots : NO_ROOTS, revision);
   useTurnEndSignal(sessions, roots, refresh);
   const idPrefix = useId();
   const tabId = (id: Tab) => `${idPrefix}-tab-${id}`;
@@ -99,7 +126,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
           </button>
         </header>
       )}
-      {root !== undefined && (
+      {showTabs && (
         <>
           <div className="git-explorer-tabs" role="tablist" aria-label="Git Explorer views">
             {TABS.map(({ tab: id, title }) => (
@@ -133,7 +160,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
             aria-labelledby={tabId('history')}
             hidden={tab !== 'history'}
           >
-            <HistoryBody root={root} branch={branch} history={history} onLoadMore={loadMore} />
+            <HistoryBody repositories={historyRepositories} history={history} onLoadMore={loadMore} />
           </div>
         </>
       )}

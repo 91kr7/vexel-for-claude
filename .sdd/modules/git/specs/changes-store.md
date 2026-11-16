@@ -6,7 +6,9 @@ type: frontend hook
 
 # useChanges
 
-**Purpose** → asks the server for the uncommitted changes of each covered re## Contract
+**Purpose** → asks the server for the uncommitted changes of each covered repository.
+
+## Contract
 
 - `useChanges(roots, revision = 0) → states` → one state per root, in the order of `roots`. Each state:
   - `{ status: "loading" }` → no answer yet for that root.
@@ -19,8 +21,7 @@ type: frontend hook
 - a root that enters the list → `loading` from the same render. A root that leaves the list → its answer is dropped.
 - a new `revision` → each root keeps its current state until its new answer replaces it; an answer of an older revision is dropped.
 - the state of a root never depends on the answer of another root: a failing root does not change the others.
-
- dropped.
+- the hook unmounts → every request in flight is dropped.
 
 ## Dependencies
 

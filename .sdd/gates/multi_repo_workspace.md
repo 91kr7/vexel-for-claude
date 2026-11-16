@@ -19,3 +19,5 @@
 | 2026-11-16 | dev | G4 batch-grouped-changes | pass | Production code typechecks, vite build green; tsc errors only in old test files of INT-7 |
 | 2026-11-16 | dev | route spec 500 answer | decided | Spec aligned with code: git errors become entries; defensive branch kept |
 | 2026-11-16 | dev | G5 batch-grouped-changes | pass | tsc clean, 278 unit + 48 e2e green, re-run by gatekeeper; damaged `changes-store.md` spec sent to next developer run |
+| 2026-11-16 | dev | G4 batch-combined-history | pass | Production code typechecks, vite build green; tsc errors only in old test files of INT-9 |
+| 2026-11-16 | dev | divergences developer: history errors inside `loaded`, "<name>: <message>" format | decided | Accepted; REQ-26 holds, single repository unchanged |
