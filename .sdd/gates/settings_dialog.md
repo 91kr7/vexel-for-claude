@@ -30,3 +30,6 @@
 | 2026-11-16 | dev | G4 editable-shortcuts fix | pass | Only `reserved-keys.ts` and its spec changed; build green |
 | 2026-11-16 | dev | G5 editable-shortcuts round 2 | pass | 519 unit + 16 batch e2e re-run green; tester ran 73 e2e |
 | 2026-11-16 | dev | G4 update-check | pass | Build green; `newer-version-loader.ts` change (shared body parsing for INT-5) accepted, no behaviour change |
+| 2026-11-16 | dev | G5 update-check | pass | 225 unit + 6 batch e2e re-run green; closing run: 3859 unit, 762/764 e2e, 26 Electron |
+| 2026-11-16 | dev | closing run failures | escalated | `plan-usage.spec.ts` wheel scroll fails on `main` too; `project-search.spec.ts:117` fails only under load, passes alone on branch and on `main` |
+| 2026-11-16 | dev | closing run failures | human decision | Merge anyway; plan-usage failure is older than this cycle |

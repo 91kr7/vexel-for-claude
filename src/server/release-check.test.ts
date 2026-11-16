@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { checkLatestRelease, latestReleaseApiUrl, releaseListUrl } from './release-check.js';
 
-// Unit tests of the release check, plan-update_check/REQ-1, REQ-3, REQ-9, REQ-12: a fake fetch stands in for GitHub.
+// Unit tests of the release check, plan-update_check/REQ-1, REQ-3, REQ-9, REQ-12 and plan-settings_dialog/REQ-45, REQ-50:
+// a fake fetch stands in for GitHub.
 const SOURCE = 'http://127.0.0.1:9/repos/owner/name/releases/latest';
 const RELEASE_PAGE = 'https://github.com/owner/name/releases/tag/v0.2.0';
 
@@ -72,11 +73,11 @@ describe('checkLatestRelease', () => {
     expect(init?.credentials === undefined || init.credentials === 'omit').toBe(true);
   });
 
-  it('gives none with no request when the source address is undefined', async () => {
+  it('gives failed with no request when the source address is undefined', async () => {
     const fetch = fakeFetch(async () => json({ tag_name: 'v0.2.0', html_url: RELEASE_PAGE }));
     await expect(
       checkLatestRelease({ sourceUrl: undefined, installedVersion: '0.1.0', fetch: fetch as unknown as typeof globalThis.fetch }),
-    ).resolves.toEqual({ status: 'none' });
+    ).resolves.toEqual({ status: 'failed' });
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -86,7 +87,7 @@ describe('checkLatestRelease', () => {
     await expect(check(fetch)).resolves.toEqual({ status: 'none' });
   });
 
-  // plan-update_check/REQ-9
+  // plan-update_check/REQ-9, plan-settings_dialog/REQ-50
   it.each([
     ['a network error', () => Promise.reject(new TypeError('fetch failed'))],
     ['a 403 refusal', async () => json({ message: 'rate limited' }, 403)],
@@ -102,9 +103,9 @@ describe('checkLatestRelease', () => {
     ['a tag_name that is not text', async () => json({ tag_name: 2, html_url: RELEASE_PAGE })],
     ['a JSON array', async () => json([{ tag_name: 'v0.2.0', html_url: RELEASE_PAGE }])],
     ['a JSON null', async () => json(null)],
-  ])('gives none on %s, without rejecting', async (_name, answer) => {
+  ])('gives failed on %s, without rejecting', async (_name, answer) => {
     const fetch = fakeFetch(answer as () => Promise<Response>);
-    await expect(check(fetch)).resolves.toEqual({ status: 'none' });
+    await expect(check(fetch)).resolves.toEqual({ status: 'failed' });
   });
 
   it('accepts an http release page address', async () => {
@@ -113,15 +114,15 @@ describe('checkLatestRelease', () => {
     await expect(check(fetch)).resolves.toMatchObject({ status: 'newer', releaseUrl: page });
   });
 
-  it('gives none when fetch throws synchronously', async () => {
+  it('gives failed when fetch throws synchronously', async () => {
     const fetch = vi.fn(() => {
       throw new Error('boom');
     });
-    await expect(check(fetch as unknown as ReturnType<typeof fakeFetch>)).resolves.toEqual({ status: 'none' });
+    await expect(check(fetch as unknown as ReturnType<typeof fakeFetch>)).resolves.toEqual({ status: 'failed' });
   });
 
-  // plan-update_check/REQ-9: a source that never answers gives none once the limit passes, and the request is aborted
-  it('gives none and aborts the request when the source does not answer within the limit', async () => {
+  // plan-update_check/REQ-9: a source that never answers gives failed once the limit passes, and the request is aborted
+  it('gives failed and aborts the request when the source does not answer within the limit', async () => {
     let signal: AbortSignal | undefined;
     const fetch = vi.fn((_input: string | URL | Request, init?: RequestInit) => {
       signal = init?.signal ?? undefined;
@@ -130,12 +131,12 @@ describe('checkLatestRelease', () => {
       });
     });
     const started = Date.now();
-    await expect(check(fetch, '0.1.0', 50)).resolves.toEqual({ status: 'none' });
+    await expect(check(fetch, '0.1.0', 50)).resolves.toEqual({ status: 'failed' });
     expect(Date.now() - started).toBeLessThan(2000);
     expect(signal?.aborted).toBe(true);
   });
 
-  it('gives none when the body does not arrive within the limit', async () => {
+  it('gives failed when the body does not arrive within the limit', async () => {
     const fetch = vi.fn((_input: string | URL | Request, init?: RequestInit) =>
       Promise.resolve({
         ok: true,
@@ -151,7 +152,7 @@ describe('checkLatestRelease', () => {
           }),
       } as unknown as Response),
     );
-    await expect(check(fetch, '0.1.0', 50)).resolves.toEqual({ status: 'none' });
+    await expect(check(fetch, '0.1.0', 50)).resolves.toEqual({ status: 'failed' });
   });
 
   it('logs no error on a failure', async () => {

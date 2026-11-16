@@ -1,15 +1,18 @@
 // @vitest-environment jsdom
 import { useState } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { NewerVersion } from '../newer-version/newer-version-loader';
 import { SettingsDialog, type SettingsTab } from './SettingsDialog';
-import { keydown, labelOf, lookStore, mount, radios, run, themeStore, unmountAll } from './settings-test-support';
+import { keydown, labelOf, lookStore, mount, radios, rerenderLast, run, themeStore, unmountAll } from './settings-test-support';
 
 afterEach(unmountAll);
 
-function open(initialTab?: SettingsTab, onClose = vi.fn()) {
+function open(initialTab?: SettingsTab, onClose = vi.fn(), onNewerVersion?: (version: NewerVersion) => void) {
   const theme = themeStore('dark');
   const look = lookStore('vexel');
-  mount(<SettingsDialog initialTab={initialTab} onClose={onClose} themeStore={theme.store} lookStore={look.store} />);
+  mount(
+    <SettingsDialog initialTab={initialTab} onClose={onClose} themeStore={theme.store} lookStore={look.store} onNewerVersion={onNewerVersion} />,
+  );
   const dialog = document.querySelector<HTMLElement>('[role="dialog"]') as HTMLElement;
   return { dialog, onClose, theme, look };
 }
@@ -43,11 +46,11 @@ describe('SettingsDialog', () => {
     expect(dialog.querySelector('.modal-actions')?.querySelectorAll('button')).toHaveLength(1);
   });
 
-  // plan-settings_dialog/REQ-6, REQ-21: a tab list "Settings sections" with "Theme", "Window Look", then "Shortcuts"
-  it('has a tab list "Settings sections" with the tabs "Theme", "Window Look" and "Shortcuts", in this order', () => {
+  // plan-settings_dialog/REQ-6, REQ-21, REQ-43: a tab list "Settings sections" with "Theme", "Window Look", "Shortcuts", then "Updates"
+  it('has a tab list "Settings sections" with the tabs "Theme", "Window Look", "Shortcuts" and "Updates", in this order', () => {
     const { dialog } = open();
     expect(dialog.querySelector('[role="tablist"]')?.getAttribute('aria-label')).toBe('Settings sections');
-    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Theme', 'Window Look', 'Shortcuts']);
+    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Theme', 'Window Look', 'Shortcuts', 'Updates']);
   });
 
   // plan-settings_dialog/REQ-4: default tab "Theme", selected and focused on open; one panel shown, labelled by its tab
@@ -106,23 +109,27 @@ describe('SettingsDialog', () => {
   // plan-settings_dialog/REQ-11: the tab list is one Tab stop, the shown tab
   it('gives tabindex 0 to the shown tab only', () => {
     const { dialog } = open();
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([0, -1, -1]);
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([0, -1, -1, -1]);
     run(() => tab(dialog, 'Window Look').click());
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, 0, -1]);
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, 0, -1, -1]);
     run(() => tab(dialog, 'Shortcuts').click());
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, -1, 0]);
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, -1, 0, -1]);
+    run(() => tab(dialog, 'Updates').click());
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, -1, -1, 0]);
   });
 
   // plan-settings_dialog/REQ-11: arrows move to the next/previous tab, wrapping; Home/End to the first/last
   it.each([
     ['ArrowRight', 'theme', 'Window Look'],
     ['ArrowRight', 'look', 'Shortcuts'],
-    ['ArrowRight', 'shortcuts', 'Theme'],
-    ['ArrowLeft', 'theme', 'Shortcuts'],
+    ['ArrowRight', 'shortcuts', 'Updates'],
+    ['ArrowRight', 'updates', 'Theme'],
+    ['ArrowLeft', 'theme', 'Updates'],
     ['ArrowLeft', 'look', 'Theme'],
     ['ArrowLeft', 'shortcuts', 'Window Look'],
-    ['Home', 'shortcuts', 'Theme'],
-    ['End', 'theme', 'Shortcuts'],
+    ['ArrowLeft', 'updates', 'Shortcuts'],
+    ['Home', 'updates', 'Theme'],
+    ['End', 'theme', 'Updates'],
   ] as const)('%s from the %s tab shows and focuses "%s"', (key, start, expected) => {
     const { dialog } = open(start);
     keydown(document.activeElement as Element, key);
@@ -204,5 +211,111 @@ describe('SettingsDialog', () => {
     keydown(document.activeElement as Element, 'Escape');
     expect(document.querySelector('[role="dialog"]')).toBeNull();
     expect(document.activeElement).toBe(opener);
+  });
+});
+
+// The "Updates" tab: a fake fetch stands in for the installed version and the update check routes.
+describe('SettingsDialog, "Updates" tab', () => {
+  const NEWER = { status: 'newer', installedVersion: '0.6.1', newerVersion: '0.7.0', releaseUrl: 'https://github.com/owner/name/releases/tag/v0.7.0' };
+  let release: ((body: unknown) => void) | undefined;
+  let updateChecks: number;
+
+  beforeEach(() => {
+    updateChecks = 0;
+    release = undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => {
+        if (url === '/api/installed-version') return Promise.resolve(new Response(JSON.stringify({ version: '0.6.1' }), { status: 200 }));
+        updateChecks += 1;
+        return new Promise<Response>((resolve) => (release = (body) => resolve(new Response(JSON.stringify(body), { status: 200 }))));
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const shownPanel = (dialog: HTMLElement) => visiblePanels(dialog)[0] as HTMLElement;
+  const until = (check: () => boolean) => vi.waitFor(() => expect(check()).toBe(true));
+  const resultText = (dialog: HTMLElement) =>
+    dialog.querySelector('.updates-section [role="status"], .updates-section [role="alert"]')?.textContent?.replace(/\s+/g, ' ').trim() ?? null;
+
+  // plan-settings_dialog/REQ-43, REQ-44: initialTab "updates" opens the updates section only
+  it('opens on the "Updates" tab when initialTab is "updates", with "Check for Updates" shown', async () => {
+    const { dialog } = open('updates');
+    const updates = tab(dialog, 'Updates');
+    expect(updates.getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(updates);
+    expect(visiblePanels(dialog)).toHaveLength(1);
+    expect(shownPanel(dialog).getAttribute('aria-labelledby')).toBe(updates.id);
+    expect(buttonNamed(shownPanel(dialog), 'Check for Updates')).toBeDefined();
+    await until(() => shownPanel(dialog).textContent?.includes('Installed version: v0.6.1') ?? false);
+  });
+
+  it('keeps the updates section out of sight behind another tab', () => {
+    const { dialog } = open('theme');
+    expect(shownPanel(dialog).querySelector('.updates-section')).toBeNull();
+    expect(buttonNamed(shownPanel(dialog), 'Check for Updates')).toBeUndefined();
+  });
+
+  // plan-settings_dialog/REQ-49, REQ-51: the newer version goes to the page, the popup stays open
+  it('passes a newer result to onNewerVersion and stays open', async () => {
+    const onClose = vi.fn();
+    const onNewerVersion = vi.fn();
+    const { dialog } = open('updates', onClose, onNewerVersion);
+    run(() => buttonNamed(dialog, 'Check for Updates').click());
+    await until(() => release !== undefined);
+    run(() => release?.(NEWER));
+    await until(() => onNewerVersion.mock.calls.length === 1);
+    expect(onNewerVersion).toHaveBeenCalledWith({ installedVersion: '0.6.1', newerVersion: '0.7.0', releaseUrl: NEWER.releaseUrl });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(document.querySelector('[role="dialog"]')).toBe(dialog);
+  });
+
+  // plan-settings_dialog/REQ-51: whatever the result, the popup stays open
+  it.each([{ status: 'current', installedVersion: '0.6.1' }, { status: 'failed' }])('stays open after the result %j', async (body) => {
+    const { dialog, onClose } = open('updates');
+    run(() => buttonNamed(dialog, 'Check for Updates').click());
+    await until(() => release !== undefined);
+    run(() => release?.(body));
+    await until(() => resultText(dialog) !== null);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(document.querySelector('[role="dialog"]')).toBe(dialog);
+  });
+
+  // spec SettingsDialog: the result and a running check survive a tab change
+  it('keeps a running check and its result across a tab change', async () => {
+    const { dialog } = open('updates');
+    run(() => buttonNamed(dialog, 'Check for Updates').click());
+    await until(() => release !== undefined);
+    run(() => tab(dialog, 'Theme').click());
+    run(() => release?.({ status: 'current', installedVersion: '0.6.1' }));
+    run(() => tab(dialog, 'Updates').click());
+    await until(() => resultText(dialog) !== null);
+    expect(resultText(dialog)).toBe('You are up to date (v0.6.1)');
+    run(() => tab(dialog, 'Shortcuts').click());
+    run(() => tab(dialog, 'Updates').click());
+    expect(resultText(dialog)).toBe('You are up to date (v0.6.1)');
+    expect(updateChecks).toBe(1);
+  });
+
+  // spec SettingsDialog: a new opening starts with no result
+  it('starts with no result when the popup opens again', async () => {
+    const theme = themeStore('dark');
+    const look = lookStore('vexel');
+    const dialogOf = (shown: boolean) => (shown ? <SettingsDialog initialTab="updates" onClose={vi.fn()} themeStore={theme.store} lookStore={look.store} /> : null);
+    mount(dialogOf(true));
+    let dialog = document.querySelector<HTMLElement>('[role="dialog"]') as HTMLElement;
+    run(() => buttonNamed(dialog, 'Check for Updates').click());
+    await until(() => release !== undefined);
+    run(() => release?.({ status: 'failed' }));
+    await until(() => resultText(dialog) !== null);
+    rerenderLast(dialogOf(false));
+    rerenderLast(dialogOf(true));
+    dialog = document.querySelector<HTMLElement>('[role="dialog"]') as HTMLElement;
+    expect(resultText(dialog)).toBeNull();
+    expect(buttonNamed(dialog, 'Check for Updates').disabled).toBe(false);
   });
 });
