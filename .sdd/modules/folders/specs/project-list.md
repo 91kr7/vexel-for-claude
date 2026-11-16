@@ -27,19 +27,23 @@ Shows:
 - state `ready` with projects, none matching the search text → a compact empty AreaState `No projects match "<text>"`, with the folder icon. The search bar stays.
 - state `ready` with projects → a list, one row per matching project, in the store order. A project matches when its full path contains the search text, ignoring case. An empty text matches every project. Each row has a button (class `project-row`) and, beside it and not inside it, the ProjectFavoriteButton and then the ProjectRemoveButton of the project. The row button has:
   - the Avatar of the folder;
-  - the folder name (`folderNameOf`), weight 600, 13 px, cut with an ellipsis; then the FavoriteIndicator when the project is favorite;
-  - the full path, mono 11 px, `--text-muted`, cut with an ellipsis; its `title` is the full path;
+  - line 1: the folder name (`folderNameOf`), weight 600, 13 px, cut with an ellipsis; the ProjectFavoriteButton shows right after the name, on the same line, on every row;
+  - the full path, mono 11 px, `--text-muted`, cut with an ellipsis, with no `title`;
   - "Last activity" and the RelativeTime of `lastActivity`, 11 px, `--text-secondary`.
+  - a right column of 36 px kept free for the ProjectRemoveButton: the text never runs under it.
+  - no "New session" label.
 - a row with `available` false → `aria-disabled="true"`, opacity 0.55, the `not-allowed` cursor, no hover style. Before "Last activity" it shows "Folder not found" in `--amber-400`, then " · ".
 - an available row on hover → `--bg-surface-2` background and a 1 px `--border-subtle` border.
-- the ProjectRemoveButton → at the right end of the row; the ProjectFavoriteButton → left of it, 4 px apart. Both are centred on the height of the row button. Each is hidden (opacity 0) until the pointer is over the row or the focus inside the row is visible from the keyboard. Each stays shown while its request runs. Their errors show under the row button. Unavailable rows have them too. They are not dimmed there, and they work.
-- an available row on hover or with visible focus → the label "▶ New session" at its right end, left of the favorite button, 11 px weight 600, on the accent colour. The label is decorative: it is not part of the row name. An unavailable row has no label.
+- the ProjectRemoveButton → in the right column of the row, 8 px from the right edge, centred on the height of the row button. It shows while the pointer is over the row, while the keyboard focus is visible on the row or on a control of the row, and while its request runs; else it is hidden (opacity 0).
+- the ProjectFavoriteButton → its visibility rules are in its spec; the row is the area whose hover or keyboard focus shows an outline star.
+- the errors of both buttons show under the row button. Unavailable rows have both buttons too. They are not dimmed there, and they work.
 
 Actions:
 - typing in the search field → the rows update at each change of the text, with no button to press.
 - "Clear Search" → empties the text, shows every row again and puts the focus back in the field.
 - click, Enter or Space on an available row → `onChoose(project)` with that row's project, also in a filtered list.
 - click, Enter or Space on an unavailable row → nothing.
+- click on the star or on Remove → only that button acts: `onChoose` is not called.
 - Tab → reaches the search field, then "Clear Search" when shown, then every row button, unavailable rows included, and after each row button its favorite button, then its remove button. The focused row button shows the focus ring inside its edge. The search field and "Clear Search" show the focus ring when focused.
 - a row that holds the focus leaves the list (e.g. after "Remove from Projects") → the focus goes to the row button of the next row still in the list, else of the previous one. No row left → the focus is not moved. The focus is not moved either when it is already on another element, e.g. the search field.
 
@@ -55,7 +59,7 @@ Actions:
 - ProjectFavoriteButton
 - ProjectRemoveButton
 - AreaState, IconSet (`FolderIcon`, `SearchIcon`, `XIcon`) (module app)
-- Avatar, `folderNameOf`, RelativeTime, FavoriteIndicator (module sessions)
+- Avatar, `folderNameOf`, RelativeTime (module sessions)
 
 ## Requirements served
 
@@ -63,3 +67,4 @@ Actions:
 - `plan-project_list_actions/REQ-1`, `plan-project_list_actions/REQ-2`, `plan-project_list_actions/REQ-3`, `plan-project_list_actions/REQ-4`, `plan-project_list_actions/REQ-5`, `plan-project_list_actions/REQ-6`, `plan-project_list_actions/REQ-8`, `plan-project_list_actions/REQ-9`, `plan-project_list_actions/REQ-10`, `plan-project_list_actions/REQ-11`
 - `plan-project_list_actions/REQ-12`, `plan-project_list_actions/REQ-18`, `plan-project_list_actions/REQ-21`, `plan-project_list_actions/REQ-22`
 - `plan-project_list_actions/REQ-23`, `plan-project_list_actions/REQ-24`, `plan-project_list_actions/REQ-27`, `plan-project_list_actions/REQ-30`, `plan-project_list_actions/REQ-31`, `plan-project_list_actions/REQ-32`
+- `plan-ui_restyle/REQ-12`, `plan-ui_restyle/REQ-13`, `plan-ui_restyle/REQ-14`, `plan-ui_restyle/REQ-19`, `plan-ui_restyle/REQ-20`, `plan-ui_restyle/REQ-21`, `plan-ui_restyle/REQ-23`, `plan-ui_restyle/REQ-24`, `plan-ui_restyle/REQ-26`

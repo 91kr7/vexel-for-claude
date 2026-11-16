@@ -143,7 +143,7 @@ async function postHook(request: APIRequestContext, id: string, event: Record<st
 }
 
 async function openFromList(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
 }
 
@@ -318,25 +318,23 @@ async function audit(scope: Locator, darkOnly: string[]): Promise<{ dark: string
 
 // ---------------------------------------------------------------------------------------------------------------------
 test.describe('theme switch', () => {
-  // REQ-1, TopBar: the switch on the right of the bar, 6 px before "New Session", on the empty screen and with a session open
-  test('the top bar shows the 32 x 32 switch just before "New Session", with and without an open session', async ({ page, request }) => {
+  // REQ-1, TopBar: the switch on the right of the bar, on the empty screen and with a session open
+  test('the top bar shows the 32 x 32 switch on its right, before the look switch and "Plan Usage", with and without an open session', async ({ page, request }) => {
     await showOnly(page);
     const folder = await newFolder('switch-place');
     await startViaApi(request, folder);
     await page.goto('/');
     const check = async (screen: string) => {
       const sw = await box(themeSwitch(page));
-      // plan-usage_limits/REQ-1, plan-wsl_support/REQ-18: the look switch, then the usage button, sit between the switch and "New Session", 6 px apart.
+      // plan-usage_limits/REQ-1, plan-wsl_support/REQ-18: the look switch, then the usage button, follow the switch 6 px apart.
       const look = await box(button(topBar(page), 'Windows 11 look'));
       const usage = await box(button(topBar(page), 'Plan Usage'));
-      const next = await box(button(topBar(page), 'New Session'));
       const bar = await box(topBar(page));
       expect(sw.width, screen).toBeCloseTo(32, 0);
       expect(sw.height, screen).toBeCloseTo(32, 0);
       expect(usage.width, screen).toBeCloseTo(32, 0);
       expect(look.x - (sw.x + sw.width), `${screen}: 6 px before the look switch`).toBeCloseTo(6, 0);
       expect(usage.x - (look.x + look.width), `${screen}: the look switch 6 px before the usage button`).toBeCloseTo(6, 0);
-      expect(next.x - (usage.x + usage.width), `${screen}: 6 px before "New Session"`).toBeCloseTo(6, 0);
       expect(sw.x, `${screen}: on the right half of the bar`).toBeGreaterThan(bar.width / 2);
       expect(Math.abs(sw.y + sw.height / 2 - (bar.y + bar.height / 2)), `${screen}: vertically centred`).toBeLessThanOrEqual(1);
     };
@@ -404,7 +402,7 @@ test.describe('theme switch', () => {
     expect(await style(page.locator('body'), 'background-color')).toBe(LIGHT['--bg-canvas']);
     expect(await style(page.locator('body'), 'color')).toBe(LIGHT['--text-primary']);
     expect(await style(topBar(page), 'background-color')).toBe(LIGHT['--bg-surface-2']);
-    expect(await style(button(topBar(page), 'New Session'), 'background-color')).toBe(LIGHT['--accent-primary']);
+    expect(await style(button(mainArea(page), 'New Session'), 'background-color')).toBe(LIGHT['--accent-primary']);
     expect(await page.evaluate(() => (window as unknown as { pageMarker?: number }).pageMarker), 'the page did not reload').toBe(42);
     expect(navigations).toBe(0);
   });
@@ -477,7 +475,7 @@ test.describe('theme switch', () => {
   // REQ-4: a theme change does not close an open dialog or lose what the user typed
   test('a theme change keeps the new-session dialog open with the typed path', async ({ page }) => {
     await page.goto('/');
-    await button(topBar(page), 'New Session').click();
+    await button(rail(page), 'New Claude Code Session').click();
     const field = chooser(page).getByRole('textbox', { name: 'Working Directory Path', exact: true });
     // The field shows the current folder once the first listing is in: typing earlier races it.
     await expect(field).toHaveValue(/^\//);
@@ -613,7 +611,7 @@ test.describe('light palette', () => {
     expect(contrast(onAccent, accent)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(onAccent, parse(await colour(page, 'var(--accent-deep)')))).toBeGreaterThanOrEqual(4.5);
 
-    const newSession = button(topBar(page), 'New Session');
+    const newSession = button(mainArea(page), 'New Session');
     expect(await style(newSession, 'background-color')).toBe(LIGHT['--accent-primary']);
     expect(await style(newSession, 'color')).toBe(LIGHT['--on-accent']);
     expect(await style(page.getByRole('banner').getByText('VX', { exact: true }), 'background-image')).toMatch(
@@ -751,7 +749,7 @@ test.describe('light screens', () => {
     const socket = await showOnly(page, [external]);
     await page.goto('/');
     await toLight(page);
-    await entry(page, external.folder).click();
+    await entry(page, external.folder).getByTitle(external.folder, { exact: true }).click();
     (await socket()).send(
       JSON.stringify({
         type: 'items',
@@ -791,7 +789,7 @@ test.describe('light screens', () => {
   test('the new-session dialog is light, keeps the mock backdrop, and all its text reaches 4.5:1', async ({ page }) => {
     await page.goto('/');
     await toLight(page);
-    await button(topBar(page), 'New Session').click();
+    await button(rail(page), 'New Claude Code Session').click();
     const dialog = chooser(page);
     await expect(dialog).toBeVisible();
     expect(await style(dialog.locator('xpath=..'), 'background-color')).toBe('rgba(0, 0, 0, 0.65)');

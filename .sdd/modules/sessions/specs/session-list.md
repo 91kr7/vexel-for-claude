@@ -30,7 +30,7 @@ Shows:
 
 Entry row (every entry but the hosted needs-input card): a button with the class `session-entry`, the `.vx-session-row` look.
 - padding 6 × 8 px, 6 px radius, 12/18 px text in `--text-secondary`. Hover → `--bg-surface-2` and `--text-primary`.
-- line 1, 8 px gaps → the StateBadge `dot` (8 px), the folder name (`folderNameOf`, tooltip: the full folder path), then on the right the StateBadge `inline` (mono 10 px in the state colour).
+- line 1, 8 px gaps → the StateBadge `dot` (8 px), the folder name (`folderNameOf`, tooltip: the full folder path), the star place, then on the right the StateBadge `inline` (mono 10 px in the state colour).
 - line 2, 2 px below and 16 px in from the left → the label (11/16 px, `--text-muted`, tooltip: the full label), then on the right the context percentage, then the estimated cost, then the RelativeTime of the last activity (mono 10 px, `--text-muted`).
 - context percentage → only when the summary has `usage.context`: "<percent>%" by `percentOf`, mono 10 px, 6 px before the time. Colour by `usageLevelOf`: `normal` in `--text-muted` (`--text-secondary` when open), `warning` in amber-400, `error` in rose-400. No `usage.context` → nothing, never "0%". Every state shows it, ended included.
 - estimated cost → only when the summary has `usage.cost`: the text of `costText(usage.cost.usd)`, e.g. "$1.27", "<$0.01", or "—" when there is no `usd`. Mono 10 px in `--text-muted` (`--text-secondary` when open).
@@ -57,22 +57,23 @@ Entry variants:
 
 Hosted needs-input card (look of `#permission-banner`): a block with the class `session-card`.
 - `.vx-surface-2`, 1 px amber-500 border at 40 %, 12 px radius, padding 14 px, `shadow-lg`. Items 4 px apart.
-- top → a button with the classes `session-entry needs-input`: the tag "Needs Input" (mono 10 px uppercase, weight 500, amber-300 on amber-500 at 20 %, amber-500 border at 40 %, 4 px radius) and the folder name (12 px weight 500, `--text-primary`); below, the label as in a row, with the context percentage and the estimated cost of a row at its right.
+- top → a button with the classes `session-entry needs-input`: the tag "Needs Input" (mono 10 px uppercase, weight 500, amber-300 on amber-500 at 20 %, amber-500 border at 40 %, 4 px radius), the folder name (12 px weight 500, `--text-primary`) and the star place; below, the label as in a row, with the context percentage and the estimated cost of a row at its right.
 - then the needs-input line → "Permission for **<tool>** · <time>", with the tool in bold. With no `waitingTool`, the label takes the place of "Permission for <tool>". `<time>` is the RelativeTime of the last activity. Look of `#perm-cmd`: mono 12/16 px, amber-300, `--bg-canvas`, `--border-subtle` border, 4 px radius, padding 6 × 10 px, one line cut with an ellipsis.
 - then, 12 px below and on the right, "Reply" → `.button-primary` in mono weight 500, padding 6 × 14 px, scaled to 95 % while pressed.
 - the card button is described by the needs-input line (`aria-describedby`).
 - the open card has `aria-current="true"` on its button, the accent glow over its background and the 2 px accent bar inside its left edge.
 
-Favorite indicator (a marked entry, in every group):
-- FavoriteIndicator right after the folder name on line 1 of a row, and after the folder name in the needs-input card. It never shrinks, so the folder name is cut first. A row of an external session needing input keeps the "External" chip after it.
-- an entry with `favorite: true` shows it. The entry keeps its place and its group.
-
-"Mark as Favorite" / "Remove Favorite" (every entry, rows and the needs-input card):
-- FavoriteButton on the entry, "Remove Favorite" when the entry has `favorite: true`. It sits left of "Rename". On an ended row, EndedEntryActions stay left of it. Tab order: entry, EndedEntryActions, FavoriteButton, "Rename". It is hidden with "Rename" during a rename. Its error shows under the entry.
+Session star (every entry, rows and the needs-input card, in every group):
+- FavoriteButton, "Remove Favorite" when the entry has `favorite: true`. It sits right after the folder name on line 1 of a row, and right after the folder name in the needs-input card. It is a sibling of the entry button, never inside it.
+- the star place never shrinks, so the folder name is cut first. A row of an external session needing input keeps the "External" chip after it.
+- the star never enters the corner of "Rename": in a row the state name keeps it apart; in the needs-input card, line 1 leaves room for "Rename" at its right.
+- a marked entry shows the filled star always; an unmarked entry shows the outline star only on hover or visible keyboard focus (FavoriteButton). The entry keeps its place and its group.
+- Tab order of a row: entry, FavoriteButton, EndedEntryActions, "Rename". Of the needs-input card: entry, FavoriteButton, "Reply", "Rename".
+- it is hidden with "Rename" during a rename. Its error shows under the entry; in the needs-input card, at the bottom of the card.
 
 "Rename" (every entry, rows and the needs-input card):
 - a 20 px square icon button (pencil icon, 14 px, `--text-muted` on `--bg-surface-2`, 4 px radius), with the accessible name and the tooltip "Rename". It sits beside the entry button, not inside it, after the EndedEntryActions in the tab order.
-- place → top right of the row, over its state name; top right inside the needs-input card. On an ended row, EndedEntryActions move to its left.
+- place → top right of the row, over its state name; top right inside the needs-input card. It is the only action of that corner. On an ended row, EndedEntryActions move to its left.
 - hidden (opacity 0) until the pointer is over the entry or the focus inside the entry is visible from the keyboard. Hover → `--bg-surface-3` and `--text-primary`. The focused button shows the focus ring.
 - pressed → the entry shows SessionNameEditor in place of its label (row line 2, or the card label). Only one entry edits at a time. The other parts of the entry stay.
 - during the edit → the entry is no longer a button: a click on it opens nothing and it cannot be dragged. "Rename" is hidden.
@@ -129,7 +130,7 @@ Drag feedback (the mock has no drag state):
 
 ## Dependencies
 
-- groupSessions, SessionOrderStore (`SessionOrder`), usage format (`percentOf`, `usageLevelOf`, `costText`, `INCOMPLETE_COST_TEXT`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions, SessionNameEditor, FavoriteButton, FavoriteIndicator
+- groupSessions, SessionOrderStore (`SessionOrder`), usage format (`percentOf`, `usageLevelOf`, `costText`, `INCOMPLETE_COST_TEXT`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions, SessionNameEditor, FavoriteButton
 - AreaState, IconSet, ShortcutChannel, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
@@ -148,3 +149,4 @@ Drag feedback (the mock has no drag state):
 - `plan-favorite_session/REQ-1`, `plan-favorite_session/REQ-2`, `plan-favorite_session/REQ-3`, `plan-favorite_session/REQ-8`, `plan-favorite_session/REQ-9`, `plan-favorite_session/REQ-13`
 - `plan-keyboard_shortcuts/REQ-16`, `plan-keyboard_shortcuts/REQ-17`, `plan-keyboard_shortcuts/REQ-18`
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-10`
+- `plan-ui_restyle/REQ-29`, `plan-ui_restyle/REQ-31`, `plan-ui_restyle/REQ-32`

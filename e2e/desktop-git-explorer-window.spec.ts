@@ -151,12 +151,12 @@ test.describe('Git explorer in the desktop app', () => {
     });
     expect(created.status).toBe(201);
 
-    await entry(page, hostedRepo).click();
+    await entry(page, hostedRepo).getByTitle(hostedRepo, { exact: true }).click();
     await explorerButton(page).click();
     await expectRepositoryShown(page, hostedRepo);
 
     await expect(entry(page, externalRepo)).toBeVisible({ timeout: 10_000 });
-    await entry(page, externalRepo).click();
+    await entry(page, externalRepo).getByTitle(externalRepo, { exact: true }).click();
     await expect(page.locator('.conversation-view')).toContainText('Hi there');
     await explorerButton(page).click();
     await expectRepositoryShown(page, externalRepo);

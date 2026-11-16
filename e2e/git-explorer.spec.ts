@@ -69,7 +69,7 @@ async function startHosted(request: APIRequestContext, folder: string): Promise<
 }
 
 async function openHosted(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
 }
 
@@ -217,7 +217,7 @@ test.describe('Git explorer of an external session', () => {
     await runExternal('8f1c2d3e-0000-4000-8000-000000000001', repo);
     await page.goto('/');
     await expect(entry(page, repo)).toBeVisible(SCAN);
-    await entry(page, repo).click();
+    await entry(page, repo).getByTitle(repo, { exact: true }).click();
     await expect(conversation(page)).toContainText('Hi there');
 
     const button = externalHeader(page).getByRole('button', { name: 'Git Explorer', exact: true });
@@ -248,7 +248,7 @@ test.describe('Git explorer of an external session', () => {
     await page.goto('/');
     await expect(entry(page, plain)).toBeVisible(SCAN);
     const lookup = page.waitForResponse((r) => isLookup(r.url()));
-    await entry(page, plain).click();
+    await entry(page, plain).getByTitle(plain, { exact: true }).click();
     await expect(conversation(page)).toContainText('Hi there');
     expect(await (await lookup).json()).toEqual({ status: 'none' });
     await expect(externalHeader(page).getByRole('button', { name: 'Git Explorer', exact: true })).toHaveCount(0);
@@ -658,7 +658,7 @@ test.describe('Refresh of the git explorer', () => {
     await runExternal('8f1c2d3e-0000-4000-8000-000000000012', repo);
     await page.goto('/');
     await expect(entry(page, repo)).toBeVisible(SCAN);
-    await entry(page, repo).click();
+    await entry(page, repo).getByTitle(repo, { exact: true }).click();
     await expect(conversation(page)).toContainText('Hi there');
     await externalHeader(page).getByRole('button', { name: 'Git Explorer', exact: true }).click();
     await expect(explorer(page)).toContainText('No uncommitted changes');

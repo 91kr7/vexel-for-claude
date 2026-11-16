@@ -419,7 +419,7 @@ test.describe('List panel width', () => {
   test('after a drag the terminal of the open session fits the main area again and the CLI gets the new columns', async ({ page, request }) => {
     const folder = await startSession(request);
     await openPage(page);
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(terminal(page)).toContainText('READY');
     await expect.poll(() => reportedColumns(page)).toBeDefined();
     const before = (await reportedColumns(page))!;

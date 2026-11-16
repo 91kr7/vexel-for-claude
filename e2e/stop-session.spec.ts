@@ -40,7 +40,7 @@ async function openSession(page: Page, request: APIRequestContext, name: string)
   const folder = await newFolder(name);
   const id = await startViaApi(request, folder);
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText('READY');
   return { id, folder };
 }
@@ -178,7 +178,7 @@ test('a state change of the open session keeps its terminal connection', async (
     if (ws.url().includes(`/api/sessions/${id}/attach`)) attaches.push(ws.url());
   });
   await page.goto('/');
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText('READY');
 
   await typeLine(page, 'TURN');

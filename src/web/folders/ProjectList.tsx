@@ -2,7 +2,6 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AreaState } from '../feedback/AreaState';
 import { FolderIcon, SearchIcon, XIcon } from '../icons/Icons';
 import { Avatar, folderNameOf } from '../sessions/Avatar';
-import { FavoriteIndicator } from '../sessions/FavoriteIndicator';
 import { RelativeTime } from '../sessions/RelativeTime';
 import { ProjectFavoriteButton } from './ProjectFavoriteButton';
 import { ProjectRemoveButton } from './ProjectRemoveButton';
@@ -32,11 +31,9 @@ function ProjectRow({ project, onChoose }: { project: Project; onChoose?: Choose
       <span className="project-row-text">
         <span className="project-row-heading">
           <span className="project-row-name">{folderNameOf(project.folder)}</span>
-          {project.favorite && <FavoriteIndicator />}
+          <span className="project-row-star-slot" aria-hidden="true" />
         </span>
-        <span className="project-row-path" title={project.folder}>
-          {project.folder}
-        </span>
+        <span className="project-row-path">{project.folder}</span>
         <span className="project-row-meta">
           {!project.available && (
             <>
@@ -47,11 +44,6 @@ function ProjectRow({ project, onChoose }: { project: Project; onChoose?: Choose
           Last activity <RelativeTime iso={project.lastActivity} />
         </span>
       </span>
-      {project.available && (
-        <span className="project-row-go" aria-hidden="true">
-          ▶ New session
-        </span>
-      )}
     </button>
   );
 }
@@ -132,7 +124,7 @@ export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onC
             }}
           >
             {projects.map((project) => (
-              <li key={project.folder} onFocus={() => (focusedFolder.current = project.folder)}>
+              <li key={project.folder} className="star-host" onFocus={() => (focusedFolder.current = project.folder)}>
                 <ProjectRow project={project} onChoose={onChoose} />
                 <ProjectFavoriteButton folder={project.folder} favorite={project.favorite} />
                 <ProjectRemoveButton folder={project.folder} />

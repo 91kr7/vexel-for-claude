@@ -1,5 +1,4 @@
 import { isDesktopWindow } from './desktop-bridge';
-import { PlusIcon } from './icons/Icons';
 import { useInstalledVersion } from './installed-version-loader';
 import { LookSwitch } from './LookSwitch';
 import { PlanUsageButton } from './PlanUsageButton';
@@ -9,14 +8,13 @@ import { useLook } from './theme/look-store';
 import { WindowButtons } from './WindowButtons';
 
 interface TopBarProps {
-  onNewSession: () => void;
   shortcutsPanelOpen: boolean;
   onToggleShortcutsPanel: () => void;
   planUsageOpen: boolean;
   onTogglePlanUsage: () => void;
 }
 
-export function TopBar({ onNewSession, shortcutsPanelOpen, onToggleShortcutsPanel, planUsageOpen, onTogglePlanUsage }: TopBarProps) {
+export function TopBar({ shortcutsPanelOpen, onToggleShortcutsPanel, planUsageOpen, onTogglePlanUsage }: TopBarProps) {
   const desktop = isDesktopWindow();
   const installedVersion = useInstalledVersion();
   const { look } = useLook();
@@ -39,10 +37,6 @@ export function TopBar({ onNewSession, shortcutsPanelOpen, onToggleShortcutsPane
         <ThemeSwitch />
         <LookSwitch />
         <PlanUsageButton open={planUsageOpen} onToggle={onTogglePlanUsage} />
-        <button type="button" className="button-primary button-bar" onClick={onNewSession}>
-          <PlusIcon />
-          New Session
-        </button>
         {desktop && windows11 && <WindowButtons look={look} />}
       </div>
     </header>

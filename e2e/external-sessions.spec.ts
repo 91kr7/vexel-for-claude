@@ -246,7 +246,8 @@ test('an external session with no message yet is labelled with its folder name a
   await page.goto('/');
   const entry = listEntry(page, folder);
   await expect(entry).toContainText('fresh-start', SCAN);
-  await entry.click();
+  // Near the left edge: with a short name the star after it sits at the centre of the entry (plan-ui_restyle/REQ-29).
+  await entry.click({ position: { x: 8, y: 8 } });
   await expect(conversationView(page)).toContainText('No messages.');
 
   await writeTranscript(folder, 'e2e-ext-fresh', [user(folder, 'Il primo messaggio')]);

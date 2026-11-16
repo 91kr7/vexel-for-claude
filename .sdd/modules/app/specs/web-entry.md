@@ -50,7 +50,7 @@ Client classes built from the mock's parts:
 | `.mono-chip` | mono 10 px, padding 2 × 6 px, 4 px radius, `--text-secondary`; used with `.vx-surface-2` (`#subbar-model`) |
 | `.button-neutral` | 12/16 px, padding 6 × 12 px, 8 px radius, the `.vx-surface-2` look, `--text-primary`; hover → surface 3 and strong border ("Cancel") |
 | `.button-primary` | 12/16 px weight 500, padding 6 × 16 px, 8 px radius, `--accent-primary` fill, `--on-accent` text, Tailwind `shadow` ("Start Session") |
-| `.button-bar` | with `.button-primary`: 32 px high, padding 0 × 10 px, `shadow-sm`, scaled to 95 % while pressed (top-bar "New Session") |
+| `.button-bar` | with `.button-primary`: 32 px high, padding 0 × 10 px, `shadow-sm`, scaled to 95 % while pressed (e.g. "Resume Here") |
 | `.button-danger` | mono 11 px, padding 4 × 10 px, 6 px radius, rose-500 at 15 % fill, rose-400 text, rose-500 at 30 % border; hover → fill at 25 % (`#subbar-stop-btn`) |
 | `.button-attn` | `.button-danger` in amber |
 | `.button-interrupt` | `.button-danger` in orange: `--orange-500-15` fill, `--orange-400` text and icon, `--orange-500-30` border; hover → `--orange-500-25` fill. Keyboard focus shows the common focus ring. "Interrupt" of SessionView |

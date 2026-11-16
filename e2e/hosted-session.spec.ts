@@ -86,7 +86,7 @@ async function startBillingApi(request: APIRequestContext): Promise<string> {
 }
 
 async function openFromList(page: Page, folder: string): Promise<void> {
-  await entry(page, folder).click();
+  await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
 }
 
@@ -209,7 +209,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await expect(interrupt).not.toContainText('■');
       await expect(stop.getByText('■', { exact: true })).toHaveAttribute('aria-hidden', 'true');
 
-      // the terminal panel: canvas, subtle border, 8 px radius, padding 12, 16 px from the left, right and top
+      // the terminal panel: canvas, subtle border, 8 px radius, padding 12, 16 px from every side
       const term = panel(page);
       await expect(term).toHaveAccessibleName('Terminal: billing-api');
       expect(await styles(term, ['border-top-left-radius', 'background-color', 'border-top-width', 'border-top-color', 'padding-top', 'padding-left'])).toEqual({
@@ -224,7 +224,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       // the footer: 40 px, padding 0 16, surface 1, subtle line above, under the panel, down to the bottom of the main area
       const row = footer(page);
       const rowBox = await box(row);
-      near(rowBox.y, termBox.y + termBox.height, 'footer top');
+      near(rowBox.y, termBox.y + termBox.height + 16, 'footer top');
       near(rowBox.height, 40, 'footer height');
       near(rowBox.y + rowBox.height, main.y + main.height, 'footer bottom');
       near(rowBox.x, main.x, 'footer left');

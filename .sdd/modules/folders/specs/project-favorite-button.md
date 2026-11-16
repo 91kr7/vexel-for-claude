@@ -11,7 +11,8 @@ type: UI component
 ## Contract
 
 Description:
-- the same look as FavoriteButton (module sessions): a 20 px square icon button, 4 px radius, star icon 14 px, in `--text-muted` on `--bg-surface-2`. ProjectList places it beside the row button. An error shows under the row.
+- a bare star: a 20 px button with no background and no border, star icon 13 px. ProjectList places it right after the folder name of the row. An error shows under the row.
+- its look comes from the shared star classes (`star-button`, with `marked` and `pop`), that the session star reuses. The row that holds it carries `star-host`.
 
 Props:
 - `folder` → the folder of the project.
@@ -19,7 +20,11 @@ Props:
 
 Shows:
 - accessible name and tooltip "Mark as Favorite", or "Remove Favorite" when `favorite`.
-- hover → `--bg-surface-3` and `--text-primary`. The focused button shows the focus ring.
+- marked → a filled star in the theme amber (`--amber-400`), always shown.
+- not marked → an outline star in `--text-muted` at 70 % opacity, shown only while the pointer is over the row, while the keyboard focus is visible on the row or on a control of the row, while the button has keyboard focus (full opacity), or while its request runs. Else it is hidden (opacity 0).
+- marked and not marked differ by shape (filled or outline), not only by colour.
+- hover → full opacity, amber colour, slightly larger. The focused button shows the focus ring.
+- "pop" → a short scale-up with an amber glow (about 0.3 s). It plays once when `favorite` turns `true` after a press of this button that asked to mark. It never plays on mount, on unmark, after a failed request, or when the mark comes from elsewhere (e.g. another page). It does not play when the system asks for reduced motion.
 - while a request runs → `aria-disabled="true"` and `aria-busy="true"`, and a press sends nothing more.
 - an ErrorMessage "Could not change the favorite mark." after a failed request. A new press clears it.
 
@@ -43,3 +48,4 @@ Actions:
 ## Requirements served
 
 - `plan-project_list_actions/REQ-23`, `plan-project_list_actions/REQ-31`, `plan-project_list_actions/REQ-32`
+- `plan-ui_restyle/REQ-14`, `plan-ui_restyle/REQ-15`, `plan-ui_restyle/REQ-16`, `plan-ui_restyle/REQ-17`, `plan-ui_restyle/REQ-18`, `plan-ui_restyle/REQ-24`, `plan-ui_restyle/REQ-25`, `plan-ui_restyle/REQ-26`, `plan-ui_restyle/REQ-27`, `plan-ui_restyle/REQ-28`

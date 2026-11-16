@@ -26,7 +26,7 @@ test.afterAll(async () => {
 const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' });
 const railButton = (page: Page, name: string) => rail(page).getByRole('button', { name, exact: true });
 const panel = (page: Page) => page.getByRole('region', { name: 'Session List' });
-const row = (page: Page, folder: string) => panel(page).locator('.project-row').filter({ has: page.getByTitle(folder, { exact: true }) });
+const row = (page: Page, folder: string) => panel(page).locator('.project-row').filter({ has: page.getByText(folder, { exact: true }) });
 const nameDialog = (page: Page) => page.getByRole('dialog', { name: 'New session' });
 const nameField = (page: Page) => nameDialog(page).getByRole('textbox', { name: 'Session name' });
 const action = (page: Page, name: string) => nameDialog(page).getByRole('button', { name, exact: true });
@@ -95,12 +95,6 @@ async function focusedShowsRing(page: Page): Promise<boolean> {
     return outline || s.boxShadow.includes(ringColour) || s.borderColor === ringColour;
   }, ring);
 }
-
-/** Whether the "▶ New session" label of a row is seen: rendered, visible and not transparent. */
-const goLabelSeen = (page: Page, folder: string) =>
-  row(page, folder)
-    .getByText('New session')
-    .evaluateAll((els) => els.some((el) => el.checkVisibility({ opacityProperty: true, visibilityProperty: true })));
 
 // plan-recent_projects/REQ-14, REQ-16, REQ-17, REQ-18, REQ-20, REQ-23, REQ-24 — scenario "the user starts a named session in a past project"
 test('Enter on a project row, a name and Enter start a named session in that folder, open in the main area and in the session list', async ({ page, request }) => {
@@ -283,29 +277,4 @@ test('the field takes a name of 150 characters outside the basic plane', async (
   await nameField(page).focus();
   await page.keyboard.insertText('😀'.repeat(150));
   expect(Array.from(await nameField(page).inputValue())).toHaveLength(150);
-});
-
-// ProjectList: "▶ New session" on hover and visible focus of an available row, never on an unavailable row, never in the row name
-test('an available row shows "▶ New session" on hover and on focus; an unavailable row never does', async ({ page }) => {
-  const available = await project('hover-me');
-  const unavailable = await project('missing-one');
-  await rm(unavailable, { recursive: true });
-  await page.goto('/');
-  await openProjects(page);
-  await railButton(page, 'Projects').focus();
-
-  await page.mouse.move(900, 600);
-  await expect.poll(() => goLabelSeen(page, available)).toBe(false);
-  await row(page, available).hover();
-  await expect.poll(() => goLabelSeen(page, available)).toBe(true);
-  await expect(row(page, available).getByText('▶ New session')).toHaveCount(1);
-  await expect(row(page, available)).not.toHaveAccessibleName(/New session/);
-
-  await page.mouse.move(900, 600);
-  await page.keyboard.press('Shift');
-  await row(page, available).focus();
-  await expect.poll(() => goLabelSeen(page, available)).toBe(true);
-
-  await row(page, unavailable).hover({ force: true });
-  expect(await goLabelSeen(page, unavailable)).toBe(false);
 });

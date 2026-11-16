@@ -39,10 +39,10 @@ describe('SessionList "Rename"', () => {
     expect(item).toMatch(/<button\b[^>]*\saria-label="Rename"[^>]*\stitle="Rename"|<button\b[^>]*\stitle="Rename"[^>]*\saria-label="Rename"/);
   });
 
-  // SessionList spec: "Rename" comes after the EndedEntryActions and the favorite button in the tab order
-  it('puts "Rename" after "Resume", "Dismiss" and the favorite button of an ended hosted entry', () => {
+  // SessionList spec, plan-ui_restyle/REQ-31: "Rename" is last in the tab order, after the favorite button and the EndedEntryActions
+  it('puts "Rename" after the favorite button, "Resume" and "Dismiss" of an ended hosted entry', () => {
     const html = renderToStaticMarkup(<SessionList sessions={[session('a', 'ended', { resumable: true })]} openSessionId={null} onOpen={() => {}} />);
-    expect(buttonsOf(items(html)[0] ?? '')).toEqual(['entry', 'Resume', 'Dismiss', 'Mark as Favorite', 'Rename']);
+    expect(buttonsOf(items(html)[0] ?? '')).toEqual(['entry', 'Mark as Favorite', 'Resume', 'Dismiss', 'Rename']);
   });
 });
 

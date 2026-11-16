@@ -197,7 +197,7 @@ test.describe('Estimated cost', () => {
     );
     await page.goto('/');
     await expect(amount(entry(page, folder)), '1h $0.80 + 5m $0.50 + long Haiku $0.10').toHaveText('$1.40');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(costChip(page)).toHaveText(/^\s*\$1\.40\s*$/);
   });
 
@@ -217,7 +217,7 @@ test.describe('Estimated cost', () => {
     await expect(mark(row)).toHaveAttribute('title', INCOMPLETE);
     await expect(mark(row)).toHaveCSS('color', amber);
 
-    await row.click();
+    await row.getByTitle(folder, { exact: true }).click();
     await expect(costChip(page)).toHaveText(/^\s*\$0\.60\s*incomplete\s*$/);
     await expect(mark(costChip(page))).toHaveText('incomplete');
     await expect(mark(costChip(page))).toHaveAttribute('title', INCOMPLETE);
@@ -232,7 +232,7 @@ test.describe('Estimated cost', () => {
     const row = entry(page, folder);
     await expect(amount(row)).toHaveText('—');
     await expect(mark(row)).toBeVisible();
-    await row.click();
+    await row.getByTitle(folder, { exact: true }).click();
     await expect(costChip(page)).toHaveText(/^\s*—\s*incomplete\s*$/);
     await expect(mark(costChip(page))).toBeVisible();
   });
@@ -246,7 +246,7 @@ test.describe('Estimated cost', () => {
     await page.waitForTimeout(1_500);
     await expect(amount(entry(page, fresh.folder))).toHaveCount(0);
     await expect(entry(page, fresh.folder)).not.toContainText('$');
-    await entry(page, fresh.folder).click();
+    await entry(page, fresh.folder).getByTitle(fresh.folder, { exact: true }).click();
     await expect(footer(page)).toBeVisible();
     await expect(costChip(page)).toHaveCount(0);
     await expect(footer(page)).not.toContainText('$');
@@ -257,7 +257,7 @@ test.describe('Estimated cost', () => {
     const { id, folder } = await hostedWith(request, 'ended', response('claude-opus-5-5', { input: 50_000, output: 32_500 }));
     await page.goto('/');
     await expect(amount(entry(page, folder)), '50,000 × $4 + 32,500 × $20').toHaveText('$0.85');
-    await entry(page, folder).click();
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await expect(costChip(page)).toHaveText(/^\s*\$0\.85\s*$/);
 
     expect((await request.post(`/api/sessions/${id}/stop`)).ok()).toBe(true);

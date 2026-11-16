@@ -162,17 +162,17 @@ test.describe('the top bar with the e2e server', () => {
     await page.goto('/');
     await expect(list(page)).toBeVisible();
     await expect(anyVersionText(page)).toHaveCount(0);
-    const newSession = topBar(page).getByRole('button', { name: 'New Session' });
+    const planUsage = topBar(page).getByRole('button', { name: 'Plan Usage' });
     const before = {
       bar: await topBar(page).boundingBox(),
       suffix: await brandSuffix(page).boundingBox(),
-      newSession: await newSession.boundingBox(),
+      planUsage: await planUsage.boundingBox(),
     };
     answer();
     await expect(versionText(page)).toBeVisible();
     expect(await topBar(page).boundingBox()).toEqual(before.bar);
     expect(await brandSuffix(page).boundingBox()).toEqual(before.suffix);
-    expect(await newSession.boundingBox()).toEqual(before.newSession);
+    expect(await planUsage.boundingBox()).toEqual(before.planUsage);
   });
 
   // spec TopBar, spec useInstalledVersion: failure gives no version text

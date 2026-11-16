@@ -33,7 +33,7 @@ Shows:
 - the ShortcutsPanel, while it is open. It is a dialog over the page: the open SessionView or ConversationView stays mounted under it, with its size, its scroll position and its session running.
 
 Actions:
-- "New Session" in the top bar or in the EmptyState, or "New Claude Code Session" in the rail → opens FolderChooser.
+- "New Session" in the EmptyState, or "New Claude Code Session" in the rail → opens FolderChooser. The top bar has no "New Session".
 - FolderChooser starts a session → the chooser closes and the new session becomes the open one.
 - FolderChooser cancelled → the chooser closes; the open session does not change.
 - "Resume" in the rail, or "Resume Session" in the EmptyState → opens ResumeDialog.
@@ -81,7 +81,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 ## Rules and invariants
 
 - the top bar, the rail and the head of the list panel stay in place. Only the SessionList, or the rows of the ProjectList, scroll when they do not fit.
-- at 1440 × 900 px with no saved width → top bar 48 px high, rail 52 px wide, list panel 224 px wide.
+- at 1440 × 900 px with no saved width → top bar 44 px high, rail 52 px wide, list panel 224 px wide.
 - the first frame already shows the stored width: no jump at start or after a reload.
 - from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements, except the snackbar and the NewerVersionNotice, which may cover part of the main area.
 - the list panel has no brand, no "New Session" and no "Resume Session" button.
@@ -112,3 +112,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-project_list_actions/REQ-7`
 - `plan-update_check/REQ-4`, `plan-update_check/REQ-7`, `plan-update_check/REQ-8`, `plan-update_check/REQ-10`
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-13`
+- `plan-ui_restyle/REQ-1`, `plan-ui_restyle/REQ-2`, `plan-ui_restyle/REQ-3`
