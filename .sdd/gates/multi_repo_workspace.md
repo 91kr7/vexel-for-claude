@@ -26,3 +26,5 @@
 | 2026-11-16 | dev | G5 batch-repo-filter: `e2e/colours-type.spec.ts:160` | decided | Code defect: `--repo-color-4..6` are pink, violet, orange; palette moves to allowed hues, the ThemeTokens rule stays |
 | 2026-11-16 | dev | G5 batch-repo-filter: `e2e/project-search.spec.ts:117` | decided | Passes on `main`, fails from `42a2a55`; race in the test (log read before the last frame when the count does not change); test fix sent to the tester |
 | 2026-11-16 | dev | G4 batch-repo-filter palette fix | pass | Only `tokens.css` and `repository-colors.md`; sky/blue closeness accepted |
+| 2026-11-16 | dev | G5 batch-repo-filter | pass | 325 unit + 78 e2e green, re-run by gatekeeper |
+| 2026-11-16 | dev | full suites | pass | 3523 unit green; 4 e2e failures outside the perimeter (terminal timing), green on `--last-failed`, not in the previous full run |
