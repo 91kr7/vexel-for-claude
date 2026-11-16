@@ -2230,6 +2230,22 @@ input {
   border-top: 1px solid var(--border-subtle);
 }
 
+.changes-repository + .changes-repository {
+  margin-top: 8px;
+}
+
+.changes-repository-title {
+  margin: 0;
+  padding: 4px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 .changes-group-title {
   margin: 0;
   padding: 4px 16px;

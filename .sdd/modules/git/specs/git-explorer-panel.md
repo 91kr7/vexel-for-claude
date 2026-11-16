@@ -26,12 +26,10 @@ Shows:
 - with one repository that has `error` → the header with the name and "Refresh", no chip; then the message in an ErrorMessage, and no tabs.
 - with several repositories → a header at least 40 px high, with the RepositoryList and, at its right end, "Refresh".
 - with `repositories` and no error message, below the header → a tab list with the tabs "Changes" (selected at first) and "History". The selected tab has `aria-selected` and an accent underline; its tab panel fills the rest of the height. The other tab panel stays mounted but hidden, so it keeps its state.
-- the tabs read the first repository of the list (`root` below is its root).
-- tab "Changes" → the changes of the whole repository, read when the panel mounts and at each refresh (useChanges on `root` and `revision`):
-  - while loading → a progress indicator "Loading…";
-  - no changes → "No uncommitted changes";
-  - changes → the ChangesTab;
-  - a git error → its message in an ErrorMessage.
+- tab "Changes" → the changes of every covered repository, read when the panel mounts and at each refresh (useChanges on every covered root and `revision`):
+  - until each root has its first answer → a progress indicator "Loading…";
+  - then → the ChangesTab with the repositories and their states (groups, empty note and errors are its own).
+- tab "History" reads the first repository of the list (`root` below is its root).
 - tab "History" → the history of the repository (useHistory on `root` and `revision`), whose first page is read the first time the tab opens, not before, and again at each later refresh:
   - while loading → a progress indicator "Loading…";
   - loaded → the HistoryTab, with the branch of the lookup, so its first commit carries the branch name or "detached" ("No commits yet" for a repository with no commits);
@@ -41,7 +39,7 @@ Shows:
 
 Actions:
 - click on a tab → shows its panel. Going back to a tab already opened reads nothing again.
-- "Refresh" → a refresh: the changes and, once the tab was opened, the first history page are read again, and `onRefresh()` is called.
+- "Refresh" → a refresh: the changes of every covered root and, once the tab was opened, the first history page are read again, and `onRefresh()` is called.
 - a session of `sessions` ends a turn in a folder at or under a covered root, or above one (useTurnEndSignal on every covered root) → the same refresh, with no click.
 
 During a refresh:
@@ -62,4 +60,4 @@ During a refresh:
 ## Requirements served
 
 - `plan-git_explorer/REQ-4`, `plan-git_explorer/REQ-6`, `plan-git_explorer/REQ-7`, `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-13`, `plan-git_explorer/REQ-16`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-24`, `plan-git_explorer/REQ-26`, `plan-git_graph/REQ-12`
-- `plan-multi_repo_workspace/REQ-7`, `plan-multi_repo_workspace/REQ-8`, `plan-multi_repo_workspace/REQ-11`, `plan-multi_repo_workspace/REQ-13`
+- `plan-multi_repo_workspace/REQ-7`, `plan-multi_repo_workspace/REQ-8`, `plan-multi_repo_workspace/REQ-11`, `plan-multi_repo_workspace/REQ-13`, `plan-multi_repo_workspace/REQ-14`, `plan-multi_repo_workspace/REQ-19`, `plan-multi_repo_workspace/REQ-20`

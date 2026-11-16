@@ -20,11 +20,9 @@ const TABS: { tab: Tab; title: string }[] = [
   { tab: 'history', title: 'History' },
 ];
 
-function ChangesBody({ root, changes }: { root: string; changes: ChangesState }) {
-  if (changes.status === 'loading') return <ProgressIndicator className="git-explorer-message" />;
-  if (changes.status === 'error') return <ErrorMessage className="git-explorer-error">{changes.message}</ErrorMessage>;
-  if (changes.changes.length === 0) return <p className="git-explorer-message">No uncommitted changes</p>;
-  return <ChangesTab root={root} changes={changes.changes} />;
+function ChangesBody({ repositories, changes }: { repositories: readonly CoveredRepository[]; changes: readonly ChangesState[] }) {
+  if (changes.some((state) => state.status === 'loading')) return <ProgressIndicator className="git-explorer-message" />;
+  return <ChangesTab repositories={repositories} changes={changes} />;
 }
 
 function HistoryBody({ root, branch, history, onLoadMore }: { root: string; branch?: BranchInfo; history: HistoryState; onLoadMore: () => void }) {
@@ -46,6 +44,7 @@ function HistoryBody({ root, branch, history, onLoadMore }: { root: string; bran
 
 const NO_SESSIONS: readonly SessionSummary[] = [];
 const NO_REPOSITORIES: readonly CoveredRepository[] = [];
+const NO_ROOTS: readonly string[] = [];
 
 interface GitExplorerPanelProps {
   lookup: RepositoryLookupState;
@@ -58,7 +57,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
   const repositories = lookup.status === 'repositories' ? lookup.repositories : NO_REPOSITORIES;
   const single = repositories.length === 1 ? repositories[0] : undefined;
   const errorMessage = lookup.status === 'error' ? lookup.message : single !== undefined && 'error' in single ? single.error : undefined;
-  // The tabs read the first repository until they cover the whole list.
+  // The Changes tab reads every covered root; History reads the first one.
   const first = errorMessage === undefined ? repositories[0] : undefined;
   const root = first?.root;
   const branch = first !== undefined && 'branch' in first ? first.branch : undefined;
@@ -68,7 +67,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
     setRevision((current) => current + 1);
     onRefresh?.();
   };
-  const changes = useChanges(root, revision);
+  const changes = useChanges(errorMessage === undefined ? roots : NO_ROOTS, revision);
   const [tab, setTab] = useState<Tab>('changes');
   const [historyOpened, setHistoryOpened] = useState(false);
   const { history, loadMore } = useHistory(historyOpened ? root : undefined, revision);
@@ -125,7 +124,7 @@ export function GitExplorerPanel({ lookup, onRefresh, sessions = NO_SESSIONS }: 
             aria-labelledby={tabId('changes')}
             hidden={tab !== 'changes'}
           >
-            <ChangesBody root={root} changes={changes} />
+            <ChangesBody repositories={repositories} changes={changes} />
           </div>
           <div
             className="git-explorer-tabpanel"

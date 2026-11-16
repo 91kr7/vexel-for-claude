@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export type ChangeGroup = 'staged' | 'unstaged';
 
@@ -28,18 +28,44 @@ async function readChanges(root: string, signal: AbortSignal): Promise<ChangesSt
   }
 }
 
-/** A new `revision` reads again and keeps the current state until the answer. */
-export function useChanges(root: string | undefined, revision = 0): ChangesState {
-  const [stored, setStored] = useState<{ root?: string; state: ChangesState }>({ state: LOADING });
+/**
+ * One state per root, in the order of `roots`. Each root is read once, and again at each new `revision`;
+ * a new revision keeps the current state of a root until its answer.
+ */
+export function useChanges(roots: readonly string[], revision = 0): ChangesState[] {
+  const [stored, setStored] = useState<ReadonlyMap<string, ChangesState>>(new Map());
+  const requests = useRef(new Map<string, { revision: number; controller: AbortController }>());
+  const rootsKey = roots.join('\0');
 
   useEffect(() => {
-    if (root === undefined) return;
-    const controller = new AbortController();
-    void readChanges(root, controller.signal).then((result) => {
-      if (!controller.signal.aborted) setStored({ root, state: result });
-    });
-    return () => controller.abort();
-  }, [root, revision]);
+    const current = new Set(rootsKey === '' ? [] : rootsKey.split('\0'));
+    const gone = [...requests.current.keys()].filter((root) => !current.has(root));
+    for (const root of gone) {
+      requests.current.get(root)?.controller.abort();
+      requests.current.delete(root);
+    }
+    if (gone.length > 0) {
+      setStored((states) => new Map([...states].filter(([root]) => current.has(root))));
+    }
+    for (const root of current) {
+      const previous = requests.current.get(root);
+      if (previous?.revision === revision) continue;
+      previous?.controller.abort();
+      const controller = new AbortController();
+      requests.current.set(root, { revision, controller });
+      void readChanges(root, controller.signal).then((result) => {
+        if (!controller.signal.aborted) setStored((states) => new Map(states).set(root, result));
+      });
+    }
+  }, [rootsKey, revision]);
 
-  return root !== undefined && stored.root === root ? stored.state : LOADING;
+  useEffect(() => {
+    const active = requests.current;
+    return () => {
+      for (const request of active.values()) request.controller.abort();
+      active.clear();
+    };
+  }, []);
+
+  return roots.map((root) => stored.get(root) ?? LOADING);
 }

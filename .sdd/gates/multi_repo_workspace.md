@@ -16,3 +16,5 @@
 | 2026-11-16 | dev | G4 batch-repo-detection | pass | Production code typechecks, vite build green; tsc errors only in old test files of INT-15 |
 | 2026-11-16 | dev | divergences developer: single-repo error, damaged `.git`, path order | decided | Accepted; keep the old look, no REQ changed |
 | 2026-11-16 | dev | G5 batch-repo-detection | pass | tsc clean, 505 unit + 44 e2e green, re-run by gatekeeper |
+| 2026-11-16 | dev | G4 batch-grouped-changes | pass | Production code typechecks, vite build green; tsc errors only in old test files of INT-7 |
+| 2026-11-16 | dev | route spec 500 answer | decided | Spec aligned with code: git errors become entries; defensive branch kept |
