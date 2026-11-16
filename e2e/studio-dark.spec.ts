@@ -343,18 +343,16 @@ test.describe('page frame', () => {
     expect(await style(topBar(page), 'border-radius')).toBe('0px');
   });
 
-  // REQ-14, REQ-16, plan-keyboard_shortcuts/REQ-22, plan-ui_restyle/REQ-2: logo mark, "Vexel for Claude" and the four controls, nothing else
-  test('the top bar shows the "VX" mark, "Vexel for Claude" and only the shortcuts button, the theme switch, the look switch and "Plan Usage"', async ({ page }) => {
+  // REQ-14, REQ-16, plan-ui_restyle/REQ-2, plan-settings_dialog/REQ-24: logo mark, "Vexel for Claude" and "Plan Usage", nothing else
+  test('the top bar shows the "VX" mark, "Vexel for Claude" and only "Plan Usage"', async ({ page }) => {
     await page.goto('/');
     expect(await style(topBar(page), 'background-color')).toBe(SURFACE_2);
     expect(await style(topBar(page), 'border-bottom-color')).toBe(BORDER_SUBTLE);
     await expect(topBar(page)).toContainText('Vexel');
     await expect(topBar(page)).toContainText('for Claude');
-    // plan-usage_limits/REQ-1 and plan-wsl_support/REQ-18: the usage button and the look switch join the bar.
-    await expect(topBar(page).getByRole('button')).toHaveCount(4);
-    await expect(button(topBar(page), 'Keyboard Shortcuts')).toBeVisible();
-    await expect(button(topBar(page), 'Dark theme')).toBeVisible();
-    await expect(button(topBar(page), 'Windows 11 look')).toBeVisible();
+    // plan-usage_limits/REQ-1: the usage button joins the bar; plan-settings_dialog/REQ-16, REQ-24: the switches and the shortcuts button leave it.
+    await expect(topBar(page).getByRole('button')).toHaveCount(1);
+    await expect(button(topBar(page), 'Keyboard Shortcuts')).toHaveCount(0);
     await expect(button(topBar(page), 'Plan Usage')).toBeVisible();
     await expect(button(topBar(page), 'New Session')).toHaveCount(0);
 
@@ -384,11 +382,11 @@ test.describe('page frame', () => {
     await expect(panel(page).getByRole('button', { name: 'New Session' })).toHaveCount(0);
   });
 
-  // REQ-17, REQ-53, plan-recent_projects/REQ-1: 52 px rail, 34 x 34 px buttons, the accent gradient "New Claude Code Session", a divider
-  test('the rail shows "New Claude Code Session", a divider, "Sessions", "Projects" and "Resume", all 34 x 34 px', async ({ page }) => {
+  // REQ-17, REQ-53, plan-recent_projects/REQ-1, plan-settings_dialog/REQ-1: 52 px rail, 34 x 34 px buttons, the accent gradient "New Claude Code Session", a divider, "Settings" at the bottom
+  test('the rail shows "New Claude Code Session", a divider, "Sessions", "Projects", "Resume" and "Settings", all 34 x 34 px', async ({ page }) => {
     await page.goto('/');
-    await expect(rail(page).getByRole('button')).toHaveCount(4);
-    for (const name of ['New Claude Code Session', 'Sessions', 'Projects', 'Resume']) {
+    await expect(rail(page).getByRole('button')).toHaveCount(5);
+    for (const name of ['New Claude Code Session', 'Sessions', 'Projects', 'Resume', 'Settings']) {
       const b = await box(railButton(page, name));
       expect(b.width, name).toBeCloseTo(34, 0);
       expect(b.height, name).toBeCloseTo(34, 0);

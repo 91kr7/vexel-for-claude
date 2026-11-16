@@ -21,7 +21,7 @@ Props:
   - the terminal never shows output of the previous session after a switch.
   - a new `sessionId` closes the search box, with its text and its count.
 - `sessions` → optional, the session list of LiveSessionStore, passed to the GitExplorerPanel.
-- `onLeaveTerminal()` → called when the user presses Ctrl+Shift+L in the terminal.
+- `onLeaveTerminal()` → called when the user presses the keys of the terminal row "Focus the list" (Ctrl+Shift+L by default) in the terminal.
 - `focusRef` → optional. Gets `{ focus() }`: puts the keyboard focus in the terminal. Before the terminal opens it does nothing.
 - `session` → `{ folder, label, state, usage? }` of the session, optional. It goes to the SessionHeader and the SessionFooter, and its `state` and folder name to StopSessionButton. A change of `session` does not reconnect the terminal.
 
@@ -41,7 +41,7 @@ Shows:
   - code `1000` (the session process ended) → no message. The header shows "Ended".
   - code `4404` → "The session no longer exists."
   - any other code (e.g. the server stopped) → "Connection to the session lost." The view then attaches again (see "Reconnection").
-- "Search" → an icon button (search icon, 26 px, `--text-secondary`) with the accessible name "Search" and the tooltip "Search (Ctrl+Shift+F)". It shows in every state, `ended` included, before the state pill. Tab goes from "Search" to "Interrupt", then to "Terminate".
+- "Search" → an icon button (search icon, 26 px, `--text-secondary`) with the accessible name "Search" and the tooltip "Search (<keys>)": `rowKeysText` of the ShortcutMap row "Search", "Ctrl+Shift+F" by default. A change of these keys shows at once. It shows in every state, `ended` included, before the state pill. Tab goes from "Search" to "Interrupt", then to "Terminate".
 - the TerminalSearchBox at the top right of the panel, while the search is open. Its count follows the search, also while new output arrives.
 - the search matches → every match on a `--term-match-bg` background. The current match has a 1 px `--term-match-current-border` outline over the selection colour, so it looks different from the others.
 - the TerminalZoomControls → at the right end of the footer, in every state, `ended` included. They show the size of TerminalFontSizeStore.
@@ -59,11 +59,12 @@ Reconnection:
 - a new `sessionId` or the removal of the view ends the attempts.
 
 Actions:
-- every key typed in the terminal → sent to the pty as `input`, Esc included. Ctrl+Shift+L, Ctrl+Shift+F, the zoom keys and the keys of the ShortcutMap are the only exceptions.
+- every key typed in the terminal → sent to the pty as `input`, Esc included. The keys of the ShortcutMap, terminal rows included, are the only exceptions.
+- the terminal rows "Search", "Larger text", "Smaller text", "Default text size" and "Focus the list" run on their active keys (`terminalShortcutOf`). The default keys match as below, by the typed character. A user key matches by physical key, Ctrl, Alt and Shift exactly, no Meta, no AltGr. The action is the same either way: nothing goes to the pty and the browser default is prevented.
 - a key of the ShortcutMap (`shortcutCommandOf` gives a command) in the terminal → the terminal does not process it and nothing goes to the pty.
 - Ctrl+click on a link → LinkOpener `openLink` with the full address (a wrapped address included). The session stays on screen.
 - a plain click on a link (no Ctrl) → opens nothing; focus and text selection work as on any other text.
-- Ctrl+Shift+L in the terminal (no Alt, no Meta, either case of L) → `onLeaveTerminal()`. The terminal does not process it, nothing goes to the pty, and the browser default is prevented.
+- default keys: Ctrl+Shift+L in the terminal (no Alt, no Meta, either case of L) → `onLeaveTerminal()`. The terminal does not process it, nothing goes to the pty, and the browser default is prevented.
 - Ctrl+Shift+F in the terminal (no Alt, no Meta, either case of F) → opens the search box and focuses its field. Nothing goes to the pty and the browser default is prevented. Outside the terminal the key does nothing here.
 - the zoom keys in the terminal → Ctrl, without Alt or Meta, with a key that produces `=` or `+` → `larger()`, `-` → `smaller()`, `0` → `reset()` of TerminalFontSizeStore. Shift does not matter: the produced character decides (on an Italian keyboard Ctrl+Shift+0 produces `=`). Nothing goes to the pty and the browser default (page zoom) is prevented. Outside the terminal these keys do nothing here.
   - Ctrl+Shift+- produces `_` (undo) → not a zoom key: it goes to the pty as today.
@@ -102,7 +103,7 @@ Actions:
 
 - AttachSessionRoute
 - WebAddressLinks, LinkOpener, TerminalSearchBox, TerminalFontSizeStore, TerminalZoomControls, droppedPathsText
-- useDesktopBridge `desktopFilePathLookup`, ShortcutMap `shortcutCommandOf` (module app)
+- useDesktopBridge `desktopFilePathLookup`, ShortcutMap `shortcutCommandOf`, `terminalShortcutOf`, `rowKeysText`, UserShortcutKeys (module app)
 - `@xterm/addon-search`
 - SessionHeader, SessionFooter, StopSessionButton, Avatar (`folderNameOf`)
 - useRepositoryLookup, GitExplorerButton, GitExplorerPanel (module git)
@@ -117,6 +118,7 @@ Actions:
 - `plan-light_theme/REQ-12`
 - `plan-terminal_addons/REQ-1`, `plan-terminal_addons/REQ-2`, `plan-terminal_addons/REQ-3`, `plan-terminal_addons/REQ-4`, `plan-terminal_addons/REQ-5`, `plan-terminal_addons/REQ-6`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-13`, `plan-terminal_addons/REQ-14`, `plan-terminal_addons/REQ-15`, `plan-terminal_addons/REQ-16`, `plan-terminal_addons/REQ-17`, `plan-terminal_addons/REQ-18`, `plan-terminal_addons/REQ-19`, `plan-terminal_addons/REQ-20`, `plan-terminal_addons/REQ-21`, `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-23`, `plan-terminal_addons/REQ-24`, `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-26`, `plan-terminal_addons/REQ-27`, `plan-terminal_addons/REQ-28`, `plan-terminal_addons/REQ-29`, `plan-terminal_addons/REQ-32`, `plan-terminal_addons/REQ-33`, `plan-terminal_addons/REQ-34`, `plan-terminal_addons/REQ-35`, `plan-terminal_addons/REQ-36`, `plan-terminal_addons/REQ-37`, `plan-terminal_addons/REQ-38`, `plan-terminal_addons/REQ-39`, `plan-terminal_addons/REQ-42`, `plan-terminal_addons/REQ-43`, `plan-terminal_addons/REQ-46`, `plan-terminal_addons/REQ-47`, `plan-terminal_addons/REQ-48`, `plan-terminal_addons/REQ-50`, `plan-terminal_addons/REQ-51`, `plan-terminal_addons/REQ-52`, `plan-terminal_addons/REQ-54`
 - `plan-keyboard_shortcuts/REQ-2`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-39`, `plan-keyboard_shortcuts/REQ-40`, `plan-keyboard_shortcuts/REQ-44`
+- `plan-settings_dialog/REQ-27`, `plan-settings_dialog/REQ-37`, `plan-settings_dialog/REQ-38`
 - `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-3`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-25`
 - `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`, `plan-session_list_width/REQ-30`, `plan-session_list_width/REQ-31`, `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-33`, `plan-session_list_width/REQ-36`
 - `plan-ui_restyle/REQ-34`, `plan-ui_restyle/REQ-35`

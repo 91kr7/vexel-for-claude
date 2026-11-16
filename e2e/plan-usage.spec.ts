@@ -4,6 +4,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, type Route, expect, test } from '@playwright/test';
+import { chooseInSettings } from './settings';
 
 const ONE_SECOND = { timeout: 1000 };
 const IN_ONE_HOUR = () => new Date(Date.now() + 3_600_000 + 30 * 60_000 + 30_000).toISOString();
@@ -38,9 +39,7 @@ const json = (body: unknown, status = 200) => (route: Route) => route.fulfill({ 
 
 const banner = (page: Page) => page.getByRole('banner');
 const usageButton = (page: Page) => banner(page).getByRole('button', { name: 'Plan Usage', exact: true });
-const themeSwitch = (page: Page) => banner(page).getByRole('button', { name: 'Dark theme', exact: true });
 const newSessionButton = (page: Page) => page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true });
-const shortcutsButton = (page: Page) => banner(page).getByRole('button', { name: 'Keyboard Shortcuts', exact: true });
 const popover = (page: Page) => page.getByRole('dialog', { name: 'Plan Usage', exact: true });
 const closeButton = (page: Page) => popover(page).getByRole('button', { name: 'Close', exact: true });
 const rows = (page: Page) => popover(page).getByRole('listitem');
@@ -50,7 +49,6 @@ const box = async (locator: Locator) => (await locator.boundingBox()) as { x: nu
 
 async function loadPage(page: Page): Promise<void> {
   await page.goto('/');
-  await expect(themeSwitch(page)).toBeVisible();
   await expect(usageButton(page)).toBeVisible();
 }
 
@@ -80,17 +78,14 @@ const contrast = (a: string, b: string) => {
 };
 
 test.describe('the usage button', () => {
-  // plan-usage_limits/REQ-1, REQ-2, REQ-15, plan-wsl_support/REQ-18: right after the look switch that follows the theme switch, 6 px apart
-  test('sits right after the look switch, 6 px apart, named and titled "Plan Usage"', async ({ page }) => {
+  // plan-usage_limits/REQ-1, REQ-2, REQ-15, plan-settings_dialog/REQ-16, REQ-24: the only control on the right of the top bar, 32 x 32 px
+  test('sits at the right end of the top bar, 32 x 32 px, named and titled "Plan Usage"', async ({ page }) => {
     await planUsageAnswers(page, [json({ status: 'unavailable' })]);
     await loadPage(page);
-    const lookSwitch = banner(page).getByRole('button', { name: 'Windows 11 look', exact: true });
-    const [shortcuts, sw, look, usage] = [await box(shortcutsButton(page)), await box(themeSwitch(page)), await box(lookSwitch), await box(usageButton(page))];
-    expect(sw.x).toBeGreaterThan(shortcuts.x);
-    expect(look.x).toBeGreaterThan(sw.x + sw.width);
-    expect(usage.x - (look.x + look.width)).toBeCloseTo(6, 0);
-    expect(usage.width).toBeCloseTo(sw.width, 0);
-    expect(usage.height).toBeCloseTo(sw.height, 0);
+    const [bar, usage] = [await box(banner(page)), await box(usageButton(page))];
+    expect(bar.x + bar.width - (usage.x + usage.width), 'the 14 px padding of the bar').toBeCloseTo(14, 0);
+    expect(usage.width).toBeCloseTo(32, 0);
+    expect(usage.height).toBeCloseTo(32, 0);
     await expect(usageButton(page)).toHaveAttribute('title', 'Plan Usage');
     await expect(usageButton(page)).toHaveAttribute('aria-expanded', 'false');
     await expect(usageButton(page).locator('svg')).toHaveAttribute('aria-hidden', 'true');
@@ -100,8 +95,7 @@ test.describe('the usage button', () => {
   test('Tab reaches it with a visible focus, Enter opens the popover and Esc closes it', async ({ page }) => {
     await planUsageAnswers(page, [json(okBody(limitsAt(40, 50)))]);
     await loadPage(page);
-    // plan-wsl_support/REQ-18: the look switch sits between the theme switch and the usage button.
-    await banner(page).getByRole('button', { name: 'Windows 11 look', exact: true }).focus();
+    // plan-settings_dialog/REQ-24: the usage button is the only control of the top bar, the first Tab stop of the page.
     await page.keyboard.press('Tab');
     await expect(usageButton(page)).toBeFocused();
     expect(await hasFocusVisible(usageButton(page))).toBe(true);
@@ -236,9 +230,9 @@ test.describe('the popover figures', () => {
     await usageButton(page).click();
     await expect(popover(page).getByRole('status')).toHaveText('Loading…');
     await expect(popover(page).locator('li')).toHaveCount(0);
-    await themeSwitch(page).click();
+    await page.keyboard.press('Alt+KeyA');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    await themeSwitch(page).click();
+    await page.keyboard.press('Alt+KeyA');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     release();
     await expect(rows(page)).toHaveCount(2);
@@ -416,7 +410,7 @@ test.describe('the look in both themes', () => {
     test(`the button, the panel, the bars and the levels are readable in the ${theme} theme`, async ({ page }) => {
       await planUsageAnswers(page, [json(okBody(limitsAt(30, 75, 95)))]);
       await loadPage(page);
-      if (theme === 'light') await themeSwitch(page).click();
+      if (theme === 'light') await chooseInSettings(page, 'Light');
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       await usageButton(page).click();
       await expect(rows(page)).toHaveCount(3);
@@ -435,11 +429,6 @@ test.describe('the look in both themes', () => {
       expect(contrast(await colourOf(bars(page).nth(0).locator('div'), 'backgroundColor'), track), 'fill against its track').toBeGreaterThan(1.3);
       expect(contrast(track, panelBackground), 'track against the panel').toBeGreaterThan(1.05);
 
-      await page.mouse.move(0, 400);
-      await usageButton(page).blur();
-      // The look of the switch, once the hover transition (150 ms) has ended.
-      const looks = async (button: Locator) => `${await colourOf(button, 'backgroundColor')}|${await colourOf(button, 'color')}|${await colourOf(button, 'borderColor' as 'color')}`;
-      await expect.poll(async () => (await looks(usageButton(page))) === (await looks(themeSwitch(page)))).toBe(true);
     });
   }
 

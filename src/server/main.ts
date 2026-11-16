@@ -25,8 +25,7 @@ import { registerLocalAccessGuard } from './local-access-guard.js';
 import { registerNewerVersionRoute } from './newer-version-route.js';
 import { PlanLimitsReader } from './plan-limits-reader.js';
 import { registerPlanUsageRoute } from './plan-usage-route.js';
-import { readReleaseChangelogs } from './release-changelog-reader.js';
-import { checkLatestRelease, latestReleaseApiUrl, releaseListUrl } from './release-check.js';
+import { latestReleaseApiUrl } from './release-check.js';
 import { registerAttachSessionRoute } from './sessions/attach-session-route.js';
 import { AttentionMonitor } from './sessions/attention-monitor.js';
 import { registerAttentionRoute } from './sessions/attention-route.js';
@@ -46,6 +45,7 @@ import { SessionStateTracker } from './sessions/session-state-tracker.js';
 import { registerStartSessionRoute } from './sessions/start-session-route.js';
 import { registerStopSessionRoute } from './sessions/stop-session-route.js';
 import { UsageMonitor } from './sessions/usage-monitor.js';
+import { checkForUpdate, registerUpdateCheckRoute } from './update-check-route.js';
 
 const HOST = '127.0.0.1';
 const port = Number(process.env.PORT ?? 3000);
@@ -63,17 +63,9 @@ const packageJson = JSON.parse(readFileSync(new URL('../../package.json', import
   repository: { url: string };
 };
 const releaseSourceUrl = process.env.AI_CLIENT_RELEASE_SOURCE_URL || latestReleaseApiUrl(packageJson.repository.url);
+const releaseCheckOptions = { sourceUrl: releaseSourceUrl, installedVersion: packageJson.version };
 // Not awaited: the check and the changelogs must never delay the listen.
-const releaseCheck = checkLatestRelease({ sourceUrl: releaseSourceUrl, installedVersion: packageJson.version }).then(
-  async (result) => {
-    if (result.status !== 'newer') return result;
-    const changelogs = await readReleaseChangelogs({
-      listUrl: releaseListUrl(releaseSourceUrl),
-      installedVersion: packageJson.version,
-    });
-    return changelogs === undefined ? result : { ...result, changelogs };
-  },
-);
+const releaseCheck = checkForUpdate(releaseCheckOptions);
 
 const app = Fastify({ logger: true });
 const settingsPath = await writeHookSettings(`http://${HOST}:${port}`);
@@ -131,6 +123,7 @@ registerAttentionRoute(app, attentionMonitor);
 registerPlanUsageRoute(app, new PlanLimitsReader());
 registerNewerVersionRoute(app, releaseCheck);
 registerInstalledVersionRoute(app, packageJson.version);
+registerUpdateCheckRoute(app, releaseCheckOptions);
 
 // In dev the page comes from Vite, so dist/web may not exist yet.
 if (existsSync(webRoot)) {

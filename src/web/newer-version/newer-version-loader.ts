@@ -25,16 +25,19 @@ function changelogsOf(value: unknown): ReleaseChangelog[] | undefined {
   return changelogs;
 }
 
+export function newerVersionOfBody(body: Record<string, unknown> | null): NewerVersion | null {
+  if (body?.status !== 'newer') return null;
+  const { installedVersion, newerVersion, releaseUrl } = body;
+  if (typeof installedVersion !== 'string' || typeof newerVersion !== 'string' || typeof releaseUrl !== 'string') return null;
+  const changelogs = changelogsOf(body.changelogs);
+  return changelogs ? { installedVersion, newerVersion, releaseUrl, changelogs } : { installedVersion, newerVersion, releaseUrl };
+}
+
 async function loadNewerVersion(signal: AbortSignal): Promise<NewerVersion | null> {
   try {
     const response = await fetch('/api/newer-version', { signal });
     if (response.status !== 200) return null;
-    const body = (await response.json()) as Record<string, unknown> | null;
-    if (body?.status !== 'newer') return null;
-    const { installedVersion, newerVersion, releaseUrl } = body;
-    if (typeof installedVersion !== 'string' || typeof newerVersion !== 'string' || typeof releaseUrl !== 'string') return null;
-    const changelogs = changelogsOf(body.changelogs);
-    return changelogs ? { installedVersion, newerVersion, releaseUrl, changelogs } : { installedVersion, newerVersion, releaseUrl };
+    return newerVersionOfBody((await response.json()) as Record<string, unknown> | null);
   } catch {
     return null;
   }

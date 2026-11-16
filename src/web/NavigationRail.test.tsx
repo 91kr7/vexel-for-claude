@@ -1,3 +1,6 @@
+// @vitest-environment jsdom
+import { flushSync } from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { NavigationRail } from './NavigationRail';
@@ -39,12 +42,23 @@ describe('NavigationRail', () => {
     expect(renderRail(0)).toMatch(/^<nav\b[^>]*aria-label="Main Navigation"/);
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14, REQ-17, plan-recent_projects/REQ-1: no logo, then the four buttons in order
-  it('shows no logo and the buttons "New Claude Code Session", "Sessions", "Projects" and "Resume", in this order', () => {
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14, REQ-17, plan-recent_projects/REQ-1, plan-settings_dialog/REQ-1: no logo, then the buttons in order, "Settings" last
+  it('shows no logo and the buttons "New Claude Code Session", "Sessions", "Projects", "Resume" and "Settings", in this order', () => {
     const html = renderRail(0);
     expect(html).not.toMatch(/role="img"/);
     expect(html).not.toContain('Vexel');
-    expect(buttons(html).map(nameOf)).toEqual(['New Claude Code Session', 'Sessions', 'Projects', 'Resume']);
+    expect(buttons(html).map(nameOf)).toEqual(['New Claude Code Session', 'Sessions', 'Projects', 'Resume', 'Settings']);
+  });
+
+  // plan-settings_dialog/REQ-1, REQ-3: "Settings" is a rail button that opens a dialog, never the active destination
+  it('shows "Settings" as a rail button with aria-haspopup="dialog" and never aria-current', () => {
+    for (const view of ['sessions', 'projects'] as const) {
+      const settings = byName(renderRail(2, view), 'Settings');
+      expect(settings).toHaveLength(1);
+      expect(settings[0]?.attributes).toMatch(/class="vx-rail-btn"/);
+      expect(settings[0]?.attributes).toMatch(/aria-haspopup="dialog"/);
+      expect(settings[0]?.attributes).not.toMatch(/aria-current/);
+    }
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-17: a divider between "New Claude Code Session" and "Sessions"
@@ -105,6 +119,30 @@ describe('NavigationRail', () => {
     expect(calls).toEqual(['projects']);
   });
 
+  // plan-settings_dialog/REQ-4, NavigationRail "Actions": a click on "Settings" calls onOpenSettings, and only it
+  it('calls onOpenSettings on a click of "Settings", and only it', () => {
+    const calls: string[] = [];
+    const host = document.createElement('div');
+    document.body.append(host);
+    const root = createRoot(host);
+    flushSync(() =>
+      root.render(
+        <NavigationRail
+          needsInputCount={0}
+          onNewSession={() => calls.push('new')}
+          onShowSessions={() => calls.push('sessions')}
+          onShowProjects={() => calls.push('projects')}
+          onResume={() => calls.push('resume')}
+          onOpenSettings={() => calls.push('settings')}
+        />,
+      ),
+    );
+    flushSync(() => host.querySelector<HTMLButtonElement>('button[aria-label="Settings"]')?.click());
+    expect(calls).toEqual(['settings']);
+    flushSync(() => root.unmount());
+    host.remove();
+  });
+
   // plan-claude_sessions_client-ui_redesign-material3_mock/REQ-9: the badge shows the number on "Sessions"
   it.each([1, 3, 12])('shows the badge %i on "Sessions", hidden from assistive technology', (count) => {
     const sessions = byName(renderRail(count), 'Sessions');
@@ -131,7 +169,7 @@ describe('NavigationRail', () => {
   });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-18: no visible label; the tooltip holds the name, hidden from assistive technology
-  it.each(['New Claude Code Session', 'Sessions', 'Projects', 'Resume'])('"%s" has no visible label and its name in a hidden tooltip', (name) => {
+  it.each(['New Claude Code Session', 'Sessions', 'Projects', 'Resume', 'Settings'])('"%s" has no visible label and its name in a hidden tooltip', (name) => {
     const button = byName(renderRail(0), name)[0];
     expect(button, name).toBeDefined();
     let visible = button?.html ?? '';
@@ -140,7 +178,9 @@ describe('NavigationRail', () => {
       visible = visible.replace(/<(\w+)\b[^>]*aria-hidden="true"[^>]*>(?:(?!<\1\b)[\s\S])*?<\/\1>/, '');
     }
     expect(textOf(visible)).toBe('');
-    expect(textOf(button?.html ?? '')).toBe(name);
-    expect(button?.html).toMatch(new RegExp(`<\\w+\\b[^>]*aria-hidden="true"[^>]*>${name}</`));
+    // plan-settings_dialog/REQ-3: the "Settings" tooltip also shows the settings shortcut
+    const tooltip = name === 'Settings' ? 'Settings (Alt+S)' : name;
+    expect(textOf(button?.html ?? '')).toBe(tooltip);
+    expect(button?.html).toMatch(new RegExp(`<\\w+\\b[^>]*aria-hidden="true"[^>]*>${tooltip.replace(/[()+]/g, '\\$&')}</`));
   });
 });

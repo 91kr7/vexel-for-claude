@@ -1,6 +1,23 @@
-// Tests of plan-keyboard_shortcuts, batches navigation, session-actions and shortcuts-panel: ShortcutMap spec.
+// Tests of plan-keyboard_shortcuts (batches navigation, session-actions, shortcuts-panel) and plan-settings_dialog (batch shortcuts-section): ShortcutMap spec.
 import { describe, expect, it } from 'vitest';
-import { SHORTCUTS, type ShortcutKey, shortcutCommandOf } from './shortcut-map';
+import {
+  SHORTCUTS,
+  type ShortcutCommand,
+  type ShortcutKey,
+  activeKeys,
+  commandKeysText,
+  defaultKeys,
+  hasDefaultKeys,
+  keyMatches,
+  keyText,
+  keysText,
+  pressOf,
+  rowKeysText,
+  shortcutCommandOf,
+  shortcutRows,
+  terminalShortcutOf,
+} from './shortcut-map';
+import { UserShortcutKeysStore } from './user-shortcut-keys';
 
 interface Pressed {
   ctrl?: boolean;
@@ -42,35 +59,27 @@ const comboOf = (key: ShortcutKey) => [...[...key.modifiers].sort(), key.code].j
 const LETTER = /^Key[A-Z]$/;
 
 describe('SHORTCUTS', () => {
-  // plan-keyboard_shortcuts/REQ-1, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7: the five navigation rows of the ShortcutMap table
-  it('has the navigation rows of the key map, in order, with their keys and commands', () => {
+  // plan-keyboard_shortcuts/REQ-1, REQ-3 to REQ-7, plan-settings_dialog/REQ-22, REQ-27: the navigation rows, one per action, with their ids, keys and commands
+  it('has the navigation rows of the key map, one per action, in order, with their ids, keys and commands', () => {
     const navigation = SHORTCUTS.filter((row) => row.area === 'navigation').map((row) => ({
+      id: row.id,
       action: row.action,
       keys: row.keys.map((key) => ({ code: key.code, modifiers: [...key.modifiers], command: key.command })),
     }));
+    const one = (id: string, action: string, code: string, command: ShortcutCommand) => ({ id, action, keys: [{ code, modifiers: ['Alt'], command }] });
     expect(navigation).toEqual([
-      { action: 'Focus the list', keys: [{ code: 'KeyL', modifiers: ['Alt'], command: { kind: 'focus-list' } }] },
-      { action: 'Focus the main view', keys: [{ code: 'KeyC', modifiers: ['Alt'], command: { kind: 'focus-main-view' } }] },
-      {
-        action: 'Previous / next session',
-        keys: [
-          { code: 'ArrowUp', modifiers: ['Alt'], command: { kind: 'open-session', target: { kind: 'previous' } } },
-          { code: 'ArrowDown', modifiers: ['Alt'], command: { kind: 'open-session', target: { kind: 'next' } } },
-        ],
-      },
-      {
-        action: 'Session at position 1 to 9',
-        keys: [1, 2, 3, 4, 5, 6, 7, 8, 9].map((position) => ({
-          code: `Digit${position}`,
-          modifiers: ['Alt'],
-          command: { kind: 'open-session', target: { kind: 'position', position } },
-        })),
-      },
-      { action: 'Next session that needs input', keys: [{ code: 'KeyI', modifiers: ['Alt'], command: { kind: 'open-session', target: { kind: 'next-needs-input' } } }] },
+      one('focus-list', 'Focus the list', 'KeyL', { kind: 'focus-list' }),
+      one('focus-main-view', 'Focus the main view', 'KeyC', { kind: 'focus-main-view' }),
+      one('previous-session', 'Previous session', 'ArrowUp', { kind: 'open-session', target: { kind: 'previous' } }),
+      one('next-session', 'Next session', 'ArrowDown', { kind: 'open-session', target: { kind: 'next' } }),
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((position) =>
+        one(`session-at-${position}`, `Session at position ${position}`, `Digit${position}`, { kind: 'open-session', target: { kind: 'position', position } }),
+      ),
+      one('next-needs-input', 'Next session that needs input', 'KeyI', { kind: 'open-session', target: { kind: 'next-needs-input' } }),
     ]);
   });
 
-  // plan-keyboard_shortcuts/REQ-12, REQ-13, REQ-14, REQ-16, REQ-17, REQ-18, REQ-19, REQ-21: the six sessions rows and the theme row
+  // plan-keyboard_shortcuts/REQ-12 to REQ-21, plan-settings_dialog/REQ-25: the six sessions rows, the theme row and the "Shortcut settings" row on Alt+S
   it('has the sessions and general rows of the key map, in order, with their keys and commands', () => {
     const rowsOf = (area: string) =>
       SHORTCUTS.filter((row) => row.area === area).map((row) => ({
@@ -90,23 +99,46 @@ describe('SHORTCUTS', () => {
     ]);
     expect(rowsOf('general')).toEqual([
       { action: 'Light/Dark theme', keys: [{ code: 'KeyA', modifiers: ['Alt'], command: { kind: 'toggle-theme' } }] },
-      { action: 'Shortcuts panel', keys: [{ code: 'KeyS', modifiers: ['Alt'], command: { kind: 'toggle-shortcuts-panel' } }] },
+      { action: 'Shortcut settings', keys: [{ code: 'KeyS', modifiers: ['Alt'], command: { kind: 'open-shortcut-settings' } }] },
     ]);
   });
 
-  // plan-keyboard_shortcuts/REQ-26, REQ-44: the existing terminal keys, keyed by typed character, with the terminal command
-  it('has the terminal rows of the existing keys, in order', () => {
+  // plan-keyboard_shortcuts/REQ-26, REQ-44, plan-settings_dialog/REQ-22, REQ-27: the existing terminal keys, one row per action, matched by typed character
+  it('has the terminal rows of the existing keys, one per action, in order', () => {
     const terminal = SHORTCUTS.filter((row) => row.area === 'terminal').map((row) => ({
+      id: row.id,
       action: row.action,
-      keys: row.keys.map((key) => ({ code: key.code, modifiers: [...key.modifiers].sort(), command: key.command })),
+      keys: row.keys.map((key) => ({ code: key.code, modifiers: [...key.modifiers].sort(), command: key.command, byCharacter: key.byCharacter })),
     }));
-    const ctrl = (code: string) => ({ code, modifiers: ['Ctrl'], command: { kind: 'terminal' } });
-    const ctrlShift = (code: string) => ({ code, modifiers: ['Ctrl', 'Shift'], command: { kind: 'terminal' } });
+    const ctrl = (code: string) => ({ code, modifiers: ['Ctrl'], command: { kind: 'terminal' }, byCharacter: true });
+    const ctrlShift = (code: string) => ({ code, modifiers: ['Ctrl', 'Shift'], command: { kind: 'terminal' }, byCharacter: true });
     expect(terminal).toEqual([
-      { action: 'Search', keys: [ctrlShift('f')] },
-      { action: 'Larger / smaller / default text', keys: [ctrl('='), ctrl('+'), ctrl('-'), ctrl('0')] },
-      { action: 'Focus the list', keys: [ctrlShift('l')] },
+      { id: 'terminal-search', action: 'Search', keys: [ctrlShift('f')] },
+      { id: 'terminal-larger-text', action: 'Larger text', keys: [ctrl('='), ctrl('+')] },
+      { id: 'terminal-smaller-text', action: 'Smaller text', keys: [ctrl('-')] },
+      { id: 'terminal-default-text', action: 'Default text size', keys: [ctrl('0')] },
+      { id: 'terminal-focus-list', action: 'Focus the list', keys: [ctrlShift('l')] },
     ]);
+  });
+
+  // ShortcutMap contract: the ids of the sessions and general rows, and no two rows with the same id
+  it('gives the sessions and general rows their ids, and every row a distinct id', () => {
+    expect(SHORTCUTS.filter((row) => row.area === 'sessions' || row.area === 'general').map((row) => row.id)).toEqual([
+      'new-session',
+      'resume-history',
+      'rename-session',
+      'resume-session',
+      'stop-session',
+      'dismiss-session',
+      'toggle-theme',
+      'shortcut-settings',
+    ]);
+    expect(new Set(SHORTCUTS.map((row) => row.id)).size).toBe(SHORTCUTS.length);
+  });
+
+  // plan-settings_dialog/REQ-39: Enter and Esc of the dialogs are not rows
+  it('has no row for Enter or Esc', () => {
+    for (const key of allKeys) expect(['Enter', 'Escape', 'NumpadEnter'], comboOf(key)).not.toContain(key.code);
   });
 
   // ShortcutMap invariant: rows of the same area are next to each other, in the order navigation, sessions, terminal, general
@@ -205,7 +237,7 @@ describe('shortcutCommandOf', () => {
     ['Alt+Shift+Q', alt('KeyQ', { shift: true }), { kind: 'session-command', command: 'stop' }],
     ['Alt+Shift+W', alt('KeyW', { shift: true }), { kind: 'session-command', command: 'dismiss' }],
     ['Alt+A', alt('KeyA'), { kind: 'toggle-theme' }],
-    ['Alt+S', alt('KeyS'), { kind: 'toggle-shortcuts-panel' }],
+    ['Alt+S', alt('KeyS'), { kind: 'open-shortcut-settings' }],
   ])('gives the command of %s', (_, event, command) => {
     expect(shortcutCommandOf(event)).toEqual(command);
   });
@@ -289,7 +321,7 @@ describe('shortcutCommandOf', () => {
 
   // plan-keyboard_shortcuts/REQ-45: Alt+S is the physical S key on any layout, and never with AltGr
   it('matches Alt+S by physical key and not with AltGr', () => {
-    expect(shortcutCommandOf(alt('KeyS', { key: 'ß' }))).toEqual({ kind: 'toggle-shortcuts-panel' });
+    expect(shortcutCommandOf(alt('KeyS', { key: 'ß' }))).toEqual({ kind: 'open-shortcut-settings' });
     expect(shortcutCommandOf(alt('KeyS', { altGraph: true }))).toBeNull();
     expect(shortcutCommandOf(alt('KeyS', { shift: true }))).toBeNull();
   });
@@ -297,5 +329,239 @@ describe('shortcutCommandOf', () => {
   // ShortcutMap contract: the event type does not matter
   it('matches a keyup of a map key', () => {
     expect(shortcutCommandOf(alt('KeyI', { type: 'keyup' }))).toEqual({ kind: 'open-session', target: { kind: 'next-needs-input' } });
+  });
+});
+
+describe('keyText', () => {
+  const key = (code: string): ShortcutKey => ({ code, modifiers: ['Alt'], command: { kind: 'focus-list' } });
+  const terminal = (code: string): ShortcutKey => ({ code, modifiers: ['Ctrl'], command: { kind: 'terminal' }, byCharacter: true });
+
+  // ShortcutMap contract, keyText table: a letter key shows its letter, without modifiers
+  it.each([
+    ['KeyA', 'A'],
+    ['KeyS', 'S'],
+    ['KeyZ', 'Z'],
+  ])('gives %s as "%s"', (code, text) => {
+    expect(keyText(key(code))).toBe(text);
+  });
+
+  // ShortcutMap contract, keyText table: a digit key shows its digit
+  it.each([
+    ['Digit0', '0'],
+    ['Digit1', '1'],
+    ['Digit9', '9'],
+  ])('gives %s as "%s"', (code, text) => {
+    expect(keyText(key(code))).toBe(text);
+  });
+
+  // ShortcutMap contract, keyText table: the arrows show "Up" and "Down"
+  it('gives ArrowUp as "Up" and ArrowDown as "Down"', () => {
+    expect(keyText(key('ArrowUp'))).toBe('Up');
+    expect(keyText(key('ArrowDown'))).toBe('Down');
+  });
+
+  // ShortcutMap contract, keyText table: a terminal key shows its character in upper case
+  it.each([
+    ['f', 'F'],
+    ['l', 'L'],
+    ['=', '='],
+    ['+', '+'],
+    ['-', '-'],
+    ['0', '0'],
+  ])('gives the terminal key %s as "%s"', (code, text) => {
+    expect(keyText(terminal(code))).toBe(text);
+  });
+});
+
+describe('keyText of any key a user can choose', () => {
+  const key = (code: string): ShortcutKey => ({ code, modifiers: ['Alt'], command: { kind: 'focus-list' } });
+
+  // plan-settings_dialog/REQ-23, REQ-26, ShortcutMap keyText table: every physical key a user can choose has a readable text
+  it.each([
+    ['F1', 'F1'],
+    ['F12', 'F12'],
+    ['F24', 'F24'],
+    ['Enter', 'Enter'],
+    ['Space', 'Space'],
+    ['Tab', 'Tab'],
+    ['Home', 'Home'],
+    ['End', 'End'],
+    ['Backspace', 'Backspace'],
+    ['ArrowLeft', 'Left'],
+    ['ArrowRight', 'Right'],
+    ['Escape', 'Esc'],
+    ['Delete', 'Del'],
+    ['Insert', 'Ins'],
+    ['PageUp', 'Page Up'],
+    ['PageDown', 'Page Down'],
+    ['NumpadEnter', 'Enter'],
+    ['Minus', '-'],
+    ['Equal', '='],
+    ['BracketLeft', '['],
+    ['BracketRight', ']'],
+    ['Backslash', '\\'],
+    ['IntlBackslash', '<'],
+    ['Semicolon', ';'],
+    ['Quote', "'"],
+    ['Backquote', '`'],
+    ['Comma', ','],
+    ['Period', '.'],
+    ['Slash', '/'],
+    ['Numpad0', 'Num 0'],
+    ['Numpad7', 'Num 7'],
+    ['MediaPlayPause', 'MediaPlayPause'],
+  ])('gives %s as "%s"', (code, text) => {
+    expect(keyText(key(code))).toBe(text);
+  });
+
+  // plan-settings_dialog/REQ-38, ShortcutMap contract: keysText joins the modifiers and the key text with "+"
+  it('gives the modifiers, then the key text, joined by "+"', () => {
+    expect(keysText({ code: 'KeyS', modifiers: ['Alt'] })).toBe('Alt+S');
+    expect(keysText({ code: 'KeyQ', modifiers: ['Alt', 'Shift'] })).toBe('Alt+Shift+Q');
+    expect(keysText({ code: 'f', modifiers: ['Ctrl', 'Shift'], byCharacter: true })).toBe('Ctrl+Shift+F');
+    expect(keysText({ code: 'Slash', modifiers: ['Ctrl', 'Alt'] })).toBe('Ctrl+Alt+/');
+  });
+});
+
+describe('active keys', () => {
+  const altK = { code: 'KeyK', modifiers: ['Alt'] as const, character: 'k' };
+
+  // ShortcutMap contract: a row without a user key has its default keys
+  it('gives the default keys of a row with no user key', () => {
+    const store = new UserShortcutKeysStore();
+    expect(activeKeys('terminal-larger-text', store)).toEqual(defaultKeys('terminal-larger-text'));
+    expect(defaultKeys('terminal-larger-text').map((key) => key.code)).toEqual(['=', '+']);
+    expect(shortcutRows(store)).toEqual(SHORTCUTS);
+  });
+
+  // plan-settings_dialog/REQ-26, ShortcutMap contract: a user key replaces every default key of the row, keeps the row command, and matches by physical key
+  it('gives the one user key of a row, with the row command, by physical key', () => {
+    const store = new UserShortcutKeysStore();
+    store.set('terminal-larger-text', altK);
+    store.set('focus-list', { code: 'KeyJ', modifiers: ['Alt', 'Shift'] });
+    const larger = activeKeys('terminal-larger-text', store);
+    expect(larger).toHaveLength(1);
+    expect(larger[0]).toMatchObject({ code: 'KeyK', modifiers: ['Alt'], command: { kind: 'terminal' }, character: 'k' });
+    expect(larger[0]?.byCharacter ?? false).toBe(false);
+    expect(activeKeys('focus-list', store)).toEqual([expect.objectContaining({ code: 'KeyJ', modifiers: ['Alt', 'Shift'], command: { kind: 'focus-list' } })]);
+    const rows = shortcutRows(store);
+    expect(rows.map((row) => row.id)).toEqual(SHORTCUTS.map((row) => row.id));
+    expect(rows.find((row) => row.id === 'focus-list')?.keys).toEqual(activeKeys('focus-list', store));
+    expect(defaultKeys('focus-list')).toEqual(SHORTCUTS.find((row) => row.id === 'focus-list')?.keys);
+  });
+
+  // plan-settings_dialog/REQ-34, ShortcutMap contract: hasDefaultKeys compares the shown texts with the defaults
+  it('tells whether a row shows its default keys', () => {
+    const store = new UserShortcutKeysStore();
+    expect(hasDefaultKeys('focus-list', store)).toBe(true);
+    store.set('focus-list', altK);
+    expect(hasDefaultKeys('focus-list', store)).toBe(false);
+    store.set('focus-list', { code: 'KeyL', modifiers: ['Alt'] });
+    expect(hasDefaultKeys('focus-list', store), 'Alt+L chosen again is the default text').toBe(true);
+    store.set('terminal-larger-text', { code: 'Equal', modifiers: ['Ctrl'], character: '=' });
+    expect(hasDefaultKeys('terminal-larger-text', store), 'one key of two is not the defaults').toBe(false);
+    store.restoreAll();
+    expect(hasDefaultKeys('terminal-larger-text', store)).toBe(true);
+  });
+
+  // plan-settings_dialog/REQ-38: the tooltip text of a row lists its active keys joined by " / "
+  it('gives the tooltip text of the active keys of a row', () => {
+    const store = new UserShortcutKeysStore();
+    expect(rowKeysText('terminal-search', store)).toBe('Ctrl+Shift+F');
+    expect(rowKeysText('terminal-larger-text', store)).toBe('Ctrl+= / Ctrl++');
+    expect(rowKeysText('terminal-smaller-text', store)).toBe('Ctrl+-');
+    expect(rowKeysText('terminal-default-text', store)).toBe('Ctrl+0');
+    expect(rowKeysText('shortcut-settings', store)).toBe('Alt+S');
+    store.set('terminal-search', altK);
+    store.set('terminal-larger-text', { code: 'Digit9', modifiers: ['Ctrl', 'Alt'], character: '9' });
+    expect(rowKeysText('terminal-search', store)).toBe('Alt+K');
+    expect(rowKeysText('terminal-larger-text', store)).toBe('Ctrl+Alt+9');
+  });
+
+  // plan-settings_dialog/REQ-37, REQ-38: commandKeysText follows the active keys
+  it('gives the texts of the active keys of a command', () => {
+    const store = new UserShortcutKeysStore();
+    store.set('shortcut-settings', { code: 'F2', modifiers: ['Ctrl'] });
+    expect(commandKeysText('open-shortcut-settings', store)).toEqual(['Ctrl+F2']);
+  });
+
+  // plan-settings_dialog/REQ-37: a user key runs the command at once, and the default key it replaced runs nothing
+  it('runs the command of a user key and not of the replaced default key', () => {
+    const store = new UserShortcutKeysStore();
+    store.set('new-session', altK);
+    expect(shortcutCommandOf(alt('KeyK', { key: 'k' }), store)).toEqual({ kind: 'new-session' });
+    expect(shortcutCommandOf(alt('KeyN', { key: 'n' }), store)).toBeNull();
+    expect(shortcutCommandOf(alt('KeyK', { key: 'k', shift: true }), store), 'Shift must match exactly').toBeNull();
+    expect(shortcutCommandOf(alt('KeyK', { key: 'k', altGraph: true }), store), 'never with AltGr').toBeNull();
+    expect(shortcutCommandOf(alt('KeyK', { key: 'k', meta: true }), store), 'never with Meta').toBeNull();
+  });
+
+  // plan-settings_dialog/REQ-27, ShortcutMap contract: a user key of a terminal row gives no command, only its terminal id
+  it('gives a terminal user key no command and its terminal row id', () => {
+    const store = new UserShortcutKeysStore();
+    store.set('terminal-search', altK);
+    expect(shortcutCommandOf(alt('KeyK', { key: 'k' }), store)).toBeNull();
+    expect(terminalShortcutOf(alt('KeyK', { key: 'k' }), store)).toBe('terminal-search');
+    expect(terminalShortcutOf(alt('KeyK', { key: 'l' }), store), 'a user key matches by physical key').toBe('terminal-search');
+    expect(terminalShortcutOf(keyEvent('KeyF', { ctrl: true, shift: true, key: 'F' }), store), 'the replaced default runs nothing').toBeNull();
+  });
+});
+
+describe('terminalShortcutOf with the default keys', () => {
+  const store = new UserShortcutKeysStore();
+
+  // plan-keyboard_shortcuts/REQ-44, ShortcutMap contract: the default terminal keys match by the typed character
+  it.each([
+    ['Ctrl+Shift+F', keyEvent('KeyF', { ctrl: true, shift: true, key: 'F' }), 'terminal-search'],
+    ['Ctrl+Shift+F, lower case', keyEvent('KeyF', { ctrl: true, shift: true, key: 'f' }), 'terminal-search'],
+    ['Ctrl+=', keyEvent('Equal', { ctrl: true, key: '=' }), 'terminal-larger-text'],
+    ['Ctrl++', keyEvent('Equal', { ctrl: true, shift: true, key: '+' }), 'terminal-larger-text'],
+    ['Ctrl+Shift+0 typing "=" (Italian layout)', keyEvent('Digit0', { ctrl: true, shift: true, key: '=' }), 'terminal-larger-text'],
+    ['Ctrl+-', keyEvent('Minus', { ctrl: true, key: '-' }), 'terminal-smaller-text'],
+    ['Ctrl+0', keyEvent('Digit0', { ctrl: true, key: '0' }), 'terminal-default-text'],
+    ['Ctrl+Shift+L', keyEvent('KeyL', { ctrl: true, shift: true, key: 'L' }), 'terminal-focus-list'],
+  ])('gives the row of %s', (_, event, id) => {
+    expect(terminalShortcutOf(event, store)).toBe(id);
+  });
+
+  // ShortcutMap contract: a default terminal key needs Ctrl, no Alt and no Meta, and Shift when it lists Shift
+  it.each([
+    ['Ctrl+F without Shift', keyEvent('KeyF', { ctrl: true, key: 'f' })],
+    ['Ctrl+Alt+=', keyEvent('Equal', { ctrl: true, alt: true, key: '=' })],
+    ['Ctrl+Meta+-', keyEvent('Minus', { ctrl: true, meta: true, key: '-' })],
+    ['= without Ctrl', keyEvent('Equal', { key: '=' })],
+    ['Ctrl+Shift+- typing "_"', keyEvent('Minus', { ctrl: true, shift: true, key: '_' })],
+    ['Alt+L, a client key', alt('KeyL', { key: 'l' })],
+  ])('gives null for %s', (_, event) => {
+    expect(terminalShortcutOf(event, store)).toBeNull();
+  });
+
+  // ShortcutMap contract: pressOf reads code, key, the modifiers and AltGr; keyMatches applies the physical match
+  it('reads a press and matches a physical key exactly', () => {
+    const press = pressOf(alt('KeyL', { key: 'l' }));
+    expect(press).toMatchObject({ code: 'KeyL', key: 'l', ctrlKey: false, altKey: true, shiftKey: false, metaKey: false, altGraph: false });
+    const focusList = defaultKeys('focus-list')[0]!;
+    expect(keyMatches(focusList, press)).toBe(true);
+    expect(keyMatches(focusList, pressOf(alt('KeyL', { altGraph: true })))).toBe(false);
+    expect(keyMatches(focusList, pressOf(alt('KeyL', { ctrl: true })))).toBe(false);
+  });
+});
+
+describe('commandKeysText', () => {
+  // plan-settings_dialog/REQ-3, ShortcutMap contract: the settings command has the one key Alt+S
+  it('gives ["Alt+S"] for open-shortcut-settings', () => {
+    expect(commandKeysText('open-shortcut-settings')).toEqual(['Alt+S']);
+  });
+
+  // ShortcutMap contract: the modifiers, then the key text, joined by "+", one text per key in map order
+  it('gives one text per key of a command, in map order, with every modifier', () => {
+    expect(commandKeysText('toggle-theme')).toEqual(['Alt+A']);
+    expect(commandKeysText('open-session')).toEqual(['Alt+Up', 'Alt+Down', ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => `Alt+${digit}`), 'Alt+I']);
+    expect(commandKeysText('session-command')).toEqual(['Alt+E', 'Alt+R', 'Alt+Shift+Q', 'Alt+Shift+W']);
+  });
+
+  // ShortcutMap contract: a kind with no key in the map gives no text
+  it('gives [] for a kind with no key', () => {
+    expect(commandKeysText('no-such-command' as ShortcutCommand['kind'])).toEqual([]);
   });
 });

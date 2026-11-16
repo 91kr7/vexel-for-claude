@@ -318,18 +318,11 @@ export function MoonIcon() {
   );
 }
 
-export function KeyboardIcon() {
+export function SettingsIcon() {
   return (
     <LucideIcon>
-      <path d="M10 8h.01" />
-      <path d="M12 12h.01" />
-      <path d="M14 8h.01" />
-      <path d="M16 12h.01" />
-      <path d="M18 8h.01" />
-      <path d="M6 8h.01" />
-      <path d="M7 16h10" />
-      <path d="M8 12h.01" />
-      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
+      <circle cx="12" cy="12" r="3" />
     </LucideIcon>
   );
 }

@@ -1,4 +1,4 @@
-// e2e of plan-keyboard_shortcuts, batch shortcuts-panel, in the desktop app (Electron group only): a few Alt keys work as in the browser.
+// e2e of plan-keyboard_shortcuts, batch shortcuts-panel, and plan-settings_dialog, batch shortcuts-section, in the desktop app (Electron group only): a few Alt keys work as in the browser.
 import { type ChildProcess, execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
@@ -97,7 +97,7 @@ const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const terminal = (page: Page) => page.locator('.xterm-rows');
 const terminalInput = (page: Page) => page.locator('.xterm-helper-textarea');
-const shortcutsPanel = (page: Page) => page.getByRole('dialog', { name: 'Keyboard Shortcuts' });
+const settingsPopup = (page: Page) => page.getByRole('dialog', { name: 'Settings', exact: true });
 const menuBarVisible = (app: ElectronApplication) => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isMenuBarVisible());
 const windowState = (app: ElectronApplication) =>
   app.evaluate(({ BrowserWindow }) => {
@@ -123,8 +123,8 @@ test.describe('Keyboard shortcuts in the desktop app', () => {
     expect(existsSync(path.join(repoRoot, 'dist/web/index.html'))).toBe(true);
   });
 
-  // plan-keyboard_shortcuts/REQ-38, REQ-39, REQ-40, REQ-46 — scenario "The shortcuts work the same in the desktop app": Alt+Down, Alt+S and Alt+L act in the window as in the browser
-  test('Alt+Down in the terminal opens the next session, Alt+S toggles the panel and Alt+L focuses the list, with no menu bar and no window action', async () => {
+  // plan-keyboard_shortcuts/REQ-38, REQ-39, REQ-40, REQ-46, plan-settings_dialog/REQ-25 — scenario "The shortcuts work the same in the desktop app": Alt+Down, Alt+S and Alt+L act in the window as in the browser
+  test('Alt+Down in the terminal opens the next session, Alt+S opens the settings on "Shortcuts" and Alt+L focuses the list, with no menu bar and no window action', async () => {
     const port = await freePort();
     const env = await desktopEnv(port);
     const app = await launchDesktop(env);
@@ -155,9 +155,12 @@ test.describe('Keyboard shortcuts in the desktop app', () => {
 
     await page.locator('.xterm-screen').click();
     await page.keyboard.press('Alt+KeyS');
-    await expect(shortcutsPanel(page)).toBeVisible(ONE_SECOND);
+    await expect(settingsPopup(page)).toBeVisible(ONE_SECOND);
+    await expect(settingsPopup(page).getByRole('tab', { name: 'Shortcuts', exact: true })).toHaveAttribute('aria-selected', 'true');
     await page.keyboard.press('Alt+KeyS');
-    await expect(shortcutsPanel(page)).toHaveCount(0, ONE_SECOND);
+    await expect(settingsPopup(page), 'Alt+S does nothing while the popup is open').toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(settingsPopup(page)).toHaveCount(0, ONE_SECOND);
     await expect(terminalInput(page)).toBeFocused();
 
     await page.keyboard.press('Alt+KeyL');

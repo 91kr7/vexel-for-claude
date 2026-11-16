@@ -555,11 +555,6 @@ input {
   color: var(--text-primary);
 }
 
-.shortcuts-button[aria-expanded='true'] {
-  position: relative;
-  z-index: 120;
-}
-
 .plan-usage-popover {
   -webkit-app-region: no-drag;
   position: fixed;
@@ -718,6 +713,10 @@ input {
 
 .vx-rail-fab:active {
   transform: scale(0.95);
+}
+
+.nav-rail-bottom {
+  margin-top: auto;
 }
 
 .nav-rail-divider {
@@ -3057,14 +3056,43 @@ input {
 }
 
 .shortcuts-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 4px 12px;
 }
 
 .shortcuts-keys {
-  flex: 0 0 168px;
   color: var(--text-muted);
+}
+
+.shortcuts-prompt {
+  color: var(--accent-primary);
+  font-weight: 500;
+}
+
+.shortcuts-row-actions {
+  grid-column: 2;
+  display: flex;
+  gap: 6px;
+}
+
+.shortcuts-row-button {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.shortcuts-row-message {
+  grid-column: 2;
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-error);
+}
+
+.shortcuts-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
 }
 
 .shortcuts-key {
@@ -3074,6 +3102,88 @@ input {
 
 .shortcuts-action {
   color: var(--text-primary);
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-tab {
+  height: 32px;
+  padding: 0 10px;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.settings-tab:hover {
+  color: var(--text-primary);
+}
+
+.settings-tab.selected {
+  border-bottom-color: var(--accent-primary);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.settings-tabpanel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-tabpanel[hidden] {
+  display: none;
+}
+
+.settings-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.settings-choice legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.settings-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.updates-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.updates-section .section-label {
+  margin: 0;
+}
+
+.updates-installed,
+.updates-result p {
+  margin: 0;
+}
+
+.updates-result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
 }
 
 .dialog-banner {

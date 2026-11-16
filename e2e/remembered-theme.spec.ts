@@ -5,6 +5,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type Page, chromium, expect, test } from '@playwright/test';
+import { settingsButton, settingsPopup, toggleThemeInSettings } from './settings';
 
 const KEY = 'ai-client.theme';
 const CANVAS = { dark: 'rgb(11, 11, 14)', light: 'rgb(244, 241, 234)' };
@@ -13,7 +14,13 @@ const CANVAS = { dark: 'rgb(11, 11, 14)', light: 'rgb(244, 241, 234)' };
 // so that a light start cannot come from the system.
 test.use({ storageState: { cookies: [], origins: [] }, colorScheme: 'dark' });
 
-const themeSwitch = (page: Page) => page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true });
+/** The theme the settings popup shows as chosen; the popup closes again. */
+async function expectChosenTheme(page: Page, choice: 'Light' | 'Dark'): Promise<void> {
+  await settingsButton(page).click();
+  await expect(settingsPopup(page).getByRole('radio', { name: choice, exact: true })).toBeChecked();
+  await page.keyboard.press('Escape');
+  await expect(settingsPopup(page)).toHaveCount(0);
+}
 
 /** Records every value the root's `data-theme` takes while the page loads, from before the first page script. */
 async function recordMarks(page: Page): Promise<void> {
@@ -55,10 +62,10 @@ test.describe('first start', () => {
     expect(await firstFrame(page)).toEqual({ mark: 'light', meta: 'light', canvas: CANVAS.light, scheme: 'light' });
   });
 
-  test('with nothing saved the page only ever carries the light mark and the switch is not pressed', async ({ page }) => {
+  test('with nothing saved the page only ever carries the light mark and the settings show Light', async ({ page }) => {
     await recordMarks(page);
     await page.goto('/');
-    await expect(themeSwitch(page)).toHaveAttribute('aria-pressed', 'false');
+    await expectChosenTheme(page, 'Light');
     expect(await page.locator('html').getAttribute('data-theme')).toBe('light');
     expect(await marks(page)).toEqual(['light']);
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY), 'opening saves nothing').toBeNull();
@@ -71,7 +78,7 @@ test.describe('first start', () => {
       expect(await firstFrame(page)).toEqual({ mark: 'light', meta: 'light', canvas: CANVAS.light, scheme: 'light' });
       await page.unroute(/\/assets\/[^/]+\.js$/);
       await page.reload();
-      await expect(themeSwitch(page)).toHaveAttribute('aria-pressed', 'false');
+      await expectChosenTheme(page, 'Light');
     });
   }
 
@@ -96,13 +103,13 @@ test.describe('remembered choice', () => {
   // REQ-17, REQ-18 — scenario "The client keeps the dark theme the user chose", the reload part
   test('after the user switches to dark, a reload shows dark from the first frame, with no light mark on the way', async ({ page }) => {
     await page.goto('/');
-    await themeSwitch(page).click();
+    await toggleThemeInSettings(page);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe('dark');
 
     await recordMarks(page);
     await page.reload();
-    await expect(themeSwitch(page)).toHaveAttribute('aria-pressed', 'true');
+    await expectChosenTheme(page, 'Dark');
     expect(await marks(page)).toEqual(['dark']);
     expect(await page.locator('meta[name="color-scheme"]').getAttribute('content')).toBe('dark');
 
@@ -113,8 +120,8 @@ test.describe('remembered choice', () => {
   test('switching back to light saves light, and the next start is light', async ({ page }) => {
     await saveChoice(page, 'dark');
     await page.reload();
-    await expect(themeSwitch(page)).toHaveAttribute('aria-pressed', 'true');
-    await themeSwitch(page).click();
+    await expectChosenTheme(page, 'Dark');
+    await toggleThemeInSettings(page);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe('light');
     expect(await firstFrame(page)).toEqual({ mark: 'light', meta: 'light', canvas: CANVAS.light, scheme: 'light' });
@@ -123,13 +130,13 @@ test.describe('remembered choice', () => {
   // ThemeStore rule: the backend stores nothing
   test('a theme change sends nothing to the backend', async ({ page }) => {
     await page.goto('/');
-    await expect(themeSwitch(page)).toBeVisible();
+    await expect(settingsButton(page)).toBeVisible();
     // Reads of the session list may happen at any time while other tests start sessions: only a write could store the theme.
     const requests: string[] = [];
     page.on('request', (request) => {
       if (request.method() !== 'GET') requests.push(`${request.method()} ${request.url()}`);
     });
-    await themeSwitch(page).click();
+    await toggleThemeInSettings(page);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await page.waitForTimeout(300);
     expect(requests).toEqual([]);
@@ -138,13 +145,13 @@ test.describe('remembered choice', () => {
   // REQ-17: each browser keeps its own choice
   test('another browser profile keeps its own choice', async ({ page, browser, baseURL }) => {
     await page.goto('/');
-    await themeSwitch(page).click();
+    await toggleThemeInSettings(page);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     const other = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
     try {
       const otherPage = await other.newPage();
       await otherPage.goto('/');
-      await expect(themeSwitch(otherPage)).toHaveAttribute('aria-pressed', 'false');
+      await expectChosenTheme(otherPage, 'Light');
       expect(await otherPage.locator('html').getAttribute('data-theme')).toBe('light');
     } finally {
       await other.close();
@@ -158,8 +165,8 @@ test.describe('remembered choice', () => {
       const first = await chromium.launchPersistentContext(profile, { baseURL, colorScheme: 'light' });
       const page1 = first.pages()[0] ?? (await first.newPage());
       await page1.goto('/');
-      await expect(themeSwitch(page1)).toHaveAttribute('aria-pressed', 'false');
-      await themeSwitch(page1).click();
+      await expectChosenTheme(page1, 'Light');
+      await toggleThemeInSettings(page1);
       await expect(page1.locator('html')).toHaveAttribute('data-theme', 'dark');
       await first.close();
 
@@ -168,7 +175,7 @@ test.describe('remembered choice', () => {
         const page2 = second.pages()[0] ?? (await second.newPage());
         await recordMarks(page2);
         await page2.goto('/');
-        await expect(themeSwitch(page2)).toHaveAttribute('aria-pressed', 'true');
+        await expectChosenTheme(page2, 'Dark');
         expect(await marks(page2)).toEqual(['dark']);
         expect(await firstFrame(page2)).toEqual({ mark: 'dark', meta: 'dark', canvas: CANVAS.dark, scheme: 'dark' });
       } finally {
