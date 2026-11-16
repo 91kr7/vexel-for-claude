@@ -22,6 +22,7 @@ export async function lookupHistory(runner: Runner, folder: string, offset = 0):
     '-z',
     '--no-color',
     '--no-show-signature',
+    '--date-order',
     LOG_FORMAT,
     `--skip=${offset}`,
     `--max-count=${HISTORY_PAGE_SIZE + 1}`,

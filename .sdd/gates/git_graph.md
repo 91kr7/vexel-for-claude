@@ -14,3 +14,8 @@
 | 2026-11-16 | dev | question developer: licences of inlined packages | decided | Regenerate `docs/dependency-licenses.md` (existing record, "regenerate when dependencies change"); no custom Vite plugin |
 | 2026-11-16 | dev | G4 batch-open-source-explorer | pass | Build green; `docs/dependency-licenses.md` and `src/web/styles.css` explained; chunk-size warning not a REQ |
 | 2026-11-16 | dev | G5 batch-open-source-explorer | pass | 177 unit + 27 e2e green, re-run by gatekeeper |
+| 2026-11-16 | dev | question developer: graph library | escalated | `@wexample/js-graph-log` young, one maintainer, no licence file |
+| 2026-11-16 | dev | question developer: graph library | human decision | Use a more stable, well-known library; adapt styles to the app |
+| 2026-11-16 | dev | G4 batch-graph-history | sent back | Unloaded second parent of a merge draws no line: REQ-10, INT-5 |
+| 2026-11-16 | dev | divergences developer: licence text, DOM selector, optional fields | decided | Accepted; `commit-graph` chosen over `@tomplum/react-git-log` 2.x for adoption and React 18 support |
+| 2026-11-16 | dev | G4 batch-graph-history | pass | Placeholder parents fix REQ-10; tsc, vite build, build:desktop green |

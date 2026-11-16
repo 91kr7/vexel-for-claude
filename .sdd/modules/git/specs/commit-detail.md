@@ -26,21 +26,23 @@ Shows:
   - while loading → a progress indicator "Loading…";
   - an error → its message in an ErrorMessage;
   - no files → "No files changed";
-  - else a list named "Changed files": each file as a button with its path in mono and its kind label "Added", "Modified", "Deleted" or "Renamed". A rename shows "<old path> → <new path>". A binary file also shows "Binary". The full path text is the tooltip.
+  - else a single-selection list box named "Changed files" (react-aria-components, as in ChangesTab): each file as an option with its path in mono and its kind label "Added", "Modified", "Deleted" or "Renamed". A rename shows "<old path> → <new path>". A binary file also shows "Binary". The full path text is the tooltip.
 - after a click on a file:
   - while loading → a progress indicator "Loading…";
   - loaded → the DiffView of that file in that commit (a binary file → "Binary file, no diff shown");
   - error → its message in an ErrorMessage.
 
 Actions:
-- click on a file → it becomes the selected one (`aria-pressed`, surface 3 background) and its diff loads.
+- click on a file, or arrow keys and Enter/Space in the list → it becomes the selected option (`aria-selected`, surface 3 background) and its diff loads. Once a file is selected, the selection cannot be emptied.
 - "Back" → `onBack()`.
 
 ## Dependencies
 
 - useCommitFiles, useCommitFileDiff (useFileDiff), DiffView
+- `react-aria-components` (npm, Apache-2.0)
 - ErrorMessage, ProgressIndicator (module app)
 
 ## Requirements served
 
 - `plan-git_explorer/REQ-18`, `plan-git_explorer/REQ-19`, `plan-git_explorer/REQ-22`
+- `plan-git_graph/REQ-14`, `plan-git_graph/REQ-15`, `plan-git_graph/REQ-16`

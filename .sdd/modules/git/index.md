@@ -9,8 +9,8 @@
 | parseDiff | backend function | `src/server/git/diff-parser.ts` | Unified diff of one file as marked lines, binary note, cut after 5,000 lines | `specs/diff-parser.md` |
 | lookupFileDiff | backend function | `src/server/git/diff-lookup.ts` | Diff of one changed file in the staged or unstaged group, untracked files included | `specs/diff-lookup.md` |
 | ChangesRoute | REST endpoint | `src/server/git/changes-route.ts` | `GET /api/git/changes` and `GET /api/git/diff`: the changes list and the diff of one file | `specs/changes-route.md` |
-| parseLog | backend function | `src/server/git/log-parser.ts` | Commits of a `git log -z` output with NUL-split fields: hash, short hash, message, author, date | `specs/log-parser.md` |
-| lookupHistory | backend function | `src/server/git/history-lookup.ts` | Commits reachable from HEAD in pages of 100 from an offset; no commits → empty page | `specs/history-lookup.md` |
+| parseLog | backend function | `src/server/git/log-parser.ts` | Commits of a `git log -z` output with NUL-split fields: hash, short hash, parents, message, author, date | `specs/log-parser.md` |
+| lookupHistory | backend function | `src/server/git/history-lookup.ts` | Commits reachable from HEAD in `--date-order`, with their parents, in pages of 100 from an offset; no commits → empty page | `specs/history-lookup.md` |
 | lookupCommitFiles | backend function | `src/server/git/commit-files-lookup.ts` | Files of a commit against its first parent (empty tree for a first commit): kind, rename, binary mark | `specs/commit-files-lookup.md` |
 | lookupCommitFileDiff | backend function | `src/server/git/commit-diff-lookup.ts` | Diff of one file in a commit, against the same base as lookupCommitFiles | `specs/commit-diff-lookup.md` |
 | HistoryRoute | REST endpoint | `src/server/git/history-route.ts` | `GET /api/git/history`, `GET /api/git/commit-files` and `GET /api/git/commit-diff` | `specs/history-route.md` |
@@ -24,6 +24,6 @@
 | ChangesTab | UI component | `src/web/git/ChangesTab.tsx` | Changed files in a react-aria-components list box, groups "Staged" and "Unstaged" with kind labels; selecting a file shows its diff | `specs/changes-tab.md` |
 | useHistory | frontend hook | `src/web/git/history-store.ts` | History of a repository root in pages, first page read again at each new revision: idle, loading, loaded with "load more", error | `specs/history-store.md` |
 | useCommitFiles | frontend hook | `src/web/git/commit-files-store.ts` | Files of one commit: loading, loaded, error | `specs/commit-files-store.md` |
-| HistoryTab | UI component | `src/web/git/HistoryTab.tsx` | Commit rows with short hash, subject, author and date; "Load more"; "No commits yet"; opens the commit detail | `specs/history-tab.md` |
-| CommitDetail | UI component | `src/web/git/CommitDetail.tsx` | Full message and changed files of a commit with kind labels; a click shows the file diff | `specs/commit-detail.md` |
+| HistoryTab | UI component | `src/web/git/HistoryTab.tsx` | Commit graph drawn by `commit-graph`, one row per commit with short hash, subject, author and date; branch label on the tip; "Load more"; "No commits yet"; opens the commit detail | `specs/history-tab.md` |
+| CommitDetail | UI component | `src/web/git/CommitDetail.tsx` | Full message and changed files of a commit in a react-aria-components list box with kind labels; selecting a file shows its diff | `specs/commit-detail.md` |
 | useTurnEndSignal | frontend hook | `src/web/git/turn-end-watcher.ts` | Signals a session of the list going from `working` to `idle` with its folder at or under the repository root | `specs/turn-end-watcher.md` |

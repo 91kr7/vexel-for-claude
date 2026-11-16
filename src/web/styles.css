@@ -2171,30 +2171,6 @@ input {
   text-transform: uppercase;
 }
 
-.changes-file {
-  width: 100%;
-  padding: 4px 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: none;
-  background: none;
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 12px;
-  line-height: 16px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.changes-file:hover {
-  background-color: var(--bg-surface-2);
-}
-
-.changes-file.selected {
-  background-color: var(--bg-surface-3);
-}
-
 .changes-item {
   padding: 4px 16px;
   display: flex;
@@ -2333,26 +2309,54 @@ input {
   list-style: none;
 }
 
+.history-graph-list {
+  position: relative;
+  overflow: hidden;
+}
+
+/* commit-graph draws one commit per 28 px row; its layer sits over the rows and lets clicks through. */
+.history-graph {
+  position: absolute;
+  top: var(--history-graph-top);
+  left: 8px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Only the drawing: the rows below show the commit text. */
+.history-graph > div > div:not(:first-child) {
+  display: none;
+}
+
+.history-graph g {
+  filter: none;
+}
+
+.history-graph line,
+.history-graph path {
+  stroke-width: 2;
+}
+
+.history-graph circle[stroke] {
+  stroke: var(--bg-surface-1);
+  stroke-width: 1.5;
+}
+
 .history-commit {
   width: 100%;
-  padding: 6px 16px;
+  height: 28px;
+  padding: 0 16px 0 calc(var(--history-graph-width) + 16px);
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   line-height: 16px;
   text-align: left;
+  white-space: nowrap;
 }
 
 .history-commit:hover {
   background-color: var(--bg-surface-2);
-}
-
-.history-commit-line {
-  display: flex;
-  gap: 8px;
-  min-width: 0;
 }
 
 .history-commit-hash {
@@ -2361,16 +2365,43 @@ input {
   color: var(--accent-primary);
 }
 
+.history-branch-label {
+  flex: none;
+  max-width: 40%;
+  padding: 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background-color: var(--accent-selection);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
 .history-commit-subject {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  white-space: nowrap;
   text-overflow: ellipsis;
   color: var(--text-primary);
 }
 
-.history-commit-meta,
+.history-commit-author {
+  flex: 0 1 auto;
+  max-width: 25%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.history-commit-date {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
 .commit-meta {
   color: var(--text-muted);
   font-size: 11px;

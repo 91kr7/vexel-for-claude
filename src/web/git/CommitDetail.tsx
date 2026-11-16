@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ListBox, ListBoxItem, type Selection } from 'react-aria-components';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { KIND_LABEL } from './ChangesTab';
@@ -13,24 +14,27 @@ const pathText = ({ path, oldPath }: CommitFile) => (oldPath === undefined ? pat
 function FileList({ files, selected, onSelect }: { files: CommitFile[]; selected?: CommitFile; onSelect: (file: CommitFile) => void }) {
   if (files.length === 0) return <p className="git-explorer-message">No files changed</p>;
   return (
-    <ul className="commit-files" aria-label="Changed files">
+    <ListBox
+      className="commit-files"
+      aria-label="Changed files"
+      selectionMode="single"
+      disallowEmptySelection
+      selectedKeys={selected === undefined ? [] : [selected.path]}
+      onSelectionChange={(keys: Selection) => {
+        const file = keys === 'all' ? undefined : files.find((candidate) => keys.has(candidate.path));
+        if (file !== undefined) onSelect(file);
+      }}
+    >
       {files.map((file) => (
-        <li key={file.path}>
-          <button
-            type="button"
-            className={file === selected ? 'changes-file selected' : 'changes-file'}
-            aria-pressed={file === selected}
-            onClick={() => onSelect(file)}
-          >
-            <span className="changes-file-path" title={pathText(file)}>
-              {pathText(file)}
-            </span>
-            {file.binary && <span className="changes-kind">Binary</span>}
-            <span className={`changes-kind changes-kind-${file.kind}`}>{KIND_LABEL[file.kind]}</span>
-          </button>
-        </li>
+        <ListBoxItem key={file.path} id={file.path} textValue={pathText(file)} className="changes-item">
+          <span className="changes-file-path" title={pathText(file)}>
+            {pathText(file)}
+          </span>
+          {file.binary && <span className="changes-kind">Binary</span>}
+          <span className={`changes-kind changes-kind-${file.kind}`}>{KIND_LABEL[file.kind]}</span>
+        </ListBoxItem>
       ))}
-    </ul>
+    </ListBox>
   );
 }
 

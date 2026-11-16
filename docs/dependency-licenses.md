@@ -8,14 +8,14 @@ Generated from the installed dependency tree (`npm ls --omit=dev --all`). Regene
 
 | License | Packages |
 |---------|----------|
-| MIT | 109 |
+| MIT | 120 |
 | Apache-2.0 | 10 |
 | ISC | 8 |
 | BlueOak-1.0.0 | 6 |
 | BSD-3-Clause | 4 |
 | 0BSD | 1 |
 
-Total: 138 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) license is declared.
+Total: 149 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) license is declared.
 
 ## Packages
 
@@ -35,6 +35,9 @@ Total: 138 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | @fastify/send@4.2.1 | MIT |
 | @fastify/static@10.1.10 | MIT |
 | @fastify/websocket@11.3.7 | MIT |
+| @floating-ui/core@1.8.0 | MIT |
+| @floating-ui/dom@1.8.0 | MIT |
+| @floating-ui/utils@0.2.12 | MIT |
 | @internationalized/date@3.12.4 | Apache-2.0 |
 | @internationalized/number@3.6.9 | Apache-2.0 |
 | @internationalized/string@3.2.10 | Apache-2.0 |
@@ -64,6 +67,7 @@ Total: 138 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | classnames@2.5.1 | MIT |
 | client-only@0.0.1 | MIT |
 | clsx@2.1.1 | MIT |
+| commit-graph@2.4.0 | MIT |
 | content-disposition@3.0.0 | MIT |
 | cookie@2.0.1 | MIT |
 | debug@4.4.3 | MIT |
@@ -108,6 +112,7 @@ Total: 138 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | ms@2.1.3 | MIT |
 | node-addon-api@7.1.1 | MIT |
 | node-pty@1.1.0 | MIT |
+| object-assign@4.1.1 | MIT |
 | on-exit-leak-free@2.1.2 | MIT |
 | once@1.4.0 | ISC |
 | path-expression-matcher@1.6.2 | MIT |
@@ -117,13 +122,19 @@ Total: 138 packages. All licenses are permissive: no copyleft (GPL, LGPL, AGPL) 
 | pino@10.4.0 | MIT |
 | process-warning@5.1.1 | MIT |
 | progress@2.0.3 | MIT |
+| prop-types@15.8.1 | MIT |
 | quick-format-unescaped@4.0.4 | MIT |
 | react-aria-components@1.22.1 | Apache-2.0 |
 | react-aria@3.53.1 | Apache-2.0 |
 | react-diff-view@3.3.3 | MIT |
 | react-dom@18.3.1 | MIT |
+| react-icons@5.7.0 | MIT |
+| react-infinite-scroller@1.2.6 | MIT |
+| react-is@16.13.1 | MIT |
 | react-stately@3.51.0 | Apache-2.0 |
+| react-tooltip@5.30.1 | MIT |
 | react@18.3.1 | MIT |
+| reactjs-popup@2.0.6 | MIT |
 | readable-stream@3.6.2 | MIT |
 | real-require@1.0.0 | MIT |
 | require-from-string@2.0.2 | MIT |
