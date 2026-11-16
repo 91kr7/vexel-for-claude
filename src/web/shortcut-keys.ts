@@ -1,13 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { type ShortcutCommand, shortcutCommandOf } from './shortcut-map';
 
-export const SHORTCUTS_PANEL_CLASS = 'shortcuts-panel';
-
-function blockedByDialog(command: ShortcutCommand): boolean {
-  const dialogs = [...document.querySelectorAll('[aria-modal="true"]')];
-  if (dialogs.length === 0) return false;
-  const onlyPanel = dialogs.every((dialog) => dialog.classList.contains(SHORTCUTS_PANEL_CLASS));
-  return !(onlyPanel && command.kind === 'toggle-shortcuts-panel');
+function dialogOpen(): boolean {
+  return document.querySelector('[aria-modal="true"]') !== null;
 }
 
 export function useShortcutKeys(run: (command: ShortcutCommand) => void): void {
@@ -16,7 +11,7 @@ export function useShortcutKeys(run: (command: ShortcutCommand) => void): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const command = shortcutCommandOf(event);
-      if (!command || blockedByDialog(command)) return;
+      if (!command || dialogOpen()) return;
       event.preventDefault();
       event.stopPropagation();
       runRef.current(command);

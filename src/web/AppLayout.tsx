@@ -16,7 +16,6 @@ import { useNewerVersion } from './newer-version/newer-version-loader';
 import { PlanUsagePopover } from './plan-usage/PlanUsagePopover';
 import { usePlanUsage } from './plan-usage/plan-usage-store';
 import { type SettingsTab, SettingsDialog } from './settings/SettingsDialog';
-import { ShortcutsPanel } from './ShortcutsPanel';
 import { ShortMessageToast, useShortMessage } from './ShortMessageToast';
 import { countNeedsInput, NeedsInputCounter } from './sessions/NeedsInputCounter';
 import { SessionList } from './sessions/SessionList';
@@ -66,8 +65,6 @@ export function AppLayout() {
   const [sideView, setSideView] = useState<SideView>('sessions');
   const [focusRequest, setFocusRequest] = useState<{ view: SideView } | null>(null);
   const [projectsOpening, setProjectsOpening] = useState(0);
-  const [showingShortcuts, setShowingShortcuts] = useState(false);
-  const toggleShortcuts = () => setShowingShortcuts((showing) => !showing);
   const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
   const [showingPlanUsage, setShowingPlanUsage] = useState(false);
   const planUsage = usePlanUsage(showingPlanUsage);
@@ -149,7 +146,7 @@ export function AppLayout() {
     else if (command.kind === 'new-session') setChoosingFolder(true);
     else if (command.kind === 'resume-history') setResuming(true);
     else if (command.kind === 'toggle-theme') pageThemeStore().toggle();
-    else if (command.kind === 'toggle-shortcuts-panel') toggleShortcuts();
+    else if (command.kind === 'open-shortcut-settings') setSettingsTab('shortcuts');
     else if (command.kind === 'session-command') sendSessionCommand(command.command);
     else {
       const sessionId = sessionToOpen(sessions, sessionOrder, openSessionId, command.target);
@@ -165,8 +162,6 @@ export function AppLayout() {
   return (
     <div className="app">
       <TopBar
-        shortcutsPanelOpen={showingShortcuts}
-        onToggleShortcutsPanel={toggleShortcuts}
         planUsageOpen={showingPlanUsage}
         onTogglePlanUsage={() => setShowingPlanUsage((showing) => !showing)}
       />
@@ -258,7 +253,6 @@ export function AppLayout() {
           onCancel={() => setResuming(false)}
         />
       )}
-      {showingShortcuts && <ShortcutsPanel onClose={() => setShowingShortcuts(false)} />}
       {settingsTab !== null && <SettingsDialog initialTab={settingsTab} onClose={() => setSettingsTab(null)} />}
     </div>
   );

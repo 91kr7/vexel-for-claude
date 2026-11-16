@@ -6,7 +6,7 @@ type: configuration
 
 # ShortcutMap
 
-**Purpose** → the one list of the client shortcuts. The key handler, the terminal and the ShortcutsPanel read it, so a key cannot work without its row, and a row cannot show without its key.
+**Purpose** → the one list of the client shortcuts. The key handler, the terminal, the ShortcutsSection and the SettingsButton read it, so a key cannot work without its row, and a row cannot show without its key.
 
 ## Contract
 
@@ -33,15 +33,25 @@ type: configuration
   | terminal | "Larger / smaller / default text" | Ctrl + `=`, Ctrl + `+`, Ctrl + `-`, Ctrl + `0` | `terminal` |
   | terminal | "Focus the list" | Ctrl + Shift + `l` | `terminal` |
   | general | "Light/Dark theme" | Alt + `KeyA` | `toggle-theme` |
-  | general | "Shortcuts panel" | Alt + `KeyS` | `toggle-shortcuts-panel` |
+  | general | "Shortcut settings" | Alt + `KeyS` | `open-shortcut-settings` |
 
-- a command → `{ kind: 'focus-list' }`, `{ kind: 'focus-main-view' }`, `{ kind: 'open-session', target }`, `{ kind: 'new-session' }`, `{ kind: 'resume-history' }`, `{ kind: 'session-command', command }`, `{ kind: 'toggle-theme' }` or `{ kind: 'toggle-shortcuts-panel' }`. `target` is a `NavigationTarget` of sessionToOpen. `command` is a session command of ShortcutChannel.
+- a command → `{ kind: 'focus-list' }`, `{ kind: 'focus-main-view' }`, `{ kind: 'open-session', target }`, `{ kind: 'new-session' }`, `{ kind: 'resume-history' }`, `{ kind: 'session-command', command }`, `{ kind: 'toggle-theme' }` or `{ kind: 'open-shortcut-settings' }`. `target` is a `NavigationTarget` of sessionToOpen. `command` is a session command of ShortcutChannel.
 - `shortcutCommandOf(event) → command | null` → the command of the key that matches a keyboard event, else `null`. A terminal key never gives a command. An event matches a key when:
   - its `code` equals the key's `code` (the physical key: Alt+L is `KeyL` on the Italian and on the US layout);
   - Ctrl, Alt and Shift are pressed exactly as the key lists them: no missing one, no extra one;
   - Meta is not pressed;
   - AltGr is not pressed (`getModifierState('AltGraph')`).
 - the event type does not matter: a `keyup` of a map key also matches.
+- `keyText(key) → text` → the display text of a key, without modifiers:
+
+  | Key | Text |
+  |-----|------|
+  | `KeyA` … `KeyZ` | the letter, `A` … `Z` |
+  | `Digit0` … `Digit9` | the digit |
+  | `ArrowUp`, `ArrowDown` | `Up`, `Down` |
+  | a terminal key | its character in upper case, e.g. `F`, `=`, `+` |
+
+- `commandKeysText(kind) → texts` → one text per map key whose command has that `kind`, in map order: the modifiers, then `keyText`, joined by "+". E.g. `open-shortcut-settings` → `["Alt+S"]`. No key → `[]`.
 
 ## Rules and invariants
 
@@ -62,3 +72,4 @@ type: configuration
 - `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-14`, `plan-keyboard_shortcuts/REQ-16`, `plan-keyboard_shortcuts/REQ-17`, `plan-keyboard_shortcuts/REQ-18`, `plan-keyboard_shortcuts/REQ-19`, `plan-keyboard_shortcuts/REQ-21`
 - `plan-keyboard_shortcuts/REQ-25`, `plan-keyboard_shortcuts/REQ-26`, `plan-keyboard_shortcuts/REQ-28`
 - `plan-keyboard_shortcuts/REQ-34`, `plan-keyboard_shortcuts/REQ-35`, `plan-keyboard_shortcuts/REQ-36`, `plan-keyboard_shortcuts/REQ-37`, `plan-keyboard_shortcuts/REQ-39`, `plan-keyboard_shortcuts/REQ-40`, `plan-keyboard_shortcuts/REQ-44`, `plan-keyboard_shortcuts/REQ-45`
+- `plan-settings_dialog/REQ-3`, `plan-settings_dialog/REQ-25`

@@ -31,7 +31,6 @@ Components and where the client uses them today:
 - `ChevronUpIcon`, `ChevronDownIcon` → "Previous match" and "Next match" in the TerminalSearchBox
 - `Maximize2Icon`, `Minimize2Icon` → the green WindowButtons button, to maximize and to restore
 - `CaptionMinimizeGlyph`, `CaptionMaximizeGlyph`, `CaptionRestoreGlyph`, `CaptionCloseGlyph` → the WindowButtons in the Windows 11 look. Drawn for the client on a 10 × 10 grid with a 1 px line, class `caption-glyph` instead of `icon`
-- `KeyboardIcon` → the ShortcutsButton
 - `GaugeIcon` → the PlanUsageButton
 - `SettingsIcon` (Lucide "settings", a gear) → the SettingsButton
 - `GitBranchIcon` → the GitExplorerButton and the branch chip of the GitExplorerPanel (module git)
@@ -62,9 +61,8 @@ Components and where the client uses them today:
 - `plan-light_theme/REQ-2`
 - `plan-mac_title_bar/REQ-19`, `plan-mac_title_bar/REQ-21`
 - `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-35`
-- `plan-keyboard_shortcuts/REQ-22`
 - `plan-usage_limits/REQ-1`
 - `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-24`
 - `plan-favorite_session/REQ-3`, `plan-favorite_session/REQ-4`, `plan-favorite_session/REQ-11`
 - `plan-wsl_support/REQ-19`, `plan-wsl_support/REQ-28`
-- `plan-settings_dialog/REQ-1`
+- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-24`

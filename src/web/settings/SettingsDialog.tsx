@@ -3,13 +3,15 @@ import { Dialog } from '../dialogs/Dialog';
 import type { LookStore } from '../theme/look-store';
 import type { ThemeStore } from '../theme/theme-store';
 import { LookSection } from './LookSection';
+import { ShortcutsSection } from './ShortcutsSection';
 import { ThemeSection } from './ThemeSection';
 
-export type SettingsTab = 'theme' | 'look';
+export type SettingsTab = 'theme' | 'look' | 'shortcuts';
 
 const TABS: { tab: SettingsTab; title: string }[] = [
   { tab: 'theme', title: 'Theme' },
   { tab: 'look', title: 'Window Look' },
+  { tab: 'shortcuts', title: 'Shortcuts' },
 ];
 
 interface SettingsDialogProps {
@@ -17,6 +19,12 @@ interface SettingsDialogProps {
   onClose: () => void;
   themeStore?: ThemeStore;
   lookStore?: LookStore;
+}
+
+function Section({ tab, themeStore, lookStore }: { tab: SettingsTab; themeStore?: ThemeStore; lookStore?: LookStore }) {
+  if (tab === 'theme') return <ThemeSection store={themeStore} />;
+  if (tab === 'look') return <LookSection store={lookStore} />;
+  return <ShortcutsSection />;
 }
 
 export function SettingsDialog({ initialTab = 'theme', onClose, themeStore, lookStore }: SettingsDialogProps) {
@@ -69,7 +77,7 @@ export function SettingsDialog({ initialTab = 'theme', onClose, themeStore, look
       </div>
       {TABS.map(({ tab: id }) => (
         <div key={id} className="settings-tabpanel" role="tabpanel" id={panelId(id)} aria-labelledby={tabId(id)} hidden={tab !== id}>
-          {tab === id && (id === 'theme' ? <ThemeSection store={themeStore} /> : <LookSection store={lookStore} />)}
+          {tab === id && <Section tab={id} themeStore={themeStore} lookStore={lookStore} />}
         </div>
       ))}
     </Dialog>

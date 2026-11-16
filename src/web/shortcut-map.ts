@@ -13,7 +13,7 @@ export type ShortcutCommand =
   | { kind: 'resume-history' }
   | { kind: 'session-command'; command: SessionCommand }
   | { kind: 'toggle-theme' }
-  | { kind: 'toggle-shortcuts-panel' };
+  | { kind: 'open-shortcut-settings' };
 
 export interface TerminalCommand {
   kind: 'terminal';
@@ -81,8 +81,21 @@ export const SHORTCUTS: readonly Shortcut[] = [
   },
   { area: 'terminal', action: 'Focus the list', keys: [terminal('l', 'Ctrl', 'Shift')] },
   { area: 'general', action: 'Light/Dark theme', keys: [alt('KeyA', { kind: 'toggle-theme' })] },
-  { area: 'general', action: 'Shortcuts panel', keys: [alt('KeyS', { kind: 'toggle-shortcuts-panel' })] },
+  { area: 'general', action: 'Shortcut settings', keys: [alt('KeyS', { kind: 'open-shortcut-settings' })] },
 ];
+
+export function keyText(key: ShortcutKey): string {
+  if (key.command.kind === 'terminal') return key.code.toUpperCase();
+  if (key.code === 'ArrowUp') return 'Up';
+  if (key.code === 'ArrowDown') return 'Down';
+  return key.code.replace(/^(Key|Digit)/, '');
+}
+
+export function commandKeysText(kind: ShortcutCommand['kind']): string[] {
+  return SHORTCUTS.flatMap((row) => row.keys)
+    .filter((key) => key.command.kind === kind)
+    .map((key) => [...key.modifiers, keyText(key)].join('+'));
+}
 
 function matches(key: ShortcutKey, event: KeyboardEvent): boolean {
   return (

@@ -30,7 +30,7 @@ Shows:
 - the NeedsInputSnackbar of `useNeedsInputSnackbar`, when it gives a session → fixed at the bottom right of the window, whatever the main area shows.
 - the ShortMessageToast of `useShortMessage`, at the bottom centre of the window.
 - the NewerVersionNotice, while `useNewerVersion` gives a version and the user has not closed it in this page. The session list does not wait for it.
-- the ShortcutsPanel, or the SettingsDialog, while it is open. Each is a dialog over the page: the open SessionView or ConversationView stays mounted under it, with its size, its scroll position and its session running.
+- the SettingsDialog, while it is open. It is a dialog over the page: the open SessionView or ConversationView stays mounted under it, with its size, its scroll position and its session running.
 
 Actions:
 - "New Session" in the EmptyState, or "New Claude Code Session" in the rail → opens FolderChooser. The top bar has no "New Session".
@@ -58,9 +58,7 @@ else → "New Claude Code Session" in the rail
 - ConversationView resumes the session ("Resume Here") → the new hosted session becomes the open one.
 - "open this session" from the desktop app (useDesktopBridge) → when LiveSessionStore lists the session, it becomes the open one, hosted or external as for a list click. Else nothing changes.
 - each change of the open session is reported to the desktop app (useDesktopBridge).
-- the ShortcutsButton of the TopBar → opens the ShortcutsPanel, or closes it when it is open.
 - the SettingsButton at the bottom of the NavigationRail (`onOpenSettings`) → opens the SettingsDialog on the "Theme" tab. The popup closes ("[Esc]", "Close", Esc) → it goes; the focus goes back to where it was before it opened (Dialog). The side view, the open session and the list scroll do not change.
-- the panel closes ("[Esc]", "Close", Esc) → it goes; the focus goes back where it was before it opened (Dialog).
 - "Close Update Notice" → the notice goes, and nothing else changes. The closed state lives only in this page: a reload or a new tab shows it again.
 - the PlanUsageButton of the TopBar → opens the PlanUsagePopover, or closes it when it is open. The popover shows the state of `usePlanUsage(open)`: the figures load once when it opens and are not refreshed while it is open. Its close button and Esc close it. It is not a dialog: the open session, its terminal focus and scroll, and any open dialog stay as they are.
 
@@ -76,7 +74,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `new-session` (Alt+N) → opens FolderChooser, as "New Session" does.
 - `resume-history` (Alt+H) → opens ResumeDialog, as "Resume" in the rail does.
 - `toggle-theme` (Alt+A) → switches the theme (ThemeStore `toggle`), as the "Theme" section of the SettingsDialog does.
-- `toggle-shortcuts-panel` (Alt+S) → opens the ShortcutsPanel, or closes it when it is open, as the ShortcutsButton does.
+- `open-shortcut-settings` (Alt+S) → opens the SettingsDialog on the "Shortcuts" tab. With the popup open, Alt+S does nothing (useShortcutKeys).
 - `session-command` (Alt+E, Alt+R, Alt+Shift+Q, Alt+Shift+W) → sent to ShortcutChannel. The component that owns the action runs it; with no owner on the page, nothing happens.
 
 ## Rules and invariants
@@ -89,7 +87,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 
 ## Dependencies
 
-- TopBar, ShortcutsPanel, SettingsDialog, PlanUsagePopover, PlanUsageStore, NewerVersionNotice, useNewerVersion, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
+- TopBar, SettingsDialog, PlanUsagePopover, PlanUsageStore, NewerVersionNotice, useNewerVersion, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
 - useShortcutKeys, ShortcutMap, ShortcutChannel, ShortMessageToast, ThemeStore
 - FolderChooser, ProjectList, ProjectListStore, SessionNameDialog (module folders)
 - ResumeDialog (module history)
@@ -107,11 +105,11 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-session_list_improvements/REQ-7`, `plan-session_list_improvements/REQ-10`
 - `plan-session_list_width/REQ-3`, `plan-session_list_width/REQ-4`, `plan-session_list_width/REQ-5`, `plan-session_list_width/REQ-6`, `plan-session_list_width/REQ-9`, `plan-session_list_width/REQ-11`
 - `plan-usage_limits/REQ-3`, `plan-usage_limits/REQ-4`
-- `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-21`, `plan-keyboard_shortcuts/REQ-24`, `plan-keyboard_shortcuts/REQ-25`, `plan-keyboard_shortcuts/REQ-29`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-31`, `plan-keyboard_shortcuts/REQ-43`
+- `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-21`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-31`, `plan-keyboard_shortcuts/REQ-43`
 - `plan-git_explorer/REQ-25`
 - `plan-recent_projects/REQ-2`, `plan-recent_projects/REQ-8`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-14`, `plan-recent_projects/REQ-17`, `plan-recent_projects/REQ-21`
 - `plan-project_list_actions/REQ-7`
 - `plan-update_check/REQ-4`, `plan-update_check/REQ-7`, `plan-update_check/REQ-8`, `plan-update_check/REQ-10`
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-13`
 - `plan-ui_restyle/REQ-1`, `plan-ui_restyle/REQ-2`, `plan-ui_restyle/REQ-3`
-- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-4`, `plan-settings_dialog/REQ-9`, `plan-settings_dialog/REQ-18`
+- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-4`, `plan-settings_dialog/REQ-9`, `plan-settings_dialog/REQ-18`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-25`

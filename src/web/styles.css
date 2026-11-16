@@ -555,11 +555,6 @@ input {
   color: var(--text-primary);
 }
 
-.shortcuts-button[aria-expanded='true'] {
-  position: relative;
-  z-index: 120;
-}
-
 .plan-usage-popover {
   -webkit-app-region: no-drag;
   position: fixed;
@@ -3103,6 +3098,12 @@ input {
   border-bottom-color: var(--accent-primary);
   color: var(--text-primary);
   font-weight: 600;
+}
+
+.settings-tabpanel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .settings-tabpanel[hidden] {
