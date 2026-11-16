@@ -11,7 +11,7 @@ type: configuration
 ## Contract
 
 - `reservedKeyOwner(press) → 'Claude Code' | 'the desktop' | 'the browser' | null` → the owner of a press, or `null` when no one owns it. `press` is a KeyPress of the ShortcutMap.
-- "alone" below → exactly the modifiers named, no other one. The owners are checked in this order; the first one that has the combination is returned.
+- "alone" below → exactly the modifiers named, no other one, Meta included. Every listed combination is without Meta, so any Meta press belongs to the desktop. The owners are checked in this order; the first one that has the combination is returned.
 
   | Owner | Combinations |
   |-------|--------------|

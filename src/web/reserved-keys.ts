@@ -9,7 +9,7 @@ function modifiersOf(press: KeyPress): string {
 }
 
 const is = (press: KeyPress, modifiers: Modifiers, codes: readonly string[]) =>
-  modifiersOf(press) === modifiers && press.code !== undefined && codes.includes(press.code);
+  !press.metaKey && modifiersOf(press) === modifiers && press.code !== undefined && codes.includes(press.code);
 
 const LETTERS = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map((letter) => `Key${letter}`);
 const ARROWS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
