@@ -175,7 +175,7 @@ export function AppLayout() {
           onShowSessions={showSessions}
           onShowProjects={showProjects}
           onResume={() => setResuming(true)}
-          onOpenSettings={() => setSettingsTab('theme')}
+          onOpenSettings={() => setSettingsTab('appearance')}
           newSessionRef={newSessionRef}
           shownView={sideView}
         />

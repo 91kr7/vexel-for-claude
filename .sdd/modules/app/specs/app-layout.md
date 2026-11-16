@@ -58,7 +58,7 @@ else → "New Claude Code Session" in the rail
 - ConversationView resumes the session ("Resume Here") → the new hosted session becomes the open one.
 - "open this session" from the desktop app (useDesktopBridge) → when LiveSessionStore lists the session, it becomes the open one, hosted or external as for a list click. Else nothing changes.
 - each change of the open session is reported to the desktop app (useDesktopBridge).
-- the SettingsButton at the bottom of the NavigationRail (`onOpenSettings`) → opens the SettingsDialog on the "Theme" tab. The popup closes ("[Esc]", "Close", Esc) → it goes; the focus goes back to where it was before it opened (Dialog). The side view, the open session and the list scroll do not change.
+- the SettingsButton at the bottom of the NavigationRail (`onOpenSettings`) → opens the SettingsDialog on the "Appearance" menu. The popup closes ("[Esc]", "Close", Esc) → it goes; the focus goes back to where it was before it opened (Dialog). The side view, the open session and the list scroll do not change.
 - "Close Update Notice" → the notice goes, and nothing else changes. The closed state lives only in this page: a reload or a new tab shows it again.
 - a `newer` result of the user's check in the SettingsDialog (`onNewerVersion`) → the notice shows that version and its closed state is cleared, so it shows again, also when the launch check found nothing. It stays under the popup and is visible when the popup closes.
 - the PlanUsageButton of the TopBar → opens the PlanUsagePopover, or closes it when it is open. The popover shows the state of `usePlanUsage(open)`: the figures load once when it opens and are not refreshed while it is open. Its close button and Esc close it. It is not a dialog: the open session, its terminal focus and scroll, and any open dialog stay as they are.
@@ -75,7 +75,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `new-session` (Alt+N) → opens FolderChooser, as "New Session" does.
 - `resume-history` (Alt+H) → opens ResumeDialog, as "Resume" in the rail does.
 - `toggle-theme` (Alt+A) → switches the theme (ThemeStore `toggle`), as the "Theme" section of the SettingsDialog does.
-- `open-shortcut-settings` (Alt+S) → opens the SettingsDialog on the "Shortcuts" tab. With the popup open, Alt+S does nothing (useShortcutKeys).
+- `open-shortcut-settings` (Alt+S) → opens the SettingsDialog on the "Shortcuts" menu. With the popup open, Alt+S does nothing (useShortcutKeys).
 - `session-command` (Alt+E, Alt+R, Alt+Shift+Q, Alt+Shift+W) → sent to ShortcutChannel. The component that owns the action runs it; with no owner on the page, nothing happens.
 
 ## Rules and invariants
@@ -113,4 +113,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-update_check/REQ-4`, `plan-update_check/REQ-7`, `plan-update_check/REQ-8`, `plan-update_check/REQ-10`
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-13`
 - `plan-ui_restyle/REQ-1`, `plan-ui_restyle/REQ-2`, `plan-ui_restyle/REQ-3`
-- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-4`, `plan-settings_dialog/REQ-9`, `plan-settings_dialog/REQ-18`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-25`, `plan-settings_dialog/REQ-49`
+- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-4`, `plan-settings_dialog/REQ-9`, `plan-settings_dialog/REQ-18`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-25`, `plan-settings_dialog/REQ-49`, `plan-settings_dialog/REQ-53`

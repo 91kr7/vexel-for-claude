@@ -47,6 +47,7 @@ type: configuration
   - `--color-focus-ring` → `--accent-primary`
   - `--color-backdrop` → black at 65 %
 - Terminal tokens, the same in both sets: `--term-bg` `#0b0b0e`, `--term-fg` `#f3f2ee`, `--term-cursor` `#8ccfff`, `--term-selection` `rgba(140, 207, 255, 0.3)`.
+- Theme preview tokens, the same in both sets, so each preview card of ThemeSection shows its own theme: `--preview-dark-canvas` `#0b0b0e`, `--preview-dark-surface` `#21212b`, `--preview-dark-line` `#f3f2ee`, `--preview-dark-accent` `#8ccfff`; `--preview-light-canvas` `#f4f1ea`, `--preview-light-surface` `#e4ded2`, `--preview-light-line` `#1c1917`, `--preview-light-accent` `#0065ae`.
 - Window button tokens, the same in both sets: `--window-close` `#e0443c`, `--window-minimize` `#e8b616`, `--window-maximize` `#25b033`, `--window-symbol` black at 60 %.
 - Terminal search tokens, the same in both sets, in `#RRGGBB` form: `--term-match-bg` `#713f12` (a match), `--term-match-current-bg` `#92400e` and `--term-match-current-border` `#fcd34d` (the current match).
 - Other groups, the same in both sets: `--font-ui` (Roboto Flex), `--font-mono` (Roboto Mono), `--focus-ring-width` and `--focus-ring-offset` (2 px), and the Tailwind shadows `--shadow-sm`, `--shadow`, `--shadow-lg`, `--shadow-2xl`.

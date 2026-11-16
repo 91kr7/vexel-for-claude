@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { useInstalledVersion } from '../installed-version-loader';
 import type { NewerVersion } from '../newer-version/newer-version-loader';
@@ -33,7 +33,6 @@ function CheckResult({ result }: { result: UpdateCheckResult }) {
 
 export function UpdatesSection({ onNewerVersion, check = checkForUpdates }: UpdatesSectionProps) {
   const installedVersion = useInstalledVersion();
-  const labelId = useId();
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<UpdateCheckResult | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
@@ -54,14 +53,13 @@ export function UpdatesSection({ onNewerVersion, check = checkForUpdates }: Upda
   };
 
   return (
-    <section className="updates-section" aria-labelledby={labelId}>
-      <h3 id={labelId} className="section-label">
-        Updates
-      </h3>
-      {installedVersion !== null && <p className="updates-installed">Installed version: v{installedVersion}</p>}
-      <button type="button" className="button-neutral updates-check" disabled={checking} onClick={runCheck}>
-        {checking ? 'Checking…' : 'Check for Updates'}
-      </button>
+    <section className="updates-card" aria-label="Updates">
+      <div className="updates-card-row">
+        <span className="updates-installed">{installedVersion !== null && `Installed version: v${installedVersion}`}</span>
+        <button type="button" className="button-neutral updates-check" disabled={checking} onClick={runCheck}>
+          {checking ? 'Checking…' : 'Check for Updates'}
+        </button>
+      </div>
       {result && <CheckResult result={result} />}
     </section>
   );

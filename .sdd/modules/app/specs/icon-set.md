@@ -35,10 +35,14 @@ Components and where the client uses them today:
 - `SettingsIcon` (Lucide "settings", a gear) → the SettingsButton
 - `GitBranchIcon` → the GitExplorerButton and the branch chip of the GitExplorerPanel (module git)
 - `RefreshCwIcon` → "Refresh" in the GitExplorerPanel (module git)
-- `PencilIcon` → "Rename" of a list entry
+- `PencilIcon` → "Rename" of a list entry, "Change Keys" of a ShortcutsSection row
+- `RotateCcwIcon` (Lucide "rotate-ccw") → "Restore Default" of a ShortcutsSection row
+- `SunIcon`, `MoonIcon` → the "Light" and "Dark" cards of ThemeSection; `MacWindowIcon`, `WindowsLogoIcon` → the "macOS" and "Windows 11" cards of LookSection
+- `MacWindowIcon` and `WindowsLogoIcon` are drawn for the client, not Lucide icons: a window with three dots, and four rounded squares.
+- `CheckIcon` → the mark of the active card in ThemeSection and LookSection
 - `StarIcon` → "Mark as Favorite" and "Remove Favorite" of a list entry (FavoriteButton), and the FavoriteIndicator. It has a filled variant (`filled`): the SVG has the class `icon-filled` and its computed `fill` is `currentColor`; the other icons keep `fill: none`
 - `CirclePauseIcon` → "Interrupt" in the SessionView subbar
-- no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, `CheckIcon`, `MoonIcon`, `SunIcon`, `MacWindowIcon` and `WindowsLogoIcon` (drawn for the client, not Lucide icons: a window with three dots, and four rounded squares), and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
+- no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
 
 ## Rules and invariants
 
@@ -65,4 +69,4 @@ Components and where the client uses them today:
 - `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-24`
 - `plan-favorite_session/REQ-3`, `plan-favorite_session/REQ-4`, `plan-favorite_session/REQ-11`
 - `plan-wsl_support/REQ-19`, `plan-wsl_support/REQ-28`
-- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-24`
+- `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-57`, `plan-settings_dialog/REQ-58`

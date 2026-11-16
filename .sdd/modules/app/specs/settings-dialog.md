@@ -6,32 +6,37 @@ type: UI component
 
 # SettingsDialog
 
-**Purpose** → the modal "Settings" popup. A tab list shows one section at a time: "Theme", "Window Look", "Shortcuts", then "Updates".
+**Purpose** → the modal "Settings" popup. A vertical menu on the left chooses one of three menus, "Appearance", "Shortcuts" and "Updates"; the chosen menu shows on the right.
 
 ## Contract
 
 Props:
-- `initialTab` → `theme` (default), `look`, `shortcuts` or `updates`: the tab shown on open.
+- `initialTab` → `appearance` (default), `shortcuts` or `updates`: the menu shown on open.
 - `onClose()` → called by "Close", "[Esc]" and the Esc key.
 - `themeStore`, `lookStore` → optional stores passed to the sections. Default: the page stores.
 - `onNewerVersion(version)` → optional, passed to UpdatesSection: called when the user's check finds a newer version.
 
 Description:
 - a Dialog titled "Settings", with no primary action: the footer has "Close" only. The frame has the class `settings-dialog`.
+- the frame is 760 × 540 px; each side is at most the window minus 32 px. The size does not change with the menu.
 
 Shows:
-- a tab list named "Settings sections" with the tabs "Theme", "Window Look", "Shortcuts" and "Updates", in this order. The shown tab has `aria-selected="true"`, an accent line under it and bold text.
-- under it, one tab panel, labelled by its tab: ThemeSection for "Theme", LookSection for "Window Look", ShortcutsSection for "Shortcuts", UpdatesSection for "Updates". The other panels are hidden.
-- UpdatesSection stays mounted while the popup is open, also behind another tab: its result and a running check survive a tab change. A new opening starts with no result.
+- on the left, a vertical tab list named "Settings sections" (`aria-orientation="vertical"`) with the items "Appearance", "Shortcuts" and "Updates", in this order. The chosen item has `aria-selected="true"`, an accent fill, an accent bar on its left and bold text.
+- on the right, one tab panel, labelled by its item. It has a header with the menu title and an optional action, and a body that scrolls on its own when the content does not fit. The popup itself never scrolls.
+  - "Appearance" → title "Appearance"; the body holds ThemeSection, then LookSection.
+  - "Shortcuts" → ShortcutsSection: title "Shortcuts" and the action "Restore All" in the header, the "Shortcut List" region as body.
+  - "Updates" → title "Updates"; the body holds UpdatesSection.
+- the other panels are hidden.
+- UpdatesSection stays mounted while the popup is open, also behind another menu: its result and a running check survive a menu change. A new opening starts with no result.
 - the colours and the look follow the active theme and look, as every Dialog. A change made in a section restyles the popup at once.
 
 Actions:
-- click on a tab → that tab and its section show.
+- click on a menu item → that menu shows.
 
 Keyboard:
-- on open → the focus is on the shown tab.
-- the tab list is one Tab stop: the shown tab. Right and Left arrows → the next or previous tab, wrapping; Home and End → the first or last tab. The new tab shows and takes the focus.
-- Tab and Shift+Tab → "[Esc]", the shown tab, the focusable items of the section (the checked radio; "Restore All", the "Shortcut List" region and the row buttons; or "Check for Updates" and "View Release") and "Close", inside the dialog only (Dialog).
+- on open → the focus is on the chosen menu item.
+- the menu is one Tab stop: the chosen item. Down and Up arrows → the next or previous item, wrapping; Home and End → the first or last item. The new menu shows and its item takes the focus.
+- Tab and Shift+Tab → "[Esc]", the chosen menu item, the focusable items of the menu (the checked card of each group; "Restore All", the "Shortcut List" region and the row buttons; or "Check for Updates" and "View Release") and "Close", inside the dialog only (Dialog).
 - Esc → `onClose()`. Enter adds nothing (no primary action).
 - on close → the focus goes back where it was before the popup opened (Dialog).
 
@@ -48,4 +53,4 @@ Keyboard:
 
 ## Requirements served
 
-- `plan-settings_dialog/REQ-5`, `plan-settings_dialog/REQ-6`, `plan-settings_dialog/REQ-7`, `plan-settings_dialog/REQ-8`, `plan-settings_dialog/REQ-10`, `plan-settings_dialog/REQ-11`, `plan-settings_dialog/REQ-19`, `plan-settings_dialog/REQ-20`, `plan-settings_dialog/REQ-21`, `plan-settings_dialog/REQ-43`, `plan-settings_dialog/REQ-51`
+- `plan-settings_dialog/REQ-5`, `plan-settings_dialog/REQ-6`, `plan-settings_dialog/REQ-7`, `plan-settings_dialog/REQ-8`, `plan-settings_dialog/REQ-10`, `plan-settings_dialog/REQ-11`, `plan-settings_dialog/REQ-19`, `plan-settings_dialog/REQ-20`, `plan-settings_dialog/REQ-21`, `plan-settings_dialog/REQ-43`, `plan-settings_dialog/REQ-51`, `plan-settings_dialog/REQ-53`, `plan-settings_dialog/REQ-54`, `plan-settings_dialog/REQ-55`, `plan-settings_dialog/REQ-56`, `plan-settings_dialog/REQ-59`

@@ -70,6 +70,16 @@
   --repo-color-5: #a3e635;
   --repo-color-6: #60a5fa;
 
+  /* Fixed colours of the theme previews in the settings: each shows its own theme whatever the active one. */
+  --preview-dark-canvas: #0b0b0e;
+  --preview-dark-surface: #21212b;
+  --preview-dark-line: #f3f2ee;
+  --preview-dark-accent: #8ccfff;
+  --preview-light-canvas: #f4f1ea;
+  --preview-light-surface: #e4ded2;
+  --preview-light-line: #1c1917;
+  --preview-light-accent: #0065ae;
+
   --window-close: #e0443c;
   --window-minimize: #e8b616;
   --window-maximize: #25b033;

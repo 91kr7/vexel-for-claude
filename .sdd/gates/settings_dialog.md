@@ -38,3 +38,5 @@
 | 2026-11-16 | plan | G2 requirements (layout defect) | pass | REQ-53..60; no existing REQ text changed |
 | 2026-11-16 | plan | question planner (row actions, size) | decided | Icon buttons with same names and tooltips so a row fits one line; 760 × 540 capped to the window |
 | 2026-11-16 | plan | G3 coverage (layout defect) | pass | INT-9..19 in update-check, paths exist, new scenario covers REQ-53..60 |
+| 2026-11-16 | dev | G4 update-check (layout) | pass | Vite build green; `tsc -b` errors only in `SettingsDialog.test.tsx` (old tab values), left to the tester; screenshots reviewed |
+| 2026-11-16 | dev | divergence developer (tokens.css) | decided | Fixed preview tokens so the Light/Dark cards show their own colours in either theme |
