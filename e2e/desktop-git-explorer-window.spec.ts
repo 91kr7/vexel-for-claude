@@ -1,4 +1,4 @@
-// e2e of plan-git_explorer, batch explorer-access, in the desktop app (Electron group only).
+// e2e of plan-git_explorer batch explorer-access and plan-git_graph batch graph-history, in the desktop app (Electron group only).
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
@@ -160,5 +160,48 @@ test.describe('Git explorer in the desktop app', () => {
     await expect(page.locator('.conversation-view')).toContainText('Hi there');
     await explorerButton(page).click();
     await expectRepositoryShown(page, externalRepo);
+  });
+
+  // plan-git_graph/REQ-5: human acceptance scenario "The user uses the git explorer in the desktop window"
+  test('the diff of a changed file in "Changes" and the graph with a merge in "History" show in the desktop window', async () => {
+    const port = await freePort();
+    const env = await desktopEnv(port);
+    const repo = await newRepository(env.HOME!, 'graph-repo');
+    git(repo, 'checkout', '-q', '-b', 'feature');
+    git(repo, 'commit', '-q', '--allow-empty', '-m', 'feature work');
+    git(repo, 'checkout', '-q', 'main');
+    git(repo, 'commit', '-q', '--allow-empty', '-m', 'main work');
+    git(repo, 'merge', '-q', '--no-ff', '-m', 'Merge feature', 'feature');
+    await writeFile(path.join(repo, 'README.md'), 'hello\nchanged line\n');
+
+    const app = await _electron.launch({ executablePath: electronBinary, args: ['.'], cwd: repoRoot, env });
+    apps.push(app);
+    const page = await app.firstWindow();
+    await expect(list(page)).toBeVisible({ timeout: 20_000 });
+    const created = await fetch(`http://127.0.0.1:${port}/api/sessions`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path: repo }),
+    });
+    expect(created.status).toBe(201);
+    await entry(page, repo).getByTitle(repo, { exact: true }).click();
+    await explorerButton(page).click();
+    await expectRepositoryShown(page, repo);
+
+    const files = explorer(page).getByRole('listbox', { name: 'Changed files', exact: true }).getByRole('option');
+    await files.filter({ hasText: 'README.md' }).click();
+    await expect(files.filter({ hasText: 'README.md' })).toHaveAttribute('aria-selected', 'true');
+    await expect(explorer(page).locator('.diff-view td').filter({ hasText: /^\+changed line$/ })).toHaveCount(1);
+
+    await explorer(page).getByRole('tab', { name: 'History', exact: true }).click();
+    const rows = explorer(page).locator('[aria-label="Commits"]').getByRole('button');
+    await expect(rows).toHaveCount(4);
+    await expect(rows.first()).toContainText('Merge feature');
+    await expect(rows.first().getByText('main', { exact: true })).toBeVisible();
+    const graph = explorer(page).locator('[aria-hidden="true"] svg').filter({ has: page.locator('circle') });
+    await expect(graph).toHaveCount(1);
+    await expect(graph).toBeVisible();
+    const lanes = await graph.evaluate((svg) => new Set([...svg.querySelectorAll('circle')].map((c) => c.getAttribute('cx'))).size);
+    expect(lanes, 'the merged branch runs in a second lane').toBeGreaterThanOrEqual(2);
   });
 });

@@ -7,7 +7,17 @@ import { GitBranchIcon } from '../icons/Icons';
 import { GitExplorerButton } from './GitExplorerButton';
 import type { RepositoryLookupState } from './repository-lookup-store';
 
-const repository: RepositoryLookupState = { status: 'repository', root: '/home/dev/project', branch: { kind: 'branch', name: 'main' } };
+const repository: RepositoryLookupState = {
+  status: 'repositories',
+  repositories: [{ root: '/home/dev/project', name: 'project', path: '.', branch: { kind: 'branch', name: 'main' } }],
+};
+const several: RepositoryLookupState = {
+  status: 'repositories',
+  repositories: [
+    { root: '/home/dev/ws/api', name: 'api', path: 'api', branch: { kind: 'branch', name: 'main' } },
+    { root: '/home/dev/ws/web/app', name: 'app', path: 'web/app', error: 'fatal: bad object HEAD' },
+  ],
+};
 const error: RepositoryLookupState = { status: 'error', message: 'fatal: bad object HEAD' };
 
 const roots: Root[] = [];
@@ -26,7 +36,7 @@ function render(lookup: RepositoryLookupState, open = false, onToggle = () => {}
 }
 
 describe('GitExplorerButton', () => {
-  // plan-git_explorer/REQ-2: no button while loading or outside a repository
+  // plan-git_explorer/REQ-2, plan-multi_repo_workspace/REQ-6: no button while loading or with no covered repository
   it.each<[string, RepositoryLookupState]>([
     ['loading', { status: 'loading' }],
     ['none', { status: 'none' }],
@@ -34,9 +44,10 @@ describe('GitExplorerButton', () => {
     expect(render(lookup).innerHTML).toBe('');
   });
 
-  // plan-git_explorer/REQ-1; with an error the button stays so the panel can show it (REQ-6)
+  // plan-git_explorer/REQ-1, plan-multi_repo_workspace/REQ-5; with an error the button stays so the panel can show it (plan-git_explorer/REQ-6)
   it.each<[string, RepositoryLookupState]>([
-    ['repository', repository],
+    ['one repository', repository],
+    ['several repositories', several],
     ['error', error],
   ])('shows the "Git Explorer" icon button with its tooltip for %s', (_name, lookup) => {
     const button = render(lookup).querySelector('button');

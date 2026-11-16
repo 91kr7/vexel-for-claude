@@ -6,16 +6,17 @@ type: frontend hook
 
 # useTurnEndSignal
 
-**Purpose** → tells the git explorer when a session in its repository ends a turn.
+**Purpose** → tells the git explorer when a session in or above one of its covered repositories ends a turn.
 
 ## Contract
 
-- `turnEndedInRepository(previous, next, root) → boolean` → `true` when at least one session of `next`:
+- `turnEndedInRepository(previous, next, roots) → boolean` → `true` when at least one session of `next`:
   - had state `working` in `previous` (same `id`) and has state `idle` in `next`;
-  - and has a `folder` equal to `root` or under it (`root` + `/` + more).
-- `useTurnEndSignal(sessions, root | undefined, onTurnEnd)` → calls `onTurnEnd()` once each time the session list changes and `turnEndedInRepository(last list, new list, root)` is `true`.
+  - and, for at least one root of `roots`, has a `folder` equal to the root, under it (root + `/` + more), or above it (the root is under the `folder`).
+- `useTurnEndSignal(sessions, roots, onTurnEnd)` → calls `onTurnEnd()` once each time the session list changes and `turnEndedInRepository(last list, new list, roots)` is `true`.
   - the first list seen gives no signal.
-  - `root` `undefined` → no signal.
+  - `roots` empty → no signal.
+  - a change of `roots` alone gives no signal.
 
 ## Rules and invariants
 
@@ -30,4 +31,4 @@ type: frontend hook
 
 ## Requirements served
 
-- `plan-git_explorer/REQ-25`
+- `plan-multi_repo_workspace/REQ-11`

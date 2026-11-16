@@ -19,7 +19,7 @@ const isOutsideRepository = (error: unknown) =>
   error instanceof GitError &&
   (error.kind === 'not_installed' || error.kind === 'folder_not_found' || (error.kind === 'failed' && /not a git repository/i.test(error.message)));
 
-async function branchOf(runner: Pick<GitRunner, 'run'>, root: string): Promise<BranchInfo> {
+export async function branchOf(runner: Pick<GitRunner, 'run'>, root: string): Promise<BranchInfo> {
   try {
     const name = (await runner.run(root, ['symbolic-ref', '--short', '-q', 'HEAD'])).trim();
     if (name !== '') return { kind: 'branch', name };

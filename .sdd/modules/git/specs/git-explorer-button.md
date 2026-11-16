@@ -17,7 +17,7 @@ Props:
 
 Shows:
 - nothing while `lookup` is `loading` or `none`.
-- with `repository` or `error` → a 26 px icon button with the `git-branch` icon, as "Search" of the header: accessible name "Git Explorer", tooltip "Git Explorer", the global focus ring on keyboard focus.
+- with `repositories` (at least one) or `error` → a 26 px icon button with the `git-branch` icon, as "Search" of the header: accessible name "Git Explorer", tooltip "Git Explorer", the global focus ring on keyboard focus.
 - `aria-expanded` follows `open`. While open, the button has the surface 3 background and the accent colour.
 
 Actions:
@@ -34,4 +34,5 @@ Actions:
 
 ## Requirements served
 
-- `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-2`, `plan-git_explorer/REQ-3`
+- `plan-git_explorer/REQ-3`
+- `plan-multi_repo_workspace/REQ-5`, `plan-multi_repo_workspace/REQ-6`

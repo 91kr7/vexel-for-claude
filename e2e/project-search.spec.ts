@@ -160,7 +160,10 @@ test('with 300 projects, Tab to "Search projects" and "vexel" filter the rows at
     await expect(rows(page)).toHaveCount(expected.at(-1)!);
   }
   expect(expected, 'each letter narrows the list').toEqual([300, 50, 20, 5, 5]);
-  const log = await page.evaluate(() => (window as unknown as { searchLog: { ms: number; rows: number }[] }).searchLog);
+  const readLog = () => page.evaluate(() => (window as unknown as { searchLog: { ms: number; rows: number }[] }).searchLog);
+  // The last letter leaves the row count unchanged, so wait for the frame of each letter before reading the log.
+  await expect.poll(async () => (await readLog()).length).toBe(expected.length);
+  const log = await readLog();
   expect(log.map((entry) => entry.rows), 'the rows are updated by the next frame after each letter').toEqual(expected);
   for (const entry of log) expect(entry.ms, 'no visible delay').toBeLessThan(100);
   expect(await shownFolders(page), 'the matches, in the order of the full list').toEqual(fullList.filter((folder) => folder!.toLowerCase().includes('vexel')));
