@@ -35,3 +35,7 @@
 | 2026-11-16 | dev session-cards | external card border | human decision | No dashed border on external session cards; solid card border |
 | 2026-11-16 | dev session-cards | list alignment | human decision | Every list of the client takes the session-card look; mock covers only the first page, the rest is extrapolated |
 | 2026-11-16 | plan | G3 coverage (amendment) | pass | REQ-43 in session-cards INT-9; REQ-44..48 in new batch list-cards; paths exist; no cycles |
+| 2026-11-16 | dev session-cards | G5 tests | sent back | Red: card line gaps (button gap), needs-input open bar 2.5px (REQ-19), Plan Usage focus ring cut (REQ-4) |
+| 2026-11-16 | dev session-cards | question tester Q1 | decided | Open needs-input card shows the full 3.5px accent bar inside its amber border; source REQ-19 |
+| 2026-11-16 | dev session-cards | question tester Q2 | decided | Open card time turns secondary like the label: spec aligned to the existing behaviour, least change |
+| 2026-11-16 | dev session-cards | question tester Q3 | decided | Top bar colour asserts in light-theme and windows-look are stale (top-bar spec `--role-chrome`): tester; Plan Usage ring is a defect: developer |

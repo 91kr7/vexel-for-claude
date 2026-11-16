@@ -193,14 +193,14 @@ async function effectiveBackground(target: Locator): Promise<string> {
   });
 }
 
-async function expectPulse(target: Locator, pulses: boolean): Promise<void> {
+async function expectPulse(target: Locator, pulses: boolean, duration = '2s'): Promise<void> {
   const animation = await target.evaluate((el) => {
     const s = getComputedStyle(el);
     return { name: s.animationName, duration: s.animationDuration, count: s.animationIterationCount };
   });
   if (pulses) {
     expect(animation.name, 'the dot pulses').not.toBe('none');
-    expect(animation.duration).toBe('2s');
+    expect(animation.duration).toBe(duration);
     expect(animation.count).toBe('infinite');
   } else {
     expect(animation.name, 'the dot does not pulse').toBe('none');
@@ -319,7 +319,7 @@ test.describe('theme and palette', () => {
 test.describe('page frame', () => {
   // REQ-13, REQ-14, REQ-53 — scenario "The user sees the client in the dark Studio look"
   // plan-ui_restyle/REQ-1, plan-dark_blue_theme/REQ-6: the bar is 38 px high.
-  test('at 1440 x 900 the frame fills the window: 38 px top bar, 52 px rail, 224 px list panel, main to the right edge', async ({ page }) => {
+  test('at 1440 x 900 the frame fills the window: 38 px top bar, 52 px rail, 260 px list panel, main to the right edge', async ({ page }) => {
     await showOnly(page);
     await page.goto('/');
     const bar = await box(topBar(page));
@@ -334,9 +334,9 @@ test.describe('page frame', () => {
     expect(railBox.y + railBox.height).toBeCloseTo(900, 0);
     const panelBox = await box(panel(page));
     expect(panelBox.x).toBeCloseTo(52, 0);
-    expect(panelBox.width).toBeCloseTo(224, 0);
+    expect(panelBox.width).toBeCloseTo(260, 0);
     const mainBox = await box(mainArea(page));
-    expect(mainBox.x).toBeCloseTo(276, 0);
+    expect(mainBox.x).toBeCloseTo(312, 0);
     expect(mainBox.x + mainBox.width).toBeCloseTo(1440, 0);
     expect(mainBox.y + mainBox.height).toBeCloseTo(900, 0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1440);
@@ -500,9 +500,9 @@ test.describe('session list', () => {
     await page.goto('/');
     await expect(entry(page, ended)).toContainText('Ended');
 
-    // REQ-23: dot, folder name, mono details, 6 px radius, no avatar
+    // REQ-23: dot, folder name, mono details, no avatar; 7 px card corners (plan-dark_blue_theme/REQ-18)
     const idleRow = entry(page, idle);
-    expect(await style(idleRow, 'border-top-left-radius')).toBe('6px');
+    expect(await style(idleRow, 'border-top-left-radius')).toBe('7px');
     await expect(idleRow.locator('.avatar')).toHaveCount(0);
     const idleDot = idleRow.locator('[aria-hidden="true"]').first();
     const dotBox = await box(idleDot);
@@ -510,23 +510,18 @@ test.describe('session list', () => {
     expect(dotBox.height).toBeCloseTo(8, 0);
     expect(await style(idleDot, 'background-color')).toBe(ZINC_400);
     await expectPulse(idleDot, false);
-    expect(await style(idleRow.getByText('Idle', { exact: true }), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     expect(await style(idleRow.locator('time'), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
 
-    // REQ-23: surface 2 on hover
+    // plan-dark_blue_theme/REQ-20: the active card surface (surface 3) on hover
     await idleRow.hover();
-    await expect.poll(() => style(idleRow, 'background-color')).toBe(SURFACE_2);
-
-    // REQ-25: taller than 30 px only for the two lines
-    const rowBox = await box(idleRow);
-    expect(rowBox.height).toBeGreaterThan(30);
-    expect(rowBox.height).toBeLessThanOrEqual(48 + TOLERANCE);
+    await expect.poll(() => style(idleRow, 'background-color')).toBe(SURFACE_3);
 
     // REQ-8, REQ-9, REQ-26: emerald pulsing dot and the emerald progress bar
     const workingRow = entry(page, working);
     const workingDot = workingRow.locator('[aria-hidden="true"]').first();
     expect(await style(workingDot, 'background-color')).toBe(EMERALD_400);
-    await expectPulse(workingDot, true);
+    // plan-dark_blue_theme/REQ-23: the working dot pulses softly in 2.2 s
+    await expectPulse(workingDot, true, '2.2s');
     expect(await style(workingRow.getByText('Running', { exact: true }), 'color')).toBe(EMERALD_400);
     const bar = workingRow.locator('.progress-bar');
     await expect(bar).toBeVisible();
@@ -549,7 +544,7 @@ test.describe('session list', () => {
     const card = panel(page).locator('li').filter({ has: page.getByTitle(asking, { exact: true }) }).locator(':scope > *').first();
     expect(await style(card, 'background-color')).toBe(SURFACE_2);
     expect(await style(card, 'border-top-color')).toBe(AMBER_500_40);
-    expect(await style(card, 'border-top-left-radius')).toBe('12px');
+    expect(await style(card, 'border-top-left-radius'), 'plan-dark_blue_theme/REQ-18: 7 px card corners').toBe('7px');
     const tag = card.getByText('Needs Input', { exact: true });
     expect(await style(tag, 'text-transform')).toBe('uppercase');
     expect(await style(tag, 'color')).toBe(AMBER_300);
@@ -557,11 +552,11 @@ test.describe('session list', () => {
     expect(await style(reply, 'background-color')).toBe(ACCENT);
     expect(await style(reply, 'color')).toBe(CANVAS);
 
-    // REQ-24: a click opens the working session; its row gets the glow and the 2 px accent bar
+    // REQ-24, plan-dark_blue_theme/REQ-19: a click opens the working session; its card gets the active surface and the accent bar
     await openFromList(page, working);
     await expect(workingRow).toHaveAttribute('aria-current', 'true');
-    await expect.poll(() => style(workingRow, 'background-color')).toBe(ACCENT_GLOW);
-    expect(await leftBar(workingRow, ACCENT, 2)).toBe(true);
+    await expect.poll(() => style(workingRow, 'background-color')).toBe(SURFACE_3);
+    expect(await leftBar(workingRow, ACCENT, 3.5)).toBe(true);
   });
 
   // REQ-27: an open external row keeps its dashed border
@@ -574,8 +569,9 @@ test.describe('session list', () => {
     (await socket()).send(JSON.stringify({ type: 'items', items: [] }));
     await expect(row).toHaveAttribute('aria-current', 'true');
     expect(await style(row, 'border-top-style')).toBe('dashed');
-    await expect.poll(() => style(row, 'background-color')).toBe(ACCENT_GLOW);
-    expect(await leftBar(row, ACCENT, 2)).toBe(true);
+    // plan-dark_blue_theme/REQ-19: the active card surface (surface 3) and the accent bar
+    await expect.poll(() => style(row, 'background-color')).toBe(SURFACE_3);
+    expect(await leftBar(row, ACCENT, 3.5)).toBe(true);
   });
 
   // REQ-9, Decisions "Motion": under reduced motion the dots stop

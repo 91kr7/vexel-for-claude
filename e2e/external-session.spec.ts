@@ -183,8 +183,8 @@ test.describe('Studio layout', () => {
     await page.mouse.move(0, 0);
 
     const mainBox = await box(mainArea(page));
-    near(mainBox.x, 52 + 224, 'main left');
-    near(mainBox.width, 1440 - 52 - 224, 'main width');
+    near(mainBox.x, 52 + 260, 'main left');
+    near(mainBox.width, 1440 - 52 - 260, 'main width');
 
     // the subbar: across the main area, 40 px high, the "Resume Here" button at its right
     const headBox = await box(header(page));

@@ -116,7 +116,7 @@ test.describe('List panel width in the desktop app', () => {
     const first = await launchDesktop(env);
     const firstWindow = await first.firstWindow();
     await expect(edge(firstWindow)).toBeVisible({ timeout: 20_000 });
-    expect(await panelWidth(firstWindow), 'a new profile starts at 224 px').toBeCloseTo(224, 0);
+    expect(await panelWidth(firstWindow), 'a new profile starts at 260 px').toBeCloseTo(260, 0);
 
     const b = (await edge(firstWindow).boundingBox())!;
     const x = b.x + b.width / 2;
@@ -125,7 +125,7 @@ test.describe('List panel width in the desktop app', () => {
     await firstWindow.mouse.down();
     for (let i = 1; i <= 5; i++) await firstWindow.mouse.move(x + i * 20, y);
     await firstWindow.mouse.up();
-    expect(await panelWidth(firstWindow)).toBeCloseTo(324, 0);
+    expect(await panelWidth(firstWindow)).toBeCloseTo(360, 0);
 
     await quitDesktop(first);
     await expect.poll(() => healthStatus(port), { timeout: 15_000 }).toBeUndefined();
@@ -150,10 +150,10 @@ test.describe('List panel width in the desktop app', () => {
       watch.observe(document, { childList: true, subtree: true });
     });
     await expect(edge(client)).toBeVisible({ timeout: 20_000 });
-    expect(await panelWidth(client)).toBeCloseTo(324, 0);
-    await expect(edge(client)).toHaveAttribute('aria-valuenow', '324');
+    expect(await panelWidth(client)).toBeCloseTo(360, 0);
+    await expect(edge(client)).toHaveAttribute('aria-valuenow', '360');
     const widths = await client.evaluate(() => (window as unknown as { listWidths?: number[] }).listWidths ?? []);
     expect(widths.length, 'the client page was watched from its start').toBeGreaterThan(0);
-    for (const width of widths) expect(width, `every width since the first frame: ${widths.join(', ')}`).toBeCloseTo(324, 0);
+    for (const width of widths) expect(width, `every width since the first frame: ${widths.join(', ')}`).toBeCloseTo(360, 0);
   });
 });

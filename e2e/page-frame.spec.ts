@@ -156,7 +156,7 @@ test.describe('rail and list panel', () => {
     expect(railBox.width, 'rail width').toBeCloseTo(52, 0);
     expect(railBox.x + railBox.width).toBeLessThanOrEqual(panelBox.x + 0.5);
     expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(mainBox.x + 0.5);
-    expect(panelBox.width, 'panel 224 px wide').toBeCloseTo(224, 0);
+    expect(panelBox.width, 'panel 260 px wide (plan-dark_blue_theme/REQ-16)').toBeCloseTo(260, 0);
     expect(mainBox.x + mainBox.width).toBeCloseTo(1440, 0);
   });
 

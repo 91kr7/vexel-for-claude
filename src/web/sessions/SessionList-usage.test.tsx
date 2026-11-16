@@ -53,14 +53,14 @@ describe('SessionList, context percentage', () => {
     expect(percentOf(entryOf(html, 's'))?.[2]).toBe('40%');
   });
 
-  // plan-session_usage/REQ-1: the hosted needs-input card shows the percentage in the label row
-  it('shows the percentage at the right of the label on the needs-input card', () => {
+  // plan-session_usage/REQ-1, plan-dark_blue_theme/REQ-21: the hosted needs-input card shows the percentage on a metrics line below the label, with no time
+  it('shows the percentage on the metrics line below the label of the needs-input card', () => {
     const entry = entryOf(renderList([session('n', 'needs_input', used(80_000))]), 'n');
     expect(entry).toMatch(/class="[^"]*\bsession-card\b/);
-    const rows = [...entry.matchAll(/<span[^>]*class="[^"]*\bsession-entry-line\b[^"]*"[^>]*>(.*?)<\/span><\/span>/g)].map((match) => match[1]!);
-    const row = rows.find((html) => html.includes('session-entry-label')) ?? '';
-    expect(textOf(row)).toBe('label n 40%');
-    expect(row.indexOf('label n')).toBeLessThan(row.indexOf('40%'));
+    const metricsAt = entry.search(/class="[^"]*\bsession-entry-metrics\b/);
+    expect(metricsAt).toBeGreaterThan(entry.indexOf('label n'));
+    expect(entry.indexOf(percentOf(entry)![0])).toBeGreaterThan(metricsAt);
+    expect(entry).not.toMatch(/class="[^"]*\bsession-entry-time\b/);
   });
 
   // plan-session_usage/REQ-8: normal below 70 %, warning from 70 %, error from 90 %

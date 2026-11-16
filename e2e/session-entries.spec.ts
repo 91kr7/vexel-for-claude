@@ -182,45 +182,41 @@ async function styleOf(target: Locator): Promise<Style> {
   }, PROPS as unknown as string[]);
 }
 
-const transparent = (colour: string) => colour === 'transparent' || /^rgba\(.*,\s*0\)$/.test(colour);
 const MONO = /^["']?Roboto Mono["']?/;
 /** The decorative status dot of a row: its first aria-hidden element. */
 const dot = (row: Locator) => row.locator('[aria-hidden="true"]').first();
 
-/** Row geometry of `.vx-session-row` (SessionList "Entry row"): padding 6 × 8 px (5 × 7 px inside the dashed border), 6 px radius, 8 px dot, no avatar. */
-async function expectStudioRow(row: Locator, name: string, external = false): Promise<void> {
+/** Card geometry of an entry (SessionList "Card", plan-dark_blue_theme/REQ-18): padding 10 × 12 px, 7 px corners, 1 px border, 8 px dot, no avatar. */
+async function expectStudioRow(row: Locator, name: string): Promise<void> {
   const s = await styleOf(row);
-  const pad = external ? ['5px', '7px', '5px', '7px'] : ['6px', '8px', '6px', '8px'];
-  if (s.borderLeftWidth === '0px' || s.borderLeftStyle === 'none' || external) {
-    expect([s.paddingTop, s.paddingRight, s.paddingBottom], `${name}: padding`).toEqual(pad.slice(0, 3));
-  }
-  expect(s.borderRadius, `${name}: radius`).toBe('6px');
+  expect([s.paddingTop, s.paddingRight, s.paddingBottom], `${name}: padding`).toEqual(['10px', '12px', '10px']);
+  expect([s.borderTopWidth, s.borderLeftWidth], `${name}: 1 px border`).toEqual(['1px', '1px']);
+  expect(s.borderRadius, `${name}: radius`).toBe('7px');
   await expect(avatar(row), `${name}: no avatar`).toHaveCount(0);
   const box = await dot(row).boundingBox();
   expect([box?.width, box?.height], `${name}: 8 px dot`).toEqual([8, 8]);
 }
 
-/** Text styles of a row: 12 px folder name, mono 10 px state in its colour, mono 10 px muted time. */
+/** Text styles of a card (SessionList "Entry row"): 13 px weight 600 folder name, 11 px weight 500 state in its colour, mono 10.5 px muted time. */
 async function expectStudioText(page: Page, row: Locator, folder: string, name: string, stateColour: string): Promise<void> {
   const title = await styleOf(row.getByTitle(folder, { exact: true }));
-  expect(title.fontSize, `${name}: 12 px folder name`).toBe('12px');
+  expect([title.fontSize, title.fontWeight], `${name}: 13 px weight 600 folder name`).toEqual(['13px', '600']);
   const state = await styleOf(badge(row));
-  expect([state.fontSize, state.color], `${name}: mono 10 px state`).toEqual(['10px', stateColour]);
-  expect(await badge(row).evaluate((el) => getComputedStyle(el).fontFamily), `${name}: mono state`).toMatch(MONO);
+  expect([state.fontSize, state.fontWeight, state.color], `${name}: 11 px weight 500 state`).toEqual(['11px', '500', stateColour]);
   const time = row.locator('time');
   if ((await time.count()) > 0) {
     const t = await styleOf(time);
-    expect([t.fontSize, t.color], `${name}: mono 10 px muted time`).toEqual(['10px', await token(page, '--text-muted')]);
+    expect([t.fontSize, t.color], `${name}: mono 10.5 px muted time`).toEqual(['10.5px', await token(page, '--text-muted')]);
     expect(await time.evaluate((el) => getComputedStyle(el).fontFamily), `${name}: mono time`).toMatch(MONO);
   }
 }
 
 const borderOf = (s: Style) => ({ width: s.borderTopWidth, style: s.borderTopStyle, colour: s.borderTopColor });
 
-/** Whether the element draws a 2 px bar of `colour` at its left edge: border, inset shadow or ::before. */
+/** Whether the element draws a 3.5 px bar of `colour` at its left edge: border, inset shadow or ::before. */
 const hasLeftBar = (target: Locator, colour: string) =>
   target.evaluate((el, c) => {
-    const near2 = (v: string) => Math.abs(parseFloat(v) - 2) <= 0.6;
+    const near2 = (v: string) => Math.abs(parseFloat(v) - 3.5) <= 0.6;
     const s = getComputedStyle(el);
     if (near2(s.borderLeftWidth) && s.borderLeftColor === c && s.borderLeftStyle !== 'none') return true;
     if (s.boxShadow.includes(c) && /inset/.test(s.boxShadow)) return true;
@@ -402,7 +398,7 @@ test('working, external, ended and open entries have their Studio row variants w
   const label = await labelOf(request, workingId);
   const line2 = entry(page, working).getByTitle(label, { exact: true }).locator('xpath=..');
   const [lineBox, barBox] = [await line2.boundingBox(), await bar.boundingBox()];
-  expect.soft(barBox!.y - (lineBox!.y + lineBox!.height), 'bar 2 px under line 2').toBeCloseTo(2, 0);
+  expect.soft(barBox!.y - (lineBox!.y + lineBox!.height), 'bar 6 px under line 2').toBeCloseTo(6, 0);
   const indicator = bar.locator('*').first();
   const moves = await indicator.evaluate(async (el) => {
     const x0 = el.getBoundingClientRect().left;
@@ -422,12 +418,12 @@ test('working, external, ended and open entries have their Studio row variants w
     await expectStudioText(page, entry(page, working), working, `${scheme} working`, emerald400);
     await expectStudioRow(entry(page, ended), `${scheme} ended`);
     await expectStudioText(page, entry(page, ended), ended, `${scheme} ended`, zinc400);
-    await expectStudioRow(entry(page, outside), `${scheme} external`, true);
+    await expectStudioRow(entry(page, outside), `${scheme} external`);
     await expectStudioText(page, entry(page, outside), outside, `${scheme} external`, emerald400);
     await expectStudioRow(entry(page, open), `${scheme} open`);
 
     const w = await styleOf(entry(page, working));
-    expect(transparent(w.backgroundColor), `${scheme} working: transparent`).toBe(true);
+    expect(w.backgroundColor, `${scheme} working: card surface`).toBe(await t('--role-card'));
     expect(w.color, `${scheme} working: text`).toBe(await t('--text-secondary'));
     expect((await styleOf(entry(page, working).getByTitle(label, { exact: true }))).color, `${scheme} working: label`).toBe(await t('--text-muted'));
     expect((await styleOf(dot(entry(page, working)))).backgroundColor, `${scheme} working: emerald dot`).toBe(emerald400);
@@ -439,20 +435,20 @@ test('working, external, ended and open entries have their Studio row variants w
     expect(parseFloat(ind.width) / parseFloat(track.width), `${scheme} indicator 45 %`).toBeCloseTo(0.45, 2);
 
     const o = await styleOf(entry(page, open));
-    expect([o.backgroundColor, o.color, o.fontWeight], `${scheme} open: accent glow`).toEqual([await t('--accent-glow'), await t('--text-primary'), '600']);
-    expect(await hasLeftBar(entry(page, open), await t('--accent-primary')), `${scheme} open: 2 px accent bar`).toBe(true);
-    expect((await styleOf(entry(page, open).locator('time'))).color, `${scheme} open: time in the secondary colour`).toBe(await t('--text-secondary'));
+    expect([o.backgroundColor, o.color], `${scheme} open: active card surface`).toEqual([await t('--role-card-active'), await t('--text-primary')]);
+    expect(await hasLeftBar(entry(page, open), await t('--role-accent')), `${scheme} open: 3.5 px accent bar`).toBe(true);
+    expect((await styleOf(entry(page, open).locator('.session-entry-label'))).color, `${scheme} open: label in the secondary colour`).toBe(await t('--text-secondary'));
     expect((await styleOf(dot(entry(page, open)))).backgroundColor, `${scheme} open idle: zinc dot`).toBe(zinc400);
     expect(await dot(entry(page, open)).evaluate((el) => getComputedStyle(el).animationName), `${scheme} idle: no pulse`).toBe('none');
 
     const e = await styleOf(entry(page, ended));
-    expect(transparent(e.backgroundColor), `${scheme} ended: transparent`).toBe(true);
+    expect(e.backgroundColor, `${scheme} ended: card surface`).toBe(await t('--role-card'));
     expect(e.color, `${scheme} ended: dimmed text`).toBe(await t('--text-muted'));
     expect((await styleOf(dot(entry(page, ended)))).backgroundColor, `${scheme} ended: zinc dot`).toBe(zinc400);
 
     const x = await styleOf(entry(page, outside));
-    expect(transparent(x.backgroundColor), `${scheme} external: transparent`).toBe(true);
-    expect(borderOf(x), `${scheme} external: dashed border`).toEqual({ width: '1px', style: 'dashed', colour: await t('--border-strong') });
+    expect(x.backgroundColor, `${scheme} external: card surface`).toBe(await t('--role-card'));
+    expect(borderOf(x), `${scheme} external: dashed border`).toEqual({ width: '1px', style: 'dashed', colour: await t('--role-border-strong') });
   }
 
   // the ended row stays dimmed under the pointer
@@ -490,15 +486,16 @@ test('an external session that waits for input is the amber row with "External" 
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     const t = async (name: string) => token(page, name);
-    await expectStudioRow(row, `${scheme} external needs input`, true);
+    await expectStudioRow(row, `${scheme} external needs input`);
     await expectStudioText(page, row, outside, `${scheme} external needs input`, 'rgb(251, 191, 36)');
     const s = await styleOf(row);
-    expect(borderOf(s), `${scheme}: dashed border`).toEqual({ width: '1px', style: 'dashed', colour: await t('--border-strong') });
+    expect(borderOf(s), `${scheme}: dashed border`).toEqual({ width: '1px', style: 'dashed', colour: await t('--role-border-strong') });
     expect((await styleOf(dot(row))).backgroundColor, `${scheme}: amber dot`).toBe('rgb(251, 191, 36)');
     expect(await dot(row).evaluate((el) => getComputedStyle(el).animationName), `${scheme}: pulsing dot`).not.toBe('none');
     const tagStyle = await styleOf(tag);
+    // WebEntry `.mono-chip`: the pill shape, 5 px corners
     expect({ radius: tagStyle.borderRadius, background: tagStyle.backgroundColor, color: tagStyle.color, size: tagStyle.fontSize }, `${scheme}: "External" chip`).toEqual({
-      radius: '4px',
+      radius: '5px',
       background: await t('--bg-surface-2'),
       color: await t('--text-secondary'),
       size: '10px',
@@ -511,7 +508,7 @@ test('an external session that waits for input is the amber row with "External" 
 });
 
 // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-24, REQ-28: the hosted needs-input card in the permission-banner look, with the accent bar when open
-test('the hosted needs-input card has the permission-banner look whatever the system theme, and the accent glow and bar when open', async ({ page, request }) => {
+test('the hosted needs-input card has the permission-banner look on a card whatever the system theme, and the accent bar when open', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const asks = await newFolder('web-dashboard');
   const asksId = await startViaApi(request, asks);
@@ -527,13 +524,13 @@ test('the hosted needs-input card has the permission-banner look whatever the sy
     const t = async (name: string) => token(page, name);
     const c = await styleOf(webCard);
     expect(
-      { background: c.backgroundColor, border: borderOf(c), radius: c.borderRadius, padding: [c.paddingTop, c.paddingRight, c.paddingBottom, c.paddingLeft] },
+      { background: c.backgroundColor, border: borderOf(c), radius: c.borderRadius, padding: [c.paddingTop, c.paddingRight, c.paddingBottom] },
       `${scheme}: card`,
     ).toEqual({
-      background: await t('--bg-surface-2'),
+      background: await t('--role-card'),
       border: { width: '1px', style: 'solid', colour: 'rgba(245, 158, 11, 0.4)' },
-      radius: '12px',
-      padding: ['14px', '14px', '14px', '14px'],
+      radius: '7px',
+      padding: ['10px', '12px', '10px'],
     });
     await expect(avatar(webCard)).toHaveCount(0);
     const tag = await styleOf(webCard.getByText('Needs Input', { exact: true }));
@@ -564,9 +561,9 @@ test('the hosted needs-input card has the permission-banner look whatever the sy
   await pointerAway(page);
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme });
-    const accent = await token(page, '--accent-primary');
+    const accent = await token(page, '--role-accent');
     const barred = (await hasLeftBar(webCard, accent)) || (await hasLeftBar(entry(page, asks), accent));
-    expect(barred, `${scheme}: 2 px accent bar when open`).toBe(true);
+    expect(barred, `${scheme}: accent bar when open`).toBe(true);
     expect((await styleOf(webCard)).borderTopColor, `${scheme}: still amber when open`).toBe('rgba(245, 158, 11, 0.4)');
   }
 });
