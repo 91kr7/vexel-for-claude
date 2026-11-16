@@ -9,3 +9,5 @@
 | 2026-11-16 | analysis | question analyst: graph content | human decision | Current branch only, merges included |
 | 2026-11-16 | analysis | question analyst: multi-repo view and depth | human decision | Combined view grouped by repository with filter; whole tree minus dependency/build folders; for the next cycle |
 | 2026-11-16 | analysis | G1 analysis | pass | 91 lines, class ordinary |
+| 2026-11-16 | plan | G2 requirements | pass | REQ-5 overlaps REQ-3 via `plan-git_explorer/REQ-7`, harmless |
+| 2026-11-16 | plan | G3 coverage | pass | Test-file INTs follow the idiom of earlier plans; `CommitDetail.tsx` list move matches the human decision "whole explorer" |
