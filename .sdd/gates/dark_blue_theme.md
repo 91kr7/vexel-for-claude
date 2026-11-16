@@ -63,3 +63,6 @@
 | 2026-11-16 | plan | state label | human decision | Session state name moves from the right of line 1 to the left, next to the name |
 | 2026-11-16 | plan | state label order | decided | Dot, name, star, state name; name truncates first; Rename keeps its corner |
 | 2026-11-16 | plan | G3 coverage (REQ-52) | pass | REQ-52 → list-polish INT-6; batch still last |
+| 2026-11-16 | plan | state label (correction) | human decision | The move is in the session header, not the cards: state pill goes left, after the session name |
+| 2026-11-16 | plan | header order | decided | Name, state pill, line pill; line pill truncates first; actions stay right |
+| 2026-11-16 | plan | G3 coverage (REQ-52 corrected) | pass | INT-6 on SessionHeader.tsx; cards unchanged; feature name left as is |

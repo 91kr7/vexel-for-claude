@@ -15,10 +15,10 @@ Human decision, 2026-11-16. Two fixes to the lists of batches session-cards and 
 - **Card line 3.** The context percentage and the cost get a smaller text, about 10 px in place of
   10.5 px. Line 3 keeps its position, aligned with the session name. The last activity time keeps
   its size.
-- **State name on line 1.** It leaves the right end and follows the name on the left. Order: dot,
-  name, star, state name. The star stays attached to the name. A long name is cut with an ellipsis
-  first; the state name is cut only after. "Rename" keeps its top-right corner. This holds for
-  hosted, external and needs-input cards.
+- **State pill in the session header.** It leaves the right group and sits on the left. Order:
+  session name, state pill, line pill. The line pill shrinks and is cut with an ellipsis first. The
+  actions, and the "Read-only" chip of an external session, stay on the right. The session cards do
+  not change. ConversationView uses the same SessionHeader, so its header changes too.
 
 | ID | Type | Where | What | REQ | Depends |
 |----|------|-------|------|-----|---------|
@@ -27,7 +27,7 @@ Human decision, 2026-11-16. Two fixes to the lists of batches session-cards and 
 | INT-3 | modify | `src/web/folders/ProjectList.tsx`, `src/web/history/ResumeDialog.tsx`, `src/web/folders/FolderChooser.tsx`, `src/web/settings/ShortcutsSection.tsx`, `src/web/settings/SettingsDialog.tsx` | The scroll areas of these lists use the rule of INT-1. | REQ-49 | INT-1 |
 | INT-4 | modify | `src/web/git/RepositoryList.tsx`, `src/web/git/ChangesTab.tsx`, `src/web/git/CommitDetail.tsx`, `src/web/git/HistoryTab.tsx`, `src/web/plan-usage/PlanUsagePopover.tsx` | The scroll areas of these lists use the rule of INT-1. | REQ-49 | INT-1 |
 | INT-5 | modify | `src/web/sessions/SessionList.tsx` | Line 3: percentage and cost use a smaller mono size (about 10 px), with tabular figures as before. Position and time size do not change. | REQ-50 | — |
-| INT-6 | modify | `src/web/sessions/SessionList.tsx` | Line 1 of every card variant: the state name moves after the star, on the left. The name is cut before the state name. | REQ-52 | — |
+| INT-6 | modify | `src/web/sessions/SessionHeader.tsx` | The state pill moves from the right group to the left group, between the session name and the line pill. The line pill shrinks first; the state pill is never cut. | REQ-52 | — |
 
 ## Human acceptance
 
@@ -45,10 +45,10 @@ Human decision, 2026-11-16. Two fixes to the lists of batches session-cards and 
 - When → the user looks at its card in the session list
 - Then → line 3 shows the percentage and the cost in a smaller text, in the same place as before
 
-### Scenario: the state name follows the session name
+### Scenario: the state pill follows the session name in the header
 
 - REQ → REQ-52
-- Given → a working session with a long name, and an external session
-- When → the user looks at their cards in the session list
-- Then → on line 1 the state name ("Running", "Idle", …) sits right after the name and the star, and the long name is cut with "…" before it
-- And → "Rename" still shows in the top-right corner on hover
+- Given → a working session with a long line text
+- When → the user opens it
+- Then → the header shows the session name, then the "Running" pill, then the line pill cut with "…", and the buttons stay on the right
+- And → an open external session shows its state pill in the same place

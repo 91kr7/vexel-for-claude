@@ -58,9 +58,11 @@ session-cards depends on window-frame because both change `src/web/AppLayout.tsx
   only the percentage and the cost of line 3 get smaller; position and time size stay. REQ-51 (left
   alignment) was withdrawn by the human. New last batch list-polish. It refines the card look; it
   is not a departure.
-- **State name next to the session name (REQ-52).** Human decision, 2026-11-16, in batch
-  list-polish. Order dot, name, star, state name (gatekeeper decision); the name is cut first;
-  "Rename" keeps its corner; all card variants. Not a departure.
+- **State pill next to the session name in the header (REQ-52).** Human decision, 2026-11-16, in
+  batch list-polish. It corrects an earlier wording that put the change on the session cards: the
+  cards do not change. Order name, state pill, line pill; the line pill is cut first (gatekeeper
+  decision). It applies to hosted and external sessions, which share SessionHeader. Not a
+  departure.
 - **Confirmed by the gatekeeper (2026-11-16):** the Windows 11 look rule, the toast above the
   snackbar, and the client's own text on card line 2 and in the header pill.
 - **Shortcut text.** The `toggle-theme` row reads "Light/Dark/Dark Blue theme". Keys do not change.
