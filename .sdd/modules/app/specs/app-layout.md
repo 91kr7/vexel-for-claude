@@ -13,7 +13,7 @@ type: UI page
 Description:
 - the page fills the window edge to edge, on `--bg-surface-1`. From top: the TopBar, then one row with the NavigationRail, the list panel and the main area.
 - the side view → `sessions` or `projects`; `sessions` at page load. It sets the content of the list panel and the `shownView` of the NavigationRail.
-- the list panel → a `section` with the label "Session List", in both views. Padding 10 px, `--bg-surface-1`, 1 px `--border-subtle` line on the right. One column with a 10 px gap. View `projects` → the ProjectList. View `sessions` →
+- the list panel → a `section` with the label "Session List", in both views. Padding 10 px, on the "session list" role surface (`--role-list`), 1 px `--role-border-subtle` line on the right. One column with a 10 px gap. View `projects` → the ProjectList. View `sessions` →
   - the title row (padding 0 × 6 px, centred, space between) → the `h1` "Sessions" in `.section-label` on the left, the NeedsInputCounter on the right.
   - the SessionList.
 - the list panel width → `shownListWidth` of the ListWidthStore width and the window width: the stored width, narrowed so that the main area keeps 700 px, never under 180 px. A window resize computes it again; the stored width does not change.
@@ -81,7 +81,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 ## Rules and invariants
 
 - the top bar, the rail and the head of the list panel stay in place. Only the SessionList, or the rows of the ProjectList, scroll when they do not fit.
-- at 1440 × 900 px with no saved width → top bar 38 px high, rail 52 px wide, list panel 224 px wide.
+- at 1440 × 900 px with no saved width → top bar 38 px high, rail 52 px wide, list panel 260 px wide.
 - the first frame already shows the stored width: no jump at start or after a reload.
 - from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements, except the snackbar and the NewerVersionNotice, which may cover part of the main area.
 - the list panel has no brand, no "New Session", no "Resume Session" and no settings button.
@@ -114,3 +114,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-13`
 - `plan-ui_restyle/REQ-1`, `plan-ui_restyle/REQ-2`, `plan-ui_restyle/REQ-3`
 - `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-4`, `plan-settings_dialog/REQ-9`, `plan-settings_dialog/REQ-18`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-25`, `plan-settings_dialog/REQ-49`, `plan-settings_dialog/REQ-53`
+- `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-16`

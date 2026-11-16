@@ -58,6 +58,15 @@ function ToolLine({ tool }: { tool: RunningTool }) {
   );
 }
 
+function EntryFigures({ usage }: { usage?: SessionUsage }) {
+  return (
+    <span className="session-entry-figures">
+      <ContextPercent context={usage?.context} />
+      <EntryCost usage={usage} />
+    </span>
+  );
+}
+
 function ContextPercent({ context }: { context?: ContextOccupancy }) {
   if (!context) return null;
   const percent = percentOf(context);
@@ -103,12 +112,13 @@ function EntryRow({ session, open, onOpen, editor, star }: EntryProps) {
             {externalNeedsInput ? <PermissionText session={session} /> : session.label}
           </span>
         )}
-        <ContextPercent context={session.usage?.context} />
-        <EntryCost usage={session.usage} />
-        <RelativeTime className="session-entry-time" iso={session.lastActivity} />
       </span>
       {session.state === 'working' && session.runningTool && <ToolLine tool={session.runningTool} />}
       {session.state === 'working' && !session.external && <ProgressBar />}
+      <span className="session-entry-line session-entry-metrics">
+        <EntryFigures usage={session.usage} />
+        <RelativeTime className="session-entry-time" iso={session.lastActivity} />
+      </span>
     </>
   );
   return (
@@ -141,9 +151,12 @@ function NeedsInputCard({ session, open, onOpen, editor, star }: EntryProps) {
             {session.label}
           </span>
         )}
-        <ContextPercent context={session.usage?.context} />
-        <EntryCost usage={session.usage} />
       </span>
+      {(session.usage?.context || session.usage?.cost) && (
+        <span className="session-entry-line session-entry-metrics">
+          <EntryFigures usage={session.usage} />
+        </span>
+      )}
     </>
   );
   return (

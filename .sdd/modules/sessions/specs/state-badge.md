@@ -24,7 +24,9 @@ Props:
 "Colour" is the 400 tone for the dot and the text, the 500 tone at 15 % for a fill and at 30 % for a border.
 
 Shows:
-- `dot` → a decorative round 8 px dot (`aria-hidden`) in the colour. It pulses as Tailwind `animate-pulse` (opacity to 0.5 and back in 2 s) when the table says so.
+- `dot` → a decorative round 8 px dot (`aria-hidden`) in the colour. When the table says so it pulses:
+  - `working` → the soft glow of the mock: in 2.2 s the opacity goes to 0.8 and back, while a ring of the colour at 55 % grows to 4 px and fades out.
+  - `needs_input` → as Tailwind `animate-pulse`: opacity to 0.5 and back in 2 s.
 - `inline` → the name alone, mono 10/15 px, in the colour. No dot: the caller shows the dot apart.
 - `chip` → an inline pill: padding 2 × 8 px, 4 px radius, mono 11 px, 6 px gap, 15 % fill, 30 % border, the name in the colour, after a 6 px dot.
 - `StateDot({ state })` → the dot alone, exported.
@@ -44,3 +46,4 @@ Shows:
 - `plan-claude_sessions_client-ui_redesign/REQ-12`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-31`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-2`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
+- `plan-dark_blue_theme/REQ-23`, `plan-dark_blue_theme/REQ-24`

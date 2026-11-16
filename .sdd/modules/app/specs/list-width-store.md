@@ -10,9 +10,9 @@ type: frontend service
 
 ## Contract
 
-- `MIN_LIST_WIDTH` → 180. `MAX_LIST_WIDTH` → 480. `DEFAULT_LIST_WIDTH` → 224. `MIN_MAIN_AREA_WIDTH` → 700. Widths are in px.
+- `MIN_LIST_WIDTH` → 180. `MAX_LIST_WIDTH` → 480. `DEFAULT_LIST_WIDTH` → 260. `MIN_MAIN_AREA_WIDTH` → 700. Widths are in px.
 - `LIST_WIDTH_KEY` → `'ai-client.list-width'`, the storage key of the saved width.
-- `new ListWidthStore(storage?)` → the width is the value saved under the key when it is a whole number from 180 to 480. Otherwise it is 224: no value, any other text, a value out of range, no `storage`, or `getItem` throws. The store reads the storage at creation and does not write.
+- `new ListWidthStore(storage?)` → the width is the value saved under the key when it is a whole number from 180 to 480. Otherwise it is 260: no value, any other text, a value out of range, no `storage`, or `getItem` throws. The store reads the storage at creation and does not write.
 - `preview(width)` → the width becomes `width`, rounded and kept between 180 and 480. Nothing is saved. The listeners are called when the width changes.
 - `commit(width)` → as `preview`, then the width is saved under the key as text (e.g. `"304"`), also when it did not change.
   - `storage` missing, or `setItem` throws → the width still changes and the listeners are called.
@@ -35,7 +35,9 @@ result = limit kept between 180 and 480
 - The width is always a whole number from 180 to 480.
 - A narrow window changes only the shown width, never the stored one.
 - Each browser profile, and the desktop window, keeps its own width. The backend stores nothing.
+- A width saved before the default changed stays as it is.
 
 ## Requirements served
 
 - `plan-session_list_width/REQ-3`, `plan-session_list_width/REQ-4`, `plan-session_list_width/REQ-5`, `plan-session_list_width/REQ-6`, `plan-session_list_width/REQ-7`, `plan-session_list_width/REQ-8`, `plan-session_list_width/REQ-9`
+- `plan-dark_blue_theme/REQ-16`, `plan-dark_blue_theme/REQ-17`

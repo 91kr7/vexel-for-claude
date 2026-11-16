@@ -47,7 +47,7 @@ type: configuration
 | `--orange-400` | `#b32912` |
 | `--caption-hover` / `--caption-pressed` | black at 5 % / 3 % |
 
-- corners → `--radius-control` on buttons, chips, fields, list rows, tooltips and the logo mark. `--radius-overlay` on cards, popovers, panels, notices, snackbars and dialogs.
+- corners → `--radius-control` on buttons, chips, fields, list rows, tooltips and the logo mark. `--radius-overlay` on cards (the session cards through `--radius-card`), popovers, panels, notices, snackbars and dialogs.
 - `.button-primary` → flat accent fill with a darker 1 px bottom edge, a little brighter on hover.
 - "Vexel" in the top bar → no negative letter spacing.
 - `.caption-buttons`, `.caption-button`, `.caption-close`, `.caption-glyph` → the Windows-style WindowButtons, described in that spec.

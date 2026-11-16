@@ -829,8 +829,8 @@ input {
   flex-direction: column;
   gap: 10px;
   padding: 10px;
-  background-color: var(--bg-surface-1);
-  border-right: 1px solid var(--border-subtle);
+  background-color: var(--role-list);
+  border-right: 1px solid var(--role-border-subtle);
   user-select: none;
 }
 
@@ -1100,9 +1100,24 @@ input {
   background-color: var(--state-solid);
 }
 
-.state-dot.state-working,
+.state-dot.state-working {
+  animation: state-dot-glow 2.2s ease-in-out infinite;
+}
+
 .state-dot.state-needs_input {
   animation: vx-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes state-dot-glow {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--emerald-400) 55%, transparent);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--emerald-400) 0%, transparent);
+  }
 }
 
 .state-badge {
@@ -1393,7 +1408,7 @@ input {
 .session-list ul {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1421,39 +1436,41 @@ input {
 }
 
 .session-list li.drop-before::before {
-  top: -2px;
+  top: -5px;
 }
 
 .session-list li.drop-after::after {
-  bottom: -2px;
+  bottom: -5px;
 }
 
+/* The left padding keeps the room of the 3.5 px accent bar of the open card. */
 .session-entry {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 2px;
-  padding: 6px 8px;
-  border-radius: 6px;
+  padding: 10px 12px 10px 14.5px;
+  border: 1px solid var(--role-border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
   font-size: 12px;
   line-height: 18px;
   color: var(--text-secondary);
   text-align: left;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.session-entry:hover {
-  background-color: var(--bg-surface-2);
+.session-entry:hover:not([aria-current='true']) {
+  background-color: var(--role-card-active);
+  border-color: var(--role-border-strong);
   color: var(--text-primary);
 }
 
 .session-entry[aria-current='true'] {
-  background-color: var(--accent-glow);
+  background-color: var(--role-card-active);
+  border-color: var(--role-accent);
+  box-shadow: inset 2.5px 0 0 0 var(--role-accent), var(--shadow-card);
   color: var(--text-primary);
-  font-weight: 600;
-  border-left: 2px solid var(--accent-primary);
-  padding-left: 6px;
 }
 
 .session-entry.ended {
@@ -1461,12 +1478,17 @@ input {
 }
 
 .session-entry.external {
-  border: 1px dashed var(--border-strong);
-  padding: 5px 7px;
+  border-style: dashed;
+  border-color: var(--role-border-strong);
+}
+
+.session-entry.external:hover:not([aria-current='true']) {
+  border-color: var(--text-muted);
 }
 
 .session-entry.external[aria-current='true'] {
-  box-shadow: inset 2px 0 0 0 var(--accent-primary);
+  border-color: var(--role-accent);
+  box-shadow: inset 3.5px 0 0 0 var(--role-accent), var(--shadow-card);
 }
 
 .session-entry:focus-visible {
@@ -1481,7 +1503,28 @@ input {
 }
 
 .session-entry-detail {
+  margin-top: 4px;
   padding-left: 16px;
+}
+
+.session-entry-metrics {
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 6px 0 0 16px;
+  border-top: 1px solid var(--role-border-subtle);
+}
+
+.session-entry-figures {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.session-entry-context,
+.session-entry-cost,
+.session-entry-time {
+  font-variant-numeric: tabular-nums;
 }
 
 .session-entry-title,
@@ -1494,7 +1537,7 @@ input {
 }
 
 .session-entry-label {
-  font-size: 11px;
+  font-size: 11.5px;
   line-height: 16px;
   font-weight: 400;
   color: var(--text-muted);
@@ -1502,6 +1545,7 @@ input {
 
 .session-entry-tool {
   gap: 4px;
+  margin-top: 2px;
   padding-left: 16px;
   font-family: var(--font-mono);
   font-size: 10px;
@@ -1531,7 +1575,7 @@ input {
   flex: 0 1 auto;
   min-width: 0;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   line-height: 15px;
   color: var(--text-muted);
   white-space: nowrap;
@@ -1544,14 +1588,18 @@ input {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
 }
 
 .session-entry-context {
   flex: none;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   line-height: 15px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
@@ -1565,19 +1613,10 @@ input {
 .session-entry-cost {
   flex: none;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   line-height: 15px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
-}
-
-.session-entry-context + .session-entry-time,
-.session-entry-cost + .session-entry-time {
-  margin-left: -2px;
-}
-
-.session-entry-context + .session-entry-cost {
-  margin-left: -4px;
 }
 
 .usage-incomplete {
@@ -1586,10 +1625,9 @@ input {
 }
 
 .session-entry[aria-current='true'] .session-entry-context.usage-normal,
-.session-card.open .session-entry-context.usage-normal,
-.session-entry[aria-current='true'] .session-entry-cost,
-.session-card.open .session-entry-cost {
-  color: var(--text-secondary);
+.session-card.open .session-entry-context.usage-normal {
+  color: var(--role-accent);
+  font-weight: 600;
 }
 
 .session-entry-context.usage-warning,
@@ -1607,22 +1645,18 @@ input {
   color: var(--amber-300);
 }
 
-.session-entry[aria-current='true'] :is(.state-badge, .session-entry-time, .mono-chip) {
-  font-weight: 500;
-}
-
 .session-entry .progress-bar {
-  margin-left: 16px;
+  margin: 6px 0 0 16px;
 }
 
 .ended-entry-actions {
   position: absolute;
-  top: 5px;
-  right: 6px;
+  top: 10px;
+  right: 10px;
   display: flex;
   gap: 2px;
   border-radius: 4px;
-  background-color: var(--bg-surface-2);
+  background-color: var(--role-card-active);
   opacity: 0;
   transition: opacity 0.12s ease;
 }
@@ -1641,7 +1675,7 @@ input {
 }
 
 .ended-entry-action:hover {
-  background-color: var(--bg-surface-3);
+  background-image: linear-gradient(var(--role-border-strong), var(--role-border-strong));
   color: var(--text-primary);
 }
 
@@ -1664,13 +1698,13 @@ input {
 
 .entry-rename {
   position: absolute;
-  top: 5px;
-  right: 6px;
+  top: 10px;
+  right: 10px;
   width: 20px;
   height: 20px;
   border-radius: 4px;
   color: var(--text-muted);
-  background-color: var(--bg-surface-2);
+  background-color: var(--role-card-active);
   opacity: 0;
   transition: opacity 0.12s ease;
 }
@@ -1681,7 +1715,7 @@ input {
 }
 
 .entry-rename:hover {
-  background-color: var(--bg-surface-3);
+  background-image: linear-gradient(var(--role-border-strong), var(--role-border-strong));
   color: var(--text-primary);
 }
 
@@ -1715,7 +1749,7 @@ input {
 }
 
 .session-list li:has(> .entry-rename:not([hidden])) .ended-entry-actions {
-  right: 28px;
+  right: 32px;
 }
 
 .session-list li:has(> .session-card) > .entry-rename {
@@ -1725,6 +1759,9 @@ input {
 
 .session-entry-title {
   max-width: max-content;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .session-card > .session-entry > .session-entry-line:first-child {
@@ -1809,32 +1846,45 @@ input {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 14px;
-  border-radius: 12px;
+  padding: 10px 12px 10px 14.5px;
+  border-radius: var(--radius-card);
   border-color: var(--amber-500-40);
-  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-lg);
+  background-color: var(--role-card);
+  box-shadow: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.session-card:not(.open):hover {
+  background-color: var(--role-card-active);
+  border-color: var(--amber-400);
 }
 
 .session-card.open {
-  background-image: linear-gradient(var(--accent-glow), var(--accent-glow));
-  box-shadow: inset 2px 0 0 0 var(--accent-primary), inset 0 1px 0 0 var(--specular-top), var(--shadow-lg);
+  background-color: var(--role-card-active);
+  box-shadow: inset 2.5px 0 0 0 var(--role-accent), var(--shadow-card);
 }
 
 .session-card > .session-entry,
+.session-card > .session-entry:hover,
 .session-card > .session-entry[aria-current='true'] {
   padding: 0;
   border: 0;
   border-radius: 0;
   background: none;
-  font-weight: 400;
+  box-shadow: none;
   gap: 4px;
+}
+
+.session-card .session-entry-metrics {
+  margin-top: 2px;
+  padding-left: 0;
 }
 
 .session-card > .session-entry::after {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-card);
 }
 
 .session-card > .session-entry:focus-visible {
@@ -1847,7 +1897,6 @@ input {
 }
 
 .session-card .session-entry-title {
-  font-weight: 500;
   color: var(--text-primary);
 }
 

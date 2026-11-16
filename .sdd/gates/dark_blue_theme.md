@@ -30,3 +30,5 @@
 | 2026-11-16 | dev window-frame | G5 re-run | sent back | window-frame green; `e2e/studio-dark.spec.ts:698` still asserts the old 40px footer (REQ-12 says 32px): to the tester |
 | 2026-11-16 | dev window-frame | question tester | decided | Header action button radius is `--radius-pill` per `.sdd/modules/app/specs/web-entry.md`; stale assertion aligned |
 | 2026-11-16 | dev window-frame | G5 tests (round 3) | pass | Test files only; no only/skip; re-run window-frame, studio-dark, hosted-session, open-session, header-footer: 69 passed |
+| 2026-11-16 | dev session-cards | G4 development | pass | Build green; diff limited to INT files, windows11.css, specs and indexes |
+| 2026-11-16 | dev session-cards | divergence developer | decided | Open needs-input card keeps its amber border (INT-3) with accent bar, surface and shadow; flagged for human review |
