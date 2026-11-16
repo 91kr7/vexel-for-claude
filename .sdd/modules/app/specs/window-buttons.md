@@ -15,13 +15,13 @@ Props:
 
 Current look shows:
 - a row of three flat 12 px circles, 8 px apart, in this order: red `--window-close` (`#e0443c`), yellow `--window-minimize` (`#e8b616`), green `--window-maximize` (`#25b033`). 6 px of extra space after the green one.
-- each circle has a solid fill in its colour and a 0.5 px border of its colour mixed 45 % with black (`box-shadow: 0 0 0 0.5px`). At rest: no gradient, no gloss, no other shadow, no filter.
+- each circle has a solid fill in its colour and no border (removed on the human request of 2026-11-16). At rest: no gradient, no gloss, no other shadow, no filter.
 - each button holds an 8 px symbol in `--window-symbol`:
   - red → a cross (`XIcon`). Yellow → a minus (`MinusIcon`).
   - green, window not maximized → two arrows that point out (`Maximize2Icon`). Maximized → two arrows that point in (`Minimize2Icon`).
 - pointer over the group, gaps included → all three symbols are visible.
 - pointer away from the group → the symbols are hidden: only the colours show. Keyboard focus does not show them.
-- hovered button → `filter: brightness(1.08)` and, besides the border, a glow `0 0 8px 1px` of its colour at 60 % opacity. Both change with a 0.2 s transition.
+- hovered button → `filter: brightness(1.08)` and a glow `0 0 8px 1px` of its colour at 60 % opacity. Both change with a 0.2 s transition.
 - pressed button → `filter: brightness(0.85)`.
 
 Windows 11 look shows:

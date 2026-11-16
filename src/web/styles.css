@@ -458,20 +458,19 @@ input {
 }
 
 .window-button {
-  --window-border: 0 0 0 0.5px color-mix(in srgb, var(--window-colour) 45%, #000);
   flex: none;
   width: 12px;
   height: 12px;
   border-radius: 50%;
   color: var(--window-symbol);
   background-color: var(--window-colour);
-  box-shadow: var(--window-border);
+  box-shadow: none;
   transition: filter 0.2s, box-shadow 0.2s;
 }
 
 .window-button:hover {
   filter: brightness(1.08);
-  box-shadow: var(--window-border), 0 0 8px 1px color-mix(in srgb, var(--window-colour) 60%, transparent);
+  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--window-colour) 60%, transparent);
 }
 
 .window-button:active {
