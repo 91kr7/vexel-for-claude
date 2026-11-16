@@ -52,3 +52,5 @@
 | 2026-11-16 | dev list-cards | G4 development | pass | Build green; diff limited to INT files, windows11.css, specs and indexes; ListStyles spec and index row present |
 | 2026-11-16 | dev list-cards | divergence developer | decided | ListStyles shared CSS group documented as a component; windows11.css keeps 4px list corners; commit rows show no selected style (list hidden while a commit is open) |
 | 2026-11-16 | dev list-cards | G5 tests | pass | Test files only; no only/skip; re-run list-cards, shared-shapes, board-dialogs: 43 passed |
+| 2026-11-16 | dev dark-blue | G4 development | pass | Web + desktop build green; diff limited to INT files, Icons.tsx, specs and indexes |
+| 2026-11-16 | dev dark-blue | divergence developer | decided | New tokens for terminal frame, scrollbar and fields; MoonStarIcon for the Dark Blue card; three-card grid; muted text lightened to #808fa4 for 4.5:1 (REQ-41) |

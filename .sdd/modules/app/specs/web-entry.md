@@ -11,21 +11,21 @@ type: UI entry point
 ## Contract
 
 - the page has `lang="en"` and the title "Vexel for Claude".
-- `color-scheme` on `:root` follows the active theme: `dark` in the dark theme, `light` when the root carries `data-theme="light"`. Scrollbars and native controls render in the active theme, whatever the system theme.
+- `color-scheme` on `:root` follows the active theme: `light` when the root carries `data-theme="light"`, `dark` in Dark and Dark Blue. Scrollbars and native controls render in the active theme, whatever the system theme.
 - before the first paint, an inline script in the head, before the styles, reads `localStorage` key `ai-client.theme` (ThemeStore `THEME_KEY`):
-  - value `dark` or `light` → that theme.
-  - anything else, missing, or storage not reachable → `light`.
-  - effect: `data-theme` on the root and the `color-scheme` meta both carry that theme. The page never paints the other theme first.
+  - value `light`, `dark` or `dark-blue` → that theme. A valid saved theme always wins.
+  - anything else, missing, or storage not reachable → `dark-blue`, the first-start theme.
+  - effect: `data-theme` on the root carries that theme; the `color-scheme` meta is `light` for Light, `dark` for Dark and Dark Blue. The page never paints another theme first.
 - the same script reads `localStorage` key `ai-client.look` (LookStore `LOOK_KEY`):
   - value `vexel` or `windows11` → that look.
   - anything else, missing, or storage not reachable → `vexel`.
   - effect: `data-look` on the root carries that look. The page never paints the other look first.
-- the `color-scheme` meta is `light` in the HTML file. It only applies before the styles load: the `:root` value overrides it.
+- the `color-scheme` meta is `dark` in the HTML file, so a first start shows no light flash. It only applies before the styles load: the `:root` value overrides it.
 - the script renders AppLayout in `#root`, with the global styles. The global styles load ThemeTokens, then Windows11Look.
 - body → `--bg-canvas` background, `--text-primary` text, Roboto Flex 14 px, line height 1.5.
 - selected text → `--accent-selection` background.
-- scrollbars → 5 px, transparent track, `--border-strong` thumb with full rounding. Browsers without `::-webkit-scrollbar` get `scrollbar-width: thin` in the same colours.
-- the element with the keyboard focus, when focused from the keyboard, shows a 2 px `--accent-primary` ring 2 px away. A control at the edge of a list that scrolls shows the ring inside its own edge, so the list does not cut it.
+- scrollbars → 5 px, transparent track, `--scrollbar-thumb` thumb with full rounding, `--scrollbar-thumb-hover` on hover. Browsers without `::-webkit-scrollbar` get `scrollbar-width: thin` in the thumb colour.
+- the element with the keyboard focus, when focused from the keyboard, shows a 2 px `--accent-primary` ring 2 px away. A control at the edge of a list that scrolls shows the ring inside its own edge, so the list does not cut it. In Dark Blue, an active entry with an accent border (session entry, session card, ListStyles card or row) shows the ring 4 px inside its edge, so a gap keeps it apart from the border.
 - buttons have no look of their own until a class gives one. A disabled button is dimmed to 55 % and shows the not-allowed cursor.
 - `.icon` → 16 px, no fill, stroke in the text colour, width 2, round caps and joins.
 
@@ -54,7 +54,7 @@ Client classes built from the mock's parts:
 | `.button-danger` | mono 11 px, padding 4 × 10 px, `--radius-pill`, rose-500 at 15 % fill, rose-400 text, rose-500 at 30 % border; hover → fill at 25 % (`#subbar-stop-btn`) |
 | `.button-attn` | `.button-danger` in amber |
 | `.button-interrupt` | `.button-danger` in orange: `--orange-500-15` fill, `--orange-400` text and icon, `--orange-500-30` border; hover → `--orange-500-25` fill. Keyboard focus shows the common focus ring. "Interrupt" of SessionView |
-| `.field`, `.field-label`, `.field-input` | label mono 11 px `--text-secondary`, 4 px above the input. Input mono 12 px, padding 8 × 12 px, `--radius-frame`, `--role-canvas`, 1 px `--role-border-strong` border; on focus no outline: the border becomes `--role-accent` with a 1 px `--role-accent` ring around it (`#new-sess-dir`) |
+| `.field`, `.field-label`, `.field-input` | label mono 11 px `--text-secondary`, 4 px above the input. Input mono 12 px, padding 8 × 12 px, `--radius-frame`, `--field-bg`, 1 px `--field-border` border; on focus no outline: the border becomes `--role-accent` with a 1 px `--field-focus-ring` ring around it (`#new-sess-dir`; in Dark Blue the mock's prompt box) |
 
 - the font is Roboto Mono wherever the mock uses JetBrains Mono, and Roboto Flex wherever it uses Plus Jakarta Sans or Instrument Serif. Where the mock asks mono 600 or 700, the client uses 500.
 - with `prefers-reduced-motion: reduce`, the pulse, the spinner and the progress bar do not move.
@@ -81,3 +81,4 @@ Client classes built from the mock's parts:
 - `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-34`, `plan-session_list_width/REQ-35`, `plan-session_list_width/REQ-36`
 - `plan-wsl_support/REQ-17`, `plan-wsl_support/REQ-23`, `plan-wsl_support/REQ-24`, `plan-wsl_support/REQ-34`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-4`
+- `plan-dark_blue_theme/REQ-32`, `plan-dark_blue_theme/REQ-33`, `plan-dark_blue_theme/REQ-35`, `plan-dark_blue_theme/REQ-40`, `plan-dark_blue_theme/REQ-42`

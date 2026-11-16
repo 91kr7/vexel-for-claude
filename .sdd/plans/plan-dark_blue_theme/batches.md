@@ -13,7 +13,7 @@ status: validated
 | session-cards | Session cards | REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-43 | shared-shapes, window-frame | certified | The session list shows cards like the mock |
 | session-view | Session view: header and terminal frame | REQ-1, REQ-2, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29 | shared-shapes, window-frame, session-cards | certified | The open session shows the mock's header and terminal frame |
 | list-cards | Lists aligned to the session cards | REQ-44, REQ-45, REQ-46, REQ-47, REQ-48 | shared-shapes, session-cards | certified | The Resume dialog shows its sessions as cards |
-| dark-blue | Dark Blue theme | REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42 | shared-shapes, window-frame, session-cards, session-view, list-cards | todo | The user switches to Dark Blue |
+| dark-blue | Dark Blue theme | REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42 | shared-shapes, window-frame, session-cards, session-view, list-cards | implemented | The user switches to Dark Blue |
 
 Execution order: shared-shapes → window-frame → session-cards → session-view → list-cards → dark-blue.
 session-cards depends on window-frame because both change `src/web/AppLayout.tsx`.

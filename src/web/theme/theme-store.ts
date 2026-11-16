@@ -1,8 +1,10 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
-export type Theme = 'dark' | 'light';
+export type Theme = 'light' | 'dark' | 'dark-blue';
 
-export const START_THEME: Theme = 'light';
+export const START_THEME: Theme = 'dark-blue';
+
+const THEME_CYCLE: readonly Theme[] = ['light', 'dark', 'dark-blue'];
 
 export const THEME_KEY = 'ai-client.theme';
 
@@ -10,7 +12,7 @@ type ThemeRoot = Pick<Element, 'setAttribute'>;
 type ThemeStorage = Pick<Storage, 'setItem'>;
 
 export function isTheme(value: unknown): value is Theme {
-  return value === 'dark' || value === 'light';
+  return THEME_CYCLE.includes(value as Theme);
 }
 
 export class ThemeStore {
@@ -27,7 +29,11 @@ export class ThemeStore {
   }
 
   toggle(): void {
-    this.#theme = this.#theme === 'dark' ? 'light' : 'dark';
+    this.setTheme(THEME_CYCLE[(THEME_CYCLE.indexOf(this.#theme) + 1) % THEME_CYCLE.length] ?? START_THEME);
+  }
+
+  setTheme(theme: Theme): void {
+    this.#theme = theme;
     this.#mark();
     try {
       this.#storage?.setItem(THEME_KEY, this.#theme);
@@ -67,8 +73,13 @@ export function pageThemeStore(): ThemeStore {
   return pageStore;
 }
 
-export function useTheme(store: ThemeStore = pageThemeStore()): { theme: Theme; toggleTheme: () => void } {
+export function useTheme(store: ThemeStore = pageThemeStore()): {
+  theme: Theme;
+  toggleTheme: () => void;
+  setTheme: (theme: Theme) => void;
+} {
   const theme = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const toggleTheme = useCallback(() => store.toggle(), [store]);
-  return { theme, toggleTheme };
+  const setTheme = useCallback((next: Theme) => store.setTheme(next), [store]);
+  return { theme, toggleTheme, setTheme };
 }

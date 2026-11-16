@@ -26,8 +26,8 @@ Props:
 - `session` → `{ folder, label, state, usage? }` of the session, optional. It goes to the SessionHeader and the SessionFooter, and its `state` and folder name to StopSessionButton. A change of `session` does not reconnect the terminal.
 
 Shows:
-- the terminal panel → a frame with `role="region"` named "Terminal: <folder name>" ("Terminal" without `session`). 12 px gap on all four sides (it keeps the frame off the header, the SessionFooter and the GitExplorerPanel), `--radius-frame` (8 px) corners, 1 px `--role-border-strong` border, `--shadow-frame` shadow, `--term-bg` background, padding 12 px. The terminal fills the box inside the padding. Nothing of the frame or its shadow paints outside its 12 px gap.
-- the terminal → Roboto Mono at the size of TerminalFontSizeStore (12 px by default), line height 1.2. Background `--term-bg`, default text `--term-fg`, cursor `--term-cursor`, selection `--term-selection`. These tokens have the same dark values in both themes, so the panel stays dark in the light theme. The font is loaded before the terminal opens and fits; if it fails to load, the terminal opens with the next font of `--font-mono`. The ANSI colours that Claude Code writes stay as written.
+- the terminal panel → a frame with `role="region"` named "Terminal: <folder name>" ("Terminal" without `session`). 12 px gap on all four sides (it keeps the frame off the header, the SessionFooter and the GitExplorerPanel), `--radius-frame` (8 px) corners, 1 px `--term-frame` border, `--shadow-frame` shadow, `--term-bg` background, padding 12 px. The terminal fills the box inside the padding. Nothing of the frame or its shadow paints outside its 12 px gap.
+- the terminal → Roboto Mono at the size of TerminalFontSizeStore (12 px by default), line height 1.2. Background `--term-bg`, default text `--term-fg`, cursor `--term-cursor`, selection `--term-selection`. These tokens are dark in every theme, so the panel stays dark in the light theme; Dark Blue has its own terminal background. On a theme change the open terminal takes the new colours at once, with no new connection and no lost output. The font is loaded before the terminal opens and fits; if it fails to load, the terminal opens with the next font of `--font-mono`. The ANSI colours that Claude Code writes stay as written.
 - while the terminal or the search box has the keyboard focus, the frame shows an accent border (`--role-accent` at 75 %) and a 1 px accent ring outside it (`--role-accent` at 22 %), around its rounded edge. The ring stays inside the 12 px gap: it touches neither the header nor the SessionFooter nor the GitExplorerPanel.
 - the SessionFooter with `session` (path and figures). Its end holds the TerminalZoomControls, at the right end.
 - no on-screen hint for Ctrl+Shift+L (human decision, 2026-11-07).
@@ -107,7 +107,7 @@ Actions:
 - `@xterm/addon-search`
 - SessionHeader, SessionFooter, StopSessionButton, Avatar (`folderNameOf`)
 - useRepositoryLookup, GitExplorerButton, GitExplorerPanel (module git)
-- ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, WebEntry, BundledFont (module app)
+- ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, ThemeStore, WebEntry, BundledFont (module app)
 
 ## Requirements served
 
@@ -122,4 +122,5 @@ Actions:
 - `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-3`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-25`
 - `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`, `plan-session_list_width/REQ-30`, `plan-session_list_width/REQ-31`, `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-33`, `plan-session_list_width/REQ-36`
 - `plan-ui_restyle/REQ-34`, `plan-ui_restyle/REQ-35`
+- `plan-dark_blue_theme/REQ-31`, `plan-dark_blue_theme/REQ-38`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-26`, `plan-dark_blue_theme/REQ-27`, `plan-dark_blue_theme/REQ-28`, `plan-dark_blue_theme/REQ-29`

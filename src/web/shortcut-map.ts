@@ -121,7 +121,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { id: 'terminal-smaller-text', area: 'terminal', action: 'Smaller text', keys: [terminal('-', 'Ctrl')] },
   { id: 'terminal-default-text', area: 'terminal', action: 'Default text size', keys: [terminal('0', 'Ctrl')] },
   { id: 'terminal-focus-list', area: 'terminal', action: 'Focus the list', keys: [terminal('l', 'Ctrl', 'Shift')] },
-  { id: 'toggle-theme', area: 'general', action: 'Light/Dark theme', keys: [alt('KeyA', { kind: 'toggle-theme' })] },
+  { id: 'toggle-theme', area: 'general', action: 'Light/Dark/Dark Blue theme', keys: [alt('KeyA', { kind: 'toggle-theme' })] },
   { id: 'shortcut-settings', area: 'general', action: 'Shortcut settings', keys: [alt('KeyS', { kind: 'open-shortcut-settings' })] },
 ];
 

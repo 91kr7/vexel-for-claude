@@ -55,14 +55,18 @@ p {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: var(--scrollbar-thumb);
   border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 @supports not selector(::-webkit-scrollbar) {
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
 }
 
@@ -1919,6 +1923,12 @@ input {
   outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
+/* Dark Blue: a gap keeps the ring apart from the accent border of an active entry. */
+:root[data-theme='dark-blue'] :is(.session-entry[aria-current='true'], .list-card.list-active, .list-row.list-active):focus-visible,
+:root[data-theme='dark-blue'] .session-card.open > .session-entry:focus-visible::after {
+  outline-offset: calc(-2 * var(--focus-ring-width));
+}
+
 .list-number {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -2192,7 +2202,7 @@ input {
   margin: 12px;
   padding: 12px;
   border-radius: var(--radius-frame);
-  border: 1px solid var(--role-border-strong);
+  border: 1px solid var(--term-frame);
   background-color: var(--term-bg);
   color: var(--term-fg);
   box-shadow: var(--shadow-frame);
@@ -3303,7 +3313,8 @@ input {
 
 .settings-cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -3416,6 +3427,13 @@ input {
   --preview-surface: var(--preview-dark-surface);
   --preview-line: var(--preview-dark-line);
   --preview-accent: var(--preview-dark-accent);
+}
+
+.theme-preview-dark-blue {
+  --preview-bg: var(--preview-dark-blue-canvas);
+  --preview-surface: var(--preview-dark-blue-surface);
+  --preview-line: var(--preview-dark-blue-line);
+  --preview-accent: var(--preview-dark-blue-accent);
 }
 
 .theme-preview {
@@ -3722,8 +3740,8 @@ input {
   width: 100%;
   padding: 8px 12px;
   border-radius: var(--radius-frame);
-  border: 1px solid var(--role-border-strong);
-  background-color: var(--role-canvas);
+  border: 1px solid var(--field-border);
+  background-color: var(--field-bg);
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -3733,7 +3751,7 @@ input {
 .field-input:focus {
   outline: none;
   border-color: var(--role-accent);
-  box-shadow: 0 0 0 1px var(--role-accent);
+  box-shadow: 0 0 0 1px var(--field-focus-ring);
 }
 
 .search-field {
