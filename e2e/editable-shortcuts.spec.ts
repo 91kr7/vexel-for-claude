@@ -129,7 +129,7 @@ test('"Change Keys" on "Search" with Alt+K: the row, the tooltip and the termina
   await openShortcuts(page);
   await editWithKeyboard(page, 'Search', 'Terminal');
   await page.keyboard.press('Alt+KeyK');
-  expect(await keysOf(row(page, 'Search', 'Terminal'))).toBe('[Alt]+[K] Search');
+  expect(await keysOf(row(page, 'Search', 'Terminal'))).toBe('Search [Alt]+[K]');
   await expect(changeKeys(page, 'Search', 'Terminal')).toBeFocused();
   await expect(restoreDefault(page, 'Search', 'Terminal')).toBeEnabled();
   await page.keyboard.press('Escape');
@@ -141,7 +141,7 @@ test('"Change Keys" on "Search" with Alt+K: the row, the tooltip and the termina
   await openSession(page, folder);
   await expect(searchButton(page)).toHaveAttribute('title', 'Search (Alt+K)');
   await openShortcuts(page);
-  expect(await keysOf(row(page, 'Search', 'Terminal')), 'the key survives the reload').toBe('[Alt]+[K] Search');
+  expect(await keysOf(row(page, 'Search', 'Terminal')), 'the key survives the reload').toBe('Search [Alt]+[K]');
   await page.keyboard.press('Escape');
   await expect(popup(page)).toHaveCount(0);
 
@@ -198,7 +198,7 @@ test('in the editing of "New session dialog", Alt+L, Shift+K and Alt+B are rejec
   await expect(popup(page), 'the rejected keys did not close the popup').toBeVisible();
 
   await page.keyboard.press('Escape');
-  expect(await keysOf(row(page, 'New session dialog'))).toBe('[Alt]+[N] New session dialog');
+  expect(await keysOf(row(page, 'New session dialog'))).toBe('New session dialog [Alt]+[N]');
   expect(await page.evaluate(() => localStorage.getItem('ai-client.shortcuts')), 'nothing saved').toBeNull();
 });
 
@@ -209,7 +209,7 @@ test('Esc in the editing of "Rename the open session" keeps Alt+E, and the popup
   await editWithKeyboard(page, 'Rename the open session');
   await page.keyboard.press('Escape');
 
-  expect(await keysOf(row(page, 'Rename the open session'))).toBe('[Alt]+[E] Rename the open session');
+  expect(await keysOf(row(page, 'Rename the open session'))).toBe('Rename the open session [Alt]+[E]');
   await expect(popup(page)).toBeVisible();
   await expect(changeKeys(page, 'Rename the open session')).toBeFocused();
   await expect(shortcutList(page).locator('.kbd-badge').filter({ hasText: /^(Enter|Esc)$/ })).toHaveCount(0);
@@ -224,12 +224,12 @@ test('"Restore Default" on "Focus the list" gives back Alt+L, and "Restore All" 
   await openShortcuts(page);
   await setKeys(page, 'Focus the list', 'Alt+KeyK', 'Navigation');
   await setKeys(page, 'Resume history dialog', 'Alt+KeyJ');
-  expect(await keysOf(row(page, 'Focus the list', 'Navigation'))).toBe('[Alt]+[K] Focus the list');
-  expect(await keysOf(row(page, 'Resume history dialog'))).toBe('[Alt]+[J] Resume history dialog');
+  expect(await keysOf(row(page, 'Focus the list', 'Navigation'))).toBe('Focus the list [Alt]+[K]');
+  expect(await keysOf(row(page, 'Resume history dialog'))).toBe('Resume history dialog [Alt]+[J]');
 
   await restoreDefault(page, 'Focus the list', 'Navigation').focus();
   await page.keyboard.press('Enter');
-  expect(await keysOf(row(page, 'Focus the list', 'Navigation'))).toBe('[Alt]+[L] Focus the list');
+  expect(await keysOf(row(page, 'Focus the list', 'Navigation'))).toBe('Focus the list [Alt]+[L]');
   await expect(restoreDefault(page, 'Focus the list', 'Navigation')).toBeDisabled();
   await expect(changeKeys(page, 'Focus the list', 'Navigation')).toBeFocused();
 
@@ -241,7 +241,7 @@ test('"Restore Default" on "Focus the list" gives back Alt+L, and "Restore All" 
   await page.keyboard.press('Escape');
   await expect(confirmation(page)).toHaveCount(0);
   await expect(popup(page), 'Esc on the confirmation keeps the settings popup').toBeVisible();
-  expect(await keysOf(row(page, 'Resume history dialog')), 'Cancel changes nothing').toBe('[Alt]+[J] Resume history dialog');
+  expect(await keysOf(row(page, 'Resume history dialog')), 'Cancel changes nothing').toBe('Resume history dialog [Alt]+[J]');
 
   await restoreAll(page).focus();
   await page.keyboard.press('Enter');
@@ -253,7 +253,7 @@ test('"Restore Default" on "Focus the list" gives back Alt+L, and "Restore All" 
   await page.keyboard.press('Enter');
   await expect(confirmation(page)).toHaveCount(0);
   await expect(popup(page)).toBeVisible();
-  expect(await keysOf(row(page, 'Resume history dialog'))).toBe('[Alt]+[H] Resume history dialog');
-  expect(await keysOf(row(page, 'Focus the list', 'Navigation'))).toBe('[Alt]+[L] Focus the list');
+  expect(await keysOf(row(page, 'Resume history dialog'))).toBe('Resume history dialog [Alt]+[H]');
+  expect(await keysOf(row(page, 'Focus the list', 'Navigation'))).toBe('Focus the list [Alt]+[L]');
   await expect(shortcutList(page).getByRole('button', { name: /^Restore Default: /, disabled: false })).toHaveCount(0);
 });

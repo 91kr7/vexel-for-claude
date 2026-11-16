@@ -3,6 +3,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
+import { cardOf } from './settings';
 
 const LIST_WIDTH_KEY = 'ai-client.list-width';
 const SESSION_COUNT = 16;
@@ -153,16 +154,17 @@ test.describe('settings button', () => {
     await expect.poll(() => tooltip.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
   });
 
-  // plan-settings_dialog/REQ-4, REQ-5, REQ-6, REQ-21, REQ-43: a click opens the modal popup on the "Theme" tab
-  test('a click opens the modal "Settings" popup on the "Theme" tab, with the tabs "Theme", "Window Look", "Shortcuts" and "Updates"', async ({ page }) => {
+  // plan-settings_dialog/REQ-4, REQ-5, REQ-6, REQ-21, REQ-53: a click opens the modal popup on the "Appearance" menu
+  test('a click opens the modal "Settings" popup on "Appearance", with the menus "Appearance", "Shortcuts" and "Updates"', async ({ page }) => {
     await loadPage(page);
     await settingsButton(page).click();
     await expect(popup(page)).toBeVisible();
     await expect(popup(page)).toHaveAttribute('aria-modal', 'true');
-    await expect(popup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Theme', 'Window Look', 'Shortcuts', 'Updates']);
-    await expect(tab(page, 'Theme')).toHaveAttribute('aria-selected', 'true');
-    await expect(tab(page, 'Theme')).toBeFocused();
+    await expect(popup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Appearance', 'Shortcuts', 'Updates']);
+    await expect(tab(page, 'Appearance')).toHaveAttribute('aria-selected', 'true');
+    await expect(tab(page, 'Appearance')).toBeFocused();
     await expect(popup(page).getByRole('group', { name: 'Theme' })).toBeVisible();
+    await expect(popup(page).getByRole('group', { name: 'Window Look' })).toBeVisible();
     await expect(popup(page).getByRole('button', { name: 'Close', exact: true })).toBeVisible();
     await expect(popup(page).getByRole('button', { name: /^(Save|Cancel)$/ })).toHaveCount(0);
   });
@@ -192,16 +194,15 @@ test('choosing "Light" and "Windows 11" restyles the whole client at once, keeps
   await expect(radio(page, 'Light')).not.toBeChecked();
   const darkBackground = await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor);
 
-  await radio(page, 'Light').check();
+  await cardOf(radio(page, 'Light')).click();
   expect(await rootMark(page, 'data-theme')).toBe('light');
   await expect(radio(page, 'Light')).toBeChecked();
   expect(await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor), 'the popup turns light').not.toBe(darkBackground);
   expect(await page.evaluate(() => localStorage.getItem('ai-client.theme'))).toBe('light');
 
-  await tab(page, 'Window Look').click();
   await expect(radio(page, 'macOS')).toBeChecked();
   const macRadius = await popup(page).evaluate((element) => getComputedStyle(element).borderRadius);
-  await radio(page, 'Windows 11').check();
+  await cardOf(radio(page, 'Windows 11')).click();
   expect(await rootMark(page, 'data-look')).toBe('windows11');
   await expect(radio(page, 'Windows 11')).toBeChecked();
   expect(await popup(page).evaluate((element) => getComputedStyle(element).borderRadius), 'the popup takes the Windows 11 look').not.toBe(macRadius);
@@ -210,7 +211,8 @@ test('choosing "Light" and "Windows 11" restyles the whole client at once, keeps
   await expect(topBar(page).getByRole('button', { name: 'Minimize' })).toHaveCount(0);
 
   await expect(popup(page)).toBeVisible();
-  await tab(page, 'Theme').click();
+  await tab(page, 'Shortcuts').click();
+  await tab(page, 'Appearance').click();
   await expect(radio(page, 'Light')).toBeChecked();
 
   await popup(page).getByRole('button', { name: 'Close', exact: true }).click();
@@ -234,17 +236,23 @@ test.describe('popup from the keyboard', () => {
     await settingsButton(page).focus();
     await page.keyboard.press('Enter');
     await expect(popup(page)).toBeVisible();
-    await expect(tab(page, 'Theme')).toBeFocused();
-    expect(await hasFocusVisible(tab(page, 'Theme'))).toBe(true);
-    expect(await outlineOf(tab(page, 'Theme'))).not.toBe('none');
+    await expect(tab(page, 'Appearance')).toBeFocused();
+    expect(await hasFocusVisible(tab(page, 'Appearance'))).toBe(true);
+    expect(await outlineOf(tab(page, 'Appearance'))).not.toBe('none');
 
-    await page.keyboard.press('ArrowRight');
-    await expect(tab(page, 'Window Look')).toBeFocused();
-    await expect(tab(page, 'Window Look')).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('ArrowDown');
+    await expect(tab(page, 'Shortcuts')).toBeFocused();
+    await expect(tab(page, 'Shortcuts')).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('ArrowUp');
+    await expect(tab(page, 'Appearance')).toBeFocused();
+    await expect(tab(page, 'Appearance')).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('Tab');
+    await expect(radio(page, 'Dark')).toBeFocused();
+    expect(await hasFocusVisible(radio(page, 'Dark'))).toBe(true);
+    expect(await outlineOf(cardOf(radio(page, 'Dark'))), 'the focus ring shows around the card').not.toBe('none');
     await page.keyboard.press('Tab');
     await expect(radio(page, 'macOS')).toBeFocused();
-    expect(await hasFocusVisible(radio(page, 'macOS'))).toBe(true);
-    expect(await outlineOf(radio(page, 'macOS'))).not.toBe('none');
+    expect(await outlineOf(cardOf(radio(page, 'macOS')))).not.toBe('none');
     await page.keyboard.press('ArrowDown');
     await expect(radio(page, 'Windows 11')).toBeChecked();
     expect(await rootMark(page, 'data-look')).toBe('windows11');

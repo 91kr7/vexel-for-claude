@@ -20,7 +20,7 @@ function open(initialTab?: SettingsTab, onClose = vi.fn(), onNewerVersion?: (ver
 const tabs = (dialog: HTMLElement) => [...dialog.querySelectorAll<HTMLElement>('[role="tab"]')];
 const tab = (dialog: HTMLElement, name: string) => tabs(dialog).find((element) => element.textContent === name) as HTMLElement;
 const visiblePanels = (dialog: HTMLElement) => [...dialog.querySelectorAll<HTMLElement>('[role="tabpanel"]')].filter((panel) => !panel.hidden);
-const shownLegend = (dialog: HTMLElement) => visiblePanels(dialog)[0]?.querySelector('legend')?.textContent;
+const shownLegends = (dialog: HTMLElement) => [...(visiblePanels(dialog)[0]?.querySelectorAll('legend') ?? [])].map((legend) => legend.textContent);
 const shownList = (dialog: HTMLElement) => visiblePanels(dialog)[0]?.querySelector<HTMLElement>('[role="region"][aria-label="Shortcut List"]') ?? null;
 const buttonNamed = (dialog: HTMLElement, text: string) =>
   [...dialog.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === text) as HTMLButtonElement;
@@ -46,31 +46,35 @@ describe('SettingsDialog', () => {
     expect(dialog.querySelector('.modal-actions')?.querySelectorAll('button')).toHaveLength(1);
   });
 
-  // plan-settings_dialog/REQ-6, REQ-21, REQ-43: a tab list "Settings sections" with "Theme", "Window Look", "Shortcuts", then "Updates"
-  it('has a tab list "Settings sections" with the tabs "Theme", "Window Look", "Shortcuts" and "Updates", in this order', () => {
+  // plan-settings_dialog/REQ-53, REQ-54: a vertical menu "Settings sections" with "Appearance", "Shortcuts", then "Updates"
+  it('has a vertical menu "Settings sections" with "Appearance", "Shortcuts" and "Updates", in this order', () => {
     const { dialog } = open();
-    expect(dialog.querySelector('[role="tablist"]')?.getAttribute('aria-label')).toBe('Settings sections');
-    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Theme', 'Window Look', 'Shortcuts', 'Updates']);
+    const menu = dialog.querySelector('[role="tablist"]');
+    expect(menu?.getAttribute('aria-label')).toBe('Settings sections');
+    expect(menu?.getAttribute('aria-orientation')).toBe('vertical');
+    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Appearance', 'Shortcuts', 'Updates']);
   });
 
-  // plan-settings_dialog/REQ-4: default tab "Theme", selected and focused on open; one panel shown, labelled by its tab
-  it('opens on the "Theme" tab by default, with the focus on it and only the theme panel shown', () => {
+  // plan-settings_dialog/REQ-4, REQ-53: default menu "Appearance", selected and focused on open, with the theme and look sections
+  it('opens on "Appearance" by default, with the focus on it and only its panel shown: "Theme", then "Window Look"', () => {
     const { dialog } = open();
-    const theme = tab(dialog, 'Theme');
-    expect(theme.getAttribute('aria-selected')).toBe('true');
-    expect(tab(dialog, 'Window Look').getAttribute('aria-selected')).toBe('false');
-    expect(document.activeElement).toBe(theme);
+    const appearance = tab(dialog, 'Appearance');
+    expect(appearance.getAttribute('aria-selected')).toBe('true');
+    expect(tab(dialog, 'Shortcuts').getAttribute('aria-selected')).toBe('false');
+    expect(document.activeElement).toBe(appearance);
     expect(visiblePanels(dialog)).toHaveLength(1);
-    expect(visiblePanels(dialog)[0]?.getAttribute('aria-labelledby')).toBe(theme.id);
-    expect(shownLegend(dialog)).toBe('Theme');
+    expect(visiblePanels(dialog)[0]?.getAttribute('aria-labelledby')).toBe(appearance.id);
+    expect(shownLegends(dialog)).toEqual(['Theme', 'Window Look']);
   });
 
-  // spec SettingsDialog, Props: initialTab "look" opens on the "Window Look" tab
-  it('opens on the "Window Look" tab when initialTab is "look"', () => {
-    const { dialog } = open('look');
-    expect(tab(dialog, 'Window Look').getAttribute('aria-selected')).toBe('true');
-    expect(document.activeElement).toBe(tab(dialog, 'Window Look'));
-    expect(shownLegend(dialog)).toBe('Window Look');
+  // spec SettingsDialog: each panel has a header with the menu title
+  it.each([
+    ['appearance', 'Appearance'],
+    ['shortcuts', 'Shortcuts'],
+    ['updates', 'Updates'],
+  ] as const)('shows the title of the %s menu in its panel header', (start, title) => {
+    const { dialog } = open(start);
+    expect(visiblePanels(dialog)[0]?.querySelector('h1, h2, h3, h4')?.textContent).toBe(title);
   });
 
   // plan-settings_dialog/REQ-25, spec SettingsDialog Props: initialTab "shortcuts" opens on the "Shortcuts" tab, with the shortcuts section only
@@ -96,40 +100,36 @@ describe('SettingsDialog', () => {
     expect([...dialog.querySelectorAll('button')].filter((button) => button.textContent?.trim() === 'Close')).toHaveLength(1);
   });
 
-  // spec SettingsDialog, Actions: a click on a tab shows its section
-  it('a click on "Window Look" shows the look section, a click on "Theme" brings the theme section back', () => {
+  // spec SettingsDialog, Actions: a click on a menu item shows its menu
+  it('a click on "Shortcuts" shows the shortcut list, a click on "Appearance" brings the theme and look sections back', () => {
     const { dialog } = open();
-    run(() => tab(dialog, 'Window Look').click());
-    expect(tab(dialog, 'Window Look').getAttribute('aria-selected')).toBe('true');
-    expect(shownLegend(dialog)).toBe('Window Look');
-    run(() => tab(dialog, 'Theme').click());
-    expect(shownLegend(dialog)).toBe('Theme');
+    run(() => tab(dialog, 'Shortcuts').click());
+    expect(tab(dialog, 'Shortcuts').getAttribute('aria-selected')).toBe('true');
+    expect(shownLegends(dialog)).toEqual([]);
+    run(() => tab(dialog, 'Appearance').click());
+    expect(shownLegends(dialog)).toEqual(['Theme', 'Window Look']);
   });
 
   // plan-settings_dialog/REQ-11: the tab list is one Tab stop, the shown tab
   it('gives tabindex 0 to the shown tab only', () => {
     const { dialog } = open();
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([0, -1, -1, -1]);
-    run(() => tab(dialog, 'Window Look').click());
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, 0, -1, -1]);
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([0, -1, -1]);
     run(() => tab(dialog, 'Shortcuts').click());
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, -1, 0, -1]);
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, 0, -1]);
     run(() => tab(dialog, 'Updates').click());
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, -1, -1, 0]);
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, -1, 0]);
   });
 
-  // plan-settings_dialog/REQ-11: arrows move to the next/previous tab, wrapping; Home/End to the first/last
+  // plan-settings_dialog/REQ-11, REQ-54: Down/Up move to the next/previous menu item, wrapping; Home/End to the first/last
   it.each([
-    ['ArrowRight', 'theme', 'Window Look'],
-    ['ArrowRight', 'look', 'Shortcuts'],
-    ['ArrowRight', 'shortcuts', 'Updates'],
-    ['ArrowRight', 'updates', 'Theme'],
-    ['ArrowLeft', 'theme', 'Updates'],
-    ['ArrowLeft', 'look', 'Theme'],
-    ['ArrowLeft', 'shortcuts', 'Window Look'],
-    ['ArrowLeft', 'updates', 'Shortcuts'],
-    ['Home', 'updates', 'Theme'],
-    ['End', 'theme', 'Updates'],
+    ['ArrowDown', 'appearance', 'Shortcuts'],
+    ['ArrowDown', 'shortcuts', 'Updates'],
+    ['ArrowDown', 'updates', 'Appearance'],
+    ['ArrowUp', 'appearance', 'Updates'],
+    ['ArrowUp', 'shortcuts', 'Appearance'],
+    ['ArrowUp', 'updates', 'Shortcuts'],
+    ['Home', 'updates', 'Appearance'],
+    ['End', 'appearance', 'Updates'],
   ] as const)('%s from the %s tab shows and focuses "%s"', (key, start, expected) => {
     const { dialog } = open(start);
     keydown(document.activeElement as Element, key);
@@ -179,13 +179,13 @@ describe('SettingsDialog', () => {
     const { dialog, onClose, theme, look } = open();
     run(() => (radios(dialog).find((radio) => labelOf(radio) === 'Light') as HTMLInputElement).click());
     expect(theme.store.getSnapshot()).toBe('light');
-    run(() => tab(dialog, 'Window Look').click());
     run(() => (radios(dialog).find((radio) => labelOf(radio) === 'Windows 11') as HTMLInputElement).click());
     expect(look.store.getSnapshot()).toBe('windows11');
     expect(onClose).not.toHaveBeenCalled();
     expect(document.querySelector('[role="dialog"]')).not.toBeNull();
-    run(() => tab(dialog, 'Theme').click());
-    expect(radios(dialog).filter((radio) => radio.checked).map(labelOf)).toEqual(['Light']);
+    run(() => tab(dialog, 'Shortcuts').click());
+    run(() => tab(dialog, 'Appearance').click());
+    expect(radios(dialog).filter((radio) => radio.checked).map(labelOf)).toEqual(['Light', 'Windows 11']);
   });
 
   // plan-settings_dialog/REQ-8: on close the focus goes back where it was before the popup opened
@@ -240,7 +240,7 @@ describe('SettingsDialog, "Updates" tab', () => {
   const shownPanel = (dialog: HTMLElement) => visiblePanels(dialog)[0] as HTMLElement;
   const until = (check: () => boolean) => vi.waitFor(() => expect(check()).toBe(true));
   const resultText = (dialog: HTMLElement) =>
-    dialog.querySelector('.updates-section [role="status"], .updates-section [role="alert"]')?.textContent?.replace(/\s+/g, ' ').trim() ?? null;
+    dialog.querySelector('[aria-label="Updates"] [role="status"], [aria-label="Updates"] [role="alert"]')?.textContent?.replace(/\s+/g, ' ').trim() ?? null;
 
   // plan-settings_dialog/REQ-43, REQ-44: initialTab "updates" opens the updates section only
   it('opens on the "Updates" tab when initialTab is "updates", with "Check for Updates" shown', async () => {
@@ -255,8 +255,8 @@ describe('SettingsDialog, "Updates" tab', () => {
   });
 
   it('keeps the updates section out of sight behind another tab', () => {
-    const { dialog } = open('theme');
-    expect(shownPanel(dialog).querySelector('.updates-section')).toBeNull();
+    const { dialog } = open('appearance');
+    expect(shownPanel(dialog).querySelector('[aria-label="Updates"]')).toBeNull();
     expect(buttonNamed(shownPanel(dialog), 'Check for Updates')).toBeUndefined();
   });
 
@@ -290,7 +290,7 @@ describe('SettingsDialog, "Updates" tab', () => {
     const { dialog } = open('updates');
     run(() => buttonNamed(dialog, 'Check for Updates').click());
     await until(() => release !== undefined);
-    run(() => tab(dialog, 'Theme').click());
+    run(() => tab(dialog, 'Appearance').click());
     run(() => release?.({ status: 'current', installedVersion: '0.6.1' }));
     run(() => tab(dialog, 'Updates').click());
     await until(() => resultText(dialog) !== null);

@@ -40,3 +40,4 @@
 | 2026-11-16 | plan | G3 coverage (layout defect) | pass | INT-9..19 in update-check, paths exist, new scenario covers REQ-53..60 |
 | 2026-11-16 | dev | G4 update-check (layout) | pass | Vite build green; `tsc -b` errors only in `SettingsDialog.test.tsx` (old tab values), left to the tester; screenshots reviewed |
 | 2026-11-16 | dev | divergence developer (tokens.css) | decided | Fixed preview tokens so the Light/Dark cards show their own colours in either theme |
+| 2026-11-16 | dev | G5 update-check (layout) | pass | 87 unit + 27 e2e re-run green; closing run 3865 unit, 771/772 e2e (accepted `project-search.spec.ts:117`), 25 Electron; human saw the popup live and approved |

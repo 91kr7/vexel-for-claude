@@ -57,29 +57,29 @@ function startEditing(host: HTMLElement, action: string, area?: string): HTMLBut
 
 const ROWS = [
   [
-    '[Alt]+[L] Focus the list',
-    '[Alt]+[C] Focus the main view',
-    '[Alt]+[Up] Previous session',
-    '[Alt]+[Down] Next session',
-    ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((position) => `[Alt]+[${position}] Session at position ${position}`),
-    '[Alt]+[I] Next session that needs input',
+    'Focus the list [Alt]+[L]',
+    'Focus the main view [Alt]+[C]',
+    'Previous session [Alt]+[Up]',
+    'Next session [Alt]+[Down]',
+    ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((position) => `Session at position ${position} [Alt]+[${position}]`),
+    'Next session that needs input [Alt]+[I]',
   ],
   [
-    '[Alt]+[N] New session dialog',
-    '[Alt]+[H] Resume history dialog',
-    '[Alt]+[E] Rename the open session',
-    '[Alt]+[R] "Resume" or "Resume Here" on the open session',
-    '[Alt]+[Shift]+[Q] Stop the open hosted session',
-    '[Alt]+[Shift]+[W] Dismiss the open ended session',
+    'New session dialog [Alt]+[N]',
+    'Resume history dialog [Alt]+[H]',
+    'Rename the open session [Alt]+[E]',
+    '"Resume" or "Resume Here" on the open session [Alt]+[R]',
+    'Stop the open hosted session [Alt]+[Shift]+[Q]',
+    'Dismiss the open ended session [Alt]+[Shift]+[W]',
   ],
   [
-    '[Ctrl]+[Shift]+[F] Search',
-    '[Ctrl]+[=] / [Ctrl]+[+] Larger text',
-    '[Ctrl]+[-] Smaller text',
-    '[Ctrl]+[0] Default text size',
-    '[Ctrl]+[Shift]+[L] Focus the list',
+    'Search [Ctrl]+[Shift]+[F]',
+    'Larger text [Ctrl]+[=] / [Ctrl]+[+]',
+    'Smaller text [Ctrl]+[-]',
+    'Default text size [Ctrl]+[0]',
+    'Focus the list [Ctrl]+[Shift]+[L]',
   ],
-  ['[Alt]+[A] Light/Dark theme', '[Alt]+[S] Shortcut settings'],
+  ['Light/Dark theme [Alt]+[A]', 'Shortcut settings [Alt]+[S]'],
 ];
 
 describe('ShortcutsSection', () => {
@@ -104,7 +104,7 @@ describe('ShortcutsSection', () => {
     expect(groups(render().host).map(headingOf)).toEqual(['Navigation', 'Sessions', 'Terminal', 'General']);
   });
 
-  // plan-settings_dialog/REQ-22, REQ-23, REQ-27: one row per action, with its keys in badges, then the action
+  // plan-settings_dialog/REQ-22, REQ-23, REQ-27, REQ-58: one row per action, the action, then its keys in badges
   it('shows every shortcut of the key map, one row per action, with its badges and action', () => {
     expect(groups(render().host).map((group) => [...group.querySelectorAll('li')].map(rowText))).toEqual(ROWS);
   });
@@ -113,7 +113,7 @@ describe('ShortcutsSection', () => {
   it('shows one row per ShortcutMap row, in map order, and no other row', () => {
     const shown = [...render().host.querySelectorAll('li')].map(rowText);
     expect(shown).toHaveLength(SHORTCUTS.length);
-    SHORTCUTS.forEach((row, index) => expect(shown[index]?.endsWith(` ${row.action}`), row.action).toBe(true));
+    SHORTCUTS.forEach((row, index) => expect(shown[index]?.startsWith(`${row.action} `), row.action).toBe(true));
   });
 
   // ShortcutsSection invariant: no key is written in the section itself, so the badges are exactly the keys of the map
@@ -128,7 +128,7 @@ describe('ShortcutsSection', () => {
     for (const text of texts) expect(text).not.toMatch(/\[(Enter|Esc)\]/);
   });
 
-  // plan-settings_dialog/REQ-26, REQ-34, REQ-35, REQ-42: "Restore All" above the list; each row has "Change Keys" and "Restore Default", named after its action
+  // plan-settings_dialog/REQ-26, REQ-34, REQ-35, REQ-42, REQ-58, REQ-59: "Restore All" above the list; each row has the icon buttons "Change Keys" and "Restore Default", named after its action, with a tooltip
   it('shows "Restore All" before the list and, in each row, "Change Keys" and a disabled "Restore Default"', () => {
     const { host } = render();
     const all = buttons(host);
@@ -139,10 +139,19 @@ describe('ShortcutsSection', () => {
     rows.forEach((row, index) => {
       const action = SHORTCUTS[index]!.action;
       expect(buttons(row).map(nameOf), action).toEqual([`Change Keys: ${action}`, `Restore Default: ${action}`]);
-      expect(buttons(row).map((b) => b.textContent?.trim())).toEqual(['Change Keys', 'Restore Default']);
+      expect(buttons(row).map((b) => b.getAttribute('title'))).toEqual(['Change Keys', 'Restore Default']);
       expect(button(row, `Restore Default: ${action}`).disabled, action).toBe(true);
     });
     for (const b of all) expect(b.type, nameOf(b)).toBe('button');
+  });
+
+  // plan-settings_dialog/REQ-59: "Restore All" sits in the header with the title "Shortcuts", outside the region that scrolls
+  it('puts "Restore All" next to the title "Shortcuts", outside the "Shortcut List" region', () => {
+    const { host } = render();
+    const restoreAll = button(host, 'Restore All');
+    const region = host.querySelector('[role="region"][aria-label="Shortcut List"]')!;
+    expect(region.contains(restoreAll)).toBe(false);
+    expect(restoreAll.parentElement?.querySelector('h1, h2, h3, h4, h5, h6')?.textContent?.trim()).toBe('Shortcuts');
   });
 
   // plan-settings_dialog/REQ-26: "Change Keys" puts the row in editing, and another row's "Change Keys" moves the editing there
@@ -152,7 +161,7 @@ describe('ShortcutsSection', () => {
     expect(rowText(rowOf(host, 'New session dialog'))).toContain('Press new keys, Esc to cancel');
     startEditing(host, 'Resume history dialog');
     expect(rowText(rowOf(host, 'Resume history dialog'))).toContain('Press new keys, Esc to cancel');
-    expect(rowText(rowOf(host, 'New session dialog'))).toBe('[Alt]+[N] New session dialog');
+    expect(rowText(rowOf(host, 'New session dialog'))).toBe('New session dialog [Alt]+[N]');
   });
 
   // plan-settings_dialog/REQ-26, REQ-37, REQ-40: an accepted press is saved for the row, shows at once, and the focus goes back to "Change Keys"
@@ -164,7 +173,7 @@ describe('ShortcutsSection', () => {
     altKey('KeyK', 'k');
     expect(store.keyOf('terminal-larger-text')).toEqual({ code: 'KeyK', modifiers: ['Alt'], character: 'k' });
     const row = rowOf(host, 'Larger text', 'Terminal');
-    expect(rowText(row)).toBe('[Alt]+[K] Larger text');
+    expect(rowText(row)).toBe('Larger text [Alt]+[K]');
     expect(button(row, 'Restore Default: Larger text').disabled).toBe(false);
     expect(document.activeElement).toBe(change);
   });
@@ -178,7 +187,7 @@ describe('ShortcutsSection', () => {
     press('keydown', 'Meta', 'MetaLeft', { shiftKey: true, ctrlKey: true });
     press('keydown', 'J', 'KeyJ', { shiftKey: true, ctrlKey: true, altKey: true });
     expect(store.keyOf('rename-session')).toEqual({ code: 'KeyJ', modifiers: ['Ctrl', 'Alt', 'Shift'], character: 'J' });
-    expect(rowText(rowOf(host, 'Rename the open session'))).toBe('[Ctrl]+[Alt]+[Shift]+[J] Rename the open session');
+    expect(rowText(rowOf(host, 'Rename the open session'))).toBe('Rename the open session [Ctrl]+[Alt]+[Shift]+[J]');
   });
 
   // plan-settings_dialog/REQ-28, REQ-29, REQ-30, REQ-31, REQ-32 — scenario "The client rejects a key that is already taken"
@@ -210,7 +219,7 @@ describe('ShortcutsSection', () => {
     const row = rowOf(host, 'New session dialog');
     expect(alertOf(row)).toBeNull();
     expect(store.keyOf('new-session')).toMatchObject({ code: 'KeyK', modifiers: ['Alt'] });
-    expect(rowText(row)).toBe('[Alt]+[K] New session dialog');
+    expect(rowText(row)).toBe('New session dialog [Alt]+[K]');
   });
 
   // plan-settings_dialog/REQ-33, REQ-39 — scenario "The user cancels an edit with Esc"
@@ -220,7 +229,7 @@ describe('ShortcutsSection', () => {
     altKey('KeyL', 'l');
     const esc = press('keydown', 'Escape', 'Escape');
     const row = rowOf(host, 'Rename the open session');
-    expect(rowText(row)).toBe('[Alt]+[E] Rename the open session');
+    expect(rowText(row)).toBe('Rename the open session [Alt]+[E]');
     expect(alertOf(row)).toBeNull();
     expect(store.getSnapshot()).toEqual({});
     expect(document.activeElement).toBe(change);
@@ -265,9 +274,9 @@ describe('ShortcutsSection', () => {
     store.set('resume-history', { code: 'KeyJ', modifiers: ['Alt'], character: 'j' });
     const { host } = render(store);
     const row = rowOf(host, 'Focus the list', 'Navigation');
-    expect(rowText(row)).toBe('[Alt]+[K] Focus the list');
+    expect(rowText(row)).toBe('Focus the list [Alt]+[K]');
     run(() => button(row, 'Restore Default: Focus the list').click());
-    expect(rowText(rowOf(host, 'Focus the list', 'Navigation'))).toBe('[Alt]+[L] Focus the list');
+    expect(rowText(rowOf(host, 'Focus the list', 'Navigation'))).toBe('Focus the list [Alt]+[L]');
     expect(store.keyOf('focus-list')).toBeUndefined();
     expect(store.keyOf('resume-history')).toBeDefined();
     expect(button(rowOf(host, 'Focus the list', 'Navigation'), 'Restore Default: Focus the list').disabled).toBe(true);
@@ -283,7 +292,7 @@ describe('ShortcutsSection', () => {
     run(() => button(rowOf(host, 'Focus the list', 'Navigation'), 'Restore Default: Focus the list').click());
     const row = rowOf(host, 'Focus the list', 'Navigation');
     expect(alertOf(row)).toBe('Already used by New session dialog');
-    expect(rowText(row)).toBe('[Alt]+[K] Focus the list');
+    expect(rowText(row)).toBe('Focus the list [Alt]+[K]');
     expect(store.keyOf('focus-list')).toMatchObject({ code: 'KeyK' });
   });
 
@@ -323,7 +332,7 @@ describe('ShortcutsSection', () => {
     altKey('KeyL', 'l');
     run(() => button(host, 'Restore All').click());
     const row = rowOf(host, 'New session dialog');
-    expect(rowText(row)).toBe('[Alt]+[N] New session dialog');
+    expect(rowText(row)).toBe('New session dialog [Alt]+[N]');
     run(() => button(document.querySelector('[role="alertdialog"]')!, 'Restore All').click());
     expect(alertOf(rowOf(host, 'New session dialog'))).toBeNull();
   });
@@ -332,6 +341,6 @@ describe('ShortcutsSection', () => {
   it('shows a change of the store at once', () => {
     const { host, store } = render();
     run(() => store.set('toggle-theme', { code: 'KeyG', modifiers: ['Alt', 'Shift'], character: 'G' }));
-    expect(rowText(rowOf(host, 'Light/Dark theme'))).toBe('[Alt]+[Shift]+[G] Light/Dark theme');
+    expect(rowText(rowOf(host, 'Light/Dark theme'))).toBe('Light/Dark theme [Alt]+[Shift]+[G]');
   });
 });
