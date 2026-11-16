@@ -94,6 +94,21 @@ Human decisions of 2026-11-16 (spec, "Updates section"). "Launch check" → the 
 | REQ-51 | The popup stays open after the check. |
 | REQ-52 | The launch check stays silent on failure, as today. |
 
+## Feature: Popup layout (defect)
+
+Human decision (2026-11-16): the popup is too narrow and badly laid out inside. This is a defect of the settings popup, fixed in the last batch. "Menu" → one entry of the popup's side menu; it shows one or more sections.
+
+| ID | Requirement |
+|----|-------------|
+| REQ-53 | The popup has three menus, in this order: "Appearance" with the theme and look sections, "Shortcuts", "Updates". |
+| REQ-54 | The menus are a vertical list on the left of the popup, and the chosen menu shows on the right. |
+| REQ-55 | The popup keeps the same size when the user changes menu. |
+| REQ-56 | The popup fits in the window at every window size, and the content that does not fit scrolls inside the right part. |
+| REQ-57 | Each theme and look choice shows as a selectable card, with the active card marked. |
+| REQ-58 | At a 1440 × 900 window, each shortcut row takes one line: the action on the left, then the keys and the row actions on the right. |
+| REQ-59 | "Restore All" sits in the header of the "Shortcuts" menu, outside the list that scrolls. |
+| REQ-60 | The "Updates" menu shows the installed version, the button and the result together in one card. |
+
 ## Assumptions
 
 - **Place of the settings button (REQ-1, REQ-2).** Human decision (2026-11-16): the button sits at the bottom of the navigation rail, not in the sidebar. The spec carries this decision.
@@ -114,6 +129,11 @@ Human decisions of 2026-11-16 (spec, "Updates section"). "Launch check" → the 
 - **Updates texts (REQ-44 to REQ-50).** Gatekeeper decision, not a human decision (2026-11-16). The button reads "Check for Updates", in the Title Case of the other client buttons. The newer version text and the link follow the launch notice: "Version <newer> is available. You have <installed>." and "View Release".
 - **Notice after a check (REQ-49).** Gatekeeper decision, not a human decision (2026-11-16). The launch notice shows the result of the user's check, also when the launch check found nothing. It stays under the popup, like every dialog, and is visible when the popup closes.
 - **Result while the popup is open (REQ-51).** Gatekeeper decision, not a human decision (2026-11-16). The section keeps its last result while the popup stays open. A new opening of the popup shows the section with no result.
+
+- **Menus and sections (REQ-4, REQ-6, REQ-21, REQ-25, REQ-43, REQ-53).** Gatekeeper decision, not a human decision (2026-11-16). The four sections stay, in the same order. "Appearance" holds the first two, so REQ-4 opens "Appearance" and REQ-25 opens "Shortcuts". No earlier REQ text changes.
+- **Popup size (REQ-55, REQ-56).** Gatekeeper decision, not a human decision (2026-11-16). The popup is wider than the other dialogs and has a fixed size. In a small window it shrinks to fit, and keeps that size across menus.
+- **Cards keep radio use (REQ-57).** Gatekeeper decision, not a human decision (2026-11-16). The cards keep the radio semantics and the keyboard use of today (REQ-11).
+- **Row actions on one line (REQ-58).** Gatekeeper decision, not a human decision (2026-11-16). "Change Keys" and "Restore Default" become icon buttons with the same accessible names and a tooltip, so the row fits on one line.
 
 ## Constraints on the whole plan
 

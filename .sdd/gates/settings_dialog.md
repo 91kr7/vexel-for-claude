@@ -33,3 +33,11 @@
 | 2026-11-16 | dev | G5 update-check | pass | 225 unit + 6 batch e2e re-run green; closing run: 3859 unit, 762/764 e2e, 26 Electron |
 | 2026-11-16 | dev | closing run failures | escalated | `plan-usage.spec.ts` wheel scroll fails on `main` too; `project-search.spec.ts:117` fails only under load, passes alone on branch and on `main` |
 | 2026-11-16 | dev | closing run failures | human decision | Merge anyway; plan-usage failure is older than this cycle |
+| 2026-11-16 | dev | popup layout defect | human decision | Popup too narrow and badly laid out; regroup in 3 menus Appearance / Shortcuts / Updates; reopen the last batch, no new analysis |
+| 2026-11-16 | plan | design of the popup | decided | Left vertical menu, steady size, choice cards, one-line shortcut rows, update card; from screenshots of the current build |
+| 2026-11-16 | plan | G2 requirements (layout defect) | pass | REQ-53..60; no existing REQ text changed |
+| 2026-11-16 | plan | question planner (row actions, size) | decided | Icon buttons with same names and tooltips so a row fits one line; 760 × 540 capped to the window |
+| 2026-11-16 | plan | G3 coverage (layout defect) | pass | INT-9..19 in update-check, paths exist, new scenario covers REQ-53..60 |
+| 2026-11-16 | dev | G4 update-check (layout) | pass | Vite build green; `tsc -b` errors only in `SettingsDialog.test.tsx` (old tab values), left to the tester; screenshots reviewed |
+| 2026-11-16 | dev | divergence developer (tokens.css) | decided | Fixed preview tokens so the Light/Dark cards show their own colours in either theme |
+| 2026-11-16 | dev | G5 update-check (layout) | pass | 87 unit + 27 e2e re-run green; closing run 3865 unit, 771/772 e2e (accepted `project-search.spec.ts:117`), 25 Electron; human saw the popup live and approved |

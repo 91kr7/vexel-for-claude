@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useId, useRef, useState } from 'react';
 import { WarningDialog } from '../dialogs/WarningDialog';
+import { PencilIcon, RotateCcwIcon } from '../icons/Icons';
 import { checkDefaultKeys, checkPress, modifiersOfPress } from '../shortcut-key-check';
 import {
   hasDefaultKeys,
@@ -12,6 +13,7 @@ import {
   shortcutRows,
 } from '../shortcut-map';
 import { pageUserShortcutKeys, type UserShortcutKeysStore, useUserShortcutKeys } from '../user-shortcut-keys';
+import { SettingsPane } from './SettingsPane';
 
 const GROUPS: readonly { area: ShortcutArea; title: string }[] = [
   { area: 'navigation', title: 'Navigation' },
@@ -125,10 +127,10 @@ export function ShortcutsSection({ store = pageUserShortcutKeys() }: { store?: U
     const messageId = `${groupId}-${row.id}-message`;
     return (
       <li key={row.id} className={editing === row.id ? 'shortcuts-row editing' : 'shortcuts-row'}>
+        <span className="shortcuts-action">{row.action}</span>
         <span className="shortcuts-keys">
           {editing === row.id ? <span className="shortcuts-prompt">Press new keys, Esc to cancel</span> : <RowKeys keys={row.keys} />}
         </span>
-        <span className="shortcuts-action">{row.action}</span>
         <span className="shortcuts-row-actions">
           <button
             ref={(element) => {
@@ -136,21 +138,23 @@ export function ShortcutsSection({ store = pageUserShortcutKeys() }: { store?: U
               else changeButtons.current.delete(row.id);
             }}
             type="button"
-            className="button-neutral shortcuts-row-button"
+            className="shortcuts-row-button"
             aria-label={`Change Keys: ${row.action}`}
+            title="Change Keys"
             aria-describedby={message ? messageId : undefined}
             onClick={() => startEditing(row.id)}
           >
-            Change Keys
+            <PencilIcon />
           </button>
           <button
             type="button"
-            className="button-neutral shortcuts-row-button"
+            className="shortcuts-row-button"
             aria-label={`Restore Default: ${row.action}`}
+            title="Restore Default"
             disabled={hasDefaultKeys(row.id, store)}
             onClick={() => restoreDefault(row.id)}
           >
-            Restore Default
+            <RotateCcwIcon />
           </button>
         </span>
         {message && (
@@ -162,26 +166,27 @@ export function ShortcutsSection({ store = pageUserShortcutKeys() }: { store?: U
     );
   };
 
+  const restoreAllButton = (
+    <button
+      type="button"
+      className="button-neutral"
+      onClick={() => {
+        setEditing(null);
+        setConfirmingRestoreAll(true);
+      }}
+    >
+      Restore All
+    </button>
+  );
+
   return (
-    <>
-      <div className="shortcuts-toolbar">
-        <button
-          type="button"
-          className="button-neutral"
-          onClick={() => {
-            setEditing(null);
-            setConfirmingRestoreAll(true);
-          }}
-        >
-          Restore All
-        </button>
-      </div>
-      <div className="shortcuts-groups" role="region" aria-label="Shortcut List" tabIndex={0}>
+    <SettingsPane title="Shortcuts" action={restoreAllButton} bodyLabel="Shortcut List">
+      <div className="shortcuts-groups">
         {GROUPS.map(({ area, title }) => (
           <section key={area} className="shortcuts-group" aria-labelledby={`${groupId}-${area}`}>
-            <h3 id={`${groupId}-${area}`} className="section-label">
+            <h4 id={`${groupId}-${area}`} className="settings-group-title">
               {title}
-            </h3>
+            </h4>
             <ul className="shortcuts-rows">{rows.filter((row) => row.area === area).map(renderRow)}</ul>
           </section>
         ))}
@@ -196,6 +201,6 @@ export function ShortcutsSection({ store = pageUserShortcutKeys() }: { store?: U
           onCancel={() => setConfirmingRestoreAll(false)}
         />
       )}
-    </>
+    </SettingsPane>
   );
 }

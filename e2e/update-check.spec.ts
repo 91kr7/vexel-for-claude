@@ -138,11 +138,11 @@ test.describe('a newer release exists', () => {
   });
 
   // plan-settings_dialog/REQ-43, REQ-44
-  test('REQ-43, REQ-44: the "Updates" tab comes after "Shortcuts" and shows the installed version and the button', async ({ page }) => {
+  test('REQ-43, REQ-44, REQ-53: the "Updates" menu comes after "Shortcuts" and shows the installed version and the button', async ({ page }) => {
     await page.goto(app.base);
     await settingsButton(page).click();
     const tabs = settingsPopup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab');
-    await expect(tabs).toHaveText(['Theme', 'Window Look', 'Shortcuts', 'Updates']);
+    await expect(tabs).toHaveText(['Appearance', 'Shortcuts', 'Updates']);
     await settingsPopup(page).getByRole('tab', { name: 'Updates', exact: true }).click();
     await expect(settingsPopup(page).getByText(`Installed version: v${installed}`, { exact: true })).toBeVisible();
     await expect(checkButton(page)).toHaveText('Check for Updates');
@@ -216,7 +216,7 @@ test.describe('a newer release exists', () => {
     await checkButton(page).click();
     const result = settingsPopup(page).getByText(`Version ${next} is available. You have ${installed}.`, { exact: true });
     await expect(result).toBeVisible();
-    await settingsPopup(page).getByRole('tab', { name: 'Theme', exact: true }).click();
+    await settingsPopup(page).getByRole('tab', { name: 'Appearance', exact: true }).click();
     await expect(result).toBeHidden();
     await settingsPopup(page).getByRole('tab', { name: 'Updates', exact: true }).click();
     await expect(result).toBeVisible();

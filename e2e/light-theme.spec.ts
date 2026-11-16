@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, type WebSocketRoute, expect, test } from '@playwright/test';
-import { chooseInSettings, settingsButton, settingsPopup } from './settings';
+import { cardOf, chooseInSettings, settingsButton, settingsPopup } from './settings';
 
 type Box = { x: number; y: number; width: number; height: number };
 type Rgba = [number, number, number, number];
@@ -348,7 +348,7 @@ test.describe('theme choice', () => {
     });
     await page.evaluate(() => ((window as unknown as { pageMarker: number }).pageMarker = 42));
     await settingsButton(page).click();
-    await settingsPopup(page).getByRole('radio', { name: 'Light', exact: true }).check();
+    await cardOf(settingsPopup(page).getByRole('radio', { name: 'Light', exact: true })).click();
     expect(await style(page.locator('body'), 'background-color')).toBe(LIGHT['--bg-canvas']);
     expect(await style(page.locator('body'), 'color')).toBe(LIGHT['--text-primary']);
     expect(await style(topBar(page), 'background-color')).toBe(LIGHT['--bg-surface-2']);

@@ -54,11 +54,13 @@ async function checked(host: HTMLElement, held: ReturnType<typeof heldCheck>, re
 }
 
 describe('UpdatesSection', () => {
-  // plan-settings_dialog/REQ-44
-  it('shows the label "Updates", the installed version and "Check for Updates"', async () => {
+  // plan-settings_dialog/REQ-44, REQ-60: one card "Updates" with the installed version and "Check for Updates"
+  it('shows one card "Updates" with the installed version and "Check for Updates"', async () => {
     const { host } = render(heldCheck().check);
-    expect(host.querySelector('#' + CSS.escape(host.querySelector('section')?.getAttribute('aria-labelledby') ?? ''))?.textContent).toBe('Updates');
-    await until(() => host.textContent?.includes('Installed version: v0.6.1') ?? false);
+    const card = host.querySelector('[aria-label="Updates"]') as HTMLElement;
+    expect(card).not.toBeNull();
+    await until(() => card.textContent?.includes('Installed version: v0.6.1') ?? false);
+    expect(card.contains(button(host))).toBe(true);
     expect(button(host).textContent).toBe('Check for Updates');
     expect(button(host).disabled).toBe(false);
     expect(statusText(host)).toBeNull();
@@ -115,6 +117,19 @@ describe('UpdatesSection', () => {
     await checked(host, held, { status: 'newer', version: VERSION });
     expect(onNewerVersion).toHaveBeenCalledTimes(1);
     expect(onNewerVersion).toHaveBeenCalledWith(VERSION);
+  });
+
+  // plan-settings_dialog/REQ-60: the result shows inside the same card
+  it.each([
+    { status: 'current', installedVersion: '0.6.1' },
+    { status: 'newer', version: VERSION },
+    { status: 'failed' },
+  ] as UpdateCheckResult[])('shows the result %j inside the "Updates" card', async (result) => {
+    const held = heldCheck();
+    const { host } = render(held.check);
+    await checked(host, held, result);
+    const card = host.querySelector('[aria-label="Updates"]') as HTMLElement;
+    expect(card.querySelector('[role="status"], [role="alert"]')).not.toBeNull();
   });
 
   // plan-settings_dialog/REQ-50

@@ -1,9 +1,12 @@
 // Theme and look choices through the settings popup, for the specs that need one of them.
-import { type Page, expect } from '@playwright/test';
+import { type Locator, type Page, expect } from '@playwright/test';
 
 export const settingsButton = (page: Page) =>
   page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'Settings', exact: true });
 export const settingsPopup = (page: Page) => page.getByRole('dialog', { name: 'Settings', exact: true });
+
+/** The card of a theme or look radio: the user clicks the card, the radio inside it is not a target of its own. */
+export const cardOf = (radio: Locator) => radio.locator('xpath=ancestor::label[1]');
 
 export type SettingsChoice = 'Light' | 'Dark' | 'macOS' | 'Windows 11';
 
@@ -12,8 +15,8 @@ export async function chooseInSettings(page: Page, choice: SettingsChoice): Prom
   await settingsButton(page).click();
   const popup = settingsPopup(page);
   await expect(popup).toBeVisible();
-  await popup.getByRole('tab', { name: choice === 'Light' || choice === 'Dark' ? 'Theme' : 'Window Look', exact: true }).click();
-  await popup.getByRole('radio', { name: choice, exact: true }).check();
+  await popup.getByRole('tab', { name: 'Appearance', exact: true }).click();
+  await cardOf(popup.getByRole('radio', { name: choice, exact: true })).click();
   await popup.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(popup).toHaveCount(0);
 }

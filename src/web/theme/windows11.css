@@ -91,6 +91,8 @@
     .search-field-clear,
     .dialog-row,
     .dialog-row-icon,
+    .settings-menu-item,
+    .shortcuts-row-button,
     .area-state-compact,
     .area-state-compact .area-state-tile
   ) {
@@ -111,7 +113,9 @@
     .tool-card,
     .new-messages,
     .modal,
-    .dialog-banner
+    .dialog-banner,
+    .settings-card,
+    .updates-card
   ) {
   border-radius: var(--radius-overlay);
 }
@@ -183,4 +187,13 @@
   width: 10px;
   height: 10px;
   flex: none;
+}
+
+:root[data-look='windows11'] .theme-preview {
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+}
+
+:root[data-look='windows11'] .settings-menu-item.selected {
+  background-color: var(--bg-surface-3);
+  color: var(--text-primary);
 }

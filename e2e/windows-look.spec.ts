@@ -5,7 +5,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
-import { chooseInSettings, settingsButton, settingsPopup } from './settings';
+import { cardOf, chooseInSettings, settingsButton, settingsPopup } from './settings';
 
 type Look = 'vexel' | 'windows11';
 type Rgb = [number, number, number];
@@ -130,7 +130,7 @@ async function setLook(page: Page, look: Look): Promise<void> {
 /** The look the settings popup shows as chosen; the popup closes again. */
 async function expectChosenLook(page: Page, choice: 'macOS' | 'Windows 11'): Promise<void> {
   await settingsButton(page).click();
-  await settingsPopup(page).getByRole('tab', { name: 'Window Look', exact: true }).click();
+  await settingsPopup(page).getByRole('tab', { name: 'Appearance', exact: true }).click();
   await expect(settingsPopup(page).getByRole('radio', { name: choice, exact: true })).toBeChecked();
   await page.keyboard.press('Escape');
   await expect(settingsPopup(page)).toHaveCount(0);
@@ -216,7 +216,7 @@ test.describe('Look choice and look store', () => {
     await page.goto('/');
     await page.evaluate(() => Object.assign(window, { sameDocument: true }));
     await settingsButton(page).click();
-    await settingsPopup(page).getByRole('tab', { name: 'Window Look', exact: true }).click();
+    await settingsPopup(page).getByRole('tab', { name: 'Appearance', exact: true }).click();
     const windows11 = settingsPopup(page).getByRole('radio', { name: 'Windows 11', exact: true });
     const macOS = settingsPopup(page).getByRole('radio', { name: 'macOS', exact: true });
     await expect(macOS).toBeChecked();
@@ -242,7 +242,7 @@ test.describe('Look choice and look store', () => {
     await expect.poll(() => topBar(page).evaluate((e) => getComputedStyle(e).backgroundColor), { message: 'the top bar takes the Windows 11 surface' }).toBe('rgb(43, 43, 43)');
     await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).fontFamily), { message: 'the page text takes Segoe UI' }).toContain('Segoe UI');
 
-    await macOS.check();
+    await cardOf(macOS).click();
     await expect(macOS).toBeChecked();
     expect(await lookMark(page)).toBe('vexel');
     expect(await page.evaluate((key) => localStorage.getItem(key), LOOK_KEY)).toBe('vexel');

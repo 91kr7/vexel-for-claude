@@ -124,7 +124,7 @@ const backgroundLuminance = (locator: Locator) =>
     return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
   });
 
-/** Row text of a group, keys as `[badge]`, then the action. */
+/** Row text of a group: the action, then the keys as `[badge]`. */
 const rowTexts = (page: Page, name: string) =>
   group(page, name)
     .locator('li')
@@ -148,33 +148,33 @@ async function openWithAltS(page: Page): Promise<void> {
 
 const ROWS = {
   Navigation: [
-    '[Alt]+[L] Focus the list',
-    '[Alt]+[C] Focus the main view',
-    '[Alt]+[Up] Previous session',
-    '[Alt]+[Down] Next session',
-    ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((position) => `[Alt]+[${position}] Session at position ${position}`),
-    '[Alt]+[I] Next session that needs input',
+    'Focus the list [Alt]+[L]',
+    'Focus the main view [Alt]+[C]',
+    'Previous session [Alt]+[Up]',
+    'Next session [Alt]+[Down]',
+    ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((position) => `Session at position ${position} [Alt]+[${position}]`),
+    'Next session that needs input [Alt]+[I]',
   ],
   Sessions: [
-    '[Alt]+[N] New session dialog',
-    '[Alt]+[H] Resume history dialog',
-    '[Alt]+[E] Rename the open session',
-    '[Alt]+[R] "Resume" or "Resume Here" on the open session',
-    '[Alt]+[Shift]+[Q] Stop the open hosted session',
-    '[Alt]+[Shift]+[W] Dismiss the open ended session',
+    'New session dialog [Alt]+[N]',
+    'Resume history dialog [Alt]+[H]',
+    'Rename the open session [Alt]+[E]',
+    '"Resume" or "Resume Here" on the open session [Alt]+[R]',
+    'Stop the open hosted session [Alt]+[Shift]+[Q]',
+    'Dismiss the open ended session [Alt]+[Shift]+[W]',
   ],
   Terminal: [
-    '[Ctrl]+[Shift]+[F] Search',
-    '[Ctrl]+[=] / [Ctrl]+[+] Larger text',
-    '[Ctrl]+[-] Smaller text',
-    '[Ctrl]+[0] Default text size',
-    '[Ctrl]+[Shift]+[L] Focus the list',
+    'Search [Ctrl]+[Shift]+[F]',
+    'Larger text [Ctrl]+[=] / [Ctrl]+[+]',
+    'Smaller text [Ctrl]+[-]',
+    'Default text size [Ctrl]+[0]',
+    'Focus the list [Ctrl]+[Shift]+[L]',
   ],
-  General: ['[Alt]+[A] Light/Dark theme', '[Alt]+[S] Shortcut settings'],
+  General: ['Light/Dark theme [Alt]+[A]', 'Shortcut settings [Alt]+[S]'],
 };
 
 // plan-settings_dialog/REQ-3, REQ-21, REQ-22, REQ-23, REQ-25 — scenario "Alt+S shows the shortcuts in the settings"
-test('with the tooltip "Settings (Alt+S)" shown, Alt+S opens the popup on the "Shortcuts" tab, after "Theme" and "Window Look", with every shortcut by area', async ({
+test('with the tooltip "Settings (Alt+S)" shown, Alt+S opens the popup on the "Shortcuts" menu, after "Appearance", with every shortcut by area', async ({
   page,
 }) => {
   await loadPage(page);
@@ -184,7 +184,7 @@ test('with the tooltip "Settings (Alt+S)" shown, Alt+S opens the popup on the "S
   await expect(tooltip).toBeVisible();
 
   await openWithAltS(page);
-  await expect(popup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Theme', 'Window Look', 'Shortcuts', 'Updates']);
+  await expect(popup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Appearance', 'Shortcuts', 'Updates']);
   await expect(shortcutList(page)).toBeVisible();
   await expect(popup(page).getByRole('tabpanel')).toHaveCount(1);
   await expect(shortcutList(page).getByRole('heading')).toHaveText(GROUPS);
@@ -192,12 +192,12 @@ test('with the tooltip "Settings (Alt+S)" shown, Alt+S opens the popup on the "S
   await expect(shortcutList(page).locator('.kbd-badge').first()).toBeVisible();
 });
 
-// plan-settings_dialog/REQ-4, REQ-25, assumption "First section": the settings button opens the "Theme" tab, only Alt+S opens "Shortcuts"
-test('the settings button opens the popup on "Theme", and a click on "Shortcuts" shows the shortcut list', async ({ page }) => {
+// plan-settings_dialog/REQ-4, REQ-25, REQ-53: the settings button opens "Appearance", only Alt+S opens "Shortcuts"
+test('the settings button opens the popup on "Appearance", and a click on "Shortcuts" shows the shortcut list', async ({ page }) => {
   await loadPage(page);
   await settingsButton(page).click();
   await expect(popup(page)).toBeVisible();
-  await expect(tab(page, 'Theme')).toHaveAttribute('aria-selected', 'true');
+  await expect(tab(page, 'Appearance')).toHaveAttribute('aria-selected', 'true');
   await expect(shortcutList(page)).toHaveCount(0);
   await tab(page, 'Shortcuts').click();
   await expect(tab(page, 'Shortcuts')).toHaveAttribute('aria-selected', 'true');
