@@ -44,3 +44,5 @@
 | 2026-11-16 | dev session-cards | regression ConversationView | decided | Tool card back to the surface-1 level to keep three looks (studio_dark REQ-37, REQ-39) |
 | 2026-11-16 | dev session-cards | G4 development (fix) | pass | Tool card on `--role-chrome`; conversation-view spec; build green |
 | 2026-11-16 | dev session-cards | G5 tests (round 3) | pass | Re-run open-session-external, session-cards, external-session, shared-shapes, studio-dark: 75 passed |
+| 2026-11-16 | dev session-view | G4 development | pass | CSS only plus sessions specs and index; build green |
+| 2026-11-16 | dev session-view | divergence developer | decided | Frame inner padding stays 12px (terminal rows); no darker focus shadow; stale 40px footer line in session-view spec fixed |

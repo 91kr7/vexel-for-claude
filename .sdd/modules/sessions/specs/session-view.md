@@ -6,14 +6,14 @@ type: UI component
 
 # SessionView
 
-**Purpose** → the open hosted session in the main area, as `#screen-session` of `.sdd/mockups/studio-dark/mock.html`: the subbar, the terminal panel and the footer.
+**Purpose** → the open hosted session in the main area, as `#screen-session` of `.sdd/mockups/studio-dark/mock.html`: the header, the framed terminal panel and the footer.
 
 ## Contract
 
 Description:
 - one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with, from left to right in its right group, GitExplorerButton and "Search" (as `leadingActions`), the state pill, "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the SessionFooter.
 - the panel takes all the height the header and the footer leave.
-- the GitExplorerPanel, while open, sits at the right of the terminal panel, in the same row. The terminal panel takes the width it leaves, and the terminal fits it.
+- the GitExplorerPanel, while open, sits at the right of the terminal panel, in the same row, past the panel's 12 px gap. The terminal panel takes the width it leaves, and the terminal fits it.
 
 Props:
 - `sessionId` → the session to show.
@@ -26,9 +26,9 @@ Props:
 - `session` → `{ folder, label, state, usage? }` of the session, optional. It goes to the SessionHeader and the SessionFooter, and its `state` and folder name to StopSessionButton. A change of `session` does not reconnect the terminal.
 
 Shows:
-- the terminal panel → `role="region"` named "Terminal: <folder name>" ("Terminal" without `session`). 16 px margin on all four sides (the bottom one keeps it off the SessionFooter), 8 px radius, 1 px `--border-subtle` border, `--term-bg` background, padding 12 px. The terminal fills the box inside the padding.
+- the terminal panel → a frame with `role="region"` named "Terminal: <folder name>" ("Terminal" without `session`). 12 px gap on all four sides (it keeps the frame off the header, the SessionFooter and the GitExplorerPanel), `--radius-frame` (8 px) corners, 1 px `--role-border-strong` border, `--shadow-frame` shadow, `--term-bg` background, padding 12 px. The terminal fills the box inside the padding. Nothing of the frame or its shadow paints outside its 12 px gap.
 - the terminal → Roboto Mono at the size of TerminalFontSizeStore (12 px by default), line height 1.2. Background `--term-bg`, default text `--term-fg`, cursor `--term-cursor`, selection `--term-selection`. These tokens have the same dark values in both themes, so the panel stays dark in the light theme. The font is loaded before the terminal opens and fits; if it fails to load, the terminal opens with the next font of `--font-mono`. The ANSI colours that Claude Code writes stay as written.
-- while the terminal or the search box has the keyboard focus, the panel shows the focus ring (`--color-focus-ring`) around its rounded edge. The ring does not touch the SessionFooter.
+- while the terminal or the search box has the keyboard focus, the frame shows an accent border (`--role-accent` at 75 %) and a 1 px accent ring outside it (`--role-accent` at 22 %), around its rounded edge. The ring stays inside the 12 px gap: it touches neither the header nor the SessionFooter nor the GitExplorerPanel.
 - the SessionFooter with `session` (path and figures). Its end holds the TerminalZoomControls, at the right end.
 - no on-screen hint for Ctrl+Shift+L (human decision, 2026-11-07).
 - a ProgressIndicator "Loading…" centred over the panel, on surface 2 with an 8 px radius, from the start until the first frame (the snapshot) arrives or the connection closes. A click goes through it to the terminal.
@@ -93,7 +93,7 @@ Actions:
 - Human decision (`plan-claude_sessions_client-ui_redesign/REQ-4`): one key combination moves the focus from the terminal to the sidebar. Its on-screen hint was removed by human decision (2026-11-07). Claude Code needs Tab, Shift+Tab and Esc, so the terminal keeps them.
 - No key typed in the search box goes to the pty.
 - Why Ctrl+Shift+L: Claude Code does not use it (Ctrl+L, which it uses to redraw, stays free without Shift). Chromium and Firefox on Linux give it no default action. Ctrl+Shift+E would open the Firefox network monitor. "L" stands for the session list.
-- The footer has a fixed height of 40 px, the height of the former hint row, so the terminal keeps its number of rows. The snackbar is fixed to the window (AppLayout), so it never changes the panel size and never resizes the terminal.
+- The footer has a fixed height of 32 px (SessionFooter), so its content never changes the number of terminal rows. The snackbar is fixed to the window (AppLayout), so it never changes the panel size and never resizes the terminal.
 - The view does not read the system theme.
 - One size for all terminals: the terminal opens at the current size of TerminalFontSizeStore. The zoom changes only the terminal text: the subbar, the footer and the rest of the page keep their size.
 - Removing the view closes its connection. The session keeps running.
@@ -122,3 +122,4 @@ Actions:
 - `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-3`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-25`
 - `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`, `plan-session_list_width/REQ-30`, `plan-session_list_width/REQ-31`, `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-33`, `plan-session_list_width/REQ-36`
 - `plan-ui_restyle/REQ-34`, `plan-ui_restyle/REQ-35`
+- `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-26`, `plan-dark_blue_theme/REQ-27`, `plan-dark_blue_theme/REQ-28`, `plan-dark_blue_theme/REQ-29`
