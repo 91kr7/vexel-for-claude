@@ -1,13 +1,18 @@
 // @vitest-environment jsdom
-// Component tests of HistoryTab and CommitDetail (plan-git_explorer batch history, plan-git_graph batch graph-history).
+// Component tests of HistoryTab and CommitDetail (plan-git_explorer batch history, plan-git_graph batch graph-history,
+// plan-multi_repo_workspace batch combined-history).
 import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommitDetail } from './CommitDetail';
-import { HistoryTab } from './HistoryTab';
+import { type HistoryRepository, HistoryTab } from './HistoryTab';
+import type { RepositoryCommit } from './history-merge';
 import type { Commit } from './history-store';
 
 const ROOT = '/home/dev/project';
+const REPO: HistoryRepository = { root: ROOT, name: 'project', color: 'rgb(1, 2, 3)' };
+/** The commits of the single repository ROOT. */
+const one = (list: Commit[]): RepositoryCommit[] => list.map((commit) => ({ root: ROOT, commit }));
 const newest: Commit = {
   hash: 'a1b2c3d4'.repeat(5),
   shortHash: 'a1b2c3d',
@@ -69,7 +74,7 @@ const fileOptions = (scope: ParentNode) => [...(fileList(scope)?.querySelectorAl
 const requestedUrl = (call: number) => new URL(String(fetchMock.mock.calls[call]?.[0]), 'http://localhost');
 
 const tab = (props: Partial<React.ComponentProps<typeof HistoryTab>> = {}) => (
-  <HistoryTab root={ROOT} commits={[newest, older]} hasMore={false} loadingMore={false} onLoadMore={() => {}} {...props} />
+  <HistoryTab repositories={[REPO]} commits={one([newest, older])} hasMore={false} loadingMore={false} onLoadMore={() => {}} {...props} />
 );
 
 describe('HistoryTab', () => {
@@ -279,7 +284,7 @@ describe('HistoryTab after a refresh', () => {
     await until(() => backButton(container) !== undefined);
     const calls = fetchMock.mock.calls.length;
     const added: Commit = { hash: 'f'.repeat(40), shortHash: 'fffffff', message: 'newer', author: 'Cy', date: '2026-11-10T10:00:00+00:00' };
-    update(tab({ commits: [added, { ...newest }, { ...older }] }));
+    update(tab({ commits: one([added, { ...newest }, { ...older }]) }));
     expect(backButton(container)).toBeDefined();
     expect(listShown(container)).toBe(false);
     await settle();
@@ -290,7 +295,7 @@ describe('HistoryTab after a refresh', () => {
     const { container, update } = mount(tab());
     flushSync(() => commitList(container)!.querySelectorAll('button')[1]!.click());
     await until(() => backButton(container) !== undefined);
-    update(tab({ commits: [{ ...newest }] }));
+    update(tab({ commits: one([{ ...newest }]) }));
     expect(backButton(container)).toBeUndefined();
     expect(listShown(container)).toBe(true);
   });
@@ -367,7 +372,7 @@ const rowsOf = (scope: ParentNode) => [...(commitList(scope)?.querySelectorAll('
 describe('HistoryTab graph', () => {
   // plan-git_graph/REQ-8, REQ-10: the merge m has parents a (first) and f (second)
   it('draws a line from a merge to each of its parents, the second parent in a lane to the right', () => {
-    const { container } = mount(tab({ commits: [commitOf('m', ['a', 'f'], 4), commitOf('f', ['a'], 3), commitOf('a', [], 2)] }));
+    const { container } = mount(tab({ commits: one([commitOf('m', ['a', 'f'], 4), commitOf('f', ['a'], 3), commitOf('a', [], 2)]) }));
     expect(graph(container), 'a graph hidden from assistive technology').not.toBeNull();
     expect(rowsOf(container)).toHaveLength(3);
     const [m, f, a] = nodes(container);
@@ -381,7 +386,7 @@ describe('HistoryTab graph', () => {
 
   // plan-git_graph/REQ-11
   it('draws a history with no merges as one straight line in one lane', () => {
-    const { container } = mount(tab({ commits: [commitOf('d', ['c'], 4), commitOf('c', ['b'], 3), commitOf('b', ['a'], 2), commitOf('a', [], 1)] }));
+    const { container } = mount(tab({ commits: one([commitOf('d', ['c'], 4), commitOf('c', ['b'], 3), commitOf('b', ['a'], 2), commitOf('a', [], 1)]) }));
     const points = nodes(container);
     expect(points).toHaveLength(4);
     expect(new Set(points.map((p) => p.x)).size, 'a single lane').toBe(1);
@@ -390,7 +395,7 @@ describe('HistoryTab graph', () => {
   });
 
   it('counts a commit with no parents field as a root', () => {
-    const { container } = mount(tab({ commits: [commitOf('b', undefined, 2), commitOf('a', undefined, 1)] }));
+    const { container } = mount(tab({ commits: one([commitOf('b', undefined, 2), commitOf('a', undefined, 1)]) }));
     const points = nodes(container);
     expect(points).toHaveLength(2);
     expect(joined(container, points[0]!, points[1]!)).toBe(false);
@@ -398,7 +403,7 @@ describe('HistoryTab graph', () => {
 
   // plan-git_graph/REQ-10, REQ-19: the second parent x is not loaded yet
   it('runs the line to a parent not loaded yet past the last row, and makes no row for it', () => {
-    const { container } = mount(tab({ commits: [commitOf('m', ['a', 'x'], 2), commitOf('a', [], 1)], hasMore: true }));
+    const { container } = mount(tab({ commits: one([commitOf('m', ['a', 'x'], 2), commitOf('a', [], 1)]), hasMore: true }));
     expect(rowsOf(container)).toHaveLength(2);
     const [m, a] = nodes(container);
     const { lines, curves } = segments(container);
@@ -408,11 +413,11 @@ describe('HistoryTab graph', () => {
 
   // plan-git_graph/REQ-19
   it('joins the lines across the page border after "Load more", with no gap', () => {
-    const first = [commitOf('d', ['c'], 4), commitOf('c', ['b'], 3)];
+    const first = one([commitOf('d', ['c'], 4), commitOf('c', ['b'], 3)]);
     const { container, update } = mount(tab({ commits: first, hasMore: true }));
     const before = nodes(container);
     expect(laneCovers(container, before[0]!.x, before[0]!.y, before[1]!.y + ROW / 2), 'the line to the unloaded parent runs past the last row').toBe(true);
-    update(tab({ commits: [...first, commitOf('b', ['a'], 2), commitOf('a', [], 1)], hasMore: false }));
+    update(tab({ commits: [...first, ...one([commitOf('b', ['a'], 2), commitOf('a', [], 1)])], hasMore: false }));
     expect(rowsOf(container)).toHaveLength(4);
     const after = nodes(container);
     expect(after, 'no placeholder left once every parent is loaded').toHaveLength(4);
@@ -427,14 +432,14 @@ describe('HistoryTab branch label', () => {
 
   // plan-git_graph/REQ-12
   it('labels only the first commit with the branch name', () => {
-    const { container } = mount(tab({ branch: { kind: 'branch', name: 'main' } }));
+    const { container } = mount(tab({ repositories: [{ ...REPO, branch: { kind: 'branch', name: 'main' } }] }));
     const rows = rowsOf(container);
     expect(labelled(rows[0]!, 'main')).toBe(true);
     expect(labelled(rows[1]!, 'main')).toBe(false);
   });
 
   it('labels the first commit "detached" on a detached HEAD', () => {
-    const { container } = mount(tab({ branch: { kind: 'detached', hash: newest.hash } }));
+    const { container } = mount(tab({ repositories: [{ ...REPO, branch: { kind: 'detached', hash: newest.hash } }] }));
     const rows = rowsOf(container);
     expect(labelled(rows[0]!, 'detached')).toBe(true);
     expect(labelled(rows[1]!, 'detached')).toBe(false);
@@ -443,5 +448,139 @@ describe('HistoryTab branch label', () => {
   it('shows no label without a branch', () => {
     const { container } = mount(tab());
     for (const row of rowsOf(container)) expect(labelled(row, 'main') || labelled(row, 'detached')).toBe(false);
+  });
+});
+
+describe('HistoryTab with several repositories', () => {
+  const API: HistoryRepository = { root: '/ws/api', name: 'api', color: 'rgb(10, 20, 30)', branch: { kind: 'branch', name: 'main' } };
+  const APP: HistoryRepository = { root: '/ws/web/app', name: 'web/app', color: 'rgb(200, 100, 50)', branch: { kind: 'branch', name: 'develop' } };
+  const at = (repository: HistoryRepository, commit: Commit): RepositoryCommit => ({ root: repository.root, commit });
+  const several = (commits: RepositoryCommit[], props: Partial<React.ComponentProps<typeof HistoryTab>> = {}) => (
+    <HistoryTab repositories={[API, APP]} commits={commits} hasMore={false} loadingMore={false} onLoadMore={() => {}} {...props} />
+  );
+  const mixed = [
+    at(API, commitOf('d', ['c'], 6)),
+    at(APP, commitOf('y', ['x'], 5)),
+    at(API, commitOf('c', [], 4)),
+    at(APP, commitOf('x', [], 3)),
+  ];
+  const markOf = (row: Element) => row.querySelector('.history-commit-repository');
+  const labelled = (row: Element, text: string) => [...row.querySelectorAll('*')].some((el) => el.textContent === text);
+
+  // plan-multi_repo_workspace/REQ-21, REQ-22, REQ-23
+  it('shows the commits in the given order, each with the name and colour mark of its repository, the root as tooltip', () => {
+    const { container } = mount(several(mixed));
+    const rows = rowsOf(container);
+    expect(rows.map((row) => row.textContent?.slice(0, 7))).toEqual(['ddddddd', 'yyyyyyy', 'ccccccc', 'xxxxxxx']);
+    const expected = [API, APP, API, APP];
+    rows.forEach((row, i) => {
+      const repository = expected[i]!;
+      const mark = markOf(row);
+      expect(mark, `row ${i} carries a repository mark`).not.toBeNull();
+      expect(mark!.textContent).toBe(repository.name);
+      expect(mark!.getAttribute('title')).toBe(repository.root);
+      const colored = [...mark!.querySelectorAll<HTMLElement>('*'), mark as HTMLElement].some((el) => el.style.backgroundColor === repository.color);
+      expect(colored, `row ${i} mark in the colour of ${repository.name}`).toBe(true);
+    });
+  });
+
+  // plan-multi_repo_workspace/REQ-27
+  it('shows no repository mark with a single repository', () => {
+    const { container } = mount(tab());
+    for (const row of rowsOf(container)) {
+      expect(markOf(row)).toBeNull();
+      expect(row.querySelector('[title="/home/dev/project"]')).toBeNull();
+      expect(row.textContent).not.toContain('project');
+    }
+  });
+
+  // plan-multi_repo_workspace/REQ-24, plan-git_graph/REQ-12
+  it('labels the tip of each repository with its own branch, and no other row', () => {
+    const { container } = mount(several(mixed));
+    const rows = rowsOf(container);
+    expect(labelled(rows[0]!, 'main')).toBe(true);
+    expect(labelled(rows[1]!, 'develop')).toBe(true);
+    expect(labelled(rows[2]!, 'main') || labelled(rows[2]!, 'develop')).toBe(false);
+    expect(labelled(rows[3]!, 'main') || labelled(rows[3]!, 'develop')).toBe(false);
+  });
+
+  it('labels "detached" the tip of a repository on a detached HEAD, and nothing for one with no branch', () => {
+    const detached = { ...API, branch: { kind: 'detached' as const, hash: hash('d') } };
+    const noBranch: HistoryRepository = { root: APP.root, name: APP.name, color: APP.color };
+    const { container } = mount(several(mixed, { repositories: [detached, noBranch] }));
+    const rows = rowsOf(container);
+    expect(labelled(rows[0]!, 'detached')).toBe(true);
+    expect(rows.slice(1).some((row) => labelled(row, 'detached') || labelled(row, 'develop'))).toBe(false);
+  });
+
+  // plan-multi_repo_workspace/REQ-25
+  it('draws no line between the commits of two repositories', () => {
+    const { container } = mount(several(mixed));
+    const [d, y, c, x] = nodes(container);
+    expect(joined(container, d!, c!), 'api commits joined').toBe(true);
+    expect(joined(container, y!, x!), 'web/app commits joined').toBe(true);
+    for (const [a, b] of [[d, y], [d, x], [y, c], [c, x]] as const) expect(joined(container, a!, b!)).toBe(false);
+  });
+
+  // plan-multi_repo_workspace/REQ-25: two clones hold the same commits
+  it('shows a commit shared by two clones as two rows and two nodes, with no line across them', () => {
+    const shared = [commitOf('s', ['r'], 4), commitOf('r', [], 3)];
+    const { container } = mount(several([at(API, shared[0]!), at(APP, shared[0]!), at(API, shared[1]!), at(APP, shared[1]!)]));
+    expect(rowsOf(container)).toHaveLength(4);
+    const points = nodes(container);
+    expect(points).toHaveLength(4);
+    const [apiS, appS, apiR, appR] = points;
+    expect(joined(container, apiS!, apiR!)).toBe(true);
+    expect(joined(container, appS!, appR!)).toBe(true);
+    expect(joined(container, apiS!, appR!)).toBe(false);
+    expect(joined(container, appS!, apiR!)).toBe(false);
+  });
+
+  // plan-multi_repo_workspace/REQ-25: the parent of an api commit is loaded only in web/app
+  it('never joins a commit to a parent hash loaded only in another repository', () => {
+    const { container } = mount(several([at(API, commitOf('m', ['p'], 5)), at(APP, commitOf('p', [], 4))], { hasMore: true }));
+    const [m, p] = nodes(container);
+    expect(rowsOf(container)).toHaveLength(2);
+    expect(m!.x === p!.x && joined(container, m!, p!), 'no line from m to the web/app node p').toBe(false);
+  });
+
+  // plan-multi_repo_workspace/REQ-24
+  it('opens the commit detail on the root of the commit repository', async () => {
+    const { container } = mount(several(mixed));
+    flushSync(() => rowsOf(container)[1]!.click());
+    await until(() => backButton(container) !== undefined);
+    const url = requestedUrl(0);
+    expect(url.pathname).toBe('/api/git/commit-files');
+    expect(url.searchParams.get('path')).toBe(APP.root);
+    expect(url.searchParams.get('hash')).toBe(hash('y'));
+  });
+
+  it('opens the clone of a shared commit on its own root', async () => {
+    const shared = commitOf('s', [], 4);
+    const { container } = mount(several([at(API, shared), at(APP, shared)]));
+    flushSync(() => rowsOf(container)[1]!.click());
+    await until(() => fetchMock.mock.calls.length === 1);
+    expect(requestedUrl(0).searchParams.get('path')).toBe(APP.root);
+  });
+
+  // plan-multi_repo_workspace/REQ-24, plan-git_explorer/REQ-26
+  it('keeps the open commit open after a refresh when the same repository still has its hash', async () => {
+    const { container, update } = mount(several(mixed));
+    flushSync(() => rowsOf(container)[1]!.click());
+    await until(() => backButton(container) !== undefined);
+    update(several([at(APP, commitOf('z', ['y'], 7)), ...mixed.map((entry) => ({ ...entry }))]));
+    expect(backButton(container)).toBeDefined();
+    await settle();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the open commit after a refresh when only another repository has its hash', async () => {
+    const shared = commitOf('s', [], 4);
+    const { container, update } = mount(several([at(API, shared), at(APP, shared)]));
+    flushSync(() => rowsOf(container)[1]!.click());
+    await until(() => backButton(container) !== undefined);
+    update(several([at(API, shared)]));
+    expect(backButton(container)).toBeUndefined();
+    expect(commitList(container)).not.toBeNull();
   });
 });

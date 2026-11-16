@@ -10,3 +10,4 @@
 | release-bumps-package-version | guideline | any | A requested new version sets `version` in `package.json` before the release is published | `entries/release-bumps-package-version.md` |
 | no-kill-by-pattern | guideline | development, test | Never stop processes by name or pattern; a process you started is stopped only by its PID | `entries/no-kill-by-pattern.md` |
 | wsl-keeps-ubuntu-working | guideline | any | A change made for WSL never breaks the app on Ubuntu | `entries/wsl-keeps-ubuntu-working.md` |
+| limited-test-parallelism | guideline | development, test | Vitest at most 4 workers, Playwright at most 3; never two full suites at once | `entries/limited-test-parallelism.md` |

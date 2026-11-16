@@ -10,7 +10,7 @@ interface GitExplorerButtonProps {
 }
 
 export function GitExplorerButton({ lookup, open, onToggle }: GitExplorerButtonProps) {
-  if (lookup.status !== 'repository' && lookup.status !== 'error') return null;
+  if (lookup.status !== 'repositories' && lookup.status !== 'error') return null;
   return (
     <button
       type="button"

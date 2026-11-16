@@ -2129,6 +2129,108 @@ input {
   margin-left: auto;
 }
 
+.git-explorer-header.several {
+  height: auto;
+  min-height: 40px;
+  padding: 6px 16px;
+  align-items: flex-start;
+}
+
+.git-repository-filter {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.git-repository-all {
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-secondary);
+}
+
+.git-repository-list {
+  align-self: stretch;
+  min-width: 0;
+  max-height: 132px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.git-repository-entry {
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 4px;
+  justify-content: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.git-repository-entry:hover,
+.git-repository-all:hover {
+  background-color: var(--bg-surface-2);
+}
+
+.git-repository-entry[aria-pressed='true'],
+.git-repository-all[aria-pressed='true'] {
+  background-color: var(--bg-surface-3);
+  color: var(--text-primary);
+}
+
+.git-repository-mark {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.git-repository-name {
+  flex: none;
+  font-weight: 600;
+}
+
+.git-repository-path {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.git-repository-branch {
+  flex: 0 1000 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.git-repository-error {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--color-error);
+}
+
 .git-explorer-error {
   padding: 8px 16px;
 }
@@ -2159,6 +2261,22 @@ input {
   min-height: 0;
   overflow: auto;
   border-top: 1px solid var(--border-subtle);
+}
+
+.changes-repository + .changes-repository {
+  margin-top: 8px;
+}
+
+.changes-repository-title {
+  margin: 0;
+  padding: 4px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .changes-group-title {
@@ -2363,6 +2481,18 @@ input {
   flex: none;
   font-family: var(--font-mono);
   color: var(--accent-primary);
+}
+
+.history-commit-repository {
+  flex: none;
+  max-width: 25%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-secondary);
+  font-size: 11px;
 }
 
 .history-branch-label {
