@@ -49,7 +49,7 @@ any other day                 → "DD/MM/YYYY HH:MM"
 
 Tool cards (look of the tool card built by `selectSession()`):
 - a `tool_call` and the first later `tool_result` whose `toolUseId` equals its `id` form one card, at the place of the call. A `tool_result` with no such call is a card of its own, named "Result".
-- the card (`aria-label` "Tool: <name>"): 36 px from the left, so it lines up with the message text. `--role-card` fill, 1 px `--role-border-subtle` border, `--radius-card`; the row turns `--role-card-active` on hover. Two cards in a row are 8 px apart.
+- the card (`aria-label` "Tool: <name>"): 36 px from the left, so it lines up with the message text. surface-1 fill through `--role-chrome`, so it stays apart from the surface-2 user box, 1 px `--role-border-subtle` border, `--radius-card`; the row turns `--role-card-active` on hover. Two cards in a row are 8 px apart.
 - its row is one button (`aria-expanded`), padding 6 × 12 px, 8 px gaps, mono 11 px; surface 2 on hover:
   - the name chip → padding 0 × 6 px, `--radius-pill`, `--role-card-active`, `--role-accent`, weight 500.
   - the summary → `--text-primary`, one line cut with an ellipsis, full text as tooltip.

@@ -2972,7 +2972,7 @@ input {
 .tool-card {
   margin-left: 36px;
   border-radius: var(--radius-card);
-  background-color: var(--role-card);
+  background-color: var(--role-chrome);
   overflow: hidden;
 }
 

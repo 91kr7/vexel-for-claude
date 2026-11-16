@@ -42,3 +42,5 @@
 | 2026-11-16 | dev session-cards | G4 development (fix) | pass | CSS fixes and INT-9 in styles.css; session-list and plan-usage-button specs; build green |
 | 2026-11-16 | dev session-cards | G5 tests (round 2) | sent back | Batch contracts green; regression `e2e/open-session-external.spec.ts:111`: user box and tool card share surface 2 since shared-shapes INT-10 |
 | 2026-11-16 | dev session-cards | regression ConversationView | decided | Tool card back to the surface-1 level to keep three looks (studio_dark REQ-37, REQ-39) |
+| 2026-11-16 | dev session-cards | G4 development (fix) | pass | Tool card on `--role-chrome`; conversation-view spec; build green |
+| 2026-11-16 | dev session-cards | G5 tests (round 3) | pass | Re-run open-session-external, session-cards, external-session, shared-shapes, studio-dark: 75 passed |
