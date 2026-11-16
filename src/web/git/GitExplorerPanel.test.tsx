@@ -4,7 +4,15 @@ import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GitExplorerPanel } from './GitExplorerPanel';
 import type { SessionSummary } from '../sessions/live-session-store';
-import type { RepositoryLookupState } from './repository-lookup-store';
+import type { CoveredRepository, RepositoryLookupState } from './repository-lookup-store';
+
+const one = (entry: CoveredRepository): RepositoryLookupState => ({ status: 'repositories', repositories: [entry] });
+const myProject = (branch: { kind: 'branch'; name: string } | { kind: 'detached'; hash: string }): CoveredRepository => ({
+  root: '/home/dev/my-project',
+  name: 'my-project',
+  path: '.',
+  branch,
+});
 
 const roots: Root[] = [];
 let pending: Array<(response: Response) => void>;
@@ -36,7 +44,7 @@ function render(lookup: RepositoryLookupState): HTMLElement {
 describe('GitExplorerPanel', () => {
   // plan-git_explorer/REQ-4: repository folder name, full path on hover, branch
   it('shows the root folder name with the full root as tooltip, and the branch', () => {
-    const region = render({ status: 'repository', root: '/home/dev/my-project', branch: { kind: 'branch', name: 'main' } });
+    const region = render(one(myProject({ kind: 'branch', name: 'main' })));
     const name = region.querySelector('[title="/home/dev/my-project"]');
     expect(name, 'an element with the root path as tooltip').not.toBeNull();
     expect(name!.textContent).toBe('my-project');
@@ -46,7 +54,7 @@ describe('GitExplorerPanel', () => {
 
   // plan-git_explorer/REQ-4: detached HEAD
   it('shows "detached" and the short hash on a detached HEAD', () => {
-    const region = render({ status: 'repository', root: '/home/dev/my-project', branch: { kind: 'detached', hash: 'a1b2c3d' } });
+    const region = render(one(myProject({ kind: 'detached', hash: 'a1b2c3d' })));
     expect(region.textContent).toContain('detached a1b2c3d');
   });
 
@@ -65,7 +73,7 @@ describe('GitExplorerPanel', () => {
   });
 });
 
-const repository: RepositoryLookupState = { status: 'repository', root: '/home/dev/my-project', branch: { kind: 'branch', name: 'main' } };
+const repository: RepositoryLookupState = one(myProject({ kind: 'branch', name: 'main' }));
 const until = (check: () => boolean) => vi.waitFor(() => expect(check()).toBe(true));
 const answer = (body: unknown, status = 200) => pending[0]!(new Response(JSON.stringify(body), { status }));
 
@@ -341,6 +349,96 @@ describe('GitExplorerPanel turn-end refresh', () => {
   it('does not refresh when the first session list already holds an idle session', async () => {
     const onRefresh = vi.fn();
     renderWith({ lookup: repository, onRefresh, sessions: [summary('b', ROOT_PATH, 'idle')] });
+    await settlePanel();
+    expect(callsTo('/api/git/changes')).toBe(1);
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+});
+
+const WS = '/home/dev/ws';
+const several: RepositoryLookupState = {
+  status: 'repositories',
+  repositories: [
+    { root: `${WS}/api`, name: 'api', path: 'api', branch: { kind: 'branch', name: 'main' } },
+    { root: `${WS}/web/app`, name: 'app', path: 'web/app', branch: { kind: 'detached', hash: 'a1b2c3d' } },
+  ],
+};
+const repositoryList = (region: HTMLElement) => region.querySelector('[aria-label="Repositories"]');
+
+describe('GitExplorerPanel with one or several repositories', () => {
+  // plan-multi_repo_workspace/REQ-13
+  it('shows one repository as before: name, branch chip and "Refresh", with no repository list', () => {
+    const { region } = renderWith({ lookup: repository });
+    expect(repositoryList(region())).toBeNull();
+    expect(region().querySelector('[title="/home/dev/my-project"]')!.textContent).toBe('my-project');
+    expect(region().textContent).toContain('main');
+    expect(refreshButton(region())).toBeDefined();
+    expect(tabs(region()).map((t) => t.textContent?.trim())).toEqual(['Changes', 'History']);
+  });
+
+  // plan-multi_repo_workspace/REQ-13, REQ-9 (spec GitExplorerPanel): one repository with a git error
+  it('shows the name, "Refresh" and the message of one repository with a git error, and no tabs', async () => {
+    const onRefresh = vi.fn();
+    const { region } = renderWith({
+      lookup: one({ root: '/home/dev/my-project', name: 'my-project', path: '.', error: 'fatal: bad object HEAD' }),
+      onRefresh,
+    });
+    expect(region().querySelector('[title="/home/dev/my-project"]')!.textContent).toBe('my-project');
+    expect(region().querySelector('[role="alert"]')!.textContent).toBe('fatal: bad object HEAD');
+    expect(tabs(region())).toHaveLength(0);
+    expect(repositoryList(region())).toBeNull();
+    flushSync(() => refreshButton(region())!.click());
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+    await settlePanel();
+    expect(callsTo('/api/git/changes')).toBe(0);
+  });
+
+  // plan-multi_repo_workspace/REQ-7, REQ-8
+  it('shows the repository list in list order, with "Refresh", for several repositories', () => {
+    const onRefresh = vi.fn();
+    const { region } = renderWith({ lookup: several, onRefresh });
+    const list = repositoryList(region());
+    expect(list, 'a list named "Repositories"').not.toBeNull();
+    const entries = [...list!.querySelectorAll('li')];
+    expect(entries.map((e) => e.getAttribute('title'))).toEqual([`${WS}/api`, `${WS}/web/app`]);
+    expect(entries[0]!.textContent).toContain('api');
+    expect(entries[1]!.textContent).toContain('web/app');
+    expect(entries[1]!.textContent).toContain('detached a1b2c3d');
+    flushSync(() => refreshButton(region())!.click());
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  // spec GitExplorerPanel: the tabs read the first repository of the list
+  it('reads the changes and the history of the first repository', async () => {
+    const { region } = renderWith({ lookup: several });
+    await until(() => callsTo('/api/git/changes') === 1);
+    flushSync(() => tabNamed(region(), 'History').click());
+    await until(() => callsTo('/api/git/history') === 1);
+    const pathOf = (pathname: string) => new URL(String(fetchMock.mock.calls[paths().indexOf(pathname)]?.[0]), 'http://localhost').searchParams.get('path');
+    expect(pathOf('/api/git/changes')).toBe(`${WS}/api`);
+    expect(pathOf('/api/git/history')).toBe(`${WS}/api`);
+  });
+
+  // plan-multi_repo_workspace/REQ-11
+  it.each([
+    ['under the second repository', `${WS}/web/app/src`],
+    ['above the repositories', WS],
+  ])('refreshes with no click on a turn end of a session %s', async (_name, folder) => {
+    const onRefresh = vi.fn();
+    const props = { lookup: several, onRefresh };
+    const { update } = renderWith({ ...props, sessions: [summary('b', folder, 'working')] });
+    await until(() => callsTo('/api/git/changes') === 1);
+    update({ ...props, sessions: [summary('b', folder, 'idle')] });
+    await until(() => callsTo('/api/git/changes') === 2);
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not refresh on a turn end of a session beside the repositories', async () => {
+    const onRefresh = vi.fn();
+    const props = { lookup: several, onRefresh };
+    const { update } = renderWith({ ...props, sessions: [summary('b', `${WS}/web/other`, 'working')] });
+    await until(() => callsTo('/api/git/changes') === 1);
+    update({ ...props, sessions: [summary('b', `${WS}/web/other`, 'idle')] });
     await settlePanel();
     expect(callsTo('/api/git/changes')).toBe(1);
     expect(onRefresh).not.toHaveBeenCalled();

@@ -1,6 +1,7 @@
 // e2e of plan-git_explorer, batches explorer-access, uncommitted-changes, history and refresh: the "Git Explorer" button, the panel, its uncommitted changes, the history and the refresh.
 // Changes list box and diff on open-source components, light and dark: plan-git_graph, batch open-source-explorer.
 // The history as a commit graph, the branch label and the commit files list box: plan-git_graph, batch graph-history.
+// Several repositories of a workspace folder in the header: plan-multi_repo_workspace, batch repo-detection.
 // Repositories are real git repositories in temp folders. External sessions use fixture files in E2E_CLAUDE_DIR.
 import { type ChildProcess, execFileSync, spawn, spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
@@ -1131,3 +1132,153 @@ test.describe('Licences of the git explorer components', () => {
     for (const dependency of Object.keys(manifest.dependencies ?? {})) expect(list, dependency).toContain(`| ${dependency}@`);
   });
 });
+
+/** A repository on `main` with one commit at `relative` below `parent`. */
+async function repositoryAt(parent: string, relative: string): Promise<string> {
+  const root = path.join(parent, relative);
+  await mkdir(root, { recursive: true });
+  git(root, 'init', '-q', '-b', 'main');
+  await writeFile(path.join(root, 'README.md'), 'hello\n');
+  git(root, 'add', '.');
+  git(root, 'commit', '-q', '-m', 'first');
+  return root;
+}
+
+/**
+ * The workspace of the human acceptance scenarios: a plain folder with `api` (and its submodule `libs/sub`) and `web/app`,
+ * plus repositories that detection must leave out: `a/b/c/d/deep` (level 5) and `node_modules/pkg`.
+ */
+async function newWorkspace(name: string): Promise<string> {
+  const ws = await newPlainFolder(name);
+  const api = await repositoryAt(ws, 'api');
+  const source = await repositoryAt(path.dirname(ws), 'sub-source');
+  git(api, '-c', 'protocol.file.allow=always', 'submodule', 'add', '-q', source, 'libs/sub');
+  git(api, 'commit', '-q', '-m', 'add submodule');
+  await repositoryAt(ws, 'web/app');
+  await repositoryAt(ws, 'a/b/c/d/deep');
+  await repositoryAt(ws, 'node_modules/pkg');
+  return ws;
+}
+
+const repositoryList = (page: Page) => explorer(page).getByRole('list', { name: 'Repositories', exact: true });
+const repositoryEntries = (page: Page) => repositoryList(page).getByRole('listitem');
+const repositoryEntry = (page: Page, root: string) => repositoryEntries(page).and(page.getByTitle(root, { exact: true }));
+/** The relative path of each entry of the repository list, in order. */
+const listedPaths = (page: Page) => repositoryEntries(page).locator('.git-repository-path').allTextContents();
+
+test.describe('Git explorer of a workspace with several repositories', () => {
+  // plan-multi_repo_workspace/REQ-1 to REQ-5, REQ-7, REQ-8: human acceptance scenario "The user sees every repository of a workspace folder"
+  test('lists api, then web/app, with colour, path and branch, and leaves out level 5, node_modules and the submodule', async ({ page, request }) => {
+    const ws = await newWorkspace('workspace');
+    await openExplorer(page, request, ws);
+
+    await expect(repositoryList(page)).toBeVisible();
+    await expect.poll(() => listedPaths(page)).toEqual(['api', 'web/app']);
+    const api = repositoryEntry(page, path.join(ws, 'api'));
+    const app = repositoryEntry(page, path.join(ws, 'web', 'app'));
+    await expect(api.locator('.git-repository-name')).toHaveText('api');
+    await expect(app.locator('.git-repository-name')).toHaveText('app');
+    await expect(api).toContainText('main');
+    await expect(app).toContainText('main');
+    const colours = await repositoryEntries(page)
+      .locator('.git-repository-mark')
+      .evaluateAll((marks) => marks.map((m) => getComputedStyle(m).backgroundColor));
+    expect(colours).toHaveLength(2);
+    expect(colours[0], 'each repository has its own colour').not.toBe(colours[1]);
+    expect(colours.every((c) => c !== 'rgba(0, 0, 0, 0)'), colours.join(' | ')).toBe(true);
+    await expect(explorer(page)).not.toContainText('deep');
+    await expect(explorer(page)).not.toContainText('pkg');
+    await expect(explorer(page)).not.toContainText('libs/sub');
+  });
+
+  // plan-multi_repo_workspace/REQ-10: human acceptance scenario "The user finds a new repository after a refresh"
+  test('a repository created in the folder appears in path order after "Refresh"', async ({ page, request }) => {
+    const ws = await newWorkspace('refreshed');
+    await openExplorer(page, request, ws);
+    await expect.poll(() => listedPaths(page)).toEqual(['api', 'web/app']);
+
+    git(ws, 'init', '-q', '-b', 'main', 'tools');
+    await explorer(page).getByRole('button', { name: 'Refresh', exact: true }).click();
+    await expect.poll(() => listedPaths(page)).toEqual(['api', 'tools', 'web/app']);
+  });
+
+  // plan-multi_repo_workspace/REQ-11: human acceptance scenario "The git explorer refreshes after a turn in a nested repository"
+  test('a turn end of a session in a nested repository refreshes the list with no click', async ({ page, request }) => {
+    const ws = await newWorkspace('turn-end');
+    const api = path.join(ws, 'api');
+    const setStatus = await runExternalWithStatus('8f1c2d3e-0000-4000-8000-000000000101', api, 'busy');
+    await openExplorer(page, request, ws);
+    await expect(entry(page, api)).toContainText('Running', SCAN);
+    await expect.poll(() => listedPaths(page)).toEqual(['api', 'web/app']);
+
+    await repositoryAt(api, 'plugins/x');
+    await setStatus('idle');
+    await expect(entry(page, api)).toContainText('Idle', SCAN);
+    await expect.poll(() => listedPaths(page), SCAN).toEqual(['api', 'api/plugins/x', 'web/app']);
+  });
+
+  // plan-multi_repo_workspace/REQ-9: human acceptance scenario "The user sees one failing repository among the others"
+  test('a damaged repository shows the git message on its entry and the others keep their branch', async ({ page, request }) => {
+    const ws = await newWorkspace('damaged');
+    const app = path.join(ws, 'web', 'app');
+    await rm(path.join(app, '.git'), { recursive: true, force: true });
+    await writeFile(path.join(app, '.git'), `gitdir: ${path.join(ws, 'missing-gitdir')}\n`);
+    await openExplorer(page, request, ws);
+
+    await expect.poll(() => listedPaths(page)).toEqual(['api', 'web/app']);
+    const broken = repositoryEntry(page, app).locator('.git-repository-error');
+    await expect(broken).toBeVisible();
+    expect((await broken.textContent())?.trim().length, 'a git message').toBeGreaterThan(0);
+    await expect(repositoryEntry(page, app)).not.toContainText('main');
+    await expect(repositoryEntry(page, path.join(ws, 'api'))).toContainText('main');
+  });
+
+  // plan-multi_repo_workspace/REQ-13: human acceptance scenario "A single repository looks as today"
+  test('a single repository shows its name and branch chip in the header, with no repository list', async ({ page, request }) => {
+    const repo = await newRepository('single-repo');
+    await openExplorer(page, request, repo);
+    await expectRepositoryShown(page, repo, 'main');
+    await expect(repositoryList(page)).toHaveCount(0);
+    await expect(explorer(page).getByRole('tab', { name: 'Changes' })).toBeVisible();
+  });
+
+  // plan-multi_repo_workspace/REQ-6: human acceptance scenario "A folder with no repository has no git explorer", with nested plain folders
+  test('a folder with only plain subfolders and a repository at level 5 shows no "Git Explorer" button', async ({ page, request }) => {
+    const plain = await newPlainFolder('no-repos');
+    await mkdir(path.join(plain, 'a', 'b'), { recursive: true });
+    await repositoryAt(plain, 'v/w/x/y/z');
+    await startHosted(request, plain);
+    await page.goto('/');
+    const lookup = page.waitForResponse((r) => isLookup(r.url()));
+    await openHosted(page, plain);
+    expect(await (await lookup).json()).toEqual({ status: 'none' });
+    await expect(header(page).getByRole('button', { name: 'Search', exact: true })).toBeVisible();
+    await expect(explorerButton(page)).toHaveCount(0);
+  });
+
+  // plan-multi_repo_workspace/REQ-12: human acceptance scenario "A large folder does not block the client"
+  test('detection in a folder with thousands of subfolders leaves the page and the session list responsive', async ({ page, request }) => {
+    test.setTimeout(120_000);
+    const big = await newPlainFolder('big');
+    const leaves: string[] = [];
+    for (let a = 0; a < 16; a += 1) for (let b = 0; b < 16; b += 1) for (let c = 0; c < 16; c += 1) leaves.push(path.join(big, `a${a}`, `b${b}`, `c${c}`, 'd'));
+    for (let i = 0; i < leaves.length; i += 500) await Promise.all(leaves.slice(i, i + 500).map((leaf) => mkdir(leaf, { recursive: true })));
+    await repositoryAt(big, 'a7/b7/c7/repo');
+    await startHosted(request, big);
+
+    await page.goto('/');
+    await openHosted(page, big);
+    // The detection of the session runs now: the server keeps answering and the page keeps reacting meanwhile.
+    const started = Date.now();
+    const sessions = await request.get('/api/sessions');
+    expect(sessions.ok()).toBe(true);
+    expect(Date.now() - started, 'the session list answers during detection').toBeLessThan(2_000);
+    expect(await page.evaluate(() => 1 + 1)).toBe(2);
+    await expect(list(page)).toBeVisible();
+
+    await expect(explorerButton(page)).toBeVisible({ timeout: 60_000 });
+    await explorerButton(page).click();
+    await expectRepositoryShown(page, path.join(big, 'a7', 'b7', 'c7', 'repo'), 'main');
+  });
+});
+

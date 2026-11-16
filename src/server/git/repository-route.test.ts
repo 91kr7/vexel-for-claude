@@ -1,6 +1,6 @@
-// REQ tests at the REST API of plan-git_explorer, batch explorer-access: GET /api/git/repository on real git repositories.
+// REQ tests at the REST API of plan-git_explorer (batch explorer-access) and plan-multi_repo_workspace (batch repo-detection): GET /api/git/repository on real git repositories.
 import { statSync } from 'node:fs';
-import { mkdir, readdir, rm } from 'node:fs/promises';
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -43,12 +43,12 @@ describe('GET /api/git/repository', () => {
   it('answers 200 with the root and the branch of a folder in a repository', async () => {
     const response = await get(await routeWith(), repo);
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ status: 'repository', root: repo, branch: { kind: 'branch', name: 'main' } });
+    expect(response.json()).toEqual({ status: 'repositories', repositories: [{ root: repo, name: path.basename(repo), path: '.', branch: { kind: 'branch', name: 'main' } }] });
   });
 
   it('answers with the repository root for a subfolder', async () => {
     const response = await get(await routeWith(), path.join(repo, 'sub'));
-    expect(response.json()).toEqual({ status: 'repository', root: repo, branch: { kind: 'branch', name: 'main' } });
+    expect(response.json()).toEqual({ status: 'repositories', repositories: [{ root: repo, name: path.basename(repo), path: '..', branch: { kind: 'branch', name: 'main' } }] });
   });
 
   // plan-git_explorer/REQ-4: detached HEAD
@@ -57,7 +57,7 @@ describe('GET /api/git/repository', () => {
     git(detached, 'checkout', '-q', '--detach');
     const response = await get(await routeWith(), detached);
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ status: 'repository', root: detached, branch: { kind: 'detached', hash: git(detached, 'rev-parse', '--short', 'HEAD') } });
+    expect(response.json()).toEqual({ status: 'repositories', repositories: [{ root: detached, name: path.basename(detached), path: '.', branch: { kind: 'detached', hash: git(detached, 'rev-parse', '--short', 'HEAD') } }] });
   });
 
   // plan-git_explorer/REQ-2
@@ -91,12 +91,12 @@ describe('GET /api/git/repository', () => {
     expect(response.json()).toEqual({ error: 'invalid_path' });
   });
 
-  // plan-git_explorer/REQ-6: a git error answers 500 with git's message
-  it('answers 500 git_error with the message of a git error', async () => {
+  // plan-multi_repo_workspace/REQ-9 (spec detectRepositories): a git error of the folder lookup is an entry with its message
+  it('answers 200 with the folder and the message of a git error', async () => {
     const failing: Runner = { run: () => Promise.reject(new GitError('failed', 'fatal: bad object HEAD', 128)) };
     const response = await get(await routeWith(failing), repo);
-    expect(response.statusCode).toBe(500);
-    expect(response.json()).toEqual({ error: 'git_error', message: 'fatal: bad object HEAD' });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ status: 'repositories', repositories: [{ root: repo, name: 'project', path: '.', error: 'fatal: bad object HEAD' }] });
   });
 
   it('looks up the normalized path: no trailing slash, no . or ..', async () => {
@@ -104,8 +104,8 @@ describe('GET /api/git/repository', () => {
     const real = new GitRunner();
     const recording: Runner = { run: (folder, args) => (folders.push(folder), real.run(folder, args)) };
     const response = await get(await routeWith(recording), `${repo}/sub/./../`);
-    expect(response.json()).toEqual({ status: 'repository', root: repo, branch: { kind: 'branch', name: 'main' } });
-    expect(new Set(folders)).toEqual(new Set([repo]));
+    expect(response.json()).toEqual({ status: 'repositories', repositories: [{ root: repo, name: path.basename(repo), path: '.', branch: { kind: 'branch', name: 'main' } }] });
+    expect(folders.every((folder) => folder === repo || folder.startsWith(`${repo}/`)), folders.join(', ')).toBe(true);
   });
 
   // plan-git_explorer/REQ-8: the lookup changes nothing in the folder or in the repository
@@ -115,5 +115,79 @@ describe('GET /api/git/repository', () => {
     const before = { files: await listing(), index: statSync(path.join(watched, '.git', 'index')).mtimeMs, head: git(watched, 'rev-parse', 'HEAD') };
     await get(await routeWith(), watched);
     expect({ files: await listing(), index: statSync(path.join(watched, '.git', 'index')).mtimeMs, head: git(watched, 'rev-parse', 'HEAD') }).toEqual(before);
+  });
+});
+
+describe('GET /api/git/repository with several repositories', () => {
+  const main = { kind: 'branch', name: 'main' };
+
+  // plan-multi_repo_workspace/REQ-2, REQ-5, REQ-7, REQ-8
+  it('answers the repositories below a plain folder in path order, with name, path and branch', async () => {
+    const ws = path.join(dir, 'workspace');
+    await mkdir(ws);
+    const api = await repoWithCommit(ws, 'api');
+    await mkdir(path.join(ws, 'web'));
+    const app = await repoWithCommit(path.join(ws, 'web'), 'app');
+    const response = await get(await routeWith(), ws);
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      status: 'repositories',
+      repositories: [
+        { root: api, name: 'api', path: 'api', branch: main },
+        { root: app, name: 'app', path: 'web/app', branch: main },
+      ],
+    });
+  });
+
+  // plan-multi_repo_workspace/REQ-1, REQ-8
+  it('answers the repository around the folder first', async () => {
+    const outer = await repoWithCommit(dir, 'outer');
+    const inner = await repoWithCommit(outer, 'aaa');
+    const response = await get(await routeWith(), outer);
+    expect(response.json()).toEqual({
+      status: 'repositories',
+      repositories: [
+        { root: outer, name: 'outer', path: '.', branch: main },
+        { root: inner, name: 'aaa', path: 'aaa', branch: main },
+      ],
+    });
+  });
+
+  // plan-multi_repo_workspace/REQ-3, REQ-4
+  it('leaves out the repositories in dependency folders and the submodules', async () => {
+    const ws = path.join(dir, 'skips');
+    await mkdir(path.join(ws, 'node_modules'), { recursive: true });
+    await repoWithCommit(path.join(ws, 'node_modules'), 'pkg');
+    const source = await repoWithCommit(dir, 'sub-source');
+    const api = await repoWithCommit(ws, 'api');
+    git(api, '-c', 'protocol.file.allow=always', 'submodule', 'add', '-q', source, 'libs/mod');
+    const response = await get(await routeWith(), ws);
+    expect(response.json()).toEqual({ status: 'repositories', repositories: [{ root: api, name: 'api', path: 'api', branch: main }] });
+  });
+
+  // plan-multi_repo_workspace/REQ-9
+  it('answers the git message on the failing repository and keeps the others', async () => {
+    const ws = path.join(dir, 'failing');
+    await mkdir(path.join(ws, 'web', 'app'), { recursive: true });
+    const api = await repoWithCommit(ws, 'api');
+    await writeFile(path.join(ws, 'web', 'app', '.git'), `gitdir: ${path.join(dir, 'missing-gitdir')}\n`);
+    const response = await get(await routeWith(), ws);
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as { repositories: Array<Record<string, unknown>> };
+    expect(body.repositories[0]).toEqual({ root: api, name: 'api', path: 'api', branch: main });
+    expect(body.repositories[1]).toMatchObject({ name: 'app', path: 'web/app', error: expect.stringMatching(/\S/) });
+    expect(body.repositories[1]).not.toHaveProperty('branch');
+  });
+
+  // plan-multi_repo_workspace/REQ-10: no cache
+  it('detects again at each request', async () => {
+    const ws = path.join(dir, 'growing');
+    await mkdir(ws);
+    const app = await routeWith();
+    expect((await get(app, ws)).json()).toEqual({ status: 'none' });
+    const tools = await repoWithCommit(ws, 'tools');
+    expect((await get(app, ws)).json()).toEqual({ status: 'repositories', repositories: [{ root: tools, name: 'tools', path: 'tools', branch: main }] });
+    await rm(tools, { recursive: true, force: true });
+    expect((await get(app, ws)).json()).toEqual({ status: 'none' });
   });
 });

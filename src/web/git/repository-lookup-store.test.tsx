@@ -5,7 +5,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type RepositoryLookupState, useRepositoryLookup } from './repository-lookup-store';
 
 const FALLBACK = 'Could not read the repository.';
-const repositoryBody = { status: 'repository', root: '/home/dev/project', branch: { kind: 'branch', name: 'main' } };
+const repositoryBody = {
+  status: 'repositories',
+  repositories: [{ root: '/home/dev/project', name: 'project', path: '.', branch: { kind: 'branch', name: 'main' } }],
+};
+const severalBody = {
+  status: 'repositories',
+  repositories: [
+    { root: '/home/dev/ws', name: 'ws', path: '.', branch: { kind: 'branch', name: 'main' } },
+    { root: '/home/dev/ws/api', name: 'api', path: 'api', branch: { kind: 'detached', hash: 'a1b2c3d' } },
+    { root: '/home/dev/ws/web/app', name: 'app', path: 'web/app', error: 'fatal: bad object HEAD' },
+  ],
+};
+/** A body with the one repository on another branch. */
+const onBranch = (kind: 'branch' | 'detached') => ({
+  status: 'repositories',
+  repositories: [{ root: '/home/dev/project', name: 'project', path: '.', branch: kind === 'branch' ? { kind, name: 'old' } : { kind, hash: 'a1b2c3d' } }],
+});
 
 let latest: RepositoryLookupState;
 const roots: Root[] = [];
@@ -69,16 +85,24 @@ describe('useRepositoryLookup', () => {
     expect(url.pathname).toBe('/api/git/repository');
     expect(url.searchParams.get('path')).toBe('/home/dev/project/sub');
     pending[0]!(new Response(JSON.stringify(repositoryBody)));
-    await until(() => latest.status === 'repository');
+    await until(() => latest.status === 'repositories');
     expect(latest).toEqual(repositoryBody);
   });
 
-  it('gives a detached HEAD as it comes', async () => {
-    const detached = { status: 'repository', root: '/r', branch: { kind: 'detached', hash: 'a1b2c3d' } };
-    steps = [{ json: detached }];
-    mount('/r');
-    await until(() => latest.status === 'repository');
-    expect(latest).toEqual(detached);
+  // plan-multi_repo_workspace/REQ-5, REQ-9: every entry as it comes, a detached HEAD and a git error included
+  it('gives several repositories as they come', async () => {
+    steps = [{ json: severalBody }];
+    mount('/home/dev/ws');
+    await until(() => latest.status === 'repositories');
+    expect(latest).toEqual(severalBody);
+  });
+
+  // plan-multi_repo_workspace/REQ-6
+  it('gives none for an empty list', async () => {
+    steps = [{ json: { status: 'repositories', repositories: [] } }];
+    mount('/tmp/plain');
+    await until(() => latest.status === 'none');
+    expect(latest).toEqual({ status: 'none' });
   });
 
   // plan-git_explorer/REQ-2
@@ -101,6 +125,11 @@ describe('useRepositoryLookup', () => {
     ['an error answer with no message', { json: { error: 'invalid_path' }, status: 400 }],
     ['a failed request', new Error('network down')],
     ['an answer of another shape', { json: { status: 'maybe' } }],
+    ['an answer with the shape of one repository', { json: { status: 'repository', root: '/r', branch: { kind: 'branch', name: 'main' } } }],
+    ['an answer with no list', { json: { status: 'repositories' } }],
+    ['an entry with no name', { json: { status: 'repositories', repositories: [{ root: '/r', path: '.', branch: { kind: 'branch', name: 'main' } }] } }],
+    ['an entry with neither branch nor error', { json: { status: 'repositories', repositories: [{ root: '/r', name: 'r', path: '.' }] } }],
+    ['an entry with a malformed branch', { json: { status: 'repositories', repositories: [{ root: '/r', name: 'r', path: '.', branch: { kind: 'branch' } }] } }],
     ['an answer that is not JSON', { text: '<html>' }],
   ])('gives the fallback message for %s', async (_name, step) => {
     steps = [step];
@@ -112,7 +141,7 @@ describe('useRepositoryLookup', () => {
   it('asks once per folder: no new request on a re-render, no periodic request', async () => {
     steps = [{ json: repositoryBody }];
     const view = mount('/r');
-    await until(() => latest.status === 'repository');
+    await until(() => latest.status === 'repositories');
     view.setFolder('/r');
     await settle();
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -125,7 +154,7 @@ describe('useRepositoryLookup', () => {
     expect(latest).toEqual({ status: 'loading' });
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(requestedUrl(1).searchParams.get('path')).toBe('/new');
-    pending[0]!(new Response(JSON.stringify({ status: 'repository', root: '/old', branch: { kind: 'branch', name: 'old' } })));
+    pending[0]!(new Response(JSON.stringify(onBranch('branch'))));
     await settle();
     expect(latest).toEqual({ status: 'loading' });
     pending[1]!(new Response(JSON.stringify({ status: 'none' })));
@@ -137,7 +166,7 @@ describe('useRepositoryLookup', () => {
   it('is loading again after a folder change that follows an answer', async () => {
     steps = [{ json: repositoryBody }, 'pending'];
     const view = mount('/r');
-    await until(() => latest.status === 'repository');
+    await until(() => latest.status === 'repositories');
     view.setFolder('/s');
     await settle();
     expect(latest).toEqual({ status: 'loading' });
@@ -157,26 +186,25 @@ function mountRevision(folder: string, revision = 0) {
 }
 
 describe('useRepositoryLookup refresh', () => {
-  // plan-git_explorer/REQ-23, plan-git_explorer/REQ-24
+  // plan-git_explorer/REQ-23, plan-git_explorer/REQ-24, plan-multi_repo_workspace/REQ-10
   it('asks again on a new revision and keeps the current state until the new answer', async () => {
     steps.push({ json: repositoryBody }, 'pending');
     const probe = mountRevision('/home/dev/project/src');
-    await until(() => latest.status === 'repository');
+    await until(() => latest.status === 'repositories');
     probe.set('/home/dev/project/src', 1);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(requestedUrl(1).searchParams.get('path')).toBe('/home/dev/project/src');
     await settle();
     expect(latest).toEqual(repositoryBody);
-    const detached = { ...repositoryBody, branch: { kind: 'detached', hash: 'a1b2c3d' } };
-    pending[0]!(new Response(JSON.stringify(detached)));
-    await until(() => latest.status === 'repository' && latest.branch.kind === 'detached');
+    pending[0]!(new Response(JSON.stringify(onBranch('detached'))));
+    await until(() => latest.status === 'repositories' && 'branch' in latest.repositories[0]! && latest.repositories[0].branch.kind === 'detached');
   });
 
   it('drops the answer of an older revision', async () => {
     steps.push('pending', { json: repositoryBody });
     const probe = mountRevision('/home/dev/project');
     probe.set('/home/dev/project', 1);
-    await until(() => latest.status === 'repository');
+    await until(() => latest.status === 'repositories');
     pending[0]!(new Response(JSON.stringify({ status: 'none' })));
     await settle();
     expect(latest).toEqual(repositoryBody);
@@ -185,7 +213,7 @@ describe('useRepositoryLookup refresh', () => {
   it('is loading in the same render when the folder changes', async () => {
     steps.push({ json: repositoryBody }, 'pending');
     const probe = mountRevision('/home/dev/project');
-    await until(() => latest.status === 'repository');
+    await until(() => latest.status === 'repositories');
     probe.set('/home/dev/other', 0);
     expect(latest).toEqual({ status: 'loading' });
   });
