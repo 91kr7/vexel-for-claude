@@ -48,6 +48,7 @@ spacing, corner radii, borders and shadows, unless a requirement says colours.
 | REQ-22 | Numbers in the cards use the monospace font with tabular figures. |
 | REQ-23 | The status dot of a working session pulses softly. |
 | REQ-24 | The status dot does not pulse when the system asks for reduced motion. |
+| REQ-43 | An external session card has the same solid 1px border as every other card, with no dashed border (human decision, 2026-11-16). |
 
 ## Feature 4 — Session view: header and terminal frame
 
@@ -76,6 +77,19 @@ spacing, corner radii, borders and shadows, unless a requirement says colours.
 | REQ-40 | In Dark Blue, native parts of the page such as scrollbars and form controls match the mock, with rounded scrollbar thumbs in `#2E3546`. |
 | REQ-41 | In Dark Blue, text meets WCAG 2.2 AA contrast; where a mock value fails, the colour changes only as much as needed. |
 | REQ-42 | In Dark Blue, every control keeps a visible keyboard focus. |
+
+## Feature 6 — Lists aligned to the session cards
+
+Human decision, 2026-11-16: the mock shows only the first page, so every other list of the client
+takes the look of the session cards.
+
+| ID | Requirement |
+|----|-------------|
+| REQ-44 | In every list of selectable entries outside the session list, each entry is a card with the corners, border and surface of a session card. |
+| REQ-45 | The active or selected entry of such a list has the look of the active session card. |
+| REQ-46 | A hovered entry of such a list changes its surface and border as an inactive session card does. |
+| REQ-47 | Dense technical lists, such as changed files, commit rows and shortcut rows, take the surfaces, borders, corners, hover and selected style of the session cards, without becoming cards. |
+| REQ-48 | Numbers in every list use the monospace font with tabular figures. |
 
 Colours of REQ-36:
 

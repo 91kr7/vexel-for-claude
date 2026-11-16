@@ -2,7 +2,7 @@
 batch: dark-blue
 feature: Dark Blue theme
 closed_req: [REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42]
-depends: [shared-shapes, window-frame, session-cards, session-view]
+depends: [shared-shapes, window-frame, session-cards, session-view, list-cards]
 ---
 
 # Batch dark-blue

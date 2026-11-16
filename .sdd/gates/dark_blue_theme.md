@@ -32,3 +32,6 @@
 | 2026-11-16 | dev window-frame | G5 tests (round 3) | pass | Test files only; no only/skip; re-run window-frame, studio-dark, hosted-session, open-session, header-footer: 69 passed |
 | 2026-11-16 | dev session-cards | G4 development | pass | Build green; diff limited to INT files, windows11.css, specs and indexes |
 | 2026-11-16 | dev session-cards | divergence developer | decided | Open needs-input card keeps its amber border (INT-3) with accent bar, surface and shadow; flagged for human review |
+| 2026-11-16 | dev session-cards | external card border | human decision | No dashed border on external session cards; solid card border |
+| 2026-11-16 | dev session-cards | list alignment | human decision | Every list of the client takes the session-card look; mock covers only the first page, the rest is extrapolated |
+| 2026-11-16 | plan | G3 coverage (amendment) | pass | REQ-43 in session-cards INT-9; REQ-44..48 in new batch list-cards; paths exist; no cycles |

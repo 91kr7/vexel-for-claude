@@ -10,11 +10,12 @@ status: validated
 |-------|---------|------------|---------|--------|------------------|
 | shared-shapes | Shared shapes (all themes) | REQ-3, REQ-4, REQ-5 | — | certified | Dialogs and panels share the new shapes in Light and Dark |
 | window-frame | Window frame: title bar, rail, bottom bar, toast | REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15 | shared-shapes | certified | The window frame takes the mock's layout |
-| session-cards | Session cards | REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24 | shared-shapes, window-frame | implemented | The session list shows cards like the mock |
+| session-cards | Session cards | REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-43 | shared-shapes, window-frame | implemented | The session list shows cards like the mock |
 | session-view | Session view: header and terminal frame | REQ-1, REQ-2, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29 | shared-shapes, window-frame, session-cards | todo | The open session shows the mock's header and terminal frame |
-| dark-blue | Dark Blue theme | REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42 | shared-shapes, window-frame, session-cards, session-view | todo | The user switches to Dark Blue |
+| list-cards | Lists aligned to the session cards | REQ-44, REQ-45, REQ-46, REQ-47, REQ-48 | shared-shapes, session-cards | todo | The Resume dialog shows its sessions as cards |
+| dark-blue | Dark Blue theme | REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42 | shared-shapes, window-frame, session-cards, session-view, list-cards | todo | The user switches to Dark Blue |
 
-Execution order: shared-shapes → window-frame → session-cards → session-view → dark-blue.
+Execution order: shared-shapes → window-frame → session-cards → session-view → list-cards → dark-blue.
 session-cards depends on window-frame because both change `src/web/AppLayout.tsx`.
 
 ## Assumptions and decisions
@@ -44,6 +45,13 @@ session-cards depends on window-frame because both change `src/web/AppLayout.tsx
   the chosen theme, Light, Dark or Dark Blue, stays at the next start, in the browser and in the
   desktop app. A saved theme wins over the first-start theme. This refines REQ-32 and agrees with
   the analysis, so it is not a departure. The desktop restart test goes in the Electron e2e group.
+- **External cards lose the dashed border (REQ-43).** Human decision, 2026-11-16. It is added to
+  batch session-cards as INT-9, for its fix round. The group heading and the "External" chip still
+  tell external sessions apart.
+- **Every list takes the session card look (REQ-44..48).** Human decision, 2026-11-16: the mock
+  shows only the first page. Selectable lists become cards; dense technical lists take the card
+  styles without becoming cards. New batch list-cards. It refines REQ-3 and the analysis rule on
+  screens outside the mock, so it is not a departure.
 - **Confirmed by the gatekeeper (2026-11-16):** the Windows 11 look rule, the toast above the
   snackbar, and the client's own text on card line 2 and in the header pill.
 - **Shortcut text.** The `toggle-theme` row reads "Light/Dark/Dark Blue theme". Keys do not change.
@@ -106,6 +114,12 @@ session-cards depends on window-frame because both change `src/web/AppLayout.tsx
 | REQ-40 | batch-dark-blue/INT-7 | dark-blue |
 | REQ-41 | batch-dark-blue/INT-4 | dark-blue |
 | REQ-42 | batch-dark-blue/INT-8 | dark-blue |
+| REQ-43 | batch-session-cards/INT-9 | session-cards |
+| REQ-44 | batch-list-cards/INT-1, INT-2, INT-3, INT-4, INT-6 | list-cards |
+| REQ-45 | batch-list-cards/INT-1, INT-3, INT-4, INT-6 | list-cards |
+| REQ-46 | batch-list-cards/INT-1, INT-2, INT-3, INT-4, INT-6 | list-cards |
+| REQ-47 | batch-list-cards/INT-1, INT-5, INT-7, INT-8, INT-9, INT-10, INT-11, INT-12 | list-cards |
+| REQ-48 | batch-list-cards/INT-1, INT-2, INT-3, INT-9, INT-12 | list-cards |
 
 - Every REQ has at least one INT. Every INT serves at least one REQ; there is no enabling-only INT.
 - REQ-1 and REQ-2 build up over four batches and close in session-view.
