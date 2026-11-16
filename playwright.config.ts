@@ -19,6 +19,8 @@ const darkChoice = { cookies: [], origins: [{ origin: baseURL, localStorage: [{ 
 
 export default defineConfig({
   testDir: './e2e',
+  // At most 3 browsers at once: a full run must leave the machine usable (knowledge base `limited-test-parallelism`).
+  workers: 3,
   outputDir: './test-results',
   use: { baseURL },
   projects: electron
