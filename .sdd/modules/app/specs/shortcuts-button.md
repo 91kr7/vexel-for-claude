@@ -6,7 +6,7 @@ type: UI component
 
 # ShortcutsButton
 
-**Purpose** → the keyboard icon button of the top bar that opens and closes the ShortcutsPanel. It has the look of the ThemeSwitch.
+**Purpose** → the keyboard icon button of the top bar that opens and closes the ShortcutsPanel. It has the shared look of the top-bar icon buttons (class `theme-switch`).
 
 ## Contract
 
@@ -15,7 +15,7 @@ Props:
 - `onToggle()` → called by a press.
 
 Shows:
-- one button with the keyboard icon, with the size, look, hover and focus ring of the ThemeSwitch.
+- one button with the keyboard icon, 32 × 32 px, 8 px radius, `.vx-surface-1`, the icon at 16 px in `--text-secondary`; hover on `--bg-surface-3` with `--border-strong` and `--text-primary`; the focus ring of the page.
 - accessible name "Keyboard Shortcuts", tooltip (`title`) "Keyboard Shortcuts (Alt+S)".
 - `aria-haspopup="dialog"`, and `aria-expanded` is `open`.
 - `open` → the button sits above the dialog backdrop: visible and clickable, like the WindowButtons.
@@ -32,7 +32,7 @@ Actions:
 
 ## Dependencies
 
-- IconSet (`KeyboardIcon`), ThemeSwitch (look), ThemeTokens, WebEntry
+- IconSet (`KeyboardIcon`), ThemeTokens, WebEntry
 
 ## Requirements served
 

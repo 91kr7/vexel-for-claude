@@ -6,7 +6,7 @@ type: UI component
 
 # PlanUsageButton
 
-**Purpose** → the gauge icon button of the top bar that opens and closes the PlanUsagePopover. It has the look of the ThemeSwitch.
+**Purpose** → the gauge icon button of the top bar that opens and closes the PlanUsagePopover. It has the shared look of the top-bar icon buttons (class `theme-switch`).
 
 ## Contract
 
@@ -15,7 +15,7 @@ Props:
 - `onToggle()` → called by a press.
 
 Shows:
-- one button with the gauge icon, with the size, look, hover and focus ring of the ThemeSwitch.
+- one button with the gauge icon, 32 × 32 px, 8 px radius, `.vx-surface-1`, the icon at 16 px in `--text-secondary`; hover on `--bg-surface-3` with `--border-strong` and `--text-primary`; the focus ring of the page.
 - accessible name "Plan Usage", tooltip (`title`) "Plan Usage".
 - `aria-haspopup="dialog"`, and `aria-expanded` is `open`.
 - desktop window → `no-drag`, as every control of the TopBar.
@@ -32,7 +32,7 @@ Actions:
 
 ## Dependencies
 
-- IconSet (`GaugeIcon`), ThemeSwitch (look), ThemeTokens
+- IconSet (`GaugeIcon`), ThemeTokens
 
 ## Requirements served
 

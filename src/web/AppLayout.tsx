@@ -15,6 +15,8 @@ import { NewerVersionNotice } from './newer-version/NewerVersionNotice';
 import { useNewerVersion } from './newer-version/newer-version-loader';
 import { PlanUsagePopover } from './plan-usage/PlanUsagePopover';
 import { usePlanUsage } from './plan-usage/plan-usage-store';
+import { SettingsButton } from './SettingsButton';
+import { type SettingsTab, SettingsDialog } from './settings/SettingsDialog';
 import { ShortcutsPanel } from './ShortcutsPanel';
 import { ShortMessageToast, useShortMessage } from './ShortMessageToast';
 import { countNeedsInput, NeedsInputCounter } from './sessions/NeedsInputCounter';
@@ -67,6 +69,7 @@ export function AppLayout() {
   const [projectsOpening, setProjectsOpening] = useState(0);
   const [showingShortcuts, setShowingShortcuts] = useState(false);
   const toggleShortcuts = () => setShowingShortcuts((showing) => !showing);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
   const [showingPlanUsage, setShowingPlanUsage] = useState(false);
   const planUsage = usePlanUsage(showingPlanUsage);
   const newerVersion = useNewerVersion();
@@ -199,6 +202,9 @@ export function AppLayout() {
               />
             </>
           )}
+          <div className="list-panel-footer">
+            <SettingsButton onOpen={() => setSettingsTab('theme')} />
+          </div>
         </ListPanel>
         <main className="session-area vx-dot-grid" ref={mainRef}>
           {openSessionId && openIsExternal ? (
@@ -256,6 +262,7 @@ export function AppLayout() {
         />
       )}
       {showingShortcuts && <ShortcutsPanel onClose={() => setShowingShortcuts(false)} />}
+      {settingsTab !== null && <SettingsDialog initialTab={settingsTab} onClose={() => setSettingsTab(null)} />}
     </div>
   );
 }

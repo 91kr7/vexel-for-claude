@@ -865,6 +865,13 @@ input {
   padding: 0 6px;
 }
 
+.list-panel-footer {
+  flex: none;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+}
+
 .needs-input-counter {
   display: flex;
 }
@@ -3074,6 +3081,58 @@ input {
 
 .shortcuts-action {
   color: var(--text-primary);
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-tab {
+  height: 32px;
+  padding: 0 10px;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.settings-tab:hover {
+  color: var(--text-primary);
+}
+
+.settings-tab.selected {
+  border-bottom-color: var(--accent-primary);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.settings-tabpanel[hidden] {
+  display: none;
+}
+
+.settings-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.settings-choice legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.settings-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  color: var(--text-primary);
+  cursor: pointer;
 }
 
 .dialog-banner {

@@ -6,7 +6,7 @@ type: UI component
 
 # TopBar
 
-**Purpose** → the 44 px bar on top of the page: the logo, the brand, the shortcuts button, the theme switch, the look switch and the plan usage button. In the desktop window it is also the title bar that moves the window. It copies "1. TOP APP BAR" of `.sdd/mockups/studio-dark/mock.html`, without its other controls.
+**Purpose** → the 44 px bar on top of the page: the logo, the brand, the shortcuts button and the plan usage button. In the desktop window it is also the title bar that moves the window. It copies "1. TOP APP BAR" of `.sdd/mockups/studio-dark/mock.html`, without its other controls.
 
 ## Contract
 
@@ -21,10 +21,8 @@ Shows:
   - "Vexel" (14/20 px, weight 600, letter spacing −0.025em) and "for Claude" (mono 10 px, `--text-muted`), 8 px apart on the same baseline.
   - the installed version → `v` followed by the version of useInstalledVersion, e.g. `v0.2.2`, right after "for Claude", 8 px apart, on the same baseline, same style as "for Claude". Plain text, not a control. While the version is `null` (loading or failure) → no version text, and the rest of the bar keeps its layout.
 - on the right, 6 px apart:
-  - the ShortcutsButton, right before the ThemeSwitch.
-  - the ThemeSwitch.
-  - the LookSwitch, right after the ThemeSwitch.
-  - the PlanUsageButton, right after the LookSwitch.
+  - the ShortcutsButton.
+  - the PlanUsageButton, right after the ShortcutsButton.
 
 Desktop window (`isDesktopWindow()` is `true`):
 - current look → the WindowButtons (macOS buttons) at the left end, before the logo mark.
@@ -40,14 +38,14 @@ Browser (`isDesktopWindow()` is `false`):
 
 ## Rules and invariants
 
-- The bar holds no control other than the ShortcutsButton, the ThemeSwitch, the LookSwitch, the PlanUsageButton and, in the desktop window, the WindowButtons: no "New Session", search, settings, session pill or sidebar switch.
+- The bar holds no control other than the ShortcutsButton, the PlanUsageButton and, in the desktop window, the WindowButtons: no "New Session", search, settings, theme switch, look switch, session pill or sidebar switch. The theme and the look are chosen in the SettingsDialog.
 - The logo mark adds nothing to the accessible names of the page.
 - The bar keeps the theme tokens in both cases: dark in the dark theme, light in the light theme, and it changes with the rest of the page.
 - In the desktop window there is a drag area at every window width, in both looks: the logo and the brand are never controls.
 
 ## Dependencies
 
-- ShortcutsButton, ThemeSwitch, LookSwitch, LookStore (`useLook`), PlanUsageButton, ThemeTokens, WebEntry
+- ShortcutsButton, LookStore (`useLook`), PlanUsageButton, ThemeTokens, WebEntry
 - useDesktopBridge (`isDesktopWindow`), WindowButtons
 - useInstalledVersion
 
@@ -62,3 +60,4 @@ Browser (`isDesktopWindow()` is `false`):
 - `plan-update_check/REQ-13`
 - `plan-wsl_support/REQ-18`, `plan-wsl_support/REQ-28`, `plan-wsl_support/REQ-32`, `plan-wsl_support/REQ-33`, `plan-wsl_support/REQ-35`
 - `plan-ui_restyle/REQ-1`, `plan-ui_restyle/REQ-2`
+- `plan-settings_dialog/REQ-16`, `plan-settings_dialog/REQ-17`
