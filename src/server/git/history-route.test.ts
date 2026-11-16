@@ -1,4 +1,4 @@
-// REQ tests at the REST API of plan-git_explorer batch history and plan-git_graph batch graph-history: GET /api/git/history, /api/git/commit-files and /api/git/commit-diff on real git repositories.
+// REQ tests at the REST API of plan-git_explorer batch history, plan-git_graph batch graph-history and plan-multi_repo_workspace batch combined-history: GET /api/git/history, /api/git/commit-files and /api/git/commit-diff on real git repositories.
 import { execFileSync } from 'node:child_process';
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -342,5 +342,24 @@ describe('graph history (plan-git_graph)', () => {
     const binary = await commitDiff(app, { path: merged, hash: ids.merge, file: 'logo.png' });
     expect(binary.statusCode).toBe(200);
     expect((binary.json() as { binary: boolean }).binary).toBe(true);
+  });
+});
+
+describe('committer date (plan-multi_repo_workspace)', () => {
+  // plan-multi_repo_workspace/REQ-21: the combined history orders by committer date, so the route gives it
+  it('answers each commit with its committer date apart from its author date', async () => {
+    const dated = path.join(dir, 'dated');
+    await mkdir(dated, { recursive: true });
+    git(dated, 'init', '-q', '-b', 'main');
+    execFileSync('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', '-c', 'commit.gpgsign=false', 'commit', '-q', '--allow-empty', '-m', 'rebased'], {
+      cwd: dated,
+      env: { ...process.env, GIT_AUTHOR_DATE: '2020-01-02T03:04:05+00:00', GIT_COMMITTER_DATE: '2024-06-07T08:09:10+00:00' },
+    });
+    const response = await history(await routeWith(), { path: dated });
+    expect(response.statusCode).toBe(200);
+    const [commit] = (response.json() as { commits: Array<Record<string, string>> }).commits;
+    expect(Date.parse(commit!.date!)).toBe(Date.parse('2020-01-02T03:04:05Z'));
+    expect(Date.parse(commit!.committerDate!)).toBe(Date.parse('2024-06-07T08:09:10Z'));
+    expect(commit!.committerDate).toBe(git(dated, 'log', '-1', '--format=%cI'));
   });
 });

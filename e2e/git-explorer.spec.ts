@@ -3,6 +3,7 @@
 // The history as a commit graph, the branch label and the commit files list box: plan-git_graph, batch graph-history.
 // Several repositories of a workspace folder in the header: plan-multi_repo_workspace, batch repo-detection.
 // The changes of every repository, one group per repository: plan-multi_repo_workspace, batch grouped-changes.
+// The combined history of every repository in one graph: plan-multi_repo_workspace, batch combined-history.
 // Repositories are real git repositories in temp folders. External sessions use fixture files in E2E_CLAUDE_DIR.
 import { type ChildProcess, execFileSync, spawn, spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
@@ -1381,5 +1382,217 @@ test.describe('Grouped changes of a workspace with several repositories', () => 
     await expect(changedFiles(page)).toHaveCount(2);
     await expect(repositoryGroup(page, 'single-changes')).toHaveCount(0);
     await expect(explorer(page).locator('.changes-repository-title')).toHaveCount(0);
+  });
+});
+
+/** An empty commit, or a commit of every change with `-a`, at `date` (author and committer). */
+const commitOn = (folder: string, date: string, message: string, ...args: string[]) => commitAt(folder, date, 'commit', '-q', '--allow-empty', ...args, '-m', message);
+
+/**
+ * The workspace of the combined history scenarios: `api` on `main` with a merge, `web/app` on `develop`, commits on different days.
+ * Newest first: app third, Merge api feature, app second, api main work, api feature, app first, api first.
+ */
+async function historyWorkspace(name: string): Promise<{ ws: string; api: string; app: string }> {
+  const ws = await newPlainFolder(name);
+  const api = path.join(ws, 'api');
+  await mkdir(api, { recursive: true });
+  git(api, 'init', '-q', '-b', 'main');
+  commitOn(api, '2026-01-10T10:00:00Z', 'api first');
+  git(api, 'checkout', '-q', '-b', 'feature');
+  commitOn(api, '2026-01-12T10:00:00Z', 'api feature');
+  git(api, 'checkout', '-q', 'main');
+  commitOn(api, '2026-01-13T10:00:00Z', 'api main work');
+  commitAt(api, '2026-01-15T10:00:00Z', 'merge', '-q', '--no-ff', '-m', 'Merge api feature', 'feature');
+  const app = path.join(ws, 'web', 'app');
+  await mkdir(app, { recursive: true });
+  git(app, 'init', '-q', '-b', 'develop');
+  await writeFile(path.join(app, 'app.txt'), 'app first\n');
+  git(app, 'add', '.');
+  commitOn(app, '2026-01-11T10:00:00Z', 'app first');
+  await writeFile(path.join(app, 'app.txt'), 'app first\napp second\n');
+  commitOn(app, '2026-01-14T10:00:00Z', 'app second', '-a');
+  commitOn(app, '2026-01-16T10:00:00Z', 'app third');
+  return { ws, api, app };
+}
+
+/**
+ * The two nodes are linked by a chain of strokes, end to end or along a vertical lane, that passes through no other node.
+ * A line from a merge to a parent rows below runs as a curve and then a lane.
+ */
+function linked(graph: GraphView, a: Point, b: Point): boolean {
+  const others = shownNodes(graph).filter((n) => !close(n, a) && !close(n, b));
+  const touches = (s: Stroke, p: Point) =>
+    close(s.from, p) ||
+    close(s.to, p) ||
+    (!s.curve && Math.abs(s.from.x - p.x) <= 2 && Math.abs(s.to.x - p.x) <= 2 && p.y >= Math.min(s.from.y, s.to.y) - 2 && p.y <= Math.max(s.from.y, s.to.y) + 2);
+  const seen = new Set<Stroke>();
+  const queue: Point[] = [a];
+  while (queue.length > 0) {
+    const p = queue.shift()!;
+    if (close(p, b)) return true;
+    for (const s of graph.strokes) {
+      if (seen.has(s) || !touches(s, p)) continue;
+      seen.add(s);
+      if (touches(s, b)) return true;
+      for (const end of [s.from, s.to]) if (!others.some((n) => close(n, end))) queue.push(end);
+    }
+  }
+  return false;
+}
+
+const COMBINED = ['app third', 'Merge api feature', 'app second', 'api main work', 'api feature', 'app first', 'api first'];
+const repositoryOfRow = (row: Locator) => row.locator('.history-commit-repository');
+const markColour = (locator: Locator) => locator.locator('.git-repository-mark').first().evaluate((m) => getComputedStyle(m).backgroundColor);
+
+async function openCombinedHistory(page: Page, request: APIRequestContext, ws: string): Promise<void> {
+  await openExplorer(page, request, ws);
+  await expect.poll(() => listedPaths(page)).toEqual(['api', 'web/app']);
+  await tab(page, 'History').click();
+  await expect(tab(page, 'History')).toHaveAttribute('aria-selected', 'true');
+}
+
+test.describe('Combined history of a workspace with several repositories', () => {
+  // plan-multi_repo_workspace/REQ-21, REQ-22, REQ-23, REQ-24, REQ-25: human acceptance scenario "The user reads the history of every repository in one graph"
+  test('shows the commits of api and web/app in one graph, newest first, each with the name and colour of its repository', async ({ page, request }) => {
+    const { ws, api, app } = await historyWorkspace('combined');
+    await openCombinedHistory(page, request, ws);
+
+    await expect(commitRows(page)).toHaveCount(COMBINED.length);
+    for (const [index, subject] of COMBINED.entries()) await expect(commitRows(page).nth(index)).toContainText(subject);
+    const owner = (subject: string) => (subject.startsWith('app') ? 'app' : 'api');
+    for (const [index, subject] of COMBINED.entries()) {
+      const repository = repositoryOfRow(commitRows(page).nth(index));
+      await expect(repository).toHaveText(owner(subject));
+      await expect(repository).toHaveAttribute('title', owner(subject) === 'app' ? app : api);
+    }
+
+    // REQ-23: the same colour in the header, the Changes group and the History rows
+    const headerColour = { api: await markColour(repositoryEntry(page, api)), app: await markColour(repositoryEntry(page, app)) };
+    expect(headerColour.api).not.toBe(headerColour.app);
+    for (const [index, subject] of COMBINED.entries()) expect(await markColour(commitRows(page).nth(index)), subject).toBe(headerColour[owner(subject)]);
+    await tab(page, 'Changes').click();
+    for (const [name, root] of [['api', api], ['app', app]] as const) {
+      expect(await drawnColours(repositoryGroup(page, name).getByTitle(root, { exact: true })), `${name}: Changes group colour`).toContain(headerColour[name]);
+    }
+    await tab(page, 'History').click();
+
+    // REQ-24: the tip of each repository carries its own branch
+    await expect(commitRows(page).nth(0).getByText('develop', { exact: true })).toBeVisible();
+    await expect(commitRows(page).nth(1).getByText('main', { exact: true })).toBeVisible();
+    for (let index = 2; index < COMBINED.length; index++) {
+      await expect(commitRows(page).nth(index).getByText(/^(main|develop)$/)).toHaveCount(0);
+    }
+
+    // REQ-24, REQ-25: lines join the commits of a repository, never two repositories
+    const graph = await readGraph(page);
+    const nodes = shownNodes(graph);
+    expect(nodes, 'one node per row').toHaveLength(COMBINED.length);
+    const at = (subject: string) => nodes[COMBINED.indexOf(subject)]!;
+    expect(linked(graph, at('app third'), at('app second'))).toBe(true);
+    expect(linked(graph, at('app second'), at('app first'))).toBe(true);
+    expect(linked(graph, at('Merge api feature'), at('api main work')), 'merge → first parent').toBe(true);
+    expect(linked(graph, at('Merge api feature'), at('api feature')), 'merge → second parent').toBe(true);
+    expect(linked(graph, at('api main work'), at('api first'))).toBe(true);
+    for (const a of COMBINED.filter((s) => owner(s) === 'api')) {
+      for (const b of COMBINED.filter((s) => owner(s) === 'app')) expect(linked(graph, at(a), at(b)), `no line between "${a}" and "${b}"`).toBe(false);
+    }
+    await expect(explorer(page).getByRole('alert')).toHaveCount(0);
+  });
+
+  // plan-multi_repo_workspace/REQ-24: human acceptance scenario "The user opens a commit of a nested repository"
+  test('a click on a commit of web/app shows its files, and a click on a file its diff in web/app', async ({ page, request }) => {
+    const { ws, app } = await historyWorkspace('combined-detail');
+    await openCombinedHistory(page, request, ws);
+    await expect(commitRows(page)).toHaveCount(COMBINED.length);
+
+    const filesRequest = page.waitForRequest((r) => new URL(r.url()).pathname === '/api/git/commit-files');
+    await commitRows(page).filter({ hasText: 'app second' }).click();
+    expect(new URL((await filesRequest).url()).searchParams.get('path')).toBe(app);
+    await expect(backButton(page)).toBeVisible();
+    await expect(changedFiles(page)).toHaveCount(1);
+    await expect(changedFiles(page).first()).toContainText('app.txt');
+    await expect(changedFiles(page).first()).toContainText('Modified');
+
+    const diffRequest = page.waitForRequest((r) => new URL(r.url()).pathname === '/api/git/commit-diff');
+    await changedFiles(page).first().click();
+    expect(new URL((await diffRequest).url()).searchParams.get('path')).toBe(app);
+    await expect(diffLines(page).filter({ hasText: /^\+app second$/ })).toHaveCount(1);
+    await expect(diffLines(page).filter({ hasText: /^-/ })).toHaveCount(0);
+  });
+
+  // plan-multi_repo_workspace/REQ-21, REQ-24: human acceptance scenario "The user loads more of a long combined history"
+  test('"Load more" on two histories of 120 commits with mixed dates appends the next commits newest first, with no gap in the lines', async ({ page, request }) => {
+    test.setTimeout(120_000);
+    const ws = await newPlainFolder('combined-long');
+    const hour = (n: number) => new Date(Date.UTC(2026, 0, 1) + n * 3_600_000).toISOString();
+    for (const [relative, offset] of [['api', 0], ['web/app', 1]] as const) {
+      const root = path.join(ws, relative);
+      await mkdir(root, { recursive: true });
+      git(root, 'init', '-q', '-b', 'main');
+      // api on even hours, web/app on odd hours: the two histories interleave one by one.
+      for (let i = 0; i < 120; i++) commitOn(root, hour(2 * i + offset), `${path.basename(relative)} ${i + 1}`);
+    }
+    await openCombinedHistory(page, request, ws);
+    const loadMore = explorer(page).getByRole('button', { name: 'Load more', exact: true });
+    await expect(loadMore).toBeVisible();
+    // First pages: api 21 to 120, app 21 to 120. The list stops once app, which has more, has shown "app 21": "api 21" waits.
+    await expect(commitRows(page)).toHaveCount(199);
+    const firstTexts = await commitRows(page).locator('.history-commit-subject').allTextContents();
+    expect(firstTexts.at(-1)).toBe('app 21');
+
+    // Each "Load more" reads the repository at the border; the two histories end after two parts.
+    await loadMore.click();
+    await expect(commitRows(page)).not.toHaveCount(199);
+    const secondTexts = await commitRows(page).locator('.history-commit-subject').allTextContents();
+    expect(secondTexts.slice(0, 199), 'the next commits appear under the first ones').toEqual(firstTexts);
+    await loadMore.click();
+    await expect(commitRows(page)).toHaveCount(240);
+    await expect(loadMore).toHaveCount(0);
+    const subjects = await commitRows(page).locator('.history-commit-subject').allTextContents();
+    expect(subjects.slice(0, secondTexts.length)).toEqual(secondTexts);
+    const expected = Array.from({ length: 240 }, (_, k) => {
+      const n = 239 - k;
+      return n % 2 === 0 ? `api ${n / 2 + 1}` : `app ${(n - 1) / 2 + 1}`;
+    });
+    expect(subjects, 'newest first across both repositories').toEqual(expected);
+
+    const graph = await readGraph(page);
+    const nodes = shownNodes(graph);
+    expect(nodes).toHaveLength(240);
+    for (const name of ['api', 'app']) {
+      const own = nodes.filter((_, index) => subjects[index]!.startsWith(`${name} `));
+      expect(new Set(own.map((n) => Math.round(n.x))).size, `${name}: one lane`).toBe(1);
+      expect(laneCovers(graph, own[0]!.x, own[0]!.y, own.at(-1)!.y), `${name}: no gap across the parts`).toBe(true);
+    }
+    expect(Math.round(nodes[0]!.x), 'the two repositories in their own lanes').not.toBe(Math.round(nodes[1]!.x));
+  });
+
+  // plan-multi_repo_workspace/REQ-26: human acceptance scenario "The user sees one history fail while the others still show"
+  test('a damaged web/app shows its git message in History, above the commits of api', async ({ page, request }) => {
+    const { ws, app } = await historyWorkspace('combined-damaged');
+    await rm(path.join(app, '.git'), { recursive: true, force: true });
+    await writeFile(path.join(app, '.git'), `gitdir: ${path.join(ws, 'missing-gitdir')}\n`);
+    await openCombinedHistory(page, request, ws);
+
+    const alert = explorer(page).getByRole('tabpanel').getByRole('alert');
+    await expect(alert).toHaveCount(1);
+    await expect(alert).toContainText(/^app: \S/);
+    await expect(commitRows(page)).toHaveCount(4);
+    for (const [index, subject] of ['Merge api feature', 'api main work', 'api feature', 'api first'].entries()) {
+      await expect(commitRows(page).nth(index)).toContainText(subject);
+    }
+    expect((await box(alert)).y, 'the message is above the commits').toBeLessThan((await box(commitRows(page).first())).y);
+  });
+
+  // plan-multi_repo_workspace/REQ-27: human acceptance scenario "The history of a single repository looks as today"
+  test('a single repository shows the graph with no repository name on the rows', async ({ page, request }) => {
+    const repo = await mergedRepository('combined-single');
+    await openHistory(page, request, repo);
+    await expect(commitRows(page)).toHaveCount(5);
+    await expect(explorer(page).locator('[aria-label="Commits"] .history-commit-repository')).toHaveCount(0);
+    await expect(explorer(page).locator('[aria-label="Commits"] .git-repository-mark')).toHaveCount(0);
+    await expect(explorer(page).locator('[aria-label="Commits"]')).not.toContainText('combined-single');
+    await expect(commitRows(page).first().getByText('main', { exact: true })).toBeVisible();
+    expect(shownNodes(await readGraph(page))).toHaveLength(5);
   });
 });

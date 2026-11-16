@@ -421,14 +421,15 @@ describe('GitExplorerPanel with one or several repositories', () => {
     expect(onRefresh).toHaveBeenCalledTimes(1);
   });
 
-  // plan-multi_repo_workspace/REQ-14 (spec GitExplorerPanel): "Changes" reads every covered root, "History" the first one
-  it('reads the changes of every repository and the history of the first one', async () => {
+  // plan-multi_repo_workspace/REQ-14, REQ-21 (spec GitExplorerPanel): both tabs read every covered root
+  it('reads the changes and, once "History" opens, the history of every repository', async () => {
     const { region } = renderWith({ lookup: several });
     await until(() => callsTo('/api/git/changes') === 2);
     expect(pathsOf('/api/git/changes').sort()).toEqual([`${WS}/api`, `${WS}/web/app`]);
+    expect(callsTo('/api/git/history')).toBe(0);
     flushSync(() => tabNamed(region(), 'History').click());
-    await until(() => callsTo('/api/git/history') === 1);
-    expect(pathsOf('/api/git/history')).toEqual([`${WS}/api`]);
+    await until(() => callsTo('/api/git/history') === 2);
+    expect(pathsOf('/api/git/history').sort()).toEqual([`${WS}/api`, `${WS}/web/app`]);
   });
 
   // plan-multi_repo_workspace/REQ-14, REQ-19 (spec GitExplorerPanel)
@@ -506,5 +507,132 @@ describe('GitExplorerPanel with one or several repositories', () => {
     await settlePanel();
     expect(callsTo('/api/git/changes')).toBe(2);
     expect(onRefresh).not.toHaveBeenCalled();
+  });
+});
+
+/** Answers the pending request to `pathname` for `root`. */
+function answerPathOf(pathname: string, root: string, body: unknown, status = 200) {
+  const urls = fetchMock.mock.calls.map((call) => new URL(String(call[0]), 'http://localhost'));
+  let index = urls.length - 1;
+  while (index >= 0 && !(urls[index]!.pathname === pathname && urls[index]!.searchParams.get('path') === root)) index--;
+  pending[index]!(new Response(JSON.stringify(body), { status }));
+}
+const dated = (char: string, day: number, message: string) => ({
+  hash: char.repeat(40),
+  shortHash: char.repeat(7),
+  parents: [],
+  message,
+  author: 'Ada',
+  date: `2026-11-${String(day).padStart(2, '0')}T10:00:00Z`,
+  committerDate: `2026-11-${String(day).padStart(2, '0')}T10:00:00Z`,
+});
+const historyPanelOf = (region: HTMLElement) => [...region.querySelectorAll<HTMLElement>('[role="tabpanel"]')].find((p) => !isHidden(p))!;
+const historyRows = (region: HTMLElement) => [...(historyPanelOf(region).querySelector('[aria-label="Commits"]')?.querySelectorAll('button') ?? [])];
+const markColor = (scope: Element | null | undefined) => scope?.querySelector<HTMLElement>('.git-repository-mark')?.style.backgroundColor;
+
+describe('GitExplorerPanel combined history', () => {
+  async function openHistory(lookup: RepositoryLookupState = several) {
+    const view = renderWith({ lookup });
+    await until(() => callsTo('/api/git/changes') === 2);
+    flushSync(() => tabNamed(view.region(), 'History').click());
+    await until(() => callsTo('/api/git/history') === 2);
+    return view;
+  }
+
+  // plan-multi_repo_workspace/REQ-21, REQ-22
+  it('shows "Loading…" until every repository answers, then the commits of all, newest first, each with its repository name', async () => {
+    const { region } = await openHistory();
+    answerPathOf('/api/git/history', `${WS}/api`, { commits: [dated('a', 9, 'api newest'), dated('b', 3, 'api oldest')], hasMore: false });
+    await settlePanel();
+    expect(historyPanelOf(region()).textContent).toContain('Loading…');
+    expect(historyPanelOf(region()).textContent).not.toContain('api newest');
+    answerPathOf('/api/git/history', `${WS}/web/app`, { commits: [dated('c', 5, 'app middle')], hasMore: false });
+    await until(() => historyRows(region()).length === 3);
+    const rows = historyRows(region());
+    expect(rows[0]!.textContent).toContain('api newest');
+    expect(rows[1]!.textContent).toContain('app middle');
+    expect(rows[2]!.textContent).toContain('api oldest');
+    expect(rows[0]!.querySelector(`[title="${WS}/api"]`)?.textContent).toBe('api');
+    expect(rows[1]!.querySelector(`[title="${WS}/web/app"]`)?.textContent).toBe('app');
+  });
+
+  // plan-multi_repo_workspace/REQ-23
+  it('gives each repository the same colour in the repository list, the Changes groups and the History rows', async () => {
+    const { region } = await openHistory();
+    answerChangesOf(`${WS}/api`, { changes: [changeEntry('server.ts')] });
+    answerChangesOf(`${WS}/web/app`, { changes: [changeEntry('ui.ts')] });
+    answerPathOf('/api/git/history', `${WS}/api`, { commits: [dated('a', 9, 'api commit')], hasMore: false });
+    answerPathOf('/api/git/history', `${WS}/web/app`, { commits: [dated('c', 5, 'app commit')], hasMore: false });
+    await until(() => historyRows(region()).length === 2);
+    await until(() => region().querySelector('section[aria-label="app"]') !== null);
+    const entries = [...repositoryList(region())!.querySelectorAll('li')];
+    const header = entries.map((entry) => markColor(entry));
+    const groups = ['api', 'app'].map((name) => markColor(region().querySelector(`section[aria-label="${name}"]`)));
+    const history = historyRows(region()).map((row) => markColor(row));
+    expect(header[0]).toBeTruthy();
+    expect(header[0]).not.toBe(header[1]);
+    expect(groups).toEqual(header);
+    expect(history).toEqual(header);
+  });
+
+  // plan-multi_repo_workspace/REQ-24, plan-git_graph/REQ-12
+  it('labels the tip of each repository with the branch of the lookup', async () => {
+    const { region } = await openHistory();
+    answerPathOf('/api/git/history', `${WS}/api`, { commits: [dated('a', 9, 'api tip'), dated('b', 1, 'api old')], hasMore: false });
+    answerPathOf('/api/git/history', `${WS}/web/app`, { commits: [dated('c', 5, 'app tip')], hasMore: false });
+    await until(() => historyRows(region()).length === 3);
+    const labelled = (row: Element, text: string) => [...row.querySelectorAll('*')].some((el) => el.textContent === text);
+    const [apiTip, appTip, apiOld] = historyRows(region());
+    expect(labelled(apiTip!, 'main')).toBe(true);
+    expect(labelled(appTip!, 'detached')).toBe(true);
+    expect(labelled(apiOld!, 'main') || labelled(apiOld!, 'detached')).toBe(false);
+  });
+
+  // plan-multi_repo_workspace/REQ-26
+  it('shows the error of a failed repository as "<name>: <message>" above the commits of the others', async () => {
+    const { region } = await openHistory();
+    answerPathOf('/api/git/history', `${WS}/api`, { commits: [dated('a', 9, 'api commit')], hasMore: false });
+    answerPathOf('/api/git/history', `${WS}/web/app`, { error: 'git_error', message: 'fatal: bad object HEAD' }, 500);
+    await until(() => historyRows(region()).length === 1);
+    const alert = historyPanelOf(region()).querySelector('[role="alert"]');
+    expect(alert!.textContent).toBe('app: fatal: bad object HEAD');
+    expect(alert!.compareDocumentPosition(historyRows(region())[0]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows only the messages, in list order, when every repository fails', async () => {
+    const { region } = await openHistory();
+    answerPathOf('/api/git/history', `${WS}/web/app`, { error: 'git_error', message: 'app broken' }, 500);
+    answerPathOf('/api/git/history', `${WS}/api`, { error: 'git_error', message: 'api broken' }, 500);
+    await until(() => historyPanelOf(region()).querySelectorAll('[role="alert"]').length === 2);
+    const panel = historyPanelOf(region());
+    expect([...panel.querySelectorAll('[role="alert"]')].map((a) => a.textContent)).toEqual(['api: api broken', 'app: app broken']);
+    expect(panel.querySelector('[aria-label="Commits"]')).toBeNull();
+    expect(panel.textContent).not.toContain('No commits yet');
+    expect(panel.textContent).not.toContain('Loading…');
+  });
+
+  // plan-multi_repo_workspace/REQ-27
+  it('shows the commits of a single repository with no repository mark', async () => {
+    const { region } = renderWith({ lookup: repository });
+    flushSync(() => tabNamed(region(), 'History').click());
+    await until(() => callsTo('/api/git/history') === 1);
+    answerLast('/api/git/history', { commits: [dated('a', 9, 'only commit')], hasMore: false });
+    await until(() => historyRows(region()).length === 1);
+    const row = historyRows(region())[0]!;
+    expect(row.textContent).not.toContain('my-project');
+    expect(row.querySelector('.git-repository-mark')).toBeNull();
+    expect([...row.querySelectorAll('*')].some((el) => el.textContent === 'main'), 'the branch label stays').toBe(true);
+  });
+
+  // plan-multi_repo_workspace/REQ-21: "Refresh" reads the first page of every root again
+  it('reads the first history page of every repository again on "Refresh"', async () => {
+    const { region } = await openHistory();
+    answerPathOf('/api/git/history', `${WS}/api`, { commits: [dated('a', 9, 'api commit')], hasMore: false });
+    answerPathOf('/api/git/history', `${WS}/web/app`, { commits: [dated('c', 5, 'app commit')], hasMore: false });
+    await until(() => historyRows(region()).length === 2);
+    flushSync(() => refreshButton(region())!.click());
+    await until(() => callsTo('/api/git/history') === 4);
+    expect(pathsOf('/api/git/history').slice(2).sort()).toEqual([`${WS}/api`, `${WS}/web/app`]);
+    expect(historyRows(region()), 'the commits stay until the refresh answers').toHaveLength(2);
   });
 });
