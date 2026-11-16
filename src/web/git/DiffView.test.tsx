@@ -51,6 +51,36 @@ describe('DiffView', () => {
     expect(text.indexOf('Diff cut at 5,000 lines')).toBeGreaterThan(text.indexOf('+first'));
   });
 
+  // plan-git_graph/REQ-2: one table row per line, the hunk header in a row of its own, no line-number gutter
+  it('draws one table row per line, with the hunk header in a row of its own and no gutter', () => {
+    const view = render({
+      binary: false,
+      cut: false,
+      lines: [
+        { kind: 'hunk', text: '@@ -1,2 +1,2 @@' },
+        { kind: 'context', text: 'keep' },
+        { kind: 'removed', text: 'old' },
+        { kind: 'added', text: 'new' },
+      ],
+    });
+    const rows = [...view.querySelectorAll('tr')];
+    expect(rows.map((row) => row.textContent)).toEqual(['@@ -1,2 +1,2 @@', ' keep', '-old', '+new']);
+    for (const row of rows) expect(row.querySelectorAll('td')).toHaveLength(1);
+  });
+
+  it('shows the lines before any hunk line with no header row', () => {
+    const view = render({
+      binary: false,
+      cut: false,
+      lines: [
+        { kind: 'context', text: 'first' },
+        { kind: 'hunk', text: '@@ -5 +5 @@' },
+        { kind: 'added', text: 'later' },
+      ],
+    });
+    expect([...view.querySelectorAll('tr')].map((row) => row.textContent)).toEqual([' first', '@@ -5 +5 @@', '+later']);
+  });
+
   it('shows an empty view with no lines and no notes', () => {
     expect(render({ binary: false, cut: false, lines: [] }).textContent).toBe('');
   });

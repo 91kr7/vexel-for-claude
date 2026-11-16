@@ -1,4 +1,5 @@
 // e2e of plan-git_explorer, batches explorer-access, uncommitted-changes, history and refresh: the "Git Explorer" button, the panel, its uncommitted changes, the history and the refresh.
+// Changes list box and diff on open-source components, light and dark: plan-git_graph, batch open-source-explorer.
 // Repositories are real git repositories in temp folders. External sessions use fixture files in E2E_CLAUDE_DIR.
 import { type ChildProcess, execFileSync, spawn, spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
@@ -255,9 +256,10 @@ test.describe('Git explorer of an external session', () => {
   });
 });
 
-const group = (page: Page, name: 'Staged' | 'Unstaged') => explorer(page).getByRole('region', { name, exact: true });
-const fileEntry = (page: Page, name: 'Staged' | 'Unstaged', file: string) => group(page, name).getByRole('button').filter({ hasText: file });
-const diffLines = (page: Page) => explorer(page).locator('.diff-line');
+const group = (page: Page, name: 'Staged' | 'Unstaged') => explorer(page).getByRole('group', { name, exact: true });
+const fileEntry = (page: Page, name: 'Staged' | 'Unstaged', file: string) => group(page, name).getByRole('option').filter({ hasText: file });
+// DiffView draws one table row per line, each with a single cell.
+const diffLines = (page: Page) => explorer(page).locator('.diff-view td');
 const isChanges = (url: string) => new URL(url).pathname === '/api/git/changes';
 
 /** The computed colour of a CSS variable, as the browser writes colours (rgb). */
@@ -300,14 +302,14 @@ test.describe('Uncommitted changes in the git explorer', () => {
     await expect(fileEntry(page, 'Staged', 'app/feature.ts')).toContainText('Added');
     await expect(fileEntry(page, 'Unstaged', 'lib/util.ts')).toContainText('Modified');
     await expect(fileEntry(page, 'Unstaged', 'todo.md')).toContainText('Untracked');
-    await expect(group(page, 'Staged').getByRole('button')).toHaveCount(1);
-    await expect(group(page, 'Unstaged').getByRole('button')).toHaveCount(2);
+    await expect(group(page, 'Staged').getByRole('option')).toHaveCount(1);
+    await expect(group(page, 'Unstaged').getByRole('option')).toHaveCount(2);
     const stagedBox = await box(group(page, 'Staged'));
     const unstagedBox = await box(group(page, 'Unstaged'));
     expect(stagedBox.y, '"Staged" is above "Unstaged"').toBeLessThan(unstagedBox.y);
 
     await fileEntry(page, 'Unstaged', 'lib/util.ts').click();
-    await expect(fileEntry(page, 'Unstaged', 'lib/util.ts')).toHaveAttribute('aria-pressed', 'true');
+    await expect(fileEntry(page, 'Unstaged', 'lib/util.ts')).toHaveAttribute('aria-selected', 'true');
     const removed = diffLines(page).filter({ hasText: /^-export const b = 2;$/ });
     const added = diffLines(page).filter({ hasText: /^\+export const b = 20;$/ });
     await expect(removed).toHaveCount(1);
@@ -382,9 +384,124 @@ test.describe('Uncommitted changes in the git explorer', () => {
 
     const clicked = Date.now();
     await fileEntry(page, 'Unstaged', 'logo.png').click();
-    await expect(fileEntry(page, 'Unstaged', 'logo.png')).toHaveAttribute('aria-pressed', 'true');
+    await expect(fileEntry(page, 'Unstaged', 'logo.png')).toHaveAttribute('aria-selected', 'true');
     await expect(explorer(page)).toContainText('Binary file, no diff shown');
     expect(Date.now() - clicked, 'a click after the large diff answers within 2 s').toBeLessThan(2_000);
+  });
+
+  // plan-git_graph/REQ-1, REQ-2, REQ-3, REQ-4: human acceptance scenario "The user sees the uncommitted changes and their diff on the new components"
+  test('the list box and the diff take their colours from the theme tokens, in the light and in the dark theme', async ({ page, request }) => {
+    const repo = await newRepository('theme-repo');
+    await writeFile(path.join(repo, 'notes.md'), 'keep\nold\n');
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'notes');
+    await writeFile(path.join(repo, 'staged.ts'), 'export const staged = 1;\n');
+    git(repo, 'add', 'staged.ts');
+    await writeFile(path.join(repo, 'notes.md'), 'keep\nadded line\n');
+    await writeFile(path.join(repo, 'loose.txt'), 'loose\n');
+
+    await openExplorer(page, request, repo);
+    await expect(explorer(page).getByRole('listbox', { name: 'Changed files', exact: true })).toBeVisible();
+    await expect(fileEntry(page, 'Staged', 'staged.ts')).toContainText('Added');
+    await expect(fileEntry(page, 'Unstaged', 'notes.md')).toContainText('Modified');
+    await expect(fileEntry(page, 'Unstaged', 'loose.txt')).toContainText('Untracked');
+    await fileEntry(page, 'Unstaged', 'notes.md').click();
+    await expect(fileEntry(page, 'Unstaged', 'notes.md')).toHaveAttribute('aria-selected', 'true');
+    await expect(diffLines(page).filter({ hasText: /^\+added line$/ })).toHaveCount(1);
+    await page.mouse.move(0, 0);
+
+    const themeSwitch = page.getByRole('banner').getByRole('button', { name: 'Dark theme', exact: true });
+    const colours = async () => {
+      const read = (locator: Locator, property: 'color' | 'backgroundColor') => locator.evaluate((el, p) => getComputedStyle(el)[p], property);
+      return {
+        added: await read(diffLines(page).filter({ hasText: /^\+added line$/ }), 'color'),
+        addedTint: await read(diffLines(page).filter({ hasText: /^\+added line$/ }), 'backgroundColor'),
+        removed: await read(diffLines(page).filter({ hasText: /^-old$/ }), 'color'),
+        context: await read(diffLines(page).filter({ hasText: /^\s?keep$/ }), 'color'),
+        hunk: await read(diffLines(page).filter({ hasText: /^@@ / }), 'color'),
+        selected: await read(fileEntry(page, 'Unstaged', 'notes.md'), 'backgroundColor'),
+      };
+    };
+    const tokens = async () => ({
+      green: await cssColour(page, '--emerald-400'),
+      red: await cssColour(page, '--color-error'),
+      text: await cssColour(page, '--text-primary'),
+      muted: await cssColour(page, '--text-muted'),
+      surface3: await cssColour(page, '--bg-surface-3'),
+    });
+    const expectThemeColours = async () => {
+      const t = await tokens();
+      const c = await colours();
+      expect(c.added, 'added line in the success colour').toBe(t.green);
+      expect(c.removed, 'removed line in the error colour').toBe(t.red);
+      expect(c.context, 'context line in the normal text colour').toBe(t.text);
+      expect(c.hunk, 'hunk header muted').toBe(t.muted);
+      expect(c.selected, 'selected entry on surface 3').toBe(t.surface3);
+      expect(c.addedTint, 'added line on a tint').not.toBe('rgba(0, 0, 0, 0)');
+      return c;
+    };
+
+    await themeSwitch.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await page.mouse.move(0, 0);
+    const light = await expectThemeColours();
+
+    await themeSwitch.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.mouse.move(0, 0);
+    const dark = await expectThemeColours();
+    expect(dark.added, 'the added colour changes with the theme').not.toBe(light.added);
+    expect(dark.selected, 'the selected entry changes with the theme').not.toBe(light.selected);
+    expect(dark.context, 'the text colour changes with the theme').not.toBe(light.context);
+  });
+
+  // plan-git_graph/REQ-2: the keyboard moves through the list box and selects an entry
+  test('the arrow keys move between the entries and Enter shows the diff of the focused one', async ({ page, request }) => {
+    const repo = await newRepository('keyboard-repo');
+    await writeFile(path.join(repo, 'README.md'), 'hello\nmore\n');
+    await writeFile(path.join(repo, 'a.txt'), 'alpha\n');
+    await writeFile(path.join(repo, 'b.txt'), 'beta\n');
+    await openExplorer(page, request, repo);
+
+    const entries = group(page, 'Unstaged').getByRole('option');
+    await expect(entries).toHaveCount(3);
+    await entries.nth(0).click();
+    await expect(entries.nth(0)).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('ArrowDown');
+    await expect(entries.nth(1)).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(entries.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(entries.nth(0)).toHaveAttribute('aria-selected', 'false');
+    const name = (await entries.nth(1).getByTitle(/./).textContent()) ?? '';
+    const expected = { 'README.md': /^\+more$/, 'a.txt': /^\+alpha$/, 'b.txt': /^\+beta$/ }[name];
+    expect(expected, `known entry ${name}`).toBeDefined();
+    await expect(diffLines(page).filter({ hasText: expected! })).toHaveCount(1);
+    await page.keyboard.press('ArrowDown');
+    await expect(entries.nth(2)).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(entries.nth(2)).toHaveAttribute('aria-selected', 'true');
+    await expect(group(page, 'Unstaged').getByRole('option', { selected: true })).toHaveCount(1);
+  });
+
+  // plan-git_graph/REQ-2: human acceptance scenario "The user sees a binary file and a clean repository"
+  test('a binary file shows its note, and after a commit of every change "Refresh" shows "No uncommitted changes"', async ({ page, request }) => {
+    const repo = await newRepository('binary-clean-repo');
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 1]);
+    await writeFile(path.join(repo, 'icon.png'), png);
+    git(repo, 'add', '.');
+    git(repo, 'commit', '-q', '-m', 'icon');
+    await writeFile(path.join(repo, 'icon.png'), Buffer.concat([png, Buffer.from([0, 3, 0, 5])]));
+
+    await openExplorer(page, request, repo);
+    await fileEntry(page, 'Unstaged', 'icon.png').click();
+    await expect(explorer(page)).toContainText('Binary file, no diff shown');
+    await expect(diffLines(page)).toHaveCount(0);
+
+    git(repo, 'commit', '-q', '-a', '-m', 'icon again');
+    await explorer(page).getByRole('button', { name: 'Refresh', exact: true }).click();
+    await expect(explorer(page)).toContainText('No uncommitted changes');
+    await expect(explorer(page)).not.toContainText('Binary file, no diff shown');
+    await expect(explorer(page).getByRole('listbox', { name: 'Changed files', exact: true })).toHaveCount(0);
   });
 
   // plan-git_explorer/REQ-6 (served here): a git error of the changes appears in the panel
@@ -590,7 +707,7 @@ test.describe('Refresh of the git explorer', () => {
     await setStatus('idle');
     await expect(entry(page, path.join(repo, 'frontend'))).toContainText('Idle', SCAN);
     await expect(fileEntry(page, 'Unstaged', 'frontend/new.ts')).toContainText('Untracked');
-    await expect(fileEntry(page, 'Unstaged', 'README.md')).toHaveAttribute('aria-pressed', 'true');
+    await expect(fileEntry(page, 'Unstaged', 'README.md')).toHaveAttribute('aria-selected', 'true');
     await expect(diffLines(page).filter({ hasText: /^\+second edit$/ })).toHaveCount(1);
     await expect(diffLines(page).filter({ hasText: /^\+first edit$/ })).toHaveCount(1);
   });
@@ -632,7 +749,7 @@ test.describe('Refresh of the git explorer', () => {
     await expect(fileEntry(page, 'Unstaged', 'README.md')).toHaveCount(0);
     await expect(fileEntry(page, 'Unstaged', 'other.txt')).toBeVisible();
     await expect(diffLines(page)).toHaveCount(0);
-    await expect(group(page, 'Unstaged').getByRole('button', { pressed: true })).toHaveCount(0);
+    await expect(group(page, 'Unstaged').getByRole('option', { selected: true })).toHaveCount(0);
   });
 
   // plan-git_explorer/REQ-24: "Refresh" reads the history and the branch again
