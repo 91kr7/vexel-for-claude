@@ -51,3 +51,4 @@
 | 2026-11-16 | dev session-view | G5 tests (round 2) | pass | Re-run session-view, git-explorer, terminal-panel, hosted-session: 77 passed |
 | 2026-11-16 | dev list-cards | G4 development | pass | Build green; diff limited to INT files, windows11.css, specs and indexes; ListStyles spec and index row present |
 | 2026-11-16 | dev list-cards | divergence developer | decided | ListStyles shared CSS group documented as a component; windows11.css keeps 4px list corners; commit rows show no selected style (list hidden while a commit is open) |
+| 2026-11-16 | dev list-cards | G5 tests | pass | Test files only; no only/skip; re-run list-cards, shared-shapes, board-dialogs: 43 passed |

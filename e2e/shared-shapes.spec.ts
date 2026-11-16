@@ -202,7 +202,7 @@ for (const theme of THEMES) {
     await appearance.click();
     const item = await shapeOf(appearance);
     expect(item.radius, 'menu item: card radius').toBe('7px');
-    expect([item.borderWidth, item.borderColour], 'chosen menu item: accent border').toEqual(['1px', level['--accent-border']]);
+    expect([item.borderWidth, item.borderColour], 'chosen menu item: accent border').toEqual(['1px', level['--accent-primary']]);
 
     const active = cardOf(popup.getByRole('radio', { name: theme === 'light' ? 'Light' : 'Dark', exact: true }));
     const other = cardOf(popup.getByRole('radio', { name: theme === 'light' ? 'Dark' : 'Light', exact: true }));
@@ -250,7 +250,7 @@ for (const theme of THEMES) {
     expect(s.radius, 'past-session row: card radius').toBe('7px');
     expect(s.background, 'past-session row: card surface').toBe(level['--bg-surface-2']);
     expect([s.borderWidth, s.borderColour], 'past-session row: subtle border').toEqual(['1px', level['--border-subtle']]);
-    expect(s.leftWidth, 'past-session row: 3 px left edge').toBe('3px');
+    expect(s.leftWidth, 'past-session row: 1 px left edge, as a session card').toBe('1px');
 
     await radio.check();
     await page.mouse.move(0, 0);

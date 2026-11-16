@@ -280,8 +280,8 @@ async function expectRing(page: Page, target: Locator, what: string): Promise<vo
 }
 
 /**
- * A dialog row (FolderChooser "Shows", `.vx-session-row`): padding 4 8, radius 6, a 24 badge, the 12 px name over the mono 11 px detail, then the 14 px radio.
- * With `card`, a past-session row of ResumeDialog: a card like the session cards (plan-dark_blue_theme/REQ-3).
+ * A dialog row of FolderChooser or ResumeDialog: a 24 badge, the 12 px name over the mono 11 px detail, then the 14 px radio.
+ * With `card`, a card of ListStyles (plan-dark_blue_theme/REQ-44, REQ-45); else a dense folder browser row: padding 4 8, 7 px corners (REQ-47).
  */
 async function expectStudioRow(
   page: Page,
@@ -296,18 +296,12 @@ async function expectStudioRow(
     await expectStyles(
       row,
       options.checked
-        ? { 'border-top-left-radius': '7px', 'border-left-width': '3px', 'background-color': await role(page, '--bg-surface-3'), 'border-top-color': await role(page, '--accent-primary') }
-        : { 'border-top-left-radius': '7px', 'border-left-width': '3px', 'background-color': await role(page, '--bg-surface-2'), 'border-top-color': await role(page, '--border-subtle') },
+        ? { 'border-top-left-radius': '7px', 'border-left-width': '1px', 'background-color': await role(page, '--bg-surface-3'), 'border-top-color': await role(page, '--accent-primary') }
+        : { 'border-top-left-radius': '7px', 'border-left-width': '1px', 'background-color': await role(page, '--bg-surface-2'), 'border-top-color': await role(page, '--border-subtle') },
       what,
     );
   } else {
-    // A checked row draws its 2 px accent bar inside the left padding (8 px = 6 px + the bar).
-    await expectStyles(row, { 'padding-top': '4px', 'padding-left': options.checked ? '6px' : '8px', 'border-top-left-radius': '6px' }, what);
-    if (options.checked) {
-      await expectStyles(row, { 'background-color': await role(page, '--accent-glow'), color: await role(page, '--text-primary'), 'font-weight': '600' }, `${what} checked`);
-    } else {
-      await expectStyles(row, { 'background-color': 'rgba(0, 0, 0, 0)' }, `${what} background`);
-    }
+    await expectStyles(row, { 'padding-top': '4px', 'padding-left': '8px', 'border-top-left-radius': '7px', 'background-color': 'rgba(0, 0, 0, 0)' }, what);
   }
   const badge = await box(row.locator(':scope > *').first());
   near(badge.width, 24, `${what} badge width`);
@@ -730,8 +724,9 @@ test.describe('Studio dialogs', () => {
       ['docs-site', docs, false],
     ] as const) {
       const row = rowOf(recents(page), name);
-      const r = await expectStudioRow(page, row, name, folder, { checked, radio: true }, `row "${name}"`);
-      if (previous) near(r.y, bottom(previous) + 2, `row "${name}" 2 under the previous one`);
+      const r = await expectStudioRow(page, row, name, folder, { checked, radio: true, card: true }, `row "${name}"`);
+      await expectStyles(row, { 'padding-top': '6px', 'padding-left': '10px', ...(checked ? { 'font-weight': '600' } : {}) }, `row "${name}" padding and weight`);
+      if (previous) near(r.y, bottom(previous) + 6, `row "${name}" 6 under the previous one`);
       previous = r;
     }
     expect(await rowOf(recents(page), 'billing-api').evaluate((el) => {
@@ -740,7 +735,7 @@ test.describe('Studio dialogs', () => {
       if (s.borderLeftColor === c && parseFloat(s.borderLeftWidth) >= 1.5) return true;
       if (s.boxShadow.includes(c)) return true;
       return ['::before', '::after'].some((p) => getComputedStyle(el, p).content !== 'none' && getComputedStyle(el, p).backgroundColor === c);
-    }), 'checked row: the 2 px accent bar').toBe(true);
+    }), 'checked row: the accent bar').toBe(true);
 
     await expectSectionHeading(page, dialog.getByText('Folders', { exact: true }), false, '"Folders"');
     const parent = action(dialog, '..');
