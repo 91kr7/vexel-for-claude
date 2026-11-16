@@ -624,7 +624,7 @@ test.describe('session list', () => {
 // ---------------------------------------------------------------------------------------------------------------------
 test.describe('hosted session view', () => {
   // REQ-30, REQ-31, REQ-32, REQ-34, REQ-35, REQ-42 — scenario "The open hosted session uses the Studio subbar and terminal"
-  test('the open working session has the 40 px subbar, the 12 px terminal on canvas and no key badges; the snackbar sits at the bottom right', async ({ page, request }) => {
+  test('the open working session has the 44 px subbar, the 12 px terminal on canvas and no key badges; the snackbar sits at the bottom right', async ({ page, request }) => {
     await showOnly(page);
     const open = await newFolder('billing-api');
     const other = await newFolder('web-dashboard');
@@ -634,10 +634,10 @@ test.describe('hosted session view', () => {
     await openFromList(page, open);
     await startWorking(request, openId);
 
-    // REQ-30, REQ-53, plan-session_list_width/REQ-15, REQ-20: 40 px subbar with name, pill and actions, no avatar; the mono path is in the footer
+    // REQ-30, REQ-53, plan-session_list_width/REQ-15, REQ-20, plan-dark_blue_theme/REQ-25: 44 px subbar with name, pill and actions, no avatar; the mono path is in the footer
     const head = subbar(page);
     await expect(head.getByRole('heading', { level: 2, name: 'billing-api' })).toBeVisible();
-    expect((await box(head)).height).toBeCloseTo(40, 0);
+    expect((await box(head)).height).toBeCloseTo(44, 0);
     await expect(head).not.toContainText(open);
     const pathText = mainArea(page).locator('footer').getByText(open, { exact: true });
     expect(await style(pathText, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
@@ -663,10 +663,11 @@ test.describe('hosted session view', () => {
     await expect(stop).toContainText('■');
     for (const action of [interrupt, stop]) expect(await style(action, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
 
-    // REQ-34: the terminal panel on canvas, subtle border, 8 px radius, 12 px mono
+    // REQ-34, plan-dark_blue_theme/REQ-26: the terminal panel on canvas, strong role border once the focus leaves it, 8 px radius, 12 px mono
     const region = page.getByRole('region', { name: 'Terminal: billing-api' });
     expect(await style(region, 'background-color')).toBe(CANVAS);
-    expect(await style(region, 'border-top-color')).toBe(BORDER_SUBTLE);
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await expect.poll(() => style(region, 'border-top-color')).toBe(await colour(page, 'var(--role-border-strong)'));
     expect(await style(region, 'border-top-left-radius')).toBe('8px');
     expect(await effectiveBackground(page.locator('.xterm-screen'))).toBe(CANVAS);
     expect(await px(terminal(page), 'font-size')).toBe(12);
@@ -726,8 +727,8 @@ test.describe('external session view', () => {
     const claudeMessage = mainArea(page).getByRole('article', { name: 'Claude', exact: true });
     await expect(userMessage).toContainText('Esegui i test');
 
-    // REQ-53: the subbar of the external view is 40 px high too
-    expect.soft((await box(subbar(page))).height, 'external subbar height').toBeCloseTo(40, 0);
+    // REQ-53, plan-dark_blue_theme/REQ-25: the subbar of the external view is 44 px high too
+    expect.soft((await box(subbar(page))).height, 'external subbar height').toBeCloseTo(44, 0);
 
     // REQ-33: accent "Resume Here", neutral mono "Read-only"
     const resume = button(mainArea(page), 'Resume Here');

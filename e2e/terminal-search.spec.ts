@@ -144,6 +144,12 @@ async function showsRing(page: Page, target: Locator): Promise<boolean> {
   }, ring);
 }
 
+/** The focus ring of the terminal frame: a box-shadow ring of `--role-accent` at 22 % (plan-dark_blue_theme/REQ-27). */
+async function frameShowsRing(page: Page): Promise<boolean> {
+  const ring = await computedColour(page, 'color-mix(in srgb, var(--role-accent) 22%, transparent)');
+  return panel(page).evaluate((element, ringColour) => getComputedStyle(element).boxShadow.includes(ringColour), ring);
+}
+
 function luminance(colour: string): number {
   const [r, g, b] = (colour.match(/[\d.]+/g) ?? []).slice(0, 3).map((value) => {
     const channel = Number(value) / 255;
@@ -285,7 +291,7 @@ test('REQ-23, REQ-24, REQ-25, REQ-30: Enter, Shift+Enter and the controls move b
   await page.keyboard.press('Shift+Tab');
   await expect(field(page)).toBeFocused();
   await expect.poll(() => showsRing(page, field(page))).toBe(true);
-  await expect.poll(() => showsRing(page, panel(page))).toBe(true);
+  await expect.poll(() => frameShowsRing(page)).toBe(true);
 
   // Esc on a control closes the box too.
   await control(page, 'Next match').focus();

@@ -172,7 +172,7 @@ test.describe('Studio layout', () => {
   test.use({ viewport: { width: 1440, height: 900 }, timezoneId: 'UTC' });
 
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-22, REQ-36, REQ-37, REQ-39, REQ-53, ConversationView "Description" — scenario "The external session shows messages and tool cards in the Studio style"
-  test('at 1440 x 900 the subbar is 40 px, and the entries sit in a centred column of at most 896 px, 16 px apart, with the tool cards under the text', async ({ page }) => {
+  test('at 1440 x 900 the subbar is 44 px, and the entries sit in a centred column of at most 896 px, 16 px apart, with the tool cards under the text', async ({ page }) => {
     const folder = path.join(projectsRoot, 'board', 'mobile-app');
     const connection = await showSessions(page, [externalEntry('board-mobile-app', folder, 'i test del checkout falliscono su Android', 'working')]);
     await serveItems(page, { 300: EDIT_INPUT, 400: EDIT_OUTPUT });
@@ -186,12 +186,12 @@ test.describe('Studio layout', () => {
     near(mainBox.x, 52 + 260, 'main left');
     near(mainBox.width, 1440 - 52 - 260, 'main width');
 
-    // the subbar: across the main area, 40 px high, the "Resume Here" button at its right
+    // the subbar: across the main area, 44 px high (plan-dark_blue_theme/REQ-25), the "Resume Here" button at its right
     const headBox = await box(header(page));
     near(headBox.x, mainBox.x, 'header left');
     near(headBox.y, mainBox.y, 'header top');
     near(headBox.width, mainBox.width, 'header width');
-    near(headBox.height, 40, 'header height');
+    near(headBox.height, 44, 'header height');
     const resume = header(page).getByRole('button', { name: 'Resume Here', exact: true });
     const resumeBox = await box(resume);
     near(resumeBox.height, 32, '"Resume Here" height');

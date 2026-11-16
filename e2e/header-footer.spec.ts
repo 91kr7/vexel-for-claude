@@ -159,10 +159,10 @@ async function runInTerminal(sessionId: string, folder: string): Promise<void> {
   await writeFile(file, JSON.stringify({ pid, sessionId, cwd: folder, kind: 'interactive', status: 'busy', updatedAt: Date.now() }));
 }
 
-/** The header keeps one 40 px row: every item inside it, side by side, with no overlap. */
+/** The header keeps one 44 px row (plan-dark_blue_theme/REQ-25): every item inside it, side by side, with no overlap. */
 async function expectOneRow(page: Page, items: Locator[]): Promise<void> {
   const head = await box(header(page));
-  near(head.height, 40, 'header height');
+  near(head.height, 44, 'header height');
   const boxes = (await Promise.all(items.map((item) => box(item)))).sort((a, b) => a.x - b.x);
   for (const [n, item] of boxes.entries()) {
     expect(item.y, `item ${n} below the header top`).toBeGreaterThanOrEqual(head.y - TOLERANCE);
@@ -311,7 +311,7 @@ test.describe('Header and footer of an open session', () => {
     await expect(tooltip(page)).toBeVisible();
     await expect(tooltip(page)).toHaveText(label);
     await expect(line).toHaveAttribute('aria-describedby', (await tooltip(page).getAttribute('id'))!);
-    near((await box(header(page))).height, 40, 'header height with the tooltip open');
+    near((await box(header(page))).height, 44, 'header height with the tooltip open');
     await page.mouse.move(0, 0);
     await expect(tooltip(page)).toBeHidden();
 

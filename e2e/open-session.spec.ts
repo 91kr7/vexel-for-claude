@@ -28,8 +28,8 @@ const header = (page: Page) => mainArea(page).locator('.session-header');
 const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
 const terminalBox = (page: Page) => panel(page).locator('.session-terminal');
 const footer = (page: Page) => mainArea(page).locator('.session-footer');
-// SessionView: the panel sits 16 px from the left, right and top; the footer under it is 32 px high (plan-dark_blue_theme/REQ-12).
-const GAP = 16;
+// SessionView: the panel sits 12 px from every side (plan-dark_blue_theme/REQ-26); the footer under it is 32 px high (plan-dark_blue_theme/REQ-12).
+const GAP = 12;
 const FOOTER_HEIGHT = 32;
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
@@ -63,7 +63,7 @@ async function contentBox(locator: Locator): Promise<Box> {
   return { x: b.x + left, y: b.y + top, width: b.width - left - right, height: b.height - top - bottom };
 }
 
-/** The panel (16 px margin on every side) and the footer fill the main area below the header, and the terminal fills the panel inside its padding. */
+/** The panel (12 px gap on every side, plan-dark_blue_theme/REQ-26) and the footer fill the main area below the header, and the terminal fills the panel inside its padding. */
 async function expectPanelAndFooterFillMainBelowHeader(page: Page): Promise<void> {
   const main = await contentBox(mainArea(page));
   const head = await box(header(page));

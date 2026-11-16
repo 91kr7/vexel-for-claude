@@ -424,7 +424,8 @@ test.describe('theme choice', () => {
 
     // REQ-12: the panel keeps the dark terminal colours
     expect(await style(region, 'background-color')).toBe(DARK_CANVAS);
-    expect(await style(region, 'border-top-color'), 'the panel border follows the light set').toBe(LIGHT['--border-subtle']);
+    // plan-dark_blue_theme/REQ-26: the frame border is the strong border role of the light set
+    expect(await style(region, 'border-top-color'), 'the panel border follows the light set').toBe(LIGHT['--border-strong']);
     expect(await effectiveBackground(page.locator('.xterm-screen'))).toBe(DARK_CANVAS);
     expect(await style(terminal(page), 'color')).toBe(DARK_TEXT_PRIMARY);
   });
