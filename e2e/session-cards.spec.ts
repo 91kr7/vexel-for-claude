@@ -16,9 +16,12 @@ const SIDES = ['top', 'right', 'bottom', 'left'] as const;
 let projectsRoot: string;
 const createdIds: string[] = [];
 const transcripts: string[] = [];
+/** External session summaries the page gets on top of the server's own list. */
+let injected: object[] = [];
 
 test.beforeEach(async ({ page }) => {
   projectsRoot = await mkdtemp(path.join(os.tmpdir(), 'ai-client-e2e-session-cards-'));
+  injected = [];
   await showOnlyOwnSessions(page);
 });
 
@@ -71,7 +74,7 @@ async function showOnlyOwnSessions(page: Page): Promise<void> {
       if (route.request().method() !== 'GET') return route.fallback();
       const response = await route.fetch();
       const sessions = (await response.json()) as { folder?: unknown }[];
-      await route.fulfill({ response, json: sessions.filter(own) });
+      await route.fulfill({ response, json: [...sessions.filter(own), ...injected] });
     },
   );
   await page.routeWebSocket(/\/api\/sessions\/events$/, (ws) => {
@@ -264,9 +267,10 @@ test.describe('session cards', () => {
       expect(await style(open, 'border-top-left-radius'), 'open card: 7 px corners').toBe('7px');
       await expectBorder(open, await colourOf(page, 'var(--role-accent)'), 'open card');
       await expectOpenLook(page, open, 'open card');
-      // SessionList "Entry variants": open turns the label to the secondary colour; the time of line 3 stays muted
+      // SessionList "Entry variants": open turns the label and the line-3 time to the secondary colour
       expect(await style(open.locator('.session-entry-label'), 'color'), 'open card: label').toBe(await colourOf(page, 'var(--text-secondary)'));
-      expect.soft(await style(open.locator('.session-entry-time'), 'color'), 'open card: time stays muted').toBe(await colourOf(page, 'var(--text-muted)'));
+      expect(await style(open.locator('.session-entry-time'), 'color'), 'open card: time').toBe(await colourOf(page, 'var(--text-secondary)'));
+      expect(await style(entry(page, other).locator('.session-entry-time'), 'color'), 'inactive card: muted time').toBe(await colourOf(page, 'var(--text-muted)'));
 
       // Cards of one group are 8 px apart.
       const a = await box(entry(page, opened));
@@ -359,6 +363,61 @@ test.describe('session cards', () => {
       expect(await style(target, 'font-variant-numeric'), `${part}: tabular figures`).toContain('tabular-nums');
     }
   });
+});
+
+test.describe('external session cards', () => {
+  const external = (name: string, state: string, extra: object = {}) => ({
+    id: `ext-session-cards-${name}`,
+    folder: `/srv/elsewhere/${name}`,
+    label: `label ${name}`,
+    state,
+    lastActivity: new Date().toISOString(),
+    external: true,
+    ...extra,
+  });
+
+  // plan-dark_blue_theme/REQ-43 — scenario "an external session card has the solid card border"
+  for (const theme of THEMES) {
+    test(`${theme}: external cards have the solid 1 px card border in every state, on hover and when open; no dashed border`, async ({ page, request }) => {
+      await page.routeWebSocket(/\/api\/external-sessions\/[^/]+\/conversation$/, () => {});
+      const hosted = await newFolder('ext-hosted');
+      await idleHosted(request, hosted);
+      injected = [
+        external('idle', 'idle'),
+        external('working', 'working'),
+        external('ended', 'ended', { resumable: true }),
+        external('asking', 'needs_input', { waitingTool: 'Edit' }),
+      ];
+      await openIn(page, theme);
+      await expect(entry(page, hosted)).toBeVisible();
+      await pointerAway(page);
+
+      const subtle = await colourOf(page, 'var(--role-border-subtle)');
+      const hostedCard = entry(page, hosted);
+      for (const side of SIDES) {
+        expect(await style(hostedCard, `border-${side}-style`), 'hosted card: solid border').toBe('solid');
+      }
+      for (const name of ['idle', 'working', 'ended', 'asking']) {
+        const card = entry(page, `/srv/elsewhere/${name}`);
+        await expect(card, `${name}: external card`).toHaveClass(/\bexternal\b/);
+        expect(await style(card, 'border-top-left-radius'), `${name}: 7 px corners`).toBe('7px');
+        await expectBorder(card, subtle, `external ${name}`);
+      }
+      await expect(entry(page, '/srv/elsewhere/asking').getByText('External', { exact: true }), 'the chip still tells it apart').toBeVisible();
+
+      const idle = entry(page, '/srv/elsewhere/idle');
+      await idle.hover();
+      await expect.poll(() => style(idle, 'border-top-color'), { message: 'hover: strong border' }).toBe(await colourOf(page, 'var(--role-border-strong)'));
+      await expectBorder(idle, await colourOf(page, 'var(--role-border-strong)'), 'hovered external card');
+
+      await idle.getByTitle('/srv/elsewhere/idle', { exact: true }).click();
+      await expect(idle).toHaveAttribute('aria-current', 'true');
+      await pointerAway(page);
+      await expect.poll(() => style(idle, 'border-top-color'), { message: 'open: accent border' }).toBe(await colourOf(page, 'var(--role-accent)'));
+      await expectBorder(idle, await colourOf(page, 'var(--role-accent)'), 'open external card');
+      await expectOpenLook(page, idle, 'open external card');
+    });
+  }
 });
 
 test.describe('working dot', () => {

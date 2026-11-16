@@ -536,9 +536,9 @@ test.describe('session list', () => {
     expect(await style(endedRow, 'color')).toBe(TEXT_MUTED);
     expect(await style(endedRow.locator('[aria-hidden="true"]').first(), 'background-color')).toBe(ZINC_400);
 
-    // REQ-27: the external row has a dashed border
+    // plan-dark_blue_theme/REQ-43: the external card has the solid card border
     const externalRow = entry(page, external.folder);
-    expect(await style(externalRow, 'border-top-style')).toBe('dashed');
+    expect(await style(externalRow, 'border-top-style')).toBe('solid');
 
     // REQ-28: the needs-input card in the permission-banner look, amber tag and accent "Reply"
     const card = panel(page).locator('li').filter({ has: page.getByTitle(asking, { exact: true }) }).locator(':scope > *').first();
@@ -559,8 +559,8 @@ test.describe('session list', () => {
     expect(await leftBar(workingRow, ACCENT, 3.5)).toBe(true);
   });
 
-  // REQ-27: an open external row keeps its dashed border
-  test('an open external entry keeps its dashed border and gets the accent bar', async ({ page }) => {
+  // plan-dark_blue_theme/REQ-43, REQ-19: an open external card has the solid accent border and the accent bar
+  test('an open external entry has the solid accent border and gets the accent bar', async ({ page }) => {
     const external = { id: 'ext-studio-2', folder: '/srv/esterni/web-app', label: 'Correggi', state: 'idle', lastActivity: new Date().toISOString(), external: true };
     const socket = await showOnly(page, [external]);
     await page.goto('/');
@@ -568,7 +568,8 @@ test.describe('session list', () => {
     await row.getByTitle(external.folder, { exact: true }).click();
     (await socket()).send(JSON.stringify({ type: 'items', items: [] }));
     await expect(row).toHaveAttribute('aria-current', 'true');
-    expect(await style(row, 'border-top-style')).toBe('dashed');
+    expect(await style(row, 'border-top-style')).toBe('solid');
+    await expect.poll(() => style(row, 'border-top-color')).toBe(ACCENT);
     // plan-dark_blue_theme/REQ-19: the active card surface (surface 3) and the accent bar
     await expect.poll(() => style(row, 'background-color')).toBe(SURFACE_3);
     expect(await leftBar(row, ACCENT, 3.5)).toBe(true);
@@ -599,7 +600,7 @@ test.describe('session list', () => {
     const dot = row.locator('[aria-hidden="true"]').first();
     expect(await style(dot, 'background-color')).toBe(AMBER_400);
     await expectPulse(dot, true);
-    expect(await style(row, 'border-top-style')).toBe('dashed');
+    expect(await style(row, 'border-top-style'), 'plan-dark_blue_theme/REQ-43: solid card border').toBe('solid');
     const chip = row.getByText('External', { exact: true });
     expect(await style(chip, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     await expect(button(row, 'Reply')).toHaveCount(0);

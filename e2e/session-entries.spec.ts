@@ -448,7 +448,8 @@ test('working, external, ended and open entries have their Studio row variants w
 
     const x = await styleOf(entry(page, outside));
     expect(x.backgroundColor, `${scheme} external: card surface`).toBe(await t('--role-card'));
-    expect(borderOf(x), `${scheme} external: dashed border`).toEqual({ width: '1px', style: 'dashed', colour: await t('--role-border-strong') });
+    // plan-dark_blue_theme/REQ-43: the solid card border
+    expect(borderOf(x), `${scheme} external: solid card border`).toEqual({ width: '1px', style: 'solid', colour: await t('--role-border-subtle') });
   }
 
   // the ended row stays dimmed under the pointer
@@ -476,7 +477,7 @@ test('an external session that waits for input is the amber row with "External" 
   await expect(badge(row)).toHaveText('Needs Input');
   await expect(counter(page)).toHaveText('1 needs input');
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-27: the "External" mono chip after the folder name, the dashed row, the amber dot
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-27: the "External" mono chip after the folder name, the amber dot
   const tag = row.getByText('External', { exact: true });
   await expect(tag).toHaveText('External');
   const [titleBox, tagBox] = [await row.getByTitle(outside, { exact: true }).boundingBox(), await tag.boundingBox()];
@@ -489,7 +490,8 @@ test('an external session that waits for input is the amber row with "External" 
     await expectStudioRow(row, `${scheme} external needs input`);
     await expectStudioText(page, row, outside, `${scheme} external needs input`, 'rgb(251, 191, 36)');
     const s = await styleOf(row);
-    expect(borderOf(s), `${scheme}: dashed border`).toEqual({ width: '1px', style: 'dashed', colour: await t('--role-border-strong') });
+    // plan-dark_blue_theme/REQ-43: the solid card border
+    expect(borderOf(s), `${scheme}: solid card border`).toEqual({ width: '1px', style: 'solid', colour: await t('--role-border-subtle') });
     expect((await styleOf(dot(row))).backgroundColor, `${scheme}: amber dot`).toBe('rgb(251, 191, 36)');
     expect(await dot(row).evaluate((el) => getComputedStyle(el).animationName), `${scheme}: pulsing dot`).not.toBe('none');
     const tagStyle = await styleOf(tag);

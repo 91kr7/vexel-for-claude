@@ -352,7 +352,15 @@ test.describe('theme choice', () => {
     await cardOf(settingsPopup(page).getByRole('radio', { name: 'Light', exact: true })).click();
     expect(await style(page.locator('body'), 'background-color')).toBe(LIGHT['--bg-canvas']);
     expect(await style(page.locator('body'), 'color')).toBe(LIGHT['--text-primary']);
-    expect(await style(topBar(page), 'background-color')).toBe(LIGHT['--bg-surface-2']);
+    // TopBar (plan-dark_blue_theme, batch window-frame): the title bar role surface
+    expect(await style(topBar(page), 'background-color')).toBe(await page.evaluate(() => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--role-chrome)';
+      document.body.append(probe);
+      const colour = getComputedStyle(probe).color;
+      probe.remove();
+      return colour;
+    }));
     expect(await style(button(mainArea(page), 'New Session'), 'background-color')).toBe(LIGHT['--accent-primary']);
     expect(await page.evaluate(() => (window as unknown as { pageMarker?: number }).pageMarker), 'the page did not reload').toBe(42);
     expect(navigations).toBe(0);
