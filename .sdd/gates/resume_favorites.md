@@ -29,3 +29,4 @@
 | 2026-11-17 | fix analysis | G1 analysis | pass | 78/80 lines narrow; two new requirements on the visible project path |
 | 2026-11-17 | fix plan | G2 requirements | pass | REQ-20, REQ-21 cover the two new analysis requirements |
 | 2026-11-17 | fix plan | G3 coverage | pass | REQ-20→INT-1, REQ-21→INT-2; one-line path with start ellipsis plus tooltip flagged for review |
+| 2026-11-17 | fix dev | G4 project-path | pass | build green on gatekeeper re-run; CSS scoped under `.resume-dialog` |

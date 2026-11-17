@@ -3249,6 +3249,25 @@ input {
   min-height: 56px;
 }
 
+.resume-dialog .past-session-group {
+  gap: 0;
+}
+
+/* Sticky one-line path; RTL puts the ellipsis at the start, so the last folders stay visible. */
+.resume-dialog .dialog-section-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-bottom: 4px;
+  background-color: var(--role-raised);
+  direction: rtl;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+}
+
 .resume-search-bar {
   flex: none;
   display: flex;
