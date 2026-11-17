@@ -24,3 +24,6 @@
 | 2026-11-17 | test | G5 favorites-filter | decided | `ResumeDialog.test.tsx` button list updated to the new toggle contract (REQ-10) |
 | 2026-11-17 | test | G5 favorites-filter | decided | `plan-usage.spec.ts:345` outside perimeter: intermittent (2 fails, 7 passes on branch, passes on main); terminal scroll not touched by the plan; flagged for review |
 | 2026-11-17 | test | G5 favorites-filter | pass | 38 unit and 27 e2e green on gatekeeper re-run; full suites 3956 unit, 881/882 e2e |
+| 2026-11-17 | fix analysis | human decision | human decision | Sticky project path handled as a fix of `resume_favorites` |
+| 2026-11-17 | fix analysis | G1 analysis | sent back | Out-of-scope line on grouping by project contradicted existing groups |
+| 2026-11-17 | fix analysis | G1 analysis | pass | 78/80 lines narrow; two new requirements on the visible project path |
