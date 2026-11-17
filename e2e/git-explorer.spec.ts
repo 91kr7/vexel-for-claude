@@ -80,6 +80,9 @@ async function openHosted(page: Page, folder: string): Promise<void> {
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
 }
 
+/** Waits for the end of the opening slide of the panel (plan-ui_transitions/REQ-5), so its size is final. */
+const slideEnded = (page: Page) => explorer(page).evaluate((panel) => Promise.all(panel.getAnimations().map((animation) => animation.finished)));
+
 async function box(locator: Locator) {
   const b = await locator.boundingBox();
   expect(b, 'element is rendered').not.toBeNull();
@@ -120,6 +123,7 @@ test.describe('Git explorer of a hosted session', () => {
     await explorerButton(page).click();
     await expect(explorerButton(page)).toHaveAttribute('aria-expanded', 'true');
     await expectRepositoryShown(page, repo, 'main');
+    await slideEnded(page);
 
     const panel = await box(explorer(page));
     const term = await box(terminalPanel(page));
@@ -141,6 +145,7 @@ test.describe('Git explorer of a hosted session', () => {
     await openHosted(page, repo);
     await explorerButton(page).click();
     await expect(explorer(page)).toBeVisible();
+    await slideEnded(page);
     const panel = await box(explorer(page));
     const term = await box(terminalPanel(page));
     const content = panel.x + panel.width - term.x;
@@ -239,6 +244,7 @@ test.describe('Git explorer of an external session', () => {
     const before = await box(conversation(page).locator('.conversation-items'));
     await button.click();
     await expectRepositoryShown(page, repo, 'main');
+    await slideEnded(page);
     const panel = await box(explorer(page));
     const content = await box(conversation(page).locator('.conversation-items'));
     expect(panel.x, 'the panel is at the right of the conversation').toBeGreaterThanOrEqual(content.x + content.width - 1);

@@ -24,3 +24,5 @@
 | 2026-11-17 | dev git-explorer-panel | divergence developer | decided | Close during open slide starts from open position, as dialogs; final state per REQ-28 |
 | 2026-11-17 | dev git-explorer-panel | divergence developer | decided | Reopen during close mounts a fresh panel; today close already unmounts, no behaviour change |
 | 2026-11-17 | dev git-explorer-panel | G4 development | pass | overflow hidden on conversation workspace explained by INT slide |
+| 2026-11-17 | dev git-explorer-panel | question tester | decided | Panel takes no focus on open; source batches.md "Focus (REQ-27)" assumption |
+| 2026-11-17 | dev git-explorer-panel | G5 tests | pass | playwright.config.ts change is test grouping only |
