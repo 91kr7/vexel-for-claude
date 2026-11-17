@@ -159,7 +159,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
           )}
         </div>
         <div
-          className="dialog-scroll"
+          className="dialog-scroll list-scroll"
           role={visibleGroups?.length ? 'radiogroup' : undefined}
           aria-label={visibleGroups?.length ? 'Past Sessions' : undefined}
         >

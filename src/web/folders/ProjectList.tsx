@@ -107,7 +107,7 @@ export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onC
           )}
         </div>
       )}
-      <div className="project-list">
+      <div className="project-list list-scroll">
         {state.kind === 'loading' ? (
           <AreaState kind="loading" size="compact" title="Loading…" />
         ) : state.kind === 'error' ? (

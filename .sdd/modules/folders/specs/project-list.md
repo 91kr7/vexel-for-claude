@@ -15,7 +15,7 @@ Props:
 - `onChoose(project)` → optional. Called when the user chooses an available row.
 
 Description:
-- in the list panel column: the title row, the search bar when the store has projects, then the list area. Only the list area scrolls, when its rows do not fit.
+- in the list panel column: the title row, the search bar when the store has projects, then the list area. Only the list area scrolls, when its rows do not fit. A shown scrollbar is as far from the right edge of the rows as the panel edge is from their left edge (ListStyles `.list-scroll`, module app).
 - the search runs in the page, on the projects of the store. It sends no request.
 
 Shows:
@@ -69,4 +69,4 @@ Actions:
 - `plan-project_list_actions/REQ-12`, `plan-project_list_actions/REQ-18`, `plan-project_list_actions/REQ-21`, `plan-project_list_actions/REQ-22`
 - `plan-project_list_actions/REQ-23`, `plan-project_list_actions/REQ-24`, `plan-project_list_actions/REQ-27`, `plan-project_list_actions/REQ-30`, `plan-project_list_actions/REQ-31`, `plan-project_list_actions/REQ-32`
 - `plan-ui_restyle/REQ-12`, `plan-ui_restyle/REQ-13`, `plan-ui_restyle/REQ-14`, `plan-ui_restyle/REQ-19`, `plan-ui_restyle/REQ-20`, `plan-ui_restyle/REQ-21`, `plan-ui_restyle/REQ-23`, `plan-ui_restyle/REQ-24`, `plan-ui_restyle/REQ-26`
-- `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-46`, `plan-dark_blue_theme/REQ-48`
+- `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-46`, `plan-dark_blue_theme/REQ-48`, `plan-dark_blue_theme/REQ-49`

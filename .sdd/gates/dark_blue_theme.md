@@ -69,3 +69,8 @@
 | 2026-11-16 | plan | card divider | human decision | No horizontal divider above the metrics line of session cards; refines REQ-21 |
 | 2026-11-16 | plan | G3 coverage (REQ-53) | pass | REQ-53 → list-polish INT-7 |
 | 2026-11-16 | dev dark-blue | G5 tests (partial) | human decision | Tests stopped to implement list-polish first; one combined test round for dark-blue and list-polish |
+| 2026-11-17 | dev list-polish | lost run | decided | In progress with clean tree and no implement commit: set back to todo and restarted |
+| 2026-11-17 | dev list-polish | lost run (correction) | decided | First run was still active; second run stopped after INT-6 in SessionHeader.tsx; first run finishes the batch |
+| 2026-11-17 | dev list-polish | G4 development | sent back | Scrollbar under the list resize handle and into the git refresh column; keep it clear while REQ-49 holds |
+| 2026-11-17 | dev list-polish | G4 development (fix) | pass | Scrollbar clear of the resize handle and git refresh column; build green; diff limited to INT files and specs |
+| 2026-11-17 | dev list-polish | divergence developer | decided | Settings, git file/commit lists and Plan Usage already keep equal gaps: unchanged; session and project cards 4px narrower |

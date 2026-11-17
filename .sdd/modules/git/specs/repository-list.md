@@ -23,7 +23,7 @@ Shows:
   - the relative path, in the mono font;
   - the branch chip (the `git-branch` icon and the branch name, or "detached <short hash>");
   - or, for an entry with `error`, the git message in the error colour in place of the chip.
-- with many entries the list scrolls inside the header.
+- with many entries the list scrolls inside the header. A shown scrollbar is as far from the right edge of the entries as the header edge is from their left edge (ListStyles `.list-scroll`, module app).
 - each entry → a 24 px card of ListStyles (`.list-card`), with its hover; a pressed entry is the active card (`.list-active`).
 - "All repositories" pressed → a stronger background.
 
@@ -42,4 +42,4 @@ Also exports:
 ## Requirements served
 
 - `plan-multi_repo_workspace/REQ-7`, `plan-multi_repo_workspace/REQ-9`, `plan-multi_repo_workspace/REQ-28`, `plan-multi_repo_workspace/REQ-30`
-- `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-45`, `plan-dark_blue_theme/REQ-46`
+- `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-45`, `plan-dark_blue_theme/REQ-46`, `plan-dark_blue_theme/REQ-49`

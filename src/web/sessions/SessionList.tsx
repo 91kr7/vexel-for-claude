@@ -264,7 +264,7 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
   return (
     <div
       ref={listRef}
-      className="session-list"
+      className="session-list list-scroll"
       onDragOver={(event) => {
         if (!drag) return;
         event.preventDefault();

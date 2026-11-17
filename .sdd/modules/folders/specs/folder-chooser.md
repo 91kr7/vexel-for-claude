@@ -21,7 +21,7 @@ Props:
 
 Shows:
 - the field → `.field`: the label "Working Directory Path" above (mono 11 px, `--text-secondary`), then the mono input on the canvas with the subtle border, and the accent border on focus. No icon. The label is the accessible name of the input. The input holds the current folder as a full absolute path.
-- the scrolling area → under the field, 10 px between its parts. When the content is taller than the dialog allows, only this area scrolls.
+- the scrolling area → under the field, 10 px between its parts. When the content is taller than the dialog allows, only this area scrolls. A shown scrollbar is as far from the right edge of the rows as the dialog edge is from their left edge (ListStyles `.list-scroll`, module app).
 - "Recent" → the heading in `.section-label`, then a `radiogroup` named "Recent Projects", rows 6 px apart. One row per folder of PastSessionListRoute, in the order of the route, each folder once, no maximum.
   - a row → a card of ListStyles (`.list-card`): padding 6 × 10 px, 8 px gaps, `--text-secondary`: the Avatar (24 px neutral square), then the folder name (12/18 px) above its full path (mono 11 px, `--text-muted`), then a 14 px radio in `--accent-primary`.
   - the radio is named by the folder name and described by the path.
@@ -74,4 +74,4 @@ Errors (an ErrorMessage under the scrolling area, the dialog stays open):
 - `plan-claude_sessions_client-ui_redesign/REQ-25`, `plan-claude_sessions_client-ui_redesign/REQ-26`, `plan-claude_sessions_client-ui_redesign/REQ-27`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`, `plan-claude_sessions_client-ui_redesign/REQ-31`, `plan-claude_sessions_client-ui_redesign/REQ-32`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-46`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`
-- `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-45`, `plan-dark_blue_theme/REQ-46`, `plan-dark_blue_theme/REQ-47`
+- `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-45`, `plan-dark_blue_theme/REQ-46`, `plan-dark_blue_theme/REQ-47`, `plan-dark_blue_theme/REQ-49`

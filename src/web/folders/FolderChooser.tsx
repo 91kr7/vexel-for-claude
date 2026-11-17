@@ -183,7 +183,7 @@ export function FolderChooser({ onStarted, onCancel }: FolderChooserProps) {
           autoFocus
         />
       </label>
-      <div className="dialog-scroll">
+      <div className="dialog-scroll list-scroll">
         {recentFolders.length > 0 && (
           <>
             <p className="section-label dialog-section-heading">Recent</p>

@@ -842,6 +842,9 @@ input {
   flex-direction: column;
   gap: 10px;
   padding: 10px;
+  --list-scroll-gap: 10px;
+  /* The last 4 px stay free for the resize handle. */
+  --list-scroll-reach: 6px;
   background-color: var(--role-list);
   border-right: 1px solid var(--role-border-subtle);
   user-select: none;
@@ -1497,8 +1500,7 @@ input {
 .session-entry-metrics {
   justify-content: space-between;
   margin-top: 8px;
-  padding: 6px 0 0 16px;
-  border-top: 1px solid var(--role-border-subtle);
+  padding: 7px 0 0 16px;
 }
 
 .session-entry-figures {
@@ -1584,7 +1586,7 @@ input {
 .session-entry-context {
   flex: none;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 10px;
   line-height: 15px;
   color: var(--text-secondary);
   white-space: nowrap;
@@ -1600,7 +1602,7 @@ input {
 .session-entry-cost {
   flex: none;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 10px;
   line-height: 15px;
   color: var(--text-secondary);
   white-space: nowrap;
@@ -1927,6 +1929,12 @@ input {
 :root[data-theme='dark-blue'] :is(.session-entry[aria-current='true'], .list-card.list-active, .list-row.list-active):focus-visible,
 :root[data-theme='dark-blue'] .session-card.open > .session-entry:focus-visible::after {
   outline-offset: calc(-2 * var(--focus-ring-width));
+}
+
+/* The scroll area reaches --list-scroll-reach to the right of its box; a shown scrollbar sits there, --list-scroll-gap (the left gap) from the entries. */
+.list-scroll {
+  margin-right: calc(-1 * var(--list-scroll-reach, 0px));
+  padding-right: var(--list-scroll-gap, 0px);
 }
 
 .list-number {
@@ -2293,6 +2301,9 @@ input {
   height: auto;
   min-height: 40px;
   padding: 6px 16px;
+  --list-scroll-gap: 16px;
+  /* Inside the 10 px gap before the refresh button, 2 px apart from it. */
+  --list-scroll-reach: 8px;
   align-items: flex-start;
 }
 
@@ -3193,6 +3204,8 @@ input {
   flex-direction: column;
   gap: 14px;
   padding: 16px;
+  --list-scroll-gap: 16px;
+  --list-scroll-reach: 16px;
   font-size: 12px;
   line-height: 16px;
 }

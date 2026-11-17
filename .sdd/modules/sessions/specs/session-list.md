@@ -36,8 +36,8 @@ Entry row (every entry but the hosted needs-input card): a button with the class
 - line 1, 8 px gaps → the StateBadge `dot` (8 px), the folder name (13 px, weight 600, `folderNameOf`, tooltip: the full folder path), the star place, then on the right the StateBadge `inline` name (11 px, weight 500, in the state colour).
 - line 2, 4 px below and 16 px in from the left → the label (11.5/16 px, `--text-muted`, `--text-secondary` when open, tooltip: the full label).
 - a working entry → its tool line and its progress bar between line 2 and line 3.
-- line 3, 8 px below, 16 px in, 6 px padding over a 1 px `--role-border-subtle` top border → on the left the context percentage and the estimated cost, 6 px apart; on the right the RelativeTime of the last activity (`--text-muted`, `--text-secondary` when open). It is there also with no usage: then only the time shows.
-- percentage, cost and time → mono 10.5 px with tabular figures.
+- line 3, 15 px below line 2 (or the tool line, or the progress bar), 16 px in, with no top border → on the left the context percentage and the estimated cost, 6 px apart; on the right the RelativeTime of the last activity (`--text-muted`, `--text-secondary` when open). It is there also with no usage: then only the time shows.
+- percentage and cost → mono 10 px with tabular figures; time → mono 10.5 px with tabular figures. All on a 15 px line.
 - context percentage → only when the summary has `usage.context`: "<percent>%" by `percentOf`. Colour by `usageLevelOf`: `normal` in `--text-secondary` (`--role-accent`, weight 600, when open), `warning` in amber-400, `error` in rose-400. No `usage.context` → nothing, never "0%". Every state shows it, ended included.
 - estimated cost → only when the summary has `usage.cost`: the text of `costText(usage.cost.usd)`, e.g. "$1.27", "<$0.01", or "—" when there is no `usd`. In `--text-secondary`.
   - with the percentage it reads "23% · $1.27": the "·" is hidden from assistive technology. Without the percentage, only "$1.27".
@@ -63,7 +63,7 @@ Entry variants:
 
 Hosted needs-input card (look of `#permission-banner`): a block with the class `session-card`.
 - a card as above, with its amber border kept: 1 px amber-500 border at 40 %, amber-400 on hover. No shadow while closed. Items 4 px apart.
-- top → a button with the classes `session-entry needs-input`: the tag "Needs Input" (mono 10 px uppercase, weight 500, amber-300 on amber-500 at 20 %, amber-500 border at 40 %, 4 px radius), the folder name (13 px weight 600, `--text-primary`) and the star place; below, the label as in a row; below, only when the summary has `usage.context` or `usage.cost`, the metrics line with the context percentage and the estimated cost of a row (top border, no indent, no time).
+- top → a button with the classes `session-entry needs-input`: the tag "Needs Input" (mono 10 px uppercase, weight 500, amber-300 on amber-500 at 20 %, amber-500 border at 40 %, 4 px radius), the folder name (13 px weight 600, `--text-primary`) and the star place; below, the label as in a row; below, only when the summary has `usage.context` or `usage.cost`, the metrics line with the context percentage and the estimated cost of a row (no top border, no indent, no time).
 - then the needs-input line → "Permission for **<tool>** · <time>", with the tool in bold. With no `waitingTool`, the label takes the place of "Permission for <tool>". `<time>` is the RelativeTime of the last activity. Look of `#perm-cmd`: mono 12/16 px, amber-300, `--bg-canvas`, `--border-subtle` border, 4 px radius, padding 6 × 10 px, one line cut with an ellipsis.
 - then, 12 px below and on the right, "Reply" → `.button-primary` in mono weight 500, padding 6 × 14 px, scaled to 95 % while pressed.
 - the card button is described by the needs-input line (`aria-describedby`).
@@ -118,6 +118,8 @@ Drag feedback (the mock has no drag state):
 ## Rules and invariants
 
 - No entry text wraps.
+- No card shows a horizontal divider above line 3.
+- The list scrolls with ListStyles `.list-scroll` (module app): a shown scrollbar is as far from the right edge of the cards as the panel edge is from their left edge. The scrollbar stays clear of the resize handle of the panel.
 - Only `working` entries show a tool line.
 - Only the open session's button has `aria-current="true"`.
 - Only the entries of ended sessions, hosted or external, show "Dismiss" or "Resume". Working, needs-input and idle entries, hosted or external, show neither.
@@ -138,7 +140,7 @@ Drag feedback (the mock has no drag state):
 ## Dependencies
 
 - groupSessions, SessionOrderStore (`SessionOrder`), usage format (`percentOf`, `usageLevelOf`, `costText`, `INCOMPLETE_COST_TEXT`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions, SessionNameEditor, FavoriteButton
-- AreaState, IconSet, ShortcutChannel, ThemeTokens, WebEntry (module app)
+- AreaState, ListStyles, IconSet, ShortcutChannel, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
 
@@ -157,4 +159,4 @@ Drag feedback (the mock has no drag state):
 - `plan-keyboard_shortcuts/REQ-16`, `plan-keyboard_shortcuts/REQ-17`, `plan-keyboard_shortcuts/REQ-18`
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-10`
 - `plan-ui_restyle/REQ-29`, `plan-ui_restyle/REQ-31`, `plan-ui_restyle/REQ-32`
-- `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-18` to `plan-dark_blue_theme/REQ-22`, `plan-dark_blue_theme/REQ-43`
+- `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-18` to `plan-dark_blue_theme/REQ-22`, `plan-dark_blue_theme/REQ-43`, `plan-dark_blue_theme/REQ-49`, `plan-dark_blue_theme/REQ-50`, `plan-dark_blue_theme/REQ-53`
