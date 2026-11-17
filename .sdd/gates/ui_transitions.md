@@ -50,3 +50,4 @@
 | 2026-11-17 | dev cascading-lists | G5 tests | human decision | F1 pre-existing flaky test does not block the merge if it passes on rerun |
 | 2026-11-17 | dev cascading-lists | G4 development | pass | Round 3, D1 fixed in list-presence.ts |
 | 2026-11-17 | dev cascading-lists | G5 tests | sent back | D2: drag during cascade not dimmed, cascade animation overrides .dragging; R1 fixed |
+| 2026-11-17 | dev cascading-lists | G4 development | pass | Round 4, D2: dragged entry plays no effect, layout change ends the cascade |

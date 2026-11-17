@@ -222,7 +222,14 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
     present.map((entry) => entry.item),
     order,
   );
-  const { cascadeOf } = useListCascade(status === 'loading' ? undefined : groups.flatMap((group) => group.sessions.map(sessionKey)));
+  const { cascadeOf, endCascade } = useListCascade(status === 'loading' ? undefined : groups.flatMap((group) => group.sessions.map(sessionKey)));
+  const layout = status === 'loading' ? undefined : groups.map((group) => `${group.id}:${group.sessions.map(sessionKey).join(',')}`).join('|');
+  const [shownLayout, setShownLayout] = useState(layout);
+  // A moved entry is mounted again and would restart its cascade from the start.
+  if (layout !== shownLayout) {
+    setShownLayout(layout);
+    if (shownLayout !== undefined) endCascade();
+  }
   const isStaying = (session: SessionSummary) => phases.get(session.id) !== 'leaving';
   const stayingIndex = new Map<string, number>();
   const stayingCount = new Map<SessionGroupId, number>();

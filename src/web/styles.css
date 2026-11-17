@@ -3309,6 +3309,11 @@ input {
   animation: vx-fade-out var(--motion-duration-exit) var(--motion-ease-exit) both;
 }
 
+/* The drag feedback wins over any list effect still playing. */
+.session-list li.dragging {
+  animation: none;
+}
+
 @keyframes vx-slide-in {
   from {
     opacity: 0;

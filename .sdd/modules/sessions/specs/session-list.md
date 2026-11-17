@@ -114,6 +114,8 @@ Motion (ListCascade, ListPresence, module app):
 - after the first appearance, a new entry, hosted or external → slides in from the left (class `is-entering`, `--motion-duration-enter`).
 - a removed entry (e.g. "Dismiss") → stays in its place and fades out (class `is-leaving`, `--motion-duration-exit`), then is gone. While it leaves it is inert and hidden from assistive technology: it takes no click, no focus and cannot be dragged. The other entries keep their keys and focus.
 - live refreshes, group moves and drag reorders play nothing.
+- a dragged entry plays no list effect: its drag dimming shows at once, also during the cascade.
+- during the cascade, any change of the shown order or groups (new, removed, moved or reordered entry) ends the cascade at once: every entry shows in full, and a moved entry never plays the cascade again.
 - a leaving entry counts for no drag rule: it is not a drop target, it takes no slot or line, and the slot, `index` and the "own group" are computed on the other entries only. A drop during a fade lands where it would land with no effect.
 - with reduced motion → no cascade, no slide and no fade: entries show and go at once.
 
