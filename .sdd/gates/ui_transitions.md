@@ -60,3 +60,4 @@
 | 2026-11-17 | dev tab-change | human review | human decision | Enter 300 ms, exit 200 ms, softer easing; added as tab-change INT-4 |
 | 2026-11-17 | plan | G3 coverage | pass | INT-4 motion tokens amendment, REQ-31 and REQ-32 |
 | 2026-11-17 | dev tab-change | G5 tests | decided | 20 older e2e tests break on effects still playing; adapt them per batch notes, never reduced motion suite-wide |
+| 2026-11-17 | dev tab-change | G4 development | pass | INT-4 motion tokens 300/200 ms, softer easing |
