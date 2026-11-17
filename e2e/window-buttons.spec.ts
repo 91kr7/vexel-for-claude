@@ -243,7 +243,7 @@ test.describe('WindowButtons in the desktop top bar', () => {
   });
 
   // REQ-28, WindowButtons "Keyboard": real buttons in the Tab order, with the focus ring of the bar, Enter and Space act
-  test('Tab reaches the three buttons with the same focus ring as "Plan Usage"; Enter and Space act; a click keeps the focus where it was', async ({ page }) => {
+  test('Tab reaches the three buttons with the focus ring of the page, as "Plan Usage" has; Enter and Space act; a click keeps the focus where it was', async ({ page }) => {
     await installFakeBridge(page);
     await page.goto('/');
     const bar = topBar(page);
@@ -270,7 +270,9 @@ test.describe('WindowButtons in the desktop top bar', () => {
     await tabTo(page, planUsage);
     const planUsageRing = await ring(planUsage);
     expect(minimizeRing.outline, 'same ring as "Plan Usage"').toBe(planUsageRing.outline);
-    expect(minimizeRing.offset).toBe(planUsageRing.offset);
+    // WindowButtons: the page ring, 2 px away (WebEntry); only Plan Usage draws it inside its edge (PlanUsageButton)
+    expect(minimizeRing.offset).toBe('2px');
+    expect(planUsageRing.offset).toBe('-2px');
 
     await close.click();
     await expect(planUsage, 'the click left the focus on "Plan Usage"').toBeFocused();

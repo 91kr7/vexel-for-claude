@@ -313,8 +313,8 @@ test.describe('session cards', () => {
     await expectOpenLook(page, card, 'open needs-input card');
   });
 
-  // plan-dark_blue_theme/REQ-21, REQ-22 — scenario "the session list shows cards like the mock"
-  test('a working card shows line 1, line 2, the tool line and progress bar, then line 3 with a top border; its numbers are mono with tabular figures', async ({ page, request }) => {
+  // plan-dark_blue_theme/REQ-21, REQ-22, REQ-50, REQ-53 — scenarios "the session list shows cards like the mock", "the card metrics are smaller"
+  test('a working card shows line 1, line 2, the tool line and progress bar, then line 3 with no divider; its numbers are mono with tabular figures, percentage and cost at 10 px', async ({ page, request }) => {
     const folder = await newFolder('cards-lines');
     await hostedWithUsage(request, folder, 'working');
     await openIn(page);
@@ -342,20 +342,25 @@ test.describe('session cards', () => {
     expect(star.x + star.width, 'star before the state name').toBeLessThanOrEqual(stateName.x + 1);
 
     expect(label.y, 'line 2 below line 1').toBeGreaterThanOrEqual(name.y + name.height - 1);
-    // SessionList "Entry row": line 2 4 px below line 1, the tool line 2 px below line 2, the bar 6 px below the tool line, line 3 8 px below
+    // SessionList "Entry row": line 2 4 px below line 1, the tool line 2 px below line 2, the bar 6 px below the tool line, line 3 15 px below (REQ-53: spacing as before)
     const line1Box = await box(card.locator('.session-entry-line').first());
     const line2Box = await box(card.locator('.session-entry-detail'));
     near.soft(line2Box.y - (line1Box.y + line1Box.height), 4, 'line 2 under line 1');
     near.soft(tool.y - (line2Box.y + line2Box.height), 2, 'tool line under line 2');
     near.soft(bar.y - (tool.y + tool.height), 6, 'progress bar under the tool line');
-    near.soft(line3.y - (bar.y + bar.height), 8, 'line 3 under the progress bar');
+    const contentTop = line3.y + parseFloat(await style(metrics, 'border-top-width')) + parseFloat(await style(metrics, 'padding-top'));
+    near.soft(contentTop - (bar.y + bar.height), 15, 'line 3 content 15 px under the progress bar');
     expect(tool.y, 'tool line below line 2').toBeGreaterThanOrEqual(label.y + label.height - 1);
     expect(bar.y, 'progress bar below the tool line').toBeGreaterThanOrEqual(tool.y + tool.height - 1);
     expect(line3.y, 'line 3 below the progress bar').toBeGreaterThanOrEqual(bar.y + bar.height - 1);
     expect(line3.y + line3.height, 'line 3 inside the card').toBeLessThanOrEqual((await box(card)).y + (await box(card)).height);
 
-    expect(await style(metrics, 'border-top-width'), 'line 3: 1 px top border').toBe('1px');
-    expect(await style(metrics, 'border-top-style'), 'line 3: top border drawn').toBe('solid');
+    // REQ-53: no divider above line 3
+    expect((await style(metrics, 'border-top-style')) === 'none' || (await style(metrics, 'border-top-width')) === '0px', 'line 3: no top border').toBe(true);
+    // REQ-50: percentage and cost 10 px, the time keeps 10.5 px
+    expect(await style(metrics.locator('.session-entry-context'), 'font-size'), 'percentage 10 px').toBe('10px');
+    expect(await style(metrics.locator('.session-entry-cost').first(), 'font-size'), 'cost 10 px').toBe('10px');
+    expect(await style(metrics.locator('.session-entry-time'), 'font-size'), 'time 10.5 px').toBe('10.5px');
     for (const part of ['.session-entry-context', '.session-entry-cost', '.session-entry-time']) {
       const target = metrics.locator(part).first();
       await expect(target, `${part} on line 3`).toBeVisible();

@@ -255,8 +255,9 @@ for (const theme of THEMES) {
     await radio.check();
     await page.mouse.move(0, 0);
     await expect.poll(async () => (await shapeOf(row)).background, { message: 'chosen row: active card' }).toBe(level['--bg-surface-3']);
+    // The border eases to the accent: wait for the end of the transition.
+    await expect.poll(async () => (await shapeOf(row)).borderColour, { message: 'chosen row: accent border' }).toBe(level['--accent-primary']);
     const chosen = await shapeOf(row);
-    expect(chosen.borderColour, 'chosen row: accent border').toBe(level['--accent-primary']);
     expect(chosen.shadow, 'chosen row: card shadow').toContain(CARD_SHADOW);
 
     const field = dialog.getByRole('textbox', { name: 'Search Past Sessions' });

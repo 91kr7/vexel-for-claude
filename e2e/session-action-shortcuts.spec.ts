@@ -332,19 +332,22 @@ test('Alt+E scrolls the entry of the open session into view', async ({ page, req
 
 // plan-keyboard_shortcuts/REQ-21 — scenario "The user switches the theme from the keyboard"
 // plan-settings_dialog/REQ-18: the shortcut still works without the top bar switch, and the settings popup shows its choice
-test('Alt+A switches from the dark to the light theme and back, as the settings popup does', async ({ page }) => {
+// plan-dark_blue_theme/REQ-34: the cycle is Light, Dark, Dark Blue
+test('Alt+A cycles from Dark to Dark Blue, Light and Dark again, as the settings popup does', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
-  await page.keyboard.press('Alt+KeyA');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light', ONE_SECOND);
-  expect(await page.evaluate(() => localStorage.getItem('ai-client.theme')), 'the choice is saved, as the popup saves it').toBe('light');
-  await settingsButton(page).click();
-  await expect(settingsPopup(page).getByRole('radio', { name: 'Light', exact: true })).toBeChecked();
-  await page.keyboard.press('Escape');
-  await expect(settingsPopup(page)).toHaveCount(0);
-
-  await page.keyboard.press('Alt+KeyA');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark', ONE_SECOND);
-  expect(await page.evaluate(() => localStorage.getItem('ai-client.theme'))).toBe('dark');
+  for (const [theme, choice] of [
+    ['dark-blue', 'Dark Blue'],
+    ['light', 'Light'],
+    ['dark', 'Dark'],
+  ] as const) {
+    await page.keyboard.press('Alt+KeyA');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme, ONE_SECOND);
+    expect(await page.evaluate(() => localStorage.getItem('ai-client.theme')), 'the choice is saved, as the popup saves it').toBe(theme);
+    await settingsButton(page).click();
+    await expect(settingsPopup(page).getByRole('radio', { name: choice, exact: true })).toBeChecked();
+    await page.keyboard.press('Escape');
+    await expect(settingsPopup(page)).toHaveCount(0);
+  }
 });

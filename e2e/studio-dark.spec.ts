@@ -273,7 +273,7 @@ test.describe('theme and palette', () => {
     expect(await page.locator('body').evaluate((el) => getComputedStyle(el, '::selection').backgroundColor)).toBe('rgba(140, 207, 255, 0.3)');
   });
 
-  // REQ-3, WebEntry: thin 5 px rounded scrollbars with the strong border thumb, and scrollbar-width thin
+  // REQ-3, WebEntry: thin 5 px rounded scrollbars with the thumb token (the strong border in Dark), and scrollbar-width thin
   test('the stylesheet gives scrollbars the mock look and a thin width', async ({ page }) => {
     await page.goto('/');
     const rules = await page.evaluate(() =>
@@ -288,8 +288,11 @@ test.describe('theme and palette', () => {
     const scrollbar = rules.filter((r) => /::-webkit-scrollbar\s*\{/.test(r));
     expect(scrollbar.join('\n')).toMatch(/width:\s*5px/);
     const thumb = rules.filter((r) => /::-webkit-scrollbar-thumb/.test(r)).join('\n');
-    expect(thumb).toMatch(/var\(--border-strong\)/);
+    expect(thumb).toMatch(/var\(--scrollbar-thumb\)/);
     expect(thumb).toMatch(/border-radius/);
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--scrollbar-thumb').trim()), 'Dark thumb is the strong border').toBe(
+      await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--border-strong').trim()),
+    );
     expect(rules.join('\n')).toMatch(/scrollbar-width:\s*thin/);
   });
 

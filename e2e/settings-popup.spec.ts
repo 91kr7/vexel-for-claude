@@ -297,8 +297,9 @@ test('the top bar has no theme or look switch, and Alt+A still switches the them
     .evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label') ?? button.textContent?.trim() ?? ''));
   expect(names).toEqual(['Plan Usage']);
   expect(await rootMark(page, 'data-theme')).toBe('dark');
-  await page.keyboard.press('Alt+KeyA');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.keyboard.press('Alt+KeyA');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  // plan-dark_blue_theme/REQ-34: from Dark the cycle goes Dark Blue, Light, Dark
+  for (const theme of ['dark-blue', 'light', 'dark']) {
+    await page.keyboard.press('Alt+KeyA');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+  }
 });

@@ -17,25 +17,27 @@ const lineChipTag = (html: string, line: string) =>
   [...html.matchAll(/<span\b[^>]*class="[^"]*\bmono-chip\b[^"]*"[^>]*>/g)].find((match) => html.slice(match.index).replace(/<[^>]*>/g, '').startsWith(line))?.[0];
 
 describe('SessionHeader', () => {
-  // plan-session_list_width/REQ-15, REQ-16: only the folder name, the line, the state pill, the notice and the actions, in this order
-  it('shows the folder name as h2, the line, the state chip, the notice and the actions, in this order', () => {
+  // plan-session_list_width/REQ-15, REQ-16, plan-dark_blue_theme/REQ-52: the folder name, the state pill, the line, the notice and the actions, in this order
+  it('shows the folder name as h2, the state chip, the line, the notice and the actions, in this order', () => {
     const html = renderToStaticMarkup(<SessionHeader session={session} actions={actions} notice={<span>Avviso</span>} />);
     const chip = renderToStaticMarkup(<StateBadge state="needs_input" variant="chip" />);
     expect(html).toContain(chip);
     expect(html).toMatch(/<h2[^>]*>\s*negozio\s*<\/h2>/);
     expect(html.indexOf('<h2')).toBeLessThan(html.indexOf(chip));
-    expect(text(html)).toBe('negozio Aggiungi il carrello Needs Input Avviso Azione');
+    expect(html.indexOf(chip)).toBeLessThan(html.indexOf(lineChipTag(html, session.label)!));
+    expect(text(html)).toBe('negozio Needs Input Aggiungi il carrello Avviso Azione');
   });
 
-  // plan-session_list_width/REQ-30, REQ-31: the leading actions come first in the right group, then the state pill, the notice and the actions
-  it('shows the leading actions before the state pill, then the notice and the actions', () => {
+  // plan-session_list_width/REQ-30, REQ-31, plan-dark_blue_theme/REQ-52: the state pill is on the left; the right group is the leading actions, the notice and the actions
+  it('shows the state pill on the left, and the leading actions first in the right group, then the notice and the actions', () => {
     const html = renderToStaticMarkup(
       <SessionHeader session={session} leadingActions={<button type="button">Cerca</button>} actions={actions} notice={<span>Avviso</span>} />,
     );
     const chip = renderToStaticMarkup(<StateBadge state="needs_input" variant="chip" />);
-    expect(text(html)).toBe('negozio Aggiungi il carrello Cerca Needs Input Avviso Azione');
-    expect(html.indexOf('Cerca')).toBeLessThan(html.indexOf(chip));
-    expect(html.indexOf(chip)).toBeLessThan(html.indexOf('Azione'));
+    expect(text(html)).toBe('negozio Needs Input Aggiungi il carrello Cerca Avviso Azione');
+    expect(html.indexOf(chip)).toBeLessThan(html.indexOf('Cerca'));
+    expect(html.indexOf('Cerca')).toBeLessThan(html.indexOf('Avviso'));
+    expect(html.indexOf('Avviso')).toBeLessThan(html.indexOf('Azione'));
   });
 
   // SessionHeader "Shows": without a session, the leading actions still show, before the notice and the actions
@@ -47,7 +49,7 @@ describe('SessionHeader', () => {
   // plan-session_list_width/REQ-15: no "/", no path and no figures, even when the session has usage
   it('shows no "/", no path and no usage figures', () => {
     const html = renderToStaticMarkup(<SessionHeader session={{ ...session, usage }} actions={actions} />);
-    expect(text(html)).toBe('negozio Aggiungi il carrello Needs Input Azione');
+    expect(text(html)).toBe('negozio Needs Input Aggiungi il carrello Azione');
     expect(html).not.toContain(session.folder);
     expect(text(html)).not.toMatch(/Context|tokens|\$/);
   });
@@ -80,7 +82,7 @@ describe('SessionHeader', () => {
   // SessionHeader props: `line` replaces the label
   it('shows the given line in place of the label', () => {
     const html = renderToStaticMarkup(<SessionHeader session={session} actions={actions} line="Riga data" />);
-    expect(text(html)).toBe('negozio Riga data Needs Input Azione');
+    expect(text(html)).toBe('negozio Needs Input Riga data Azione');
     expect(lineChipTag(html, 'Riga data')).toBeDefined();
   });
 

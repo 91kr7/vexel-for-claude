@@ -74,3 +74,7 @@
 | 2026-11-17 | dev list-polish | G4 development | sent back | Scrollbar under the list resize handle and into the git refresh column; keep it clear while REQ-49 holds |
 | 2026-11-17 | dev list-polish | G4 development (fix) | pass | Scrollbar clear of the resize handle and git refresh column; build green; diff limited to INT files and specs |
 | 2026-11-17 | dev list-polish | divergence developer | decided | Settings, git file/commit lists and Plan Usage already keep equal gaps: unchanged; session and project cards 4px narrower |
+| 2026-11-17 | dev dark-blue + list-polish | test round | decided | One combined tester round for both batches, list-polish last: closing full suites there |
+| 2026-11-17 | dev dark-blue + list-polish | question tester | decided | Tester report did not reach the orchestrator; results confirmed by the orchestrator's own full runs |
+| 2026-11-17 | dev dark-blue + list-polish | G5 tests | pass | Test files only; no only/skip; unit 3905 passed; full e2e 864 passed; Electron desktop-window + desktop-list-width 28 passed |
+| 2026-11-17 | closing | merge | pass | All 7 batches certified; no source change after the closing run |

@@ -189,7 +189,7 @@ test.describe('Header and footer of an open session', () => {
     // The header: folder name, label, state, "Search", "Interrupt" and "Terminate", and nothing else.
     const name = path.basename(folder);
     await expect(header(page).getByRole('heading', { level: 2 })).toHaveText(name);
-    await expect(header(page)).toHaveText(new RegExp(`^\\s*${name}\\s*${label}\\s*Idle\\s*■?\\s*Interrupt\\s*■?\\s*Terminate\\s*$`));
+    await expect(header(page)).toHaveText(new RegExp(`^\\s*${name}\\s*Idle\\s*${label}\\s*■?\\s*Interrupt\\s*■?\\s*Terminate\\s*$`));
     await expect(header(page).getByRole('button')).toHaveText(['', /Interrupt/, /Terminate/]);
     await expect(header(page).getByRole('button').first()).toHaveAccessibleName('Search');
     await expectOneRow(page, [
@@ -270,7 +270,7 @@ test.describe('Header and footer of an open session', () => {
 
     const name = path.basename(folder);
     const label = escaped(await labelOf(request, folder, true));
-    await expect(header(page)).toHaveText(new RegExp(`^\\s*${name}\\s*${label}\\s*(Running|Needs Input|Idle)\\s*Read-only\\s*Resume Here\\s*$`));
+    await expect(header(page)).toHaveText(new RegExp(`^\\s*${name}\\s*(Running|Needs Input|Idle)\\s*${label}\\s*Read-only\\s*Resume Here\\s*$`));
     await expect(header(page)).not.toContainText('Open in Another Terminal');
 
     await expect(place(page, folder)).toHaveText(`Open in Another Terminal · ${folder}`);
@@ -408,7 +408,8 @@ const style = (locator: Locator, property: string) => locator.evaluate((el, p) =
 
 test.describe('Order and look of the header actions of a hosted session', () => {
   // plan-session_list_width/REQ-30, REQ-31, REQ-32, REQ-36 — scenario "The user finds "Search", the state, "Interrupt" and "Terminate" in this order"
-  test('"Search", the state, "Interrupt" and "Terminate" show and take the focus in this order', async ({ page, request }) => {
+  // plan-dark_blue_theme/REQ-52: the state pill moved to the left group, before the line pill
+  test('the state, then "Search", "Interrupt" and "Terminate" show in this order, and the buttons take the focus in this order', async ({ page, request }) => {
     const folder = await newFolder('order');
     const label = 'Add the invoice export';
     await hosted(request, folder, label, [response(SOME_RESPONSES)], { working: true });
@@ -422,8 +423,8 @@ test.describe('Order and look of the header actions of a hosted session', () => 
     const stop = actionButton(page, 'Terminate');
     const pill = statePill(page, 'Running');
     await expect(pill).toBeVisible();
-    const xs = await Promise.all([search, pill, interrupt, stop].map(async (item) => (await box(item)).x));
-    expect([...xs].sort((a, b) => a - b), 'Search, state, Interrupt, Terminate from left to right').toEqual(xs);
+    const xs = await Promise.all([pill, search, interrupt, stop].map(async (item) => (await box(item)).x));
+    expect([...xs].sort((a, b) => a - b), 'state, Search, Interrupt, Terminate from left to right').toEqual(xs);
     await expectOneRow(page, [search, pill, interrupt, stop]);
 
     // Tab from the label chip: "Search", then "Interrupt", then "Terminate"; the state takes no focus.

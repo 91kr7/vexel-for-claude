@@ -75,6 +75,9 @@ const DARK_ONLY = [
 ];
 const SURFACES = ['--bg-canvas', '--bg-surface-1', '--bg-surface-2', '--bg-surface-3', '--role-list', '--role-raised'];
 
+// Headless Chromium hides scrollbars by default; the scrollbar thumb test needs them drawn.
+test.use({ launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] } });
+
 let projectsRoot: string;
 const createdIds: string[] = [];
 
@@ -630,8 +633,10 @@ test.describe('Dark Blue screens', () => {
     expect(await handle.evaluate((n) => n !== null), 'the session list scrolls').toBe(true);
     const area = await handle.evaluate((n) => {
       const r = n!.getBoundingClientRect();
-      return { x: r.right - 8, y: r.top, width: 8, height: r.height };
+      const bar = n!.offsetWidth - n!.clientWidth;
+      return { x: r.right - bar, y: r.top, width: bar, height: r.height };
     });
+    expect(area.width, 'a scrollbar shows').toBeGreaterThan(0);
     const pixels = await pixelsOf(page, await page.screenshot({ clip: area, animations: 'disabled' }));
     const thumb = parse(DARK_BLUE['--scrollbar-thumb']!);
     const count = pixels.flat().filter((p) => near(p, thumb, 2)).length;
