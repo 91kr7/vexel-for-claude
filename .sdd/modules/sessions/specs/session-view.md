@@ -60,6 +60,7 @@ Reconnection:
 
 Actions:
 - every key typed in the terminal → sent to the pty as `input`, Esc included. The keys of the ShortcutMap, terminal rows included, are the only exceptions.
+- keys typed while the connection is still opening (first attach or a new attempt) → kept, then sent as `input` in typing order right after the `resize` of the open connection. A new `sessionId` drops the kept input: it never reaches another session. Input typed after a connection has closed, while no new attempt is opening, is lost as before.
 - the terminal rows "Search", "Larger text", "Smaller text", "Default text size" and "Focus the list" run on their active keys (`terminalShortcutOf`). The default keys match as below, by the typed character. A user key matches by physical key, Ctrl, Alt and Shift exactly, no Meta, no AltGr. The action is the same either way: nothing goes to the pty and the browser default is prevented.
 - a key of the ShortcutMap (`shortcutCommandOf` gives a command) in the terminal → the terminal does not process it and nothing goes to the pty.
 - Ctrl+click on a link → LinkOpener `openLink` with the full address (a wrapped address included). The session stays on screen.
@@ -126,5 +127,5 @@ Actions:
 - `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`, `plan-session_list_width/REQ-30`, `plan-session_list_width/REQ-31`, `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-33`, `plan-session_list_width/REQ-36`
 - `plan-ui_restyle/REQ-34`, `plan-ui_restyle/REQ-35`
 - `plan-dark_blue_theme/REQ-31`, `plan-dark_blue_theme/REQ-38`
-- `plan-ui_transitions/REQ-6`, `plan-ui_transitions/REQ-12`, `plan-ui_transitions/REQ-13`, `plan-ui_transitions/REQ-28`
+- `plan-ui_transitions/REQ-6`, `plan-ui_transitions/REQ-11`, `plan-ui_transitions/REQ-12`, `plan-ui_transitions/REQ-13`, `plan-ui_transitions/REQ-28`, `plan-ui_transitions/REQ-33`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-26`, `plan-dark_blue_theme/REQ-27`, `plan-dark_blue_theme/REQ-28`, `plan-dark_blue_theme/REQ-29`

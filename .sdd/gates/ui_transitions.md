@@ -32,3 +32,5 @@
 | 2026-11-17 | dev session-switch | G5 tests | human decision | Fix it now: buffer input until the connection opens; analysis and plan extended |
 | 2026-11-17 | plan | G2 requirements | pass | REQ-33 amendment from spec requirement 8 |
 | 2026-11-17 | plan | G3 coverage | pass | REQ-33 closed by session-switch/INT-4 |
+| 2026-11-17 | dev session-switch | divergence developer | decided | Keys typed before the terminal exists (font load) stay out; REQ-33 covers an opening connection only |
+| 2026-11-17 | dev session-switch | G4 development | pass | INT-4 |

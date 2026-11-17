@@ -220,11 +220,28 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
       if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
     };
     const sendSize = () => send({ type: 'resize', cols: terminal.cols, rows: terminal.rows });
+    // Input typed while the connection opens goes out, in order, once it is open.
+    let pendingInput: string[] = [];
+    const sendInput = (data: string) => {
+      if (socket.readyState === WebSocket.CONNECTING) pendingInput.push(data);
+      else send({ type: 'input', data });
+    };
+    const sendPendingInput = () => {
+      for (const data of pendingInput) send({ type: 'input', data });
+      pendingInput = [];
+    };
 
     const connect = (reconnecting: boolean) => {
       socket = new WebSocket(attachUrl(sessionId));
       socketRef.current = socket;
-      socket.addEventListener('open', sendSize, { signal });
+      socket.addEventListener(
+        'open',
+        () => {
+          sendSize();
+          sendPendingInput();
+        },
+        { signal },
+      );
       let snapshotShown = false;
       socket.addEventListener(
         'message',
@@ -272,7 +289,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
       if (event.type === 'keydown') shortcut();
       return false;
     });
-    const inputSubscription = terminal.onData((data) => send({ type: 'input', data }));
+    const inputSubscription = terminal.onData(sendInput);
     const resizeSubscription = terminal.onResize(sendSize);
     // While the Git Explorer slides or the main area cross-fades, the terminal fits once at the end, not at each frame.
     const workspace = container.closest('.session-workspace');
