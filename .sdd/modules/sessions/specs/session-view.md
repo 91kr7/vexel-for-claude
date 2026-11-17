@@ -88,6 +88,7 @@ Actions:
 - "Interrupt" → sends Esc (`\x1b`) as `input`, then gives focus back to the terminal.
 - the panel changes size → the terminal fits it and sends the new `resize`. It also sends a `resize` as soon as it connects.
 - while the GitExplorerPanel slides → the terminal does not fit at each frame. It fits the new size and sends one `resize` when the slide ends. It keeps its text.
+- during the cross-fade of a session switch (AppLayout) → both views keep the size of the main area, so the rows and columns of neither session change. The leaving view keeps its connection and sends no `resize`. The new view opens only its own connection and sends its `resize` when it connects, as on any open. When the fade ends the terminal fits once; it sends a `resize` only if its rows or columns changed. The focus rules of an open stay the same: the new terminal takes the focus when it opens.
 
 ## Rules and invariants
 
@@ -125,5 +126,5 @@ Actions:
 - `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`, `plan-session_list_width/REQ-30`, `plan-session_list_width/REQ-31`, `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-33`, `plan-session_list_width/REQ-36`
 - `plan-ui_restyle/REQ-34`, `plan-ui_restyle/REQ-35`
 - `plan-dark_blue_theme/REQ-31`, `plan-dark_blue_theme/REQ-38`
-- `plan-ui_transitions/REQ-6`, `plan-ui_transitions/REQ-28`
+- `plan-ui_transitions/REQ-6`, `plan-ui_transitions/REQ-12`, `plan-ui_transitions/REQ-13`, `plan-ui_transitions/REQ-28`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-26`, `plan-dark_blue_theme/REQ-27`, `plan-dark_blue_theme/REQ-28`, `plan-dark_blue_theme/REQ-29`

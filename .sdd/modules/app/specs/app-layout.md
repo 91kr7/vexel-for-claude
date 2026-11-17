@@ -85,11 +85,14 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - the first frame already shows the stored width: no jump at start or after a reload.
 - from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements, except the snackbar and the NewerVersionNotice, which may cover part of the main area.
 - the list panel has no brand, no "New Session", no "Resume Session" and no settings button.
+- a change of the main view (another session, a session opened from the EmptyState, or back to the EmptyState) → cross-fade. The old view fades out (`--motion-duration-exit`) while the new one fades in (`--motion-duration-enter`), both in the same place and at the same size. SessionView, ConversationView and EmptyState are all covered. The old view stays mounted, with its state, until the end of the fade; then it goes. No cross-fade at page load, and none with reduced motion: the new view replaces the old one at once.
+- the leaving view takes no input: no click, no keyboard focus, hidden from assistive technology. If it holds the focus, it loses it. It gets no `focusRef`: `focus-main-view` reaches only the new view.
+- a new change during a cross-fade ends it: the views on screen go at once and only the last selected view shows, with no fade. Going back to the leaving view during the fade keeps that view, with its state.
 - the PlanUsagePopover, the snackbar, the NewerVersionNotice and the toast are mounted through ExitPresence: when one closes, it plays its exit effect before it goes. Opening it again during the exit shows a new one at once.
 
 ## Dependencies
 
-- TopBar, SettingsDialog, PlanUsagePopover, PlanUsageStore, NewerVersionNotice, useNewerVersion, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
+- TopBar, SettingsDialog, PlanUsagePopover, PlanUsageStore, NewerVersionNotice, useNewerVersion, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, ExitPresence (`motionDurationMs`), MotionTokens, useDesktopBridge, ListWidthStore, ListPanelEdge
 - useShortcutKeys, ShortcutMap, ShortcutChannel, ShortMessageToast, ThemeStore
 - ExitPresence
 - FolderChooser, ProjectList, ProjectListStore, SessionNameDialog (module folders)
@@ -110,7 +113,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-usage_limits/REQ-3`, `plan-usage_limits/REQ-4`
 - `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-21`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-31`, `plan-keyboard_shortcuts/REQ-43`
 - `plan-git_explorer/REQ-25`
-- `plan-ui_transitions/REQ-4`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-28`
+- `plan-ui_transitions/REQ-4`, `plan-ui_transitions/REQ-10`, `plan-ui_transitions/REQ-11`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-28`
 - `plan-recent_projects/REQ-2`, `plan-recent_projects/REQ-8`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-14`, `plan-recent_projects/REQ-17`, `plan-recent_projects/REQ-21`
 - `plan-project_list_actions/REQ-7`
 - `plan-update_check/REQ-4`, `plan-update_check/REQ-7`, `plan-update_check/REQ-8`, `plan-update_check/REQ-10`

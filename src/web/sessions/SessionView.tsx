@@ -274,20 +274,23 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
     });
     const inputSubscription = terminal.onData((data) => send({ type: 'input', data }));
     const resizeSubscription = terminal.onResize(sendSize);
-    // While the Git Explorer slides, the terminal fits once at the end, not at each frame.
+    // While the Git Explorer slides or the main area cross-fades, the terminal fits once at the end, not at each frame.
     const workspace = container.closest('.session-workspace');
-    const panelSliding = () =>
-      workspace
-        ?.querySelector('.git-explorer-panel')
-        ?.getAnimations?.()
-        .some((animation) => animation.playState === 'running') ?? false;
+    const mainView = container.closest('.main-view');
+    const running = (element: Element | null | undefined) =>
+      element?.getAnimations?.().some((animation) => animation.playState === 'running') ?? false;
     const fitUnlessSliding = () => {
-      if (!panelSliding()) fitAddon.fit();
+      if (!running(workspace?.querySelector('.git-explorer-panel')) && !running(mainView)) fitAddon.fit();
+    };
+    const fitAtFadeEnd = (event: Event) => {
+      if (event.target === mainView) fitUnlessSliding();
     };
     const resizeObserver = new ResizeObserver(fitUnlessSliding);
     resizeObserver.observe(container);
     workspace?.addEventListener('animationend', fitUnlessSliding, { signal });
     workspace?.addEventListener('animationcancel', fitUnlessSliding, { signal });
+    mainView?.addEventListener('animationend', fitAtFadeEnd, { signal });
+    mainView?.addEventListener('animationcancel', fitAtFadeEnd, { signal });
     const unsubscribeFontSize = fontSizeStore.subscribe(() => {
       terminal.options.fontSize = fontSizeStore.getSnapshot();
       fitAddon.fit();

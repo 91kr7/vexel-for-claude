@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useDesktopBridge } from './desktop-bridge';
 import { EmptyState } from './EmptyState';
 import { ConversationView } from './external/ConversationView';
@@ -28,7 +28,7 @@ import { useShortcutKeys } from './shortcut-keys';
 import type { ShortcutCommand } from './shortcut-map';
 import { pageThemeStore } from './theme/theme-store';
 import { TopBar } from './TopBar';
-import { ExitPresence } from './motion/ExitPresence';
+import { ExitPresence, motionDurationMs } from './motion/ExitPresence';
 
 function subscribeToWindowResize(listener: () => void): () => void {
   window.addEventListener('resize', listener);
@@ -54,6 +54,44 @@ function ListPanel({ panelRef, children }: { panelRef: RefObject<HTMLElement>; c
         onCommit={(next) => store.commit(next)}
       />
     </section>
+  );
+}
+
+type MainView = { kind: 'empty' } | { kind: 'hosted' | 'external'; sessionId: string };
+
+const mainViewKey = (view: MainView) => (view.kind === 'empty' ? 'empty' : `${view.kind}:${view.sessionId}`);
+
+// The view that fades out after a switch. A switch during a cross-fade ends it: no view leaves then.
+function useLeavingMainView(view: MainView): MainView | null {
+  const [shown, setShown] = useState(view);
+  const [leaving, setLeaving] = useState<{ view: MainView; ms: number } | null>(null);
+  if (mainViewKey(shown) !== mainViewKey(view)) {
+    setShown(view);
+    const ms = Math.max(motionDurationMs('--motion-duration-enter'), motionDurationMs('--motion-duration-exit'));
+    setLeaving(leaving === null && ms > 0 ? { view: shown, ms } : null);
+  }
+  useEffect(() => {
+    if (!leaving) return;
+    const timer = setTimeout(() => setLeaving(null), leaving.ms);
+    return () => clearTimeout(timer);
+  }, [leaving]);
+  return leaving?.view ?? null;
+}
+
+function MainViewLayer({ state, children }: { state: 'shown' | 'entering' | 'leaving'; children: ReactNode }) {
+  const layerRef = useRef<HTMLDivElement>(null);
+  const leaving = state === 'leaving';
+  useLayoutEffect(() => {
+    const layer = layerRef.current;
+    if (!layer) return;
+    layer.inert = leaving;
+    if (leaving && document.activeElement instanceof HTMLElement && layer.contains(document.activeElement)) document.activeElement.blur();
+  }, [leaving]);
+  const className = state === 'shown' ? 'main-view' : `main-view is-${state}`;
+  return (
+    <div className={className} ref={layerRef} aria-hidden={leaving || undefined}>
+      {children}
+    </div>
   );
 }
 
@@ -106,6 +144,8 @@ export function AppLayout() {
     setOpenSessionId(sessionId);
     setOpenIsExternal(sessions.find((session) => session.id === sessionId)?.external === true);
   };
+  const mainView: MainView = openSessionId === null ? { kind: 'empty' } : { kind: openIsExternal ? 'external' : 'hosted', sessionId: openSessionId };
+  const leavingMainView = useLeavingMainView(mainView);
   useDesktopBridge(openSessionId, (sessionId) => {
     if (sessions.some((session) => session.id === sessionId)) openFromList(sessionId);
   });
@@ -162,6 +202,17 @@ export function AppLayout() {
     }
   });
 
+  const renderMainView = (view: MainView, current: boolean) => {
+    if (view.kind === 'empty') return <EmptyState onNewSession={() => setChoosingFolder(true)} onResumeSession={() => setResuming(true)} />;
+    const session = current ? openSummary : sessions.find((summary) => summary.id === view.sessionId);
+    const focusRef = current ? mainViewRef : undefined;
+    return view.kind === 'external' ? (
+      <ConversationView sessionId={view.sessionId} session={session} sessions={sessions} onResumed={openHosted} focusRef={focusRef} />
+    ) : (
+      <SessionView sessionId={view.sessionId} session={session} sessions={sessions} onLeaveTerminal={showSessions} focusRef={focusRef} />
+    );
+  };
+
   return (
     <div className="app">
       <TopBar
@@ -202,27 +253,14 @@ export function AppLayout() {
           )}
         </ListPanel>
         <main className="session-area vx-dot-grid" ref={mainRef}>
-          {openSessionId && openIsExternal ? (
-            <ConversationView
-              key={openSessionId}
-              sessionId={openSessionId}
-              session={openSummary}
-              sessions={sessions}
-              onResumed={openHosted}
-              focusRef={mainViewRef}
-            />
-          ) : openSessionId ? (
-            <SessionView
-              key={openSessionId}
-              sessionId={openSessionId}
-              session={openSummary}
-              sessions={sessions}
-              onLeaveTerminal={showSessions}
-              focusRef={mainViewRef}
-            />
-          ) : (
-            <EmptyState onNewSession={() => setChoosingFolder(true)} onResumeSession={() => setResuming(true)} />
+          {leavingMainView && (
+            <MainViewLayer key={mainViewKey(leavingMainView)} state="leaving">
+              {renderMainView(leavingMainView, false)}
+            </MainViewLayer>
           )}
+          <MainViewLayer key={mainViewKey(mainView)} state={leavingMainView ? 'entering' : 'shown'}>
+            {renderMainView(mainView, true)}
+          </MainViewLayer>
         </main>
       </div>
       <ExitPresence>{snackbar}</ExitPresence>

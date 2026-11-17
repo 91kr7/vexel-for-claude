@@ -26,3 +26,5 @@
 | 2026-11-17 | dev git-explorer-panel | G4 development | pass | overflow hidden on conversation workspace explained by INT slide |
 | 2026-11-17 | dev git-explorer-panel | question tester | decided | Panel takes no focus on open; source batches.md "Focus (REQ-27)" assumption |
 | 2026-11-17 | dev git-explorer-panel | G5 tests | pass | playwright.config.ts change is test grouping only |
+| 2026-11-17 | dev session-switch | divergence developer | decided | ExitPresence exports motionDurationMs, 4-line change to share the duration lookup; spec updated |
+| 2026-11-17 | dev session-switch | G4 development | pass | |

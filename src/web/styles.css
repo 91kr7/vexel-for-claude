@@ -3250,6 +3250,37 @@ input {
   }
 }
 
+/* Session switch: the views share the main area; the leaving one lies over the new one, at the same size. */
+.main-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-view.is-entering {
+  animation: vx-fade-in var(--motion-duration-enter) var(--motion-ease-enter) both;
+}
+
+.main-view.is-leaving {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: vx-fade-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+@keyframes vx-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vx-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes vx-rise-in {
   from {
     opacity: 0;

@@ -7,10 +7,10 @@ export function useLeaving(): boolean {
   return useContext(LeavingContext);
 }
 
-// The exit token is 0ms with reduced motion, and unset where no style sheet is loaded.
-function exitDurationMs(): number {
+// A motion token in ms: 0 with reduced motion, and unset where no style sheet is loaded.
+export function motionDurationMs(token: '--motion-duration-enter' | '--motion-duration-exit'): number {
   if (typeof document === 'undefined') return 0;
-  const value = getComputedStyle(document.documentElement).getPropertyValue('--motion-duration-exit').trim();
+  const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
   const amount = Number.parseFloat(value);
   if (!Number.isFinite(amount) || amount <= 0) return 0;
   return value.endsWith('ms') ? amount : amount * 1000;
@@ -32,7 +32,7 @@ export function ExitPresence({ children }: { children: ReactNode }) {
   if (shown !== wasShown) {
     setWasShown(shown);
     if (shown) setOpenCount((count) => count + 1);
-    else setExitMs(exitDurationMs());
+    else setExitMs(motionDurationMs('--motion-duration-exit'));
   }
   if (shown) lastShown.current = children;
 
