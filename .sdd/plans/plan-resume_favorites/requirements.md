@@ -48,6 +48,15 @@ Words used below, as in the spec and in `plan-favorite_session`:
 | REQ-18 | The search bar has the keyboard focus when the popup opens, as today. |
 | REQ-19 | Every new text of the UI is in English. |
 
+## Feature: Project path while scrolling
+
+Fix of 2026-11-17. The batches of the three features above are certified. This feature is planned on top of them.
+
+| ID | Requirement |
+|----|-------------|
+| REQ-20 | While the user scrolls the list of the resume popup, the project path of the sessions in view stays visible, and it changes when they belong to another project. |
+| REQ-21 | A long project path stays readable, and the user can see its full value. |
+
 ## Assumptions
 
 All come from the spec, where the gatekeeper decided them. None is a human decision.
@@ -56,6 +65,7 @@ All come from the spec, where the gatekeeper decided them. None is a human decis
 - **Filter state (REQ-13).** The filter state is not saved. Nothing new is persisted.
 - **Mark in the session list.** The mark action on the session list entry stays as it is.
 - **REQ-19.** It covers the texts of both the mark action and the filter. It closes with the filter, the last feature.
+- **Which path (REQ-20).** The visible path is the project path of the first session in view, fixed at the top of the list. It works the same with the search or the favorites filter on. Its exact look is a design choice of the implementer.
 
 ## Constraints on the whole plan
 

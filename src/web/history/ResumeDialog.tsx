@@ -205,7 +205,9 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
           )}
           {visibleGroups?.map((group) => (
             <section key={group.folder} className="past-session-group" aria-label={group.folder}>
-              <h3 className="section-label section-label-path dialog-section-heading">{group.folder}</h3>
+              <h3 className="section-label section-label-path dialog-section-heading" title={group.folder}>
+                <span dir="ltr">{group.folder}</span>
+              </h3>
               <div className="dialog-rows">
                 {group.sessions.map((session) => {
                   const checked = selected?.id === session.id;

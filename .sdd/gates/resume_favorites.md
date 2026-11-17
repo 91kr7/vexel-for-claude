@@ -24,3 +24,11 @@
 | 2026-11-17 | test | G5 favorites-filter | decided | `ResumeDialog.test.tsx` button list updated to the new toggle contract (REQ-10) |
 | 2026-11-17 | test | G5 favorites-filter | decided | `plan-usage.spec.ts:345` outside perimeter: intermittent (2 fails, 7 passes on branch, passes on main); terminal scroll not touched by the plan; flagged for review |
 | 2026-11-17 | test | G5 favorites-filter | pass | 38 unit and 27 e2e green on gatekeeper re-run; full suites 3956 unit, 881/882 e2e |
+| 2026-11-17 | fix analysis | human decision | human decision | Sticky project path handled as a fix of `resume_favorites` |
+| 2026-11-17 | fix analysis | G1 analysis | sent back | Out-of-scope line on grouping by project contradicted existing groups |
+| 2026-11-17 | fix analysis | G1 analysis | pass | 78/80 lines narrow; two new requirements on the visible project path |
+| 2026-11-17 | fix plan | G2 requirements | pass | REQ-20, REQ-21 cover the two new analysis requirements |
+| 2026-11-17 | fix plan | G3 coverage | pass | REQ-20→INT-1, REQ-21→INT-2; one-line path with start ellipsis plus tooltip flagged for review |
+| 2026-11-17 | fix dev | G4 project-path | pass | build green on gatekeeper re-run; CSS scoped under `.resume-dialog` |
+| 2026-11-17 | fix test | G5 project-path | decided | `ended-external-sessions.spec.ts:229` outside perimeter: failed once in full pass, green alone (3 runs); resume popup CSS not on its path |
+| 2026-11-17 | fix test | G5 project-path | pass | 11 e2e green on gatekeeper re-run; full suites 3956 unit, 885/886 e2e |
