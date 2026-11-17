@@ -15,7 +15,7 @@ Props:
 - `onClose()` → called by the close button.
 
 Shows:
-- a `role="status"` `.vx-glass` box named "Update Available". It is fixed 12 px under the top bar and 20 px from the right edge of the window, above the page (z-index 50) and below the popovers and the dialogs. It looks like the NeedsInputSnackbar: padding 8 × 14 px, 8 px radius, mono 12/16 px in `--text-primary`.
+- a `role="status"` `.vx-glass` box named "Update Available". It is fixed 12 px under the top bar and 20 px from the right edge of the window, above the page (z-index 50) and below the popovers and the dialogs. It looks like the NeedsInputSnackbar: padding 8 × 14 px, `--radius-frame`, 1 px `--role-border-strong` border, top line and `--shadow-frame`, mono 12/16 px in `--text-primary`.
 - the title "Update Available", in bold (mono 500).
 - the text "Version <newerVersion> is available." and, on a new line, "You have <installedVersion>."
 - the changelog area, under that text, only when `changelogs` has at least one entry. One block per entry, in the given order (newest first), each named and headed "Version <version>" (heading in mono 500), then its `text` through ChangelogText. An entry without `text` shows the heading alone.
@@ -43,3 +43,4 @@ Actions:
 
 - `plan-update_check/REQ-5`, `plan-update_check/REQ-6`, `plan-update_check/REQ-7`
 - `plan-release_changelog/REQ-7`, `plan-release_changelog/REQ-8`, `plan-release_changelog/REQ-9`, `plan-release_changelog/REQ-12`, `plan-release_changelog/REQ-13`, `plan-release_changelog/REQ-14`, `plan-release_changelog/REQ-15`
+- `plan-dark_blue_theme/REQ-3`

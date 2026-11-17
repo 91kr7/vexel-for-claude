@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ListBox, ListBoxItem, type Selection } from 'react-aria-components';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
-import { KIND_LABEL } from './ChangesTab';
+import { fileItemClassName, KIND_LABEL } from './ChangesTab';
 import { formatCommitDate } from './commit-format';
 import { useCommitFiles, type CommitFile } from './commit-files-store';
 import { DiffView } from './DiffView';
@@ -26,7 +26,7 @@ function FileList({ files, selected, onSelect }: { files: CommitFile[]; selected
       }}
     >
       {files.map((file) => (
-        <ListBoxItem key={file.path} id={file.path} textValue={pathText(file)} className="changes-item">
+        <ListBoxItem key={file.path} id={file.path} textValue={pathText(file)} className={fileItemClassName}>
           <span className="changes-file-path" title={pathText(file)}>
             {pathText(file)}
           </span>

@@ -366,12 +366,12 @@ test('the empty state is the full area-state block with the accent and the neutr
   expect(await rgb(await style(neutral, 'color')), 'neutral text').toEqual(await rgb(t['--text-primary']!));
 });
 
-// WebEntry `.button-neutral`: on hover, surface 3 and the strong border
-test('the neutral empty state button takes surface 3 and the strong border on hover', async ({ page }) => {
+// WebEntry `.button-neutral`: on hover, surface 3 and the accent border (plan-dark_blue_theme/REQ-3)
+test('the neutral empty state button takes surface 3 and the accent border on hover', async ({ page }) => {
   await page.goto('/');
   const b = emptyButton(page, 'Resume Session');
   await expect(b).toBeVisible();
-  const t = await tokens(page, ['--bg-surface-3', '--border-strong']);
+  const t = await tokens(page, ['--bg-surface-3', '--accent-border']);
   await b.hover();
   await expect.poll(async () => resolved(page, await b.evaluate((el) => getComputedStyle(el).backgroundColor))).toEqual(await resolved(page, t['--bg-surface-3']!));
   expect(await b.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(await page.evaluate((v) => {
@@ -381,7 +381,7 @@ test('the neutral empty state button takes surface 3 and the strong border on ho
     const c = getComputedStyle(probe).color;
     probe.remove();
     return c;
-  }, t['--border-strong']!));
+  }, t['--accent-border']!));
 });
 
 // SessionView "Shows", plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-34: Roboto Mono, 12 px, line height 1.2, font loaded before the terminal opens

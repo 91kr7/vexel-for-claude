@@ -1,11 +1,12 @@
 import { type ReactNode, useId } from 'react';
-import { MoonIcon, SunIcon } from '../icons/Icons';
+import { MoonIcon, MoonStarIcon, SunIcon } from '../icons/Icons';
 import { type Theme, type ThemeStore, useTheme } from '../theme/theme-store';
 import { ChoiceCard } from './ChoiceCard';
 
 const CHOICES: { theme: Theme; label: string; icon: ReactNode }[] = [
   { theme: 'light', label: 'Light', icon: <SunIcon /> },
   { theme: 'dark', label: 'Dark', icon: <MoonIcon /> },
+  { theme: 'dark-blue', label: 'Dark Blue', icon: <MoonStarIcon /> },
 ];
 
 function ThemePreview({ theme }: { theme: Theme }) {
@@ -25,7 +26,7 @@ function ThemePreview({ theme }: { theme: Theme }) {
 }
 
 export function ThemeSection({ store }: { store?: ThemeStore }) {
-  const { theme, toggleTheme } = useTheme(store);
+  const { theme, setTheme } = useTheme(store);
   const name = useId();
   return (
     <fieldset className="settings-choice">
@@ -40,7 +41,7 @@ export function ThemeSection({ store }: { store?: ThemeStore }) {
             preview={<ThemePreview theme={choice.theme} />}
             checked={theme === choice.theme}
             onChoose={() => {
-              if (theme !== choice.theme) toggleTheme();
+              if (theme !== choice.theme) setTheme(choice.theme);
             }}
           />
         ))}

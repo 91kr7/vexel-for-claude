@@ -25,7 +25,7 @@ Current look shows:
 - pressed button → `filter: brightness(0.85)`.
 
 Windows 11 look shows:
-- a row of three buttons, in this order: minimize, maximize or restore, close. Each is 46 px wide and as high as the top bar, with no gap and no radius. The row ends flush with the right edge of the window at every window width, and never shrinks. It has the background of the top bar, so nothing shows through it.
+- a row of three buttons, in this order: minimize, maximize or restore, close. Each is 46 px wide and as high as the top bar (38 px), with no gap and no radius. The row ends flush with the right edge of the window at every window width, and never shrinks. It has the background of the top bar, so nothing shows through it.
 - each button holds a 10 px glyph with a 1 px line in `--text-primary`, always visible: a line (minimize), a square (maximize), two overlapping squares (restore, when maximized), a cross (close).
 - hover → `--caption-hover` background. Pressed → `--caption-pressed`.
 - close: hover → `--caption-close` background and a white glyph. Pressed → `--caption-close-pressed`.
@@ -58,3 +58,4 @@ Keyboard:
 - `plan-mac_title_bar/REQ-15`, `plan-mac_title_bar/REQ-16`, `plan-mac_title_bar/REQ-17`, `plan-mac_title_bar/REQ-18`, `plan-mac_title_bar/REQ-19`, `plan-mac_title_bar/REQ-20`, `plan-mac_title_bar/REQ-21`, `plan-mac_title_bar/REQ-22`, `plan-mac_title_bar/REQ-24`, `plan-mac_title_bar/REQ-26`, `plan-mac_title_bar/REQ-27`, `plan-mac_title_bar/REQ-28`
 - `plan-wsl_support/REQ-28`, `plan-wsl_support/REQ-29`, `plan-wsl_support/REQ-30`, `plan-wsl_support/REQ-31`, `plan-wsl_support/REQ-34`, `plan-wsl_support/REQ-39`, `plan-wsl_support/REQ-40`
 - `plan-ui_restyle/REQ-4`, `plan-ui_restyle/REQ-5`, `plan-ui_restyle/REQ-6`, `plan-ui_restyle/REQ-7`, `plan-ui_restyle/REQ-8`, `plan-ui_restyle/REQ-9`, `plan-ui_restyle/REQ-10`, `plan-ui_restyle/REQ-11`
+- `plan-dark_blue_theme/REQ-7`, `plan-dark_blue_theme/REQ-8`

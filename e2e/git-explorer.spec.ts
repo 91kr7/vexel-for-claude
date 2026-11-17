@@ -436,12 +436,16 @@ test.describe('Uncommitted changes in the git explorer', () => {
     });
     const expectThemeColours = async () => {
       const t = await tokens();
+      // The selected row fades between themes: wait for its colour to settle.
+      await expect
+        .poll(() => fileEntry(page, 'Unstaged', 'notes.md').evaluate((el) => getComputedStyle(el).backgroundColor), { message: 'selected entry on the active card surface' })
+        .toBe(t.surface3);
       const c = await colours();
       expect(c.added, 'added line in the success colour').toBe(t.green);
       expect(c.removed, 'removed line in the error colour').toBe(t.red);
       expect(c.context, 'context line in the normal text colour').toBe(t.text);
       expect(c.hunk, 'hunk header muted').toBe(t.muted);
-      expect(c.selected, 'selected entry on surface 3').toBe(t.surface3);
+      expect(c.selected, 'selected entry on the active card surface').toBe(t.surface3);
       expect(c.addedTint, 'added line on a tint').not.toBe('rgba(0, 0, 0, 0)');
       return c;
     };

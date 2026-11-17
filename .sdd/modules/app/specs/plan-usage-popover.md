@@ -15,7 +15,7 @@ Props:
 - `onClose()` → called by the close button and by Esc.
 
 Description:
-- a `role="dialog"` panel named "Plan Usage", without `aria-modal`, in the `.vx-surface-1` look, fixed under the top bar at the right (320 px wide), above the page and below the backdrop of any dialog. A header with the title "Plan Usage" and a close button "Close" (X icon).
+- a `role="dialog"` panel named "Plan Usage", without `aria-modal`, on `--role-raised`, with a 1 px `--role-border-strong` border, `--radius-frame` corners, the top line and `--shadow-frame`, fixed under the top bar at the right (320 px wide), above the page and below the backdrop of any dialog. A header with the title "Plan Usage" and a close button "Close" (X icon).
 - it has no mock: it follows the look of the existing panels.
 
 Shows, by `state`:
@@ -41,3 +41,4 @@ Actions:
 ## Requirements served
 
 - `plan-usage_limits/REQ-3`, `plan-usage_limits/REQ-4`, `plan-usage_limits/REQ-5`, `plan-usage_limits/REQ-6`, `plan-usage_limits/REQ-7`, `plan-usage_limits/REQ-13`, `plan-usage_limits/REQ-15`, `plan-usage_limits/REQ-16`, `plan-usage_limits/REQ-17`
+- `plan-dark_blue_theme/REQ-3`

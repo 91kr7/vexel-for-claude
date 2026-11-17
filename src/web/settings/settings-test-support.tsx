@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 import { vi } from 'vitest';
 import { LookStore } from '../theme/look-store';
-import { ThemeStore } from '../theme/theme-store';
+import { type Theme, ThemeStore } from '../theme/theme-store';
 
 const roots: Root[] = [];
 
@@ -39,10 +39,11 @@ function fakeRoot() {
   return { setAttribute: vi.fn() };
 }
 
-export function themeStore(initial: 'light' | 'dark') {
+export function themeStore(initial: Theme) {
   const store = new ThemeStore(fakeRoot(), initial);
   const toggle = vi.spyOn(store, 'toggle');
-  return { store, toggle };
+  const setTheme = vi.spyOn(store, 'setTheme');
+  return { store, toggle, setTheme };
 }
 
 export function lookStore(initial: 'vexel' | 'windows11') {

@@ -383,7 +383,7 @@ describe('SessionList, ended hosted entry actions', () => {
     expect(actionNames(itemOf(html, 'ext-unsaved'))).toEqual(['Dismiss']);
   });
 
-  // plan-wsl_support/REQ-7: the ended external entry sits in the "Ended" group and keeps its dashed external row
+  // plan-wsl_support/REQ-7: the ended external entry sits in the "Ended" group with the classes ended and external
   it('shows an ended external entry in the "Ended" group with the classes ended and external', () => {
     const html = renderList([{ ...external('ext-saved', 'ended', now), resumable: true }]);
     expect(headings(html).map((h) => h.text)).toEqual(['Ended']);

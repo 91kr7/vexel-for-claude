@@ -87,7 +87,7 @@ export function SettingsDialog({ initialTab = 'appearance', onClose, themeStore,
               aria-controls={panelId(id)}
               tabIndex={tab === id ? 0 : -1}
               autoFocus={tab === id}
-              className={tab === id ? 'settings-menu-item selected' : 'settings-menu-item'}
+              className={tab === id ? 'settings-menu-item list-row list-active selected' : 'settings-menu-item list-row'}
               onClick={() => setTab(id)}
               onKeyDown={(event) => onTabKeyDown(event, index)}
             >

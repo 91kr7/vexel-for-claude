@@ -1,18 +1,27 @@
-/* Windows 11 look: applies on top of either theme through data-look on the root. */
+/* Windows 11 look: applies on top of any theme through data-look on the root. */
 
 :root[data-look='windows11'] {
   --font-ui: 'Segoe UI Variable Text', 'Segoe UI Variable', 'Segoe UI', 'Selawik', system-ui, sans-serif;
-
-  --accent-deep: #0078d4;
 
   --caption-close: #c42b1c;
   --caption-close-pressed: #b3261a;
 
   --radius-control: 4px;
   --radius-overlay: 8px;
+
+  /* The mock's shapes keep the Windows corners. The role tokens follow the levels below. */
+  --radius-pill: var(--radius-control);
+  --radius-card: var(--radius-overlay);
+  --radius-frame: var(--radius-overlay);
 }
 
 :root[data-look='windows11']:not([data-theme='light']) {
+  --caption-hover: rgba(255, 255, 255, 0.08);
+  --caption-pressed: rgba(255, 255, 255, 0.05);
+}
+
+/* Dark Blue keeps its own colours in this look. */
+:root[data-look='windows11'][data-theme='dark'] {
   --bg-canvas: #1c1c1c;
   --bg-surface-1: #202020;
   --bg-surface-2: #2b2b2b;
@@ -26,6 +35,7 @@
   --text-muted: #9d9d9d;
 
   --accent-primary: #60cdff;
+  --accent-deep: #0078d4;
   --accent-glow: rgba(96, 205, 255, 0.14);
   --accent-border: rgba(96, 205, 255, 0.4);
   --accent-selection: rgba(96, 205, 255, 0.3);
@@ -34,9 +44,6 @@
   /* Lightened for 4.5:1 on the rose and zinc tints over surface 3. */
   --rose-400: #fb8092;
   --zinc-400: #a6a6ae;
-
-  --caption-hover: rgba(255, 255, 255, 0.08);
-  --caption-pressed: rgba(255, 255, 255, 0.05);
 }
 
 :root[data-look='windows11'][data-theme='light'] {
@@ -53,6 +60,7 @@
   --text-muted: #616161;
 
   --accent-primary: #005fb8;
+  --accent-deep: #0078d4;
   --accent-glow: rgba(0, 95, 184, 0.1);
   --accent-border: rgba(0, 95, 184, 0.35);
   --accent-selection: rgba(0, 95, 184, 0.3);
@@ -76,9 +84,10 @@
     .vx-rail-fab,
     .vx-rail-btn,
     .vx-tooltip,
+    .list-card,
+    .list-row,
     .project-row,
     .project-row-go,
-    .session-entry,
     .session-name-project,
     .session-figure-tokens-tooltip,
     .terminal-zoom-size,
@@ -151,7 +160,7 @@
   bottom: 0;
   z-index: 120;
   display: flex;
-  background-color: var(--bg-surface-2);
+  background-color: var(--role-chrome);
 }
 
 .caption-button {

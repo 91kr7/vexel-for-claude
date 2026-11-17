@@ -315,8 +315,8 @@ test('the session list and the open session are visible side by side', async ({ 
   await expectNoHorizontalScroll(page);
 });
 
-// plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-17, REQ-53: the rail keeps 52 px, the list panel 224 px, the main area takes the rest of the width
-test('the rail keeps its width, the list panel keeps 224 px and the main area reaches the right edge', async ({ page }) => {
+// plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-17, REQ-53: the rail keeps 52 px, the list panel 260 px (plan-dark_blue_theme/REQ-16), the main area takes the rest of the width
+test('the rail keeps its width, the list panel keeps 260 px and the main area reaches the right edge', async ({ page }) => {
   const mainWidths: number[] = [];
   for (const width of [1280, 3840]) {
     await page.setViewportSize({ width, height: 900 });
@@ -326,7 +326,7 @@ test('the rail keeps its width, the list panel keeps 224 px and the main area re
     const side = await box(panel(page));
     const main = await box(mainArea(page));
     expect(railBox.width, `rail width at ${width} px`).toBeCloseTo(52, 0);
-    expect(side.width, `list panel width at ${width} px`).toBeCloseTo(224, 0);
+    expect(side.width, `list panel width at ${width} px`).toBeCloseTo(260, 0);
     expect(main.x + main.width, `main area reaches the right edge at ${width} px`).toBeCloseTo(width, 0);
     mainWidths.push(main.width);
   }

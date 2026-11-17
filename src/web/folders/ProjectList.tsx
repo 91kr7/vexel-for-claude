@@ -21,7 +21,7 @@ function ProjectRow({ project, onChoose }: { project: Project; onChoose?: Choose
   return (
     <button
       type="button"
-      className={project.available ? 'project-row' : 'project-row unavailable'}
+      className={project.available ? 'project-row list-card' : 'project-row list-card unavailable'}
       aria-disabled={project.available ? undefined : true}
       onClick={() => {
         if (project.available) onChoose?.(project);
@@ -41,7 +41,7 @@ function ProjectRow({ project, onChoose }: { project: Project; onChoose?: Choose
               {' · '}
             </>
           )}
-          Last activity <RelativeTime iso={project.lastActivity} />
+          Last activity <RelativeTime iso={project.lastActivity} className="list-number" />
         </span>
       </span>
     </button>
@@ -107,7 +107,7 @@ export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onC
           )}
         </div>
       )}
-      <div className="project-list">
+      <div className="project-list list-scroll">
         {state.kind === 'loading' ? (
           <AreaState kind="loading" size="compact" title="Loading…" />
         ) : state.kind === 'error' ? (

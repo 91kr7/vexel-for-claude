@@ -193,14 +193,14 @@ async function effectiveBackground(target: Locator): Promise<string> {
   });
 }
 
-async function expectPulse(target: Locator, pulses: boolean): Promise<void> {
+async function expectPulse(target: Locator, pulses: boolean, duration = '2s'): Promise<void> {
   const animation = await target.evaluate((el) => {
     const s = getComputedStyle(el);
     return { name: s.animationName, duration: s.animationDuration, count: s.animationIterationCount };
   });
   if (pulses) {
     expect(animation.name, 'the dot pulses').not.toBe('none');
-    expect(animation.duration).toBe('2s');
+    expect(animation.duration).toBe(duration);
     expect(animation.count).toBe('infinite');
   } else {
     expect(animation.name, 'the dot does not pulse').toBe('none');
@@ -273,7 +273,7 @@ test.describe('theme and palette', () => {
     expect(await page.locator('body').evaluate((el) => getComputedStyle(el, '::selection').backgroundColor)).toBe('rgba(140, 207, 255, 0.3)');
   });
 
-  // REQ-3, WebEntry: thin 5 px rounded scrollbars with the strong border thumb, and scrollbar-width thin
+  // REQ-3, WebEntry: thin 5 px rounded scrollbars with the thumb token (the strong border in Dark), and scrollbar-width thin
   test('the stylesheet gives scrollbars the mock look and a thin width', async ({ page }) => {
     await page.goto('/');
     const rules = await page.evaluate(() =>
@@ -288,8 +288,11 @@ test.describe('theme and palette', () => {
     const scrollbar = rules.filter((r) => /::-webkit-scrollbar\s*\{/.test(r));
     expect(scrollbar.join('\n')).toMatch(/width:\s*5px/);
     const thumb = rules.filter((r) => /::-webkit-scrollbar-thumb/.test(r)).join('\n');
-    expect(thumb).toMatch(/var\(--border-strong\)/);
+    expect(thumb).toMatch(/var\(--scrollbar-thumb\)/);
     expect(thumb).toMatch(/border-radius/);
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--scrollbar-thumb').trim()), 'Dark thumb is the strong border').toBe(
+      await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--border-strong').trim()),
+    );
     expect(rules.join('\n')).toMatch(/scrollbar-width:\s*thin/);
   });
 
@@ -318,25 +321,25 @@ test.describe('theme and palette', () => {
 // ---------------------------------------------------------------------------------------------------------------------
 test.describe('page frame', () => {
   // REQ-13, REQ-14, REQ-53 — scenario "The user sees the client in the dark Studio look"
-  // plan-ui_restyle/REQ-1: the bar is 44 px high.
-  test('at 1440 x 900 the frame fills the window: 44 px top bar, 52 px rail, 224 px list panel, main to the right edge', async ({ page }) => {
+  // plan-ui_restyle/REQ-1, plan-dark_blue_theme/REQ-6: the bar is 38 px high.
+  test('at 1440 x 900 the frame fills the window: 38 px top bar, 52 px rail, 260 px list panel, main to the right edge', async ({ page }) => {
     await showOnly(page);
     await page.goto('/');
     const bar = await box(topBar(page));
     expect(bar.x).toBe(0);
     expect(bar.y).toBe(0);
     expect(bar.width).toBeCloseTo(1440, 0);
-    expect(bar.height).toBeCloseTo(44, 0);
+    expect(bar.height).toBeCloseTo(38, 0);
     const railBox = await box(rail(page));
     expect(railBox.x).toBe(0);
-    expect(railBox.y).toBeCloseTo(44, 0);
+    expect(railBox.y).toBeCloseTo(38, 0);
     expect(railBox.width).toBeCloseTo(52, 0);
     expect(railBox.y + railBox.height).toBeCloseTo(900, 0);
     const panelBox = await box(panel(page));
     expect(panelBox.x).toBeCloseTo(52, 0);
-    expect(panelBox.width).toBeCloseTo(224, 0);
+    expect(panelBox.width).toBeCloseTo(260, 0);
     const mainBox = await box(mainArea(page));
-    expect(mainBox.x).toBeCloseTo(276, 0);
+    expect(mainBox.x).toBeCloseTo(312, 0);
     expect(mainBox.x + mainBox.width).toBeCloseTo(1440, 0);
     expect(mainBox.y + mainBox.height).toBeCloseTo(900, 0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(1440);
@@ -346,7 +349,8 @@ test.describe('page frame', () => {
   // REQ-14, REQ-16, plan-ui_restyle/REQ-2, plan-settings_dialog/REQ-24: logo mark, "Vexel for Claude" and "Plan Usage", nothing else
   test('the top bar shows the "VX" mark, "Vexel for Claude" and only "Plan Usage"', async ({ page }) => {
     await page.goto('/');
-    expect(await style(topBar(page), 'background-color')).toBe(SURFACE_2);
+    // plan-dark_blue_theme/REQ-6: the title bar role surface (surface 1 in Dark).
+    expect(await style(topBar(page), 'background-color')).toBe(SURFACE_1);
     expect(await style(topBar(page), 'border-bottom-color')).toBe(BORDER_SUBTLE);
     await expect(topBar(page)).toContainText('Vexel');
     await expect(topBar(page)).toContainText('for Claude');
@@ -360,9 +364,10 @@ test.describe('page frame', () => {
     await expect(mark).toBeVisible();
     await expect(mark).toHaveAttribute('aria-hidden', 'true');
     const markBox = await box(mark);
-    expect(markBox.width).toBeCloseTo(28, 0);
-    expect(markBox.height).toBeCloseTo(28, 0);
-    expect(await style(mark, 'border-radius')).toBe('8px');
+    // TopBar "Shows" (plan-dark_blue_theme): 20 px square, 6 px radius.
+    expect(markBox.width).toBeCloseTo(20, 0);
+    expect(markBox.height).toBeCloseTo(20, 0);
+    expect(await style(mark, 'border-radius')).toBe('6px');
     const gradient = await style(mark, 'background-image');
     expect(gradient).toMatch(/^linear-gradient\(135deg, rgb\(140, 207, 255\).*rgb\(0, 142, 244\)/);
     expect(await style(mark, 'color')).toBe(CANVAS);
@@ -382,22 +387,23 @@ test.describe('page frame', () => {
     await expect(panel(page).getByRole('button', { name: 'New Session' })).toHaveCount(0);
   });
 
-  // REQ-17, REQ-53, plan-recent_projects/REQ-1, plan-settings_dialog/REQ-1: 52 px rail, 34 x 34 px buttons, the accent gradient "New Claude Code Session", a divider, "Settings" at the bottom
-  test('the rail shows "New Claude Code Session", a divider, "Sessions", "Projects", "Resume" and "Settings", all 34 x 34 px', async ({ page }) => {
+  // REQ-17, REQ-53, plan-recent_projects/REQ-1, plan-settings_dialog/REQ-1, plan-dark_blue_theme/REQ-9, REQ-10: 52 px rail, 32 x 32 px buttons, the accent-tinted "New Claude Code Session", a divider, "Settings" at the bottom
+  test('the rail shows "New Claude Code Session", a divider, "Sessions", "Projects", "Resume" and "Settings", all 32 x 32 px', async ({ page }) => {
     await page.goto('/');
     await expect(rail(page).getByRole('button')).toHaveCount(5);
     for (const name of ['New Claude Code Session', 'Sessions', 'Projects', 'Resume', 'Settings']) {
       const b = await box(railButton(page, name));
-      expect(b.width, name).toBeCloseTo(34, 0);
-      expect(b.height, name).toBeCloseTo(34, 0);
+      expect(b.width, name).toBeCloseTo(32, 0);
+      expect(b.height, name).toBeCloseTo(32, 0);
     }
     const fab = railButton(page, 'New Claude Code Session');
-    expect(await style(fab, 'background-image')).toMatch(/^linear-gradient\(135deg, rgb\(140, 207, 255\).*rgb\(0, 142, 244\)/);
-    expect(await style(fab, 'color')).toBe(CANVAS);
+    expect(await style(fab, 'background-image')).toBe('none');
+    expect(await style(fab, 'color')).toBe(ACCENT);
     const fabBox = await box(fab);
     const sessionsBox = await box(railButton(page, 'Sessions'));
     expect(sessionsBox.y - (fabBox.y + fabBox.height), 'room for the divider').toBeGreaterThan(6);
-    expect(await style(rail(page), 'background-color')).toBe(SURFACE_1);
+    // plan-dark_blue_theme: the rail takes the canvas role.
+    expect(await style(rail(page), 'background-color')).toBe(CANVAS);
   });
 
   // REQ-18 — scenario "The user sees the client in the dark Studio look": tooltip on hover, no label under the buttons
@@ -414,19 +420,19 @@ test.describe('page frame', () => {
     expect(await style(tooltip, 'background-color')).toBe(SURFACE_3);
     for (const name of ['Sessions', 'Resume']) {
       const b = await box(railButton(page, name));
-      expect(b.height, `${name}: no label under the icon`).toBeCloseTo(34, 0);
+      expect(b.height, `${name}: no label under the icon`).toBeCloseTo(32, 0);
     }
   });
 
-  // REQ-19: the active destination has accent glow, accent border and the 2.5 px bar on the left
-  test('"Sessions" has the active style: accent glow, accent border and the 2.5 px accent bar', async ({ page }) => {
+  // REQ-19, plan-dark_blue_theme/REQ-11: the active destination has accent glow, accent border and the 3 px bar on the left
+  test('"Sessions" has the active style: accent glow, accent border and the 3 px accent bar', async ({ page }) => {
     await page.goto('/');
     const sessions = railButton(page, 'Sessions');
     await expect(sessions).toHaveAttribute('aria-current', 'page');
     expect(await style(sessions, 'background-color')).toBe(ACCENT_GLOW);
     expect(await style(sessions, 'border-top-color')).toBe(ACCENT_BORDER);
     expect(await style(sessions, 'color')).toBe(ACCENT);
-    expect(await leftBar(sessions, ACCENT, 2.5)).toBe(true);
+    expect(await leftBar(sessions, ACCENT, 3)).toBe(true);
     expect(await style(railButton(page, 'Resume'), 'background-color')).toBe('rgba(0, 0, 0, 0)');
   });
 
@@ -497,9 +503,9 @@ test.describe('session list', () => {
     await page.goto('/');
     await expect(entry(page, ended)).toContainText('Ended');
 
-    // REQ-23: dot, folder name, mono details, 6 px radius, no avatar
+    // REQ-23: dot, folder name, mono details, no avatar; 7 px card corners (plan-dark_blue_theme/REQ-18)
     const idleRow = entry(page, idle);
-    expect(await style(idleRow, 'border-top-left-radius')).toBe('6px');
+    expect(await style(idleRow, 'border-top-left-radius')).toBe('7px');
     await expect(idleRow.locator('.avatar')).toHaveCount(0);
     const idleDot = idleRow.locator('[aria-hidden="true"]').first();
     const dotBox = await box(idleDot);
@@ -507,23 +513,18 @@ test.describe('session list', () => {
     expect(dotBox.height).toBeCloseTo(8, 0);
     expect(await style(idleDot, 'background-color')).toBe(ZINC_400);
     await expectPulse(idleDot, false);
-    expect(await style(idleRow.getByText('Idle', { exact: true }), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     expect(await style(idleRow.locator('time'), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
 
-    // REQ-23: surface 2 on hover
+    // plan-dark_blue_theme/REQ-20: the active card surface (surface 3) on hover
     await idleRow.hover();
-    await expect.poll(() => style(idleRow, 'background-color')).toBe(SURFACE_2);
-
-    // REQ-25: taller than 30 px only for the two lines
-    const rowBox = await box(idleRow);
-    expect(rowBox.height).toBeGreaterThan(30);
-    expect(rowBox.height).toBeLessThanOrEqual(48 + TOLERANCE);
+    await expect.poll(() => style(idleRow, 'background-color')).toBe(SURFACE_3);
 
     // REQ-8, REQ-9, REQ-26: emerald pulsing dot and the emerald progress bar
     const workingRow = entry(page, working);
     const workingDot = workingRow.locator('[aria-hidden="true"]').first();
     expect(await style(workingDot, 'background-color')).toBe(EMERALD_400);
-    await expectPulse(workingDot, true);
+    // plan-dark_blue_theme/REQ-23: the working dot pulses softly in 2.2 s
+    await expectPulse(workingDot, true, '2.2s');
     expect(await style(workingRow.getByText('Running', { exact: true }), 'color')).toBe(EMERALD_400);
     const bar = workingRow.locator('.progress-bar');
     await expect(bar).toBeVisible();
@@ -538,15 +539,15 @@ test.describe('session list', () => {
     expect(await style(endedRow, 'color')).toBe(TEXT_MUTED);
     expect(await style(endedRow.locator('[aria-hidden="true"]').first(), 'background-color')).toBe(ZINC_400);
 
-    // REQ-27: the external row has a dashed border
+    // plan-dark_blue_theme/REQ-43: the external card has the solid card border
     const externalRow = entry(page, external.folder);
-    expect(await style(externalRow, 'border-top-style')).toBe('dashed');
+    expect(await style(externalRow, 'border-top-style')).toBe('solid');
 
     // REQ-28: the needs-input card in the permission-banner look, amber tag and accent "Reply"
     const card = panel(page).locator('li').filter({ has: page.getByTitle(asking, { exact: true }) }).locator(':scope > *').first();
     expect(await style(card, 'background-color')).toBe(SURFACE_2);
     expect(await style(card, 'border-top-color')).toBe(AMBER_500_40);
-    expect(await style(card, 'border-top-left-radius')).toBe('12px');
+    expect(await style(card, 'border-top-left-radius'), 'plan-dark_blue_theme/REQ-18: 7 px card corners').toBe('7px');
     const tag = card.getByText('Needs Input', { exact: true });
     expect(await style(tag, 'text-transform')).toBe('uppercase');
     expect(await style(tag, 'color')).toBe(AMBER_300);
@@ -554,15 +555,15 @@ test.describe('session list', () => {
     expect(await style(reply, 'background-color')).toBe(ACCENT);
     expect(await style(reply, 'color')).toBe(CANVAS);
 
-    // REQ-24: a click opens the working session; its row gets the glow and the 2 px accent bar
+    // REQ-24, plan-dark_blue_theme/REQ-19: a click opens the working session; its card gets the active surface and the accent bar
     await openFromList(page, working);
     await expect(workingRow).toHaveAttribute('aria-current', 'true');
-    await expect.poll(() => style(workingRow, 'background-color')).toBe(ACCENT_GLOW);
-    expect(await leftBar(workingRow, ACCENT, 2)).toBe(true);
+    await expect.poll(() => style(workingRow, 'background-color')).toBe(SURFACE_3);
+    expect(await leftBar(workingRow, ACCENT, 3.5)).toBe(true);
   });
 
-  // REQ-27: an open external row keeps its dashed border
-  test('an open external entry keeps its dashed border and gets the accent bar', async ({ page }) => {
+  // plan-dark_blue_theme/REQ-43, REQ-19: an open external card has the solid accent border and the accent bar
+  test('an open external entry has the solid accent border and gets the accent bar', async ({ page }) => {
     const external = { id: 'ext-studio-2', folder: '/srv/esterni/web-app', label: 'Correggi', state: 'idle', lastActivity: new Date().toISOString(), external: true };
     const socket = await showOnly(page, [external]);
     await page.goto('/');
@@ -570,9 +571,11 @@ test.describe('session list', () => {
     await row.getByTitle(external.folder, { exact: true }).click();
     (await socket()).send(JSON.stringify({ type: 'items', items: [] }));
     await expect(row).toHaveAttribute('aria-current', 'true');
-    expect(await style(row, 'border-top-style')).toBe('dashed');
-    await expect.poll(() => style(row, 'background-color')).toBe(ACCENT_GLOW);
-    expect(await leftBar(row, ACCENT, 2)).toBe(true);
+    expect(await style(row, 'border-top-style')).toBe('solid');
+    await expect.poll(() => style(row, 'border-top-color')).toBe(ACCENT);
+    // plan-dark_blue_theme/REQ-19: the active card surface (surface 3) and the accent bar
+    await expect.poll(() => style(row, 'background-color')).toBe(SURFACE_3);
+    expect(await leftBar(row, ACCENT, 3.5)).toBe(true);
   });
 
   // REQ-9, Decisions "Motion": under reduced motion the dots stop
@@ -600,7 +603,7 @@ test.describe('session list', () => {
     const dot = row.locator('[aria-hidden="true"]').first();
     expect(await style(dot, 'background-color')).toBe(AMBER_400);
     await expectPulse(dot, true);
-    expect(await style(row, 'border-top-style')).toBe('dashed');
+    expect(await style(row, 'border-top-style'), 'plan-dark_blue_theme/REQ-43: solid card border').toBe('solid');
     const chip = row.getByText('External', { exact: true });
     expect(await style(chip, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     await expect(button(row, 'Reply')).toHaveCount(0);
@@ -624,7 +627,7 @@ test.describe('session list', () => {
 // ---------------------------------------------------------------------------------------------------------------------
 test.describe('hosted session view', () => {
   // REQ-30, REQ-31, REQ-32, REQ-34, REQ-35, REQ-42 — scenario "The open hosted session uses the Studio subbar and terminal"
-  test('the open working session has the 40 px subbar, the 12 px terminal on canvas and no key badges; the snackbar sits at the bottom right', async ({ page, request }) => {
+  test('the open working session has the 44 px subbar, the 12 px terminal on canvas and no key badges; the snackbar sits at the bottom right', async ({ page, request }) => {
     await showOnly(page);
     const open = await newFolder('billing-api');
     const other = await newFolder('web-dashboard');
@@ -634,10 +637,10 @@ test.describe('hosted session view', () => {
     await openFromList(page, open);
     await startWorking(request, openId);
 
-    // REQ-30, REQ-53, plan-session_list_width/REQ-15, REQ-20: 40 px subbar with name, pill and actions, no avatar; the mono path is in the footer
+    // REQ-30, REQ-53, plan-session_list_width/REQ-15, REQ-20, plan-dark_blue_theme/REQ-25: 44 px subbar with name, pill and actions, no avatar; the mono path is in the footer
     const head = subbar(page);
     await expect(head.getByRole('heading', { level: 2, name: 'billing-api' })).toBeVisible();
-    expect((await box(head)).height).toBeCloseTo(40, 0);
+    expect((await box(head)).height).toBeCloseTo(44, 0);
     await expect(head).not.toContainText(open);
     const pathText = mainArea(page).locator('footer').getByText(open, { exact: true });
     expect(await style(pathText, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
@@ -663,10 +666,11 @@ test.describe('hosted session view', () => {
     await expect(stop).toContainText('■');
     for (const action of [interrupt, stop]) expect(await style(action, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
 
-    // REQ-34: the terminal panel on canvas, subtle border, 8 px radius, 12 px mono
+    // REQ-34, plan-dark_blue_theme/REQ-26: the terminal panel on canvas, strong role border once the focus leaves it, 8 px radius, 12 px mono
     const region = page.getByRole('region', { name: 'Terminal: billing-api' });
     expect(await style(region, 'background-color')).toBe(CANVAS);
-    expect(await style(region, 'border-top-color')).toBe(BORDER_SUBTLE);
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await expect.poll(() => style(region, 'border-top-color')).toBe(await colour(page, 'var(--role-border-strong)'));
     expect(await style(region, 'border-top-left-radius')).toBe('8px');
     expect(await effectiveBackground(page.locator('.xterm-screen'))).toBe(CANVAS);
     expect(await px(terminal(page), 'font-size')).toBe(12);
@@ -691,14 +695,14 @@ test.describe('hosted session view', () => {
     expect(await box(region), 'the terminal panel does not resize for the snackbar').toEqual(before);
   });
 
-  // plan-session_list_width/REQ-28: the footer under the terminal, in place of the hint row, is 40 px high
-  test('the footer under the terminal is 40 px high', async ({ page, request }) => {
+  // plan-session_list_width/REQ-28, plan-dark_blue_theme/REQ-12: the footer under the terminal, in place of the hint row, is 32 px high
+  test('the footer under the terminal is 32 px high', async ({ page, request }) => {
     await showOnly(page);
     const folder = await newFolder('footer-row');
     await startViaApi(request, folder);
     await page.goto('/');
     await openFromList(page, folder);
-    expect((await box(mainArea(page).locator('footer'))).height).toBeCloseTo(40, 0);
+    expect((await box(mainArea(page).locator('footer'))).height).toBeCloseTo(32, 0);
   });
 });
 
@@ -726,8 +730,8 @@ test.describe('external session view', () => {
     const claudeMessage = mainArea(page).getByRole('article', { name: 'Claude', exact: true });
     await expect(userMessage).toContainText('Esegui i test');
 
-    // REQ-53: the subbar of the external view is 40 px high too
-    expect.soft((await box(subbar(page))).height, 'external subbar height').toBeCloseTo(40, 0);
+    // REQ-53, plan-dark_blue_theme/REQ-25: the subbar of the external view is 44 px high too
+    expect.soft((await box(subbar(page))).height, 'external subbar height').toBeCloseTo(44, 0);
 
     // REQ-33: accent "Resume Here", neutral mono "Read-only"
     const resume = button(mainArea(page), 'Resume Here');
@@ -770,7 +774,7 @@ test.describe('external session view', () => {
     const code = claudeMessage.getByText('npm test', { exact: true });
     expect(await style(code, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     expect(await style(code, 'background-color')).toBe(SURFACE_2);
-    expect(await style(code, 'border-top-left-radius')).toBe('4px');
+    expect(await style(code, 'border-top-left-radius')).toBe('5px');
     await expect(claudeMessage).not.toContainText('`');
 
     // REQ-39: the tool card row, then the open output on canvas
@@ -832,7 +836,7 @@ test.describe('dialogs', () => {
     expect(await style(backdrop, 'backdrop-filter')).toBe('none');
     expect(await style(dialog, 'background-color')).toBe(SURFACE_2);
     expect(await style(dialog, 'border-top-color')).toBe(BORDER_STRONG);
-    expect(await style(dialog, 'border-top-left-radius')).toBe('12px');
+    expect(await style(dialog, 'border-top-left-radius')).toBe('8px');
     expect((await box(dialog)).width).toBeLessThanOrEqual(448 + TOLERANCE);
 
     // REQ-44: the accent dot, the title and the mono "[Esc]"
@@ -860,7 +864,7 @@ test.describe('dialogs', () => {
     expect(await style(field, 'background-color')).toBe(CANVAS);
     expect(await style(field, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     await expect(field).toBeFocused();
-    expect(await style(field, 'border-top-color')).toBe(ACCENT_BORDER);
+    expect(await style(field, 'border-top-color')).toBe(ACCENT);
     expect((await box(label)).y).toBeLessThan((await box(field)).y);
 
     // REQ-47: surface-1 footer, neutral "Cancel", accent "Start Session"
@@ -945,7 +949,8 @@ test.describe('dialogs', () => {
     const text = warning.getByText(/This session is still running/);
     const banner = text.locator('xpath=ancestor::*[contains(@class, "vx-surface-2")][1]');
     expect(await style(banner, 'border-top-color')).toBe(AMBER_500_40);
-    expect(await style(banner, 'border-top-left-radius')).toBe('12px');
+    expect(await style(banner, 'border-top-left-radius')).toBe('7px');
+    expect(await style(banner, 'box-shadow')).toContain('rgba(0, 0, 0, 0.28) 0px 2px 10px 0px');
     expect(await style(banner.locator('svg'), 'color')).toBe(AMBER_400);
     const primary = button(warning, 'Resume Anyway');
     expect(await style(primary, 'color')).toBe(AMBER_400);

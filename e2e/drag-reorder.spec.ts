@@ -52,7 +52,7 @@ async function groupOrder(page: Page, title: string): Promise<string[]> {
 }
 
 /**
- * Every 2 px `--accent-primary` line as wide as the entries, named by the gap it sits in:
+ * Every 2 px `--accent-primary` line as wide as the entries, named by the 8 px gap whose middle it sits in:
  * "above X" before the first entry, "between X and Y", "below X" after the last entry.
  */
 async function dropLines(page: Page): Promise<string[]> {
@@ -77,8 +77,9 @@ async function dropLines(page: Page): Promise<string[]> {
           if (style.height !== '2px' || style.backgroundColor !== accent) continue;
           const top = style.top !== 'auto' ? box.top + parseFloat(style.top) : box.bottom - parseFloat(style.bottom) - 2;
           const siblings = [...(li.parentElement?.children ?? [])];
-          const prev = siblings.filter((el) => Math.abs(el.getBoundingClientRect().bottom - top) < 1).at(0);
-          const next = siblings.filter((el) => Math.abs(el.getBoundingClientRect().top - (top + 2)) < 1).at(0);
+          const middle = top + 1;
+          const prev = siblings.filter((el) => Math.abs(el.getBoundingClientRect().bottom - (middle - 4)) < 1).at(0);
+          const next = siblings.filter((el) => Math.abs(el.getBoundingClientRect().top - (middle + 4)) < 1).at(0);
           const where = prev && next ? `between ${name(prev)} and ${name(next)}` : next ? `above ${name(next)}` : prev ? `below ${name(prev)}` : 'not in a gap';
           const wide = Math.abs(parseFloat(style.width) - box.width) < 1;
           found.push(wide ? where : `${where} (not as wide as the entry)`);

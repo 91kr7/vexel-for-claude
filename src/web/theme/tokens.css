@@ -59,6 +59,7 @@
   --term-match-bg: #713f12;
   --term-match-current-bg: #92400e;
   --term-match-current-border: #fcd34d;
+  --term-frame: var(--role-border-strong);
   --color-error: var(--rose-400);
   --color-focus-ring: var(--accent-primary);
   --color-backdrop: rgba(0, 0, 0, 0.65);
@@ -79,6 +80,10 @@
   --preview-light-surface: #e4ded2;
   --preview-light-line: #1c1917;
   --preview-light-accent: #0065ae;
+  --preview-dark-blue-canvas: #12151e;
+  --preview-dark-blue-surface: #212736;
+  --preview-dark-blue-line: #f1f5f9;
+  --preview-dark-blue-accent: #38bdf8;
 
   --window-close: #e0443c;
   --window-minimize: #e8b616;
@@ -93,6 +98,33 @@
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+  /* Surface roles of the mock: each points to a level of the active set. */
+  --role-canvas: var(--bg-canvas);
+  --role-list: var(--bg-surface-1);
+  --role-chrome: var(--bg-surface-1);
+  --role-card: var(--bg-surface-2);
+  --role-raised: var(--bg-surface-2);
+  --role-card-active: var(--bg-surface-3);
+  --role-border-subtle: var(--border-subtle);
+  --role-border-strong: var(--border-strong);
+  --role-accent: var(--accent-primary);
+  --role-accent-glow: var(--accent-glow);
+  --role-accent-border: var(--accent-border);
+
+  --scrollbar-thumb: var(--border-strong);
+  --scrollbar-thumb-hover: var(--scrollbar-thumb);
+  --field-bg: var(--role-canvas);
+  --field-border: var(--role-border-strong);
+  --field-focus-ring: var(--role-accent);
+
+  /* Shapes of the mock, the same in every theme. */
+  --radius-pill: 5px;
+  --radius-card: 7px;
+  --radius-frame: 8px;
+  --border-pill: 1px solid var(--role-border-strong);
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.28);
+  --shadow-frame: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
 }
 
 :root[data-theme='light'] {
@@ -132,4 +164,46 @@
   --repo-color-4: #e11d48;
   --repo-color-5: #4d7c0f;
   --repo-color-6: #1d4ed8;
+}
+
+/* Dark Blue: colours of .sdd/mockups/dark_blue_theme/mock.html. */
+:root[data-theme='dark-blue'] {
+  --bg-canvas: #12151e;
+  --bg-surface-1: #181c27;
+  --bg-surface-2: #1b202c;
+  --bg-surface-3: #212736;
+  --bg-glass: rgba(29, 34, 48, 0.86);
+  --border-subtle: #2e3546;
+  --border-strong: #384156;
+  --specular-top: rgba(255, 255, 255, 0.05);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  /* Mock #64748b (slate-500), lightened to reach 4.5:1 on surface 3. */
+  --text-muted: #808fa4;
+
+  --accent-primary: #38bdf8;
+  --accent-secondary: #7dd3fc;
+  --accent-glow: rgba(56, 189, 248, 0.16);
+  --accent-border: rgba(56, 189, 248, 0.42);
+  --accent-deep: #0284c7;
+  --accent-selection: rgba(56, 189, 248, 0.3);
+  --on-accent: #090d16;
+
+  /* Ended tone of the mock: slate in place of zinc. */
+  --zinc-400: #94a3b8;
+  --zinc-500: #64748b;
+  --zinc-500-15: rgba(100, 116, 139, 0.15);
+  --zinc-500-30: rgba(100, 116, 139, 0.3);
+
+  --term-bg: #11141c;
+  --term-frame: #333b4f;
+
+  --role-list: #161a24;
+  --role-raised: #1d2230;
+
+  --scrollbar-thumb: var(--border-subtle);
+  --scrollbar-thumb-hover: #434e66;
+  --field-bg: var(--role-raised);
+  --field-border: #3b445c;
+  --field-focus-ring: rgba(56, 189, 248, 0.25);
 }

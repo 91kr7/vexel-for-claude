@@ -4,10 +4,13 @@ import { costText, INCOMPLETE_COST_TEXT, percentOf, shortTokens, usageLevelOf } 
 
 function ContextChip({ context }: { context: ContextOccupancy }) {
   const percent = percentOf(context);
+  const level = usageLevelOf(percent);
+  const filled = Math.min(100, Math.max(0, percent));
   return (
     <span className="mono-chip vx-surface-2 session-figure-context">
+      {filled > 0 && <span className={`session-figure-context-fill usage-${level}`} style={{ width: `${filled}%` }} aria-hidden="true" />}
       <span className="session-figure-label">Context</span>
-      <span className={`usage-${usageLevelOf(percent)}`}>
+      <span className={`usage-${level}`}>
         {`${shortTokens(context.used)} / ${shortTokens(context.window)} · ${percent}%`}
       </span>
     </span>

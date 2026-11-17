@@ -6,9 +6,16 @@ import { SessionFigures } from './SessionFigures';
 const text = (html: string) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 const render = (usage?: SessionUsage) => renderToStaticMarkup(<SessionFigures usage={usage} />);
 
-/** The context chip: the `.mono-chip` element that holds "Context". */
+/** The context chip: the `.mono-chip` element that holds "Context", after its empty fill when there is one. */
 function chipOf(html: string): string | undefined {
-  return elementAt(html, html.search(/<span[^>]*class="[^"]*\bmono-chip\b[^"]*"[^>]*>\s*(<span[^>]*>)?\s*Context\b/));
+  return elementAt(html, html.search(/<span[^>]*class="[^"]*\bmono-chip\b[^"]*"[^>]*>\s*(<span[^>]*><\/span>)?\s*(<span[^>]*>)?\s*Context\b/));
+}
+
+/** The decorative fill of a context chip: an empty `aria-hidden` span with a width. */
+function fillOf(chip: string): { tag: string; width: string | undefined } | undefined {
+  const tag = /<span[^>]*aria-hidden="true"[^>]*><\/span>/.exec(chip)?.[0];
+  if (!tag) return undefined;
+  return { tag, width: /style="[^"]*\bwidth:\s*([^;"]+)/.exec(tag)?.[1]?.trim() };
 }
 
 /** The tokens chip: the `.mono-chip` element whose text starts with "<count> tokens". */
@@ -77,6 +84,50 @@ describe('SessionFigures, context chip', () => {
     expect(chipOf(html)).toBeUndefined();
     expect(text(html)).not.toContain('Context');
     expect(text(html)).not.toMatch(/\b0%/);
+  });
+});
+
+describe('SessionFigures, context fill', () => {
+  // plan-dark_blue_theme/REQ-13: the fill is as wide as the percentage of the pill
+  it.each([
+    [45_200, '23%'],
+    [150_000, '75%'],
+    [200_000, '100%'],
+  ])('gives %d used tokens of 200k a fill %s wide', (used, width) => {
+    const fill = fillOf(chipOf(render({ context: { used, window: 200_000 } }))!);
+    expect(fill).toBeDefined();
+    expect(fill!.width).toBe(width);
+  });
+
+  // SessionFigures "Shows": the width is kept between 0 and 100
+  it('keeps the fill at 100% when the context is over the window', () => {
+    const chip = chipOf(render({ context: { used: 260_000, window: 200_000 } }))!;
+    expect(text(chip)).toContain('130%');
+    expect(fillOf(chip)?.width).toBe('100%');
+  });
+
+  // SessionFigures "Shows": no fill at 0 %
+  it.each([0, 900])('shows no fill at 0%% (%d used tokens of 200k)', (used) => {
+    const chip = chipOf(render({ context: { used, window: 200_000 } }))!;
+    expect(text(chip)).toContain('· 0%');
+    expect(fillOf(chip)).toBeUndefined();
+  });
+
+  // plan-dark_blue_theme/REQ-13, SessionFigures "Shows": the fill colour follows the usage level
+  it.each([
+    [138_000, 'usage-normal'],
+    [140_000, 'usage-warning'],
+    [180_000, 'usage-error'],
+  ])('gives the fill of %d used tokens of 200k the level %s', (used, level) => {
+    const tag = fillOf(chipOf(render({ context: { used, window: 200_000 } }))!)!.tag;
+    const classes = /class="([^"]*)"/.exec(tag)?.[1]?.split(/\s+/) ?? [];
+    expect(classes).toContain(level);
+    for (const other of ['usage-normal', 'usage-warning', 'usage-error'].filter((name) => name !== level)) expect(classes).not.toContain(other);
+  });
+
+  // SessionFigures "Shows": the fill is decorative and adds no text
+  it('keeps the chip text unchanged by the fill', () => {
+    expect(text(chipOf(render({ context: { used: 45_200, window: 200_000 } }))!)).toBe('Context 45.2k / 200k · 23%');
   });
 });
 

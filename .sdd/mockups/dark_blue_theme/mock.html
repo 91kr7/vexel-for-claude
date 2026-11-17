@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vexel for Claude v0.6.1 — UI Redesign</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              base: '#12151E',
+              chrome: '#181C27',
+              sidebar: '#161A24',
+              header: '#181C27',
+              terminal: '#11141C',
+              elevated: '#1D2230',
+              card: '#1B202C',
+              cardActive: '#212736',
+            },
+            borderSubtle: '#2E3546',
+            borderStrong: '#384156',
+            accent: {
+              cyan: '#38BDF8',
+              indigo: '#6366F1',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #12151E;
+      color: #F1F5F9;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Custom scrollbar for terminal */
+    .terminal-scroll::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    .terminal-scroll::-webkit-scrollbar-track {
+      background: rgba(18, 21, 30, 0.5);
+    }
+    .terminal-scroll::-webkit-scrollbar-thumb {
+      background: #2E3546;
+      border-radius: 9999px;
+    }
+    .terminal-scroll::-webkit-scrollbar-thumb:hover {
+      background: #434E66;
+    }
+
+    /* Tabular numbers for aligned metrics */
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* High-contrast session cards */
+    .session-card-active {
+      background-color: #212736;
+      border: 1px solid #38BDF8;
+      border-left: 3.5px solid #38BDF8;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+    }
+    .session-card-inactive {
+      background-color: #1B202C;
+      border: 1px solid #2E3546;
+      border-left: 3.5px solid transparent;
+    }
+    .session-card-inactive:hover {
+      background-color: #202634;
+      border-color: #434E66;
+    }
+
+    /* Soft pulse for Running status dot */
+    @keyframes pulse-glow {
+      0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55);
+      }
+      50% {
+        opacity: 0.8;
+        box-shadow: 0 0 0 4px rgba(52, 211, 153, 0);
+      }
+    }
+    .dot-running {
+      animation: pulse-glow 2.2s infinite ease-in-out;
+    }
+
+    /* Terminal container with clear perimeter & subtle cyan focus ring */
+    .terminal-frame {
+      background-color: #11141C;
+      border: 1px solid #333B4F;
+      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .terminal-frame:focus-within {
+      border-color: rgba(56, 189, 248, 0.75);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.22), 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Prompt box distinct borders */
+    .prompt-container {
+      background-color: #1D2230;
+      border: 1px solid #3B445C;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .prompt-container:focus-within {
+      border-color: #38BDF8;
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+    }
+
+    /* Inline code / path highlights inside terminal */
+    .term-path {
+      color: #7DD3FC;
+    }
+
+    /* User prompt message block in terminal */
+    .user-prompt-block {
+      background-color: #1D2230;
+      border: 1px solid #384156;
+      border-left: 3px solid #64748B;
+      border-radius: 6px;
+    }
+
+    /* Toast notification */
+    .toast-enter {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .toast-exit {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col antialiased selection:bg-sky-500/30 selection:text-sky-100">
+
+  <!-- 1. TOP WINDOW TITLEBAR (38px) -->
+  <header class="h-[38px] bg-[#181C27] border-b border-[#2E3546] px-3.5 flex items-center justify-between shrink-0">
+    <!-- Left: Traffic Lights + App Identity (No divider line) -->
+    <div class="flex items-center gap-3.5">
+      <!-- macOS Window Controls -->
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-black/30"></span>
+        <span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-black/30"></span>
+        <span class="w-3 h-3 rounded-full bg-[#27C93F] border border-black/30"></span>
+      </div>
+
+      <!-- Original Cyan Brand Badge + Name -->
+      <div class="flex items-center gap-2">
+        <div class="w-5 h-5 rounded-[6px] bg-[#38BDF8] flex items-center justify-center shadow-sm">
+          <span class="text-[10px] font-extrabold tracking-tighter text-[#090D16] font-mono">VX</span>
+        </div>
+        <span class="text-[13px] font-semibold tracking-[-0.015em] text-slate-50">Vexel</span>
+        <span class="text-[11.5px] font-normal text-slate-400 tracking-tight">for Claude v0.6.1</span>
+      </div>
+    </div>
+
+    <!-- Right: Single Usage / Gauge Icon Button -->
+    <div class="flex items-center">
+      <button onclick="showToast('Utilizzo risorse & rate limits: 19% contesto utilizzato')" title="Usage & Rate Limits"
+        class="w-7 h-7 rounded-full bg-[#212736] border border-[#384156] hover:border-sky-400/60 hover:bg-[#272E40] flex items-center justify-center text-slate-300 hover:text-white transition-colors">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. MAIN WORKSPACE ROW -->
+  <div class="flex-1 flex min-h-0 overflow-hidden">
+
+    <!-- 2A. LEFT ACTIVITY BAR (52px) -->
+    <aside class="w-[52px] bg-[#12151E] border-r border-[#2E3546] flex flex-col items-center justify-between py-2.5 shrink-0">
+      <!-- Top Navigation Group -->
+      <div class="flex flex-col items-center gap-3 w-full">
+        <!-- New Session Button (+) -->
+        <button onclick="showToast('Creazione nuova sessione Claude Code...')" title="New Session"
+          class="w-8 h-8 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/50 text-sky-300 hover:text-white flex items-center justify-center transition-all duration-150 shadow-sm">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"/><path d="M12 5v14"/>
+          </svg>
+        </button>
+
+        <div class="w-6 h-[1px] bg-[#2E3546]"></div>
+
+        <!-- Navigation Icons -->
+        <nav class="flex flex-col items-center gap-2 w-full">
+          <!-- Active Item: Terminal Sessions -->
+          <button title="Active Sessions" class="relative w-full h-9 flex items-center justify-center text-white">
+            <span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]"></span>
+            <div class="w-8 h-8 rounded-lg bg-[#212736] border border-[#3B445C] flex items-center justify-center shadow-sm">
+              <svg class="w-4 h-4 text-sky-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/>
+              </svg>
+            </div>
+          </button>
+
+          <!-- Inactive Item: Workspaces / Folders -->
+          <button onclick="showToast('Esplora directory di lavoro')" title="Project Folders" class="relative w-full h-9 flex items-center justify-center text-slate-400 hover:text-slate-100 transition-colors">
+            <div class="w-8 h-8 rounded-lg border border-transparent hover:border-[#384156] hover:bg-[#1B202C] flex items-center justify-center transition-colors">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>
+              </svg>
+            </div>
+          </button>
+
+          <!-- Inactive Item: Session History -->
+          <button onclick="showToast('Cronologia sessioni archiviate')" title="Session History" class="relative w-full h-9 flex items-center justify-center text-slate-400 hover:text-slate-100 transition-colors">
+            <div class="w-8 h-8 rounded-lg border border-transparent hover:border-[#384156] hover:bg-[#1B202C] flex items-center justify-center transition-colors">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>
+              </svg>
+            </div>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Bottom Pinned Settings Gear Icon (No top divider line) -->
+      <div class="mt-auto flex flex-col items-center w-full">
+        <button onclick="showToast('Apertura Settings (Appearance, Shortcuts, Updates)')" title="Settings"
+          class="w-8 h-8 rounded-lg border border-transparent hover:border-[#384156] hover:bg-[#1B202C] text-slate-400 hover:text-slate-100 flex items-center justify-center transition-colors">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 2B. SESSIONS SIDEBAR (260px) -->
+    <aside id="sessionsSidebar" class="w-[260px] bg-[#161A24] border-r border-[#2E3546] flex flex-col shrink-0 transition-all duration-200">
+      <!-- Sidebar Header -->
+      <div class="px-3.5 pt-3 pb-2.5 border-b border-[#2E3546]">
+        <div class="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-400">Sessions</div>
+        <div class="mt-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400/85 flex items-center justify-between">
+          <span>Running</span>
+          <span class="px-1.5 py-0.2 rounded bg-[#212736] border border-[#384156] font-mono text-[10px] text-slate-300">1</span>
+        </div>
+      </div>
+
+      <!-- Session Cards Container -->
+      <div id="sessionList" class="flex-1 overflow-y-auto p-2.5 space-y-2">
+        <!-- Populated dynamically by JS -->
+      </div>
+    </aside>
+
+    <!-- 2C. MAIN TERMINAL WORKSPACE -->
+    <main class="flex-1 bg-[#12151E] flex flex-col min-w-0">
+
+      <!-- Session Top Header Bar (44px) -->
+      <div class="h-[44px] bg-[#181C27] border-b border-[#2E3546] px-4 flex items-center justify-between gap-3 shrink-0">
+        <!-- Left: Session Title + Prompt Summary Pill -->
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <h1 id="headerSessionName" class="text-[13.5px] font-semibold tracking-[-0.015em] text-slate-50 shrink-0">vexel-for-claude</h1>
+          <span id="headerSessionTag" class="px-2.5 py-0.5 rounded-[5px] bg-[#212736] border border-[#3B445C] font-mono text-[11px] text-slate-300 truncate max-w-[420px]">
+            /sdd-auto vorrei che mi implementassi in basso a sinistra nell...
+          </span>
+        </div>
+
+        <!-- Right: Tools, Status Indicator & Semantic Hover Action Buttons -->
+        <div class="flex items-center gap-2.5 shrink-0">
+          <!-- Utility Icons -->
+          <div class="flex items-center gap-1 text-slate-300">
+            <button onclick="showToast('Branch git attivo: main')" title="Git Branch" class="w-7 h-7 rounded-md border border-transparent hover:border-[#3B445C] hover:bg-[#212736] hover:text-white flex items-center justify-center transition-colors">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+            </button>
+            <button onclick="showToast('Cerca nell’output del terminale (Alt+K)')" title="Search Output" class="w-7 h-7 rounded-md border border-transparent hover:border-[#3B445C] hover:bg-[#212736] hover:text-white flex items-center justify-center transition-colors">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="h-4 w-[1px] bg-[#2E3546]"></div>
+
+          <!-- Non-clickable Status Indicator Pill -->
+          <div id="headerStatusBadge" class="px-2.5 py-1 rounded-md bg-[#212736] border border-[#384156] flex items-center gap-1.5 text-[11.5px] font-medium text-slate-200 select-none">
+            <span id="headerStatusDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+            <span id="headerStatusText">Idle</span>
+          </div>
+
+          <!-- Action Buttons: Clean neutral dark at rest, lighting up in amber/crimson on hover -->
+          <div class="flex items-center gap-1.5">
+            <button onclick="handleInterrupt()"
+              class="group px-2.5 py-1 rounded-md bg-[#1D2230] hover:bg-[#2F2519] border border-[#384156] hover:border-amber-500/80 flex items-center gap-1.5 text-[11.5px] font-medium text-slate-300 hover:text-amber-300 transition-all duration-150">
+              <svg class="w-3.5 h-3.5 text-amber-400/80 group-hover:text-amber-300 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="10" x2="10" y1="15" y2="9"/><line x1="14" x2="14" y1="15" y2="9"/>
+              </svg>
+              <span>Interrupt</span>
+            </button>
+
+            <button onclick="handleTerminate()"
+              class="group px-2.5 py-1 rounded-md bg-[#1D2230] hover:bg-[#311B21] border border-[#384156] hover:border-rose-500/80 flex items-center gap-1.5 text-[11.5px] font-medium text-slate-300 hover:text-rose-300 transition-all duration-150">
+              <span class="w-2 h-2 rounded-[2px] bg-rose-400/80 group-hover:bg-rose-400 transition-colors"></span>
+              <span>Terminate</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal Viewport Padding Wrapper -->
+      <div class="flex-1 p-3 bg-[#12151E] flex flex-col min-h-0">
+        <!-- Framed Terminal Container (1px solid #333B4F) -->
+        <div class="terminal-frame flex-1 rounded-[8px] flex flex-col min-h-0 overflow-hidden">
+
+          <!-- Scrollable Terminal Output Area (#11141C) -->
+          <div id="terminalOutput" style="font-size: 12px;"
+            class="terminal-scroll flex-1 overflow-y-auto px-5 py-4 font-mono leading-[1.6] text-slate-100 select-text space-y-3.5">
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Floating Command Input Box (#1D2230 with 1px solid #3B445C) -->
+          <div class="px-3.5 pb-3 pt-2 shrink-0 bg-[#11141C] border-t border-[#2E3546]">
+            <div class="prompt-container rounded-[8px] shadow-md overflow-hidden">
+              <!-- Input Line -->
+              <form id="commandForm" class="flex items-center px-3 py-2.5 gap-2.5">
+                <span class="font-mono text-[13px] font-bold text-sky-400 select-none">&gt;</span>
+                <input
+                  id="commandInput"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Scrivi un messaggio o un comando slash per Claude Code..."
+                  class="flex-1 bg-transparent font-mono text-[12.5px] text-slate-50 placeholder-slate-400/70 focus:outline-none"
+                />
+                <span class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-[#262C3D] border border-[#3B445C] font-mono text-[10px] text-slate-300">
+                  ↵ Enter
+                </span>
+              </form>
+
+              <!-- Integrated Prompt Sub-footer separated by 1px solid #2E3546 -->
+              <div class="px-3 py-1.5 bg-[#161A24] border-t border-[#2E3546] flex items-center justify-between text-[11px] font-mono">
+                <div class="flex items-center gap-2">
+                  <span id="autoModeBadge" onclick="cycleAutoMode()" class="cursor-pointer inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/35 text-amber-300 font-medium hover:bg-amber-500/20 transition-colors">
+                    <span>&gt;&gt;</span>
+                    <span id="autoModeText">auto mode on</span>
+                  </span>
+                  <span class="text-slate-400">(shift+tab to cycle)</span>
+                </div>
+                <div class="text-[10.5px] text-slate-400 hidden md:block">
+                  Claude Code CLI
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- 3. BOTTOM STATUS BAR (32px) -->
+  <footer class="h-[32px] bg-[#181C27] border-t border-[#2E3546] px-3.5 flex items-center justify-between text-[11px] shrink-0">
+    <!-- Left: Working Directory + Metric Pills -->
+    <div class="flex items-center gap-2.5 min-w-0 overflow-hidden">
+      <span id="footerPath" class="font-mono text-slate-300 truncate">
+        /home/christian.mariani/.local/app/vexel-for-claude
+      </span>
+
+      <!-- Context Pill with Integrated 19% Progress Fill & #384156 border -->
+      <div class="relative overflow-hidden px-2.5 py-0.5 rounded-[5px] bg-[#1D2230] border border-[#384156] font-mono tabular-nums text-slate-100 shrink-0">
+        <div id="footerContextBar" class="absolute inset-y-0 left-0 bg-sky-500/25 border-r border-sky-400/45 transition-all duration-300" style="width: 19%;"></div>
+        <span id="footerContextText" class="relative z-10 text-[10.5px] font-medium">Context 191.6k / 1M · 19%</span>
+      </div>
+
+      <!-- Tokens Pill -->
+      <div class="hidden sm:flex items-center px-2.5 py-0.5 rounded-[5px] bg-[#1D2230] border border-[#384156] font-mono tabular-nums text-slate-200 text-[10.5px] shrink-0">
+        <span id="footerTokens">46.8M tokens</span>
+      </div>
+
+      <!-- Cost Pill -->
+      <div class="flex items-center px-2.5 py-0.5 rounded-[5px] bg-[#1D2230] border border-[#384156] font-mono tabular-nums text-slate-100 font-medium text-[10.5px] shrink-0">
+        <span id="footerCost">$27.34</span>
+      </div>
+    </div>
+
+    <!-- Right: Font Size Stepper -->
+    <div class="flex items-center gap-1 font-mono tabular-nums text-slate-200 shrink-0 bg-[#1D2230] border border-[#384156] rounded-[5px] px-1 py-0.5">
+      <button onclick="changeFontSize(-1)" title="Riduci font" class="w-4 h-4 rounded hover:bg-[#2B3246] hover:text-white flex items-center justify-center transition-colors">
+        −
+      </button>
+      <span id="fontSizeLabel" class="px-1.5 text-[10.5px] text-slate-200 min-w-[38px] text-center">12 px</span>
+      <button onclick="changeFontSize(1)" title="Aumenta font" class="w-4 h-4 rounded hover:bg-[#2B3246] hover:text-white flex items-center justify-center transition-colors">
+        +
+      </button>
+    </div>
+  </footer>
+
+  <!-- Subtle Floating Toast Notification -->
+  <div id="toast" class="fixed bottom-10 right-5 z-50 pointer-events-none transition-all duration-200 toast-exit">
+    <div class="px-3.5 py-2 rounded-lg bg-[#212736] border border-[#3B445C] shadow-xl text-[12px] text-slate-100 flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+      <span id="toastMessage">Azione eseguita</span>
+    </div>
+  </div>
+
+  <script>
+    // Single active session matching the v0.6.1 screenshot
+    const sessions = [
+      {
+        id: 'vexel-for-claude',
+        name: 'vexel-for-claude',
+        headerSummary: '/sdd-auto vorrei che mi implementassi in basso a sinistra nell...',
+        starred: true,
+        status: 'Idle',
+        subtitle: '/sdd-auto vorrei che mi impleme...',
+        contextPct: 19,
+        contextText: 'Context 191.6k / 1M · 19%',
+        tokens: '46.8M tokens',
+        cost: '$27.34',
+        timeAgo: 'Just now',
+        path: '/home/christian.mariani/.local/app/vexel-for-claude',
+        logs: `
+          <div class="space-y-1 text-slate-100 pl-3">
+            <div>Shortcuts.</div>
+            <div>4. In Shortcuts, "Change Keys" su "Search" e premi Alt+K: dopo un reload Alt+K apre la ricerca nel terminale.</div>
+            <div>5. Prova Alt+L su "New session dialog": compare "Already used by Focus the list".</div>
+            <div>6. In Updates, "Check for Updates" deve mostrare uno dei tre esiti.</div>
+          </div>
+
+          <div class="text-slate-100">
+            Il registro delle decisioni prese dal gatekeeper è in <span class="term-path">.sdd/gates/settings_dialog</span>; l'analisi è in <span class="term-path">.sdd/analysis/settings_dialog.md</span> e il piano nella cartella <span class="term-path">.sdd/plans/plan-settings-dialog/</span>.
+          </div>
+
+          <div class="text-slate-400">✻ Crunched for 1m 37s · done 1:46 p.m.</div>
+
+          <!-- Highlighted User Prompt Block 1 -->
+          <div class="user-prompt-block px-3.5 py-2.5 text-slate-100 leading-[1.6]">
+            <div class="flex items-start gap-2">
+              <span class="text-slate-400 font-bold select-none">&gt;</span>
+              <div>
+                scusami ma puoi rivedere graficamente il popup settings ed il contenuto? magari facendo screenshot e cercando di fare un qualcosa di gradevole alla vista? il popup è troppo stretto e graficamente anche internamente è fatto malissimo!! visto che sono poche le impostazioni cercherei di raggruppare diversamente!! tipo 3 menù: aspetto (in inglese), shortcut e updates
+              </div>
+            </div>
+          </div>
+
+          <!-- Agent Response 1 -->
+          <div class="flex items-start gap-2">
+            <span class="text-slate-100 mt-0.5">●</span>
+            <div class="text-slate-100">
+              Prima di toccare qualcosa guardo com'è adesso il popup: avvio l'app su una porta separata e faccio gli screenshot.
+            </div>
+          </div>
+
+          <div class="text-slate-400 pl-4">Ran <span class="text-slate-200 font-medium">1</span> shell command</div>
+
+          <!-- Background Command Completed -->
+          <div class="flex items-start gap-2">
+            <span class="text-emerald-400 mt-0.5">●</span>
+            <div class="text-slate-100">
+              Background command <span class="text-white font-medium">"Start the built app on port 3219"</span> completed (exit code 0)
+            </div>
+          </div>
+
+          <div class="text-slate-400 pl-4">Ran <span class="text-slate-200 font-medium">1</span> shell command</div>
+
+          <!-- Highlighted User Prompt Block 2 + Interrupted Feedback -->
+          <div class="space-y-1.5">
+            <div class="user-prompt-block px-3.5 py-2 text-slate-100">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-400 font-bold select-none">&gt;</span>
+                <span>non gestire come evolutiva ma come defect</span>
+              </div>
+            </div>
+            <div class="pl-3 flex items-center gap-2 text-slate-400">
+              <span class="text-slate-500">└</span>
+              <span class="text-rose-400 font-medium">Interrupted</span>
+              <span>·</span>
+              <span>What should Claude do instead?</span>
+            </div>
+          </div>
+        `
+      }
+    ];
+
+    let activeSessionId = 'vexel-for-claude';
+    let currentFontSize = 12;
+    let autoModeOn = true;
+    let toastTimeout = null;
+
+    function renderSessionList() {
+      const container = document.getElementById('sessionList');
+      container.innerHTML = sessions.map(s => {
+        const isActive = s.id === activeSessionId;
+        const isRunning = s.status === 'Running';
+
+        return `
+          <div onclick="selectSession('${s.id}')"
+            class="px-3 py-2.5 rounded-[7px] cursor-pointer transition-all duration-150 ${isActive ? 'session-card-active' : 'session-card-inactive'}">
+            <!-- Row 1: Status Dot + Name + Star + Status Label -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-2 h-2 rounded-full shrink-0 ${isRunning ? 'bg-emerald-400 dot-running' : 'bg-slate-400'}"></span>
+                <span class="text-[13px] font-semibold tracking-[-0.01em] truncate ${isActive ? 'text-[#F8FAFC]' : 'text-slate-200'}">
+                  ${s.name}
+                </span>
+                ${s.starred ? `
+                  <svg class="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" viewBox="0 0 24 24">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                ` : ''}
+              </div>
+              <span class="text-[11px] font-medium shrink-0 ${isRunning ? 'text-emerald-400' : 'text-slate-400'}">
+                ${s.status}
+              </span>
+            </div>
+
+            <!-- Row 2: Subtitle / Last Prompt -->
+            <div class="mt-1 pl-4 text-[11.5px] ${isActive ? 'text-slate-300' : 'text-slate-400'} truncate">
+              ${s.subtitle}
+            </div>
+
+            <!-- Row 3: Tabular Monospace Metrics -->
+            <div class="mt-2 pt-1.5 border-t border-[#2E3546] pl-4 flex items-center justify-between font-mono tabular-nums text-[10.5px] text-slate-300">
+              <div class="flex items-center gap-1.5">
+                <span class="${isActive ? 'text-sky-300 font-semibold' : 'text-slate-300'}">${s.contextPct}%</span>
+                <span class="text-slate-500">·</span>
+                <span>${s.cost}</span>
+              </div>
+              <span class="text-slate-400">${s.timeAgo}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectSession(id) {
+      activeSessionId = id;
+      const session = sessions.find(s => s.id === id);
+      if (!session) return;
+
+      document.getElementById('headerSessionName').textContent = session.name;
+      document.getElementById('headerSessionTag').textContent = session.headerSummary;
+
+      const statusText = document.getElementById('headerStatusText');
+      const statusDot = document.getElementById('headerStatusDot');
+      statusText.textContent = session.status;
+      if (session.status === 'Running') {
+        statusText.className = 'text-emerald-400';
+        statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 dot-running';
+      } else {
+        statusText.className = 'text-slate-200';
+        statusDot.className = 'w-2 h-2 rounded-full bg-slate-400';
+      }
+
+      const term = document.getElementById('terminalOutput');
+      term.innerHTML = session.logs;
+      term.scrollTop = term.scrollHeight;
+
+      document.getElementById('footerPath').textContent = session.path;
+      document.getElementById('footerContextBar').style.width = `${session.contextPct}%`;
+      document.getElementById('footerContextText').textContent = session.contextText;
+      document.getElementById('footerTokens').textContent = session.tokens;
+      document.getElementById('footerCost').textContent = session.cost;
+
+      renderSessionList();
+    }
+
+    // Handle sending mock prompt in terminal
+    document.getElementById('commandForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const input = document.getElementById('commandInput');
+      const val = input.value.trim();
+      if (!val) return;
+
+      const session = sessions.find(s => s.id === activeSessionId);
+      const userEcho = `
+        <div class="user-prompt-block px-3.5 py-2 text-slate-100">
+          <div class="flex items-start gap-2">
+            <span class="text-sky-400 font-bold select-none">&gt;</span>
+            <span>${escapeHtml(val)}</span>
+          </div>
+        </div>
+        <div class="flex items-start gap-2 text-slate-100">
+          <span class="text-emerald-400 mt-0.5">●</span>
+          <div>Ricevuto. Aggiorno la gestione del defect sul popup <span class="term-path">settings_dialog</span>...</div>
+        </div>
+      `;
+
+      session.logs += userEcho;
+      const term = document.getElementById('terminalOutput');
+      term.innerHTML = session.logs;
+      term.scrollTop = term.scrollHeight;
+      input.value = '';
+    });
+
+    // Shift+Tab shortcut & click cycle for auto mode
+    function cycleAutoMode() {
+      autoModeOn = !autoModeOn;
+      const badge = document.getElementById('autoModeBadge');
+      const text = document.getElementById('autoModeText');
+      if (autoModeOn) {
+        badge.className = 'cursor-pointer inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/35 text-amber-300 font-medium hover:bg-amber-500/20 transition-colors';
+        text.textContent = 'auto mode on';
+      } else {
+        badge.className = 'cursor-pointer inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-[#212736] border border-[#384156] text-slate-300 font-medium hover:bg-[#272E40] transition-colors';
+        text.textContent = 'auto mode off';
+      }
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.shiftKey && e.key === 'Tab') {
+        e.preventDefault();
+        cycleAutoMode();
+      }
+    });
+
+    function changeFontSize(delta) {
+      currentFontSize = Math.min(18, Math.max(10, currentFontSize + delta));
+      document.getElementById('terminalOutput').style.fontSize = `${currentFontSize}px`;
+      document.getElementById('fontSizeLabel').textContent = `${currentFontSize} px`;
+    }
+
+    function handleInterrupt() {
+      const session = sessions.find(s => s.id === activeSessionId);
+      session.logs += `
+        <div class="pl-3 flex items-center gap-2 text-slate-400">
+          <span class="text-slate-500">└</span>
+          <span class="text-rose-400 font-medium">Interrupted</span>
+          <span>·</span>
+          <span>What should Claude do instead?</span>
+        </div>
+      `;
+      const term = document.getElementById('terminalOutput');
+      term.innerHTML = session.logs;
+      term.scrollTop = term.scrollHeight;
+      showToast('Segnale Interrupt inviato alla sessione');
+    }
+
+    function handleTerminate() {
+      showToast('Richiesta terminazione sessione vexel-for-claude');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMessage').textContent = msg;
+      toast.classList.remove('toast-exit');
+      toast.classList.add('toast-enter');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('toast-enter');
+        toast.classList.add('toast-exit');
+      }, 2400);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      selectSession('vexel-for-claude');
+    });
+  </script>
+</body>
+</html>

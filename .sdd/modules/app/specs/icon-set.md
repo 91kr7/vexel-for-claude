@@ -37,7 +37,7 @@ Components and where the client uses them today:
 - `RefreshCwIcon` → "Refresh" in the GitExplorerPanel (module git)
 - `PencilIcon` → "Rename" of a list entry, "Change Keys" of a ShortcutsSection row
 - `RotateCcwIcon` (Lucide "rotate-ccw") → "Restore Default" of a ShortcutsSection row
-- `SunIcon`, `MoonIcon` → the "Light" and "Dark" cards of ThemeSection; `MacWindowIcon`, `WindowsLogoIcon` → the "macOS" and "Windows 11" cards of LookSection
+- `SunIcon`, `MoonIcon`, `MoonStarIcon` → the "Light", "Dark" and "Dark Blue" cards of ThemeSection; `MacWindowIcon`, `WindowsLogoIcon` → the "macOS" and "Windows 11" cards of LookSection
 - `MacWindowIcon` and `WindowsLogoIcon` are drawn for the client, not Lucide icons: a window with three dots, and four rounded squares.
 - `CheckIcon` → the mark of the active card in ThemeSection and LookSection
 - `StarIcon` → "Mark as Favorite" and "Remove Favorite" of a list entry (FavoriteButton), and the FavoriteIndicator. It has a filled variant (`filled`): the SVG has the class `icon-filled` and its computed `fill` is `currentColor`; the other icons keep `fill: none`

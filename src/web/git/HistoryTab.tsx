@@ -134,8 +134,8 @@ export function HistoryTab({ repositories, several = repositories.length > 1, co
               const tipLabel = tip ? tipLabelOf(repository?.branch) : undefined;
               return (
                 <li key={graphId(root, commit.hash)}>
-                  <button type="button" className="history-commit" onClick={() => setSelected(entry)}>
-                    <span className="history-commit-hash">{commit.shortHash}</span>
+                  <button type="button" className="history-commit list-row" onClick={() => setSelected(entry)}>
+                    <span className="history-commit-hash list-number">{commit.shortHash}</span>
                     {several && repository !== undefined && (
                       <span className="history-commit-repository" title={repository.root}>
                         <span className="git-repository-mark" style={{ backgroundColor: repository.color }} aria-hidden="true" />
@@ -149,7 +149,7 @@ export function HistoryTab({ repositories, several = repositories.length > 1, co
                     <span className="history-commit-author" title={commit.author}>
                       {commit.author}
                     </span>
-                    <span className="history-commit-date">{formatCommitDate(commit.date)}</span>
+                    <span className="history-commit-date list-number">{formatCommitDate(commit.date)}</span>
                   </button>
                 </li>
               );

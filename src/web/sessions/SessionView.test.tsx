@@ -51,12 +51,12 @@ describe('SessionView', () => {
     expect(match?.[2]).toMatch(/^<\w+\b[^>]*aria-hidden="true"[^>]*>■<\/\w+>\s*Terminate\s*$/);
   });
 
-  // plan-session_list_width/REQ-30, REQ-31: "Search", the state pill, "Interrupt" and "Terminate", in this order in the markup
-  it.each<SessionState>(['working', 'needs_input', 'idle'])('shows "Search", the state pill, "Interrupt" and "Terminate" in this order when the state is %s', (state) => {
+  // plan-session_list_width/REQ-30, REQ-31, plan-dark_blue_theme/REQ-52: the state pill (left group), then "Search", "Interrupt" and "Terminate", in this order in the markup
+  it.each<SessionState>(['working', 'needs_input', 'idle'])('shows the state pill, "Search", "Interrupt" and "Terminate" in this order when the state is %s', (state) => {
     const header = partOf(render(state), 'header');
     const positions = [
-      header.search(/<button\b[^>]*\saria-label="Search"/),
       header.search(new RegExp(`class="[^"]*\\bstate-${state}\\b`)),
+      header.search(/<button\b[^>]*\saria-label="Search"/),
       header.indexOf(button(header, 'Interrupt')?.[0] ?? '\0'),
       header.indexOf(button(header, 'Terminate')?.[0] ?? '\0'),
     ];

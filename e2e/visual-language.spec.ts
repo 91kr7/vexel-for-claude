@@ -234,7 +234,8 @@ test('the UI uses the bundled Roboto Flex font and the terminal uses Roboto Mono
 test('the rail "Resume" carries a decorative icon', async ({ page, request }) => {
   await openSession(page, request, 'icons');
   const buttons: [Locator, number][] = [
-    [page.getByRole('navigation').getByRole('button', { name: 'Resume', exact: true }), 17],
+    // NavigationRail: the rail icons are 16 px
+    [page.getByRole('navigation').getByRole('button', { name: 'Resume', exact: true }), 16],
   ];
   for (const [button, size] of buttons) {
     await expect(button).toHaveCount(1);

@@ -159,7 +159,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
           )}
         </div>
         <div
-          className="dialog-scroll"
+          className="dialog-scroll list-scroll"
           role={visibleGroups?.length ? 'radiogroup' : undefined}
           aria-label={visibleGroups?.length ? 'Past Sessions' : undefined}
         >
@@ -176,7 +176,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
                   const checked = selected?.id === session.id;
                   const id = `${rowId}-${session.id}`;
                   return (
-                    <label key={session.id} className={checked ? 'dialog-row dialog-row-checked' : 'dialog-row'}>
+                    <label key={session.id} className={checked ? 'dialog-row list-card list-active dialog-row-checked' : 'dialog-row list-card'}>
                       <Avatar folder={group.folder} />
                       <span className="dialog-row-text">
                         <span className="past-session-heading">
@@ -189,7 +189,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
                             </span>
                           )}
                         </span>
-                        <time id={`${id}-time`} className="dialog-row-detail" dateTime={session.lastActivity}>
+                        <time id={`${id}-time`} className="dialog-row-detail list-number" dateTime={session.lastActivity}>
                           {formatDate(session.lastActivity)}
                         </time>
                         {session.runningElsewhere && (

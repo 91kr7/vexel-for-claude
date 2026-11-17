@@ -170,7 +170,7 @@ const ROWS = {
     'Default text size [Ctrl]+[0]',
     'Focus the list [Ctrl]+[Shift]+[L]',
   ],
-  General: ['Light/Dark theme [Alt]+[A]', 'Shortcut settings [Alt]+[S]'],
+  General: ['Light/Dark/Dark Blue theme [Alt]+[A]', 'Shortcut settings [Alt]+[S]'],
 };
 
 // plan-settings_dialog/REQ-3, REQ-21, REQ-22, REQ-23, REQ-25 — scenario "Alt+S shows the shortcuts in the settings"

@@ -76,9 +76,10 @@ describe('startupPageHtml style (plan-ui_restyle)', () => {
   const style = (html: string) => [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map((match) => match[1]).join('\n');
   const css = style(startupPageHtml({ kind: 'loading' })).replace(/\s+/g, ' ');
 
-  it('REQ-36: the bar is 44 px high, no longer 48 px', () => {
-    expect(css).toMatch(/height: ?44px/);
-    expect(css).not.toMatch(/height: ?48px/);
+  // plan-dark_blue_theme/REQ-6, REQ-8: the bar follows the 38 px client title bar.
+  it('the bar is 38 px high, no longer 44 or 48 px', () => {
+    expect(css).toMatch(/\.title-bar \{[^}]*height: ?38px/);
+    expect(css).not.toMatch(/height: ?(44|48)px/);
   });
 
   it('REQ-37: the three colours of the client buttons, not the old ones', () => {

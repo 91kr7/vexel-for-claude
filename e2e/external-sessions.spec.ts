@@ -116,9 +116,9 @@ test('a session that runs in another terminal is listed as external with its fol
   await expect(entry).toContainText('Idle');
   await expect(entry.locator('time')).toHaveText(RELATIVE_TIME);
   await expect(entry).toHaveClass(/\bexternal\b/);
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-23, REQ-27: the dashed row with the dot, no avatar
+  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-23, plan-dark_blue_theme/REQ-43: the solid card border, no avatar
   await expect(entry.locator('.avatar')).toHaveCount(0);
-  expect(await entry.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('dashed');
+  expect(await entry.evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('solid');
   await expect(list(page).getByRole('heading', { level: 2, name: 'In Other Terminals', exact: true })).toBeVisible();
   await expect(entry).not.toContainText('External');
 });

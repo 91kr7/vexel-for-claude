@@ -223,10 +223,10 @@ const folderNameCut = (page: Page, folder: string) =>
     });
 
 test.describe('List panel width', () => {
-  // plan-session_list_width/REQ-7, REQ-6: no saved width → 224 px, and opening the page saves nothing
-  test('with no saved width the list panel is 224 px wide and nothing is saved', async ({ page }) => {
+  // plan-session_list_width/REQ-7, REQ-6: no saved width → 260 px (plan-dark_blue_theme/REQ-16), and opening the page saves nothing
+  test('with no saved width the list panel is 260 px wide and nothing is saved', async ({ page }) => {
     await openPage(page);
-    expect(await panelWidth(page)).toBeCloseTo(224, 0);
+    expect(await panelWidth(page)).toBeCloseTo(260, 0);
     expect(await savedWidth(page)).toBeNull();
   });
 
@@ -267,35 +267,35 @@ test.describe('List panel width', () => {
       watch.observe(document, { childList: true, subtree: true });
     });
     await openPage(page);
-    expect(await panelWidth(page)).toBeCloseTo(224, 0);
+    expect(await panelWidth(page)).toBeCloseTo(260, 0);
 
     await dragEdge(page, 100, {
       release: false,
       onMove: async (moved) => {
-        expect(await widthNextFrame(page), `panel follows the pointer after ${moved} px`).toBeCloseTo(224 + moved, 0);
+        expect(await widthNextFrame(page), `panel follows the pointer after ${moved} px`).toBeCloseTo(260 + moved, 0);
         expect(await savedWidth(page), 'nothing saved during the drag').toBeNull();
       },
     });
     await expect.poll(() => showsAccentLine(page), { message: 'accent line while dragging' }).toBe(true);
     await page.mouse.up();
 
-    expect(await panelWidth(page)).toBeCloseTo(324, 0);
-    expect(await savedWidth(page)).toBe('324');
+    expect(await panelWidth(page)).toBeCloseTo(360, 0);
+    expect(await savedWidth(page)).toBe('360');
     expect(await page.evaluate(() => window.getSelection()?.toString() ?? ''), 'the drag selects no text').toBe('');
 
     await page.reload();
     await expect(edge(page)).toBeVisible();
-    expect(await panelWidth(page)).toBeCloseTo(324, 0);
+    expect(await panelWidth(page)).toBeCloseTo(360, 0);
     const widths = await page.evaluate(() => (window as unknown as { listWidths: number[] }).listWidths);
     expect(widths.length, 'the panel was measured').toBeGreaterThan(0);
-    for (const width of widths) expect(width, `every width since the first frame: ${widths.join(', ')}`).toBeCloseTo(324, 0);
+    for (const width of widths) expect(width, `every width since the first frame: ${widths.join(', ')}`).toBeCloseTo(360, 0);
   });
 
   // ListPanelEdge "Actions": a press and release with no width change saves nothing
   test('a press and release with no move saves nothing', async ({ page }) => {
     await openPage(page);
     await dragEdge(page, 0, { steps: 1 });
-    expect(await panelWidth(page)).toBeCloseTo(224, 0);
+    expect(await panelWidth(page)).toBeCloseTo(260, 0);
     expect(await savedWidth(page)).toBeNull();
   });
 
@@ -304,7 +304,7 @@ test.describe('List panel width', () => {
     const folder = await startSession(request, 'a-very-long-project-folder-name-that-never-fits-in-a-narrow-list');
     await openPage(page);
     await expect(entry(page, folder)).toBeVisible();
-    expect(await panelWidth(page)).toBeCloseTo(224, 0);
+    expect(await panelWidth(page)).toBeCloseTo(260, 0);
 
     await dragEdge(page, -300);
     expect(await panelWidth(page)).toBeCloseTo(180, 0);
@@ -425,7 +425,7 @@ test.describe('List panel width', () => {
     const before = (await reportedColumns(page))!;
 
     await dragEdge(page, 100);
-    expect(await panelWidth(page)).toBeCloseTo(324, 0);
+    expect(await panelWidth(page)).toBeCloseTo(360, 0);
 
     await expect.poll(() => reportedColumns(page), { message: 'the CLI gets fewer columns' }).toBeLessThan(before);
     await expect.poll(async () => (await reportedColumns(page)) === (await screenColumns(page)), { message: 'reported columns match the screen' }).toBe(true);

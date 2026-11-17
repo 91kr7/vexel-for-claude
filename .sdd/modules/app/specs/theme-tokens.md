@@ -6,12 +6,12 @@ type: configuration
 
 # ThemeTokens
 
-**Purpose** → the shared CSS custom properties of the client: a dark set from the `:root` block of `.sdd/mockups/studio-dark/mock.html` and a light set from its `[data-theme="editorial-light"]` block, both with a light-blue accent.
+**Purpose** → the shared CSS custom properties of the client: a dark set from the `:root` block of `.sdd/mockups/studio-dark/mock.html` and a light set from its `[data-theme="editorial-light"]` block, both with a light-blue accent, and a Dark Blue set from `.sdd/mockups/dark_blue_theme/mock.html`.
 
 ## Contract
 
 - The tokens are custom properties on `:root`. Every style of the client takes its colours from them.
-- Two sets. The dark set is on `:root`. The light set overrides it when the root carries `data-theme="light"` (the mark of ThemeStore). Any other mark, or none, gives the dark set.
+- Three sets. The dark set is on `:root`. The light set overrides it when the root carries `data-theme="light"`, the Dark Blue set when it carries `data-theme="dark-blue"` (marks of ThemeStore). Any other mark, or none, gives the dark set.
 - There is no `prefers-color-scheme` rule. The system theme changes nothing.
 
 ### Dark set
@@ -46,11 +46,41 @@ type: configuration
   - `--color-error` → `--rose-400`
   - `--color-focus-ring` → `--accent-primary`
   - `--color-backdrop` → black at 65 %
-- Terminal tokens, the same in both sets: `--term-bg` `#0b0b0e`, `--term-fg` `#f3f2ee`, `--term-cursor` `#8ccfff`, `--term-selection` `rgba(140, 207, 255, 0.3)`.
-- Theme preview tokens, the same in both sets, so each preview card of ThemeSection shows its own theme: `--preview-dark-canvas` `#0b0b0e`, `--preview-dark-surface` `#21212b`, `--preview-dark-line` `#f3f2ee`, `--preview-dark-accent` `#8ccfff`; `--preview-light-canvas` `#f4f1ea`, `--preview-light-surface` `#e4ded2`, `--preview-light-line` `#1c1917`, `--preview-light-accent` `#0065ae`.
+- Terminal tokens, the same in Dark and Light: `--term-bg` `#0b0b0e`, `--term-fg` `#f3f2ee`, `--term-cursor` `#8ccfff`, `--term-selection` `rgba(140, 207, 255, 0.3)`, `--term-frame` (frame border) → `--role-border-strong`.
+- Theme preview tokens, the same in every set, so each preview card of ThemeSection shows its own theme: `--preview-dark-canvas` `#0b0b0e`, `--preview-dark-surface` `#21212b`, `--preview-dark-line` `#f3f2ee`, `--preview-dark-accent` `#8ccfff`; `--preview-light-canvas` `#f4f1ea`, `--preview-light-surface` `#e4ded2`, `--preview-light-line` `#1c1917`, `--preview-light-accent` `#0065ae`; `--preview-dark-blue-canvas` `#12151e`, `--preview-dark-blue-surface` `#212736`, `--preview-dark-blue-line` `#f1f5f9`, `--preview-dark-blue-accent` `#38bdf8`.
 - Window button tokens, the same in both sets: `--window-close` `#e0443c`, `--window-minimize` `#e8b616`, `--window-maximize` `#25b033`, `--window-symbol` black at 60 %.
 - Terminal search tokens, the same in both sets, in `#RRGGBB` form: `--term-match-bg` `#713f12` (a match), `--term-match-current-bg` `#92400e` and `--term-match-current-border` `#fcd34d` (the current match).
 - Other groups, the same in both sets: `--font-ui` (Roboto Flex), `--font-mono` (Roboto Mono), `--focus-ring-width` and `--focus-ring-offset` (2 px), and the Tailwind shadows `--shadow-sm`, `--shadow`, `--shadow-lg`, `--shadow-2xl`.
+
+### Role tokens
+
+- One token per surface role of `.sdd/mockups/dark_blue_theme/mock.html`. Each one points to a level of the active set, so it takes the light or dark value:
+
+| Role token | Mock use | Level |
+|------------|----------|-------|
+| `--role-canvas` | canvas and rail | `--bg-canvas` |
+| `--role-list` | session list | `--bg-surface-1` |
+| `--role-chrome` | title bar, session header, bottom bar | `--bg-surface-1` |
+| `--role-card` | card | `--bg-surface-2` |
+| `--role-raised` | raised surface and pill | `--bg-surface-2` |
+| `--role-card-active` | active card | `--bg-surface-3` |
+| `--role-border-subtle` / `--role-border-strong` | subtle / strong border | `--border-subtle` / `--border-strong` |
+| `--role-accent` / `--role-accent-glow` / `--role-accent-border` | accent | `--accent-primary` / `--accent-glow` / `--accent-border` |
+
+- Native part tokens of WebEntry: `--scrollbar-thumb` → `--border-strong`, `--scrollbar-thumb-hover` → `--scrollbar-thumb`; `--field-bg` → `--role-canvas`, `--field-border` → `--role-border-strong`, `--field-focus-ring` → `--role-accent`.
+
+### Shape tokens
+
+- The mock's shapes, the same in both sets:
+
+| Token | Value | Use |
+|-------|-------|-----|
+| `--radius-pill` | 5 px | pills, chips, key badges, small buttons |
+| `--radius-card` | 7 px | cards and list rows |
+| `--radius-frame` | 8 px | frames, dialogs, floating panels, buttons, fields |
+| `--border-pill` | 1 px `--role-border-strong` | pill border |
+| `--shadow-card` | `0 2px 10px` black at 28 % | raised or chosen card |
+| `--shadow-frame` | `0 8px 24px -4px` black at 45 % | frames and floating panels |
 ### Light set
 
 - Mock tokens, with the mock's editorial-light values:
@@ -89,6 +119,38 @@ type: configuration
 - `--orange-400` → `#b62a12` (OKLCH L 0.51, chroma 0.18, hue 32), not a Tailwind tone: orange-800 sits too close to the amber `#92400e` (see rules).
 - The 500 tones, their tints, `--color-backdrop`, the shadows, the fonts and `--term-size` keep the dark values. The mock uses the same ones in both themes.
 
+### Dark Blue set
+
+- The mock's colours (REQ-36 table). Level tokens, so the role tokens follow them, plus two roles with their own value:
+
+| Token | Value | Mock use |
+|-------|-------|----------|
+| `--bg-canvas` (`--role-canvas`) | `#12151e` | canvas and rail |
+| `--bg-surface-1` (`--role-chrome`) | `#181c27` | title bar, session header, bottom bar |
+| `--role-list` | `#161a24` | session list |
+| `--bg-surface-2` (`--role-card`) | `#1b202c` | card |
+| `--role-raised` | `#1d2230` | raised surface and pill |
+| `--bg-surface-3` (`--role-card-active`) | `#212736` | active card |
+| `--border-subtle` / `--border-strong` | `#2e3546` / `#384156` | subtle / strong border |
+| `--bg-glass` | `#1d2230` at 86 % | |
+| `--specular-top` | white at 5 % | |
+
+- Text: `--text-primary` `#f1f5f9` (slate-100), `--text-secondary` `#94a3b8` (slate-400), `--text-muted` `#808fa4` (the mock's slate-500 `#64748b`, lightened, see rules).
+- Accent family on the mock's `#38bdf8`:
+
+| Token | Value |
+|-------|-------|
+| `--accent-primary` | `#38bdf8` |
+| `--accent-secondary` | `#7dd3fc` (sky-300, the mock's light accent text) |
+| `--accent-deep` | `#0284c7` (sky-600) |
+| `--accent-glow` / `--accent-border` / `--accent-selection` | `--accent-primary` at 16 % / 42 % / 30 % |
+| `--on-accent` | `#090d16`, the mock's text on the accent badge |
+
+- Status: emerald, amber and rose keep the dark set values (the mock's Tailwind tones). Ended and waiting take the mock's slate: `--zinc-400` `#94a3b8`, `--zinc-500` `#64748b`, `--zinc-500-15/30` at 15 % / 30 %.
+- Terminal: `--term-bg` `#11141c`, `--term-frame` `#333b4f`. The focus border and ring of the frame are the role accent at 75 % and 22 %, the mock's values. `--term-fg`, `--term-cursor`, `--term-selection` and the search tokens keep the dark values.
+- Native parts: `--scrollbar-thumb` `#2e3546`, `--scrollbar-thumb-hover` `#434e66`, `--field-bg` → `--role-raised`, `--field-border` `#3b445c`, `--field-focus-ring` accent at 25 % (the mock's prompt box).
+- Any other token keeps the dark set value.
+
 ### Removed
 
 - The Material 3 roles (`--primary`, `--sc-*`, …), the other `--color-*` names and the type, spacing and radius scales no longer exist.
@@ -103,10 +165,14 @@ type: configuration
 - Light: the status text tones stay apart from each other: green, brown-orange, crimson and grey.
 - `--orange-400` reaches 4.5:1 on surface 1 and on the `--orange-500-15` and `--orange-500-25` tints over it. Dark: about 8.3, 6.7 and 5.6:1. Light: about 6.0, 5.2 and 4.7:1.
 - `--orange-400` keeps its OKLCH hue apart from `--amber-400` and `--rose-400` of the same set. Dark: 56 against 84 and 13. Light: 32 against 46 and 14, also with more chroma than the amber (0.18 against 0.13).
-- The terminal tokens never change with the theme.
+- The terminal tokens are the same in Dark and Light. Only Dark Blue has its own `--term-bg` and `--term-frame`; the ANSI palette is the same in every theme.
 - `--window-symbol` over each window button colour reaches 3:1 (about 3.16:1 on the red, the lowest). 52 % would give 2.72:1.
 - `--term-fg` reaches 4.5:1 on `--term-match-bg` (about 7.7:1) and on `--term-match-current-bg` (about 6.3:1). `--term-match-current-border` reaches 3:1 on `--term-bg` (about 13.6:1).
 - `--font-ui` and `--font-mono` load the BundledFont files.
+- A role token never has a value of its own in Light and Dark: it always equals its level. In Dark Blue only `--role-list` and `--role-raised` have their own value.
+- Dark Blue: `--text-primary`, `-secondary` and `-muted` reach 4.5:1 on canvas, surfaces 1–3, `--role-list` and `--role-raised` (lowest: muted on surface 3, about 4.53:1). `--text-muted` is the least HSL-lightness lightening of the mock value that reaches it.
+- Dark Blue: the status text tones (`--emerald-400`, `--amber-300/400`, `--rose-300/400`, `--zinc-400`, `--orange-400`) reach 4.5:1 on canvas, on surfaces 1–3 and on the 15 % tint of their family over them (lowest: `--rose-400`, about 4.8:1).
+- Dark Blue: `--on-accent` reaches 4.5:1 on `--accent-primary` (about 9.1:1) and on `--accent-deep` (about 4.7:1). `--accent-primary`, the focus ring, reaches 3:1 on every surface (about 7.0:1 on surface 3).
 
 ## Dependencies
 
@@ -121,3 +187,5 @@ type: configuration
 - `plan-terminal_addons/REQ-22`, `plan-terminal_addons/REQ-31`
 - `plan-session_list_width/REQ-34`, `plan-session_list_width/REQ-35`
 - `plan-ui_restyle/REQ-5`
+- `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-5`
+- `plan-dark_blue_theme/REQ-30`, `plan-dark_blue_theme/REQ-36`, `plan-dark_blue_theme/REQ-37`, `plan-dark_blue_theme/REQ-38`, `plan-dark_blue_theme/REQ-39`, `plan-dark_blue_theme/REQ-40`, `plan-dark_blue_theme/REQ-41`, `plan-dark_blue_theme/REQ-42`

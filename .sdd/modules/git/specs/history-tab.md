@@ -21,14 +21,14 @@ Props:
 
 Shows:
 - no commits → "No commits yet", and no error.
-- each commit (list named "Commits") as a button on one line, in this order:
+- each commit (list named "Commits") as a button on one line, 28 px high, a dense row of ListStyles (`.list-row`, 6 px in from the list sides) with its hover, in this order:
   - room on the left for the graph, as wide as the graph;
-  - the short hash in mono;
+  - the short hash in mono with tabular figures;
   - with `several` → the name of the commit's repository, after a round mark in its `color` (tooltip: its root). Without → nothing, as before `plan-multi_repo_workspace`;
   - on the first commit of each repository in the list (its tip), a label: the branch name of that repository, or "detached" on a detached HEAD; no `branch` → no label;
   - the first line of the message (tooltip: that line);
   - the author (tooltip: the author);
-  - the author date in local time as `DD/MM/YYYY HH:MM`.
+  - the author date in local time as `DD/MM/YYYY HH:MM`, mono with tabular figures.
 - `hasMore` → the button "Load more"; while `loadingMore` it reads "Loading…" and is disabled.
 - `moreError` → its message in an ErrorMessage, above "Load more".
 - a chosen commit → the CommitDetail of that commit, instead of the list.
@@ -61,10 +61,11 @@ After a refresh (a new `commits` list):
 
 - CommitDetail
 - `commit-graph` (npm, MIT): human decision, 2026-11-16 (a stable, well-known library); chosen over `@tomplum/react-git-log` 2.x, gatekeeper decision, 2026-11-16
-- ErrorMessage (module app)
+- ErrorMessage, ListStyles (module app)
 
 ## Requirements served
 
 - `plan-git_explorer/REQ-17`, `plan-git_explorer/REQ-20`, `plan-git_explorer/REQ-21`, `plan-git_explorer/REQ-26`
 - `plan-git_graph/REQ-3`, `plan-git_graph/REQ-4`, `plan-git_graph/REQ-8`, `plan-git_graph/REQ-10`, `plan-git_graph/REQ-11`, `plan-git_graph/REQ-12`, `plan-git_graph/REQ-13`, `plan-git_graph/REQ-17`, `plan-git_graph/REQ-18`, `plan-git_graph/REQ-19`
 - `plan-multi_repo_workspace/REQ-22`, `plan-multi_repo_workspace/REQ-23`, `plan-multi_repo_workspace/REQ-24`, `plan-multi_repo_workspace/REQ-25`, `plan-multi_repo_workspace/REQ-27`, `plan-multi_repo_workspace/REQ-29`
+- `plan-dark_blue_theme/REQ-47`, `plan-dark_blue_theme/REQ-48`

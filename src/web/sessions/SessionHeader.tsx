@@ -49,13 +49,13 @@ export function SessionHeader({ session, actions, leadingActions, notice, line }
             <h2 className="session-header-name" title={name}>
               {name}
             </h2>
+            <StateBadge state={session.state} variant="chip" />
             {subtitle && <LineChip text={subtitle} />}
           </>
         )}
       </div>
       <div className="session-header-actions">
         {leadingActions}
-        {session && <StateBadge state={session.state} variant="chip" />}
         {notice}
         {actions}
       </div>

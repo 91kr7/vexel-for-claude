@@ -27,6 +27,9 @@ const entryKey = ({ group, path }: Pick<ChangeEntry, 'group' | 'path'>) => `${gr
 
 const LOADING: ChangesState = { status: 'loading' };
 
+export const fileItemClassName = ({ isSelected }: { isSelected: boolean }) =>
+  isSelected ? 'changes-item list-row list-active' : 'changes-item list-row';
+
 type SelectionKey = { root: string; group: ChangeGroup; path: string };
 
 function FileList({
@@ -61,7 +64,7 @@ function FileList({
           <ListBoxSection key={group} id={group} className="changes-group" aria-label={title}>
             <Header className="changes-group-title">{title}</Header>
             {entries.map((entry) => (
-              <ListBoxItem key={entryKey(entry)} id={entryKey(entry)} textValue={pathText(entry)} className="changes-item">
+              <ListBoxItem key={entryKey(entry)} id={entryKey(entry)} textValue={pathText(entry)} className={fileItemClassName}>
                 <span className="changes-file-path" title={pathText(entry)}>
                   {pathText(entry)}
                 </span>
