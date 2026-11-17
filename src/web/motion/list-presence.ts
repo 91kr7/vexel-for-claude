@@ -45,29 +45,31 @@ export function useListPresence<T>(items: readonly T[] | undefined, keyOf: (item
     entries: items ? nextEntries([], items, keyOf, false) : [],
   }));
 
+  let current = presence;
   if (presence.source !== items) {
-    setPresence({
+    current = {
       source: items,
       entries: items ? nextEntries(presence.entries, items, keyOf, presence.source !== undefined) : [],
-    });
+    };
+    setPresence(current);
   }
 
   useEffect(() => {
-    const timed = presence.entries.filter((entry) => entry.phase !== 'shown');
+    const timed = current.entries.filter((entry) => entry.phase !== 'shown');
     if (timed.length === 0) return;
     const firstEnd = Math.min(...timed.map((entry) => entry.until));
     const timer = setTimeout(() => {
       const now = Date.now();
-      setPresence((current) => ({
-        source: current.source,
-        entries: current.entries.flatMap((entry) => {
+      setPresence((state) => ({
+        source: state.source,
+        entries: state.entries.flatMap((entry) => {
           if (entry.phase === 'shown' || entry.until > now) return [entry];
           return entry.phase === 'leaving' ? [] : [{ ...entry, phase: 'shown' as const, until: 0 }];
         }),
       }));
     }, Math.max(0, firstEnd - Date.now()));
     return () => clearTimeout(timer);
-  }, [presence.entries]);
+  }, [current.entries]);
 
-  return presence.entries;
+  return current.entries;
 }

@@ -13,6 +13,7 @@ type: frontend hook
 - `useListPresence(items, keyOf) → { key, item, phase }[]`
   - `items` → the current items, or `undefined` while the list is not shown (e.g. loading): then the result is empty.
   - `phase` → `shown`, `entering` or `leaving`.
+  - the result follows `items` in the same render that gives them.
 - first defined `items` (the appearance) → every item `shown`.
 - an item whose key was not in the previous items → `entering` for `--motion-duration-enter`, then `shown`.
 - an item whose key leaves the items → it stays in the result as `leaving`, with its last value, near its previous position, for `--motion-duration-exit`; then it is gone.

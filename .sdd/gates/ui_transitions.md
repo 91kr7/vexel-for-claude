@@ -46,3 +46,6 @@
 | 2026-11-17 | dev cascading-lists | G4 development | pass | Round 2 |
 | 2026-11-17 | dev cascading-lists | G5 tests | sent back | D1 REQ-16: no cascade at app start, presence result empty on the ready render |
 | 2026-11-17 | dev cascading-lists | G5 tests | decided | R1 session-list.spec xterm locator strict mode from session-switch cross-fade; test to be scoped by tester |
+| 2026-11-17 | dev cascading-lists | G5 tests | escalated | F1 project-search 300 projects flaky, fails 2/8 on main too |
+| 2026-11-17 | dev cascading-lists | G5 tests | human decision | F1 pre-existing flaky test does not block the merge if it passes on rerun |
+| 2026-11-17 | dev cascading-lists | G4 development | pass | Round 3, D1 fixed in list-presence.ts |
