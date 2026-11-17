@@ -12,3 +12,5 @@
 | 2026-11-17 | dev | G4 popup-size | decided | `styles.css` instead of TSX: INT-1 names "page styles", class already present |
 | 2026-11-17 | dev | G4 popup-size | decided | 280 px floor on the 70 % height cap; serves batch decision "room for one row" |
 | 2026-11-17 | dev | G4 popup-size | pass | build green, re-run by gatekeeper |
+| 2026-11-17 | test | G5 popup-size | decided | `playwright.config.ts` change accepted as test infrastructure (serial fixture group) |
+| 2026-11-17 | test | G5 popup-size | pass | 20 e2e green on gatekeeper re-run; 448 px assertion updated per REQ-1 |
