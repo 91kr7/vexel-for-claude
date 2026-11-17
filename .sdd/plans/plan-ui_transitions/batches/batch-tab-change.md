@@ -15,13 +15,15 @@ The motion base comes from batch modal-dialogs. This is the last batch: it also 
 |----|------|-------|------|-----|---------|
 | INT-1 | modify | `src/web/git/GitExplorerPanel.tsx` | When the selected tab changes, the new tab panel enters with a fade and a small slide. The hidden panel stays mounted, as today. | REQ-23 | — |
 | INT-2 | modify | `src/web/settings/SettingsDialog.tsx` | When the chosen menu changes, the new panel enters with a fade and a small slide. Arrow keys and Tab move on at once, during the effect. | REQ-24, REQ-26, REQ-28 | — |
-| INT-3 | create | test, frontend | Cross-check of the whole plan: every new effect, with reduced motion, applies at once; every effect stays within its limit; the existing effects behave as before. | REQ-25, REQ-29, REQ-30, REQ-31 | INT-1, INT-2 |
+| INT-3 | create | test, frontend | Cross-check of the whole plan: every new effect, with reduced motion, applies at once; every effect stays within its limit; the existing effects behave as before. | REQ-25, REQ-29, REQ-30, REQ-31 | INT-1, INT-2, INT-4 |
+| INT-4 | modify | `src/web/theme/motion.css` | Set enter effects to 300 ms and exit effects to 200 ms. Replace the enter and exit easing with a softer deceleration curve that spreads the motion over the whole duration. | REQ-31, REQ-32 | — |
 
 Notes:
 
 - Only the entering panel plays the effect. The leaving panel hides at once, so two panels never show together.
 - INT-3 changes no behaviour. The common rules need no code of their own here, but they close only when a check covers all seven effects together.
 - REQ-29 needs no code: today no dialog or panel is open when the app starts. INT-3 checks that this stays true.
+- INT-4 applies the durations and the curve that the human chose on 2026-11-17 (`requirements.md`, assumption "Durations"). The current enter curve does most of its movement in the first ~50 ms. The cascade limit stays 600 ms.
 
 ## Human acceptance
 
@@ -38,6 +40,13 @@ Notes:
 - Given → the Settings dialog open on "Appearance"
 - When → the user presses the Down arrow twice in quick succession
 - Then → the "Updates" section shows, and its item has the focus
+
+### Scenario: a dialog opens smoothly, with no jump at the start
+
+- REQ → REQ-31, REQ-32
+- Given → the app is open, with no dialog, in any theme and window look
+- When → the user opens Settings with the gear button, then closes it with Esc
+- Then → the box zooms in evenly over the whole opening, with no jump at the start, and it leaves a little faster than it entered
 
 ### Scenario: with reduced motion every change is immediate
 

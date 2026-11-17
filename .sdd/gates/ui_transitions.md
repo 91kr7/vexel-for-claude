@@ -56,3 +56,6 @@
 | 2026-11-17 | dev cascading-lists | G5 tests | pass | Confirmed by gatekeeper rerun of the tester's batch tests |
 | 2026-11-17 | dev tab-change | divergence developer | decided | INT-3 is a cross-check by tests, left to the tester; REQ-25..32 need no extra code |
 | 2026-11-17 | dev tab-change | G4 development | pass | |
+| 2026-11-17 | dev tab-change | human review | escalated | Human found effects too fast and dialog opening jerky in the preview |
+| 2026-11-17 | dev tab-change | human review | human decision | Enter 300 ms, exit 200 ms, softer easing; added as tab-change INT-4 |
+| 2026-11-17 | plan | G3 coverage | pass | INT-4 motion tokens amendment, REQ-31 and REQ-32 |

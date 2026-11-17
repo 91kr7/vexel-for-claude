@@ -101,7 +101,7 @@ These REQs apply to every effect above.
 
 ## Assumptions
 
-- **Durations (REQ-22, REQ-31).** 300 ms per effect and 600 ms for a whole cascade. Gatekeeper decision: both are inside the spec's "a few hundred milliseconds at most" (Non-functional).
+- **Durations (REQ-22, REQ-31).** Enter effects last 300 ms and exit effects 200 ms. Both use a softer deceleration curve that spreads the motion over the whole duration. A whole cascade ends within 600 ms. Human decision (2026-11-17), taken after seeing the app: the first effects were too fast and the dialog opening looked jerky.
 - **Session list (REQ-18, REQ-19).** The slide-in and fade-out apply to every entry of the session list, external sessions included. Gatekeeper decision: spec requirement 7 names "the items of the session list" with no exclusion.
 - **Theme change (REQ-14).** The dissolve plays for any theme or look change made while the app is open, never on the first paint at app start. Gatekeeper decision: derived from spec requirement 6 and the spec assumption on what appears at app start.
 - **Sections of Settings (REQ-24).** They are the navigation entries inside the Settings dialog (spec assumption).

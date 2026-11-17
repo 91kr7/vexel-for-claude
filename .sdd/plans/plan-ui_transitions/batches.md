@@ -69,8 +69,8 @@ REQ → INT (each INT cited as `<batch>/INT-n`):
 | REQ-28 | modal-dialogs/INT-3; popovers/INT-3, INT-5; git-explorer-panel/INT-2; session-switch/INT-2; theme-change/INT-2; tab-change/INT-2 | tab-change |
 | REQ-29 | tab-change/INT-3 (no code needed, see the batch notes) | tab-change |
 | REQ-30 | modal-dialogs/INT-2; tab-change/INT-3 | tab-change |
-| REQ-31 | modal-dialogs/INT-1; tab-change/INT-3 | tab-change |
-| REQ-32 | modal-dialogs/INT-1 | tab-change |
+| REQ-31 | modal-dialogs/INT-1; tab-change/INT-3, INT-4 | tab-change |
+| REQ-32 | modal-dialogs/INT-1; tab-change/INT-4 | tab-change |
 | REQ-33 | session-switch/INT-4 | session-switch |
 
 Result:
