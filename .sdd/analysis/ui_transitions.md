@@ -33,6 +33,7 @@ The app must not become slower to use: an effect is decoration, never a wait.
 5. **Theme change.** When the user changes the theme or the window look, the colours must change with a colour dissolve. The human rejected the variant where the new theme expands as a circle from the click point.
 6. **Cascading lists.** The items of the session list and of the project list must enter in sequence. A new session must slide in. A removed session must fade out.
 7. **Tab change.** When the user switches between the Changes and History tabs of the Git Explorer, or between the sections of Settings, the content must change with a fade and a small slide.
+8. **Keys typed while a session connects.** Keys typed in a session while its connection is still opening must reach that session, in order, once it is open. Today these keys are lost for about 600 ms after a session switch. This bug existed before this request. The human decided on 2026-11-17 to fix it here.
 
 ### Functional (behaviour around the effects)
 
@@ -72,9 +73,10 @@ The app must not become slower to use: an effect is decoration, never a wait.
 **In scope**
 - The seven effects above, on the surfaces named for each.
 - Reduced-motion support for all of them.
+- The fix for keys typed while a session connects (requirement 8).
 
 **Out of scope**
 - A setting or menu entry to turn effects off or to choose their speed.
 - New effects on surfaces not named above (for example hover effects or the title bar).
 - Changes to the existing effects.
-- Any change to the behaviour of the app other than how its changes are animated.
+- Any change to the behaviour of the app other than how its changes are animated. The only exception is requirement 8.
