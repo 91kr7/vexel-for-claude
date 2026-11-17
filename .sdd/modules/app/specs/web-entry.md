@@ -57,7 +57,7 @@ Client classes built from the mock's parts:
 | `.field`, `.field-label`, `.field-input` | label mono 11 px `--text-secondary`, 4 px above the input. Input mono 12 px, padding 8 × 12 px, `--radius-frame`, `--field-bg`, 1 px `--field-border` border; on focus no outline: the border becomes `--role-accent` with a 1 px `--field-focus-ring` ring around it (`#new-sess-dir`; in Dark Blue the mock's prompt box) |
 
 - the font is Roboto Mono wherever the mock uses JetBrains Mono, and Roboto Flex wherever it uses Plus Jakarta Sans or Instrument Serif. Where the mock asks mono 600 or 700, the client uses 500.
-- with `prefers-reduced-motion: reduce`, the pulse, the spinner and the progress bar do not move.
+- with `prefers-reduced-motion: reduce`, the pulse, the spinner and the progress bar do not move, and the motion durations (MotionTokens) are 0 ms.
 
 ## Rules and invariants
 
@@ -71,6 +71,7 @@ Client classes built from the mock's parts:
 - ThemeStore (takes over the first mark)
 - LookStore (takes over the first look mark), Windows11Look
 - BundledFont
+- MotionTokens
 
 ## Requirements served
 
@@ -82,3 +83,4 @@ Client classes built from the mock's parts:
 - `plan-wsl_support/REQ-17`, `plan-wsl_support/REQ-23`, `plan-wsl_support/REQ-24`, `plan-wsl_support/REQ-34`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-4`
 - `plan-dark_blue_theme/REQ-32`, `plan-dark_blue_theme/REQ-33`, `plan-dark_blue_theme/REQ-35`, `plan-dark_blue_theme/REQ-40`, `plan-dark_blue_theme/REQ-42`
+- `plan-ui_transitions/REQ-25`, `plan-ui_transitions/REQ-30`

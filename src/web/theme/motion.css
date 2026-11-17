@@ -1,0 +1,8 @@
+/* Motion of the UI transitions: the same in every theme and look, so no theme or look file sets these tokens. */
+:root {
+  --motion-duration-enter: 200ms;
+  --motion-duration-exit: 150ms;
+  --motion-cascade-max: 600ms;
+  --motion-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+}

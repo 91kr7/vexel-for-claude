@@ -4,6 +4,7 @@ import { ErrorMessage } from '../feedback/ErrorMessage';
 import { Spinner } from '../feedback/ProgressIndicator';
 import { LogInIcon } from '../icons/Icons';
 import { useSessionCommand } from '../shortcut-channel';
+import { ExitPresence } from '../motion/ExitPresence';
 
 interface ResumeHereButtonProps {
   sessionId: string;
@@ -53,15 +54,17 @@ export function ResumeHereButton({ sessionId, onResumed, ended = false }: Resume
         Resume Here
       </button>
       {error && <ErrorMessage>{error}</ErrorMessage>}
-      {warning && (
-        <RunningElsewhereWarning
-          onConfirm={() => {
-            setWarning(false);
-            void resume();
-          }}
-          onCancel={() => setWarning(false)}
-        />
-      )}
+      <ExitPresence>
+        {warning && (
+          <RunningElsewhereWarning
+            onConfirm={() => {
+              setWarning(false);
+              void resume();
+            }}
+            onCancel={() => setWarning(false)}
+          />
+        )}
+      </ExitPresence>
     </>
   );
 }

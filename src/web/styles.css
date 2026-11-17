@@ -1,4 +1,5 @@
 @import './theme/tokens.css';
+@import './theme/motion.css';
 @import './theme/windows11.css';
 @import './fonts/roboto.css';
 
@@ -3155,6 +3156,62 @@ input {
   z-index: 110;
 }
 
+.modal-backdrop,
+.modal {
+  animation-duration: var(--motion-duration-enter);
+  animation-timing-function: var(--motion-ease-enter);
+  animation-fill-mode: both;
+}
+
+.modal-backdrop {
+  animation-name: vx-backdrop-in;
+}
+
+.modal {
+  animation-name: vx-dialog-in;
+}
+
+.modal-backdrop.is-leaving {
+  pointer-events: none;
+  animation-name: vx-backdrop-out;
+}
+
+.modal-backdrop.is-leaving,
+.modal-backdrop.is-leaving .modal {
+  animation-duration: var(--motion-duration-exit);
+  animation-timing-function: var(--motion-ease-exit);
+}
+
+.modal-backdrop.is-leaving .modal {
+  animation-name: vx-dialog-out;
+}
+
+@keyframes vx-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vx-backdrop-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vx-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes vx-dialog-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
 .modal {
   -webkit-app-region: no-drag;
   display: flex;
@@ -4011,5 +4068,12 @@ button.dialog-row {
   .state-dot.state-needs_input,
   .star-button.pop {
     animation: none;
+  }
+
+  /* Every effect that uses the motion tokens ends at once. */
+  :root {
+    --motion-duration-enter: 0ms;
+    --motion-duration-exit: 0ms;
+    --motion-cascade-max: 0ms;
   }
 }

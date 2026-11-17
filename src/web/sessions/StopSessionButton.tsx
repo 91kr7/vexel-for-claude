@@ -4,6 +4,7 @@ import { ErrorMessage } from '../feedback/ErrorMessage';
 import { Spinner } from '../feedback/ProgressIndicator';
 import { useSessionCommand } from '../shortcut-channel';
 import type { SessionState } from './live-session-store';
+import { ExitPresence } from '../motion/ExitPresence';
 
 const STILL_WORKING = ' is still working. The current turn will be interrupted. You can resume the conversation from the history.';
 
@@ -56,20 +57,22 @@ export function StopSessionButton({ sessionId, state, folderName }: StopSessionB
         Terminate
       </button>
       {failed && <ErrorMessage>Could not terminate the session.</ErrorMessage>}
-      {confirming && (
-        <WarningDialog
-          title="Terminate the Session?"
-          description={
-            <>
-              {folderName ? <b>{folderName}</b> : 'The session'}
-              {STILL_WORKING}
-            </>
-          }
-          primaryLabel="Terminate"
-          onPrimary={() => void stop()}
-          onCancel={() => setConfirming(false)}
-        />
-      )}
+      <ExitPresence>
+        {confirming && (
+          <WarningDialog
+            title="Terminate the Session?"
+            description={
+              <>
+                {folderName ? <b>{folderName}</b> : 'The session'}
+                {STILL_WORKING}
+              </>
+            }
+            primaryLabel="Terminate"
+            onPrimary={() => void stop()}
+            onCancel={() => setConfirming(false)}
+          />
+        )}
+      </ExitPresence>
     </>
   );
 }

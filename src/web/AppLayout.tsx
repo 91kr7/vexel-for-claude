@@ -28,6 +28,7 @@ import { useShortcutKeys } from './shortcut-keys';
 import type { ShortcutCommand } from './shortcut-map';
 import { pageThemeStore } from './theme/theme-store';
 import { TopBar } from './TopBar';
+import { ExitPresence } from './motion/ExitPresence';
 
 function subscribeToWindowResize(listener: () => void): () => void {
   window.addEventListener('resize', listener);
@@ -227,44 +228,52 @@ export function AppLayout() {
       {snackbar}
       {newerVersion && !updateNoticeClosed && <NewerVersionNotice version={newerVersion} onClose={() => setUpdateNoticeClosed(true)} />}
       <ShortMessageToast text={shortMessage.text} />
-      {choosingFolder && (
-        <FolderChooser
-          onStarted={(sessionId) => {
-            setChoosingFolder(false);
-            openHosted(sessionId);
-          }}
-          onCancel={() => setChoosingFolder(false)}
-        />
-      )}
-      {namingProject && (
-        <SessionNameDialog
-          project={namingProject}
-          onStarted={(sessionId) => {
-            setNamingProject(null);
-            openHosted(sessionId);
-          }}
-          onCancel={() => setNamingProject(null)}
-        />
-      )}
-      {resuming && (
-        <ResumeDialog
-          onResumed={(sessionId) => {
-            setResuming(false);
-            openHosted(sessionId);
-          }}
-          onCancel={() => setResuming(false)}
-        />
-      )}
-      {settingsTab !== null && (
-        <SettingsDialog
-          initialTab={settingsTab}
-          onClose={() => setSettingsTab(null)}
-          onNewerVersion={(version) => {
-            setCheckedNewerVersion(version);
-            setUpdateNoticeClosed(false);
-          }}
-        />
-      )}
+      <ExitPresence>
+        {choosingFolder && (
+          <FolderChooser
+            onStarted={(sessionId) => {
+              setChoosingFolder(false);
+              openHosted(sessionId);
+            }}
+            onCancel={() => setChoosingFolder(false)}
+          />
+        )}
+      </ExitPresence>
+      <ExitPresence>
+        {namingProject && (
+          <SessionNameDialog
+            project={namingProject}
+            onStarted={(sessionId) => {
+              setNamingProject(null);
+              openHosted(sessionId);
+            }}
+            onCancel={() => setNamingProject(null)}
+          />
+        )}
+      </ExitPresence>
+      <ExitPresence>
+        {resuming && (
+          <ResumeDialog
+            onResumed={(sessionId) => {
+              setResuming(false);
+              openHosted(sessionId);
+            }}
+            onCancel={() => setResuming(false)}
+          />
+        )}
+      </ExitPresence>
+      <ExitPresence>
+        {settingsTab !== null && (
+          <SettingsDialog
+            initialTab={settingsTab}
+            onClose={() => setSettingsTab(null)}
+            onNewerVersion={(version) => {
+              setCheckedNewerVersion(version);
+              setUpdateNoticeClosed(false);
+            }}
+          />
+        )}
+      </ExitPresence>
     </div>
   );
 }
