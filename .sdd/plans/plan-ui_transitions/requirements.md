@@ -26,8 +26,8 @@ Human decision (2026-11-17): the effect covers every modal dialog, the New sessi
 
 | ID | Requirement |
 |----|-------------|
-| REQ-3 | The Plan Usage popover, the "needs input" snackbar, the short-message toast and the newer-version notice enter by sliding up from the bottom with a fade. |
-| REQ-4 | The same elements leave with the reverse effect: they slide down and fade out. |
+| REQ-3 | The "needs input" snackbar, the short-message toast and the newer-version notice enter by sliding up from the bottom with a fade; the Plan Usage popover drops from its title-bar button with a fade. |
+| REQ-4 | The same elements leave with the reverse effect: the first three slide down and the popover lifts back to its button, while they fade out. |
 
 ## Feature: Git Explorer panel
 
@@ -101,7 +101,7 @@ These REQs apply to every effect above.
 
 ## Assumptions
 
-- **Durations (REQ-22, REQ-31).** Enter effects last 300 ms and exit effects 200 ms. Both use a softer deceleration curve that spreads the motion over the whole duration. A whole cascade ends within 600 ms. Human decision (2026-11-17), taken after seeing the app: the first effects were too fast and the dialog opening looked jerky.
+- **Durations (REQ-22, REQ-31).** Enter effects last 300 ms and exit effects 200 ms. Both use a softer deceleration curve that spreads the motion over the whole duration. A whole cascade ends within 600 ms. Human decision (2026-11-17), taken after seeing the app: the first effects were too fast and the dialog opening looked jerky. A later human review found the popups mechanical: their fade now ends in 150 ms, their motion uses a light spring, and a dialog box follows its backdrop by 40 ms, all within 300 ms.
 - **Session list (REQ-18, REQ-19).** The slide-in and fade-out apply to every entry of the session list, external sessions included. Gatekeeper decision: spec requirement 7 names "the items of the session list" with no exclusion.
 - **Theme change (REQ-14).** The dissolve plays for any theme or look change made while the app is open, never on the first paint at app start. Gatekeeper decision: derived from spec requirement 6 and the spec assumption on what appears at app start.
 - **Sections of Settings (REQ-24).** They are the navigation entries inside the Settings dialog (spec assumption).

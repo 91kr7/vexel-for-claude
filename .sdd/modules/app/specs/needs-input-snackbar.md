@@ -40,7 +40,7 @@ Actions:
 - "Open" → `onOpen(session.id)`.
 
 Motion (MotionTokens):
-- on open → it slides up a few pixels from below while it fades in. "Open" works from the first frame of the effect.
+- on open → it slides up a few pixels from below on the spring curve while it fades in. "Open" works from the first frame of the effect.
 - leaving (`useLeaving()` of ExitPresence is `true`) → the reverse: it slides down while it fades out. The leaving snackbar:
   - takes no pointer input: clicks reach the page below;
   - "Open" does nothing;

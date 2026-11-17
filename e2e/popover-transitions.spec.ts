@@ -148,21 +148,32 @@ function shiftOf(transform: string | undefined): number {
 }
 
 const framesAt = (effects: Effect[], offset: number) => effects.flatMap((effect) => effect.keyframes).filter((frame) => frame.offset === offset);
-/** At `offset` the element is transparent and a few pixels lower than its place. */
-const lowAndTransparentAt = (effects: Effect[], offset: number) =>
-  framesAt(effects, offset).some((frame) => Number(frame.opacity) === 0 && shiftOf(frame.transform) > 0 && shiftOf(frame.transform) <= 24);
+/**
+ * At `offset` the element is transparent and a few pixels off its place: lower (`direction` 1) or higher (-1). The fade
+ * and the shift may come from two effects that play together.
+ */
+const offPlaceAndTransparentAt = (effects: Effect[], offset: number, direction: 1 | -1 = 1) => {
+  const frames = framesAt(effects, offset);
+  const shifted = (frame: Effect['keyframes'][number]) => {
+    const shift = shiftOf(frame.transform) * direction;
+    return shift > 0 && shift <= 24;
+  };
+  return frames.some((frame) => Number(frame.opacity) === 0) && frames.some(shifted);
+};
 
-function expectRiseIn(snapshot: Snapshot | undefined, label: string): void {
+function expectRiseIn(snapshot: Snapshot | undefined, label: string, direction: 1 | -1 = 1): void {
   expect(snapshot, `${label}: no opening recorded`).toBeDefined();
   const { effects } = snapshot as Snapshot;
-  expect(lowAndTransparentAt(effects, 0), `${label}: starts lower and transparent ${JSON.stringify(effects)}`).toBe(true);
+  const where = direction === 1 ? 'lower' : 'higher';
+  expect(offPlaceAndTransparentAt(effects, 0, direction), `${label}: starts ${where} and transparent ${JSON.stringify(effects)}`).toBe(true);
   for (const effect of effects) expect(effect.duration, `${label}: opening duration`).toBeGreaterThan(0);
 }
 
-function expectRiseOut(snapshot: Snapshot | undefined, label: string): void {
+function expectRiseOut(snapshot: Snapshot | undefined, label: string, direction: 1 | -1 = 1): void {
   expect(snapshot, `${label}: no leaving recorded`).toBeDefined();
   const { effects } = snapshot as Snapshot;
-  expect(lowAndTransparentAt(effects, 1), `${label}: ends lower and transparent ${JSON.stringify(effects)}`).toBe(true);
+  const where = direction === 1 ? 'lower' : 'higher';
+  expect(offPlaceAndTransparentAt(effects, 1, direction), `${label}: ends ${where} and transparent ${JSON.stringify(effects)}`).toBe(true);
   for (const effect of effects) expect(effect.duration, `${label}: leaving duration`).toBeGreaterThan(0);
 }
 
@@ -180,8 +191,9 @@ async function pointerGoesThrough(target: Locator): Promise<boolean> {
   });
 }
 
-// plan-ui_transitions/REQ-3, REQ-4 — scenario "the popovers slide up on enter and slide down on leave"
-test('the Plan Usage popover slides up with a fade on open, and slides down while it fades out on close', async ({ page, request }) => {
+// plan-ui_transitions/REQ-3, REQ-4 — the Plan Usage popover hangs under its title-bar button: it drops from it on
+// open and lifts back to it on close
+test('the Plan Usage popover drops from its button with a fade on open, and lifts back while it fades out on close', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const folder = await startViaApi(request, 'usage-motion');
   await page.goto('/');
@@ -196,9 +208,9 @@ test('the Plan Usage popover slides up with a fade on open, and slides down whil
 
   const [opening, leaving] = await snapshots(page, 'plan-usage-popover');
   expect(opening?.phase).toBe('open');
-  expectRiseIn(opening, 'Plan Usage');
+  expectRiseIn(opening, 'Plan Usage', -1);
   expect(leaving?.phase).toBe('leave');
-  expectRiseOut(leaving, 'Plan Usage');
+  expectRiseOut(leaving, 'Plan Usage', -1);
 });
 
 // plan-ui_transitions/REQ-26, REQ-27, REQ-28: the close button works from the first frame; a leaving popover takes

@@ -28,8 +28,8 @@ Actions:
 - Esc with the focus inside the panel → `onClose()`.
 
 Motion (MotionTokens):
-- on open → it slides up a few pixels from below while it fades in. The close button and Esc work from the first frame of the effect.
-- leaving (`useLeaving()` of ExitPresence is `true`) → the reverse: it slides down while it fades out. The leaving panel:
+- on open → it hangs under its title-bar button, so it drops a few pixels from that corner and grows from 96 % on the spring curve while it fades in. The close button and Esc work from the first frame of the effect.
+- leaving (`useLeaving()` of ExitPresence is `true`) → the reverse: it lifts back toward its button while it fades out. The leaving panel:
   - takes no pointer input: clicks reach the page below;
   - ignores Esc and its close button does nothing;
   - is hidden from assistive technologies (`aria-hidden`).

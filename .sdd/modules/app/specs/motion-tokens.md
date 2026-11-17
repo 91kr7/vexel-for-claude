@@ -15,6 +15,9 @@ type: configuration
 - `--motion-cascade-max` → 600 ms, the whole cascade of a list.
 - `--motion-ease-enter` → a soft deceleration that spreads the motion over the whole duration (no jump in the first frames).
 - `--motion-ease-exit` → a soft acceleration over the whole duration, the pair of the enter curve.
+- `--motion-duration-fade` → 150 ms, the fade of a popup, shorter than its motion so the box is solid while it settles.
+- `--motion-duration-pop` → 260 ms, the motion of a dialog box, which starts `--motion-stagger` (40 ms) after its backdrop: 300 ms in all.
+- `--motion-ease-spring` → a light spring: the popup passes its place by a hair and settles. Enter effects of popups only; exits keep `--motion-ease-exit`.
 - with `prefers-reduced-motion: reduce` → the three durations are 0 ms, so every effect that uses them ends at once. A change of the system setting applies at once, with no reload.
 
 ## Rules and invariants

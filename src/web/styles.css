@@ -3169,7 +3169,9 @@ input {
 }
 
 .modal {
-  animation-name: vx-dialog-in;
+  animation:
+    vx-fade-in var(--motion-duration-fade) ease-out var(--motion-stagger) both,
+    vx-dialog-in var(--motion-duration-pop) var(--motion-ease-spring) var(--motion-stagger) both;
 }
 
 .modal-backdrop.is-leaving {
@@ -3184,7 +3186,7 @@ input {
 }
 
 .modal-backdrop.is-leaving .modal {
-  animation-name: vx-dialog-out;
+  animation: vx-dialog-out var(--motion-duration-exit) var(--motion-ease-exit) both;
 }
 
 @keyframes vx-backdrop-in {
@@ -3201,8 +3203,7 @@ input {
 
 @keyframes vx-dialog-in {
   from {
-    opacity: 0;
-    transform: scale(0.96);
+    transform: translateY(6px) scale(0.95);
   }
 }
 
@@ -3213,11 +3214,33 @@ input {
   }
 }
 
-.plan-usage-popover,
 .snackbar,
 .short-message,
 .update-notice {
-  animation: vx-rise-in var(--motion-duration-enter) var(--motion-ease-enter) both;
+  will-change: transform, opacity;
+  animation:
+    vx-fade-in var(--motion-duration-fade) ease-out both,
+    vx-pop-up var(--motion-duration-enter) var(--motion-ease-spring) both;
+}
+
+/* The popover hangs under its button in the title bar: it grows from that corner. */
+.plan-usage-popover {
+  transform-origin: top right;
+  animation:
+    vx-fade-in var(--motion-duration-fade) ease-out both,
+    vx-pop-down var(--motion-duration-enter) var(--motion-ease-spring) both;
+}
+
+@keyframes vx-pop-up {
+  from {
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
+@keyframes vx-pop-down {
+  from {
+    transform: translateY(-6px) scale(0.96);
+  }
 }
 
 .plan-usage-popover.is-leaving,
@@ -3226,6 +3249,17 @@ input {
 .update-notice.is-leaving {
   pointer-events: none;
   animation: vx-rise-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+.plan-usage-popover.is-leaving {
+  animation-name: vx-lift-out;
+}
+
+@keyframes vx-lift-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
 }
 
 /* The panel slides from the right edge; its negative margin gives its width back to the content, which resizes with it. */
@@ -4203,5 +4237,8 @@ button.dialog-row {
     --motion-duration-enter: 0ms;
     --motion-duration-exit: 0ms;
     --motion-cascade-max: 0ms;
+    --motion-duration-fade: 0ms;
+    --motion-duration-pop: 0ms;
+    --motion-stagger: 0ms;
   }
 }

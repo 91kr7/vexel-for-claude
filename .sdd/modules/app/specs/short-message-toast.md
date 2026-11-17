@@ -26,7 +26,7 @@ Shows:
 - it does not take the pointer.
 
 Motion (MotionTokens):
-- on open → it slides up a few pixels from below while it fades in.
+- on open → it slides up a few pixels from below on the spring curve while it fades in.
 - leaving (`useLeaving()` of ExitPresence is `true`) → the reverse: it slides down while it fades out. The leaving toast:
   - shows the text it had;
   - is hidden from assistive technologies (`aria-hidden`).

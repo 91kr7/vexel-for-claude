@@ -27,7 +27,7 @@ The app must not become slower to use: an effect is decoration, never a wait.
 ### Functional (human decisions)
 
 1. **Modal dialogs.** On open, the backdrop must fade in and the box must enter with a slight zoom. On close, the reverse must play. This covers every modal dialog of the app, for example Settings, New session (folder chooser), Resume session, Session name and the Warning dialogs.
-2. **Popovers, snackbar, toasts.** They must enter by sliding up from the bottom with a fade, and leave with the reverse. This covers the Plan Usage popover, the "needs input" snackbar, the short-message toast and the newer-version notice.
+2. **Popovers, snackbar, toasts.** They must enter by sliding up from the bottom with a fade, and leave with the reverse. The Plan Usage popover hangs under its title-bar button, so it drops from that button and lifts back to it (human decision, 2026-11-17). This covers the Plan Usage popover, the "needs input" snackbar, the short-message toast and the newer-version notice.
 3. **Git Explorer panel.** It must slide in from its side on open and slide out on close.
 4. **Session switch.** When the user selects another session, the main area (terminal or conversation) must change with a cross-fade.
 5. **Theme change.** When the user changes the theme or the window look, the colours must change with a colour dissolve. The human rejected the variant where the new theme expands as a circle from the click point.

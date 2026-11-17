@@ -34,7 +34,7 @@ Shows (sizes in px):
 - `aria-modal="true"`.
 
 Motion (MotionTokens):
-- on open → the backdrop fades in and the frame enters with a slight zoom (from 96 % and transparent). The focus rules apply from the first frame of the effect: Esc and Enter work at once.
+- on open → the backdrop fades in and the frame follows 40 ms later: it rises 6 px and grows from 95 % on the spring curve, while its fade ends in 150 ms. The focus rules apply from the first frame of the effect: Esc and Enter work at once.
 - leaving (`useLeaving()` of ExitPresence is `true`) → the reverse: the frame zooms out slightly while the backdrop fades out. The leaving dialog:
   - takes no pointer input: clicks reach the page below;
   - ignores keys and traps no focus;

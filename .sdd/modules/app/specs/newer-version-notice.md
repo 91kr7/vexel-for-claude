@@ -27,7 +27,7 @@ Actions:
 - "Close Update Notice" → `onClose()`.
 
 Motion (MotionTokens):
-- on open → it slides up a few pixels from below while it fades in. "Close Update Notice" and "View Release" work from the first frame of the effect.
+- on open → it slides up a few pixels from below on the spring curve while it fades in. "Close Update Notice" and "View Release" work from the first frame of the effect.
 - leaving (`useLeaving()` of ExitPresence is `true`) → the reverse: it slides down while it fades out. The leaving notice:
   - takes no pointer input: clicks reach the page below;
   - "Close Update Notice" does nothing;

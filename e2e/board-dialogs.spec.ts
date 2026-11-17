@@ -419,7 +419,8 @@ test.describe('new-session dialog', () => {
     await expect(radios).toHaveCount(14);
     for (const [index, name] of names.entries()) await expect(radios.nth(index)).toHaveAccessibleName(name);
 
-    // Dialog "Shows": the backdrop pads the frame by 16 px
+    // Dialog "Shows": the backdrop pads the frame by 16 px. Measured once the opening zoom has settled.
+    await settled(chooser(page));
     const frame = await box(chooser(page));
     expect(frame.y, 'the frame keeps 16 px above').toBeGreaterThanOrEqual(16 - TOLERANCE);
     expect(bottom(frame), 'the frame keeps 16 px below').toBeLessThanOrEqual(900 - 16 + TOLERANCE);
