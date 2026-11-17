@@ -10,7 +10,7 @@ status: validated
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
 | modal-dialogs | Modal dialogs (also builds the motion base) | REQ-1, REQ-2 | — | certified | A dialog opens with a zoom and closes with the reverse |
-| popovers | Popovers, snackbar, toasts | REQ-3, REQ-4 | modal-dialogs | implemented | The popovers slide up on enter and slide down on leave |
+| popovers | Popovers, snackbar, toasts | REQ-3, REQ-4 | modal-dialogs | certified | The popovers slide up on enter and slide down on leave |
 | git-explorer-panel | Git Explorer panel | REQ-5, REQ-6 | modal-dialogs | todo | The Git Explorer slides in and out |
 | session-switch | Session switch | REQ-10, REQ-11, REQ-12, REQ-13 | modal-dialogs | todo | Switching session cross-fades the main area |
 | theme-change | Theme change | REQ-14, REQ-15 | modal-dialogs | todo | The theme changes with a colour dissolve |

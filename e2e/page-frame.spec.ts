@@ -120,6 +120,18 @@ async function focusedShowsRing(page: Page): Promise<boolean> {
   }, ring);
 }
 
+/** Waits for the enter effect of the element (plan-ui_transitions/REQ-3): its place is measured at rest. */
+async function settled(target: Locator): Promise<void> {
+  await target.evaluate((el) =>
+    Promise.all(
+      el
+        .getAnimations()
+        .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+        .map((animation) => animation.finished),
+    ),
+  );
+}
+
 test.describe('rail and list panel', () => {
   // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-14, REQ-17: scenario "The user starts a new session from the rail"
   test('at 1440 px the top bar shows the brand, the rail its actions and no logo, the panel "Sessions", and "New Claude Code Session" opens the dialog', async ({ page }) => {
@@ -364,6 +376,7 @@ test.describe('needs-input snackbar', () => {
     await openFromList(page, open);
     await askPermission(request, waitingId);
     await expect(snackbar(page)).toBeVisible();
+    await settled(snackbar(page));
 
     const bar = await box(snackbar(page));
     expect(1440 - (bar.x + bar.width), 'gap to the right edge of the window').toBeCloseTo(20, 0);
