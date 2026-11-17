@@ -416,7 +416,7 @@ test.describe('typing right after a switch', () => {
     });
   });
 
-  // plan-ui_transitions/REQ-12, REQ-26 — scenario "typing right after a switch reaches the new session"
+  // plan-ui_transitions/REQ-12, REQ-26, REQ-33 — scenario "typing right after a switch reaches the new session"
   test('text typed at once after opening B with its shortcut reaches B, and A does not receive it', async ({ page, request }) => {
     const { folders } = await hostedSessions(request, ['type-a', 'type-b']);
     await page.goto('/');
@@ -435,7 +435,7 @@ test.describe('typing right after a switch', () => {
 
     await expect(layerOf(page, second).locator('.xterm-helper-textarea'), 'the new terminal takes the focus').toBeFocused();
     await page.waitForTimeout(SLOW_MS);
-    await expect.soft(layerOf(page, second), 'B received "z" then "q"').toContainText(/IN:7a(71|[\s\S]*IN:71)/, { timeout: 3000 });
+    await expect(layerOf(page, second), 'B received "z" then "q"').toContainText(/IN:7a(71|[\s\S]*IN:71)/, { timeout: 3000 });
     await expect(layers(page)).toHaveCount(1, { timeout: SLOW_MS + 1000 });
 
     await openHosted(page, first);

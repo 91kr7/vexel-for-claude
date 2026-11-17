@@ -34,3 +34,4 @@
 | 2026-11-17 | plan | G3 coverage | pass | REQ-33 closed by session-switch/INT-4 |
 | 2026-11-17 | dev session-switch | divergence developer | decided | Keys typed before the terminal exists (font load) stay out; REQ-33 covers an opening connection only |
 | 2026-11-17 | dev session-switch | G4 development | pass | INT-4 |
+| 2026-11-17 | dev session-switch | G5 tests | pass | Round 2, REQ-33 green |
