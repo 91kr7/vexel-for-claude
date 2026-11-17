@@ -28,3 +28,5 @@
 | 2026-11-17 | dev git-explorer-panel | G5 tests | pass | playwright.config.ts change is test grouping only |
 | 2026-11-17 | dev session-switch | divergence developer | decided | ExitPresence exports motionDurationMs, 4-line change to share the duration lookup; spec updated |
 | 2026-11-17 | dev session-switch | G4 development | pass | |
+| 2026-11-17 | dev session-switch | G5 tests | escalated | Keys typed while the new session connects are lost; also on code before the batch |
+| 2026-11-17 | dev session-switch | G5 tests | human decision | Fix it now: buffer input until the connection opens; analysis and plan extended |

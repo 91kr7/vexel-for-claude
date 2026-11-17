@@ -4,7 +4,7 @@ import { type ReactNode, useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ExitPresence, useLeaving } from './ExitPresence';
+import { ExitPresence, motionDurationMs, useLeaving } from './ExitPresence';
 
 const EXIT_MS = 100;
 
@@ -158,5 +158,34 @@ describe('ExitPresence', () => {
     expect(probe('portal')?.dataset.leaving).toBe('false');
     render(<Portal open={false} />);
     expect(probe('portal')?.dataset.leaving).toBe('true');
+  });
+});
+
+// Tests of plan-ui_transitions, batch session-switch: motionDurationMs in the ExitPresence spec.
+describe('motionDurationMs', () => {
+  const setToken = (token: string, value: string) => document.documentElement.style.setProperty(token, value);
+
+  it('gives the enter and the exit token in ms', () => {
+    setToken('--motion-duration-enter', '240ms');
+    setToken('--motion-duration-exit', '180ms');
+    expect(motionDurationMs('--motion-duration-enter')).toBe(240);
+    expect(motionDurationMs('--motion-duration-exit')).toBe(180);
+  });
+
+  it('turns a value in seconds into ms', () => {
+    setToken('--motion-duration-enter', '0.3s');
+    expect(motionDurationMs('--motion-duration-enter')).toBeCloseTo(300);
+  });
+
+  // reduced motion sets the tokens to 0ms
+  it('gives 0 when the token is 0ms', () => {
+    setToken('--motion-duration-enter', '0ms');
+    expect(motionDurationMs('--motion-duration-enter')).toBe(0);
+  });
+
+  // no style sheet: the token is not set
+  it('gives 0 when the token is not set', () => {
+    document.documentElement.style.removeProperty('--motion-duration-enter');
+    expect(motionDurationMs('--motion-duration-enter')).toBe(0);
   });
 });

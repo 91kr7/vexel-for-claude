@@ -37,8 +37,9 @@ test.beforeEach(async ({ page }) => {
 
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
-const terminal = (page: Page) => page.locator('.xterm-rows');
-const terminalInput = (page: Page) => page.locator('.xterm-helper-textarea');
+// During a session switch the leaving view keeps its terminal until its fade ends (plan-ui_transitions/REQ-10).
+const terminal = (page: Page) => page.locator('.main-view:not(.is-leaving) .xterm-rows');
+const terminalInput = (page: Page) => page.locator('.main-view:not(.is-leaving) .xterm-helper-textarea');
 const toast = (page: Page) => page.getByRole('status').filter({ hasText: 'No session needs input' });
 
 async function newFolder(name: string): Promise<string> {
@@ -86,7 +87,7 @@ async function openByClick(page: Page, folder: string): Promise<void> {
 }
 
 async function focusTerminal(page: Page): Promise<void> {
-  await page.locator('.xterm-screen').click();
+  await page.locator('.main-view:not(.is-leaving) .xterm-screen').click();
   await expect(terminalInput(page)).toBeFocused();
 }
 

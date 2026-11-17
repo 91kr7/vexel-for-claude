@@ -63,7 +63,8 @@ const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const mainArea = (page: Page) => page.getByRole('main');
 const terminalPanel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
-const terminal = (page: Page) => page.locator('.xterm-rows');
+// During a session switch the leaving view keeps its terminal until its fade ends (plan-ui_transitions/REQ-10).
+const terminal = (page: Page) => page.locator('.main-view:not(.is-leaving) .xterm-rows');
 const header = (page: Page) => mainArea(page).locator('.session-header');
 const explorerButton = (page: Page) => header(page).getByRole('button', { name: 'Git Explorer', exact: true });
 const explorer = (page: Page) => mainArea(page).getByRole('region', { name: 'Git Explorer', exact: true });
