@@ -16,3 +16,4 @@
 | 2026-11-17 | test | G5 popup-size | pass | 20 e2e green on gatekeeper re-run; 448 px assertion updated per REQ-1 |
 | 2026-11-17 | dev | G4 popup-mark | decided | FavoriteIndicator left in place though unused in production: removal is outside the batch INTs |
 | 2026-11-17 | dev | G4 popup-mark | pass | build green on gatekeeper re-run; files match INT-1..5 plus specs and indexes |
+| 2026-11-17 | test | G5 popup-mark | pass | 65 unit and 31 e2e green on gatekeeper re-run; `favorite-session.spec.ts` updated to the star button contract |
