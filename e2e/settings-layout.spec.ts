@@ -1,5 +1,6 @@
 // e2e of plan-settings_dialog, batch update-check: the three menus of the settings popup and its steady layout.
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { settled } from './motion';
 import { cardOf, settingsButton, settingsPopup } from './settings';
 
 const MENUS = ['Appearance', 'Shortcuts', 'Updates'] as const;
@@ -123,6 +124,8 @@ test.describe('at 1440 × 900', () => {
   test('REQ-59: "Restore All" sits above the "Shortcut List" and stays in place while the list scrolls', async ({ page }) => {
     await openSettings(page);
     await menuItem(page, 'Shortcuts').click();
+    // The new section rises in (plan-ui_transitions/REQ-24): it is measured at rest.
+    await settled(settingsPopup(page), true);
     const restoreAll = settingsPopup(page).getByRole('button', { name: 'Restore All', exact: true });
     const inList = await shortcutList(page).evaluate((list, button) => list.contains(button), await restoreAll.elementHandle());
     expect(inList).toBe(false);

@@ -5,6 +5,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, type WebSocketRoute, expect, test } from '@playwright/test';
+import { currentView, settled } from './motion';
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -34,7 +35,7 @@ const entry = (page: Page, folder: string) => entries(page).filter({ has: page.g
 const chip = (page: Page) => panel(page).getByRole('status').filter({ hasText: /needs? input/ });
 const badge = (page: Page) => railButton(page, 'Sessions').locator('.nav-rail-badge');
 const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'needs your input' });
-const terminal = (page: Page) => page.locator('.xterm-rows');
+const terminal = (page: Page) => currentView(page).locator('.xterm-rows');
 const chooser = (page: Page) => page.getByRole('dialog', { name: 'New Claude Code Session' });
 const history = (page: Page) => page.getByRole('dialog', { name: 'Resume Session' });
 
@@ -118,18 +119,6 @@ async function focusedShowsRing(page: Page): Promise<boolean> {
     const outline = s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0 && s.outlineColor === ringColour;
     return outline || s.boxShadow.includes(ringColour);
   }, ring);
-}
-
-/** Waits for the enter effect of the element (plan-ui_transitions/REQ-3): its place is measured at rest. */
-async function settled(target: Locator): Promise<void> {
-  await target.evaluate((el) =>
-    Promise.all(
-      el
-        .getAnimations()
-        .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
-        .map((animation) => animation.finished),
-    ),
-  );
 }
 
 test.describe('rail and list panel', () => {

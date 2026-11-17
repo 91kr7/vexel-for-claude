@@ -3,6 +3,7 @@ import { chmod, mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type Page, expect, test } from '@playwright/test';
+import { currentView } from './motion';
 
 let projectsRoot: string;
 let projectA: string;
@@ -24,7 +25,7 @@ test.afterAll(async () => {
 
 const chooser = (page: Page) => page.getByRole('form', { name: 'Choose the Project Folder' });
 const pathField = (page: Page) => page.getByRole('textbox', { name: 'Working Directory Path', exact: true });
-const terminal = (page: Page) => page.locator('.xterm-rows');
+const terminal = (page: Page) => currentView(page).locator('.xterm-rows');
 const focusTerminal = (page: Page) => page.locator('.xterm-screen').click();
 
 /** Opens the chooser and waits for its initial listing of the home folder. */

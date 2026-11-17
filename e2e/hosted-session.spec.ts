@@ -4,6 +4,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
+import { currentView, settled } from './motion';
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -27,7 +28,7 @@ const entry = (page: Page, folder: string) => list(page).getByRole('button').fil
 const mainArea = (page: Page) => page.getByRole('main');
 const header = (page: Page) => mainArea(page).locator('header');
 const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
-const footer = (page: Page) => mainArea(page).locator('footer');
+const footer = (page: Page) => currentView(page).locator('footer');
 const zoomControls = (page: Page) => page.getByRole('group', { name: 'Terminal text size' });
 const statePill = (page: Page, name: string) => header(page).getByText(name, { exact: true });
 const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'needs your input' });
@@ -350,6 +351,7 @@ test('at 1280 px a long snackbar wraps within the window minus 40 px, and the fo
   await openFromList(page, folder);
   await postHook(request, waitingId, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
   await expect(snackbar(page)).toBeVisible();
+  await settled(snackbar(page));
 
   const rowBox = await box(footer(page));
   near(rowBox.height, 32, 'footer height');
@@ -376,6 +378,7 @@ test('with no session open the snackbar sits 20 px from the bottom right of the 
   await expect(snackbar(page)).toBeVisible();
 
   await expect(footer(page)).toHaveCount(0);
+  await settled(snackbar(page));
   const bar = await box(snackbar(page));
   near(1440 - (bar.x + bar.width), 20, 'gap to the right edge of the window');
   near(900 - (bar.y + bar.height), 20, 'gap to the bottom edge of the window');

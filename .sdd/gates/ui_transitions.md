@@ -61,3 +61,5 @@
 | 2026-11-17 | plan | G3 coverage | pass | INT-4 motion tokens amendment, REQ-31 and REQ-32 |
 | 2026-11-17 | dev tab-change | G5 tests | decided | 20 older e2e tests break on effects still playing; adapt them per batch notes, never reduced motion suite-wide |
 | 2026-11-17 | dev tab-change | G4 development | pass | INT-4 motion tokens 300/200 ms, softer easing |
+| 2026-11-17 | dev tab-change | G5 tests | decided | Tester stuck on a self-matching wait loop; gatekeeper ran the closing suites |
+| 2026-11-17 | dev tab-change | G5 tests | pass | Unit 4101/4101; e2e 944 passed, 1 load-flaky (session-action-shortcuts-resume:165) passes 6/6 alone |

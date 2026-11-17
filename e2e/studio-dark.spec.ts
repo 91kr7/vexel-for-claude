@@ -5,6 +5,7 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, type WebSocketRoute, expect, test } from '@playwright/test';
+import { currentView, settled } from './motion';
 
 type Box = { x: number; y: number; width: number; height: number };
 type Rgba = [number, number, number, number];
@@ -57,7 +58,7 @@ const mainArea = (page: Page) => page.getByRole('main');
 const entry = (page: Page, folder: string) => panel(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const counter = (page: Page) => panel(page).getByRole('status').filter({ hasText: /needs? input/ });
 const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'needs your input' });
-const terminal = (page: Page) => page.locator('.xterm-rows');
+const terminal = (page: Page) => currentView(page).locator('.xterm-rows');
 const subbar = (page: Page) => mainArea(page).locator('header');
 const chooser = (page: Page) => page.getByRole('dialog', { name: 'New Claude Code Session' });
 const history = (page: Page) => page.getByRole('dialog', { name: 'Resume Session' });
@@ -683,6 +684,7 @@ test.describe('hosted session view', () => {
     const before = await box(region);
     await askPermission(request, otherId);
     await expect(snackbar(page)).toBeVisible();
+    await settled(snackbar(page));
     const toast = await box(snackbar(page));
     expect(toast.x + toast.width).toBeCloseTo(1440 - 20, 0);
     expect(toast.y + toast.height).toBeCloseTo(900 - 20, 0);

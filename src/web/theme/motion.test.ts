@@ -41,6 +41,18 @@ function motionDeclarations(css: string): { name: string; value: string; context
   return found;
 }
 
+/** The start and end slopes of a `cubic-bezier(x1, y1, x2, y2)` timing function. */
+function bezier(value: string | undefined): { startSlope: number; endSlope: number } {
+  const match = value?.match(/^cubic-bezier\(\s*([\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*([\d.]+)\s*,\s*(-?[\d.]+)\s*\)$/);
+  expect(match, `a cubic-bezier curve: ${value}`).toBeTruthy();
+  const [x1, y1, x2, y2] = match!.slice(1).map(Number) as [number, number, number, number];
+  const slope = (dy: number, dx: number) => (dx === 0 ? Number.POSITIVE_INFINITY : dy / dx);
+  // A control point on its end point leaves the tangent to the other control point.
+  const start = x1 === 0 && y1 === 0 ? slope(y2, x2) : slope(y1, x1);
+  const end = x2 === 1 && y2 === 1 ? slope(1 - y1, 1 - x1) : slope(1 - y2, 1 - x2);
+  return { startSlope: start, endSlope: end };
+}
+
 const toMs = (value: string) => (value.endsWith('ms') ? Number.parseFloat(value) : Number.parseFloat(value) * 1000);
 
 describe('MotionTokens', () => {
@@ -48,9 +60,9 @@ describe('MotionTokens', () => {
   const valueOf = (name: string) => tokens.find((token) => token.name === name)?.value;
 
   // MotionTokens "Contract": the durations of the tokens
-  it('sets 200ms enter, 150ms exit and 600ms cascade', () => {
-    expect(valueOf('--motion-duration-enter')).toBe('200ms');
-    expect(valueOf('--motion-duration-exit')).toBe('150ms');
+  it('sets 300ms enter, 200ms exit and 600ms cascade', () => {
+    expect(valueOf('--motion-duration-enter')).toBe('300ms');
+    expect(valueOf('--motion-duration-exit')).toBe('200ms');
     expect(valueOf('--motion-cascade-max')).toBe('600ms');
   });
 
@@ -60,10 +72,14 @@ describe('MotionTokens', () => {
     expect(toMs(valueOf('--motion-cascade-max') ?? 'NaN')).toBeLessThanOrEqual(600);
   });
 
-  // MotionTokens "Contract": the easing tokens exist
-  it('sets the enter and exit easing', () => {
-    expect(valueOf('--motion-ease-enter')).toBeTruthy();
-    expect(valueOf('--motion-ease-exit')).toBeTruthy();
+  // MotionTokens "Contract": the enter curve starts with no jump and slows down; the exit curve starts slowly and speeds up
+  it('sets a soft enter deceleration and a soft exit acceleration', () => {
+    const enter = bezier(valueOf('--motion-ease-enter'));
+    const exit = bezier(valueOf('--motion-ease-exit'));
+    expect(enter.startSlope, 'enter: no jump in the first frames').toBeLessThanOrEqual(2);
+    expect(enter.endSlope, 'enter: slows down at the end').toBeLessThan(1);
+    expect(exit.startSlope, 'exit: starts slowly').toBeLessThan(1);
+    expect(exit.endSlope, 'exit: speeds up at the end').toBeGreaterThan(1);
   });
 
   // plan-ui_transitions/REQ-32: the tokens sit on :root only, in no theme or look selector

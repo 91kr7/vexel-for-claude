@@ -5,6 +5,7 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
+import { pageSettled } from './motion';
 import { cardOf, settingsButton, settingsPopup } from './settings';
 
 interface Effect {
@@ -166,16 +167,16 @@ test.describe('Git Explorer tab change', () => {
 
     await explorerButton(page).click();
     await expect(gitPanel(page, 'Changes')).toBeVisible();
-    await page.waitForTimeout(600);
+    await pageSettled(page);
 
     await gitTab(page, 'History').click();
     await expect(gitPanel(page, 'History')).toBeVisible();
     await expect(gitPanel(page, 'Changes')).toBeHidden({ timeout: 50 });
-    await page.waitForTimeout(500);
+    await pageSettled(page);
 
     await gitTab(page, 'Changes').click();
     await expect(gitPanel(page, 'Changes')).toBeVisible();
-    await page.waitForTimeout(500);
+    await pageSettled(page);
 
     await gitTab(page, 'Changes').click();
     await page.waitForTimeout(100);
@@ -194,7 +195,7 @@ test.describe('Git Explorer tab change', () => {
     await openRepositorySession(page, request, 'tab-quick-repo');
     await explorerButton(page).click();
     await expect(gitPanel(page, 'Changes')).toBeVisible();
-    await page.waitForTimeout(600);
+    await pageSettled(page);
     await slowMotion(page);
     await watchTabs(page, GIT_PANELS);
 
@@ -245,12 +246,12 @@ test.describe('Settings menu change', () => {
 
     await settingsButton(page).click();
     await expect(pane(page, 'Appearance')).toBeVisible();
-    await page.waitForTimeout(600);
+    await pageSettled(page);
 
     await menuItem(page, 'Shortcuts').click();
     await expect(pane(page, 'Shortcuts')).toBeVisible();
     await expect(pane(page, 'Appearance')).toBeHidden({ timeout: 50 });
-    await page.waitForTimeout(500);
+    await pageSettled(page);
 
     await menuItem(page, 'Shortcuts').click();
     await page.waitForTimeout(100);
@@ -259,10 +260,10 @@ test.describe('Settings menu change', () => {
     await menuItem(page, 'Shortcuts').focus();
     await page.keyboard.press('ArrowDown');
     await expect(pane(page, 'Updates')).toBeVisible();
-    await page.waitForTimeout(500);
+    await pageSettled(page);
     await page.keyboard.press('Home');
     await expect(pane(page, 'Appearance')).toBeVisible();
-    await page.waitForTimeout(500);
+    await pageSettled(page);
 
     const watch = await tabWatch(page);
     expect(watch.shown.map((shown) => shown.label)).toEqual(['Appearance', 'Shortcuts', 'Updates', 'Appearance']);
@@ -279,7 +280,7 @@ test.describe('Settings menu change', () => {
     await settingsButton(page).click();
     await expect(pane(page, 'Appearance')).toBeVisible();
     await expect(menuItem(page, 'Appearance')).toBeFocused();
-    await page.waitForTimeout(600);
+    await pageSettled(page);
     await slowMotion(page);
     await watchTabs(page, SETTINGS_PANES);
 
@@ -306,7 +307,7 @@ test.describe('Settings menu change', () => {
     await settingsButton(page).click();
     await menuItem(page, 'Shortcuts').click();
     await expect(pane(page, 'Shortcuts')).toBeVisible();
-    await page.waitForTimeout(600);
+    await pageSettled(page);
     await slowMotion(page);
 
     await menuItem(page, 'Appearance').click();

@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { settled } from './motion';
 
 interface Sample {
   t: number;
@@ -224,11 +225,11 @@ test.describe('Git Explorer slide of a hosted session', () => {
     await openHosted(page, repo);
     await explorerButton(page).click();
     await expect(explorer(page)).toBeVisible();
-    await page.waitForTimeout(400);
+    await settled(panels(page));
     await slowMotion(page);
 
     await explorerButton(page).click();
-    await expect(explorer(page), 'closed: no longer exposed').toHaveCount(0, { timeout: 200 });
+    await expect(explorer(page), 'closed: no longer exposed').toHaveCount(0, { timeout: SLOW_MS / 3 });
     await expect(panels(page), 'the panel plays its exit').toHaveCount(1);
     await expect(panels(page)).toHaveAttribute('aria-hidden', 'true');
     expect(await pointerGoesThrough(panels(page)), 'the leaving panel takes no pointer input').toBe(true);
@@ -364,7 +365,7 @@ test.describe('Git Explorer slide of an external session', () => {
     expectSlideIn(opening);
 
     await button.click();
-    await expect(explorer(page), 'closed: no longer exposed').toHaveCount(0, { timeout: 200 });
+    await expect(explorer(page), 'closed: no longer exposed').toHaveCount(0, { timeout: SLOW_MS / 3 });
     await expect(panels(page), 'the panel plays its exit').toHaveCount(1);
     await expect(panels(page)).toHaveAttribute('aria-hidden', 'true');
     await expect(panels(page)).toHaveCount(0, { timeout: SLOW_MS + 1000 });

@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { pageSettled } from './motion';
 
 let projectsRoot: string;
 
@@ -167,6 +168,8 @@ test('a row with a long path shows no "New session" label, no path tooltip, and 
 // plan-ui_restyle/REQ-14
 test('the star sits right after the folder name, on its first line, inside the row', async ({ page }) => {
   const { a } = await twoProjects(page);
+  // The project rows rise in cascade (plan-ui_transitions/REQ-17): they are measured at rest.
+  await pageSettled(page);
   await row(page, a).hover();
   const nameBox = (await nameText(page, a).boundingBox())!;
   const starBox = (await starButton(page, a).boundingBox())!;

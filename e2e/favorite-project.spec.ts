@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { pageSettled } from './motion';
 
 let projectsRoot: string;
 
@@ -219,6 +220,8 @@ test('when the server does not answer, the row shows "Could not change the favor
   const error = item(page, c).getByRole('alert');
   await expect(error).toHaveText('Could not change the favorite mark.');
   await expect(star(page, c)).toHaveCount(0);
+  // The project rows rise in cascade (plan-ui_transitions/REQ-17): they are measured at rest.
+  await pageSettled(page);
   const rowBox = await row(page, c).boundingBox();
   const errorBox = await error.boundingBox();
   expect(errorBox!.y).toBeGreaterThanOrEqual(rowBox!.y + rowBox!.height - 0.5);

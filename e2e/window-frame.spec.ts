@@ -7,6 +7,7 @@ import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
 import { settingsButton } from './settings';
+import { currentView, settled } from './motion';
 
 type Theme = 'light' | 'dark';
 const THEMES: Theme[] = ['dark', 'light'];
@@ -31,11 +32,11 @@ const rail = (page: Page) => page.getByRole('navigation', { name: 'Main Navigati
 const railButton = (page: Page, name: string) => rail(page).getByRole('button', { name, exact: true });
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).locator('.session-entry').filter({ has: page.getByTitle(folder, { exact: true }) });
-const footer = (page: Page) => page.getByRole('main').locator('footer');
+const footer = (page: Page) => currentView(page).locator('footer');
 const contextChip = (page: Page) => footer(page).locator('.session-figure-context');
 const contextFill = (page: Page) => contextChip(page).locator('.session-figure-context-fill');
 const zoomGroup = (page: Page) => footer(page).getByRole('group', { name: 'Terminal text size' });
-const terminal = (page: Page) => page.locator('.xterm-rows');
+const terminal = (page: Page) => currentView(page).locator('.xterm-rows');
 const toast = (page: Page) => page.getByRole('status').filter({ hasText: 'No session needs input' });
 const snackbar = (page: Page) => page.getByRole('status').filter({ hasText: 'needs your input' });
 
@@ -339,6 +340,7 @@ test.describe('short-message toast', () => {
       await openIn(page, theme);
       await page.keyboard.press('Alt+KeyI');
       await expect(toast(page)).toHaveText('No session needs input');
+      await settled(toast(page));
 
       const b = await box(toast(page));
       near(1280 - (b.x + b.width), 20, '20 px from the right edge', 1);
@@ -379,6 +381,8 @@ test.describe('short-message toast', () => {
     await postHook(request, id, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
     await expect(snackbar(page)).toBeVisible();
     await expect(toast(page), 'the toast still shows').toBeVisible();
+    await settled(toast(page));
+    await settled(snackbar(page));
 
     const t = await box(toast(page));
     const s = await box(snackbar(page));
