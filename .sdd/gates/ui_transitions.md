@@ -40,3 +40,4 @@
 | 2026-11-17 | dev theme-change | G4 development | sent back | Click forwarding uses window unguarded; 5 color-dissolve unit tests throw ReferenceError |
 | 2026-11-17 | dev theme-change | divergence developer | decided | A pointer press ends the dissolve early and is forwarded to the real target; allowed by REQ-28 |
 | 2026-11-17 | dev theme-change | G4 development | pass | Round 2 |
+| 2026-11-17 | dev theme-change | G5 tests | pass | Round 2 |

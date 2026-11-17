@@ -112,6 +112,18 @@ describe('ColorDissolve', () => {
     expect(await settles(captured), 'the new picture is taken once a frame has passed').toBe(true);
   });
 
+  it('with no window to watch presses on, still dissolves and does not throw', () => {
+    vi.stubGlobal('window', undefined);
+    const api = fakeViewTransitions();
+    vi.stubGlobal('document', { documentElement: {}, startViewTransition: api.startViewTransition });
+    manualFrames();
+    const apply = vi.fn();
+    expect(() => dissolveColors(apply)).not.toThrow();
+    expect(api.startViewTransition).toHaveBeenCalledTimes(1);
+    void api.updates[0]!();
+    expect(apply).toHaveBeenCalledTimes(1);
+  });
+
   // plan-ui_transitions/REQ-15: the areas that recolour after the change get one frame before the new picture
   it('takes the new picture one frame after the change, not before', async () => {
     const api = fakeViewTransitions();

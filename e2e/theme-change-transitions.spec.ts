@@ -240,7 +240,7 @@ test.describe('colour dissolve', () => {
   });
 
   // REQ-26
-  test('a click during the dissolve reaches the control under it', async ({ page }) => {
+  test('a click during the dissolve ends it at once in the new colours, and the control under it takes the click', async ({ page }) => {
     await page.goto('/');
     await expect(html(page)).toHaveAttribute('data-theme', 'dark');
     await page.evaluate((ms) => document.documentElement.style.setProperty('--motion-duration-enter', `${ms}ms`), SLOW_MS);
@@ -248,9 +248,15 @@ test.describe('colour dissolve', () => {
 
     await page.keyboard.press('Alt+KeyA');
     await expect.poll(async () => (await watchOf(page)).active, { timeout: 1000 }).toBeGreaterThan(0);
+    const clickedAt = Date.now();
     await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
     expect((await watchOf(page)).clicksDuringDissolve, 'the click landed while the dissolve played').toBeGreaterThan(0);
+    await waitForDissolveEnd(page);
+    expect(Date.now() - clickedAt, 'the press ends the dissolve at once').toBeLessThan(SLOW_MS / 2);
+    await expect(html(page)).toHaveAttribute('data-theme', 'dark-blue');
+    expect(await effectiveBackground(page.locator('body')), 'the page is in the new colours').toBe(DARK_BLUE_CANVAS);
     await expect(settingsPopup(page), 'the Settings button takes the click').toBeVisible();
+    expect((await watchOf(page)).calls, 'the click starts no other dissolve').toBe(1);
   });
 
   // REQ-25
