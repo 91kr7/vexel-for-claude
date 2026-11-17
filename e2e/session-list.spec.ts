@@ -39,7 +39,7 @@ test.beforeEach(async ({ page }) => {
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const counter = (page: Page) => page.getByRole('region', { name: 'Session List' }).getByRole('status').filter({ hasText: /needs? input/ });
-const terminal = (page: Page) => page.locator('.xterm-rows');
+const terminal = (page: Page) => page.locator('.main-view:not(.is-leaving) .xterm-rows');
 const pathField = (page: Page) => page.getByRole('textbox', { name: 'Working Directory Path', exact: true });
 const RELATIVE_TIME = /^(Just now|\d+m ago)$/;
 
@@ -76,7 +76,7 @@ async function startViaUi(page: Page, folder: string): Promise<string> {
 }
 
 async function typeLine(page: Page, text: string): Promise<void> {
-  await page.locator('.xterm-screen').click();
+  await page.locator('.main-view:not(.is-leaving) .xterm-screen').click();
   await page.keyboard.type(text);
   await page.keyboard.press('Enter');
 }
@@ -189,7 +189,7 @@ test('the user switches between sessions', async ({ page }) => {
 
   await entry(page, folderB).getByTitle(folderB, { exact: true }).click();
   await expect(terminal(page)).toContainText('PERMISSION?(y/n)', { timeout: 1000 });
-  await page.locator('.xterm-screen').click();
+  await page.locator('.main-view:not(.is-leaving) .xterm-screen').click();
   await page.keyboard.type('y');
   await expect(terminal(page)).toContainText('ANSWER:y');
 });

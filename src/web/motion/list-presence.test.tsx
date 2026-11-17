@@ -113,6 +113,24 @@ describe('useListPresence', () => {
     expect(latest.find((entry) => entry.key === 'new')?.item.value).toBe('refreshed');
   });
 
+  // ListPresence "Contract": the result follows `items` in the same render that gives them
+  it('gives the result of the new items in every render that gives them', () => {
+    const seen: { tag: string; view: string[] }[] = [];
+    function Tagged({ items, tag }: { items: Item[] | undefined; tag: string }) {
+      seen.push({ tag, view: useListPresence(items, (entry) => entry.id).map((entry) => `${entry.key}:${entry.phase}`) });
+      return null;
+    }
+    const renderTagged = (items: Item[] | undefined, tag: string) => flushSync(() => root?.render(<Tagged items={items} tag={tag} />));
+    renderTagged(undefined, 'loading');
+    renderTagged(of('a', 'b'), 'appearance');
+    renderTagged(of('a', 'b', 'new'), 'added');
+    renderTagged(of('b', 'new'), 'removed');
+    const viewsOf = (tag: string) => seen.filter((entry) => entry.tag === tag).map((entry) => entry.view);
+    for (const view of viewsOf('appearance')) expect(view).toEqual(['a:shown', 'b:shown']);
+    for (const view of viewsOf('added')) expect(view).toEqual(['a:shown', 'b:shown', 'new:entering']);
+    for (const view of viewsOf('removed')) expect(view).toEqual(['a:leaving', 'b:shown', 'new:entering']);
+  });
+
   // plan-ui_transitions/REQ-25: duration 0 (reduced motion) → no entering, no leaving
   it('gives no entering and no leaving with 0ms durations', () => {
     setTokens('0ms', '0ms');

@@ -210,6 +210,27 @@ test('an entry opens its session when clicked during the cascade', async ({ page
   await expect(last.locator('.session-entry')).toHaveAttribute('aria-current', 'true');
 });
 
+// plan-ui_transitions/REQ-26, REQ-28, REQ-30: a drag started during the cascade shows its feedback at once
+test('an entry dragged during the cascade is dimmed at once', async ({ page }) => {
+  // A long cascade leaves time to drag before it ends.
+  await page.addInitScript(() => {
+    document.documentElement.style.setProperty('--motion-duration-enter', '1500ms');
+    document.documentElement.style.setProperty('--motion-cascade-max', '3000ms');
+  });
+  await fixedSessions(page, 4);
+  await page.goto('/');
+  const dragged = item(page, fakeFolder(2));
+  await expect(dragged).toHaveClass(/\bcascade-item\b/);
+  const box = (await dragged.locator('.session-entry').boundingBox())!;
+  await page.mouse.move(box.x + 20, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 24, box.y + box.height / 2 + 4, { steps: 2 });
+  await expect(dragged).toHaveClass(/\bdragging\b/);
+  await expect(dragged).toHaveClass(/\bcascade-item\b/);
+  expect(await dragged.evaluate((li) => getComputedStyle(li).opacity), 'the dragged entry is dimmed to 40 %').toBe('0.4');
+  await page.mouse.up();
+});
+
 // plan-ui_transitions/REQ-25: reduced motion → no cascade
 test('the session list shows at once with reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
