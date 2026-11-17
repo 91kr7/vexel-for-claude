@@ -192,7 +192,8 @@ async function openHistory(page: Page): Promise<void> {
 }
 
 const pastRow = (page: Page, folder: string) => resumeDialog(page).getByRole('region', { name: folder }).getByRole('radio');
-const pastIndicator = (page: Page, folder: string) => resumeDialog(page).getByRole('region', { name: folder }).getByRole('img', { name: 'Favorite', exact: true });
+// plan-resume_favorites/REQ-5: a popup row shows its mark with the star button "Remove Favorite", not with FavoriteIndicator.
+const pastIndicator = (page: Page, folder: string) => resumeDialog(page).getByRole('region', { name: folder }).getByRole('button', { name: 'Remove Favorite', exact: true });
 
 /** The folders of the list entries, top to bottom. */
 const listOrder = (page: Page) => list(page).getByRole('listitem').evaluateAll((items) => items.map((li) => li.querySelector('[title^="/"]')?.getAttribute('title') ?? ''));
@@ -295,14 +296,13 @@ test('the history shows the indicator on the marked row only, and a new history 
   await expect(pastRow(page, favorite.folder)).toHaveCount(1);
   await expect(pastRow(page, plain.folder)).toHaveCount(1);
   await expect(pastIndicator(page, favorite.folder)).toHaveCount(1);
-  await expect(pastIndicator(page, favorite.folder)).toHaveAttribute('title', 'Favorite');
+  await expect(pastIndicator(page, favorite.folder)).toHaveAttribute('title', 'Remove Favorite');
   await expect(pastIndicator(page, plain.folder)).toHaveCount(0);
   // the radio keeps its name (the label) and is described by "Favorite"
   await expect(pastRow(page, favorite.folder)).toHaveAccessibleName(favorite.prompt);
   await expect(pastRow(page, favorite.folder)).toHaveAccessibleDescription(/Favorite/);
   await expect(pastRow(page, plain.folder)).not.toHaveAccessibleDescription(/Favorite/);
-  // the history offers no mark action
-  await expect(resumeDialog(page).getByRole('button', { name: /Favorite/ })).toHaveCount(0);
+  await expect(resumeDialog(page).getByRole('region', { name: plain.folder }).getByRole('button', { name: 'Mark as Favorite', exact: true })).toHaveCount(1);
   await resumeDialog(page).getByRole('button', { name: 'Cancel', exact: true }).click();
 
   await removeButton(page, favorite.folder).click();
