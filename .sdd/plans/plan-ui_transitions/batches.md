@@ -13,7 +13,7 @@ status: validated
 | popovers | Popovers, snackbar, toasts | REQ-3, REQ-4 | modal-dialogs | certified | The popovers slide up on enter and slide down on leave |
 | git-explorer-panel | Git Explorer panel | REQ-5, REQ-6 | modal-dialogs | certified | The Git Explorer slides in and out |
 | session-switch | Session switch | REQ-10, REQ-11, REQ-12, REQ-13, REQ-33 | modal-dialogs | certified | Switching session cross-fades the main area |
-| theme-change | Theme change | REQ-14, REQ-15 | modal-dialogs | todo | The theme changes with a colour dissolve |
+| theme-change | Theme change | REQ-14, REQ-15 | modal-dialogs | implemented | The theme changes with a colour dissolve |
 | cascading-lists | Cascading lists | REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22 | modal-dialogs | todo | The session list enters in cascade |
 | tab-change | Tab change (also closes the common rules) | REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32 | all the batches above | todo | Switching tabs fades in the new content |
 

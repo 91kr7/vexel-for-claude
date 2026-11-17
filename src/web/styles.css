@@ -4143,6 +4143,17 @@ button.dialog-row {
   font-weight: 400;
 }
 
+/* Colour dissolve of a theme or look change: the whole-page cross-fade lets clicks through to the page. */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-duration-enter);
+  animation-timing-function: var(--motion-ease-enter);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .spinner .icon,
   .progress-bar-indicator,
