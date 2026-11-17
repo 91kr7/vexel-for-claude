@@ -1775,9 +1775,25 @@ input {
   gap: 6px;
 }
 
-.past-session-favorite {
+.past-session-row {
+  position: relative;
+  anchor-scope: --past-session-star;
+}
+
+.past-session-star-slot {
   flex: none;
-  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  margin: -1px 0;
+  anchor-name: --past-session-star;
+}
+
+.past-session-row > .entry-favorite {
+  position-anchor: --past-session-star;
+}
+
+.past-session-row > .entry-favorite-error {
+  padding: 4px 10px 0;
 }
 
 .session-name-editor {
@@ -3224,6 +3240,46 @@ input {
   height: 540px;
 }
 
+.resume-dialog {
+  max-width: 672px;
+  max-height: min(100%, max(70vh, 280px));
+}
+
+.resume-dialog .dialog-scroll {
+  min-height: 56px;
+}
+
+.resume-search-bar {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+.resume-search-bar > .search-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.favorites-filter {
+  flex: none;
+  width: 34px;
+  border-radius: var(--radius-frame);
+  border: 1px solid var(--field-border);
+  background-color: var(--field-bg);
+  color: var(--text-muted);
+}
+
+.favorites-filter:hover {
+  background-color: var(--bg-surface-3);
+  color: var(--text-primary);
+}
+
+.favorites-filter[aria-pressed='true'] {
+  border-color: var(--role-accent);
+  background-color: var(--role-card-active);
+  color: var(--amber-400);
+}
+
 .settings-dialog .dialog-body {
   padding: 0;
 }
@@ -3865,7 +3921,7 @@ button.dialog-row {
   font-weight: 600;
 }
 
-.dialog-rows:has(> .list-card) {
+.dialog-rows:has(> .list-card, > .past-session-row) {
   gap: 6px;
 }
 

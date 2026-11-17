@@ -2,9 +2,9 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Dialog } from '../dialogs/Dialog';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { AreaState } from '../feedback/AreaState';
-import { HistoryIcon, SearchIcon, TerminalIcon, XIcon } from '../icons/Icons';
+import { HistoryIcon, SearchIcon, StarIcon, TerminalIcon, XIcon } from '../icons/Icons';
 import { Avatar } from '../sessions/Avatar';
-import { FavoriteIndicator } from '../sessions/FavoriteIndicator';
+import { FavoriteButton } from '../sessions/FavoriteButton';
 import { RunningElsewhereWarning } from './RunningElsewhereWarning';
 
 interface PastSessionEntry {
@@ -44,19 +44,37 @@ function describedBy(id: string, session: PastSessionEntry): string {
   return parts.join(' ');
 }
 
+function withFavorite(groups: PastSessionGroup[], sessionId: string, favorite: boolean): PastSessionGroup[] {
+  return groups.map((group) => ({
+    ...group,
+    sessions: group.sessions.map((session) => {
+      if (session.id !== sessionId) return session;
+      const { favorite: _, ...rest } = session;
+      return favorite ? { ...rest, favorite: true } : rest;
+    }),
+  }));
+}
+
 function formatDate(iso: string): string {
   const time = new Date(iso);
   return `${time.toLocaleDateString('en-GB')} ${time.toLocaleTimeString('en-GB')}`;
 }
 
-function filterGroups(groups: PastSessionGroup[], query: string): PastSessionGroup[] {
+function filterGroups(groups: PastSessionGroup[], query: string, onlyFavorites: boolean): PastSessionGroup[] {
   const text = query.toLowerCase();
-  if (text === '') return groups;
+  if (text === '' && !onlyFavorites) return groups;
   return groups.flatMap((group) => {
-    if (group.folder.toLowerCase().includes(text)) return [group];
-    const sessions = group.sessions.filter((session) => session.label.toLowerCase().includes(text));
+    const folderMatches = group.folder.toLowerCase().includes(text);
+    const sessions = group.sessions.filter(
+      (session) => (!onlyFavorites || session.favorite === true) && (folderMatches || session.label.toLowerCase().includes(text)),
+    );
     return sessions.length > 0 ? [{ ...group, sessions }] : [];
   });
+}
+
+function noMatchTitle(query: string, onlyFavorites: boolean): string {
+  if (!onlyFavorites) return `No sessions match "${query}".`;
+  return query === '' ? 'No favorite sessions.' : `No favorite sessions match "${query}".`;
 }
 
 export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
@@ -66,9 +84,10 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
   const [warningFor, setWarningFor] = useState<string | null>(null);
   const [selected, setSelected] = useState<PastSessionEntry | null>(null);
   const [query, setQuery] = useState('');
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const rowId = useId();
-  const visibleGroups = groups === null ? null : filterGroups(groups, query);
+  const visibleGroups = groups === null ? null : filterGroups(groups, query, onlyFavorites);
 
   useEffect(() => {
     let active = true;
@@ -104,11 +123,15 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
     }
   };
 
-  const search = (text: string) => {
+  const applyFilter = (text: string, favoritesOnly: boolean) => {
     setQuery(text);
-    const stillVisible = filterGroups(groups ?? [], text).some((group) => group.sessions.some((session) => session.id === selected?.id));
+    setOnlyFavorites(favoritesOnly);
+    const stillVisible = filterGroups(groups ?? [], text, favoritesOnly).some((group) =>
+      group.sessions.some((session) => session.id === selected?.id),
+    );
     if (!stillVisible) setSelected(null);
   };
+  const search = (text: string) => applyFilter(text, onlyFavorites);
 
   const choose = (session: PastSessionEntry) => {
     if (session.runningElsewhere) setWarningFor(session.id);
@@ -128,35 +151,47 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
         primaryBusy={busy}
         onCancel={onCancel}
       >
-        <div className="search-field">
-          <SearchIcon />
-          <input
-            ref={searchRef}
-            className="field-input search-field-input"
-            type="text"
-            value={query}
-            placeholder="Search by label or folder"
-            aria-label="Search Past Sessions"
-            onChange={(event) => search(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') event.preventDefault();
-            }}
-            autoFocus
-          />
-          {query !== '' && (
-            <button
-              type="button"
-              className="search-field-clear"
-              aria-label="Clear Search"
-              title="Clear Search"
-              onClick={() => {
-                search('');
-                searchRef.current?.focus();
+        <div className="resume-search-bar">
+          <div className="search-field">
+            <SearchIcon />
+            <input
+              ref={searchRef}
+              className="field-input search-field-input"
+              type="text"
+              value={query}
+              placeholder="Search by label or folder"
+              aria-label="Search Past Sessions"
+              onChange={(event) => search(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') event.preventDefault();
               }}
-            >
-              <XIcon />
-            </button>
-          )}
+              autoFocus
+            />
+            {query !== '' && (
+              <button
+                type="button"
+                className="search-field-clear"
+                aria-label="Clear Search"
+                title="Clear Search"
+                onClick={() => {
+                  search('');
+                  searchRef.current?.focus();
+                }}
+              >
+                <XIcon />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            className="favorites-filter"
+            aria-label="Only Favorites"
+            title="Only Favorites"
+            aria-pressed={onlyFavorites}
+            onClick={() => applyFilter(query, !onlyFavorites)}
+          >
+            <StarIcon filled={onlyFavorites} />
+          </button>
         </div>
         <div
           className="dialog-scroll list-scroll"
@@ -166,7 +201,7 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
           {groups === null && error === null && <AreaState kind="loading" size="compact" title="Loading…" />}
           {groups?.length === 0 && <AreaState kind="empty" size="compact" icon={<HistoryIcon />} title="No sessions to resume." />}
           {groups?.length !== 0 && visibleGroups?.length === 0 && (
-            <AreaState kind="empty" size="compact" icon={<HistoryIcon />} title={`No sessions match "${query}".`} />
+            <AreaState kind="empty" size="compact" icon={<HistoryIcon />} title={noMatchTitle(query, onlyFavorites)} />
           )}
           {visibleGroups?.map((group) => (
             <section key={group.folder} className="past-session-group" aria-label={group.folder}>
@@ -176,40 +211,52 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
                   const checked = selected?.id === session.id;
                   const id = `${rowId}-${session.id}`;
                   return (
-                    <label key={session.id} className={checked ? 'dialog-row list-card list-active dialog-row-checked' : 'dialog-row list-card'}>
-                      <Avatar folder={group.folder} />
-                      <span className="dialog-row-text">
-                        <span className="past-session-heading">
-                          <span id={`${id}-label`} className="dialog-row-title">
-                            {session.label}
+                    <div key={session.id} className="past-session-row star-host">
+                      <label className={checked ? 'dialog-row list-card list-active dialog-row-checked' : 'dialog-row list-card'}>
+                        <Avatar folder={group.folder} />
+                        <span className="dialog-row-text">
+                          <span className="past-session-heading">
+                            <span id={`${id}-label`} className="dialog-row-title">
+                              {session.label}
+                            </span>
+                            <span className="past-session-star-slot" />
+                            {session.favorite === true && (
+                              <span id={`${id}-favorite`} hidden>
+                                Favorite
+                              </span>
+                            )}
                           </span>
-                          {session.favorite === true && (
-                            <span id={`${id}-favorite`} className="past-session-favorite">
-                              <FavoriteIndicator />
+                          <time id={`${id}-time`} className="dialog-row-detail list-number" dateTime={session.lastActivity}>
+                            {formatDate(session.lastActivity)}
+                          </time>
+                          {session.runningElsewhere && (
+                            <span id={`${id}-running`} className="status-pill state-needs_input past-session-running">
+                              <TerminalIcon />
+                              Running in a terminal
                             </span>
                           )}
                         </span>
-                        <time id={`${id}-time`} className="dialog-row-detail list-number" dateTime={session.lastActivity}>
-                          {formatDate(session.lastActivity)}
-                        </time>
-                        {session.runningElsewhere && (
-                          <span id={`${id}-running`} className="status-pill state-needs_input past-session-running">
-                            <TerminalIcon />
-                            Running in a terminal
-                          </span>
-                        )}
-                      </span>
-                      <input
-                        type="radio"
-                        className="dialog-radio"
-                        name={`${rowId}-session`}
-                        checked={checked}
-                        disabled={busy}
-                        aria-labelledby={`${id}-label`}
-                        aria-describedby={describedBy(id, session)}
-                        onChange={() => setSelected(session)}
+                        <input
+                          type="radio"
+                          className="dialog-radio"
+                          name={`${rowId}-session`}
+                          checked={checked}
+                          disabled={busy}
+                          aria-labelledby={`${id}-label`}
+                          aria-describedby={describedBy(id, session)}
+                          onChange={() => setSelected(session)}
+                        />
+                      </label>
+                      <FavoriteButton
+                        sessionId={session.id}
+                        favorite={session.favorite === true}
+                        pastSession
+                        onChanged={(favorite) => {
+                          setGroups((current) => current && withFavorite(current, session.id, favorite));
+                          if (!favorite && onlyFavorites && checked) setSelected(null);
+                        }}
                       />
-                    </label>
+                    </div>
                   );
                 })}
               </div>
