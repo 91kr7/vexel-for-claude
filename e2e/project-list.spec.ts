@@ -182,6 +182,8 @@ test('a deleted folder stays in the list, dimmed, with "Folder not found" and ar
   await expect(rows(page)).toHaveCount(2);
   await expect(row(page, deleted)).toHaveAttribute('aria-disabled', 'true');
   await expect(row(page, deleted)).toContainText('Folder not found');
+  // The rows enter in cascade (plan-ui_transitions/REQ-17): the dimming is read once it ends.
+  await expect(panel(page).locator('.cascade-item')).toHaveCount(0);
   expect(await seenOpacity(page, deleted)).toBeCloseTo(0.55, 2);
   await expect(row(page, kept)).not.toContainText('Folder not found');
   expect(await seenOpacity(page, kept)).toBe(1);

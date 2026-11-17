@@ -306,3 +306,92 @@ describe('useTheme', () => {
     expect(store.getSnapshot()).toBe('dark-blue');
   });
 });
+
+/** A colour change that holds each change until the test runs it. */
+function heldChange() {
+  const held: (() => void)[] = [];
+  const change = vi.fn((apply: () => void) => void held.push(apply));
+  return { held, change };
+}
+
+describe('ThemeStore with a colour change (plan-ui_transitions/REQ-14, REQ-28)', () => {
+  it('marks the initial theme at once, never through the change', () => {
+    const root = fakeRoot();
+    const { change } = heldChange();
+    new ThemeStore(root, 'light', fakeStorage(), change);
+    expect(root.attributes.get('data-theme')).toBe('light');
+    expect(change).not.toHaveBeenCalled();
+  });
+
+  it('setTheme makes the theme active and saves it at once, and moves the mark and calls the listeners through the change', () => {
+    const root = fakeRoot();
+    const storage = fakeStorage();
+    const { held, change } = heldChange();
+    const store = new ThemeStore(root, 'dark', storage, change);
+    const listener = vi.fn();
+    store.subscribe(listener);
+
+    store.setTheme('light');
+    expect(store.getSnapshot()).toBe('light');
+    expect(storage.items.get(THEME_KEY)).toBe('light');
+    expect(change).toHaveBeenCalledTimes(1);
+    expect(root.attributes.get('data-theme'), 'the mark waits for the change').toBe('dark');
+    expect(listener).not.toHaveBeenCalled();
+
+    held[0]!();
+    expect(root.attributes.get('data-theme')).toBe('light');
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggle runs through the change too', () => {
+    const root = fakeRoot();
+    const { held, change } = heldChange();
+    const store = new ThemeStore(root, 'dark', fakeStorage(), change);
+    store.toggle();
+    expect(store.getSnapshot()).toBe('dark-blue');
+    expect(root.attributes.get('data-theme')).toBe('dark');
+    held[0]!();
+    expect(root.attributes.get('data-theme')).toBe('dark-blue');
+  });
+
+  it('two changes before the change runs them end on the last theme, whichever runs', () => {
+    const root = fakeRoot();
+    const storage = fakeStorage();
+    const { held, change } = heldChange();
+    const store = new ThemeStore(root, 'dark', storage, change);
+    store.toggle();
+    store.toggle();
+    expect(store.getSnapshot()).toBe('light');
+    expect(storage.items.get(THEME_KEY)).toBe('light');
+
+    held[0]!();
+    expect(root.attributes.get('data-theme'), 'the first change already marks the latest theme').toBe('light');
+    held[1]!();
+    expect(root.attributes.get('data-theme')).toBe('light');
+  });
+
+  it('without a change argument applies the change at once', () => {
+    const root = fakeRoot();
+    const store = new ThemeStore(root, 'dark', fakeStorage());
+    store.setTheme('light');
+    expect(root.attributes.get('data-theme')).toBe('light');
+  });
+
+  it('the page store runs each change through ColorDissolve', async () => {
+    const dissolveColors = vi.fn((apply: () => void) => apply());
+    vi.doMock('./color-dissolve', () => ({ dissolveColors }));
+    try {
+      const root = fakeRoot('dark');
+      stubPage(root);
+      const { pageThemeStore } = await freshModule();
+      const store = pageThemeStore();
+      expect(dissolveColors, 'the first mark has no dissolve').not.toHaveBeenCalled();
+      store.setTheme('light');
+      expect(dissolveColors).toHaveBeenCalledTimes(1);
+      expect(root.attributes.get('data-theme')).toBe('light');
+    } finally {
+      vi.doUnmock('./color-dissolve');
+      vi.unstubAllGlobals();
+    }
+  });
+});

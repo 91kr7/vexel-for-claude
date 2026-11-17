@@ -1,6 +1,8 @@
 import { type DragEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react';
 import { AreaState } from '../feedback/AreaState';
 import { PencilIcon } from '../icons/Icons';
+import { useListCascade } from '../motion/list-cascade';
+import { useListPresence } from '../motion/list-presence';
 import { useSessionCommand } from '../shortcut-channel';
 import { folderNameOf } from './Avatar';
 import { EndedEntryActions } from './EndedEntryActions';
@@ -199,6 +201,8 @@ interface SessionListProps {
   onResumed?: (sessionId: string) => void;
 }
 
+const sessionKey = (session: SessionSummary) => session.id;
+
 interface DragState {
   sessionId: string;
   groupId: SessionGroupId;
@@ -212,8 +216,30 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
   const focusAfterRename = useRef<string | null>(null);
   const scrollToEditor = useRef(false);
   const listRef = useRef<HTMLDivElement>(null);
-  const groups = groupSessions(sessions, order);
-  const draggedGroup = drag && groups.find((group) => group.id === drag.groupId && group.sessions.some((session) => session.id === drag.sessionId));
+  const present = useListPresence(status === 'loading' ? undefined : sessions, sessionKey);
+  const phases = new Map(present.map((entry) => [entry.key, entry.phase]));
+  const groups = groupSessions(
+    present.map((entry) => entry.item),
+    order,
+  );
+  const { cascadeOf, endCascade } = useListCascade(status === 'loading' ? undefined : groups.flatMap((group) => group.sessions.map(sessionKey)));
+  const isStaying = (session: SessionSummary) => phases.get(session.id) !== 'leaving';
+  const layout = status === 'loading' ? undefined : groups.map((group) => `${group.id}:${group.sessions.filter(isStaying).map(sessionKey).join(',')}`).join('|');
+  const [shownLayout, setShownLayout] = useState(layout);
+  // A moved entry is mounted again and would restart its cascade from the start.
+  if (layout !== shownLayout) {
+    setShownLayout(layout);
+    if (shownLayout !== undefined) endCascade();
+  }
+  const stayingIndex = new Map<string, number>();
+  const stayingCount = new Map<SessionGroupId, number>();
+  for (const group of groups) {
+    const staying = group.sessions.filter(isStaying);
+    staying.forEach((session, index) => stayingIndex.set(session.id, index));
+    stayingCount.set(group.id, staying.length);
+  }
+  const draggedGroup =
+    drag && groups.find((group) => group.id === drag.groupId && group.sessions.some((session) => session.id === drag.sessionId && isStaying(session)));
 
   useEffect(() => {
     if (drag && !draggedGroup) setDrag(null);
@@ -257,7 +283,7 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
     event.preventDefault();
     endDrag();
     if (!draggedGroup || drag.slot === null) return;
-    const currentIndex = draggedGroup.sessions.findIndex((session) => session.id === drag.sessionId);
+    const currentIndex = stayingIndex.get(drag.sessionId) ?? -1;
     onReorder?.(drag.sessionId, draggedGroup.id, drag.slot > currentIndex ? drag.slot - 1 : drag.slot);
   };
 
@@ -279,7 +305,7 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
       {status === 'error' && <AreaState kind="error" size="compact" title="Connection to the server lost. Reload the page." />}
       {status === 'loading' ? (
         <AreaState kind="loading" size="compact" title="Loading…" />
-      ) : sessions.length === 0 ? (
+      ) : present.length === 0 ? (
         status === 'ready' && <AreaState kind="empty" size="compact" title="No sessions." />
       ) : (
         groups.map((group) => (
@@ -294,21 +320,33 @@ export function SessionList({ sessions, openSessionId, onOpen, status = 'ready',
           >
             <h2 className={`section-label session-group-heading session-group-${group.id}`}>{group.title}</h2>
             <ul>
-              {group.sessions.map((session, entryIndex) => {
+              {group.sessions.map((session) => {
                 const Entry = session.state === 'needs_input' && !session.external ? NeedsInputCard : EntryRow;
-                const inDraggedGroup = draggedGroup === group;
+                const phase = phases.get(session.id);
+                const leaving = phase === 'leaving';
+                const entryIndex = stayingIndex.get(session.id) ?? -1;
+                const inDraggedGroup = draggedGroup === group && !leaving;
                 const classes = [
                   'star-host',
                   inDraggedGroup && session.id === drag?.sessionId && 'dragging',
                   inDraggedGroup && drag?.slot === entryIndex && 'drop-before',
-                  inDraggedGroup && drag?.slot === entryIndex + 1 && entryIndex === group.sessions.length - 1 && 'drop-after',
+                  inDraggedGroup && drag?.slot === entryIndex + 1 && entryIndex === (stayingCount.get(group.id) ?? 0) - 1 && 'drop-after',
                 ].filter(Boolean);
                 const renaming = session.id === renamingId;
+                const cascade = cascadeOf(session.id);
+                if (phase === 'entering') classes.push('is-entering');
+                if (leaving) classes.push('is-leaving');
+                if (cascade) classes.push(cascade.className);
                 return (
                   <li
                     key={session.id}
+                    ref={(item) => {
+                      if (item) item.inert = leaving;
+                    }}
                     className={classes.join(' ')}
-                    draggable={!renaming}
+                    style={cascade?.style}
+                    aria-hidden={leaving || undefined}
+                    draggable={!renaming && !leaving}
                     onDragStart={(event) => {
                       event.dataTransfer.effectAllowed = 'move';
                       event.dataTransfer.setData('text/plain', session.id);

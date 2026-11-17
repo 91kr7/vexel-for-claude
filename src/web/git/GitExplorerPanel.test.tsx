@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GitExplorerPanel } from './GitExplorerPanel';
+import { ExitPresence } from '../motion/ExitPresence';
 import type { SessionSummary } from '../sessions/live-session-store';
 import type { CoveredRepository, RepositoryLookupState } from './repository-lookup-store';
 
@@ -882,5 +883,59 @@ describe('GitExplorerPanel repository filter', () => {
     expect(repositoryList(region())).toBeNull();
     expect(allRepositories(region())).toBeUndefined();
     expect([...region().querySelectorAll('button')].some((b) => b.hasAttribute('aria-pressed'))).toBe(false);
+  });
+});
+
+// plan-ui_transitions/REQ-6, REQ-26: the panel mounted through ExitPresence, open then closed
+describe('GitExplorerPanel motion', () => {
+  const EXIT_MS = 100;
+  const panel = () => document.querySelector<HTMLElement>('section.git-explorer-panel');
+
+  function renderOwned(open: boolean, root: Root): void {
+    flushSync(() =>
+      root.render(<ExitPresence>{open && <GitExplorerPanel lookup={one(myProject({ kind: 'branch', name: 'main' }))} />}</ExitPresence>),
+    );
+  }
+
+  function ownedRoot(): Root {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    roots.push(root);
+    return root;
+  }
+
+  afterEach(() => document.documentElement.style.removeProperty('--motion-duration-exit'));
+
+  it('while open it is exposed and not leaving', () => {
+    document.documentElement.style.setProperty('--motion-duration-exit', `${EXIT_MS}ms`);
+    const root = ownedRoot();
+    renderOwned(true, root);
+    expect(panel()).not.toBeNull();
+    expect(panel()!.classList.contains('is-leaving')).toBe(false);
+    expect(panel()!.hasAttribute('aria-hidden')).toBe(false);
+  });
+
+  it('when closed it stays while it slides out, marked leaving and hidden from assistive technologies, then goes', async () => {
+    document.documentElement.style.setProperty('--motion-duration-exit', `${EXIT_MS}ms`);
+    const root = ownedRoot();
+    renderOwned(true, root);
+    renderOwned(false, root);
+    expect(panel(), 'the panel plays its exit').not.toBeNull();
+    expect(panel()!.classList.contains('is-leaving')).toBe(true);
+    expect(panel()!.getAttribute('aria-hidden')).toBe('true');
+    await new Promise((resolve) => setTimeout(resolve, EXIT_MS * 3));
+    expect(panel(), 'removed after the exit').toBeNull();
+  });
+
+  it('reopened during its exit it is a panel that is not leaving', () => {
+    document.documentElement.style.setProperty('--motion-duration-exit', `${EXIT_MS}ms`);
+    const root = ownedRoot();
+    renderOwned(true, root);
+    renderOwned(false, root);
+    renderOwned(true, root);
+    expect(document.querySelectorAll('section.git-explorer-panel')).toHaveLength(1);
+    expect(panel()!.classList.contains('is-leaving')).toBe(false);
+    expect(panel()!.hasAttribute('aria-hidden')).toBe(false);
   });
 });

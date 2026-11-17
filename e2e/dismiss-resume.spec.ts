@@ -44,7 +44,8 @@ test.afterAll(async () => {
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const byFolder = (page: Page, folder: string) => page.getByTitle(folder, { exact: true });
 const item = (page: Page, folder: string) => list(page).getByRole('listitem').filter({ has: byFolder(page, folder) });
-const entry = (page: Page, folder: string) => list(page).locator('.session-entry').filter({ has: byFolder(page, folder) });
+// A removed entry stays while it fades out (plan-ui_transitions/REQ-19): it is not an entry the user can use.
+const entry = (page: Page, folder: string) => list(page).locator('li:not(.is-leaving) .session-entry').filter({ has: byFolder(page, folder) });
 const action = (page: Page, folder: string, name: 'Resume' | 'Dismiss') => item(page, folder).getByRole('button', { name, exact: true });
 const groupItems = (page: Page, title: string) => list(page).getByRole('heading', { level: 2, name: title, exact: true }).locator('xpath=following::ul[1]/li');
 const terminal = (page: Page) => page.locator('.xterm-rows');

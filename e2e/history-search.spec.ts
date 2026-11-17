@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { pageSettled } from './motion';
 
 const QUERIES = ['login', 'ogi', 'zzqx', 'ventory-s', 'rotate', '10/2026'];
 const FILLER_FOLDERS = 6;
@@ -454,12 +455,15 @@ test('the search bar has the look of the dialog fields', async ({ page }) => {
   await page.getByRole('navigation', { name: 'Main Navigation' }).getByRole('button', { name: 'New Claude Code Session', exact: true }).click();
   const pathField = page.getByRole('textbox', { name: 'Working Directory Path', exact: true });
   await expect(pathField).toBeFocused();
+  // The dialogs zoom in when they open (plan-ui_transitions/REQ-1): the fields are measured at rest.
+  await pageSettled(page);
   const reference = await look(pathField);
   await page.keyboard.press('Escape');
   await expect(pathField).toBeHidden();
 
   await openDialog(page);
   await expect(searchBar(page)).toBeFocused();
+  await pageSettled(page);
   expect(await look(searchBar(page))).toEqual(reference);
 
   const muted = await resolvedColour(page, '--text-muted');

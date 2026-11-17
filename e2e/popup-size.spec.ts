@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { pageSettled } from './motion';
 
 const FOLDERS = 3;
 const SESSIONS_PER_FOLDER = 20;
@@ -64,7 +65,9 @@ test.afterAll(async () => {
   await rm(projectsRoot, { recursive: true, force: true });
 });
 
+/** Measured at rest: a dialog zooms in when it opens (plan-ui_transitions/REQ-1). */
 const box = async (locator: Locator) => {
+  await pageSettled(locator.page());
   const b = await locator.boundingBox();
   expect(b).not.toBeNull();
   return b!;

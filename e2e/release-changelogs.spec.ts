@@ -8,7 +8,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Page, expect, test } from '@playwright/test';
+import { type Locator, type Page, expect, test } from '@playwright/test';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const fakeClaude = fileURLToPath(new URL('../test-support/fake-claude.mjs', import.meta.url));
@@ -136,6 +136,18 @@ async function launch(source: FakeSource): Promise<Launch> {
   throw new Error('the e2e release server did not start');
 }
 
+/** Waits for the enter effect of the element (plan-ui_transitions/REQ-3): its place is measured at rest. */
+async function settled(target: Locator): Promise<void> {
+  await target.evaluate((el) =>
+    Promise.all(
+      el
+        .getAnimations()
+        .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+        .map((animation) => animation.finished),
+    ),
+  );
+}
+
 test.describe('changelogs of the missing versions', () => {
   test.describe.configure({ mode: 'serial' });
   let app: Launch;
@@ -254,6 +266,7 @@ test.describe('a release without a description, unsafe markup and a long changel
     await page.setViewportSize({ width: 1280, height: 420 });
     await page.goto(app.base);
     await expect(block(page, latest)).toBeVisible();
+    await settled(notice(page));
     const box = (await notice(page).boundingBox())!;
     const bar = (await page.getByRole('banner').boundingBox())!;
     expect(box.y + box.height).toBeLessThanOrEqual(420 - 12 + 1);

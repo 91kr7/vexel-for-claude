@@ -48,6 +48,11 @@ Actions:
 - Tab → reaches the search field, then "Clear Search" when shown, then every row button, unavailable rows included, and after each row button its favorite button, then its remove button. The focused row button shows the focus ring inside its edge. The search field and "Clear Search" show the focus ring when focused.
 - a row that holds the focus leaves the list (e.g. after "Remove from Projects") → the focus goes to the row button of the next row still in the list, else of the previous one. No row left → the focus is not moved. The focus is not moved either when it is already on another element, e.g. the search field.
 
+Motion:
+- each mount (each time the Projects view shows) → the rows of the first shown list enter in cascade through ListCascade (module app). Focus, clicks and keys work during the cascade.
+- a search change (typing or "Clear Search") → the rows update at once; a cascade still playing ends.
+- a new list from the store (reload, favorite, remove) → no cascade.
+
 ## Rules and invariants
 
 - All text is in English.
@@ -59,7 +64,7 @@ Actions:
 - ProjectListStore
 - ProjectFavoriteButton
 - ProjectRemoveButton
-- AreaState, IconSet (`FolderIcon`, `SearchIcon`, `XIcon`), ListStyles (module app)
+- AreaState, IconSet (`FolderIcon`, `SearchIcon`, `XIcon`), ListStyles, ListCascade (module app)
 - Avatar, `folderNameOf`, RelativeTime (module sessions)
 
 ## Requirements served
@@ -70,3 +75,4 @@ Actions:
 - `plan-project_list_actions/REQ-23`, `plan-project_list_actions/REQ-24`, `plan-project_list_actions/REQ-27`, `plan-project_list_actions/REQ-30`, `plan-project_list_actions/REQ-31`, `plan-project_list_actions/REQ-32`
 - `plan-ui_restyle/REQ-12`, `plan-ui_restyle/REQ-13`, `plan-ui_restyle/REQ-14`, `plan-ui_restyle/REQ-19`, `plan-ui_restyle/REQ-20`, `plan-ui_restyle/REQ-21`, `plan-ui_restyle/REQ-23`, `plan-ui_restyle/REQ-24`, `plan-ui_restyle/REQ-26`
 - `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-46`, `plan-dark_blue_theme/REQ-48`, `plan-dark_blue_theme/REQ-49`
+- `plan-ui_transitions/REQ-17`, `plan-ui_transitions/REQ-20`, `plan-ui_transitions/REQ-21`

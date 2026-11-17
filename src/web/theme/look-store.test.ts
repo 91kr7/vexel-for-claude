@@ -141,3 +141,76 @@ describe('LookStore', () => {
     expect(root.attributes.get('data-look')).toBe('windows11');
   });
 });
+
+describe('LookStore with a colour change (plan-ui_transitions/REQ-14)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+
+  function heldChange() {
+    const held: (() => void)[] = [];
+    const change = vi.fn((apply: () => void) => void held.push(apply));
+    return { held, change };
+  }
+
+  it('marks the initial look at once, never through the change', () => {
+    const root = fakeRoot();
+    const { change } = heldChange();
+    new LookStore(root, 'windows11', fakeStorage(), change);
+    expect(root.attributes.get('data-look')).toBe('windows11');
+    expect(change).not.toHaveBeenCalled();
+  });
+
+  it('toggle makes the look active and saves it at once, and moves the mark and calls the listeners through the change', () => {
+    const root = fakeRoot();
+    const storage = fakeStorage();
+    const { held, change } = heldChange();
+    const store = new LookStore(root, 'vexel', storage, change);
+    const listener = vi.fn();
+    store.subscribe(listener);
+
+    store.toggle();
+    expect(store.getSnapshot()).toBe('windows11');
+    expect(storage.items.get(LOOK_KEY)).toBe('windows11');
+    expect(root.attributes.get('data-look'), 'the mark waits for the change').toBe('vexel');
+    expect(listener).not.toHaveBeenCalled();
+
+    held[0]!();
+    expect(root.attributes.get('data-look')).toBe('windows11');
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('two toggles before the change runs them end on the last look, whichever runs', () => {
+    const root = fakeRoot();
+    const { held, change } = heldChange();
+    const store = new LookStore(root, 'vexel', fakeStorage(), change);
+    store.toggle();
+    store.toggle();
+    expect(store.getSnapshot()).toBe('vexel');
+    held[0]!();
+    expect(root.attributes.get('data-look')).toBe('vexel');
+    held[1]!();
+    expect(root.attributes.get('data-look')).toBe('vexel');
+  });
+
+  it('the page store runs each toggle through ColorDissolve', async () => {
+    const dissolveColors = vi.fn((apply: () => void) => apply());
+    vi.doMock('./color-dissolve', () => ({ dissolveColors }));
+    try {
+      const root = fakeRoot('vexel');
+      const storage = fakeStorage();
+      vi.stubGlobal('document', { documentElement: root });
+      vi.stubGlobal('window', { localStorage: storage });
+      vi.stubGlobal('localStorage', storage);
+      const { pageLookStore } = await import('./look-store');
+      const store = pageLookStore();
+      expect(dissolveColors, 'the first mark has no dissolve').not.toHaveBeenCalled();
+      store.toggle();
+      expect(dissolveColors).toHaveBeenCalledTimes(1);
+      expect(root.attributes.get('data-look')).toBe('windows11');
+    } finally {
+      vi.doUnmock('./color-dissolve');
+    }
+  });
+});

@@ -4,6 +4,7 @@ import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { GitExplorerButton } from '../git/GitExplorerButton';
 import { GitExplorerPanel } from '../git/GitExplorerPanel';
+import { ExitPresence } from '../motion/ExitPresence';
 import { useRepositoryLookup } from '../git/repository-lookup-store';
 import { ArrowDownIcon, LockIcon } from '../icons/Icons';
 import { SessionFooter } from '../sessions/SessionFooter';
@@ -314,7 +315,9 @@ export function ConversationView({ sessionId, session, sessions, onResumed, focu
             </button>
           )}
         </div>
-        {gitShown && <GitExplorerPanel lookup={repository} folder={session?.folder} onRefresh={refreshGit} sessions={sessions} />}
+        <ExitPresence>
+          {gitShown && <GitExplorerPanel lookup={repository} folder={session?.folder} onRefresh={refreshGit} sessions={sessions} />}
+        </ExitPresence>
       </div>
       <SessionFooter session={session} lead="Open in Another Terminal · " />
     </div>

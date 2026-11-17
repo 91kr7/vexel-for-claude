@@ -3,6 +3,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
+import { currentView, pageSettled } from './motion';
 
 let projectsRoot: string;
 const createdIds: string[] = [];
@@ -19,8 +20,8 @@ const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const mainArea = (page: Page) => page.getByRole('main');
 const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
-const terminal = (page: Page) => page.locator('.xterm-rows');
-const terminalInput = (page: Page) => page.locator('.xterm-helper-textarea');
+const terminal = (page: Page) => currentView(page).locator('.xterm-rows');
+const terminalInput = (page: Page) => currentView(page).locator('.xterm-helper-textarea');
 const searchBox = (page: Page) => page.getByRole('search', { name: 'Terminal search' });
 const field = (page: Page) => searchBox(page).getByRole('textbox', { name: 'Search in terminal' });
 const count = (page: Page) => searchBox(page).getByRole('status');
@@ -366,6 +367,8 @@ test('REQ-29: opening another session closes the box', async ({ page, request })
 
   await openFromList(page, other);
   await expect(searchBox(page)).toHaveCount(0);
+  // Going back during the cross-fade would keep the leaving view as it was (plan-ui_transitions/REQ-12, REQ-28).
+  await pageSettled(page);
 
   await openFromList(page, folder, 'COUNT-DONE');
   await expect(searchBox(page)).toHaveCount(0);

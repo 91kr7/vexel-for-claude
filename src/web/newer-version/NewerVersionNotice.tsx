@@ -1,4 +1,5 @@
 import { XIcon } from '../icons/Icons';
+import { useLeaving } from '../motion/ExitPresence';
 import { ChangelogText } from './ChangelogText';
 import type { NewerVersion } from './newer-version-loader';
 
@@ -8,8 +9,14 @@ interface NewerVersionNoticeProps {
 }
 
 export function NewerVersionNotice({ version, onClose }: NewerVersionNoticeProps) {
+  const leaving = useLeaving();
   return (
-    <section className="update-notice vx-glass" role="status" aria-label="Update Available">
+    <section
+      className={leaving ? 'update-notice vx-glass is-leaving' : 'update-notice vx-glass'}
+      role="status"
+      aria-label="Update Available"
+      aria-hidden={leaving || undefined}
+    >
       <div className="update-notice-content">
         <h2 className="update-notice-title">Update Available</h2>
         <p className="update-notice-text">
@@ -31,7 +38,7 @@ export function NewerVersionNotice({ version, onClose }: NewerVersionNoticeProps
           View Release
         </a>
       </div>
-      <button type="button" className="update-notice-close" aria-label="Close Update Notice" onClick={onClose}>
+      <button type="button" className="update-notice-close" aria-label="Close Update Notice" onClick={leaving ? undefined : onClose}>
         <XIcon />
       </button>
     </section>

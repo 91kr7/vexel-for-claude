@@ -3,6 +3,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
+import { currentView } from './motion';
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -24,14 +25,14 @@ test.afterEach(async ({ request }) => {
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const mainArea = (page: Page) => page.getByRole('main');
-const header = (page: Page) => mainArea(page).locator('.session-header');
+const header = (page: Page) => currentView(page).locator('.session-header');
 const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
 const terminalBox = (page: Page) => panel(page).locator('.session-terminal');
-const footer = (page: Page) => mainArea(page).locator('.session-footer');
+const footer = (page: Page) => currentView(page).locator('.session-footer');
 // SessionView: the panel sits 12 px from every side (plan-dark_blue_theme/REQ-26); the footer under it is 32 px high (plan-dark_blue_theme/REQ-12).
 const GAP = 12;
 const FOOTER_HEIGHT = 32;
-const terminal = (page: Page) => page.locator('.xterm-rows');
+const terminal = (page: Page) => currentView(page).locator('.xterm-rows');
 
 async function makeFolder(name: string): Promise<string> {
   const folder = path.join(projectsRoot, name);

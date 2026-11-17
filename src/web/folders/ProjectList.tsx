@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AreaState } from '../feedback/AreaState';
 import { FolderIcon, SearchIcon, XIcon } from '../icons/Icons';
+import { useListCascade } from '../motion/list-cascade';
 import { Avatar, folderNameOf } from '../sessions/Avatar';
 import { RelativeTime } from '../sessions/RelativeTime';
 import { ProjectFavoriteButton } from './ProjectFavoriteButton';
@@ -57,6 +58,11 @@ export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onC
     const text = query.toLowerCase();
     return text === '' ? allProjects : allProjects?.filter((project) => project.folder.toLowerCase().includes(text));
   }, [allProjects, query]);
+  const { cascadeOf, endCascade } = useListCascade(projects?.map((project) => project.folder));
+  const changeQuery = (text: string) => {
+    endCascade();
+    setQuery(text);
+  };
   const listRef = useRef<HTMLUListElement>(null);
   const focusedFolder = useRef<string | undefined>(undefined);
   const shownProjects = useRef(projects);
@@ -89,7 +95,7 @@ export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onC
             value={query}
             placeholder="Search projects"
             aria-label="Search projects"
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => changeQuery(event.target.value)}
           />
           {query !== '' && (
             <button
@@ -98,7 +104,7 @@ export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onC
               aria-label="Clear Search"
               title="Clear Search"
               onClick={() => {
-                setQuery('');
+                changeQuery('');
                 searchRef.current?.focus();
               }}
             >
@@ -123,13 +129,21 @@ export function ProjectList({ store, onChoose }: { store?: ProjectListStore; onC
               if (event.relatedTarget !== null && !event.currentTarget.contains(event.relatedTarget)) focusedFolder.current = undefined;
             }}
           >
-            {projects.map((project) => (
-              <li key={project.folder} className="star-host" onFocus={() => (focusedFolder.current = project.folder)}>
-                <ProjectRow project={project} onChoose={onChoose} />
-                <ProjectFavoriteButton folder={project.folder} favorite={project.favorite} />
-                <ProjectRemoveButton folder={project.folder} />
-              </li>
-            ))}
+            {projects.map((project) => {
+              const cascade = cascadeOf(project.folder);
+              return (
+                <li
+                  key={project.folder}
+                  className={cascade ? `star-host ${cascade.className}` : 'star-host'}
+                  style={cascade?.style}
+                  onFocus={() => (focusedFolder.current = project.folder)}
+                >
+                  <ProjectRow project={project} onChoose={onChoose} />
+                  <ProjectFavoriteButton folder={project.folder} favorite={project.favorite} />
+                  <ProjectRemoveButton folder={project.folder} />
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

@@ -5,6 +5,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
+import { currentView, settled } from './motion';
 
 type Theme = 'light' | 'dark';
 type Box = { x: number; y: number; width: number; height: number };
@@ -31,13 +32,13 @@ test.afterEach(async ({ request }) => {
 
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const mainArea = (page: Page) => page.getByRole('main');
-const header = (page: Page) => mainArea(page).locator('.session-header');
+const header = (page: Page) => currentView(page).locator('.session-header');
 const footer = (page: Page) => mainArea(page).locator('.session-footer');
 const frame = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
 const explorer = (page: Page) => mainArea(page).getByRole('region', { name: 'Git Explorer', exact: true });
 const linePill = (page: Page) => header(page).locator('.mono-chip').first();
-const terminal = (page: Page) => page.locator('.xterm-rows');
-const terminalInput = (page: Page) => page.locator('.xterm-helper-textarea');
+const terminal = (page: Page) => currentView(page).locator('.xterm-rows');
+const terminalInput = (page: Page) => currentView(page).locator('.xterm-helper-textarea');
 
 async function box(locator: Locator): Promise<Box> {
   const b = await locator.boundingBox();
@@ -315,6 +316,8 @@ test('with the git explorer open, it sits right of the frame past the 12 px gap,
   await openIn(page, 'dark', folder);
   await header(page).getByRole('button', { name: 'Git Explorer', exact: true }).click();
   await expect(explorer(page)).toBeVisible();
+  // The frame shrinks while the panel slides in (plan-ui_transitions/REQ-5): both are measured at rest.
+  await settled(explorer(page));
 
   const panelBox = await box(frame(page));
   const gitBox = await box(explorer(page));

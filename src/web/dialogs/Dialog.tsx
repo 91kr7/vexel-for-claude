@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Spinner } from '../feedback/ProgressIndicator';
+import { useLeaving } from '../motion/ExitPresence';
 import { TriangleAlertIcon } from '../icons/Icons';
 
 export interface DialogProps {
@@ -43,11 +44,19 @@ export function Dialog({
   const titleId = useId();
   const descriptionId = useId();
   const frameRef = useRef<HTMLDivElement>(null);
+  const leaving = useLeaving();
+  const focusReturned = useRef(false);
   const [previousFocus] = useState(() => (typeof document === 'undefined' ? null : document.activeElement));
   const warning = tone === 'warning';
   const attnBanner = warning && accent === 'attn';
   const primaryBlocked = primaryDisabled || primaryBusy;
   const hasPrimary = primaryLabel !== undefined && onPrimary !== undefined;
+
+  const restoreFocus = () => {
+    if (focusReturned.current) return;
+    focusReturned.current = true;
+    if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
+  };
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -55,9 +64,22 @@ export function Dialog({
     return () => {
       // StrictMode re-runs effects on a frame that is still mounted: restore focus only on a real close.
       if (frame?.isConnected) return;
-      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
+      restoreFocus();
     };
   }, [previousFocus]);
+
+  // A leaving dialog gives the focus back at once, so the page takes the next keys.
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!leaving || !frame) return;
+    if (!frame.contains(document.activeElement)) {
+      // The focus already left: the final removal must not pull it back.
+      focusReturned.current = true;
+      return;
+    }
+    restoreFocus();
+    if (frame.contains(document.activeElement) && document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  }, [leaving]);
 
   const keepFocusInside = (event: KeyboardEvent<HTMLDivElement>) => {
     const frame = event.currentTarget;
@@ -79,6 +101,7 @@ export function Dialog({
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (leaving) return;
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
@@ -100,7 +123,8 @@ export function Dialog({
 
   return (
     <div
-      className={warning ? 'modal-backdrop warning-backdrop' : 'modal-backdrop'}
+      className={['modal-backdrop', warning ? 'warning-backdrop' : '', leaving ? 'is-leaving' : ''].filter(Boolean).join(' ')}
+      aria-hidden={leaving || undefined}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) event.preventDefault();
       }}
@@ -109,7 +133,7 @@ export function Dialog({
         ref={frameRef}
         className={['modal vx-surface-2', warning ? `dialog-warning dialog-${accent}` : '', className ?? ''].filter(Boolean).join(' ')}
         role={warning ? 'alertdialog' : 'dialog'}
-        aria-modal="true"
+        aria-modal={leaving ? undefined : true}
         aria-labelledby={titleId}
         aria-describedby={description === undefined ? undefined : descriptionId}
         tabIndex={-1}

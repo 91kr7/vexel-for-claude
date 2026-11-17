@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from 'react';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { RefreshCwIcon } from '../icons/Icons';
+import { useLeaving } from '../motion/ExitPresence';
 import type { SessionSummary } from '../sessions/live-session-store';
 import { ChangesTab } from './ChangesTab';
 import { useChanges, type ChangesState } from './changes-store';
@@ -122,20 +123,25 @@ export function GitExplorerPanel({ lookup, folder, onRefresh, sessions = NO_SESS
   };
   const changes = useChanges(showTabs ? shownRoots : NO_ROOTS, revision);
   const [tab, setTab] = useState<Tab>('changes');
+  const [tabSwitched, setTabSwitched] = useState(false);
   const [historyOpened, setHistoryOpened] = useState(false);
   const { history, loadMore } = useHistory(showTabs && historyOpened ? shownRoots : NO_ROOTS, revision);
   useTurnEndSignal(sessions, roots, refresh);
   const idPrefix = useId();
+  const leaving = useLeaving();
   const tabId = (id: Tab) => `${idPrefix}-tab-${id}`;
   const panelId = (id: Tab) => `${idPrefix}-tabpanel-${id}`;
 
+  const tabPanelClass = tabSwitched ? 'git-explorer-tabpanel tab-panel-enter' : 'git-explorer-tabpanel';
+
   const open = (next: Tab) => {
+    if (next !== tab) setTabSwitched(true);
     setTab(next);
     if (next === 'history') setHistoryOpened(true);
   };
 
   return (
-    <section className="git-explorer-panel" aria-label={NAME}>
+    <section className={leaving ? 'git-explorer-panel is-leaving' : 'git-explorer-panel'} aria-label={NAME} aria-hidden={leaving || undefined}>
       {(lookup.status === 'repositories' || lookup.status === 'error') && (
         <header className={several ? 'git-explorer-header several' : 'git-explorer-header'}>
           {single !== undefined && (
@@ -171,7 +177,7 @@ export function GitExplorerPanel({ lookup, folder, onRefresh, sessions = NO_SESS
             ))}
           </div>
           <div
-            className="git-explorer-tabpanel"
+            className={tabPanelClass}
             role="tabpanel"
             id={panelId('changes')}
             aria-labelledby={tabId('changes')}
@@ -180,7 +186,7 @@ export function GitExplorerPanel({ lookup, folder, onRefresh, sessions = NO_SESS
             <ChangesBody repositories={shownRepositories} changes={changes} colors={shownColors} several={several} />
           </div>
           <div
-            className="git-explorer-tabpanel"
+            className={tabPanelClass}
             role="tabpanel"
             id={panelId('history')}
             aria-labelledby={tabId('history')}

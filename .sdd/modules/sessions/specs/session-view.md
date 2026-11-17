@@ -60,6 +60,7 @@ Reconnection:
 
 Actions:
 - every key typed in the terminal → sent to the pty as `input`, Esc included. The keys of the ShortcutMap, terminal rows included, are the only exceptions.
+- keys typed while the connection is still opening (first attach or a new attempt) → kept, then sent as `input` in typing order right after the `resize` of the open connection. A new `sessionId` drops the kept input: it never reaches another session. Input typed after a connection has closed, while no new attempt is opening, is lost as before.
 - the terminal rows "Search", "Larger text", "Smaller text", "Default text size" and "Focus the list" run on their active keys (`terminalShortcutOf`). The default keys match as below, by the typed character. A user key matches by physical key, Ctrl, Alt and Shift exactly, no Meta, no AltGr. The action is the same either way: nothing goes to the pty and the browser default is prevented.
 - a key of the ShortcutMap (`shortcutCommandOf` gives a command) in the terminal → the terminal does not process it and nothing goes to the pty.
 - Ctrl+click on a link → LinkOpener `openLink` with the full address (a wrapped address included). The session stays on screen.
@@ -83,10 +84,12 @@ Actions:
   - desktop app, session `ended` → nothing is inserted and nothing goes to the pty.
   - browser client → nothing is inserted and nothing goes to the pty; the message above shows.
 - a drag that carries no files (e.g. text) → the panel does not change it: no drop state, no message.
-- GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known, and one more at each opening of the panel and each refresh). A click opens the GitExplorerPanel; a second click closes it. The panel is closed when the view opens.
+- GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known, and one more at each opening of the panel and each refresh). A click opens the GitExplorerPanel; a second click closes it. The panel is closed when the view opens, so no slide plays then. The panel is mounted through ExitPresence: it slides in on open and out on close. A click during a slide reverses it, and the panel ends in the state of the last click.
 - the GitExplorerPanel gets the session list of the `sessions` prop. Each opening of the panel, and each refresh the panel asks for (`onRefresh`), reads the repository again. While a lookup of a refresh is in flight, the button and the panel stay as they are.
 - "Interrupt" → sends Esc (`\x1b`) as `input`, then gives focus back to the terminal.
 - the panel changes size → the terminal fits it and sends the new `resize`. It also sends a `resize` as soon as it connects.
+- while the GitExplorerPanel slides → the terminal does not fit at each frame. It fits the new size and sends one `resize` when the slide ends. It keeps its text.
+- during the cross-fade of a session switch (AppLayout) → both views keep the size of the main area, so the rows and columns of neither session change. The leaving view keeps its connection and sends no `resize`. The new view opens only its own connection and sends its `resize` when it connects, as on any open. When the fade ends the terminal fits once; it sends a `resize` only if its rows or columns changed. The focus rules of an open stay the same: the new terminal takes the focus when it opens.
 
 ## Rules and invariants
 
@@ -107,6 +110,7 @@ Actions:
 - `@xterm/addon-search`
 - SessionHeader, SessionFooter, StopSessionButton, Avatar (`folderNameOf`)
 - useRepositoryLookup, GitExplorerButton, GitExplorerPanel (module git)
+- ExitPresence (module app)
 - ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, ThemeStore, WebEntry, BundledFont (module app)
 
 ## Requirements served
@@ -123,4 +127,5 @@ Actions:
 - `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`, `plan-session_list_width/REQ-30`, `plan-session_list_width/REQ-31`, `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-33`, `plan-session_list_width/REQ-36`
 - `plan-ui_restyle/REQ-34`, `plan-ui_restyle/REQ-35`
 - `plan-dark_blue_theme/REQ-31`, `plan-dark_blue_theme/REQ-38`
+- `plan-ui_transitions/REQ-6`, `plan-ui_transitions/REQ-11`, `plan-ui_transitions/REQ-12`, `plan-ui_transitions/REQ-13`, `plan-ui_transitions/REQ-28`, `plan-ui_transitions/REQ-33`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-26`, `plan-dark_blue_theme/REQ-27`, `plan-dark_blue_theme/REQ-28`, `plan-dark_blue_theme/REQ-29`

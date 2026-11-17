@@ -63,7 +63,8 @@ const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const mainArea = (page: Page) => page.getByRole('main');
 const terminalPanel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
-const terminal = (page: Page) => page.locator('.xterm-rows');
+// During a session switch the leaving view keeps its terminal until its fade ends (plan-ui_transitions/REQ-10).
+const terminal = (page: Page) => page.locator('.main-view:not(.is-leaving) .xterm-rows');
 const header = (page: Page) => mainArea(page).locator('.session-header');
 const explorerButton = (page: Page) => header(page).getByRole('button', { name: 'Git Explorer', exact: true });
 const explorer = (page: Page) => mainArea(page).getByRole('region', { name: 'Git Explorer', exact: true });
@@ -79,6 +80,9 @@ async function openHosted(page: Page, folder: string): Promise<void> {
   await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(terminal(page)).toContainText(`CWD:${folder}`);
 }
+
+/** Waits for the end of the opening slide of the panel (plan-ui_transitions/REQ-5), so its size is final. */
+const slideEnded = (page: Page) => explorer(page).evaluate((panel) => Promise.all(panel.getAnimations().map((animation) => animation.finished)));
 
 async function box(locator: Locator) {
   const b = await locator.boundingBox();
@@ -120,6 +124,7 @@ test.describe('Git explorer of a hosted session', () => {
     await explorerButton(page).click();
     await expect(explorerButton(page)).toHaveAttribute('aria-expanded', 'true');
     await expectRepositoryShown(page, repo, 'main');
+    await slideEnded(page);
 
     const panel = await box(explorer(page));
     const term = await box(terminalPanel(page));
@@ -141,6 +146,7 @@ test.describe('Git explorer of a hosted session', () => {
     await openHosted(page, repo);
     await explorerButton(page).click();
     await expect(explorer(page)).toBeVisible();
+    await slideEnded(page);
     const panel = await box(explorer(page));
     const term = await box(terminalPanel(page));
     const content = panel.x + panel.width - term.x;
@@ -239,6 +245,7 @@ test.describe('Git explorer of an external session', () => {
     const before = await box(conversation(page).locator('.conversation-items'));
     await button.click();
     await expectRepositoryShown(page, repo, 'main');
+    await slideEnded(page);
     const panel = await box(explorer(page));
     const content = await box(conversation(page).locator('.conversation-items'));
     expect(panel.x, 'the panel is at the right of the conversation').toBeGreaterThanOrEqual(content.x + content.width - 1);

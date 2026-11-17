@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { currentView } from './motion';
 
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 // The external scanner reads the sessions folder every 2 seconds.
@@ -40,7 +41,7 @@ const percent = (target: Locator) => target.locator('.session-entry-context');
 /** The amount in a list entry: the element with the estimate tooltip. */
 const amount = (target: Locator) => target.getByTitle(COST_TOOLTIP, { exact: true });
 const mark = (target: Locator) => target.getByRole('img', { name: INCOMPLETE });
-const footer = (page: Page) => page.locator('.session-footer');
+const footer = (page: Page) => currentView(page).locator('.session-footer');
 const costChip = (page: Page) => footer(page).locator('.session-figure-cost');
 const tokensChip = (page: Page) => footer(page).locator('.session-figure-tokens');
 

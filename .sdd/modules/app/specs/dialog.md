@@ -33,6 +33,15 @@ Shows (sizes in px):
 - `tone` `default` → role `dialog`. `tone` `warning` → role `alertdialog`, see WarningDialog.
 - `aria-modal="true"`.
 
+Motion (MotionTokens):
+- on open → the backdrop fades in and the frame enters with a slight zoom (from 96 % and transparent). The focus rules apply from the first frame of the effect: Esc and Enter work at once.
+- leaving (`useLeaving()` of ExitPresence is `true`) → the reverse: the frame zooms out slightly while the backdrop fades out. The leaving dialog:
+  - takes no pointer input: clicks reach the page below;
+  - ignores keys and traps no focus;
+  - has no `aria-modal` and is hidden from assistive technologies (`aria-hidden`), so the page shortcuts work at once;
+  - gives the focus back at once, as on close. Its final removal does not move the focus again.
+- reduced motion → no fade and no zoom.
+
 Keyboard:
 - Esc → `onCancel()`. Nothing else happens.
 - Enter, focus on a button → that button acts. The dialog adds nothing.
@@ -45,7 +54,7 @@ Actions:
 Focus:
 - on open → `cancel` focuses "Cancel". `dialog` keeps the focus on a content element that takes it on mount (e.g. `autoFocus`); otherwise it focuses the dialog itself.
 - a click on the backdrop does not move the focus out of the dialog.
-- on close → the focus goes back to the element that had it before the dialog opened, if that element is still on the page.
+- on close, or when it starts to leave → the focus goes back to the element that had it before the dialog opened, if that element is still on the page.
 
 ## Rules and invariants
 
@@ -60,6 +69,7 @@ Focus:
 - IconSet (`TriangleAlertIcon`, `attn` warning)
 - ProgressIndicator (`Spinner`)
 - ThemeTokens, WebEntry (surface and button classes)
+- MotionTokens, ExitPresence (`useLeaving`)
 
 ## Requirements served
 
@@ -70,3 +80,4 @@ Focus:
 - `plan-mac_title_bar/REQ-8`, `plan-mac_title_bar/REQ-11`, `plan-mac_title_bar/REQ-24`
 - `plan-keyboard_shortcuts/REQ-29`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-33`
 - `plan-dark_blue_theme/REQ-3`
+- `plan-ui_transitions/REQ-1`, `plan-ui_transitions/REQ-2`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-27`
