@@ -17,3 +17,7 @@
 | 2026-11-17 | dev | G4 popup-mark | decided | FavoriteIndicator left in place though unused in production: removal is outside the batch INTs |
 | 2026-11-17 | dev | G4 popup-mark | pass | build green on gatekeeper re-run; files match INT-1..5 plus specs and indexes |
 | 2026-11-17 | test | G5 popup-mark | pass | 65 unit and 31 e2e green on gatekeeper re-run; `favorite-session.spec.ts` updated to the star button contract |
+| 2026-11-17 | dev | entry favorites-filter | decided | Run interrupted by shutdown; partial uncommitted diff in `ResumeDialog.tsx` is this cycle's work: new developer run reviews and completes it |
+| 2026-11-17 | dev | entry favorites-filter | decided | First developer run was still alive and finished; second run stopped; duplicated CSS lines from the overlap removed by the gatekeeper |
+| 2026-11-17 | dev | G4 favorites-filter | decided | One extra line in `theme/windows11.css`: toggle corners match the search field in the Windows 11 look |
+| 2026-11-17 | dev | G4 favorites-filter | pass | build green on gatekeeper re-run; files match INT-1..3 plus spec and index |

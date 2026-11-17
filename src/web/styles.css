@@ -3249,6 +3249,37 @@ input {
   min-height: 56px;
 }
 
+.resume-search-bar {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+.resume-search-bar > .search-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.favorites-filter {
+  flex: none;
+  width: 34px;
+  border-radius: var(--radius-frame);
+  border: 1px solid var(--field-border);
+  background-color: var(--field-bg);
+  color: var(--text-muted);
+}
+
+.favorites-filter:hover {
+  background-color: var(--bg-surface-3);
+  color: var(--text-primary);
+}
+
+.favorites-filter[aria-pressed='true'] {
+  border-color: var(--role-accent);
+  background-color: var(--role-card-active);
+  color: var(--amber-400);
+}
+
 .settings-dialog .dialog-body {
   padding: 0;
 }
