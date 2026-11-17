@@ -468,6 +468,8 @@ test('with an external session open, the needs-input snackbar sits 20 px from th
   const response = await request.post(`/api/sessions/${waitingId}/hook-events`, { data: { hook_event_name: 'PermissionRequest', tool_name: 'Bash' } });
   expect(response.status()).toBe(204);
   await expect(snackbar(page)).toHaveText(/attende-input needs your input/);
+  // The snackbar is measured at rest, after its enter effect (plan-ui_transitions/REQ-3).
+  await snackbar(page).evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((animation) => animation.finished)));
 
   const bar = await box(snackbar(page));
   near(1440 - (bar.x + bar.width), 20, 'gap to the right edge of the window');

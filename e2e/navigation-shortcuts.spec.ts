@@ -37,8 +37,9 @@ test.beforeEach(async ({ page }) => {
 
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
-const terminal = (page: Page) => page.locator('.xterm-rows');
-const terminalInput = (page: Page) => page.locator('.xterm-helper-textarea');
+// During a session switch the leaving view keeps its terminal until its fade ends (plan-ui_transitions/REQ-10).
+const terminal = (page: Page) => page.locator('.main-view:not(.is-leaving) .xterm-rows');
+const terminalInput = (page: Page) => page.locator('.main-view:not(.is-leaving) .xterm-helper-textarea');
 const toast = (page: Page) => page.getByRole('status').filter({ hasText: 'No session needs input' });
 
 async function newFolder(name: string): Promise<string> {
@@ -86,7 +87,7 @@ async function openByClick(page: Page, folder: string): Promise<void> {
 }
 
 async function focusTerminal(page: Page): Promise<void> {
-  await page.locator('.xterm-screen').click();
+  await page.locator('.main-view:not(.is-leaving) .xterm-screen').click();
   await expect(terminalInput(page)).toBeFocused();
 }
 
@@ -114,6 +115,18 @@ async function showsRing(page: Page, target: Locator): Promise<boolean> {
 const at = (folders: string[], index: number) => folders[index] ?? '';
 
 // plan-keyboard_shortcuts/REQ-5, REQ-10, REQ-11, REQ-39, REQ-40 — scenario "The user opens the next session from the terminal"
+/** Waits for the enter effect of the element (plan-ui_transitions/REQ-3): its place is measured at rest. */
+async function settled(target: Locator): Promise<void> {
+  await target.evaluate((el) =>
+    Promise.all(
+      el
+        .getAnimations()
+        .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+        .map((animation) => animation.finished),
+    ),
+  );
+}
+
 test('Alt+Down in the terminal opens the next session as a click does, and types nothing in the CLI', async ({ page, request }) => {
   const { folders } = await sessionsInList(page, request, ['next-a', 'next-b', 'next-c']);
   await openByClick(page, at(folders, 1));
@@ -254,6 +267,7 @@ test('Alt+I with no session that needs input keeps the open session and shows a 
   await expectOpen(page, at(folders, 0));
   await expect(terminal(page)).not.toContainText('IN:');
 
+  await settled(toast(page));
   const box = await toast(page).boundingBox();
   expect(box, 'the message is rendered').not.toBeNull();
   // plan-dark_blue_theme/REQ-15: the message sits at the bottom right.

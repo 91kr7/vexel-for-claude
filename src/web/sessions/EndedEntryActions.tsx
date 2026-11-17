@@ -5,6 +5,7 @@ import { Spinner } from '../feedback/ProgressIndicator';
 import { RunningElsewhereWarning } from '../history/RunningElsewhereWarning';
 import { HistoryIcon, XIcon } from '../icons/Icons';
 import { useSessionCommand } from '../shortcut-channel';
+import { ExitPresence } from '../motion/ExitPresence';
 
 interface EndedEntryActionsProps {
   sessionId: string;
@@ -100,18 +101,20 @@ export function EndedEntryActions({ sessionId, resumable, open = false, onResume
         </button>
       </div>
       {error && <ErrorMessage className="ended-entry-error">{error}</ErrorMessage>}
-      {warning &&
-        // Outside the draggable list item, so a mouse move on the dialog cannot drag the entry.
-        createPortal(
-          <RunningElsewhereWarning
-            onConfirm={() => {
-              setWarning(false);
-              void resume(true);
-            }}
-            onCancel={() => setWarning(false)}
-          />,
-          document.body,
-        )}
+      <ExitPresence>
+        {warning &&
+          // Outside the draggable list item, so a mouse move on the dialog cannot drag the entry.
+          createPortal(
+            <RunningElsewhereWarning
+              onConfirm={() => {
+                setWarning(false);
+                void resume(true);
+              }}
+              onCancel={() => setWarning(false)}
+            />,
+            document.body,
+          )}
+      </ExitPresence>
     </>
   );
 }

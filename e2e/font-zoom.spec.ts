@@ -23,8 +23,9 @@ const entry = (page: Page, folder: string) => list(page).getByRole('button').fil
 const mainArea = (page: Page) => page.getByRole('main');
 const subbar = (page: Page) => mainArea(page).locator('header');
 const panel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
-const terminal = (page: Page) => page.locator('.xterm-rows');
-const terminalInput = (page: Page) => page.locator('.xterm-helper-textarea');
+// During a session switch the leaving view keeps its terminal until its fade ends (plan-ui_transitions/REQ-10).
+const terminal = (page: Page) => page.locator('.main-view:not(.is-leaving) .xterm-rows');
+const terminalInput = (page: Page) => page.locator('.main-view:not(.is-leaving) .xterm-helper-textarea');
 // plan-session_list_width/REQ-29: the controls sit at the right end of the footer.
 const zoomGroup = (page: Page) => mainArea(page).locator('footer').getByRole('group', { name: 'Terminal text size' });
 const smallerButton = (page: Page) => zoomGroup(page).getByRole('button', { name: 'Smaller text', exact: true });
@@ -57,7 +58,7 @@ async function focusedSession(page: Page, request: APIRequestContext, name = 'zo
   await startViaApi(request, folder);
   await page.goto('/');
   await openFromList(page, folder);
-  await page.locator('.xterm-screen').click();
+  await page.locator('.main-view:not(.is-leaving) .xterm-screen').click();
   await expect(terminalInput(page)).toBeFocused();
   return folder;
 }
@@ -266,7 +267,7 @@ test('REQ-35, REQ-40, REQ-41, REQ-45: the controls work with Tab and Enter, show
 
   // REQ-40: a disabled "larger" does nothing, and Ctrl+= in the terminal stops at 32 px.
   await largerButton(page).click({ force: true });
-  await page.locator('.xterm-screen').click();
+  await page.locator('.main-view:not(.is-leaving) .xterm-screen').click();
   await page.keyboard.press('Control+Equal');
   await page.waitForTimeout(300);
   await expectSize(page, 32);
@@ -283,7 +284,7 @@ test('REQ-35, REQ-40, REQ-41, REQ-45: "Smaller text" stops at 8 px, Space activa
   }
   await expect(smallerButton(page)).toBeDisabled();
   await expect(largerButton(page)).toBeEnabled();
-  await page.locator('.xterm-screen').click();
+  await page.locator('.main-view:not(.is-leaving) .xterm-screen').click();
   await page.keyboard.press('Control+Minus');
   await page.waitForTimeout(300);
   await expectSize(page, 8);
@@ -319,7 +320,7 @@ test('REQ-36, REQ-38: outside the terminal the zoom keys change nothing, and in 
   await page.waitForTimeout(300);
   await expectSize(page, 12);
 
-  await page.locator('.xterm-screen').click();
+  await page.locator('.main-view:not(.is-leaving) .xterm-screen').click();
   await expect(terminalInput(page)).toBeFocused();
   await page.keyboard.press('Control+Shift+Minus');
   // Ctrl+_ is the control character 0x1f.

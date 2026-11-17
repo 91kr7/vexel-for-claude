@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { STAYING_ENTRY, currentView } from './motion';
 
 const WITHIN_2_S = { timeout: 2_000 };
 
@@ -25,9 +26,9 @@ test.afterAll(async () => {
 });
 
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
-const entry = (page: Page, folder: string) => list(page).locator('.session-entry').filter({ has: page.getByTitle(folder, { exact: true }) });
-const header = (page: Page) => page.locator('.session-header');
-const footer = (page: Page) => page.locator('.session-footer');
+const entry = (page: Page, folder: string) => list(page).locator(STAYING_ENTRY).filter({ has: page.getByTitle(folder, { exact: true }) });
+const header = (page: Page) => currentView(page).locator('.session-header');
+const footer = (page: Page) => currentView(page).locator('.session-footer');
 const chip = (page: Page) => footer(page).locator('.session-figure-tokens');
 const popover = (page: Page) => page.getByRole('tooltip');
 /** The chip text: the popover text sits inside the chip, so only the start is matched. */

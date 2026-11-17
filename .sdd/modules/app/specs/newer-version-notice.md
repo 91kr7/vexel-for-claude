@@ -26,6 +26,14 @@ Actions:
 - "View Release" → the browser opens the release page in a new tab. The desktop window sends it to the system browser.
 - "Close Update Notice" → `onClose()`.
 
+Motion (MotionTokens):
+- on open → it slides up a few pixels from below on the spring curve while it fades in. "Close Update Notice" and "View Release" work from the first frame of the effect.
+- leaving (`useLeaving()` of ExitPresence is `true`) → the reverse: it slides down while it fades out. The leaving notice:
+  - takes no pointer input: clicks reach the page below;
+  - "Close Update Notice" does nothing;
+  - is hidden from assistive technologies (`aria-hidden`).
+- reduced motion → no slide and no fade: it appears and goes at once.
+
 ## Rules and invariants
 
 - It takes no focus when it appears.
@@ -37,6 +45,7 @@ Actions:
 ## Dependencies
 
 - useNewerVersion (`NewerVersion` type), ChangelogText, IconSet (`XIcon`), WebEntry (`.vx-glass`)
+- MotionTokens, ExitPresence (`useLeaving`)
 - DesktopApp (module desktop): web addresses opened with a target go to the system browser, changelog links included
 
 ## Requirements served
@@ -44,3 +53,4 @@ Actions:
 - `plan-update_check/REQ-5`, `plan-update_check/REQ-6`, `plan-update_check/REQ-7`
 - `plan-release_changelog/REQ-7`, `plan-release_changelog/REQ-8`, `plan-release_changelog/REQ-9`, `plan-release_changelog/REQ-12`, `plan-release_changelog/REQ-13`, `plan-release_changelog/REQ-14`, `plan-release_changelog/REQ-15`
 - `plan-dark_blue_theme/REQ-3`
+- `plan-ui_transitions/REQ-3`, `plan-ui_transitions/REQ-4`, `plan-ui_transitions/REQ-26`

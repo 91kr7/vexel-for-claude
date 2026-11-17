@@ -8,6 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Page, type Response, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { STAYING_ENTRY, currentView } from './motion';
 
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 // The external scanner reads the sessions folder every 2 seconds.
@@ -45,13 +46,13 @@ test.afterAll(async () => {
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const byFolder = (page: Page, folder: string) => page.getByTitle(folder, { exact: true });
 const item = (page: Page, folder: string) => list(page).getByRole('listitem').filter({ has: byFolder(page, folder) });
-const entry = (page: Page, folder: string) => list(page).locator('.session-entry').filter({ has: byFolder(page, folder) });
+const entry = (page: Page, folder: string) => list(page).locator(STAYING_ENTRY).filter({ has: byFolder(page, folder) });
 const renameButton = (page: Page, folder: string) => item(page, folder).getByRole('button', { name: 'Rename', exact: true });
 const nameField = (page: Page, folder: string) => item(page, folder).getByRole('textbox', { name: 'Session Name', exact: true });
-const header = (page: Page) => page.getByRole('main').locator('.session-header');
+const header = (page: Page) => currentView(page).locator('.session-header');
 const resumeDialog = (page: Page) => page.getByRole('dialog', { name: 'Resume Session' });
 const warning = (page: Page) => page.getByRole('alertdialog', { name: 'Session Running in a Terminal' });
-const terminal = (page: Page) => page.locator('.xterm-rows');
+const terminal = (page: Page) => currentView(page).locator('.xterm-rows');
 const isRenameRequest = (r: { url(): string; method(): string }) => r.method() === 'PUT' && /^\/api\/sessions\/[^/]+\/name$/.test(new URL(r.url()).pathname);
 
 /** Shows in the page only the sessions of the current test. */

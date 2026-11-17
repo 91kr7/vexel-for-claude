@@ -27,6 +27,14 @@ Actions:
 - close button → `onClose()`.
 - Esc with the focus inside the panel → `onClose()`.
 
+Motion (MotionTokens):
+- on open → it hangs under its title-bar button, so it drops a few pixels from that corner and grows from 96 % on the spring curve while it fades in. The close button and Esc work from the first frame of the effect.
+- leaving (`useLeaving()` of ExitPresence is `true`) → the reverse: it lifts back toward its button while it fades out. The leaving panel:
+  - takes no pointer input: clicks reach the page below;
+  - ignores Esc and its close button does nothing;
+  - is hidden from assistive technologies (`aria-hidden`).
+- reduced motion → no slide and no fade: it appears and goes at once.
+
 ## Rules and invariants
 
 - Opening it takes no focus and moves no scroll.
@@ -37,8 +45,10 @@ Actions:
 ## Dependencies
 
 - PlanLimitRow, reset time format, ProgressIndicator, IconSet (`XIcon`), PlanUsageStore (state type)
+- MotionTokens, ExitPresence (`useLeaving`)
 
 ## Requirements served
 
 - `plan-usage_limits/REQ-3`, `plan-usage_limits/REQ-4`, `plan-usage_limits/REQ-5`, `plan-usage_limits/REQ-6`, `plan-usage_limits/REQ-7`, `plan-usage_limits/REQ-13`, `plan-usage_limits/REQ-15`, `plan-usage_limits/REQ-16`, `plan-usage_limits/REQ-17`
 - `plan-dark_blue_theme/REQ-3`
+- `plan-ui_transitions/REQ-3`, `plan-ui_transitions/REQ-4`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-27`

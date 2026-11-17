@@ -1,4 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { dissolveColors } from './color-dissolve';
+import type { ColorChange } from './theme-store';
 
 export type Look = 'vexel' | 'windows11';
 
@@ -16,25 +18,30 @@ export function isLook(value: unknown): value is Look {
 export class LookStore {
   readonly #root: LookRoot;
   readonly #storage: LookStorage | undefined;
+  readonly #change: ColorChange;
   readonly #listeners = new Set<() => void>();
   #look: Look;
 
-  constructor(root: LookRoot, initial: Look = START_LOOK, storage?: LookStorage) {
+  constructor(root: LookRoot, initial: Look = START_LOOK, storage?: LookStorage, change: ColorChange = (apply) => apply()) {
     this.#root = root;
     this.#storage = storage;
+    this.#change = change;
     this.#look = initial;
     this.#mark();
   }
 
   toggle(): void {
     this.#look = this.#look === 'vexel' ? 'windows11' : 'vexel';
-    this.#mark();
     try {
       this.#storage?.setItem(LOOK_KEY, this.#look);
     } catch {
       // The look still applies to this page when the browser refuses to store it.
     }
-    for (const listener of this.#listeners) listener();
+    // Marks the active look: a later toggle may already have replaced it.
+    this.#change(() => {
+      this.#mark();
+      for (const listener of this.#listeners) listener();
+    });
   }
 
   #mark(): void {
@@ -63,7 +70,7 @@ export function pageLookStore(): LookStore {
   if (pageStore) return pageStore;
   const root = document.documentElement;
   const mark = root.getAttribute('data-look');
-  pageStore = new LookStore(root, isLook(mark) ? mark : START_LOOK, pageStorage());
+  pageStore = new LookStore(root, isLook(mark) ? mark : START_LOOK, pageStorage(), dissolveColors);
   return pageStore;
 }
 

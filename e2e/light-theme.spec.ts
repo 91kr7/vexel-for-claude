@@ -5,6 +5,7 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, type WebSocketRoute, expect, test } from '@playwright/test';
+import { pageSettled } from './motion';
 import { cardOf, chooseInSettings, settingsButton, settingsPopup } from './settings';
 
 type Box = { x: number; y: number; width: number; height: number };
@@ -403,6 +404,8 @@ test.describe('theme choice', () => {
       return all.find((n) => n.scrollHeight > n.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(n).overflowY)) ?? null;
     });
     expect(await scroller.evaluate((n) => n !== null), 'the session list scrolls').toBe(true);
+    // The start cascade offsets the entries while it plays (plan-ui_transitions/REQ-16): the list scrolls at rest.
+    await pageSettled(page);
     await scroller.evaluate((n) => n!.scrollTo(0, n!.scrollHeight));
     const scrollTop = await scroller.evaluate((n) => n!.scrollTop);
     expect(scrollTop).toBeGreaterThan(0);

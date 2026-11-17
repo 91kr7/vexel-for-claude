@@ -6,6 +6,7 @@ import { HistoryIcon, SearchIcon, StarIcon, TerminalIcon, XIcon } from '../icons
 import { Avatar } from '../sessions/Avatar';
 import { FavoriteButton } from '../sessions/FavoriteButton';
 import { RunningElsewhereWarning } from './RunningElsewhereWarning';
+import { ExitPresence } from '../motion/ExitPresence';
 
 interface PastSessionEntry {
   id: string;
@@ -267,16 +268,18 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
         </div>
         {error && <ErrorMessage>{error}</ErrorMessage>}
       </Dialog>
-      {warningFor !== null && (
-        <RunningElsewhereWarning
-          onConfirm={() => {
-            const pastSessionId = warningFor;
-            setWarningFor(null);
-            void resume(pastSessionId);
-          }}
-          onCancel={() => setWarningFor(null)}
-        />
-      )}
+      <ExitPresence>
+        {warningFor !== null && (
+          <RunningElsewhereWarning
+            onConfirm={() => {
+              const pastSessionId = warningFor;
+              setWarningFor(null);
+              void resume(pastSessionId);
+            }}
+            onCancel={() => setWarningFor(null)}
+          />
+        )}
+      </ExitPresence>
     </>
   );
 }

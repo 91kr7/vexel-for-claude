@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { XIcon } from '../icons/Icons';
+import { useLeaving } from '../motion/ExitPresence';
 import { PlanLimitRow } from './PlanLimitRow';
 import type { PlanUsageState } from './plan-usage-store';
 
@@ -22,16 +23,23 @@ function Content({ state }: { state: PlanUsageState }) {
 }
 
 export function PlanUsagePopover({ state, onClose }: PlanUsagePopoverProps) {
+  const leaving = useLeaving();
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.key !== 'Escape') return;
+    if (leaving || event.key !== 'Escape') return;
     event.preventDefault();
     onClose();
   };
   return (
-    <section className="plan-usage-popover vx-surface-1" role="dialog" aria-label="Plan Usage" onKeyDown={handleKeyDown}>
+    <section
+      className={leaving ? 'plan-usage-popover vx-surface-1 is-leaving' : 'plan-usage-popover vx-surface-1'}
+      role="dialog"
+      aria-label="Plan Usage"
+      aria-hidden={leaving || undefined}
+      onKeyDown={handleKeyDown}
+    >
       <header className="plan-usage-header">
         <h2 className="plan-usage-title">Plan Usage</h2>
-        <button type="button" className="plan-usage-close" aria-label="Close" onClick={onClose}>
+        <button type="button" className="plan-usage-close" aria-label="Close" onClick={leaving ? undefined : onClose}>
           <XIcon />
         </button>
       </header>

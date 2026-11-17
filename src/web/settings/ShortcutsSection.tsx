@@ -14,6 +14,7 @@ import {
 } from '../shortcut-map';
 import { pageUserShortcutKeys, type UserShortcutKeysStore, useUserShortcutKeys } from '../user-shortcut-keys';
 import { SettingsPane } from './SettingsPane';
+import { ExitPresence } from '../motion/ExitPresence';
 
 const GROUPS: readonly { area: ShortcutArea; title: string }[] = [
   { area: 'navigation', title: 'Navigation' },
@@ -191,16 +192,18 @@ export function ShortcutsSection({ store = pageUserShortcutKeys() }: { store?: U
           </section>
         ))}
       </div>
-      {confirmingRestoreAll && (
-        <WarningDialog
-          accent="attn"
-          title="Restore All Shortcuts"
-          description="Every shortcut goes back to its default keys."
-          primaryLabel="Restore All"
-          onPrimary={restoreAll}
-          onCancel={() => setConfirmingRestoreAll(false)}
-        />
-      )}
+      <ExitPresence>
+        {confirmingRestoreAll && (
+          <WarningDialog
+            accent="attn"
+            title="Restore All Shortcuts"
+            description="Every shortcut goes back to its default keys."
+            primaryLabel="Restore All"
+            onPrimary={restoreAll}
+            onCancel={() => setConfirmingRestoreAll(false)}
+          />
+        )}
+      </ExitPresence>
     </SettingsPane>
   );
 }

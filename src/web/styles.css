@@ -1,4 +1,5 @@
 @import './theme/tokens.css';
+@import './theme/motion.css';
 @import './theme/windows11.css';
 @import './fonts/roboto.css';
 
@@ -2256,7 +2257,8 @@ input {
   display: flex;
 }
 
-.session-view > .session-workspace {
+.session-view > .session-workspace,
+.conversation-view > .session-workspace {
   overflow: hidden;
 }
 
@@ -3155,6 +3157,216 @@ input {
   z-index: 110;
 }
 
+.modal-backdrop,
+.modal {
+  animation-duration: var(--motion-duration-enter);
+  animation-timing-function: var(--motion-ease-enter);
+  animation-fill-mode: both;
+}
+
+.modal-backdrop {
+  animation-name: vx-backdrop-in;
+}
+
+.modal {
+  animation:
+    vx-fade-in var(--motion-duration-fade) ease-out var(--motion-stagger) both,
+    vx-dialog-in var(--motion-duration-pop) var(--motion-ease-spring) var(--motion-stagger) both;
+}
+
+.modal-backdrop.is-leaving {
+  pointer-events: none;
+  animation-name: vx-backdrop-out;
+}
+
+.modal-backdrop.is-leaving,
+.modal-backdrop.is-leaving .modal {
+  animation-duration: var(--motion-duration-exit);
+  animation-timing-function: var(--motion-ease-exit);
+}
+
+.modal-backdrop.is-leaving .modal {
+  animation: vx-dialog-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+@keyframes vx-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vx-backdrop-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vx-dialog-in {
+  from {
+    transform: translateY(6px) scale(0.95);
+  }
+}
+
+@keyframes vx-dialog-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.snackbar,
+.short-message,
+.update-notice {
+  will-change: transform, opacity;
+  animation:
+    vx-fade-in var(--motion-duration-fade) ease-out both,
+    vx-pop-up var(--motion-duration-enter) var(--motion-ease-spring) both;
+}
+
+/* The popover hangs under its button in the title bar: it grows from that corner. */
+.plan-usage-popover {
+  transform-origin: top right;
+  animation:
+    vx-fade-in var(--motion-duration-fade) ease-out both,
+    vx-pop-down var(--motion-duration-enter) var(--motion-ease-spring) both;
+}
+
+@keyframes vx-pop-up {
+  from {
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
+@keyframes vx-pop-down {
+  from {
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+
+.plan-usage-popover.is-leaving,
+.snackbar.is-leaving,
+.short-message.is-leaving,
+.update-notice.is-leaving {
+  pointer-events: none;
+  animation: vx-rise-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+.plan-usage-popover.is-leaving {
+  animation-name: vx-lift-out;
+}
+
+@keyframes vx-lift-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+
+/* The panel slides from the right edge; its negative margin gives its width back to the content, which resizes with it. */
+.git-explorer-panel {
+  animation: vx-panel-in var(--motion-duration-enter) var(--motion-ease-enter) both;
+}
+
+.git-explorer-panel.is-leaving {
+  pointer-events: none;
+  animation: vx-panel-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+@keyframes vx-panel-in {
+  from {
+    margin-right: min(-360px, -50%);
+  }
+}
+
+@keyframes vx-panel-out {
+  to {
+    margin-right: min(-360px, -50%);
+  }
+}
+
+/* Session switch: the views share the main area; the leaving one lies over the new one, at the same size. */
+.main-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-view.is-entering {
+  animation: vx-fade-in var(--motion-duration-enter) var(--motion-ease-enter) both;
+}
+
+.main-view.is-leaving {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: vx-fade-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+@keyframes vx-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vx-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vx-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes vx-rise-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* List cascade: each item waits its own delay before it enters. */
+.cascade-item {
+  animation: vx-rise-in var(--motion-duration-enter) var(--motion-ease-enter) var(--cascade-delay, 0ms) both;
+}
+
+.session-list li.is-entering {
+  animation: vx-slide-in var(--motion-duration-enter) var(--motion-ease-enter) both;
+}
+
+.session-list li.is-leaving {
+  pointer-events: none;
+  animation: vx-fade-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+/* The drag feedback wins over any list effect still playing. */
+.session-list li.dragging {
+  animation: none;
+}
+
+/* Tab change: a panel restarts this effect each time it shows again; the hidden one goes at once. */
+.tab-panel-enter {
+  animation: vx-tab-in var(--motion-duration-enter) var(--motion-ease-enter) both;
+}
+
+@keyframes vx-tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes vx-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
 .modal {
   -webkit-app-region: no-drag;
   display: flex;
@@ -4003,6 +4215,13 @@ button.dialog-row {
   font-weight: 400;
 }
 
+/* Colour dissolve of a theme or look change: a whole-page cross-fade. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-duration-enter);
+  animation-timing-function: var(--motion-ease-enter);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .spinner .icon,
   .progress-bar-indicator,
@@ -4011,5 +4230,15 @@ button.dialog-row {
   .state-dot.state-needs_input,
   .star-button.pop {
     animation: none;
+  }
+
+  /* Every effect that uses the motion tokens ends at once. */
+  :root {
+    --motion-duration-enter: 0ms;
+    --motion-duration-exit: 0ms;
+    --motion-cascade-max: 0ms;
+    --motion-duration-fade: 0ms;
+    --motion-duration-pop: 0ms;
+    --motion-stagger: 0ms;
   }
 }

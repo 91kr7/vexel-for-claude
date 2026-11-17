@@ -215,8 +215,21 @@ async function expectMono(target: Locator, what: string): Promise<void> {
   expect((await styles(target, ['font-family']))['font-family'], `${what}: mono`).toMatch(MONO);
 }
 
+/** Waits for the opening fade and zoom of the dialog (plan-ui_transitions/REQ-1): sizes and colours are measured at rest. */
+async function settled(dialog: Locator): Promise<void> {
+  await dialog.evaluate((el) =>
+    Promise.all(
+      (el.closest('.modal-backdrop') ?? el)
+        .getAnimations({ subtree: true })
+        .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+        .map((animation) => animation.finished),
+    ),
+  );
+}
+
 /** The mock modal frame (Dialog "Shows"): at most `maxWidth` wide, centred, surface 2, strong border, 8 radius, frame shadow. */
 async function expectStudioFrame(page: Page, frame: Locator, what: string, maxWidth = 448): Promise<Box> {
+  await settled(frame);
   const b = await box(frame);
   expect(b.width, `${what} width`).toBeLessThanOrEqual(maxWidth + TOLERANCE);
   near(centreX(b), 720, `${what} horizontal centre`);
@@ -232,6 +245,7 @@ async function expectStudioFrame(page: Page, frame: Locator, what: string, maxWi
 
 /** The header (Dialog "Shows"): the 8 px accent dot, the 14/600 title, "[Esc]" in mono muted on the right, a subtle line below. */
 async function expectStudioHeader(page: Page, dialog: Locator, title: string, what: string): Promise<Box> {
+  await settled(dialog);
   const heading = dialog.getByRole('heading', { name: title, exact: true });
   await expectStyles(heading, { 'font-size': '14px', 'font-weight': '600' }, `${what} title`);
   const dot = await heading.evaluate((el) => {
@@ -405,7 +419,8 @@ test.describe('new-session dialog', () => {
     await expect(radios).toHaveCount(14);
     for (const [index, name] of names.entries()) await expect(radios.nth(index)).toHaveAccessibleName(name);
 
-    // Dialog "Shows": the backdrop pads the frame by 16 px
+    // Dialog "Shows": the backdrop pads the frame by 16 px. Measured once the opening zoom has settled.
+    await settled(chooser(page));
     const frame = await box(chooser(page));
     expect(frame.y, 'the frame keeps 16 px above').toBeGreaterThanOrEqual(16 - TOLERANCE);
     expect(bottom(frame), 'the frame keeps 16 px below').toBeLessThanOrEqual(900 - 16 + TOLERANCE);

@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { dissolveColors } from './color-dissolve';
 
 export type Theme = 'light' | 'dark' | 'dark-blue';
 
@@ -10,6 +11,10 @@ export const THEME_KEY = 'ai-client.theme';
 
 type ThemeRoot = Pick<Element, 'setAttribute'>;
 type ThemeStorage = Pick<Storage, 'setItem'>;
+/** Runs a change of the page colours; the default applies it at once. */
+export type ColorChange = (apply: () => void) => void;
+
+const applyAtOnce: ColorChange = (apply) => apply();
 
 export function isTheme(value: unknown): value is Theme {
   return THEME_CYCLE.includes(value as Theme);
@@ -18,12 +23,14 @@ export function isTheme(value: unknown): value is Theme {
 export class ThemeStore {
   readonly #root: ThemeRoot;
   readonly #storage: ThemeStorage | undefined;
+  readonly #change: ColorChange;
   readonly #listeners = new Set<() => void>();
   #theme: Theme;
 
-  constructor(root: ThemeRoot, initial: Theme = START_THEME, storage?: ThemeStorage) {
+  constructor(root: ThemeRoot, initial: Theme = START_THEME, storage?: ThemeStorage, change: ColorChange = applyAtOnce) {
     this.#root = root;
     this.#storage = storage;
+    this.#change = change;
     this.#theme = initial;
     this.#mark();
   }
@@ -34,13 +41,16 @@ export class ThemeStore {
 
   setTheme(theme: Theme): void {
     this.#theme = theme;
-    this.#mark();
     try {
       this.#storage?.setItem(THEME_KEY, this.#theme);
     } catch {
       // The theme still applies to this page when the browser refuses to store it.
     }
-    for (const listener of this.#listeners) listener();
+    // Marks the active theme, not `theme`: a later change may already have replaced it.
+    this.#change(() => {
+      this.#mark();
+      for (const listener of this.#listeners) listener();
+    });
   }
 
   #mark(): void {
@@ -69,7 +79,7 @@ export function pageThemeStore(): ThemeStore {
   if (pageStore) return pageStore;
   const root = document.documentElement;
   const mark = root.getAttribute('data-theme');
-  pageStore = new ThemeStore(root, isTheme(mark) ? mark : START_THEME, pageStorage());
+  pageStore = new ThemeStore(root, isTheme(mark) ? mark : START_THEME, pageStorage(), dissolveColors);
   return pageStore;
 }
 

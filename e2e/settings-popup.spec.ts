@@ -194,8 +194,9 @@ test('choosing "Light" and "Windows 11" restyles the whole client at once, keeps
   await expect(radio(page, 'Light')).not.toBeChecked();
   const darkBackground = await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor);
 
+  // The colour dissolve applies the change a frame or two after the click.
   await cardOf(radio(page, 'Light')).click();
-  expect(await rootMark(page, 'data-theme')).toBe('light');
+  await expect.poll(() => rootMark(page, 'data-theme')).toBe('light');
   await expect(radio(page, 'Light')).toBeChecked();
   expect(await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor), 'the popup turns light').not.toBe(darkBackground);
   expect(await page.evaluate(() => localStorage.getItem('ai-client.theme'))).toBe('light');
@@ -203,7 +204,7 @@ test('choosing "Light" and "Windows 11" restyles the whole client at once, keeps
   await expect(radio(page, 'macOS')).toBeChecked();
   const macBackground = await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor);
   await cardOf(radio(page, 'Windows 11')).click();
-  expect(await rootMark(page, 'data-look')).toBe('windows11');
+  await expect.poll(() => rootMark(page, 'data-look')).toBe('windows11');
   await expect(radio(page, 'Windows 11')).toBeChecked();
   expect(await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor), 'the popup takes the Windows 11 look').not.toBe(macBackground);
   expect(await page.evaluate(() => localStorage.getItem('ai-client.look'))).toBe('windows11');

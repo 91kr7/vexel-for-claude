@@ -19,6 +19,8 @@ export async function chooseInSettings(page: Page, choice: SettingsChoice): Prom
   await cardOf(popup.getByRole('radio', { name: choice, exact: true })).click();
   await popup.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(popup).toHaveCount(0);
+  // The closed dialog stays in the page while it zooms out (plan-ui_transitions/REQ-2): the next step starts once it is gone.
+  await expect(page.locator('.modal-backdrop')).toHaveCount(0);
 }
 
 /** Light from Dark or Dark Blue, Dark from Light: what the old top bar switch gave with one press. */

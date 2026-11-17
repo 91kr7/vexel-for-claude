@@ -109,6 +109,16 @@ index = slot - 1  if slot is after the session's current place
 - drop anywhere else (another group, the gap between groups, outside the list) → no `onReorder`.
 - the own group is the group of the session when the drag started. If a live update moves the session to another group during the drag, the drag ends for the list: the line and the dimming disappear, also if the session later comes back, and the drop calls no `onReorder`.
 
+Motion (ListCascade, ListPresence, module app):
+- first appearance of the entries (the first render after `loading`, or each mount, e.g. when the Sessions view shows) → the entries enter in cascade, in display order, through ListCascade. Focus, clicks and keys work during the cascade.
+- after the first appearance, a new entry, hosted or external → slides in from the left (class `is-entering`, `--motion-duration-enter`).
+- a removed entry (e.g. "Dismiss") → stays in its place and fades out (class `is-leaving`, `--motion-duration-exit`), then is gone. While it leaves it is inert and hidden from assistive technology: it takes no click, no focus and cannot be dragged. The other entries keep their keys and focus.
+- live refreshes, group moves and drag reorders play nothing.
+- a dragged entry plays no list effect: its drag dimming shows at once, also during the cascade.
+- during the cascade, any change of the shown order or groups (new, removed, moved or reordered entry) ends the cascade at once: every entry shows in full, and a moved entry never plays the cascade again.
+- a leaving entry counts for no drag rule: it is not a drop target, it takes no slot or line, and the slot, `index` and the "own group" are computed on the other entries only. A drop during a fade lands where it would land with no effect.
+- with reduced motion → no cascade, no slide and no fade: entries show and go at once.
+
 Drag feedback (the mock has no drag state):
 - while the pointer is over an entry of the own group → a 2 px `--accent-primary` line, as wide as the entries, in the middle of the 8 px gap at the landing place: above the entry for "before", below it for "after".
 - the dragged entry → dimmed to 40 % opacity while it is in the own group.
@@ -130,6 +140,7 @@ Drag feedback (the mock has no drag state):
 - The needs-input entries are the most visible of the list: amber, first group.
 - An external entry is told apart without colour: its group heading, and the "External" chip when it needs input. Its border is the same as every other card.
 - The state of an entry is readable without colour: its name is always shown.
+- The existing star pop and status-dot pulse stay as they are.
 
 ## Assumptions
 
@@ -140,7 +151,7 @@ Drag feedback (the mock has no drag state):
 ## Dependencies
 
 - groupSessions, SessionOrderStore (`SessionOrder`), usage format (`percentOf`, `usageLevelOf`, `costText`, `INCOMPLETE_COST_TEXT`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions, SessionNameEditor, FavoriteButton
-- AreaState, ListStyles, IconSet, ShortcutChannel, ThemeTokens, WebEntry (module app)
+- AreaState, ListStyles, IconSet, ShortcutChannel, ThemeTokens, WebEntry, ListCascade, ListPresence (module app)
 
 ## Requirements served
 
@@ -160,3 +171,4 @@ Drag feedback (the mock has no drag state):
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-10`
 - `plan-ui_restyle/REQ-29`, `plan-ui_restyle/REQ-31`, `plan-ui_restyle/REQ-32`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-18` to `plan-dark_blue_theme/REQ-22`, `plan-dark_blue_theme/REQ-43`, `plan-dark_blue_theme/REQ-49`, `plan-dark_blue_theme/REQ-50`, `plan-dark_blue_theme/REQ-53`
+- `plan-ui_transitions/REQ-16`, `plan-ui_transitions/REQ-18`, `plan-ui_transitions/REQ-19`, `plan-ui_transitions/REQ-20`, `plan-ui_transitions/REQ-21`, `plan-ui_transitions/REQ-26`

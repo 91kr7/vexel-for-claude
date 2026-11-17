@@ -9,6 +9,7 @@ import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { GitExplorerButton } from '../git/GitExplorerButton';
 import { GitExplorerPanel } from '../git/GitExplorerPanel';
+import { ExitPresence } from '../motion/ExitPresence';
 import { useRepositoryLookup } from '../git/repository-lookup-store';
 import { CirclePauseIcon, SearchIcon } from '../icons/Icons';
 import { folderNameOf } from './Avatar';
@@ -219,11 +220,28 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
       if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
     };
     const sendSize = () => send({ type: 'resize', cols: terminal.cols, rows: terminal.rows });
+    // Input typed while the connection opens goes out, in order, once it is open.
+    let pendingInput: string[] = [];
+    const sendInput = (data: string) => {
+      if (socket.readyState === WebSocket.CONNECTING) pendingInput.push(data);
+      else send({ type: 'input', data });
+    };
+    const sendPendingInput = () => {
+      for (const data of pendingInput) send({ type: 'input', data });
+      pendingInput = [];
+    };
 
     const connect = (reconnecting: boolean) => {
       socket = new WebSocket(attachUrl(sessionId));
       socketRef.current = socket;
-      socket.addEventListener('open', sendSize, { signal });
+      socket.addEventListener(
+        'open',
+        () => {
+          sendSize();
+          sendPendingInput();
+        },
+        { signal },
+      );
       let snapshotShown = false;
       socket.addEventListener(
         'message',
@@ -271,10 +289,25 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
       if (event.type === 'keydown') shortcut();
       return false;
     });
-    const inputSubscription = terminal.onData((data) => send({ type: 'input', data }));
+    const inputSubscription = terminal.onData(sendInput);
     const resizeSubscription = terminal.onResize(sendSize);
-    const resizeObserver = new ResizeObserver(() => fitAddon.fit());
+    // While the Git Explorer slides or the main area cross-fades, the terminal fits once at the end, not at each frame.
+    const workspace = container.closest('.session-workspace');
+    const mainView = container.closest('.main-view');
+    const running = (element: Element | null | undefined) =>
+      element?.getAnimations?.().some((animation) => animation.playState === 'running') ?? false;
+    const fitUnlessSliding = () => {
+      if (!running(workspace?.querySelector('.git-explorer-panel')) && !running(mainView)) fitAddon.fit();
+    };
+    const fitAtFadeEnd = (event: Event) => {
+      if (event.target === mainView) fitUnlessSliding();
+    };
+    const resizeObserver = new ResizeObserver(fitUnlessSliding);
     resizeObserver.observe(container);
+    workspace?.addEventListener('animationend', fitUnlessSliding, { signal });
+    workspace?.addEventListener('animationcancel', fitUnlessSliding, { signal });
+    mainView?.addEventListener('animationend', fitAtFadeEnd, { signal });
+    mainView?.addEventListener('animationcancel', fitAtFadeEnd, { signal });
     const unsubscribeFontSize = fontSizeStore.subscribe(() => {
       terminal.options.fontSize = fontSizeStore.getSnapshot();
       fitAddon.fit();
@@ -434,7 +467,9 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
             </div>
           )}
         </div>
-        {gitShown && <GitExplorerPanel lookup={repository} folder={session?.folder} onRefresh={refreshGit} sessions={sessions} />}
+        <ExitPresence>
+          {gitShown && <GitExplorerPanel lookup={repository} folder={session?.folder} onRefresh={refreshGit} sessions={sessions} />}
+        </ExitPresence>
       </div>
       {linkTooltip && (
         <div className="terminal-link-tooltip" role="tooltip" style={{ left: linkTooltip.left, top: linkTooltip.top }}>
