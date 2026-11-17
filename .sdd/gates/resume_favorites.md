@@ -30,3 +30,5 @@
 | 2026-11-17 | fix plan | G2 requirements | pass | REQ-20, REQ-21 cover the two new analysis requirements |
 | 2026-11-17 | fix plan | G3 coverage | pass | REQ-20→INT-1, REQ-21→INT-2; one-line path with start ellipsis plus tooltip flagged for review |
 | 2026-11-17 | fix dev | G4 project-path | pass | build green on gatekeeper re-run; CSS scoped under `.resume-dialog` |
+| 2026-11-17 | fix test | G5 project-path | decided | `ended-external-sessions.spec.ts:229` outside perimeter: failed once in full pass, green alone (3 runs); resume popup CSS not on its path |
+| 2026-11-17 | fix test | G5 project-path | pass | 11 e2e green on gatekeeper re-run; full suites 3956 unit, 885/886 e2e |
