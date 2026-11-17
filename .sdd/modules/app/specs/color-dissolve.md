@@ -16,7 +16,8 @@ type: frontend function
   - no view transitions, or no page → `apply` runs at once.
   - a new call during a dissolve → the running dissolve ends at once and the new one starts; every `apply` still runs, in call order.
 - Effect on the whole page: every area takes part, the terminal and the commit graph included. The new picture is taken one frame after `apply` (at most 100 ms later), so the areas that recolour after the change (terminal, commit graph) are already in the new colours.
-- The cross-fade never takes input: clicks reach the page under it, keys and shortcuts work as usual.
+- The cross-fade never takes input: keys and shortcuts work as usual.
+  - a press of the pointer during the dissolve → the dissolve ends at once, in the new colours, and the press (down, up, click) reaches the element under the pointer, which also takes the focus when it can.
 - It does not throw and leaves no failed promise when a newer change cuts it short.
 
 ## Rules and invariants
