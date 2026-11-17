@@ -282,3 +282,37 @@ describe('SessionList drag with a leaving entry', () => {
     expect(onReorder).not.toHaveBeenCalled();
   });
 });
+
+describe('SessionList changes during the cascade', () => {
+  const cascading = () => ['a', 'b', 'c'].filter((id) => has(id, 'cascade-item'));
+
+  // SessionList "Motion": a refresh that only changes entry values does not end the cascade
+  it('keeps the cascade through a refresh of the entry values', () => {
+    render({ sessions: THREE, order: ORDER });
+    render({ sessions: THREE.map((s) => ({ ...s, label: `${s.label} again` })), order: ORDER });
+    expect(cascading()).toEqual(['a', 'b', 'c']);
+  });
+
+  // SessionList "Motion": any change of the shown order or groups ends the cascade at once
+  it.each<[string, ListProps]>([
+    ['a new entry', { sessions: [...THREE, session('new')], order: ORDER }],
+    ['a removed entry', { sessions: [session('a'), session('c')], order: ORDER }],
+    ['an entry moved to another group', { sessions: [session('a'), session('b', 'ended'), session('c')], order: ORDER }],
+    ['a reordered entry', { sessions: THREE, order: { running: ['c', 'a', 'b'] } }],
+  ])('ends the cascade at once on %s', (_, changed) => {
+    render({ sessions: THREE, order: ORDER });
+    expect(cascading()).toEqual(['a', 'b', 'c']);
+    render(changed);
+    expect(anyCascade()).toBe(false);
+  });
+
+  it('never plays the cascade again for an entry moved during it', async () => {
+    render({ sessions: THREE, order: ORDER });
+    render({ sessions: [session('a'), session('b', 'ended'), session('c')], order: ORDER });
+    render({ sessions: THREE, order: ORDER });
+    expect(anyCascade()).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 2 * (CASCADE_MAX_MS / 4)));
+    expect(anyCascade()).toBe(false);
+  });
+});
+
