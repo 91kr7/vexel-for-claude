@@ -8,7 +8,7 @@ status: validated
 |-------|---------|------------|---------|--------|------------------|
 | [popup-size](batches/batch-popup-size.md) | Popup size | REQ-1, REQ-2, REQ-3, REQ-4 | — | certified | The resume popup is wider and shorter |
 | [popup-mark](batches/batch-popup-mark.md) | Mark from the resume popup | REQ-5, REQ-6, REQ-7, REQ-8, REQ-9 | — | certified | The user marks a session from the resume popup |
-| [favorites-filter](batches/batch-favorites-filter.md) | Favorites filter | REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19 | popup-mark | implemented | The user shows only the favorite sessions |
+| [favorites-filter](batches/batch-favorites-filter.md) | Favorites filter | REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19 | popup-mark | certified | The user shows only the favorite sessions |
 
 Execution order: `popup-size`, `popup-mark`, `favorites-filter`. All three change `src/web/history/ResumeDialog.tsx`, so they run one after the other, not in parallel.
 

@@ -21,3 +21,6 @@
 | 2026-11-17 | dev | entry favorites-filter | decided | First developer run was still alive and finished; second run stopped; duplicated CSS lines from the overlap removed by the gatekeeper |
 | 2026-11-17 | dev | G4 favorites-filter | decided | One extra line in `theme/windows11.css`: toggle corners match the search field in the Windows 11 look |
 | 2026-11-17 | dev | G4 favorites-filter | pass | build green on gatekeeper re-run; files match INT-1..3 plus spec and index |
+| 2026-11-17 | test | G5 favorites-filter | decided | `ResumeDialog.test.tsx` button list updated to the new toggle contract (REQ-10) |
+| 2026-11-17 | test | G5 favorites-filter | decided | `plan-usage.spec.ts:345` outside perimeter: intermittent (2 fails, 7 passes on branch, passes on main); terminal scroll not touched by the plan; flagged for review |
+| 2026-11-17 | test | G5 favorites-filter | pass | 38 unit and 27 e2e green on gatekeeper re-run; full suites 3956 unit, 881/882 e2e |
