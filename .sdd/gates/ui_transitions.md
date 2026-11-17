@@ -54,3 +54,5 @@
 | 2026-11-17 | dev cascading-lists | G5 tests | sent back | D3: removed entry during cascade does not end it, layout key counts leaving entries |
 | 2026-11-17 | dev cascading-lists | G4 development | pass | Round 5, D3 |
 | 2026-11-17 | dev cascading-lists | G5 tests | pass | Confirmed by gatekeeper rerun of the tester's batch tests |
+| 2026-11-17 | dev tab-change | divergence developer | decided | INT-3 is a cross-check by tests, left to the tester; REQ-25..32 need no extra code |
+| 2026-11-17 | dev tab-change | G4 development | pass | |

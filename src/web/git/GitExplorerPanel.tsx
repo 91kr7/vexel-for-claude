@@ -123,6 +123,7 @@ export function GitExplorerPanel({ lookup, folder, onRefresh, sessions = NO_SESS
   };
   const changes = useChanges(showTabs ? shownRoots : NO_ROOTS, revision);
   const [tab, setTab] = useState<Tab>('changes');
+  const [tabSwitched, setTabSwitched] = useState(false);
   const [historyOpened, setHistoryOpened] = useState(false);
   const { history, loadMore } = useHistory(showTabs && historyOpened ? shownRoots : NO_ROOTS, revision);
   useTurnEndSignal(sessions, roots, refresh);
@@ -131,7 +132,10 @@ export function GitExplorerPanel({ lookup, folder, onRefresh, sessions = NO_SESS
   const tabId = (id: Tab) => `${idPrefix}-tab-${id}`;
   const panelId = (id: Tab) => `${idPrefix}-tabpanel-${id}`;
 
+  const tabPanelClass = tabSwitched ? 'git-explorer-tabpanel tab-panel-enter' : 'git-explorer-tabpanel';
+
   const open = (next: Tab) => {
+    if (next !== tab) setTabSwitched(true);
     setTab(next);
     if (next === 'history') setHistoryOpened(true);
   };
@@ -173,7 +177,7 @@ export function GitExplorerPanel({ lookup, folder, onRefresh, sessions = NO_SESS
             ))}
           </div>
           <div
-            className="git-explorer-tabpanel"
+            className={tabPanelClass}
             role="tabpanel"
             id={panelId('changes')}
             aria-labelledby={tabId('changes')}
@@ -182,7 +186,7 @@ export function GitExplorerPanel({ lookup, folder, onRefresh, sessions = NO_SESS
             <ChangesBody repositories={shownRepositories} changes={changes} colors={shownColors} several={several} />
           </div>
           <div
-            className="git-explorer-tabpanel"
+            className={tabPanelClass}
             role="tabpanel"
             id={panelId('history')}
             aria-labelledby={tabId('history')}

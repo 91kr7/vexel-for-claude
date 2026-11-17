@@ -48,15 +48,21 @@ function Section({ tab, themeStore, lookStore, onNewerVersion }: SectionProps) {
 
 export function SettingsDialog({ initialTab = 'appearance', onClose, themeStore, lookStore, onNewerVersion }: SettingsDialogProps) {
   const [tab, setTab] = useState<SettingsTab>(initialTab);
+  const [tabSwitched, setTabSwitched] = useState(false);
   const baseId = useId();
   const tabRefs = useRef(new Map<SettingsTab, HTMLButtonElement>());
   const tabId = (id: SettingsTab) => `${baseId}-tab-${id}`;
   const panelId = (id: SettingsTab) => `${baseId}-panel-${id}`;
 
+  const choose = (next: SettingsTab) => {
+    if (next !== tab) setTabSwitched(true);
+    setTab(next);
+  };
+
   const moveTo = (index: number) => {
     const next = TABS[(index + TABS.length) % TABS.length];
     if (!next) return;
-    setTab(next.tab);
+    choose(next.tab);
     tabRefs.current.get(next.tab)?.focus();
   };
 
@@ -88,7 +94,7 @@ export function SettingsDialog({ initialTab = 'appearance', onClose, themeStore,
               tabIndex={tab === id ? 0 : -1}
               autoFocus={tab === id}
               className={tab === id ? 'settings-menu-item list-row list-active selected' : 'settings-menu-item list-row'}
-              onClick={() => setTab(id)}
+              onClick={() => choose(id)}
               onKeyDown={(event) => onTabKeyDown(event, index)}
             >
               {title}
@@ -96,7 +102,14 @@ export function SettingsDialog({ initialTab = 'appearance', onClose, themeStore,
           ))}
         </div>
         {TABS.map(({ tab: id }) => (
-          <div key={id} className="settings-pane" role="tabpanel" id={panelId(id)} aria-labelledby={tabId(id)} hidden={tab !== id}>
+          <div
+            key={id}
+            className={tabSwitched ? 'settings-pane tab-panel-enter' : 'settings-pane'}
+            role="tabpanel"
+            id={panelId(id)}
+            aria-labelledby={tabId(id)}
+            hidden={tab !== id}
+          >
             {(tab === id || id === 'updates') && (
               <Section tab={id} themeStore={themeStore} lookStore={lookStore} onNewerVersion={onNewerVersion} />
             )}

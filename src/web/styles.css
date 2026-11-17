@@ -3314,6 +3314,18 @@ input {
   animation: none;
 }
 
+/* Tab change: a panel restarts this effect each time it shows again; the hidden one goes at once. */
+.tab-panel-enter {
+  animation: vx-tab-in var(--motion-duration-enter) var(--motion-ease-enter) both;
+}
+
+@keyframes vx-tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
 @keyframes vx-slide-in {
   from {
     opacity: 0;

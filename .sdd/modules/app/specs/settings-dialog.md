@@ -40,6 +40,11 @@ Keyboard:
 - Esc → `onClose()`. Enter adds nothing (no primary action).
 - on close → the focus goes back where it was before the popup opened (Dialog).
 
+Motion (MotionTokens):
+- menu change, by click or keys → the panel that shows fades in with a 4 px rise (enter duration and easing); the hidden one goes at once, so two panels never show together. Each later change plays it again. No effect on the panel shown at open (the Dialog has its own), nor on a click on the chosen item.
+- the effect blocks no input: arrows, Home, End and Tab move on at once while it plays; quick presses end on the last menu chosen, with its item focused.
+- reduced motion → no effect: the new panel shows at once.
+
 ## Rules and invariants
 
 - the popup has `aria-modal="true"`, so useShortcutKeys runs no shortcut while it is open, Alt+S included.
@@ -49,9 +54,10 @@ Keyboard:
 
 ## Dependencies
 
-- Dialog, ThemeSection, LookSection, ShortcutsSection, UpdatesSection, ThemeStore, LookStore, useShortcutKeys (reads `aria-modal`), ThemeTokens, Windows11Look, ListStyles
+- Dialog, MotionTokens, ThemeSection, LookSection, ShortcutsSection, UpdatesSection, ThemeStore, LookStore, useShortcutKeys (reads `aria-modal`), ThemeTokens, Windows11Look, ListStyles
 
 ## Requirements served
 
 - `plan-settings_dialog/REQ-5`, `plan-settings_dialog/REQ-6`, `plan-settings_dialog/REQ-7`, `plan-settings_dialog/REQ-8`, `plan-settings_dialog/REQ-10`, `plan-settings_dialog/REQ-11`, `plan-settings_dialog/REQ-19`, `plan-settings_dialog/REQ-20`, `plan-settings_dialog/REQ-21`, `plan-settings_dialog/REQ-43`, `plan-settings_dialog/REQ-51`, `plan-settings_dialog/REQ-53`, `plan-settings_dialog/REQ-54`, `plan-settings_dialog/REQ-55`, `plan-settings_dialog/REQ-56`, `plan-settings_dialog/REQ-59`
 - `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-4`, `plan-dark_blue_theme/REQ-47`
+- `plan-ui_transitions/REQ-24`, `plan-ui_transitions/REQ-25`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-28`, `plan-ui_transitions/REQ-31`, `plan-ui_transitions/REQ-32`
