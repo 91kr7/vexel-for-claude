@@ -3224,6 +3224,15 @@ input {
   height: 540px;
 }
 
+.resume-dialog {
+  max-width: 672px;
+  max-height: min(100%, max(70vh, 280px));
+}
+
+.resume-dialog .dialog-scroll {
+  min-height: 56px;
+}
+
 .settings-dialog .dialog-body {
   padding: 0;
 }

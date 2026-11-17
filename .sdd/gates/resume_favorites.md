@@ -9,3 +9,6 @@
 | 2026-11-17 | analysis | G1 analysis | pass | 76/80 lines narrow; empty state and keyboard derive from the filter and mark action |
 | 2026-11-17 | plan | G2 requirements | pass | REQ-1..19 cover the analysis; REQ-19 closes with the last batch |
 | 2026-11-17 | plan | G3 coverage | pass | 3 batches, every REQ in an INT and a scenario; new route in history area named |
+| 2026-11-17 | dev | G4 popup-size | decided | `styles.css` instead of TSX: INT-1 names "page styles", class already present |
+| 2026-11-17 | dev | G4 popup-size | decided | 280 px floor on the 70 % height cap; serves batch decision "room for one row" |
+| 2026-11-17 | dev | G4 popup-size | pass | build green, re-run by gatekeeper |
