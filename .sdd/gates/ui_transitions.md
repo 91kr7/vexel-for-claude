@@ -36,3 +36,4 @@
 | 2026-11-17 | dev session-switch | G4 development | pass | INT-4 |
 | 2026-11-17 | dev session-switch | G5 tests | pass | Round 2, REQ-33 green |
 | 2026-11-17 | dev theme-change | G4 development | pass | |
+| 2026-11-17 | dev theme-change | G5 tests | sent back | REQ-26: clicks during the view transition hit <html>, pointer-events rule ineffective |

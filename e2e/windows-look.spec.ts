@@ -211,7 +211,8 @@ test.describe('Look choice and look store', () => {
     expect(new Set(await lookMarks(page)), 'the page never carries the Windows 11 mark').toEqual(new Set(['vexel']));
   });
 
-  // plan-wsl_support/REQ-19, REQ-20, REQ-22, plan-settings_dialog/REQ-13, REQ-15: a choice switches the whole page at once, no reload, and saves it
+  // plan-wsl_support/REQ-19, REQ-20, REQ-22, plan-settings_dialog/REQ-13, REQ-15: a choice switches the whole page, no reload, and saves it.
+  // plan-ui_transitions/REQ-14: the switch lands through a short colour dissolve, so the checks wait for it.
   test('choosing "Windows 11" shows the Windows 11 look at once without a reload and saves it; choosing "macOS" brings back the current look', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => Object.assign(window, { sameDocument: true }));
@@ -221,21 +222,21 @@ test.describe('Look choice and look store', () => {
     const macOS = settingsPopup(page).getByRole('radio', { name: 'macOS', exact: true });
     await expect(macOS).toBeChecked();
 
-    const sameFrame = await windows11.evaluate(
-      (button) =>
-        new Promise<{ mark: string | null; canvas: string }>((resolve) => {
-          (button as HTMLInputElement).click();
-          requestAnimationFrame(() => {
+    await cardOf(windows11).click();
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
             const probe = document.createElement('div');
             probe.style.color = 'var(--bg-canvas)';
             document.body.append(probe);
             const canvas = getComputedStyle(probe).color;
             probe.remove();
-            resolve({ mark: document.documentElement.getAttribute('data-look'), canvas });
-          });
-        }),
-    );
-    expect(sameFrame, 'the next frame already carries the Windows 11 mark and its dark canvas').toEqual({ mark: 'windows11', canvas: 'rgb(28, 28, 28)' });
+            return { mark: document.documentElement.getAttribute('data-look'), canvas };
+          }),
+        { message: 'the page carries the Windows 11 mark and its dark canvas', timeout: 1000 },
+      )
+      .toEqual({ mark: 'windows11', canvas: 'rgb(28, 28, 28)' });
     await expect(windows11).toBeChecked();
     await expect(settingsPopup(page), 'the popup stays open').toBeVisible();
     expect(await page.evaluate((key) => localStorage.getItem(key), LOOK_KEY)).toBe('windows11');
@@ -254,7 +255,7 @@ test.describe('Look choice and look store', () => {
 
     await cardOf(macOS).click();
     await expect(macOS).toBeChecked();
-    expect(await lookMark(page)).toBe('vexel');
+    await expect.poll(() => lookMark(page), { timeout: 1000 }).toBe('vexel');
     expect(await page.evaluate((key) => localStorage.getItem(key), LOOK_KEY)).toBe('vexel');
     expect(await page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument), 'no reload').toBe(true);
   });
