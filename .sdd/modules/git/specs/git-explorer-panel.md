@@ -11,7 +11,7 @@ type: UI component
 ## Contract
 
 Description:
-- a region named "Git Explorer" (`section` with `aria-label`), on surface 1, with a 1 px `--border-subtle` left border. It takes 50 % of the width of the session content, at least 360 px. It fills the height between the session header and the footer.
+- a region named "Git Explorer" (`section` with `aria-label`), on `--role-list`, with a 1 px `--role-border-subtle` left border. Repository entries and branch labels have `--radius-pill` corners; a hovered entry is on `--role-card`, a chosen one on `--role-card-active`. A focused repository entry or commit row shows the focus ring inside its own edge. It takes 50 % of the width of the session content, at least 360 px. It fills the height between the session header and the footer.
 
 Props:
 - `lookup` → the state of useRepositoryLookup.
@@ -64,3 +64,4 @@ During a refresh:
 
 - `plan-git_explorer/REQ-4`, `plan-git_explorer/REQ-6`, `plan-git_explorer/REQ-7`, `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-13`, `plan-git_explorer/REQ-16`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-24`, `plan-git_explorer/REQ-26`, `plan-git_graph/REQ-12`
 - `plan-multi_repo_workspace/REQ-7`, `plan-multi_repo_workspace/REQ-8`, `plan-multi_repo_workspace/REQ-11`, `plan-multi_repo_workspace/REQ-13`, `plan-multi_repo_workspace/REQ-14`, `plan-multi_repo_workspace/REQ-19`, `plan-multi_repo_workspace/REQ-20`, `plan-multi_repo_workspace/REQ-21`, `plan-multi_repo_workspace/REQ-22`, `plan-multi_repo_workspace/REQ-23`, `plan-multi_repo_workspace/REQ-26`, `plan-multi_repo_workspace/REQ-28`, `plan-multi_repo_workspace/REQ-29`, `plan-multi_repo_workspace/REQ-30`, `plan-multi_repo_workspace/REQ-31`
+- `plan-dark_blue_theme/REQ-3`

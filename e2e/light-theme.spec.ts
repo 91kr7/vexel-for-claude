@@ -328,10 +328,11 @@ test.describe('theme choice', () => {
     await expect.poll(() => style(sw, 'color')).toBe(LIGHT['--text-secondary']);
     expect(await style(sw, 'background-color')).toBe(await style(resume, 'background-color'));
     const size = await box(sw);
-    expect(size.width).toBeCloseTo(34, 0);
-    expect(size.height).toBeCloseTo(34, 0);
+    // plan-dark_blue_theme/REQ-9: 32 px square, 16 px icon.
+    expect(size.width).toBeCloseTo(32, 0);
+    expect(size.height).toBeCloseTo(32, 0);
     expect(await style(sw, 'border-top-left-radius')).toBe('8px');
-    expect((await box(sw.locator('svg'))).width).toBeCloseTo(17, 0);
+    expect((await box(sw.locator('svg'))).width).toBeCloseTo(16, 0);
     await sw.hover();
     await expect.poll(() => style(sw, 'background-color')).toBe(LIGHT['--bg-surface-3']);
     expect(await style(sw, 'color')).toBe(LIGHT['--text-primary']);
@@ -351,7 +352,15 @@ test.describe('theme choice', () => {
     await cardOf(settingsPopup(page).getByRole('radio', { name: 'Light', exact: true })).click();
     expect(await style(page.locator('body'), 'background-color')).toBe(LIGHT['--bg-canvas']);
     expect(await style(page.locator('body'), 'color')).toBe(LIGHT['--text-primary']);
-    expect(await style(topBar(page), 'background-color')).toBe(LIGHT['--bg-surface-2']);
+    // TopBar (plan-dark_blue_theme, batch window-frame): the title bar role surface
+    expect(await style(topBar(page), 'background-color')).toBe(await page.evaluate(() => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--role-chrome)';
+      document.body.append(probe);
+      const colour = getComputedStyle(probe).color;
+      probe.remove();
+      return colour;
+    }));
     expect(await style(button(mainArea(page), 'New Session'), 'background-color')).toBe(LIGHT['--accent-primary']);
     expect(await page.evaluate(() => (window as unknown as { pageMarker?: number }).pageMarker), 'the page did not reload').toBe(42);
     expect(navigations).toBe(0);
@@ -415,7 +424,8 @@ test.describe('theme choice', () => {
 
     // REQ-12: the panel keeps the dark terminal colours
     expect(await style(region, 'background-color')).toBe(DARK_CANVAS);
-    expect(await style(region, 'border-top-color'), 'the panel border follows the light set').toBe(LIGHT['--border-subtle']);
+    // plan-dark_blue_theme/REQ-26: the frame border is the strong border role of the light set
+    expect(await style(region, 'border-top-color'), 'the panel border follows the light set').toBe(LIGHT['--border-strong']);
     expect(await effectiveBackground(page.locator('.xterm-screen'))).toBe(DARK_CANVAS);
     expect(await style(terminal(page), 'color')).toBe(DARK_TEXT_PRIMARY);
   });

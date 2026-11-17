@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 export const MIN_LIST_WIDTH = 180;
 export const MAX_LIST_WIDTH = 480;
-export const DEFAULT_LIST_WIDTH = 224;
+export const DEFAULT_LIST_WIDTH = 260;
 export const MIN_MAIN_AREA_WIDTH = 700;
 export const LIST_WIDTH_KEY = 'ai-client.list-width';
 

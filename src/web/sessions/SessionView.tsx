@@ -19,6 +19,7 @@ import type { SessionSummary } from './live-session-store';
 import { SessionHeader, type SessionHeaderSummary } from './SessionHeader';
 import { StopSessionButton } from './StopSessionButton';
 import { pageTerminalFontSizeStore, useTerminalFontSize } from './terminal-font-size-store';
+import { pageThemeStore } from '../theme/theme-store';
 import { TerminalSearchBox, type TerminalSearchResults } from './TerminalSearchBox';
 import { TerminalZoomControls } from './TerminalZoomControls';
 import { loadWebAddressLinks } from './web-address-links';
@@ -278,6 +279,9 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
       terminal.options.fontSize = fontSizeStore.getSnapshot();
       fitAddon.fit();
     });
+    const unsubscribeTheme = pageThemeStore().subscribe(() => {
+      terminal.options.theme = terminalTheme(container);
+    });
     terminal.focus();
 
     return () => {
@@ -285,6 +289,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
       clearTimeout(retry);
       resizeObserver.disconnect();
       unsubscribeFontSize();
+      unsubscribeTheme();
       inputSubscription.dispose();
       resizeSubscription.dispose();
       webAddressLinks.dispose();

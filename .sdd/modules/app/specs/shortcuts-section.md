@@ -25,6 +25,7 @@ Shows:
 - the keys of a row → joined by " / ". A row with more than four keys shows its first and its last key, joined by " … ".
 - "Change Keys" → accessible name "Change Keys: <action>".
 - "Restore Default" → accessible name "Restore Default: <action>". Enabled only when the row's active keys differ from its defaults (`hasDefaultKeys` false).
+- each row → a dense row of ListStyles (`.list-row`) with its hover, its text aligned with the group heading. No separator lines between rows.
 - a row in editing → "Press new keys, Esc to cancel" in place of its keys.
 - a rejected key → its message inside the row, under the action (`role="alert"`), e.g. "Already used by Focus the list". "Change Keys" of that row is described by it.
 - the colours follow the active theme, as the rest of the popup.
@@ -56,9 +57,10 @@ Keyboard:
 
 ## Dependencies
 
-- ShortcutMap, ShortcutKeyCheck, UserShortcutKeys, WarningDialog, SettingsDialog (its menu pane), IconSet (`PencilIcon`, `RotateCcwIcon`), ThemeTokens, WebEntry (`.kbd-badge`, `.button-neutral`)
+- ShortcutMap, ShortcutKeyCheck, UserShortcutKeys, WarningDialog, SettingsDialog (its menu pane), IconSet (`PencilIcon`, `RotateCcwIcon`), ThemeTokens, ListStyles, WebEntry (`.kbd-badge`, `.button-neutral`)
 
 ## Requirements served
 
 - `plan-keyboard_shortcuts/REQ-26`, `plan-keyboard_shortcuts/REQ-27`, `plan-keyboard_shortcuts/REQ-28`, `plan-keyboard_shortcuts/REQ-32`, `plan-keyboard_shortcuts/REQ-33`
 - `plan-settings_dialog/REQ-22`, `plan-settings_dialog/REQ-23`, `plan-settings_dialog/REQ-26`, `plan-settings_dialog/REQ-31`, `plan-settings_dialog/REQ-32`, `plan-settings_dialog/REQ-33`, `plan-settings_dialog/REQ-34`, `plan-settings_dialog/REQ-35`, `plan-settings_dialog/REQ-36`, `plan-settings_dialog/REQ-39`, `plan-settings_dialog/REQ-41`, `plan-settings_dialog/REQ-42`, `plan-settings_dialog/REQ-58`, `plan-settings_dialog/REQ-59`
+- `plan-dark_blue_theme/REQ-47`

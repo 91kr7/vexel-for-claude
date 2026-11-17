@@ -243,7 +243,7 @@ test.describe('WindowButtons in the desktop top bar', () => {
   });
 
   // REQ-28, WindowButtons "Keyboard": real buttons in the Tab order, with the focus ring of the bar, Enter and Space act
-  test('Tab reaches the three buttons with the same focus ring as "Plan Usage"; Enter and Space act; a click keeps the focus where it was', async ({ page }) => {
+  test('Tab reaches the three buttons with the focus ring of the page, as "Plan Usage" has; Enter and Space act; a click keeps the focus where it was', async ({ page }) => {
     await installFakeBridge(page);
     await page.goto('/');
     const bar = topBar(page);
@@ -270,7 +270,9 @@ test.describe('WindowButtons in the desktop top bar', () => {
     await tabTo(page, planUsage);
     const planUsageRing = await ring(planUsage);
     expect(minimizeRing.outline, 'same ring as "Plan Usage"').toBe(planUsageRing.outline);
-    expect(minimizeRing.offset).toBe(planUsageRing.offset);
+    // WindowButtons: the page ring, 2 px away (WebEntry); only Plan Usage draws it inside its edge (PlanUsageButton)
+    expect(minimizeRing.offset).toBe('2px');
+    expect(planUsageRing.offset).toBe('-2px');
 
     await close.click();
     await expect(planUsage, 'the click left the focus on "Plan Usage"').toBeFocused();
@@ -546,7 +548,7 @@ test.describe('WindowButtons on the StartupPage', () => {
   const states = [{ kind: 'loading' as const }, { kind: 'error' as const, outputLines: ['first line', 'Backend exited with code 1.'] }];
 
   for (const state of states) {
-    // REQ-23, plan-ui_restyle/REQ-36, REQ-37, StartupPage "Shows" and "Actions": the three buttons at the left of the 44 px bar, outside the drag area, and they act
+    // REQ-23, plan-ui_restyle/REQ-36, REQ-37, StartupPage "Shows" and "Actions": the three buttons at the left of the 38 px bar (plan-dark_blue_theme/REQ-8), outside the drag area, and they act
     test(`${state.kind} state: the three buttons sit 14 px from the left, centred in the bar, outside the drag area, and act`, async ({ page }) => {
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
@@ -557,12 +559,12 @@ test.describe('WindowButtons on the StartupPage', () => {
       await expectMacLook([close, minimize, maximize]);
       const [red, yellow, green] = await boxes([close, minimize, maximize]);
       expect(red!.x).toBeCloseTo(14, 0);
-      // The 1 px bottom line sits inside the 44 px, so the centre may be half a pixel above 22.
-      expect(Math.abs(red!.y + red!.height / 2 - 22), 'centred in the 44 px bar').toBeLessThanOrEqual(0.5);
+      // The 1 px bottom line sits inside the 38 px, so the centre may be half a pixel above 19.
+      expect(Math.abs(red!.y + red!.height / 2 - 19), 'centred in the 38 px bar').toBeLessThanOrEqual(0.5);
       for (const x of [red!.x + 6, (red!.x + 12 + yellow!.x) / 2, yellow!.x + 6, (yellow!.x + 12 + green!.x) / 2, green!.x + 6]) {
-        expect(await regionAt(page, x, 22), `at ${x}`).toBe('no-drag');
+        expect(await regionAt(page, x, 19), `at ${x}`).toBe('no-drag');
       }
-      expect(await regionAt(page, green!.x + 40, 22), 'the bar right of the buttons').toBe('drag');
+      expect(await regionAt(page, green!.x + 40, 19), 'the bar right of the buttons').toBe('drag');
 
       await close.click();
       await minimize.click();

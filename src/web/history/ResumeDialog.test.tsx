@@ -20,7 +20,8 @@ describe('ResumeDialog', () => {
   // plan-claude_sessions_client-ui_redesign/REQ-25: "Cancel" and the primary "Resume", disabled while no entry is selected
   it('has "Cancel" and the primary action "Resume", disabled on open', () => {
     const html = renderToStaticMarkup(<ResumeDialog onResumed={() => {}} onCancel={() => {}} />);
-    const actions = buttons(html);
+    // The toggle "Only Favorites" (plan-resume_favorites/REQ-10) is the only other button: an icon with no text.
+    const actions = buttons(html).filter((b) => !b.attrs.includes('aria-label="Only Favorites"'));
     expect(actions.map((b) => b.label)).toEqual(['[Esc]', 'Cancel', 'Resume']);
     const primary = actions[2]?.attrs ?? '';
     expect(primary).toMatch(/\sclass="(?:[^"]*\s)?button-primary(?:\s[^"]*)?"/);

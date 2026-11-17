@@ -159,10 +159,10 @@ async function runInTerminal(sessionId: string, folder: string): Promise<void> {
   await writeFile(file, JSON.stringify({ pid, sessionId, cwd: folder, kind: 'interactive', status: 'busy', updatedAt: Date.now() }));
 }
 
-/** The header keeps one 40 px row: every item inside it, side by side, with no overlap. */
+/** The header keeps one 44 px row (plan-dark_blue_theme/REQ-25): every item inside it, side by side, with no overlap. */
 async function expectOneRow(page: Page, items: Locator[]): Promise<void> {
   const head = await box(header(page));
-  near(head.height, 40, 'header height');
+  near(head.height, 44, 'header height');
   const boxes = (await Promise.all(items.map((item) => box(item)))).sort((a, b) => a.x - b.x);
   for (const [n, item] of boxes.entries()) {
     expect(item.y, `item ${n} below the header top`).toBeGreaterThanOrEqual(head.y - TOLERANCE);
@@ -189,7 +189,7 @@ test.describe('Header and footer of an open session', () => {
     // The header: folder name, label, state, "Search", "Interrupt" and "Terminate", and nothing else.
     const name = path.basename(folder);
     await expect(header(page).getByRole('heading', { level: 2 })).toHaveText(name);
-    await expect(header(page)).toHaveText(new RegExp(`^\\s*${name}\\s*${label}\\s*Idle\\s*■?\\s*Interrupt\\s*■?\\s*Terminate\\s*$`));
+    await expect(header(page)).toHaveText(new RegExp(`^\\s*${name}\\s*Idle\\s*${label}\\s*■?\\s*Interrupt\\s*■?\\s*Terminate\\s*$`));
     await expect(header(page).getByRole('button')).toHaveText(['', /Interrupt/, /Terminate/]);
     await expect(header(page).getByRole('button').first()).toHaveAccessibleName('Search');
     await expectOneRow(page, [
@@ -201,7 +201,7 @@ test.describe('Header and footer of an open session', () => {
 
     // The footer: path, context, total tokens, cost, then the text size controls at the right end; no key hint.
     const foot = await box(footer(page));
-    near(foot.height, 40, 'footer height');
+    near(foot.height, 32, 'footer height');
     await expect(place(page, folder)).toHaveText(folder);
     await expect(contextChip(page)).toHaveText(/^\s*Context\s*45\.2k \/ 200k · 23%\s*$/);
     await expect(tokensChip(page)).toHaveText(/^\s*47\.2k tokens/);
@@ -215,7 +215,8 @@ test.describe('Header and footer of an open session', () => {
       if (next) expect(item.x + item.width, `footer item ${n} before the next one`).toBeLessThanOrEqual(next.x + TOLERANCE);
     }
     const zoom = boxes[4]!;
-    near(zoom.x + zoom.width, foot.x + foot.width - 16, 'text size controls at the right end');
+    // SessionFooter "Shows" (plan-dark_blue_theme): 14 px side padding.
+    near(zoom.x + zoom.width, foot.x + foot.width - 14, 'text size controls at the right end');
     await expect(footer(page).locator('kbd')).toHaveCount(0);
     await expect(mainArea(page)).not.toContainText('back to the list');
   });
@@ -237,7 +238,7 @@ test.describe('Header and footer of an open session', () => {
     await expect(tooltip(page)).toBeVisible();
     await expect(tooltip(page)).toHaveText(/^\s*Input\s*4k\s*Output\s*2k\s*Cache write\s*30k\s*Cache read\s*150k\s*$/);
     await expect(tokensChip(page)).toHaveAttribute('aria-describedby', (await tooltip(page).getAttribute('id'))!);
-    near((await box(footer(page))).height, 40, 'footer height with the tooltip open');
+    near((await box(footer(page))).height, 32, 'footer height with the tooltip open');
     const chip = await box(tokensChip(page));
     const tip = await box(tooltip(page));
     expect(tip.y + tip.height, 'the tooltip sits above the chip').toBeLessThanOrEqual(chip.y + TOLERANCE);
@@ -269,14 +270,14 @@ test.describe('Header and footer of an open session', () => {
 
     const name = path.basename(folder);
     const label = escaped(await labelOf(request, folder, true));
-    await expect(header(page)).toHaveText(new RegExp(`^\\s*${name}\\s*${label}\\s*(Running|Needs Input|Idle)\\s*Read-only\\s*Resume Here\\s*$`));
+    await expect(header(page)).toHaveText(new RegExp(`^\\s*${name}\\s*(Running|Needs Input|Idle)\\s*${label}\\s*Read-only\\s*Resume Here\\s*$`));
     await expect(header(page)).not.toContainText('Open in Another Terminal');
 
     await expect(place(page, folder)).toHaveText(`Open in Another Terminal · ${folder}`);
     await expect(contextChip(page)).toHaveText(/^\s*Context\s*45\.2k \/ 200k · 23%\s*$/);
     await expect(tokensChip(page)).toHaveText(/^\s*47\.2k tokens/);
     await expect(costChip(page)).toHaveText(/^\s*<?\$\d+\.\d\d\s*$/);
-    near((await box(footer(page))).height, 40, 'footer height');
+    near((await box(footer(page))).height, 32, 'footer height');
     await expect(zoomControls(page)).toHaveCount(0);
   });
 
@@ -310,7 +311,7 @@ test.describe('Header and footer of an open session', () => {
     await expect(tooltip(page)).toBeVisible();
     await expect(tooltip(page)).toHaveText(label);
     await expect(line).toHaveAttribute('aria-describedby', (await tooltip(page).getAttribute('id'))!);
-    near((await box(header(page))).height, 40, 'header height with the tooltip open');
+    near((await box(header(page))).height, 44, 'header height with the tooltip open');
     await page.mouse.move(0, 0);
     await expect(tooltip(page)).toBeHidden();
 
@@ -325,7 +326,7 @@ test.describe('Header and footer of an open session', () => {
     // The path in the footer: cut with "…", the full path as tooltip, the figures whole.
     await expect(place(page, folder)).toHaveText(folder);
     expect(await isCutWithEllipsis(place(page, folder)), 'the path ends with "…"').toBe(true);
-    near((await box(footer(page))).height, 40, 'footer height');
+    near((await box(footer(page))).height, 32, 'footer height');
     for (const figure of [contextChip(page), tokensChip(page), costChip(page), zoomControls(page)]) {
       await expect(figure).toBeInViewport({ ratio: 1 });
       expect(await figure.evaluate((el) => el.scrollWidth <= el.clientWidth), 'figure not cut').toBe(true);
@@ -407,7 +408,8 @@ const style = (locator: Locator, property: string) => locator.evaluate((el, p) =
 
 test.describe('Order and look of the header actions of a hosted session', () => {
   // plan-session_list_width/REQ-30, REQ-31, REQ-32, REQ-36 — scenario "The user finds "Search", the state, "Interrupt" and "Terminate" in this order"
-  test('"Search", the state, "Interrupt" and "Terminate" show and take the focus in this order', async ({ page, request }) => {
+  // plan-dark_blue_theme/REQ-52: the state pill moved to the left group, before the line pill
+  test('the state, then "Search", "Interrupt" and "Terminate" show in this order, and the buttons take the focus in this order', async ({ page, request }) => {
     const folder = await newFolder('order');
     const label = 'Add the invoice export';
     await hosted(request, folder, label, [response(SOME_RESPONSES)], { working: true });
@@ -421,8 +423,8 @@ test.describe('Order and look of the header actions of a hosted session', () => 
     const stop = actionButton(page, 'Terminate');
     const pill = statePill(page, 'Running');
     await expect(pill).toBeVisible();
-    const xs = await Promise.all([search, pill, interrupt, stop].map(async (item) => (await box(item)).x));
-    expect([...xs].sort((a, b) => a - b), 'Search, state, Interrupt, Terminate from left to right').toEqual(xs);
+    const xs = await Promise.all([pill, search, interrupt, stop].map(async (item) => (await box(item)).x));
+    expect([...xs].sort((a, b) => a - b), 'state, Search, Interrupt, Terminate from left to right').toEqual(xs);
     await expectOneRow(page, [search, pill, interrupt, stop]);
 
     // Tab from the label chip: "Search", then "Interrupt", then "Terminate"; the state takes no focus.

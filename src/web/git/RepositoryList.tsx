@@ -27,12 +27,12 @@ export function RepositoryList({ repositories, chosen, onToggle, onClear }: Repo
       <button type="button" className="git-repository-all" aria-pressed={chosen.length === 0} onClick={onClear}>
         All repositories
       </button>
-      <ul className="git-repository-list" aria-label="Repositories">
+      <ul className="git-repository-list list-scroll" aria-label="Repositories">
         {repositories.map((repository, index) => (
           <li key={repository.root}>
             <button
               type="button"
-              className="git-repository-entry"
+              className={chosen.includes(repository.root) ? 'git-repository-entry list-card list-active' : 'git-repository-entry list-card'}
               title={repository.root}
               aria-pressed={chosen.includes(repository.root)}
               onClick={() => onToggle(repository.root)}

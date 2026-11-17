@@ -22,7 +22,7 @@ type: configuration
 - on each tracker change with cause `track` (a hosted session started or resumed), clears the removal of the session folder in the ProjectMarkStore.
 - one shared SessionStateTracker with that name store and favorite store. It tracks every session the registry starts.
 - registers StartSessionRoute (with the tracker and the name store), StopSessionRoute, AttachSessionRoute (with the tracker), SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute (with the tracker and the scanner), RenameSessionRoute (with the tracker, the scanner and the name store), FavoriteSessionRoute (with the tracker, the scanner and the favorite store) and FolderRoute.
-- one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute (also with the name store and the favorite store), ResumeSessionRoute and ResumeEndedSessionRoute with them, the registry and the tracker. ResumeEndedSessionRoute also gets the scanner.
+- one SessionHistory and one ExternalSessionCheck with their default Claude Code folder. Registers PastSessionListRoute (also with the name store and the favorite store), ResumeSessionRoute and ResumeEndedSessionRoute with them, the registry and the tracker. ResumeEndedSessionRoute also gets the scanner. Registers PastSessionFavoriteRoute with the SessionHistory and the favorite store.
 - one ExternalSessionScanner on that ExternalSessionCheck and SessionHistory, with the hosted pids of the registry, the live Claude Code session ids of the tracker (`liveClaudeSessionIds`), the name store and the favorite store. It starts with the server.
 - it starts listening only after one `scan()` of that scanner has settled. A scan that fails or throws does not stop the listen.
 - passes the scanner to SessionListRoute and SessionEventsRoute.
@@ -52,7 +52,7 @@ type: configuration
 - PlanUsageRoute, PlanLimitsReader
 - checkLatestRelease, releaseListUrl, readReleaseChangelogs, NewerVersionRoute, InstalledVersionRoute, UpdateCheckRoute (`checkForUpdate`)
 - FolderRoute, ProjectMarkStore, ProjectFavoriteRoute, ProjectRemoveRoute, ProjectMarkEventsRoute (module folders)
-- SessionHistory, ExternalSessionCheck, PastSessionListRoute, ResumeSessionRoute (module history)
+- SessionHistory, ExternalSessionCheck, PastSessionListRoute, ResumeSessionRoute, PastSessionFavoriteRoute (module history)
 - ExternalSessionScanner, TranscriptReader, ConversationStreamRoute, ItemContentRoute (module external)
 - GitRunner, RepositoryRoute (module git)
 
@@ -72,3 +72,4 @@ type: configuration
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-10`, `plan-wsl_support/REQ-12`
 - `plan-release_changelog/REQ-7`, `plan-release_changelog/REQ-14`, `plan-release_changelog/REQ-15`, `plan-release_changelog/REQ-16`
 - `plan-settings_dialog/REQ-45`, `plan-settings_dialog/REQ-52`
+- `plan-resume_favorites/REQ-8`

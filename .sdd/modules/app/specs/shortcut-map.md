@@ -36,7 +36,7 @@ type: configuration
   | `terminal-smaller-text` | terminal | "Smaller text" | Ctrl + `-` | `terminal` |
   | `terminal-default-text` | terminal | "Default text size" | Ctrl + `0` | `terminal` |
   | `terminal-focus-list` | terminal | "Focus the list" | Ctrl + Shift + `l` | `terminal` |
-  | `toggle-theme` | general | "Light/Dark theme" | Alt + `KeyA` | `toggle-theme` |
+  | `toggle-theme` | general | "Light/Dark/Dark Blue theme" | Alt + `KeyA` | `toggle-theme` |
   | `shortcut-settings` | general | "Shortcut settings" | Alt + `KeyS` | `open-shortcut-settings` |
 
 - a command → `{ kind: 'focus-list' }`, `{ kind: 'focus-main-view' }`, `{ kind: 'open-session', target }`, `{ kind: 'new-session' }`, `{ kind: 'resume-history' }`, `{ kind: 'session-command', command }`, `{ kind: 'toggle-theme' }` or `{ kind: 'open-shortcut-settings' }`. `target` is a `NavigationTarget` of sessionToOpen. `command` is a session command of ShortcutChannel.
@@ -91,3 +91,4 @@ type: configuration
 - `plan-keyboard_shortcuts/REQ-25`, `plan-keyboard_shortcuts/REQ-26`, `plan-keyboard_shortcuts/REQ-28`
 - `plan-keyboard_shortcuts/REQ-34`, `plan-keyboard_shortcuts/REQ-35`, `plan-keyboard_shortcuts/REQ-36`, `plan-keyboard_shortcuts/REQ-37`, `plan-keyboard_shortcuts/REQ-39`, `plan-keyboard_shortcuts/REQ-40`, `plan-keyboard_shortcuts/REQ-44`, `plan-keyboard_shortcuts/REQ-45`
 - `plan-settings_dialog/REQ-3`, `plan-settings_dialog/REQ-22`, `plan-settings_dialog/REQ-23`, `plan-settings_dialog/REQ-25`, `plan-settings_dialog/REQ-26`, `plan-settings_dialog/REQ-27`, `plan-settings_dialog/REQ-37`, `plan-settings_dialog/REQ-38`
+- `plan-dark_blue_theme/REQ-34`

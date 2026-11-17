@@ -14,12 +14,13 @@ afterEach(() => {
 const ERROR = 'Could not change the favorite mark.';
 
 // The shell may export NODE_ENV=production, where React has no `act`: flushSync commits the render at once.
-function mount(sessionId: string, favorite: boolean, hidden?: boolean) {
+function mount(sessionId: string, favorite: boolean, hidden?: boolean, extra: { pastSession?: boolean; onChanged?: (favorite: boolean) => void } = {}) {
   const host = document.createElement('div');
   document.body.append(host);
   const root = createRoot(host);
   roots.push(root);
-  const render = (value: boolean, hide = hidden) => flushSync(() => root.render(<FavoriteButton sessionId={sessionId} favorite={value} hidden={hide} />));
+  const render = (value: boolean, hide = hidden) =>
+    flushSync(() => root.render(<FavoriteButton sessionId={sessionId} favorite={value} hidden={hide} {...extra} />));
   render(favorite);
   const button = () => host.querySelector('button')!;
   return { host, button, render };
@@ -238,5 +239,69 @@ describe('FavoriteButton', () => {
     await settle();
     render(true);
     expect(pops(button())).toBe(false);
+  });
+
+  // plan-resume_favorites/REQ-5: with pastSession the press goes to PastSessionFavoriteRoute
+  it.each([
+    [false, true],
+    [true, false],
+  ])('with pastSession and favorite %s, a press sends PUT /api/past-sessions/:id/favorite with favorite %s', async (favorite, sent) => {
+    const { fetch, answers } = controlledFetch();
+    const { button } = mount('id/1', favorite, false, { pastSession: true });
+    button().click();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+    expect(String(url)).toMatch(/\/api\/past-sessions\/id%2F1\/favorite$/);
+    expect(init.method).toBe('PUT');
+    expect(JSON.parse(String(init.body))).toEqual({ favorite: sent });
+    answers[0]!.resolve(new Response(null, { status: 204 }));
+    await settle();
+  });
+
+  // plan-resume_favorites/REQ-7: onChanged gets the new mark after any 2xx answer
+  it.each([
+    [false, 204, true],
+    [true, 204, false],
+    [false, 200, true],
+  ])('with favorite %s, a %i answer calls onChanged(%s) once', async (favorite, status, expected) => {
+    const { answers } = controlledFetch();
+    const onChanged = vi.fn();
+    const { host, button } = mount('a', favorite, false, { pastSession: true, onChanged });
+    button().click();
+    expect(onChanged).not.toHaveBeenCalled();
+    answers[0]!.resolve(new Response(status === 204 ? null : '', { status }));
+    await settle();
+    expect(onChanged).toHaveBeenCalledTimes(1);
+    expect(onChanged).toHaveBeenCalledWith(expected);
+    expect(alertText(host)).toBeNull();
+  });
+
+  // FavoriteButton "Actions": onChanged is not called on a failure, and the error shows
+  it.each([
+    ['a 500 answer', (answer: { resolve: (r: Response) => void }) => answer.resolve(new Response('', { status: 500 }))],
+    ['a 404 answer', (answer: { resolve: (r: Response) => void }) => answer.resolve(new Response('{"error":"session_not_found"}', { status: 404 }))],
+    ['a network error', (answer: { reject: (e: unknown) => void }) => answer.reject(new TypeError('Failed to fetch'))],
+  ])('with pastSession, %s does not call onChanged and shows the error', async (_name, fail) => {
+    const { answers } = controlledFetch();
+    const onChanged = vi.fn();
+    const { host, button } = mount('a', false, false, { pastSession: true, onChanged });
+    button().click();
+    fail(answers[0]! as never);
+    await settle();
+    expect(onChanged).not.toHaveBeenCalled();
+    expect(alertText(host)).toBe(ERROR);
+    expect(button().getAttribute('aria-label')).toBe('Mark as Favorite');
+  });
+
+  // FavoriteButton prop onChanged: also without pastSession, on the session route
+  it('without pastSession, onChanged is called after a 2xx of the session route', async () => {
+    const { fetch, answers } = controlledFetch();
+    const onChanged = vi.fn();
+    const { button } = mount('a', false, false, { onChanged });
+    button().click();
+    expect(String(fetch.mock.calls[0]![0 as never])).toMatch(/\/api\/sessions\/a\/favorite$/);
+    answers[0]!.resolve(new Response(null, { status: 204 }));
+    await settle();
+    expect(onChanged).toHaveBeenCalledWith(true);
   });
 });

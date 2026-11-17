@@ -15,7 +15,7 @@ type: UI page
 - `state` → `{ kind: "loading" }` or `{ kind: "error", outputLines: string[] }`.
 
 Description:
-- a 44 px bar across the top, the height of the client top bar, then one centred column on the light background of the client. Title of the document: "Vexel for Claude".
+- a 38 px bar across the top, the height of the client top bar, then one centred column on the light background of the client. Title of the document: "Vexel for Claude".
 
 Shows:
 - both states → the top bar, in the light top bar colours (`#efeae0`, 1 px line `rgba(28, 25, 23, 0.08)` at the bottom). It is a drag area (`-webkit-app-region: drag`): it moves the window, and a double click maximizes or restores it.
@@ -47,3 +47,4 @@ Actions (through `window.desktopBridge`, the DesktopBridge):
 - `plan-light_theme/REQ-20`
 - `plan-mac_title_bar/REQ-10`, `plan-mac_title_bar/REQ-23`
 - `plan-ui_restyle/REQ-36`, `plan-ui_restyle/REQ-37`, `plan-ui_restyle/REQ-38`, `plan-ui_restyle/REQ-39`, `plan-ui_restyle/REQ-40`
+- `plan-dark_blue_theme/REQ-6`, `plan-dark_blue_theme/REQ-8`

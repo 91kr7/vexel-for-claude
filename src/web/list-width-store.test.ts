@@ -29,8 +29,9 @@ const throwing = () => {
 };
 
 describe('ListWidthStore limits', () => {
-  it('uses 180, 480 and 224 px for the list panel and 700 px for the main area', () => {
-    expect([MIN_LIST_WIDTH, MAX_LIST_WIDTH, DEFAULT_LIST_WIDTH, MIN_MAIN_AREA_WIDTH]).toEqual([180, 480, 224, 700]);
+  // plan-dark_blue_theme/REQ-16: the default is 260 px
+  it('uses 180, 480 and 260 px for the list panel and 700 px for the main area', () => {
+    expect([MIN_LIST_WIDTH, MAX_LIST_WIDTH, DEFAULT_LIST_WIDTH, MIN_MAIN_AREA_WIDTH]).toEqual([180, 480, 260, 700]);
     expect(LIST_WIDTH_KEY).toBe('ai-client.list-width');
   });
 });
@@ -41,7 +42,15 @@ describe('ListWidthStore at creation', () => {
     expect(new ListWidthStore(memoryStorage(saved)).getSnapshot()).toBe(Number(saved));
   });
 
-  // plan-session_list_width/REQ-7
+  // plan-dark_blue_theme/REQ-17: a width saved under the old 224 px default stays, and creation does not rewrite it
+  it('keeps a saved width of 224 px and does not overwrite it', () => {
+    const storage = memoryStorage('224');
+    expect(new ListWidthStore(storage).getSnapshot()).toBe(224);
+    expect(storage.values.get(LIST_WIDTH_KEY)).toBe('224');
+    expect(storage.setItem).not.toHaveBeenCalled();
+  });
+
+  // plan-session_list_width/REQ-7, plan-dark_blue_theme/REQ-16
   it.each([
     ['no saved value', undefined],
     ['text that is not a number', 'wide'],
@@ -49,16 +58,16 @@ describe('ListWidthStore at creation', () => {
     ['a value under 180', '179'],
     ['a value over 480', '481'],
     ['a value that is not whole', '250.5'],
-  ])('starts at 224 px with %s', (_case, saved) => {
-    expect(new ListWidthStore(memoryStorage(saved)).getSnapshot()).toBe(224);
+  ])('starts at 260 px with %s', (_case, saved) => {
+    expect(new ListWidthStore(memoryStorage(saved)).getSnapshot()).toBe(260);
   });
 
-  it('starts at 224 px with no storage', () => {
-    expect(new ListWidthStore().getSnapshot()).toBe(224);
+  it('starts at 260 px with no storage', () => {
+    expect(new ListWidthStore().getSnapshot()).toBe(260);
   });
 
-  it('starts at 224 px when reading the storage throws', () => {
-    expect(new ListWidthStore({ getItem: throwing, setItem: vi.fn() }).getSnapshot()).toBe(224);
+  it('starts at 260 px when reading the storage throws', () => {
+    expect(new ListWidthStore({ getItem: throwing, setItem: vi.fn() }).getSnapshot()).toBe(260);
   });
 
   // plan-session_list_width/REQ-6: creating the store saves nothing
@@ -228,8 +237,8 @@ describe('pageListWidthStore', () => {
   it('is one store for the page, which works without localStorage', () => {
     const store = pageListWidthStore();
     expect(pageListWidthStore()).toBe(store);
-    expect(store.getSnapshot()).toBe(224);
-    expect(() => store.commit(260)).not.toThrow();
     expect(store.getSnapshot()).toBe(260);
+    expect(() => store.commit(304)).not.toThrow();
+    expect(store.getSnapshot()).toBe(304);
   });
 });

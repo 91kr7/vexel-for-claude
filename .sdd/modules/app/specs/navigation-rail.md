@@ -6,7 +6,7 @@ type: UI component
 
 # NavigationRail
 
-**Purpose** → the 52 px column on the left: "New Claude Code Session", then the destinations "Sessions", "Projects" and "Resume", and the SettingsButton at the bottom. It copies the top group of `#primary-rail` in `.sdd/mockups/studio-dark/mock.html`.
+**Purpose** → the 52 px column on the left: "New Claude Code Session", then the destinations "Sessions", "Projects" and "Resume", and the SettingsButton at the bottom. It follows the activity bar of `.sdd/mockups/dark_blue_theme/mock.html`.
 
 ## Contract
 
@@ -18,13 +18,13 @@ Props:
 - `shownView` → `sessions` or `projects`: the side view on screen. Default `sessions`.
 
 Description:
-- a `nav` with the label "Main Navigation". One column, 52 px wide, items centred, 6 px apart, padding 10 px above and below, `--bg-surface-1`, 1 px `--border-subtle` line on the right. It has no logo.
+- a `nav` with the label "Main Navigation". One column, 52 px wide, items centred, 12 px apart, padding 10 px above and below, on `--role-canvas`, 1 px `--role-border-subtle` line on the right. It has no logo.
 
 Shows, top to bottom:
-- "New Claude Code Session" (`.vx-rail-fab`) → 34 × 34 px, 8 px radius, 4 px extra space below, a 135° gradient from `--accent-primary` to `--accent-deep`, the plus icon at 16 px in `--on-accent`, `shadow-sm`. Scaled to 95 % while pressed.
-- the divider → 20 × 1 px in `--border-subtle`, 2 px above and below.
-- "Sessions", "Projects" and "Resume" (`.vx-rail-btn`), in this order → 34 × 34 px, 8 px radius, the icon at 17 px (terminal, folder, history) in `--text-secondary`, no text under it. Hover → `--bg-surface-3` and `--text-primary`.
-- the button of `shownView` ("Sessions" or "Projects") → the active style. The other one and "Resume" have none. The active style: `aria-current="page"`, `--accent-glow` background, `--accent-primary` icon, 1 px `--accent-border` border, glow `0 0 14px -2px`. A bar 2.5 px wide, rounded on the right, in `--accent-primary`, 8 px left of the button and 8 px from its top and bottom.
+- "New Claude Code Session" (`.vx-rail-fab`) → 32 × 32 px, `--radius-frame` corners, tinted with the accent: `--role-accent` at 20 % as fill (30 % on hover), 1 px `--role-accent-border` border, the plus icon at 16 px in `--role-accent`, `shadow-sm`. No gradient. Scaled to 95 % while pressed.
+- the divider → 24 × 1 px in `--role-border-subtle`.
+- "Sessions", "Projects" and "Resume" (`.vx-rail-btn`), in this order → 32 × 32 px squares, `--radius-frame` corners, the icon at 16 px (terminal, folder, history) in `--text-secondary`, no text under it. Hover → `--bg-surface-3` and `--text-primary`.
+- the button of `shownView` ("Sessions" or "Projects") → the active style. The other one and "Resume" have none. The active style: `aria-current="page"`, `--accent-glow` background, `--accent-primary` icon, 1 px `--accent-border` border, glow `0 0 14px -2px`. A bar 3 px wide on the left edge of the rail, fully rounded on the right, in `--role-accent`, 4 px from the button's top and bottom, with a soft glow `0 0 8px` of the accent at 80 %.
 - the badge on "Sessions" → shown in both views. The number `needsInputCount` in a pill on the top-right corner (4 px out on each side): at least 14 px wide, 14 px high, padding 0 × 3 px, `--amber-400` fill, mono 10 px weight 500 in `--bg-canvas`. Not shown when the number is 0. Hidden from assistive technology.
 - the SettingsButton → at the bottom of the rail, apart from the top group, under the free space. It stays visible at every window height and every list panel width.
 - a tooltip per button → on hover, its name ("New Claude Code Session", "Sessions", "Projects", "Resume", "Settings") 44 px from the button's left edge: `--bg-surface-3`, 1 px `--border-strong`, padding 3 × 8 px, 6 px radius, 11 px weight 500, shadow `0 6px 16px` black at 40 %. It fades in and slides 4 px in 0.12 s. No shortcut, for every button; the SettingsButton is the exception that gets its keys in batch shortcuts-section of `plan-settings_dialog`. Hidden from assistive technology.
@@ -52,3 +52,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-15`
 - `plan-recent_projects/REQ-1`, `plan-recent_projects/REQ-2`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-13`
 - `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-2`, `plan-settings_dialog/REQ-4`
+- `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-9`, `plan-dark_blue_theme/REQ-10`, `plan-dark_blue_theme/REQ-11`

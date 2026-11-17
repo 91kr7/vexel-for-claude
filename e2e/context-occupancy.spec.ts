@@ -127,8 +127,8 @@ test.describe('Context occupancy', () => {
     await row.getByTitle(folder, { exact: true }).click();
     await expect(chip(page)).toHaveText(/^Context\s*45\.2k \/ 200k · 23%$/);
     await expect(chip(page)).toBeVisible();
-    const box = await row.boundingBox();
-    expect(box!.height, 'a two-line row stays 48 px').toBeLessThanOrEqual(48.5);
+    // plan-dark_blue_theme/REQ-21: the percentage sits on line 3, the metrics line
+    await expect(row.locator('.session-entry-metrics').locator('.session-entry-context')).toHaveText('23%');
   });
 
   // plan-session_usage/REQ-1, REQ-12: an external entry shows the new percentage within 2 seconds

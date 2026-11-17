@@ -6,7 +6,7 @@ type: UI component
 
 # TopBar
 
-**Purpose** → the 44 px bar on top of the page: the logo, the brand and the plan usage button. In the desktop window it is also the title bar that moves the window. It copies "1. TOP APP BAR" of `.sdd/mockups/studio-dark/mock.html`, without its other controls.
+**Purpose** → the 38 px bar on top of the page: the logo, the brand and the plan usage button. In the desktop window it is also the title bar that moves the window. It follows the title bar of `.sdd/mockups/dark_blue_theme/mock.html`.
 
 ## Contract
 
@@ -14,10 +14,10 @@ Props:
 - `planUsageOpen`, `onTogglePlanUsage()` → passed to the PlanUsageButton.
 
 Shows:
-- a `header`, 44 px high, padding 0 × 14 px, `--bg-surface-2`, 1 px `--border-subtle` line at the bottom. Items centred, at the two ends, 12 px apart. Its text cannot be selected.
+- a `header`, 38 px high, padding 0 × 14 px, on `--role-chrome`, 1 px `--role-border-subtle` line at the bottom. Items centred, at the two ends, 12 px apart. Its text cannot be selected.
 - on the left, 8 px apart:
-  - the logo mark → a decorative 28 px square, 8 px radius, a 135° gradient from `--accent-primary` to `--accent-deep`, "VX" in mono 12 px weight 500 and `--on-accent`.
-  - "Vexel" (14/20 px, weight 600, letter spacing −0.025em) and "for Claude" (mono 10 px, `--text-muted`), 8 px apart on the same baseline.
+  - the logo mark → a decorative 20 px square, 6 px radius, a 135° gradient from `--accent-primary` to `--accent-deep`, "VX" in mono 10 px weight 500 and `--on-accent`.
+  - "Vexel" (13/20 px, weight 600, letter spacing −0.025em) and "for Claude" (mono 10 px, `--text-muted`), 8 px apart on the same baseline.
   - the installed version → `v` followed by the version of useInstalledVersion, e.g. `v0.2.2`, right after "for Claude", 8 px apart, on the same baseline, same style as "for Claude". Plain text, not a control. While the version is `null` (loading or failure) → no version text, and the rest of the bar keeps its layout.
 - on the right: the PlanUsageButton.
 
@@ -57,3 +57,4 @@ Browser (`isDesktopWindow()` is `false`):
 - `plan-wsl_support/REQ-18`, `plan-wsl_support/REQ-28`, `plan-wsl_support/REQ-32`, `plan-wsl_support/REQ-33`, `plan-wsl_support/REQ-35`
 - `plan-ui_restyle/REQ-1`, `plan-ui_restyle/REQ-2`
 - `plan-settings_dialog/REQ-16`, `plan-settings_dialog/REQ-17`, `plan-settings_dialog/REQ-24`
+- `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-6`, `plan-dark_blue_theme/REQ-8`

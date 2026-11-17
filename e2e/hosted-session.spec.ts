@@ -119,13 +119,10 @@ async function computedColour(page: Page, cssValue: string): Promise<string> {
 const near = (actual: number, expected: number, what: string) => expect(Math.abs(actual - expected), `${what}: ${actual} vs ${expected}`).toBeLessThanOrEqual(TOLERANCE);
 
 /** Whether the element draws the focus ring colour as an outline or a box-shadow. */
+/** The focus ring of the terminal frame: a box-shadow ring of `--role-accent` at 22 % (plan-dark_blue_theme/REQ-27). */
 async function showsRing(page: Page, target: Locator): Promise<boolean> {
-  const ring = await computedColour(page, 'var(--color-focus-ring)');
-  return target.evaluate((el, ringColour) => {
-    const s = getComputedStyle(el);
-    const outline = s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0 && s.outlineColor === ringColour;
-    return outline || s.boxShadow.includes(ringColour);
-  }, ring);
+  const ring = await computedColour(page, 'color-mix(in srgb, var(--role-accent) 22%, transparent)');
+  return target.evaluate((el, ringColour) => getComputedStyle(el).boxShadow.includes(ringColour), ring);
 }
 
 for (const colorScheme of ['light', 'dark'] as const) {
@@ -144,31 +141,31 @@ for (const colorScheme of ['light', 'dark'] as const) {
       const mono = /^["']?Roboto Mono["']?/;
       const main = await box(mainArea(page));
 
-      // subbar: 40 px with its bottom line, padding 0 16 (mock `h-10 px-4`), surface 1, subtle line below, across the main area, no avatar
+      // subbar: 44 px with its bottom line, padding 0 16, title bar role surface, subtle role line below, across the main area, no avatar (plan-dark_blue_theme/REQ-25)
       const head = header(page);
       expect(await styles(head, ['padding-top', 'padding-bottom', 'padding-right', 'padding-left', 'background-color', 'border-bottom-width', 'border-bottom-color'])).toEqual({
         'padding-top': '0px', 'padding-bottom': '0px', 'padding-right': '16px', 'padding-left': '16px',
-        'background-color': await colour('--bg-surface-1'), 'border-bottom-width': '1px', 'border-bottom-color': await colour('--border-subtle'),
+        'background-color': await colour('--role-chrome'), 'border-bottom-width': '1px', 'border-bottom-color': await colour('--role-border-subtle'),
       });
       const headBox = await box(head);
       near(headBox.y, main.y, 'header top');
       near(headBox.x, main.x, 'header left');
       near(headBox.width, main.width, 'header width');
-      expect(headBox.height, 'header height').toBeCloseTo(40, 0);
+      expect(headBox.height, 'header height').toBeCloseTo(44, 0);
       await expect(head.locator('.avatar')).toHaveCount(0);
 
       // name, then the label chip; no "/", no path, no figures
       const title = head.getByRole('heading', { level: 2 });
       await expect(title).toHaveText('billing-api');
       expect(await styles(title, ['font-size', 'font-weight', 'margin-top', 'margin-bottom'])).toEqual({
-        'font-size': '12px', 'font-weight': '600', 'margin-top': '0px', 'margin-bottom': '0px',
+        'font-size': '13.5px', 'font-weight': '600', 'margin-top': '0px', 'margin-bottom': '0px',
       });
       await expect(head.getByText('/', { exact: true })).toHaveCount(0);
       await expect(head).not.toContainText(folder);
       const line = head.locator('.mono-chip').filter({ hasText: LABEL });
       await expect(line).toHaveCount(1);
       expect(await styles(line, ['color', 'background-color', 'white-space'])).toEqual({
-        color: await colour('--text-muted'), 'background-color': await colour('--bg-surface-2'), 'white-space': 'nowrap',
+        color: await colour('--text-secondary'), 'background-color': await colour('--bg-surface-2'), 'white-space': 'nowrap',
       });
       expect(await style(line, 'font-family')).toMatch(mono);
       expect((await box(line)).x).toBeGreaterThan((await box(title)).x);
@@ -196,12 +193,22 @@ for (const colorScheme of ['light', 'dark'] as const) {
         { action: interrupt, fill: '--orange-500-15', text: '--orange-400', line: '--orange-500-30' },
         { action: stop, fill: '--rose-500-15', text: '--rose-400', line: '--rose-500-30' },
       ];
+      // WebEntry `.button-danger` / `.button-attn` / `.button-interrupt` (plan-dark_blue_theme/REQ-3): `--radius-pill` corners.
+      const pillRadius = await page.evaluate(() => {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position: absolute; width: var(--radius-pill)';
+        document.body.append(probe);
+        const width = getComputedStyle(probe).width;
+        probe.remove();
+        return width;
+      });
+      expect(pillRadius, 'pill radius in the current look').toBe('5px');
       for (const { action, fill, text, line } of looks) {
         expect(await styles(action, [
           'background-color', 'color', 'border-top-width', 'border-top-color', 'border-top-left-radius', 'padding-top', 'padding-left', 'font-size',
         ])).toEqual({
           'background-color': await colour(fill), color: await colour(text), 'border-top-width': '1px', 'border-top-color': await colour(line),
-          'border-top-left-radius': '6px', 'padding-top': '4px', 'padding-left': '10px', 'font-size': '11px',
+          'border-top-left-radius': pillRadius, 'padding-top': '4px', 'padding-left': '10px', 'font-size': '11px',
         });
         expect(await style(action, 'font-family')).toMatch(mono);
       }
@@ -209,38 +216,41 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await expect(interrupt).not.toContainText('■');
       await expect(stop.getByText('■', { exact: true })).toHaveAttribute('aria-hidden', 'true');
 
-      // the terminal panel: canvas, subtle border, 8 px radius, padding 12, 16 px from every side
+      // the terminal panel (plan-dark_blue_theme/REQ-26): terminal background, strong role border, 8 px radius, padding 12, 12 px from every side
       const term = panel(page);
       await expect(term).toHaveAccessibleName('Terminal: billing-api');
+      // Opening the session focuses the terminal: the plain border shows once the focus leaves the frame (plan-dark_blue_theme/REQ-27).
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+      await expect.poll(() => style(term, 'border-top-color')).toBe(await colour('--role-border-strong'));
       expect(await styles(term, ['border-top-left-radius', 'background-color', 'border-top-width', 'border-top-color', 'padding-top', 'padding-left'])).toEqual({
-        'border-top-left-radius': '8px', 'background-color': await colour('--bg-canvas'), 'border-top-width': '1px', 'border-top-color': await colour('--border-subtle'),
+        'border-top-left-radius': '8px', 'background-color': await colour('--term-bg'), 'border-top-width': '1px', 'border-top-color': await colour('--role-border-strong'),
         'padding-top': '12px', 'padding-left': '12px',
       });
       const termBox = await box(term);
-      near(termBox.y, headBox.y + headBox.height + 16, 'panel top');
-      near(termBox.x, main.x + 16, 'panel left');
-      near(termBox.width, main.width - 32, 'panel width');
+      near(termBox.y, headBox.y + headBox.height + 12, 'panel top');
+      near(termBox.x, main.x + 12, 'panel left');
+      near(termBox.width, main.width - 24, 'panel width');
 
-      // the footer: 40 px, padding 0 16, surface 1, subtle line above, under the panel, down to the bottom of the main area
+      // the footer (plan-dark_blue_theme/REQ-12): 32 px, padding 0 14, title bar role surface, subtle line above, under the panel, down to the bottom of the main area
       const row = footer(page);
       const rowBox = await box(row);
-      near(rowBox.y, termBox.y + termBox.height + 16, 'footer top');
-      near(rowBox.height, 40, 'footer height');
+      near(rowBox.y, termBox.y + termBox.height + 12, 'footer top');
+      near(rowBox.height, 32, 'footer height');
       near(rowBox.y + rowBox.height, main.y + main.height, 'footer bottom');
       near(rowBox.x, main.x, 'footer left');
       near(rowBox.width, main.width, 'footer width');
       expect(await styles(row, ['padding-left', 'padding-right', 'background-color', 'border-top-width', 'border-top-color'])).toEqual({
-        'padding-left': '16px', 'padding-right': '16px', 'background-color': await colour('--bg-surface-1'),
-        'border-top-width': '1px', 'border-top-color': await colour('--border-subtle'),
+        'padding-left': '14px', 'padding-right': '14px', 'background-color': await colour('--role-chrome'),
+        'border-top-width': '1px', 'border-top-color': await colour('--role-border-subtle'),
       });
 
-      // the path in mono 11 px, then the zoom controls at the right end; no key hint
+      // the path in mono 10.5 px (plan-dark_blue_theme/REQ-12), then the zoom controls at the right end; no key hint
       const pathText = row.getByText(folder, { exact: true });
-      expect(await styles(pathText, ['font-size', 'color'])).toEqual({ 'font-size': '11px', color: await colour('--text-secondary') });
+      expect(await styles(pathText, ['font-size', 'color'])).toEqual({ 'font-size': '10.5px', color: await colour('--text-secondary') });
       expect(await style(pathText, 'font-family')).toMatch(mono);
       const zoom = row.getByRole('group', { name: 'Terminal text size' });
       const zoomBox = await box(zoom);
-      near(zoomBox.x + zoomBox.width, rowBox.x + rowBox.width - 16, 'zoom controls at the right end');
+      near(zoomBox.x + zoomBox.width, rowBox.x + rowBox.width - 14, 'zoom controls at the right end');
       expect((await box(pathText)).x).toBeLessThan(zoomBox.x);
       await expect(row.locator('kbd')).toHaveCount(0);
       await expect(row).not.toContainText('Ctrl');
@@ -287,7 +297,7 @@ test('a session whose process has ended shows its header without "Interrupt" and
   await expect(header(page).getByRole('button', { name: 'Terminate' })).toHaveCount(0);
 });
 
-// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-32; SessionView: the panel shows the focus ring while the terminal has the focus
+// plan-claude_sessions_client-ui_redesign-material3_mock/REQ-32, plan-dark_blue_theme/REQ-27; SessionView: the panel shows the focus ring while the terminal has the focus
 test('the terminal panel shows the focus ring only while the terminal has the keyboard focus', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const folder = await newFolder('anello');
@@ -316,12 +326,12 @@ test('Ctrl+Shift+L moves the focus to the list, and the snackbar outside the foo
   await expect(footer(page)).toBeVisible();
   await expect(footer(page)).not.toContainText('Ctrl');
   const before = await box(panel(page));
-  near((await box(footer(page))).height, 40, 'footer height without snackbar');
+  near((await box(footer(page))).height, 32, 'footer height without snackbar');
 
   await postHook(request, waitingId, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
   await expect(snackbar(page)).toBeVisible();
   await expect(footer(page).getByRole('status')).toHaveCount(0);
-  near((await box(footer(page))).height, 40, 'footer height with snackbar');
+  near((await box(footer(page))).height, 32, 'footer height with snackbar');
   expect(await box(panel(page))).toEqual(before);
 
   await page.locator('.xterm-screen').click();
@@ -342,7 +352,7 @@ test('at 1280 px a long snackbar wraps within the window minus 40 px, and the fo
   await expect(snackbar(page)).toBeVisible();
 
   const rowBox = await box(footer(page));
-  near(rowBox.height, 40, 'footer height');
+  near(rowBox.height, 32, 'footer height');
   const zoomBox = await box(zoomControls(page));
   expect(zoomBox.x + zoomBox.width, 'zoom controls inside the footer').toBeLessThanOrEqual(rowBox.x + rowBox.width + TOLERANCE);
   expect(await zoomControls(page).evaluate((el) => el.scrollWidth <= el.clientWidth), 'zoom controls not cut').toBe(true);

@@ -16,8 +16,8 @@ type Rgba = [number, number, number, number];
 const TOLERANCE = 1;
 // Rounding of blended pixel colours.
 const COLOUR_TOLERANCE = 2;
-// Tailwind `shadow-2xl` of the mock modal.
-const SHADOW_2XL = 'rgba(0, 0, 0, 0.25) 0px 25px 50px -12px';
+// `--shadow-frame` of ThemeTokens (plan-dark_blue_theme).
+const SHADOW_FRAME = 'rgba(0, 0, 0, 0.45) 0px 8px 24px -4px';
 const MONO = /^"?Roboto Mono"?,/;
 const STOP_TEXT = 'is still working. The current turn will be interrupted. You can resume the conversation from the history.';
 
@@ -215,18 +215,18 @@ async function expectMono(target: Locator, what: string): Promise<void> {
   expect((await styles(target, ['font-family']))['font-family'], `${what}: mono`).toMatch(MONO);
 }
 
-/** The mock modal frame (Dialog "Shows"): at most 448 wide, centred, surface 2, strong border, 12 radius, shadow-2xl. */
-async function expectStudioFrame(page: Page, frame: Locator, what: string): Promise<Box> {
+/** The mock modal frame (Dialog "Shows"): at most `maxWidth` wide, centred, surface 2, strong border, 8 radius, frame shadow. */
+async function expectStudioFrame(page: Page, frame: Locator, what: string, maxWidth = 448): Promise<Box> {
   const b = await box(frame);
-  expect(b.width, `${what} width`).toBeLessThanOrEqual(448 + TOLERANCE);
+  expect(b.width, `${what} width`).toBeLessThanOrEqual(maxWidth + TOLERANCE);
   near(centreX(b), 720, `${what} horizontal centre`);
   near(b.y, 900 - bottom(b), `${what} vertical centring (space above vs below)`);
   await expectStyles(
     frame,
-    { 'border-top-left-radius': '12px', 'background-color': await role(page, '--bg-surface-2'), 'border-top-color': await role(page, '--border-strong') },
+    { 'border-top-left-radius': '8px', 'background-color': await role(page, '--bg-surface-2'), 'border-top-color': await role(page, '--border-strong') },
     `${what} frame`,
   );
-  expect((await styles(frame, ['box-shadow']))['box-shadow'], `${what} shadow-2xl`).toContain(SHADOW_2XL);
+  expect((await styles(frame, ['box-shadow']))['box-shadow'], `${what} frame shadow`).toContain(SHADOW_FRAME);
   return b;
 }
 
@@ -279,15 +279,29 @@ async function expectRing(page: Page, target: Locator, what: string): Promise<vo
   await expectStyles(target, { 'outline-style': 'solid', 'outline-width': '2px', 'outline-offset': '2px', 'outline-color': await role(page, '--accent-primary') }, what);
 }
 
-/** A dialog row (FolderChooser "Shows", `.vx-session-row`): padding 4 8, radius 6, a 24 badge, the 12 px name over the mono 11 px detail, then the 14 px radio. */
-async function expectStudioRow(page: Page, row: Locator, title: string, detail: string, options: { checked: boolean; radio: boolean }, what: string): Promise<Box> {
+/**
+ * A dialog row of FolderChooser or ResumeDialog: a 24 badge, the 12 px name over the mono 11 px detail, then the 14 px radio.
+ * With `card`, a card of ListStyles (plan-dark_blue_theme/REQ-44, REQ-45); else a dense folder browser row: padding 4 8, 7 px corners (REQ-47).
+ */
+async function expectStudioRow(
+  page: Page,
+  row: Locator,
+  title: string,
+  detail: string,
+  options: { checked: boolean; radio: boolean; card?: boolean },
+  what: string,
+): Promise<Box> {
   const r = await box(row);
-  // A checked row draws its 2 px accent bar inside the left padding (8 px = 6 px + the bar).
-  await expectStyles(row, { 'padding-top': '4px', 'padding-left': options.checked ? '6px' : '8px', 'border-top-left-radius': '6px' }, what);
-  if (options.checked) {
-    await expectStyles(row, { 'background-color': await role(page, '--accent-glow'), color: await role(page, '--text-primary'), 'font-weight': '600' }, `${what} checked`);
+  if (options.card) {
+    await expectStyles(
+      row,
+      options.checked
+        ? { 'border-top-left-radius': '7px', 'border-left-width': '1px', 'background-color': await role(page, '--bg-surface-3'), 'border-top-color': await role(page, '--accent-primary') }
+        : { 'border-top-left-radius': '7px', 'border-left-width': '1px', 'background-color': await role(page, '--bg-surface-2'), 'border-top-color': await role(page, '--border-subtle') },
+      what,
+    );
   } else {
-    await expectStyles(row, { 'background-color': 'rgba(0, 0, 0, 0)' }, `${what} background`);
+    await expectStyles(row, { 'padding-top': '4px', 'padding-left': '8px', 'border-top-left-radius': '7px', 'background-color': 'rgba(0, 0, 0, 0)' }, what);
   }
   const badge = await box(row.locator(':scope > *').first());
   near(badge.width, 24, `${what} badge width`);
@@ -335,9 +349,10 @@ async function expectWarningFrame(page: Page, dialog: Locator, accent: 'error' |
     const banner = text.locator('xpath=ancestor::*[contains(@class, "vx-surface-2")][1]');
     await expectStyles(
       banner,
-      { 'border-top-color': 'rgba(245, 158, 11, 0.4)', 'border-top-left-radius': '12px', 'padding-top': '14px', 'padding-left': '14px' },
+      { 'border-top-color': 'rgba(245, 158, 11, 0.4)', 'border-top-left-radius': '7px', 'padding-top': '14px', 'padding-left': '14px' },
       `${what} amber banner`,
     );
+    expect((await styles(banner, ['box-shadow']))['box-shadow'], `${what} banner card shadow`).toContain('rgba(0, 0, 0, 0.28) 0px 2px 10px 0px');
     const triangle = banner.locator('svg');
     await expect(triangle, `${what}: one triangle`).toHaveCount(1);
     near((await box(triangle)).width, 16, `${what} triangle width`);
@@ -583,7 +598,8 @@ test.describe('resume history and running-elsewhere warning', () => {
     await openHistory(page);
     await page.mouse.move(0, 0);
 
-    await expectStudioFrame(page, history(page), 'resume history');
+    // The resume popup is 672 px wide (plan-resume_favorites/REQ-1).
+    await expectStudioFrame(page, history(page), 'resume history', 672);
     await expectStudioHeader(page, history(page), 'Resume Session', 'resume history');
     await expect(history(page), 'no description').toHaveAccessibleDescription('');
 
@@ -601,13 +617,13 @@ test.describe('resume history and running-elsewhere warning', () => {
     await expect(first).toHaveAccessibleDescription(/03\/11\/2026/);
     const firstRow = sections.nth(0).locator('*').filter({ has: page.getByRole('radio', { name: "Aggiungi la validazione dell'IBAN", exact: true }) }).filter({ hasText: "Aggiungi la validazione dell'IBAN" }).last();
     const date = (await first.evaluate((el) => document.getElementById(el.getAttribute('aria-describedby')?.split(' ')[0] ?? '')?.textContent)) ?? '';
-    await expectStudioRow(page, firstRow, "Aggiungi la validazione dell'IBAN", date, { checked: false, radio: true }, 'unchecked session row');
+    await expectStudioRow(page, firstRow, "Aggiungi la validazione dell'IBAN", date, { checked: false, radio: true, card: true }, 'unchecked session row');
     await expectStyles(firstRow.locator('.avatar'), { 'background-color': await role(page, '--bg-surface-3') }, 'neutral avatar');
 
     await first.click();
     await expect(first).toBeChecked();
     await page.mouse.move(0, 0);
-    await expectStudioRow(page, firstRow, "Aggiungi la validazione dell'IBAN", date, { checked: true, radio: true }, 'checked session row');
+    await expectStudioRow(page, firstRow, "Aggiungi la validazione dell'IBAN", date, { checked: true, radio: true, card: true }, 'checked session row');
 
     const running = history(page).getByRole('radio', { name: 'Aggiorna la guida', exact: true });
     await expect(running).toHaveAccessibleDescription(/Running in a terminal/);
@@ -696,9 +712,9 @@ test.describe('Studio dialogs', () => {
     );
     await expectMono(pathField(page), 'input');
     await pathField(page).blur();
-    await expectStyles(pathField(page), { 'border-top-color': await role(page, '--border-subtle') }, 'input, not focused');
+    await expectStyles(pathField(page), { 'border-top-color': await role(page, '--border-strong') }, 'input, not focused');
     await pathField(page).focus();
-    await expectStyles(pathField(page), { 'border-top-color': await role(page, '--accent-border'), 'outline-style': 'none' }, 'input, focused');
+    await expectStyles(pathField(page), { 'border-top-color': await role(page, '--accent-primary'), 'outline-style': 'none' }, 'input, focused');
 
     const recentHeading = await expectSectionHeading(page, dialog.getByText('Recent', { exact: true }), false, '"Recent"');
     expect(recentHeading.y, '"Recent" under the field').toBeGreaterThan(bottom(inputBox));
@@ -709,8 +725,9 @@ test.describe('Studio dialogs', () => {
       ['docs-site', docs, false],
     ] as const) {
       const row = rowOf(recents(page), name);
-      const r = await expectStudioRow(page, row, name, folder, { checked, radio: true }, `row "${name}"`);
-      if (previous) near(r.y, bottom(previous) + 2, `row "${name}" 2 under the previous one`);
+      const r = await expectStudioRow(page, row, name, folder, { checked, radio: true, card: true }, `row "${name}"`);
+      await expectStyles(row, { 'padding-top': '6px', 'padding-left': '10px', ...(checked ? { 'font-weight': '600' } : {}) }, `row "${name}" padding and weight`);
+      if (previous) near(r.y, bottom(previous) + 6, `row "${name}" 6 under the previous one`);
       previous = r;
     }
     expect(await rowOf(recents(page), 'billing-api').evaluate((el) => {
@@ -719,7 +736,7 @@ test.describe('Studio dialogs', () => {
       if (s.borderLeftColor === c && parseFloat(s.borderLeftWidth) >= 1.5) return true;
       if (s.boxShadow.includes(c)) return true;
       return ['::before', '::after'].some((p) => getComputedStyle(el, p).content !== 'none' && getComputedStyle(el, p).backgroundColor === c);
-    }), 'checked row: the 2 px accent bar').toBe(true);
+    }), 'checked row: the accent bar').toBe(true);
 
     await expectSectionHeading(page, dialog.getByText('Folders', { exact: true }), false, '"Folders"');
     const parent = action(dialog, '..');

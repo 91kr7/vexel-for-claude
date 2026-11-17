@@ -1,21 +1,23 @@
-// e2e of plan-light_theme, batch remembered-theme: REQ-17, REQ-18, REQ-19 in the browser. Expected values come from
-// the REQs and the specs WebEntry, ThemeStore and ThemeTokens. The desktop part (REQ-17, REQ-20) is in desktop-window.spec.ts.
+// e2e of plan-light_theme, batch remembered-theme (REQ-17, REQ-18), and of plan-dark_blue_theme, batch dark-blue (REQ-32,
+// REQ-33, REQ-35), in the browser. Expected values come from the REQs and the specs WebEntry, ThemeStore and ThemeTokens.
+// The desktop part is in desktop-window.spec.ts.
 /// <reference lib="dom" />
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type Page, chromium, expect, test } from '@playwright/test';
-import { settingsButton, settingsPopup, toggleThemeInSettings } from './settings';
+import { chooseInSettings, settingsButton, settingsPopup, toggleThemeInSettings } from './settings';
 
 const KEY = 'ai-client.theme';
-const CANVAS = { dark: 'rgb(11, 11, 14)', light: 'rgb(244, 241, 234)' };
+const CANVAS = { dark: 'rgb(11, 11, 14)', light: 'rgb(244, 241, 234)', 'dark-blue': 'rgb(18, 21, 30)' };
+const FIRST_START = { mark: 'dark-blue', meta: 'dark', canvas: CANVAS['dark-blue'], scheme: 'dark' };
 
-// A browser that has never opened the client: no saved choice (the config default saves dark). A dark system theme,
-// so that a light start cannot come from the system.
-test.use({ storageState: { cookies: [], origins: [] }, colorScheme: 'dark' });
+// A browser that has never opened the client: no saved choice (the config default saves dark). A light system theme,
+// so that a dark start cannot come from the system.
+test.use({ storageState: { cookies: [], origins: [] }, colorScheme: 'light' });
 
 /** The theme the settings popup shows as chosen; the popup closes again. */
-async function expectChosenTheme(page: Page, choice: 'Light' | 'Dark'): Promise<void> {
+async function expectChosenTheme(page: Page, choice: 'Light' | 'Dark' | 'Dark Blue'): Promise<void> {
   await settingsButton(page).click();
   await expect(settingsPopup(page).getByRole('radio', { name: choice, exact: true })).toBeChecked();
   await page.keyboard.press('Escape');
@@ -57,34 +59,34 @@ async function saveChoice(page: Page, value: string): Promise<void> {
 }
 
 test.describe('first start', () => {
-  // REQ-19, REQ-18 — scenario "The client opens light the first time"
-  test('with nothing saved the client opens light, and the head script marks it before the app runs', async ({ page }) => {
-    expect(await firstFrame(page)).toEqual({ mark: 'light', meta: 'light', canvas: CANVAS.light, scheme: 'light' });
+  // plan-dark_blue_theme/REQ-35, REQ-33 — scenario "the shortcut cycles three themes", the first frame
+  test('with nothing saved the client opens Dark Blue, and the head script marks it before the app runs', async ({ page }) => {
+    expect(await firstFrame(page)).toEqual(FIRST_START);
   });
 
-  test('with nothing saved the page only ever carries the light mark and the settings show Light', async ({ page }) => {
+  test('with nothing saved the page only ever carries the dark-blue mark and the settings show Dark Blue', async ({ page }) => {
     await recordMarks(page);
     await page.goto('/');
-    await expectChosenTheme(page, 'Light');
-    expect(await page.locator('html').getAttribute('data-theme')).toBe('light');
-    expect(await marks(page)).toEqual(['light']);
+    await expectChosenTheme(page, 'Dark Blue');
+    expect(await page.locator('html').getAttribute('data-theme')).toBe('dark-blue');
+    expect(await marks(page)).toEqual(['dark-blue']);
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY), 'opening saves nothing').toBeNull();
   });
 
-  // WebEntry: a value other than dark or light counts as no choice
-  for (const value of ['blue', '', 'Dark', '"dark"']) {
-    test(`a saved value ${JSON.stringify(value)} counts as no choice: the client starts light`, async ({ page }) => {
+  // WebEntry: a value other than light, dark or dark-blue counts as no choice
+  for (const value of ['blue', '', 'Dark', '"dark"', 'Dark Blue', 'dark_blue']) {
+    test(`a saved value ${JSON.stringify(value)} counts as no choice: the client starts Dark Blue`, async ({ page }) => {
       await saveChoice(page, value);
-      expect(await firstFrame(page)).toEqual({ mark: 'light', meta: 'light', canvas: CANVAS.light, scheme: 'light' });
+      expect(await firstFrame(page)).toEqual(FIRST_START);
       await page.unroute(/\/assets\/[^/]+\.js$/);
       await page.reload();
-      await expectChosenTheme(page, 'Light');
+      await expectChosenTheme(page, 'Dark Blue');
     });
   }
 
-  // WebEntry: storage not reachable → light. The ThemeStore side is in the unit tests: the app's session order needs
+  // WebEntry: storage not reachable → dark-blue. The ThemeStore side is in the unit tests: the app's session order needs
   // the storage too, so the full page cannot mount here.
-  test('with web storage not reachable the head script marks light', async ({ page }) => {
+  test('with web storage not reachable the head script marks dark-blue', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.addInitScript(() => {
@@ -94,16 +96,16 @@ test.describe('first start', () => {
         },
       });
     });
-    expect(await firstFrame(page)).toEqual({ mark: 'light', meta: 'light', canvas: CANVAS.light, scheme: 'light' });
+    expect(await firstFrame(page)).toEqual(FIRST_START);
     expect(errors).toEqual([]);
   });
 });
 
 test.describe('remembered choice', () => {
   // REQ-17, REQ-18 — scenario "The client keeps the dark theme the user chose", the reload part
-  test('after the user switches to dark, a reload shows dark from the first frame, with no light mark on the way', async ({ page }) => {
+  test('after the user switches to dark, a reload shows dark from the first frame, with no other mark on the way', async ({ page }) => {
     await page.goto('/');
-    await toggleThemeInSettings(page);
+    await chooseInSettings(page, 'Dark');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe('dark');
 
@@ -127,6 +129,37 @@ test.describe('remembered choice', () => {
     expect(await firstFrame(page)).toEqual({ mark: 'light', meta: 'light', canvas: CANVAS.light, scheme: 'light' });
   });
 
+  // plan-dark_blue_theme/REQ-32, REQ-33 — scenario "Dark Blue is remembered with no flash"
+  test('Dark Blue chosen from Light is saved, and a reload shows it from the first frame with no other mark', async ({ page }) => {
+    await saveChoice(page, 'light');
+    await page.reload();
+    await expectChosenTheme(page, 'Light');
+    await chooseInSettings(page, 'Dark Blue');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark-blue');
+    expect(await page.evaluate((key) => localStorage.getItem(key), KEY)).toBe('dark-blue');
+
+    await recordMarks(page);
+    await page.reload();
+    await expectChosenTheme(page, 'Dark Blue');
+    expect(await marks(page)).toEqual(['dark-blue']);
+    expect(await firstFrame(page)).toEqual(FIRST_START);
+  });
+
+  // plan-dark_blue_theme/REQ-32: a saved theme wins over the first-start theme, also on a reload
+  for (const [value, choice] of [
+    ['light', 'Light'],
+    ['dark', 'Dark'],
+  ] as const) {
+    test(`a saved ${value} theme wins over Dark Blue: the reload shows ${value} from the first frame, never dark-blue`, async ({ page }) => {
+      await saveChoice(page, value);
+      await recordMarks(page);
+      await page.reload();
+      await expectChosenTheme(page, choice);
+      expect(await marks(page)).toEqual([value]);
+      expect(await firstFrame(page)).toEqual({ mark: value, meta: value, canvas: CANVAS[value], scheme: value });
+    });
+  }
+
   // ThemeStore rule: the backend stores nothing
   test('a theme change sends nothing to the backend', async ({ page }) => {
     await page.goto('/');
@@ -136,7 +169,7 @@ test.describe('remembered choice', () => {
     page.on('request', (request) => {
       if (request.method() !== 'GET') requests.push(`${request.method()} ${request.url()}`);
     });
-    await toggleThemeInSettings(page);
+    await chooseInSettings(page, 'Dark');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await page.waitForTimeout(300);
     expect(requests).toEqual([]);
@@ -145,14 +178,14 @@ test.describe('remembered choice', () => {
   // REQ-17: each browser keeps its own choice
   test('another browser profile keeps its own choice', async ({ page, browser, baseURL }) => {
     await page.goto('/');
-    await toggleThemeInSettings(page);
+    await chooseInSettings(page, 'Dark');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     const other = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
     try {
       const otherPage = await other.newPage();
       await otherPage.goto('/');
-      await expectChosenTheme(otherPage, 'Light');
-      expect(await otherPage.locator('html').getAttribute('data-theme')).toBe('light');
+      await expectChosenTheme(otherPage, 'Dark Blue');
+      expect(await otherPage.locator('html').getAttribute('data-theme')).toBe('dark-blue');
     } finally {
       await other.close();
     }
@@ -165,8 +198,8 @@ test.describe('remembered choice', () => {
       const first = await chromium.launchPersistentContext(profile, { baseURL, colorScheme: 'light' });
       const page1 = first.pages()[0] ?? (await first.newPage());
       await page1.goto('/');
-      await expectChosenTheme(page1, 'Light');
-      await toggleThemeInSettings(page1);
+      await expectChosenTheme(page1, 'Dark Blue');
+      await chooseInSettings(page1, 'Dark');
       await expect(page1.locator('html')).toHaveAttribute('data-theme', 'dark');
       await first.close();
 
@@ -195,5 +228,6 @@ test('the served page runs the theme script in the head before any style', async
   expect(script, 'an inline head script reads the saved theme').toBeGreaterThan(-1);
   const firstStyle = head.search(/<link[^>]+rel=["']?stylesheet|<style/i);
   if (firstStyle !== -1) expect(script).toBeLessThan(firstStyle);
-  expect(head).toMatch(/<meta[^>]+name=["']color-scheme["'][^>]+content=["']light["']/i);
+  // plan-dark_blue_theme/REQ-35, WebEntry: dark in the HTML, so a first start shows no light flash
+  expect(head).toMatch(/<meta[^>]+name=["']color-scheme["'][^>]+content=["']dark["']/i);
 });

@@ -6,16 +6,19 @@ type: configuration
 
 # Windows11Look
 
-**Purpose** → the styles of the Windows 11 look: Mica-like surfaces, the Windows 11 default accent blue, Segoe UI, 4 px and 8 px corners, and the Windows-style WindowButtons. They apply on top of the light or dark set of ThemeTokens when the root carries `data-look="windows11"` (the mark of LookStore).
+**Purpose** → the styles of the Windows 11 look: Mica-like surfaces, the Windows 11 default accent blue, Segoe UI, 4 px and 8 px corners, and the Windows-style WindowButtons. They apply on top of the active set of ThemeTokens when the root carries `data-look="windows11"` (the mark of LookStore).
 
 ## Contract
 
 - WebEntry loads it with the global styles, right after ThemeTokens.
-- Both themes:
+- Every theme:
   - `--font-ui` → Segoe UI Variable Text, Segoe UI Variable, Segoe UI, Selawik, then `system-ui` and `sans-serif`.
   - `--caption-close` `#c42b1c`, `--caption-close-pressed` `#b3261a`, `--radius-control` 4 px, `--radius-overlay` 8 px.
-  - `--accent-deep` → `#0078d4`, the Windows 11 default accent blue.
-- Dark theme (any `data-theme` other than `light`):
+  - shape tokens of ThemeTokens → `--radius-pill` takes `--radius-control` (4 px); `--radius-card` and `--radius-frame` take `--radius-overlay` (8 px).
+  - role tokens of ThemeTokens → they follow the Windows 11 levels below with the same mapping as in ThemeTokens.
+- Dark Blue keeps its own ThemeTokens colours in this look; only the shapes, the font and the caption tokens apply.
+- `--caption-hover` / `--caption-pressed` → white at 8 % / 5 % in Dark and Dark Blue.
+- Dark theme (`data-theme="dark"`):
 
 | Token | Value |
 |-------|-------|
@@ -26,9 +29,9 @@ type: configuration
 | `--specular-top` | white at 5 % |
 | `--text-primary` / `-secondary` / `-muted` | `#ffffff` / `#c8c8c8` / `#9d9d9d` |
 | `--accent-primary` | `#60cdff`; glow / border / selection at 14 % / 40 % / 30 % |
+| `--accent-deep` | `#0078d4`, the Windows 11 default accent blue |
 | `--on-accent` | `#000000` |
 | `--rose-400` / `--zinc-400` | `#fb8092` / `#a6a6ae` |
-| `--caption-hover` / `--caption-pressed` | white at 8 % / 5 % |
 
 - Light theme (`data-theme="light"`):
 
@@ -41,15 +44,16 @@ type: configuration
 | `--specular-top` | white at 70 % |
 | `--text-primary` / `-secondary` / `-muted` | `#1a1a1a` / `#5d5d5d` / `#616161` |
 | `--accent-primary` | `#005fb8`; glow / border / selection at 10 % / 35 % / 30 % |
+| `--accent-deep` | `#0078d4` |
 | `--on-accent` | `#ffffff` |
 | `--orange-400` | `#b32912` |
 | `--caption-hover` / `--caption-pressed` | black at 5 % / 3 % |
 
-- corners → `--radius-control` on buttons, chips, fields, list rows, tooltips and the logo mark. `--radius-overlay` on cards, popovers, panels, notices, snackbars and dialogs.
+- corners → `--radius-control` on buttons, chips, fields, list rows (the ListStyles cards and rows included), tooltips and the logo mark. `--radius-overlay` on cards (the session cards through `--radius-card`), popovers, panels, notices, snackbars and dialogs.
 - `.button-primary` → flat accent fill with a darker 1 px bottom edge, a little brighter on hover.
 - "Vexel" in the top bar → no negative letter spacing.
 - `.caption-buttons`, `.caption-button`, `.caption-close`, `.caption-glyph` → the Windows-style WindowButtons, described in that spec.
-- settings popup → the menu items and the shortcut row icon buttons take `--radius-control`; the choice cards and the update card take `--radius-overlay`. The chosen menu item has the surface 3 fill and the primary text colour, with the accent bar on its left.
+- settings popup → the menu items and the shortcut row icon buttons take `--radius-control`; the choice cards and the update card take `--radius-overlay`. The chosen menu item has the surface 3 fill and the primary text colour, with the accent border and bar of ListStyles.
 
 ## Rules and invariants
 
@@ -58,7 +62,7 @@ type: configuration
 - `--font-mono` and the terminal tokens do not change: the terminal panel stays dark in both looks.
 - No font file is bundled. Where Segoe UI is not installed (Linux by default), the next font of the list shows.
 - The app reads no Windows accent colour and no wallpaper.
-- Contrast (WCAG 2.2 AA), in each theme:
+- Contrast (WCAG 2.2 AA), in Dark and Light:
   - `--text-primary`, `-secondary` and `-muted` reach 4.5:1 on canvas and surfaces 1–3. `--text-muted` is the lowest: about 4.7:1 dark, 5.1:1 light, on surface 3.
   - `--accent-primary` reaches 4.5:1 on canvas and surfaces 1–3: about 7.1:1 dark, 5.2:1 light.
   - `--on-accent` reaches 4.5:1 on `--accent-primary` (about 11.7:1 dark, 6.3:1 light) and on `--accent-deep` (about 4.6:1 dark, 4.5:1 light).
@@ -68,9 +72,12 @@ type: configuration
 
 ## Dependencies
 
-- ThemeTokens, LookStore (the mark), WebEntry (loads it), WindowButtons (the caption classes)
+- ThemeTokens, LookStore (the mark), WebEntry (loads it), WindowButtons (the caption classes), ListStyles
 
 ## Requirements served
 
 - `plan-settings_dialog/REQ-57`, `plan-settings_dialog/REQ-60`
+- `plan-dark_blue_theme/REQ-2`
 - `plan-wsl_support/REQ-17`, `plan-wsl_support/REQ-25`, `plan-wsl_support/REQ-26`, `plan-wsl_support/REQ-27`, `plan-wsl_support/REQ-34`, `plan-wsl_support/REQ-36`, `plan-wsl_support/REQ-37`, `plan-wsl_support/REQ-38`
+- `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-47`
+- `plan-dark_blue_theme/REQ-36`

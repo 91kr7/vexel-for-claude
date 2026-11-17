@@ -239,7 +239,17 @@ test.describe('Look choice and look store', () => {
     await expect(windows11).toBeChecked();
     await expect(settingsPopup(page), 'the popup stays open').toBeVisible();
     expect(await page.evaluate((key) => localStorage.getItem(key), LOOK_KEY)).toBe('windows11');
-    await expect.poll(() => topBar(page).evaluate((e) => getComputedStyle(e).backgroundColor), { message: 'the top bar takes the Windows 11 surface' }).toBe('rgb(43, 43, 43)');
+    // TopBar (plan-dark_blue_theme, batch window-frame): the title bar role surface of the Windows 11 look
+    await expect
+      .poll(async () => (await topBar(page).evaluate((e) => getComputedStyle(e).backgroundColor)) === (await page.evaluate(() => {
+        const probe = document.createElement('span');
+        probe.style.color = 'var(--role-chrome)';
+        document.body.append(probe);
+        const colour = getComputedStyle(probe).color;
+        probe.remove();
+        return colour;
+      })), { message: 'the top bar takes the title bar role surface' })
+      .toBe(true);
     await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).fontFamily), { message: 'the page text takes Segoe UI' }).toContain('Segoe UI');
 
     await cardOf(macOS).click();

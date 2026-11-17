@@ -230,10 +230,11 @@ test.describe('the popover figures', () => {
     await usageButton(page).click();
     await expect(popover(page).getByRole('status')).toHaveText('Loading…');
     await expect(popover(page).locator('li')).toHaveCount(0);
-    await page.keyboard.press('Alt+KeyA');
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    await page.keyboard.press('Alt+KeyA');
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    // plan-dark_blue_theme/REQ-34: from Dark the cycle goes Dark Blue, Light, Dark
+    for (const theme of ['dark-blue', 'light', 'dark']) {
+      await page.keyboard.press('Alt+KeyA');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+    }
     release();
     await expect(rows(page)).toHaveCount(2);
     await expect(popover(page).getByText('Loading…')).toHaveCount(0);

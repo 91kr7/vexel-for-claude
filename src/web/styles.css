@@ -55,14 +55,18 @@ p {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: var(--scrollbar-thumb);
   border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 @supports not selector(::-webkit-scrollbar) {
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
 }
 
@@ -112,20 +116,20 @@ input {
 }
 
 .vx-surface-1 {
-  background-color: var(--bg-surface-1);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--role-chrome);
+  border: 1px solid var(--role-border-subtle);
   box-shadow: inset 0 1px 0 0 var(--specular-top);
 }
 
 .vx-surface-2 {
-  background-color: var(--bg-surface-2);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--role-raised);
+  border: 1px solid var(--role-border-subtle);
   box-shadow: inset 0 1px 0 0 var(--specular-top);
 }
 
 .vx-surface-3 {
-  background-color: var(--bg-surface-3);
-  border: 1px solid var(--border-strong);
+  background-color: var(--role-card-active);
+  border: 1px solid var(--role-border-strong);
 }
 
 .vx-glass {
@@ -144,16 +148,17 @@ input {
   font-family: var(--font-mono);
   font-size: 10px;
   padding: 1px 5px;
-  border-radius: 4px;
-  background-color: var(--bg-surface-3);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background-color: var(--role-raised);
+  border: var(--border-pill);
   color: var(--text-muted);
 }
 
 .accent-pill {
-  background-color: var(--accent-glow);
-  color: var(--accent-primary);
-  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-pill);
+  background-color: var(--role-accent-glow);
+  color: var(--role-accent);
+  border: 1px solid var(--role-accent-border);
 }
 
 @keyframes vx-pulse {
@@ -187,7 +192,9 @@ input {
   align-items: center;
   gap: 4px;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
+  background-color: var(--role-raised);
+  border: var(--border-pill);
   font-family: var(--font-mono);
   font-size: 10px;
   line-height: 15px;
@@ -203,27 +210,27 @@ input {
 .button-neutral,
 .button-primary {
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-frame);
   font-size: 12px;
   line-height: 16px;
 }
 
 .button-neutral {
-  background-color: var(--bg-surface-2);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--role-raised);
+  border: var(--border-pill);
   box-shadow: inset 0 1px 0 0 var(--specular-top);
   color: var(--text-primary);
 }
 
 .button-neutral:hover:not(:disabled) {
-  background-color: var(--bg-surface-3);
-  border-color: var(--border-strong);
+  background-color: var(--role-card-active);
+  border-color: var(--role-accent-border);
 }
 
 .button-primary {
   padding: 6px 16px;
   font-weight: 500;
-  background-color: var(--accent-primary);
+  background-color: var(--role-accent);
   color: var(--on-accent);
   box-shadow: var(--shadow);
 }
@@ -249,7 +256,7 @@ input {
 .button-attn,
 .button-interrupt {
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   border: 1px solid;
   font-family: var(--font-mono);
   font-size: 11px;
@@ -423,14 +430,14 @@ input {
 
 .top-bar {
   flex: none;
-  height: 44px;
+  height: 38px;
   padding: 0 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background-color: var(--bg-surface-2);
-  border-bottom: 1px solid var(--border-subtle);
+  background-color: var(--role-chrome);
+  border-bottom: 1px solid var(--role-border-subtle);
   user-select: none;
 }
 
@@ -501,15 +508,15 @@ input {
 }
 
 .logo-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 10px;
+  line-height: 14px;
   font-weight: 500;
   color: var(--on-accent);
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-deep));
@@ -523,7 +530,7 @@ input {
 }
 
 .top-bar-name {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 20px;
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -549,6 +556,11 @@ input {
   transition: color 150ms, background-color 150ms, border-color 150ms;
 }
 
+/* Inside the edge: the 38 px top bar would cut a ring outside the 32 px button. */
+.plan-usage-button:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
 .theme-switch:hover {
   background-color: var(--bg-surface-3);
   border-color: var(--border-strong);
@@ -558,16 +570,18 @@ input {
 .plan-usage-popover {
   -webkit-app-region: no-drag;
   position: fixed;
-  top: 52px;
+  top: 46px;
   right: 14px;
   z-index: 90;
   width: 320px;
   max-width: calc(100vw - 28px);
-  max-height: calc(100vh - 64px);
+  max-height: calc(100vh - 58px);
   overflow-y: auto;
   padding: 12px 14px 14px;
-  border-radius: 12px;
-  box-shadow: var(--shadow-2xl);
+  border-radius: var(--radius-frame);
+  background-color: var(--role-raised);
+  border-color: var(--role-border-strong);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-frame);
   color: var(--text-primary);
 }
 
@@ -617,10 +631,15 @@ input {
 .plan-limits {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.plan-limit {
+  margin: 0 -9px;
+  padding: 4px 8px;
 }
 
 .plan-limit-head {
@@ -636,7 +655,6 @@ input {
 }
 
 .plan-limit-percent {
-  font-family: var(--font-mono);
   font-size: 13px;
   line-height: 20px;
   color: var(--text-secondary);
@@ -693,22 +711,26 @@ input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
   padding: 10px 0;
-  background-color: var(--bg-surface-1);
-  border-right: 1px solid var(--border-subtle);
+  background-color: var(--role-canvas);
+  border-right: 1px solid var(--role-border-subtle);
 }
 
 .vx-rail-fab {
   position: relative;
-  width: 34px;
-  height: 34px;
-  margin-bottom: 4px;
-  border-radius: 8px;
-  color: var(--on-accent);
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-deep));
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-frame);
+  color: var(--role-accent);
+  background-color: color-mix(in srgb, var(--role-accent) 20%, transparent);
+  border: 1px solid var(--role-accent-border);
   box-shadow: var(--shadow-sm);
-  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms;
+}
+
+.vx-rail-fab:hover {
+  background-color: color-mix(in srgb, var(--role-accent) 30%, transparent);
 }
 
 .vx-rail-fab:active {
@@ -720,16 +742,16 @@ input {
 }
 
 .nav-rail-divider {
-  width: 20px;
+  flex: none;
+  width: 24px;
   height: 1px;
-  margin: 2px 0;
-  background-color: var(--border-subtle);
+  background-color: var(--role-border-subtle);
 }
 
 .vx-rail-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-frame);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -750,20 +772,22 @@ input {
   box-shadow: 0 0 14px -2px var(--accent-glow);
 }
 
+/* On the left edge of the rail; offsets start inside the 1 px border. */
 .vx-rail-btn.active::before {
   content: '';
   position: absolute;
-  left: -8px;
-  top: 8px;
-  bottom: 8px;
-  width: 2.5px;
-  border-radius: 0 3px 3px 0;
-  background-color: var(--accent-primary);
+  left: -10px;
+  top: 3px;
+  bottom: 3px;
+  width: 3px;
+  border-radius: 0 9999px 9999px 0;
+  background-color: var(--role-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--role-accent) 80%, transparent);
 }
 
 .vx-rail-btn .icon {
-  width: 17px;
-  height: 17px;
+  width: 16px;
+  height: 16px;
 }
 
 .vx-tooltip {
@@ -818,8 +842,11 @@ input {
   flex-direction: column;
   gap: 10px;
   padding: 10px;
-  background-color: var(--bg-surface-1);
-  border-right: 1px solid var(--border-subtle);
+  --list-scroll-gap: 10px;
+  /* The last 4 px stay free for the resize handle. */
+  --list-scroll-reach: 6px;
+  background-color: var(--role-list);
+  border-right: 1px solid var(--role-border-subtle);
   user-select: none;
 }
 
@@ -879,6 +906,7 @@ input {
 }
 
 .snackbar {
+  anchor-name: --needs-input-snackbar;
   position: fixed;
   right: 20px;
   bottom: 20px;
@@ -888,7 +916,9 @@ input {
   align-items: center;
   gap: 12px;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-frame);
+  border-color: var(--role-border-strong);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-frame);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
@@ -914,20 +944,30 @@ input {
   text-decoration: underline;
 }
 
+.short-message-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--role-accent);
+}
+
 .update-notice {
   position: fixed;
-  top: 56px;
+  top: 50px;
   right: 20px;
   z-index: 50;
   width: 320px;
   max-width: calc(100vw - 40px);
-  /* The window below the 44 px top bar, minus 24 px. */
-  max-height: calc(100vh - 68px);
+  /* The window below the 38 px top bar, minus 24 px. */
+  max-height: calc(100vh - 62px);
   display: flex;
   align-items: flex-start;
   gap: 12px;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-frame);
+  border-color: var(--role-border-strong);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-frame);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
@@ -1029,13 +1069,19 @@ input {
 
 .short-message {
   position: fixed;
-  left: 50%;
+  right: 20px;
   bottom: 20px;
+  /* 8 px above the needs-input snackbar while it shows. */
+  bottom: calc(anchor(--needs-input-snackbar top, 12px) + 8px);
   z-index: 50;
-  transform: translateX(-50%);
   max-width: calc(100vw - 40px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-frame);
+  border-color: var(--role-border-strong);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-frame);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
@@ -1070,9 +1116,24 @@ input {
   background-color: var(--state-solid);
 }
 
-.state-dot.state-working,
+.state-dot.state-working {
+  animation: state-dot-glow 2.2s ease-in-out infinite;
+}
+
 .state-dot.state-needs_input {
   animation: vx-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes state-dot-glow {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--emerald-400) 55%, transparent);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--emerald-400) 0%, transparent);
+  }
 }
 
 .state-badge {
@@ -1151,20 +1212,8 @@ input {
   justify-content: stretch;
   gap: 10px;
   padding: 9px 36px 9px 8px;
-  border: 1px solid transparent;
-  border-radius: 10px;
   text-align: left;
   anchor-name: --project-row;
-  transition: background-color 0.12s ease, border-color 0.12s ease;
-}
-
-.project-row:not(.unavailable):hover {
-  background-color: var(--bg-surface-2);
-  border-color: var(--border-subtle);
-}
-
-.project-row:focus-visible {
-  outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
 .project-row.unavailable {
@@ -1208,7 +1257,6 @@ input {
 .project-row-meta {
   font-size: 11px;
   color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
 }
 
 .project-row-missing {
@@ -1362,7 +1410,7 @@ input {
 .session-list ul {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1390,53 +1438,48 @@ input {
 }
 
 .session-list li.drop-before::before {
-  top: -2px;
+  top: -5px;
 }
 
 .session-list li.drop-after::after {
-  bottom: -2px;
+  bottom: -5px;
 }
 
+/* The left padding keeps the room of the 3.5 px accent bar of the open card. */
 .session-entry {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 2px;
-  padding: 6px 8px;
-  border-radius: 6px;
+  gap: 0;
+  padding: 10px 12px 10px 14.5px;
+  border: 1px solid var(--role-border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
   font-size: 12px;
   line-height: 18px;
   color: var(--text-secondary);
   text-align: left;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.session-entry:hover {
-  background-color: var(--bg-surface-2);
+.session-entry:hover:not([aria-current='true']) {
+  background-color: var(--role-card-active);
+  border-color: var(--role-border-strong);
   color: var(--text-primary);
 }
 
 .session-entry[aria-current='true'] {
-  background-color: var(--accent-glow);
+  background-color: var(--role-card-active);
+  border-color: var(--role-accent);
+  box-shadow: inset 2.5px 0 0 0 var(--role-accent), var(--shadow-card);
   color: var(--text-primary);
-  font-weight: 600;
-  border-left: 2px solid var(--accent-primary);
-  padding-left: 6px;
 }
 
 .session-entry.ended {
   color: var(--text-muted);
 }
 
-.session-entry.external {
-  border: 1px dashed var(--border-strong);
-  padding: 5px 7px;
-}
-
-.session-entry.external[aria-current='true'] {
-  box-shadow: inset 2px 0 0 0 var(--accent-primary);
-}
 
 .session-entry:focus-visible {
   outline-offset: calc(-1 * var(--focus-ring-width));
@@ -1450,7 +1493,27 @@ input {
 }
 
 .session-entry-detail {
+  margin-top: 4px;
   padding-left: 16px;
+}
+
+.session-entry-metrics {
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 7px 0 0 16px;
+}
+
+.session-entry-figures {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.session-entry-context,
+.session-entry-cost,
+.session-entry-time {
+  font-variant-numeric: tabular-nums;
 }
 
 .session-entry-title,
@@ -1463,7 +1526,7 @@ input {
 }
 
 .session-entry-label {
-  font-size: 11px;
+  font-size: 11.5px;
   line-height: 16px;
   font-weight: 400;
   color: var(--text-muted);
@@ -1471,6 +1534,7 @@ input {
 
 .session-entry-tool {
   gap: 4px;
+  margin-top: 2px;
   padding-left: 16px;
   font-family: var(--font-mono);
   font-size: 10px;
@@ -1500,7 +1564,7 @@ input {
   flex: 0 1 auto;
   min-width: 0;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   line-height: 15px;
   color: var(--text-muted);
   white-space: nowrap;
@@ -1513,6 +1577,10 @@ input {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
 }
 
 .session-entry-context {
@@ -1520,7 +1588,7 @@ input {
   font-family: var(--font-mono);
   font-size: 10px;
   line-height: 15px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
@@ -1536,17 +1604,8 @@ input {
   font-family: var(--font-mono);
   font-size: 10px;
   line-height: 15px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
-}
-
-.session-entry-context + .session-entry-time,
-.session-entry-cost + .session-entry-time {
-  margin-left: -2px;
-}
-
-.session-entry-context + .session-entry-cost {
-  margin-left: -4px;
 }
 
 .usage-incomplete {
@@ -1555,10 +1614,9 @@ input {
 }
 
 .session-entry[aria-current='true'] .session-entry-context.usage-normal,
-.session-card.open .session-entry-context.usage-normal,
-.session-entry[aria-current='true'] .session-entry-cost,
-.session-card.open .session-entry-cost {
-  color: var(--text-secondary);
+.session-card.open .session-entry-context.usage-normal {
+  color: var(--role-accent);
+  font-weight: 600;
 }
 
 .session-entry-context.usage-warning,
@@ -1576,22 +1634,18 @@ input {
   color: var(--amber-300);
 }
 
-.session-entry[aria-current='true'] :is(.state-badge, .session-entry-time, .mono-chip) {
-  font-weight: 500;
-}
-
 .session-entry .progress-bar {
-  margin-left: 16px;
+  margin: 6px 0 0 16px;
 }
 
 .ended-entry-actions {
   position: absolute;
-  top: 5px;
-  right: 6px;
+  top: 10px;
+  right: 10px;
   display: flex;
   gap: 2px;
   border-radius: 4px;
-  background-color: var(--bg-surface-2);
+  background-color: var(--role-card-active);
   opacity: 0;
   transition: opacity 0.12s ease;
 }
@@ -1610,7 +1664,7 @@ input {
 }
 
 .ended-entry-action:hover {
-  background-color: var(--bg-surface-3);
+  background-image: linear-gradient(var(--role-border-strong), var(--role-border-strong));
   color: var(--text-primary);
 }
 
@@ -1633,13 +1687,13 @@ input {
 
 .entry-rename {
   position: absolute;
-  top: 5px;
-  right: 6px;
+  top: 10px;
+  right: 10px;
   width: 20px;
   height: 20px;
   border-radius: 4px;
   color: var(--text-muted);
-  background-color: var(--bg-surface-2);
+  background-color: var(--role-card-active);
   opacity: 0;
   transition: opacity 0.12s ease;
 }
@@ -1650,7 +1704,7 @@ input {
 }
 
 .entry-rename:hover {
-  background-color: var(--bg-surface-3);
+  background-image: linear-gradient(var(--role-border-strong), var(--role-border-strong));
   color: var(--text-primary);
 }
 
@@ -1684,7 +1738,7 @@ input {
 }
 
 .session-list li:has(> .entry-rename:not([hidden])) .ended-entry-actions {
-  right: 28px;
+  right: 32px;
 }
 
 .session-list li:has(> .session-card) > .entry-rename {
@@ -1694,6 +1748,9 @@ input {
 
 .session-entry-title {
   max-width: max-content;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .session-card > .session-entry > .session-entry-line:first-child {
@@ -1718,9 +1775,25 @@ input {
   gap: 6px;
 }
 
-.past-session-favorite {
+.past-session-row {
+  position: relative;
+  anchor-scope: --past-session-star;
+}
+
+.past-session-star-slot {
   flex: none;
-  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  margin: -1px 0;
+  anchor-name: --past-session-star;
+}
+
+.past-session-row > .entry-favorite {
+  position-anchor: --past-session-star;
+}
+
+.past-session-row > .entry-favorite-error {
+  padding: 4px 10px 0;
 }
 
 .session-name-editor {
@@ -1778,32 +1851,45 @@ input {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 14px;
-  border-radius: 12px;
+  padding: 10px 12px 10px 14.5px;
+  border-radius: var(--radius-card);
   border-color: var(--amber-500-40);
-  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-lg);
+  background-color: var(--role-card);
+  box-shadow: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.session-card:not(.open):hover {
+  background-color: var(--role-card-active);
+  border-color: var(--amber-400);
 }
 
 .session-card.open {
-  background-image: linear-gradient(var(--accent-glow), var(--accent-glow));
-  box-shadow: inset 2px 0 0 0 var(--accent-primary), inset 0 1px 0 0 var(--specular-top), var(--shadow-lg);
+  background-color: var(--role-card-active);
+  box-shadow: inset 3.5px 0 0 0 var(--role-accent), var(--shadow-card);
 }
 
 .session-card > .session-entry,
+.session-card > .session-entry:hover,
 .session-card > .session-entry[aria-current='true'] {
   padding: 0;
   border: 0;
   border-radius: 0;
   background: none;
-  font-weight: 400;
+  box-shadow: none;
   gap: 4px;
+}
+
+.session-card .session-entry-metrics {
+  margin-top: 2px;
+  padding-left: 0;
 }
 
 .session-card > .session-entry::after {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-card);
 }
 
 .session-card > .session-entry:focus-visible {
@@ -1816,12 +1902,60 @@ input {
 }
 
 .session-card .session-entry-title {
-  font-weight: 500;
   color: var(--text-primary);
 }
 
 .session-card.open .session-entry-label {
   color: var(--text-secondary);
+}
+
+/* Shared list look: the values of the session cards. A dense row is a card only on hover and when active. */
+.list-card,
+.list-row {
+  border: 1px solid var(--role-border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.list-row {
+  border-color: transparent;
+  background-color: transparent;
+}
+
+:is(.list-card, .list-row):hover:not(.list-active, .unavailable) {
+  background-color: var(--role-card-active);
+  border-color: var(--role-border-strong);
+  color: var(--text-primary);
+}
+
+:is(.list-card, .list-row).list-active {
+  background-color: var(--role-card-active);
+  border-color: var(--role-accent);
+  box-shadow: inset 2.5px 0 0 0 var(--role-accent), var(--shadow-card);
+  color: var(--text-primary);
+}
+
+/* Lists clip and scroll: the ring stays inside the edge. */
+:is(.list-card, .list-row):focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+/* Dark Blue: a gap keeps the ring apart from the accent border of an active entry. */
+:root[data-theme='dark-blue'] :is(.session-entry[aria-current='true'], .list-card.list-active, .list-row.list-active):focus-visible,
+:root[data-theme='dark-blue'] .session-card.open > .session-entry:focus-visible::after {
+  outline-offset: calc(-2 * var(--focus-ring-width));
+}
+
+/* The scroll area reaches --list-scroll-reach to the right of its box; a shown scrollbar sits there, --list-scroll-gap (the left gap) from the entries. */
+.list-scroll {
+  margin-right: calc(-1 * var(--list-scroll-reach, 0px));
+  padding-right: var(--list-scroll-gap, 0px);
+}
+
+.list-number {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .perm-tag {
@@ -1884,14 +2018,14 @@ input {
 
 .session-header {
   flex: none;
-  height: 40px;
+  height: 44px;
   padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  background-color: var(--bg-surface-1);
-  border-bottom: 1px solid var(--border-subtle);
+  gap: 12px;
+  background-color: var(--role-chrome);
+  border-bottom: 1px solid var(--role-border-subtle);
 }
 
 .session-header-info {
@@ -1908,16 +2042,20 @@ input {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 13.5px;
+  line-height: 18px;
   font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 .session-header-subtitle {
   position: relative;
   flex: 0 1000 auto;
   min-width: 0;
-  color: var(--text-muted);
+  max-width: 420px;
+  padding: 2px 10px;
+  font-size: 11px;
+  line-height: 16px;
 }
 
 .session-header-subtitle-text {
@@ -1956,22 +2094,28 @@ input {
 
 .session-footer {
   flex: none;
-  height: 40px;
-  padding: 0 16px;
+  height: 32px;
+  padding: 0 14px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  background-color: var(--bg-surface-1);
-  border-top: 1px solid var(--border-subtle);
+  gap: 10px;
+  background-color: var(--role-chrome);
+  border-top: 1px solid var(--role-border-subtle);
+  font-variant-numeric: tabular-nums;
 }
 
 .session-footer-place {
   flex: 0 1 auto;
   min-width: 0;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  border: var(--border-pill);
+  background-color: var(--role-raised);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 11px;
+  font-size: 10.5px;
+  line-height: 15px;
 }
 
 .session-footer-lead {
@@ -1995,7 +2139,40 @@ input {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.session-figures .mono-chip {
+  padding: 2px 10px;
+  font-size: 10.5px;
+}
+
+.session-figure-context {
+  position: relative;
+  overflow: hidden;
+}
+
+.session-figure-context > :not(.session-figure-context-fill) {
+  position: relative;
+}
+
+.session-figure-context-fill {
+  --fill-colour: var(--role-accent);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background-color: color-mix(in srgb, var(--fill-colour) 25%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--fill-colour) 45%, transparent);
+}
+
+.session-figure-context-fill.usage-warning {
+  --fill-colour: var(--amber-400);
+}
+
+.session-figure-context-fill.usage-error {
+  --fill-colour: var(--rose-400);
 }
 
 .session-figure-label {
@@ -2046,18 +2223,20 @@ input {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  margin: 16px;
+  margin: 12px;
   padding: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-frame);
+  border: 1px solid var(--term-frame);
   background-color: var(--term-bg);
   color: var(--term-fg);
+  box-shadow: var(--shadow-frame);
   overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .session-terminal-panel:focus-within {
-  outline: var(--focus-ring-width) solid var(--color-focus-ring);
-  outline-offset: var(--focus-ring-offset);
+  border-color: color-mix(in srgb, var(--role-accent) 75%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--role-accent) 22%, transparent), var(--shadow-frame);
 }
 
 .session-terminal-panel.drop-target {
@@ -2077,19 +2256,26 @@ input {
   display: flex;
 }
 
+.session-view > .session-workspace {
+  overflow: hidden;
+}
+
 .session-workspace > .session-terminal-panel,
 .session-workspace > .conversation-panel {
   min-width: 0;
 }
 
+/* Stacked above the terminal frame, so the frame shadow does not reach it. */
 .git-explorer-panel {
+  position: relative;
+  z-index: 1;
   flex: 0 0 50%;
   min-width: 360px;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-surface-1);
-  border-left: 1px solid var(--border-subtle);
+  background-color: var(--role-list);
+  border-left: 1px solid var(--role-border-subtle);
 }
 
 .git-explorer-header {
@@ -2099,7 +2285,7 @@ input {
   display: flex;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--role-border-subtle);
 }
 
 .git-explorer-repository {
@@ -2131,6 +2317,9 @@ input {
   height: auto;
   min-height: 40px;
   padding: 6px 16px;
+  --list-scroll-gap: 16px;
+  /* Inside the 10 px gap before the refresh button, 2 px apart from it. */
+  --list-scroll-reach: 8px;
   align-items: flex-start;
 }
 
@@ -2146,7 +2335,7 @@ input {
 .git-repository-all {
   height: 24px;
   padding: 0 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
   font-size: 12px;
   line-height: 16px;
   color: var(--text-secondary);
@@ -2170,7 +2359,6 @@ input {
   min-width: 0;
   height: 24px;
   padding: 0 6px;
-  border-radius: 4px;
   justify-content: flex-start;
   gap: 8px;
   font-size: 12px;
@@ -2179,14 +2367,12 @@ input {
   white-space: nowrap;
 }
 
-.git-repository-entry:hover,
 .git-repository-all:hover {
-  background-color: var(--bg-surface-2);
+  background-color: var(--role-card);
 }
 
-.git-repository-entry[aria-pressed='true'],
 .git-repository-all[aria-pressed='true'] {
-  background-color: var(--bg-surface-3);
+  background-color: var(--role-card-active);
   color: var(--text-primary);
 }
 
@@ -2258,7 +2444,7 @@ input {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--role-border-subtle);
 }
 
 .changes-repository + .changes-repository {
@@ -2288,7 +2474,8 @@ input {
 }
 
 .changes-item {
-  padding: 4px 16px;
+  margin: 0 6px;
+  padding: 4px 9px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2297,14 +2484,6 @@ input {
   line-height: 16px;
   cursor: pointer;
   outline: none;
-}
-
-.changes-item[data-hovered] {
-  background-color: var(--bg-surface-2);
-}
-
-.changes-item[data-selected] {
-  background-color: var(--bg-surface-3);
 }
 
 .changes-item[data-focus-visible] {
@@ -2378,7 +2557,7 @@ input {
   display: flex;
   align-items: stretch;
   gap: 4px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--role-border-subtle);
 }
 
 .git-explorer-tab {
@@ -2394,7 +2573,7 @@ input {
 }
 
 .git-explorer-tab.selected {
-  border-bottom-color: var(--accent-primary);
+  border-bottom-color: var(--role-accent);
   color: var(--text-primary);
   font-weight: 600;
 }
@@ -2454,14 +2633,15 @@ input {
 }
 
 .history-graph circle[stroke] {
-  stroke: var(--bg-surface-1);
+  stroke: var(--role-list);
   stroke-width: 1.5;
 }
 
 .history-commit {
-  width: 100%;
+  width: calc(100% - 12px);
   height: 28px;
-  padding: 0 16px 0 calc(var(--history-graph-width) + 16px);
+  margin: 0 6px;
+  padding: 0 9px 0 calc(var(--history-graph-width) + 9px);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2471,13 +2651,8 @@ input {
   white-space: nowrap;
 }
 
-.history-commit:hover {
-  background-color: var(--bg-surface-2);
-}
-
 .history-commit-hash {
   flex: none;
-  font-family: var(--font-mono);
   color: var(--accent-primary);
 }
 
@@ -2499,8 +2674,8 @@ input {
   padding: 0 6px;
   overflow: hidden;
   text-overflow: ellipsis;
-  border: 1px solid var(--accent-border);
-  border-radius: 4px;
+  border: 1px solid var(--role-accent-border);
+  border-radius: var(--radius-pill);
   background-color: var(--accent-selection);
   color: var(--text-primary);
   font-family: var(--font-mono);
@@ -2624,13 +2799,35 @@ input {
 .terminal-zoom {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  padding: 2px 4px;
+  border-radius: var(--radius-pill);
+  border: var(--border-pill);
+  background-color: var(--role-raised);
+}
+
+.terminal-zoom .terminal-zoom-button,
+.terminal-zoom .terminal-zoom-size {
+  height: 16px;
+  border-radius: 4px;
+}
+
+.terminal-zoom .terminal-zoom-button {
+  width: 16px;
+}
+
+.terminal-zoom .terminal-zoom-button .icon {
+  width: 12px;
+  height: 12px;
 }
 
 .terminal-zoom-size {
-  width: 44px;
+  width: auto;
+  min-width: 38px;
+  padding: 0 6px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10.5px;
+  line-height: 15px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2816,21 +3013,23 @@ input {
 
 .message-user .message-text {
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
+  border-color: var(--role-border-strong);
 }
 
 .inline-code {
   padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid var(--border-subtle);
-  background-color: var(--bg-surface-2);
+  border-radius: var(--radius-pill);
+  border: var(--border-pill);
+  background-color: var(--role-raised);
   font-family: var(--font-mono);
   font-size: 12px;
 }
 
 .tool-card {
   margin-left: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
+  background-color: var(--role-chrome);
   overflow: hidden;
 }
 
@@ -2855,7 +3054,7 @@ input {
 }
 
 .tool-card-toggle:hover {
-  background-color: var(--bg-surface-2);
+  background-color: var(--role-card-active);
 }
 
 .tool-card-toggle:focus-visible {
@@ -2865,9 +3064,9 @@ input {
 .tool-card-name {
   flex: none;
   padding: 0 6px;
-  border-radius: 4px;
-  background-color: var(--bg-surface-3);
-  color: var(--accent-primary);
+  border-radius: var(--radius-pill);
+  background-color: var(--role-card-active);
+  color: var(--role-accent);
   font-weight: 500;
 }
 
@@ -2906,8 +3105,8 @@ input {
 .tool-card-output {
   margin: 0;
   padding: 8px 12px;
-  border-top: 1px solid var(--border-subtle);
-  background-color: var(--bg-canvas);
+  border-top: 1px solid var(--role-border-subtle);
+  background-color: var(--role-canvas);
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: var(--term-size);
@@ -2918,7 +3117,7 @@ input {
 
 .tool-card-state {
   padding: 6px 12px;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--role-border-subtle);
   font-size: 11px;
 }
 
@@ -2928,7 +3127,8 @@ input {
   bottom: 20px;
   transform: translateX(-50%);
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-frame);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-frame);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
@@ -2962,9 +3162,9 @@ input {
   width: 100%;
   max-width: 448px;
   max-height: 100%;
-  border-radius: 12px;
-  border-color: var(--border-strong);
-  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-2xl);
+  border-radius: var(--radius-frame);
+  border-color: var(--role-border-strong);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-frame);
   overflow: hidden;
 }
 
@@ -2974,7 +3174,8 @@ input {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--role-border-subtle);
+  background-color: var(--role-raised);
 }
 
 .dialog-dot {
@@ -3019,6 +3220,8 @@ input {
   flex-direction: column;
   gap: 14px;
   padding: 16px;
+  --list-scroll-gap: 16px;
+  --list-scroll-reach: 16px;
   font-size: 12px;
   line-height: 16px;
 }
@@ -3035,6 +3238,65 @@ input {
 .settings-dialog {
   max-width: 760px;
   height: 540px;
+}
+
+.resume-dialog {
+  max-width: 672px;
+  max-height: min(100%, max(70vh, 280px));
+}
+
+.resume-dialog .dialog-scroll {
+  min-height: 56px;
+}
+
+.resume-dialog .past-session-group {
+  gap: 0;
+}
+
+/* Sticky one-line path; RTL puts the ellipsis at the start, so the last folders stay visible. */
+.resume-dialog .dialog-section-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-bottom: 4px;
+  background-color: var(--role-raised);
+  direction: rtl;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+}
+
+.resume-search-bar {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+.resume-search-bar > .search-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.favorites-filter {
+  flex: none;
+  width: 34px;
+  border-radius: var(--radius-frame);
+  border: 1px solid var(--field-border);
+  background-color: var(--field-bg);
+  color: var(--text-muted);
+}
+
+.favorites-filter:hover {
+  background-color: var(--bg-surface-3);
+  color: var(--text-primary);
+}
+
+.favorites-filter[aria-pressed='true'] {
+  border-color: var(--role-accent);
+  background-color: var(--role-card-active);
+  color: var(--amber-400);
 }
 
 .settings-dialog .dialog-body {
@@ -3054,15 +3316,13 @@ input {
   flex-direction: column;
   gap: 2px;
   padding: 12px 8px;
-  border-right: 1px solid var(--border-subtle);
-  background-color: var(--bg-surface-1);
+  border-right: 1px solid var(--role-border-subtle);
+  background-color: var(--role-list);
 }
 
 .settings-menu-item {
-  position: relative;
   height: 32px;
   padding: 0 12px;
-  border-radius: 8px;
   color: var(--text-secondary);
   justify-content: flex-start;
   font-size: 13px;
@@ -3070,26 +3330,8 @@ input {
   text-align: left;
 }
 
-.settings-menu-item:hover {
-  background-color: var(--bg-surface-3);
-  color: var(--text-primary);
-}
-
 .settings-menu-item.selected {
-  background-color: var(--accent-glow);
-  color: var(--accent-primary);
   font-weight: 600;
-}
-
-.settings-menu-item.selected::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 9999px;
-  background-color: var(--accent-primary);
 }
 
 .settings-pane {
@@ -3112,7 +3354,7 @@ input {
   gap: 12px;
   min-height: 52px;
   padding: 10px 24px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--role-border-subtle);
 }
 
 .settings-pane-title {
@@ -3130,6 +3372,13 @@ input {
   flex-direction: column;
   gap: 24px;
   padding: 20px 24px 24px;
+  /* A control scrolled to an edge keeps its whole focus ring in view. */
+  scroll-padding-block: calc(var(--focus-ring-width) + var(--focus-ring-offset));
+}
+
+/* The body touches the clipping frame: its ring stays inside its edge. */
+.settings-pane-body:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
 .settings-group-title {
@@ -3152,7 +3401,8 @@ input {
 
 .settings-cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -3160,21 +3410,21 @@ input {
   position: relative;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border-strong);
-  border-radius: 12px;
-  background-color: var(--bg-surface-1);
+  border: 1px solid var(--role-border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
   overflow: hidden;
   cursor: pointer;
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .settings-card:hover {
-  border-color: var(--accent-border);
+  border-color: var(--role-border-strong);
 }
 
 .settings-card.checked {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 1px var(--accent-primary);
+  border-color: var(--role-accent);
+  box-shadow: 0 0 0 1px var(--role-accent), var(--shadow-card);
 }
 
 .settings-card:has(.settings-card-input:focus-visible) {
@@ -3195,8 +3445,8 @@ input {
   display: flex;
   height: 84px;
   padding: 12px 14px 0;
-  background-color: var(--bg-surface-3);
-  border-bottom: 1px solid var(--border-subtle);
+  background-color: var(--role-card-active);
+  border-bottom: 1px solid var(--role-border-subtle);
 }
 
 .settings-card-footer {
@@ -3265,6 +3515,13 @@ input {
   --preview-surface: var(--preview-dark-surface);
   --preview-line: var(--preview-dark-line);
   --preview-accent: var(--preview-dark-accent);
+}
+
+.theme-preview-dark-blue {
+  --preview-bg: var(--preview-dark-blue-canvas);
+  --preview-surface: var(--preview-dark-blue-surface);
+  --preview-line: var(--preview-dark-blue-line);
+  --preview-accent: var(--preview-dark-blue-accent);
 }
 
 .theme-preview {
@@ -3414,12 +3671,9 @@ input {
   align-items: center;
   column-gap: 16px;
   min-height: 36px;
-  padding: 4px 4px 4px 0;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.shortcuts-row:last-child {
-  border-bottom: none;
+  /* Out by the padding and border, so the text stays aligned with the group title. */
+  margin: 0 -9px;
+  padding: 4px 12px 4px 8px;
 }
 
 .shortcuts-action {
@@ -3449,12 +3703,12 @@ input {
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-pill);
   color: var(--text-secondary);
 }
 
 .shortcuts-row-button:hover:not(:disabled) {
-  background-color: var(--bg-surface-3);
+  background-color: var(--role-card-active);
   color: var(--text-primary);
 }
 
@@ -3483,9 +3737,9 @@ input {
 .updates-card {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border-strong);
-  border-radius: 12px;
-  background-color: var(--bg-surface-1);
+  border: 1px solid var(--role-border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
 }
 
 .updates-card-row {
@@ -3506,7 +3760,7 @@ input {
 .updates-card > .error-message {
   margin: 0;
   padding: 14px 18px;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--role-border-subtle);
 }
 
 .updates-result {
@@ -3527,9 +3781,9 @@ input {
   align-items: flex-start;
   gap: 10px;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   border-color: var(--amber-500-40);
-  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-lg);
+  box-shadow: inset 0 1px 0 0 var(--specular-top), var(--shadow-card);
 }
 
 .dialog-banner .icon {
@@ -3548,8 +3802,8 @@ input {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 16px;
-  border-top: 1px solid var(--border-subtle);
-  background-color: var(--bg-surface-1);
+  border-top: 1px solid var(--role-border-subtle);
+  background-color: var(--role-chrome);
 }
 
 .dialog-warning .dialog-cancel:focus {
@@ -3573,9 +3827,9 @@ input {
   display: block;
   width: 100%;
   padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border-subtle);
-  background-color: var(--bg-canvas);
+  border-radius: var(--radius-frame);
+  border: 1px solid var(--field-border);
+  background-color: var(--field-bg);
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -3584,7 +3838,8 @@ input {
 
 .field-input:focus {
   outline: none;
-  border-color: var(--accent-border);
+  border-color: var(--role-accent);
+  box-shadow: 0 0 0 1px var(--field-focus-ring);
 }
 
 .search-field {
@@ -3668,13 +3923,11 @@ input {
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
-  border-radius: 6px;
   font-size: 12px;
   line-height: 18px;
   color: var(--text-secondary);
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 button.dialog-row {
@@ -3683,22 +3936,16 @@ button.dialog-row {
   text-align: left;
 }
 
-.dialog-row:hover {
-  background-color: var(--bg-surface-3);
-  color: var(--text-primary);
-}
-
-.dialog-row-checked,
-.dialog-row-checked:hover {
-  background-color: var(--accent-glow);
-  color: var(--text-primary);
+.dialog-row-checked {
   font-weight: 600;
-  border-left: 2px solid var(--accent-primary);
-  padding-left: 6px;
 }
 
-.dialog-row:focus-visible {
-  outline-offset: calc(-1 * var(--focus-ring-width));
+.dialog-rows:has(> .list-card, > .past-session-row) {
+  gap: 6px;
+}
+
+.dialog-row.list-card {
+  padding: 6px 10px;
 }
 
 .dialog-row-icon {

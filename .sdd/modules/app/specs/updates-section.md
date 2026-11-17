@@ -15,7 +15,7 @@ Props:
 - `check` → optional, the check to run. Default: checkForUpdates.
 
 Description:
-- the body of the "Updates" menu of the SettingsDialog: one card named "Updates". Its first line has the installed version on the left and the button on the right; after a check, the result shows under them, inside the same card.
+- the body of the "Updates" menu of the SettingsDialog: one card named "Updates" (`--radius-card`, `--role-card`, 1 px `--role-border-subtle` border). Its first line has the installed version on the left and the button on the right; after a check, the result shows under them, inside the same card.
 
 Shows:
 - "Installed version: v<installed>", with the version of useInstalledVersion. Hidden while the version is unknown.
@@ -45,3 +45,4 @@ Actions:
 ## Requirements served
 
 - `plan-settings_dialog/REQ-44`, `plan-settings_dialog/REQ-46`, `plan-settings_dialog/REQ-47`, `plan-settings_dialog/REQ-48`, `plan-settings_dialog/REQ-50`, `plan-settings_dialog/REQ-51`, `plan-settings_dialog/REQ-60`
+- `plan-dark_blue_theme/REQ-3`

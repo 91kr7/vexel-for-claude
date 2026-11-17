@@ -1,4 +1,5 @@
 // e2e of plan-ui_restyle, batch terminal: the terminal panel margin and its focus ring above the footer.
+// plan-dark_blue_theme/REQ-26 and REQ-28 changed the margin to a 12 px gap and the ring to a 1 px box-shadow.
 import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -8,7 +9,7 @@ type Box = { x: number; y: number; width: number; height: number };
 
 // Rounding of fractional layout sizes.
 const TOLERANCE = 1;
-const MARGIN = 16;
+const MARGIN = 12;
 
 let projectsRoot: string;
 const createdIds: string[] = [];
@@ -56,23 +57,29 @@ async function box(locator: Locator): Promise<Box> {
 
 const near = (actual: number, expected: number, what: string) => expect(Math.abs(actual - expected), `${what}: ${actual} vs ${expected}`).toBeLessThanOrEqual(TOLERANCE);
 
-/** How far the drawn focus ring reaches outside the panel's border box; 0 when no ring is drawn. */
+/** How far the drawn focus ring reaches outside the panel's border box: its outline, or its unblurred box-shadow ring; 0 when no ring is drawn. */
 const ringReach = (target: Locator) =>
   target.evaluate((el) => {
     const s = getComputedStyle(el);
-    if (s.outlineStyle === 'none' || parseFloat(s.outlineWidth) <= 0) return 0;
-    return parseFloat(s.outlineWidth) + parseFloat(s.outlineOffset);
+    const outline = s.outlineStyle === 'none' || parseFloat(s.outlineWidth) <= 0 ? 0 : parseFloat(s.outlineWidth) + parseFloat(s.outlineOffset);
+    const layers = s.boxShadow === 'none' ? [] : s.boxShadow.split(/,(?![^(]*\))/).map((layer) => layer.replace(/rgba?\([^)]*\)|color\([^)]*\)/, '').trim());
+    const rings = layers
+      .filter((layer) => !layer.includes('inset'))
+      .map((layer) => layer.split(/\s+/).map(parseFloat))
+      .filter(([x = 0, y = 0, blur = 0]) => x === 0 && y === 0 && blur === 0)
+      .map(([, , , spread = 0]) => spread);
+    return Math.max(outline, 0, ...rings);
   });
 
-// plan-ui_restyle/REQ-34
-test('the terminal panel has a 16 px margin on all four sides', async ({ page, request }) => {
+// plan-ui_restyle/REQ-34, plan-dark_blue_theme/REQ-26
+test('the terminal panel has a 12 px margin on all four sides', async ({ page, request }) => {
   await openSession(page, request, 'margine');
   const term = panel(page);
 
   expect(await term.evaluate((el) => {
     const s = getComputedStyle(el);
     return [s.marginTop, s.marginRight, s.marginBottom, s.marginLeft];
-  })).toEqual(['16px', '16px', '16px', '16px']);
+  })).toEqual(['12px', '12px', '12px', '12px']);
 
   const main = await box(mainArea(page));
   const head = await box(header(page));
@@ -84,7 +91,7 @@ test('the terminal panel has a 16 px margin on all four sides', async ({ page, r
   near(foot.y - (termBox.y + termBox.height), MARGIN, 'space below the panel');
 });
 
-// plan-ui_restyle/REQ-34, plan-ui_restyle/REQ-35 — scenario "The terminal focus ring stays clear of the footer"
+// plan-ui_restyle/REQ-34, plan-ui_restyle/REQ-35, plan-dark_blue_theme/REQ-28 — scenario "The terminal focus ring stays clear of the footer"
 test('with the terminal focused, the focus ring of the panel does not reach the session footer', async ({ page, request }) => {
   await openSession(page, request, 'anello-footer');
   await page.locator('.xterm-screen').click();

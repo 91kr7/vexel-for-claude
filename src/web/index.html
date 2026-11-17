@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="dark" />
     <title>Vexel for Claude</title>
     <script>
       // Marks the saved theme and look before the first paint; ThemeStore and LookStore own the same keys.
       (function () {
-        var theme = 'light';
+        var theme = 'dark-blue';
         try {
           var saved = localStorage.getItem('ai-client.theme');
-          if (saved === 'light' || saved === 'dark') theme = saved;
+          if (saved === 'light' || saved === 'dark' || saved === 'dark-blue') theme = saved;
         } catch (e) {}
         var look = 'vexel';
         try {
@@ -20,7 +20,7 @@
         } catch (e) {}
         document.documentElement.setAttribute('data-theme', theme);
         document.documentElement.setAttribute('data-look', look);
-        document.querySelector('meta[name="color-scheme"]').setAttribute('content', theme);
+        document.querySelector('meta[name="color-scheme"]').setAttribute('content', theme === 'light' ? 'light' : 'dark');
       })();
     </script>
   </head>

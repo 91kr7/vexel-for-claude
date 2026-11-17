@@ -1,4 +1,4 @@
-// e2e of plan-ui_restyle, batch top-bar: the 44 px top bar with no "New Session", and the two ways left to start a session.
+// e2e of plan-ui_restyle, batch top-bar: the top bar (38 px since plan-dark_blue_theme) with no "New Session", and the two ways left to start a session.
 import { type Page, expect, test } from '@playwright/test';
 
 const LOOK_KEY = 'ai-client.look';
@@ -18,13 +18,13 @@ async function loadPage(page: Page, look: 'vexel' | 'windows11' = 'vexel'): Prom
 }
 
 for (const look of ['vexel', 'windows11'] as const) {
-  // plan-ui_restyle/REQ-1
-  test(`${look} look: the top bar is 44 px high`, async ({ page }) => {
+  // plan-ui_restyle/REQ-1, plan-dark_blue_theme/REQ-6
+  test(`${look} look: the top bar is 38 px high`, async ({ page }) => {
     await loadPage(page, look);
     const bar = (await topBar(page).boundingBox())!;
-    expect(bar.height).toBeCloseTo(44, 0);
+    expect(bar.height).toBeCloseTo(38, 0);
     const railBox = (await rail(page).boundingBox())!;
-    expect(railBox.y, 'the rail starts right under the bar').toBeCloseTo(bar.y + 44, 0);
+    expect(railBox.y, 'the rail starts right under the bar').toBeCloseTo(bar.y + 38, 0);
   });
 
   // plan-ui_restyle/REQ-2

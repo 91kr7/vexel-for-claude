@@ -7,14 +7,14 @@ import { E2E_CLAUDE_DIR } from './e2e/claude-dir';
 const port = Number(process.env.E2E_PORT ?? 3100);
 const baseURL = `http://127.0.0.1:${port}`;
 // These specs share the server's fixture Claude Code folder, so they must never run at the same time.
-const claudeDirSpecs = /(resume-session|dismiss-resume|ended-external-sessions|history-search|external-sessions|session-entries|open-session-external|dialogs|desktop-bridge-external|running-tool|rename|context-occupancy|tokens-consumed|estimated-cost|header-footer|navigation-shortcuts-external|session-action-shortcuts-resume|git-explorer|favorite-session|project-list|project-session-start|favorite-project|remove-project|project-search|project-row)\.spec\.ts$/;
+const claudeDirSpecs = /(resume-session|dismiss-resume|ended-external-sessions|history-search|external-sessions|session-entries|open-session-external|dialogs|desktop-bridge-external|running-tool|rename|context-occupancy|tokens-consumed|estimated-cost|header-footer|navigation-shortcuts-external|session-action-shortcuts-resume|git-explorer|favorite-session|project-list|project-session-start|favorite-project|remove-project|project-search|project-row|shared-shapes|window-frame|session-cards|list-cards|list-polish|popup-size|popup-mark|favorites-filter|project-path)\.spec\.ts$/;
 // Specs that launch Electron open windows on the user's display: only `npm run test:e2e:desktop` runs them (E2E_DESKTOP=1).
 const electronSpecs = /desktop-(window|notifications|tray|links|font-zoom|file-drop|list-width|reconnection|shortcuts|git-explorer-window)\.spec\.ts$/;
 const electron = process.env.E2E_DESKTOP === '1';
 // No e2e server asks GitHub for releases: port 9 refuses, unless a spec points this at a fake source.
 const releaseSource = (process.env.AI_CLIENT_RELEASE_SOURCE_URL ??= 'http://127.0.0.1:9/releases/latest');
 // The specs of earlier plans were written for a client that started dark: the browser runs as a user who chose dark.
-// e2e/remembered-theme.spec.ts clears this choice to test the light default.
+// e2e/remembered-theme.spec.ts and e2e/dark-blue-theme.spec.ts clear this choice to test the first-start theme.
 const darkChoice = { cookies: [], origins: [{ origin: baseURL, localStorage: [{ name: 'ai-client.theme', value: 'dark' }] }] };
 
 export default defineConfig({

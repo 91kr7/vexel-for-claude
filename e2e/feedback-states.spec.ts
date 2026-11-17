@@ -176,9 +176,9 @@ async function expectFocusMarked(page: Page, what: string): Promise<void> {
   await expect.poll(() => hasFocusRing(page), { message: `${what} shows the focus ring` }).toBe(true);
 }
 
-/** The path field marks the focus with the accent border (plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-46). */
+/** The path field marks the focus with the accent border (plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-46; WebEntry `.field-input`: `--role-accent`). */
 async function expectFieldOutlined(page: Page): Promise<void> {
-  const accent = await resolved(page, await token(page, '--accent-border'));
+  const accent = await resolved(page, await token(page, '--role-accent'));
   await expect
     .poll(async () => resolved(page, await pathField(page).evaluate((el) => getComputedStyle(el).borderTopColor)), {
       message: 'the focused path field has the accent border',
@@ -437,16 +437,26 @@ test.describe('open session', () => {
 
     await page.keyboard.press('Control+Shift+L');
     await expect.poll(() => terminalHasFocus(page)).toBe(false);
-    const ringOnTerminal = await page.locator('.xterm-helper-textarea').evaluate((textarea) => {
-      const marks: string[] = [];
-      for (let node: Element | null = textarea; node && node.tagName !== 'MAIN'; node = node.parentElement) {
-        const style = getComputedStyle(node);
-        if (style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0) marks.push(style.outlineColor);
-        if (style.boxShadow !== 'none') marks.push(style.boxShadow);
-      }
-      return marks;
-    });
-    expect(ringOnTerminal, 'no focus mark around the terminal once it lost the focus').toEqual([]);
+    // SessionView: the frame keeps its black --shadow-frame; only a coloured outline or shadow layer is a focus mark.
+    const ringOnTerminal = () =>
+      page.locator('.xterm-helper-textarea').evaluate((textarea) => {
+        const context = new OffscreenCanvas(1, 1).getContext('2d', { willReadFrequently: true })!;
+        const coloured = (c: string) => {
+          context.clearRect(0, 0, 1, 1);
+          context.fillStyle = c;
+          context.fillRect(0, 0, 1, 1);
+          const [r, g, b, a] = context.getImageData(0, 0, 1, 1).data;
+          return a! > 0 && !(r === 0 && g === 0 && b === 0);
+        };
+        const marks: string[] = [];
+        for (let node: Element | null = textarea; node && node.tagName !== 'MAIN'; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          if (style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0) marks.push(style.outlineColor);
+          marks.push(...(style.boxShadow.match(/(?:rgba?|oklch|oklab|color)\([^)]*\)/g) ?? []).filter(coloured));
+        }
+        return marks;
+      });
+    await expect.poll(ringOnTerminal, { message: 'no focus mark around the terminal once it lost the focus' }).toEqual([]);
   });
 });
 
