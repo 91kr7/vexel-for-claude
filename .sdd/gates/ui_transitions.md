@@ -44,3 +44,5 @@
 | 2026-11-17 | dev cascading-lists | divergence developer | decided | ListPresence instead of ExitPresence for removed list entries; ExitPresence handles one conditional element |
 | 2026-11-17 | dev cascading-lists | G4 development | sent back | Drop slot counts a leaving entry; drag-reorder behaviour must not change |
 | 2026-11-17 | dev cascading-lists | G4 development | pass | Round 2 |
+| 2026-11-17 | dev cascading-lists | G5 tests | sent back | D1 REQ-16: no cascade at app start, presence result empty on the ready render |
+| 2026-11-17 | dev cascading-lists | G5 tests | decided | R1 session-list.spec xterm locator strict mode from session-switch cross-fade; test to be scoped by tester |
