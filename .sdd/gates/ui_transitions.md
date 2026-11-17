@@ -52,3 +52,5 @@
 | 2026-11-17 | dev cascading-lists | G5 tests | sent back | D2: drag during cascade not dimmed, cascade animation overrides .dragging; R1 fixed |
 | 2026-11-17 | dev cascading-lists | G4 development | pass | Round 4, D2: dragged entry plays no effect, layout change ends the cascade |
 | 2026-11-17 | dev cascading-lists | G5 tests | sent back | D3: removed entry during cascade does not end it, layout key counts leaving entries |
+| 2026-11-17 | dev cascading-lists | G4 development | pass | Round 5, D3 |
+| 2026-11-17 | dev cascading-lists | G5 tests | pass | Confirmed by gatekeeper rerun of the tester's batch tests |
