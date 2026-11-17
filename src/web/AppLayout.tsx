@@ -168,7 +168,7 @@ export function AppLayout() {
         planUsageOpen={showingPlanUsage}
         onTogglePlanUsage={() => setShowingPlanUsage((showing) => !showing)}
       />
-      {showingPlanUsage && <PlanUsagePopover state={planUsage} onClose={() => setShowingPlanUsage(false)} />}
+      <ExitPresence>{showingPlanUsage && <PlanUsagePopover state={planUsage} onClose={() => setShowingPlanUsage(false)} />}</ExitPresence>
       <div className="app-body">
         <NavigationRail
           needsInputCount={countNeedsInput(sessions)}
@@ -225,9 +225,11 @@ export function AppLayout() {
           )}
         </main>
       </div>
-      {snackbar}
-      {newerVersion && !updateNoticeClosed && <NewerVersionNotice version={newerVersion} onClose={() => setUpdateNoticeClosed(true)} />}
-      <ShortMessageToast text={shortMessage.text} />
+      <ExitPresence>{snackbar}</ExitPresence>
+      <ExitPresence>
+        {newerVersion && !updateNoticeClosed && <NewerVersionNotice version={newerVersion} onClose={() => setUpdateNoticeClosed(true)} />}
+      </ExitPresence>
+      <ExitPresence>{shortMessage.text !== null && <ShortMessageToast text={shortMessage.text} />}</ExitPresence>
       <ExitPresence>
         {choosingFolder && (
           <FolderChooser

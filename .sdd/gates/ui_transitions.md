@@ -18,3 +18,5 @@
 | 2026-11-17 | plan | G3 coverage | pass | Wording "eight effects" in batches.md sent for fix with the validation |
 | 2026-11-17 | dev modal-dialogs | G4 development | pass | |
 | 2026-11-17 | dev modal-dialogs | G5 tests | pass | Intermittent session-action-shortcuts-resume:165 noted, recheck in final full run |
+| 2026-11-17 | dev popovers | divergence developer | decided | Own buttons inert while leaving, same contract as leaving Dialog; no REQ changed |
+| 2026-11-17 | dev popovers | G4 development | pass | |

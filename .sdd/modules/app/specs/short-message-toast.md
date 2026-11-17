@@ -25,11 +25,21 @@ Shows:
 - at the level of the needs-input snackbar: above the page, below the dialogs and their backdrop.
 - it does not take the pointer.
 
+Motion (MotionTokens):
+- on open → it slides up a few pixels from below while it fades in.
+- leaving (`useLeaving()` of ExitPresence is `true`) → the reverse: it slides down while it fades out. The leaving toast:
+  - shows the text it had;
+  - is hidden from assistive technologies (`aria-hidden`).
+- reduced motion → no slide and no fade: it appears and goes at once.
+- a new text while it shows → the text is replaced, with no new enter effect.
+
 ## Dependencies
 
 - WebEntry, ThemeTokens, NeedsInputSnackbar (its place)
+- MotionTokens, ExitPresence (`useLeaving`)
 
 ## Requirements served
 
 - `plan-keyboard_shortcuts/REQ-9`
 - `plan-dark_blue_theme/REQ-15`
+- `plan-ui_transitions/REQ-3`, `plan-ui_transitions/REQ-4`, `plan-ui_transitions/REQ-28`

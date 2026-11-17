@@ -3212,6 +3212,35 @@ input {
   }
 }
 
+.plan-usage-popover,
+.snackbar,
+.short-message,
+.update-notice {
+  animation: vx-rise-in var(--motion-duration-enter) var(--motion-ease-enter) both;
+}
+
+.plan-usage-popover.is-leaving,
+.snackbar.is-leaving,
+.short-message.is-leaving,
+.update-notice.is-leaving {
+  pointer-events: none;
+  animation: vx-rise-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+@keyframes vx-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes vx-rise-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 .modal {
   -webkit-app-region: no-drag;
   display: flex;

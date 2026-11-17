@@ -85,11 +85,13 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - the first frame already shows the stored width: no jump at start or after a reload.
 - from 1280 px to 3840 px of window width → no horizontal scroll and no overlapping elements, except the snackbar and the NewerVersionNotice, which may cover part of the main area.
 - the list panel has no brand, no "New Session", no "Resume Session" and no settings button.
+- the PlanUsagePopover, the snackbar, the NewerVersionNotice and the toast are mounted through ExitPresence: when one closes, it plays its exit effect before it goes. Opening it again during the exit shows a new one at once.
 
 ## Dependencies
 
 - TopBar, SettingsDialog, PlanUsagePopover, PlanUsageStore, NewerVersionNotice, useNewerVersion, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, useDesktopBridge, ListWidthStore, ListPanelEdge
 - useShortcutKeys, ShortcutMap, ShortcutChannel, ShortMessageToast, ThemeStore
+- ExitPresence
 - FolderChooser, ProjectList, ProjectListStore, SessionNameDialog (module folders)
 - ResumeDialog (module history)
 - SessionView, SessionList, NeedsInputCounter, LiveSessionStore, SessionOrderStore, sessionToOpen (module sessions)
@@ -108,6 +110,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-usage_limits/REQ-3`, `plan-usage_limits/REQ-4`
 - `plan-keyboard_shortcuts/REQ-1`, `plan-keyboard_shortcuts/REQ-3`, `plan-keyboard_shortcuts/REQ-4`, `plan-keyboard_shortcuts/REQ-5`, `plan-keyboard_shortcuts/REQ-6`, `plan-keyboard_shortcuts/REQ-7`, `plan-keyboard_shortcuts/REQ-8`, `plan-keyboard_shortcuts/REQ-9`, `plan-keyboard_shortcuts/REQ-10`, `plan-keyboard_shortcuts/REQ-11`, `plan-keyboard_shortcuts/REQ-12`, `plan-keyboard_shortcuts/REQ-13`, `plan-keyboard_shortcuts/REQ-21`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-31`, `plan-keyboard_shortcuts/REQ-43`
 - `plan-git_explorer/REQ-25`
+- `plan-ui_transitions/REQ-4`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-28`
 - `plan-recent_projects/REQ-2`, `plan-recent_projects/REQ-8`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-14`, `plan-recent_projects/REQ-17`, `plan-recent_projects/REQ-21`
 - `plan-project_list_actions/REQ-7`
 - `plan-update_check/REQ-4`, `plan-update_check/REQ-7`, `plan-update_check/REQ-8`, `plan-update_check/REQ-10`

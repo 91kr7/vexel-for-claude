@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLeaving } from './motion/ExitPresence';
 import type { LoadStatus, SessionState, SessionSummary } from './sessions/live-session-store';
 
 export function nextSnackbarSession(
@@ -51,12 +52,13 @@ interface NeedsInputSnackbarProps {
 }
 
 export function NeedsInputSnackbar({ session, onOpen }: NeedsInputSnackbarProps) {
+  const leaving = useLeaving();
   return (
-    <div className="snackbar vx-glass" role="status">
+    <div className={leaving ? 'snackbar vx-glass is-leaving' : 'snackbar vx-glass'} role="status" aria-hidden={leaving || undefined}>
       <span className="snackbar-text">
         <b>{projectName(session.folder)}</b> needs your input
       </span>
-      <button type="button" className="snackbar-action" onClick={() => onOpen(session.id)}>
+      <button type="button" className="snackbar-action" onClick={leaving ? undefined : () => onOpen(session.id)}>
         Open
       </button>
     </div>

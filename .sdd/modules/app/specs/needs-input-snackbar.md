@@ -39,6 +39,15 @@ Shows:
 Actions:
 - "Open" → `onOpen(session.id)`.
 
+Motion (MotionTokens):
+- on open → it slides up a few pixels from below while it fades in. "Open" works from the first frame of the effect.
+- leaving (`useLeaving()` of ExitPresence is `true`) → the reverse: it slides down while it fades out. The leaving snackbar:
+  - takes no pointer input: clicks reach the page below;
+  - "Open" does nothing;
+  - is hidden from assistive technologies (`aria-hidden`).
+- reduced motion → no slide and no fade: it appears and goes at once.
+- the shown session changes while it shows → the text changes, with no new enter effect.
+
 ## Rules and invariants
 
 - One snackbar at a time. A newer session that starts to need input replaces the one shown.
@@ -49,6 +58,7 @@ Actions:
 
 - LiveSessionStore (module sessions): `SessionSummary`, `LoadStatus`
 - WebEntry (`.vx-glass`)
+- MotionTokens, ExitPresence (`useLeaving`)
 
 ## Requirements served
 
@@ -57,3 +67,4 @@ Actions:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-41`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-42`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`
 - `plan-dark_blue_theme/REQ-3`
+- `plan-ui_transitions/REQ-3`, `plan-ui_transitions/REQ-4`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-28`
