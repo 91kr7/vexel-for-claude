@@ -3295,6 +3295,27 @@ input {
   }
 }
 
+/* List cascade: each item waits its own delay before it enters. */
+.cascade-item {
+  animation: vx-rise-in var(--motion-duration-enter) var(--motion-ease-enter) var(--cascade-delay, 0ms) both;
+}
+
+.session-list li.is-entering {
+  animation: vx-slide-in var(--motion-duration-enter) var(--motion-ease-enter) both;
+}
+
+.session-list li.is-leaving {
+  pointer-events: none;
+  animation: vx-fade-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+@keyframes vx-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
 .modal {
   -webkit-app-region: no-drag;
   display: flex;

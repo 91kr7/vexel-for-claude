@@ -8,7 +8,7 @@ export function useLeaving(): boolean {
 }
 
 // A motion token in ms: 0 with reduced motion, and unset where no style sheet is loaded.
-export function motionDurationMs(token: '--motion-duration-enter' | '--motion-duration-exit'): number {
+export function motionDurationMs(token: '--motion-duration-enter' | '--motion-duration-exit' | '--motion-cascade-max'): number {
   if (typeof document === 'undefined') return 0;
   const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
   const amount = Number.parseFloat(value);

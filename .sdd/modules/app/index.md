@@ -31,6 +31,8 @@
 | Dialog | UI component | `src/web/dialogs/Dialog.tsx` | Shared modal frame of the mock: header with "[Esc]", body, footer with "Cancel" and an optional primary action ("Close" alone without it), Enter, Esc, focus trap; zoom and fade on open and while leaving | `specs/dialog.md` |
 | WarningDialog | UI component | `src/web/dialogs/WarningDialog.tsx` | Dialog for a risky action: rose or amber primary action, amber banner, focus on "Cancel" | `specs/warning-dialog.md` |
 | ExitPresence | UI component | `src/web/motion/ExitPresence.tsx` | Keeps a closed element mounted while its exit effect plays (`useLeaving`), then removes it; a new open cancels the exit; no exit with reduced motion; gives the motion durations in ms (`motionDurationMs`) | `specs/exit-presence.md` |
+| ListCascade | frontend hook | `src/web/motion/list-cascade.ts`, `src/web/styles.css` | Cascade rule: enter delay per item position (`cascadeDelaysMs`) and `useListCascade`, once per appearance of a list, ending within `--motion-cascade-max` | `specs/list-cascade.md` |
+| ListPresence | frontend hook | `src/web/motion/list-presence.ts` | `useListPresence`: the items of a list with their phase; new items enter, removed items stay while they leave | `specs/list-presence.md` |
 | AreaState | UI component | `src/web/feedback/AreaState.tsx` | Empty, loading or error block that fills an area, in full or compact size | `specs/area-state.md` |
 | ProgressIndicator | UI component | `src/web/feedback/ProgressIndicator.tsx` | Rotating indicator with a label for a loading area, and the Spinner of a busy button | `specs/progress-indicator.md` |
 | ErrorMessage | UI component | `src/web/feedback/ErrorMessage.tsx` | Icon and text in rose, announced as an alert | `specs/error-message.md` |

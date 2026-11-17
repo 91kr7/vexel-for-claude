@@ -41,3 +41,6 @@
 | 2026-11-17 | dev theme-change | divergence developer | decided | A pointer press ends the dissolve early and is forwarded to the real target; allowed by REQ-28 |
 | 2026-11-17 | dev theme-change | G4 development | pass | Round 2 |
 | 2026-11-17 | dev theme-change | G5 tests | pass | Round 2 |
+| 2026-11-17 | dev cascading-lists | divergence developer | decided | ListPresence instead of ExitPresence for removed list entries; ExitPresence handles one conditional element |
+| 2026-11-17 | dev cascading-lists | G4 development | sent back | Drop slot counts a leaving entry; drag-reorder behaviour must not change |
+| 2026-11-17 | dev cascading-lists | G4 development | pass | Round 2 |

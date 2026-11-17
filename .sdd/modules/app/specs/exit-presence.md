@@ -11,7 +11,7 @@ type: UI component
 ## Contract
 
 - `<ExitPresence>{open && <X />}</ExitPresence>` → the owner mounts an element through it, with a condition.
-- `motionDurationMs(token)` → the value of `--motion-duration-enter` or `--motion-duration-exit` in ms; 0 with reduced motion or with no style sheet.
+- `motionDurationMs(token)` → the value of `--motion-duration-enter`, `--motion-duration-exit` or `--motion-cascade-max` in ms; 0 with reduced motion or with no style sheet.
 - `useLeaving()` → `true` inside an element that is closed and plays its exit effect; `false` while it is open and outside any ExitPresence.
 
 Behaviour:
