@@ -54,6 +54,9 @@ Removed by human decision (2026-11-17): the app has no collapse or expand of the
 | REQ-11 | After the selection, the main area shows only the content of the selected session; the content of two sessions never stays mixed. |
 | REQ-12 | The terminals of both sessions keep their content, scroll position and typed input across the cross-fade. |
 | REQ-13 | When the cross-fade ends, the terminal of the selected session shows the correct layout for its size. |
+| REQ-33 | Keys typed in a session while its connection is still opening reach that session, in order, once the connection is open. |
+
+REQ-33 is an amendment by human decision (2026-11-17), from spec functional requirement 8. It is the only behaviour change of the plan. It sits in this feature because the user meets it right after a session switch.
 
 ## Feature: Theme change
 
@@ -110,4 +113,4 @@ These are not REQs. They apply to every REQ above.
 
 - The UI offers no new option to turn the effects off or to choose their speed (human decision).
 - The effects stay smooth on every supported platform, WSL included. A change made for WSL never breaks the app on Ubuntu.
-- Out of scope: any width animation of the session list panel (human decision); effects on surfaces not named above (hover effects, title bar), changes to the existing effects, any change to the behaviour of the app other than how its changes are animated.
+- Out of scope: any width animation of the session list panel (human decision); effects on surfaces not named above (hover effects, title bar), changes to the existing effects, any change to the behaviour of the app other than how its changes are animated, except REQ-33.
