@@ -24,7 +24,7 @@ Props:
 Shows:
 - the SessionHeader with `session`: folder name, the label or name as its line, the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The actions are GitExplorerButton, then ResumeHereButton, with `ended` when `session.state` is `ended`.
 - the GitExplorerPanel, while open, at the right of the content, in the same row. The content takes the width it leaves.
-- GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known, and one more at each opening of the panel and each refresh). A click opens the panel; a second click closes it. The panel is closed when the view opens.
+- GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known, and one more at each opening of the panel and each refresh). A click opens the panel; a second click closes it. The panel is closed when the view opens. The panel is mounted through ExitPresence: it slides in on open and out on close, and the content resizes with it.
 - the GitExplorerPanel gets the session list of the `sessions` prop. Each opening of the panel, and each refresh the panel asks for (`onRefresh`), reads the repository again. While a lookup of a refresh is in flight, the button and the panel stay as they are.
 - the SessionFooter with `session` and the lead text "Open in Another Terminal · ": the lead, the path, then the figures. No end items.
 - before the first frame of ConversationStreamRoute → an AreaState `loading` "Loading…".
@@ -98,6 +98,7 @@ Scrolling:
 - ConversationStreamRoute, ItemContentRoute, ResumeHereButton
 - SessionHeader, SessionFooter (module sessions)
 - useRepositoryLookup, GitExplorerButton, GitExplorerPanel (module git)
+- ExitPresence (module app)
 - AreaState, IconSet, ProgressIndicator, ErrorMessage, ThemeTokens, WebEntry (module app)
 
 ## Requirements served
@@ -111,3 +112,4 @@ Scrolling:
 - `plan-git_explorer/REQ-1`, `plan-git_explorer/REQ-3`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-25`
 - `plan-wsl_support/REQ-11`, `plan-wsl_support/REQ-13`
 - `plan-dark_blue_theme/REQ-3`
+- `plan-ui_transitions/REQ-6`

@@ -21,3 +21,6 @@
 | 2026-11-17 | dev popovers | divergence developer | decided | Own buttons inert while leaving, same contract as leaving Dialog; no REQ changed |
 | 2026-11-17 | dev popovers | G4 development | pass | |
 | 2026-11-17 | dev popovers | G5 tests | pass | |
+| 2026-11-17 | dev git-explorer-panel | divergence developer | decided | Close during open slide starts from open position, as dialogs; final state per REQ-28 |
+| 2026-11-17 | dev git-explorer-panel | divergence developer | decided | Reopen during close mounts a fresh panel; today close already unmounts, no behaviour change |
+| 2026-11-17 | dev git-explorer-panel | G4 development | pass | overflow hidden on conversation workspace explained by INT slide |

@@ -9,6 +9,7 @@ import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
 import { GitExplorerButton } from '../git/GitExplorerButton';
 import { GitExplorerPanel } from '../git/GitExplorerPanel';
+import { ExitPresence } from '../motion/ExitPresence';
 import { useRepositoryLookup } from '../git/repository-lookup-store';
 import { CirclePauseIcon, SearchIcon } from '../icons/Icons';
 import { folderNameOf } from './Avatar';
@@ -273,8 +274,20 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
     });
     const inputSubscription = terminal.onData((data) => send({ type: 'input', data }));
     const resizeSubscription = terminal.onResize(sendSize);
-    const resizeObserver = new ResizeObserver(() => fitAddon.fit());
+    // While the Git Explorer slides, the terminal fits once at the end, not at each frame.
+    const workspace = container.closest('.session-workspace');
+    const panelSliding = () =>
+      workspace
+        ?.querySelector('.git-explorer-panel')
+        ?.getAnimations?.()
+        .some((animation) => animation.playState === 'running') ?? false;
+    const fitUnlessSliding = () => {
+      if (!panelSliding()) fitAddon.fit();
+    };
+    const resizeObserver = new ResizeObserver(fitUnlessSliding);
     resizeObserver.observe(container);
+    workspace?.addEventListener('animationend', fitUnlessSliding, { signal });
+    workspace?.addEventListener('animationcancel', fitUnlessSliding, { signal });
     const unsubscribeFontSize = fontSizeStore.subscribe(() => {
       terminal.options.fontSize = fontSizeStore.getSnapshot();
       fitAddon.fit();
@@ -434,7 +447,9 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
             </div>
           )}
         </div>
-        {gitShown && <GitExplorerPanel lookup={repository} folder={session?.folder} onRefresh={refreshGit} sessions={sessions} />}
+        <ExitPresence>
+          {gitShown && <GitExplorerPanel lookup={repository} folder={session?.folder} onRefresh={refreshGit} sessions={sessions} />}
+        </ExitPresence>
       </div>
       {linkTooltip && (
         <div className="terminal-link-tooltip" role="tooltip" style={{ left: linkTooltip.left, top: linkTooltip.top }}>

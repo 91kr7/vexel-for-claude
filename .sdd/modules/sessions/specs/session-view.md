@@ -83,10 +83,11 @@ Actions:
   - desktop app, session `ended` → nothing is inserted and nothing goes to the pty.
   - browser client → nothing is inserted and nothing goes to the pty; the message above shows.
 - a drag that carries no files (e.g. text) → the panel does not change it: no drop state, no message.
-- GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known, and one more at each opening of the panel and each refresh). A click opens the GitExplorerPanel; a second click closes it. The panel is closed when the view opens.
+- GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known, and one more at each opening of the panel and each refresh). A click opens the GitExplorerPanel; a second click closes it. The panel is closed when the view opens, so no slide plays then. The panel is mounted through ExitPresence: it slides in on open and out on close. A click during a slide reverses it, and the panel ends in the state of the last click.
 - the GitExplorerPanel gets the session list of the `sessions` prop. Each opening of the panel, and each refresh the panel asks for (`onRefresh`), reads the repository again. While a lookup of a refresh is in flight, the button and the panel stay as they are.
 - "Interrupt" → sends Esc (`\x1b`) as `input`, then gives focus back to the terminal.
 - the panel changes size → the terminal fits it and sends the new `resize`. It also sends a `resize` as soon as it connects.
+- while the GitExplorerPanel slides → the terminal does not fit at each frame. It fits the new size and sends one `resize` when the slide ends. It keeps its text.
 
 ## Rules and invariants
 
@@ -107,6 +108,7 @@ Actions:
 - `@xterm/addon-search`
 - SessionHeader, SessionFooter, StopSessionButton, Avatar (`folderNameOf`)
 - useRepositoryLookup, GitExplorerButton, GitExplorerPanel (module git)
+- ExitPresence (module app)
 - ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, ThemeStore, WebEntry, BundledFont (module app)
 
 ## Requirements served
@@ -123,4 +125,5 @@ Actions:
 - `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-19`, `plan-session_list_width/REQ-20`, `plan-session_list_width/REQ-28`, `plan-session_list_width/REQ-29`, `plan-session_list_width/REQ-30`, `plan-session_list_width/REQ-31`, `plan-session_list_width/REQ-32`, `plan-session_list_width/REQ-33`, `plan-session_list_width/REQ-36`
 - `plan-ui_restyle/REQ-34`, `plan-ui_restyle/REQ-35`
 - `plan-dark_blue_theme/REQ-31`, `plan-dark_blue_theme/REQ-38`
+- `plan-ui_transitions/REQ-6`, `plan-ui_transitions/REQ-28`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-26`, `plan-dark_blue_theme/REQ-27`, `plan-dark_blue_theme/REQ-28`, `plan-dark_blue_theme/REQ-29`

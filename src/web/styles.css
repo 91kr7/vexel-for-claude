@@ -2257,7 +2257,8 @@ input {
   display: flex;
 }
 
-.session-view > .session-workspace {
+.session-view > .session-workspace,
+.conversation-view > .session-workspace {
   overflow: hidden;
 }
 
@@ -3225,6 +3226,28 @@ input {
 .update-notice.is-leaving {
   pointer-events: none;
   animation: vx-rise-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+/* The panel slides from the right edge; its negative margin gives its width back to the content, which resizes with it. */
+.git-explorer-panel {
+  animation: vx-panel-in var(--motion-duration-enter) var(--motion-ease-enter) both;
+}
+
+.git-explorer-panel.is-leaving {
+  pointer-events: none;
+  animation: vx-panel-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+@keyframes vx-panel-in {
+  from {
+    margin-right: min(-360px, -50%);
+  }
+}
+
+@keyframes vx-panel-out {
+  to {
+    margin-right: min(-360px, -50%);
+  }
 }
 
 @keyframes vx-rise-in {

@@ -45,6 +45,11 @@ Actions:
 - a toggle of the filter in the RepositoryList, or "All repositories" → both tabs show the new shown repositories; a repository shown again is read again.
 - a session of `sessions` ends a turn in a folder at or under a covered root, or above one (useTurnEndSignal on every covered root) → the same refresh, with no click.
 
+Motion (MotionTokens):
+- on open → it slides in from the right edge of the session content, which shrinks with it. Its controls take clicks and keys from the first frame of the slide.
+- leaving (`useLeaving()` of ExitPresence is `true`) → it slides out to the right edge, and the session content grows with it. The leaving panel takes no pointer input and is hidden from assistive technologies (`aria-hidden`).
+- reduced motion → no slide: it appears and goes at once.
+
 During a refresh:
 - each tab keeps what it shows until its new answer arrives, then shows the new content in one step. "Load more" reads "Loading…" and is disabled until the first history page answers.
 - the open diff of "Changes" and the open commit of "History" follow the rules of ChangesTab and HistoryTab.
@@ -58,10 +63,11 @@ During a refresh:
 ## Dependencies
 
 - useRepositoryLookup, useRepositoryFilter, RepositoryList, repositoryColor, useChanges, ChangesTab, useHistory, HistoryTab, useTurnEndSignal
-- ErrorMessage, ProgressIndicator, IconSet (module app)
+- ErrorMessage, ProgressIndicator, IconSet, MotionTokens, ExitPresence (`useLeaving`) (module app)
 
 ## Requirements served
 
 - `plan-git_explorer/REQ-4`, `plan-git_explorer/REQ-6`, `plan-git_explorer/REQ-7`, `plan-git_explorer/REQ-9`, `plan-git_explorer/REQ-13`, `plan-git_explorer/REQ-16`, `plan-git_explorer/REQ-23`, `plan-git_explorer/REQ-24`, `plan-git_explorer/REQ-26`, `plan-git_graph/REQ-12`
 - `plan-multi_repo_workspace/REQ-7`, `plan-multi_repo_workspace/REQ-8`, `plan-multi_repo_workspace/REQ-11`, `plan-multi_repo_workspace/REQ-13`, `plan-multi_repo_workspace/REQ-14`, `plan-multi_repo_workspace/REQ-19`, `plan-multi_repo_workspace/REQ-20`, `plan-multi_repo_workspace/REQ-21`, `plan-multi_repo_workspace/REQ-22`, `plan-multi_repo_workspace/REQ-23`, `plan-multi_repo_workspace/REQ-26`, `plan-multi_repo_workspace/REQ-28`, `plan-multi_repo_workspace/REQ-29`, `plan-multi_repo_workspace/REQ-30`, `plan-multi_repo_workspace/REQ-31`
 - `plan-dark_blue_theme/REQ-3`
+- `plan-ui_transitions/REQ-5`, `plan-ui_transitions/REQ-6`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-27`
