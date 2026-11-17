@@ -215,10 +215,10 @@ async function expectMono(target: Locator, what: string): Promise<void> {
   expect((await styles(target, ['font-family']))['font-family'], `${what}: mono`).toMatch(MONO);
 }
 
-/** The mock modal frame (Dialog "Shows"): at most 448 wide, centred, surface 2, strong border, 8 radius, frame shadow. */
-async function expectStudioFrame(page: Page, frame: Locator, what: string): Promise<Box> {
+/** The mock modal frame (Dialog "Shows"): at most `maxWidth` wide, centred, surface 2, strong border, 8 radius, frame shadow. */
+async function expectStudioFrame(page: Page, frame: Locator, what: string, maxWidth = 448): Promise<Box> {
   const b = await box(frame);
-  expect(b.width, `${what} width`).toBeLessThanOrEqual(448 + TOLERANCE);
+  expect(b.width, `${what} width`).toBeLessThanOrEqual(maxWidth + TOLERANCE);
   near(centreX(b), 720, `${what} horizontal centre`);
   near(b.y, 900 - bottom(b), `${what} vertical centring (space above vs below)`);
   await expectStyles(
@@ -598,7 +598,8 @@ test.describe('resume history and running-elsewhere warning', () => {
     await openHistory(page);
     await page.mouse.move(0, 0);
 
-    await expectStudioFrame(page, history(page), 'resume history');
+    // The resume popup is 672 px wide (plan-resume_favorites/REQ-1).
+    await expectStudioFrame(page, history(page), 'resume history', 672);
     await expectStudioHeader(page, history(page), 'Resume Session', 'resume history');
     await expect(history(page), 'no description').toHaveAccessibleDescription('');
 
