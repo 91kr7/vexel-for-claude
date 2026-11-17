@@ -14,3 +14,5 @@
 | 2026-11-17 | dev | G4 popup-size | pass | build green, re-run by gatekeeper |
 | 2026-11-17 | test | G5 popup-size | decided | `playwright.config.ts` change accepted as test infrastructure (serial fixture group) |
 | 2026-11-17 | test | G5 popup-size | pass | 20 e2e green on gatekeeper re-run; 448 px assertion updated per REQ-1 |
+| 2026-11-17 | dev | G4 popup-mark | decided | FavoriteIndicator left in place though unused in production: removal is outside the batch INTs |
+| 2026-11-17 | dev | G4 popup-mark | pass | build green on gatekeeper re-run; files match INT-1..5 plus specs and indexes |

@@ -4,7 +4,7 @@ import { ErrorMessage } from '../feedback/ErrorMessage';
 import { AreaState } from '../feedback/AreaState';
 import { HistoryIcon, SearchIcon, TerminalIcon, XIcon } from '../icons/Icons';
 import { Avatar } from '../sessions/Avatar';
-import { FavoriteIndicator } from '../sessions/FavoriteIndicator';
+import { FavoriteButton } from '../sessions/FavoriteButton';
 import { RunningElsewhereWarning } from './RunningElsewhereWarning';
 
 interface PastSessionEntry {
@@ -42,6 +42,17 @@ function describedBy(id: string, session: PastSessionEntry): string {
   if (session.runningElsewhere) parts.push(`${id}-running`);
   if (session.favorite === true) parts.push(`${id}-favorite`);
   return parts.join(' ');
+}
+
+function withFavorite(groups: PastSessionGroup[], sessionId: string, favorite: boolean): PastSessionGroup[] {
+  return groups.map((group) => ({
+    ...group,
+    sessions: group.sessions.map((session) => {
+      if (session.id !== sessionId) return session;
+      const { favorite: _, ...rest } = session;
+      return favorite ? { ...rest, favorite: true } : rest;
+    }),
+  }));
 }
 
 function formatDate(iso: string): string {
@@ -176,40 +187,49 @@ export function ResumeDialog({ onResumed, onCancel }: ResumeDialogProps) {
                   const checked = selected?.id === session.id;
                   const id = `${rowId}-${session.id}`;
                   return (
-                    <label key={session.id} className={checked ? 'dialog-row list-card list-active dialog-row-checked' : 'dialog-row list-card'}>
-                      <Avatar folder={group.folder} />
-                      <span className="dialog-row-text">
-                        <span className="past-session-heading">
-                          <span id={`${id}-label`} className="dialog-row-title">
-                            {session.label}
+                    <div key={session.id} className="past-session-row star-host">
+                      <label className={checked ? 'dialog-row list-card list-active dialog-row-checked' : 'dialog-row list-card'}>
+                        <Avatar folder={group.folder} />
+                        <span className="dialog-row-text">
+                          <span className="past-session-heading">
+                            <span id={`${id}-label`} className="dialog-row-title">
+                              {session.label}
+                            </span>
+                            <span className="past-session-star-slot" />
+                            {session.favorite === true && (
+                              <span id={`${id}-favorite`} hidden>
+                                Favorite
+                              </span>
+                            )}
                           </span>
-                          {session.favorite === true && (
-                            <span id={`${id}-favorite`} className="past-session-favorite">
-                              <FavoriteIndicator />
+                          <time id={`${id}-time`} className="dialog-row-detail list-number" dateTime={session.lastActivity}>
+                            {formatDate(session.lastActivity)}
+                          </time>
+                          {session.runningElsewhere && (
+                            <span id={`${id}-running`} className="status-pill state-needs_input past-session-running">
+                              <TerminalIcon />
+                              Running in a terminal
                             </span>
                           )}
                         </span>
-                        <time id={`${id}-time`} className="dialog-row-detail list-number" dateTime={session.lastActivity}>
-                          {formatDate(session.lastActivity)}
-                        </time>
-                        {session.runningElsewhere && (
-                          <span id={`${id}-running`} className="status-pill state-needs_input past-session-running">
-                            <TerminalIcon />
-                            Running in a terminal
-                          </span>
-                        )}
-                      </span>
-                      <input
-                        type="radio"
-                        className="dialog-radio"
-                        name={`${rowId}-session`}
-                        checked={checked}
-                        disabled={busy}
-                        aria-labelledby={`${id}-label`}
-                        aria-describedby={describedBy(id, session)}
-                        onChange={() => setSelected(session)}
+                        <input
+                          type="radio"
+                          className="dialog-radio"
+                          name={`${rowId}-session`}
+                          checked={checked}
+                          disabled={busy}
+                          aria-labelledby={`${id}-label`}
+                          aria-describedby={describedBy(id, session)}
+                          onChange={() => setSelected(session)}
+                        />
+                      </label>
+                      <FavoriteButton
+                        sessionId={session.id}
+                        favorite={session.favorite === true}
+                        pastSession
+                        onChanged={(favorite) => setGroups((current) => current && withFavorite(current, session.id, favorite))}
                       />
-                    </label>
+                    </div>
                   );
                 })}
               </div>

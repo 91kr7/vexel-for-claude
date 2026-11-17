@@ -1775,9 +1775,25 @@ input {
   gap: 6px;
 }
 
-.past-session-favorite {
+.past-session-row {
+  position: relative;
+  anchor-scope: --past-session-star;
+}
+
+.past-session-star-slot {
   flex: none;
-  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  margin: -1px 0;
+  anchor-name: --past-session-star;
+}
+
+.past-session-row > .entry-favorite {
+  position-anchor: --past-session-star;
+}
+
+.past-session-row > .entry-favorite-error {
+  padding: 4px 10px 0;
 }
 
 .session-name-editor {
@@ -3874,7 +3890,7 @@ button.dialog-row {
   font-weight: 600;
 }
 
-.dialog-rows:has(> .list-card) {
+.dialog-rows:has(> .list-card, > .past-session-row) {
   gap: 6px;
 }
 

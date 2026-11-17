@@ -6,11 +6,13 @@ interface FavoriteButtonProps {
   sessionId: string;
   favorite: boolean;
   hidden?: boolean;
+  pastSession?: boolean;
+  onChanged?: (favorite: boolean) => void;
 }
 
 const FAVORITE_FAILED = 'Could not change the favorite mark.';
 
-export function FavoriteButton({ sessionId, favorite, hidden = false }: FavoriteButtonProps) {
+export function FavoriteButton({ sessionId, favorite, hidden = false, pastSession = false, onChanged }: FavoriteButtonProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [pop, setPop] = useState(false);
@@ -33,12 +35,14 @@ export function FavoriteButton({ sessionId, favorite, hidden = false }: Favorite
     setBusy(true);
     markPressed.current = !favorite;
     try {
-      const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/favorite`, {
+      const base = pastSession ? '/api/past-sessions' : '/api/sessions';
+      const response = await fetch(`${base}/${encodeURIComponent(sessionId)}/favorite`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ favorite: !favorite }),
       });
       if (!response.ok) fail();
+      else onChanged?.(!favorite);
     } catch {
       fail();
     } finally {
