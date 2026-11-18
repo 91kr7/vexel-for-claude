@@ -50,3 +50,4 @@
 | 2026-11-18 | plan | G2 requirements | pass | REQ-42 to REQ-47 trace to the fix lines of the analysis |
 | 2026-11-18 | plan | G3 coverage | sent back | INT-2 was a test as an intervention; tests belong to the tester notes, INT-1 serves REQ-42 to REQ-47 |
 | 2026-11-18 | plan | G3 coverage | pass | INT-1 serves REQ-42 to REQ-47; order test is a binding tester note; lists consistent |
+| 2026-11-18 | dev | G4 development | pass | Diff is INT-1 in `AppLayout.tsx` plus the app-layout spec; build green re-run by the gatekeeper |
