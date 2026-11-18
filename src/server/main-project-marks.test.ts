@@ -37,7 +37,8 @@ interface Server {
 
 async function startServer(dir: string): Promise<Server> {
   const port = await freePort();
-  const child = spawn(path.join(repoRoot, 'node_modules/.bin/tsx'), ['src/server/main.ts'], {
+  // Node runs the server itself, not the tsx wrapper: the SIGKILL of the cleanup then reaches the server.
+  const child = spawn(process.execPath, ['--import', 'tsx', 'src/server/main.ts'], {
     cwd: repoRoot,
     env: {
       ...process.env,

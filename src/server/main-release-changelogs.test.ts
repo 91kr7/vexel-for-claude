@@ -116,7 +116,8 @@ async function startServer(sourceUrl: string): Promise<string> {
   const dir = await tempDir('ai-client-changelog-');
   dirs.push(dir);
   children.push(
-    spawn(path.join(repoRoot, 'node_modules/.bin/tsx'), ['src/server/main.ts'], {
+    // Node runs the server itself, not the tsx wrapper: the SIGKILL of the cleanup then reaches the server.
+    spawn(process.execPath, ['--import', 'tsx', 'src/server/main.ts'], {
       cwd: repoRoot,
       env: {
         ...process.env,
