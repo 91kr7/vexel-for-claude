@@ -10,6 +10,8 @@ const HEALTH_TIMEOUT_MS = 1_000;
 const POLL_INTERVAL_MS = 100;
 const OUTPUT_LINE_COUNT = 20;
 const DEFAULT_KILL_TIMEOUT_MS = 10_000;
+// Same name and `<pid>:<startTicks>` format as the server's process reader.
+const LAUNCHER_VARIABLE = 'AI_CLIENT_LAUNCHER';
 
 let startedServer: ChildProcess | undefined;
 
@@ -54,6 +56,16 @@ function lastOutputLines(logFile: string): string[] {
   }
 }
 
+function launcherMarker(): Record<string, string> {
+  try {
+    const stat = readFileSync(`/proc/${process.pid}/stat`, 'utf8');
+    const startTicks = stat.slice(stat.lastIndexOf(')') + 2).split(' ')[19];
+    return startTicks ? { [LAUNCHER_VARIABLE]: `${process.pid}:${startTicks}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function launchBackend(options: LaunchOptions): Promise<LaunchResult> {
   const port = options.port ?? backendPort(process.env);
   const origin = backendOrigin(port);
@@ -68,7 +80,7 @@ export async function launchBackend(options: LaunchOptions): Promise<LaunchResul
   const output = openSync(options.logFile, 'w');
   const child = spawn(file, args, {
     cwd: options.rootDir,
-    env: { ...process.env, NODE_ENV: 'production', PORT: String(port) },
+    env: { ...process.env, NODE_ENV: 'production', PORT: String(port), ...launcherMarker() },
     detached: true,
     stdio: ['ignore', output, output],
   });

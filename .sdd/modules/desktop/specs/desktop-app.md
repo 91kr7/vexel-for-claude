@@ -32,6 +32,7 @@ type: Electron main process
 Window buttons:
 
 - after it creates the window, it connects the WindowActions to it, with `ipcMain`. The page closes, minimizes, and maximizes or restores the window through them.
+- the quit request of the page (after the user terminated the current instance) → no QuitCheck question: `stopStartedBackend`, then the window and the TrayIcon close and the app exits. A backend that the app did not start gets no signal; the app quits anyway. A second request while it runs is ignored.
 
 Notifications:
 
@@ -72,3 +73,4 @@ Tray:
 - `plan-session_notifications/REQ-30`, `plan-session_notifications/REQ-32`, `plan-session_notifications/REQ-33`, `plan-session_notifications/REQ-34`, `plan-session_notifications/REQ-36`
 - `plan-mac_title_bar/REQ-1`, `plan-mac_title_bar/REQ-2`, `plan-mac_title_bar/REQ-3`, `plan-mac_title_bar/REQ-4`, `plan-mac_title_bar/REQ-5`, `plan-mac_title_bar/REQ-16`, `plan-mac_title_bar/REQ-17`, `plan-mac_title_bar/REQ-18`, `plan-mac_title_bar/REQ-21`
 - `plan-terminal_addons/REQ-9`, `plan-terminal_addons/REQ-11`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-39`
+- `plan-app_processes/REQ-26`

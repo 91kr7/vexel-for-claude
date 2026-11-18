@@ -4,17 +4,19 @@ import type { NewerVersion } from '../newer-version/newer-version-loader';
 import type { LookStore } from '../theme/look-store';
 import type { ThemeStore } from '../theme/theme-store';
 import { LookSection } from './LookSection';
+import { ProcessesSection } from './ProcessesSection';
 import { SettingsPane } from './SettingsPane';
 import { ShortcutsSection } from './ShortcutsSection';
 import { ThemeSection } from './ThemeSection';
 import { UpdatesSection } from './UpdatesSection';
 
-export type SettingsTab = 'appearance' | 'shortcuts' | 'updates';
+export type SettingsTab = 'appearance' | 'shortcuts' | 'updates' | 'processes';
 
 const TABS: { tab: SettingsTab; title: string }[] = [
   { tab: 'appearance', title: 'Appearance' },
   { tab: 'shortcuts', title: 'Shortcuts' },
   { tab: 'updates', title: 'Updates' },
+  { tab: 'processes', title: 'Processes' },
 ];
 
 interface SettingsDialogProps {
@@ -43,6 +45,7 @@ function Section({ tab, themeStore, lookStore, onNewerVersion }: SectionProps) {
       </SettingsPane>
     );
   }
+  if (tab === 'processes') return <ProcessesSection />;
   return <ShortcutsSection />;
 }
 

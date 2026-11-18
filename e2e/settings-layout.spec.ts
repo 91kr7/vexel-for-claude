@@ -1,9 +1,9 @@
-// e2e of plan-settings_dialog, batch update-check: the three menus of the settings popup and its steady layout.
+// e2e of plan-settings_dialog, batch update-check: the menus of the settings popup and its steady layout.
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { settled } from './motion';
 import { cardOf, settingsButton, settingsPopup } from './settings';
 
-const MENUS = ['Appearance', 'Shortcuts', 'Updates'] as const;
+const MENUS = ['Appearance', 'Shortcuts', 'Updates', 'Processes'] as const;
 
 const menu = (page: Page) => settingsPopup(page).getByRole('tablist', { name: 'Settings sections' });
 const menuItem = (page: Page, name: string) => menu(page).getByRole('tab', { name, exact: true });
@@ -30,8 +30,8 @@ const markOf = (card: Locator) =>
 test.describe('at 1440 × 900', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  // plan-settings_dialog/REQ-53, REQ-54, REQ-55 — scenario "The settings popup shows three menus at a steady size"
-  test('REQ-53, REQ-54, REQ-55: three menus in a vertical list on the left, the chosen one on the right, at the same popup size', async ({ page }) => {
+  // plan-settings_dialog/REQ-53, REQ-54, REQ-55, plan-app_processes/REQ-1 — scenario "The settings popup shows three menus at a steady size"
+  test('REQ-53, REQ-54, REQ-55: four menus in a vertical list on the left, the chosen one on the right, at the same popup size', async ({ page }) => {
     await openSettings(page);
     await expect(menu(page).getByRole('tab')).toHaveText([...MENUS]);
     await expect(menuItem(page, 'Appearance')).toHaveAttribute('aria-selected', 'true');
@@ -155,6 +155,8 @@ for (const viewport of [
   test(`REQ-55, REQ-56: at ${viewport.width} × ${viewport.height} the popup fits, keeps its size and only the right part scrolls`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await openSettings(page);
+    // The box zooms in on opening (MotionTokens): REQ-55 and REQ-56 are about its size at rest.
+    await settled(page.locator('.modal-backdrop'), true);
     const sizes = [];
     for (const name of MENUS) {
       await menuItem(page, name).click();

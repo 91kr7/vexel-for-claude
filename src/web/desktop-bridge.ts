@@ -53,6 +53,7 @@ export interface DesktopBridge {
   toggleMaximizeWindow?(): void;
   isWindowMaximized?(): Promise<boolean>;
   onWindowMaximizedChange?(listener: (maximized: boolean) => void): () => void;
+  quitApp?(): void;
 }
 
 export function closeWindow(): void {
@@ -65,6 +66,10 @@ export function minimizeWindow(): void {
 
 export function toggleMaximizeWindow(): void {
   window.desktopBridge?.toggleMaximizeWindow?.();
+}
+
+export function quitApp(): void {
+  window.desktopBridge?.quitApp?.();
 }
 
 export function useWindowMaximized(): boolean {

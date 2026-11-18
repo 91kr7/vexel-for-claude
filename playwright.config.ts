@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +14,9 @@ const electronSpecs = /desktop-(window|notifications|tray|links|font-zoom|file-d
 const electron = process.env.E2E_DESKTOP === '1';
 // No e2e server asks GitHub for releases: port 9 refuses, unless a spec points this at a fake source.
 const releaseSource = (process.env.AI_CLIENT_RELEASE_SOURCE_URL ??= 'http://127.0.0.1:9/releases/latest');
+// The launcher marker (`<pid>:<startTicks>` of this runner) lets the app mark a server left by a stopped run as hanging.
+const runnerStat = readFileSync(`/proc/${process.pid}/stat`, 'utf8');
+const launcherMarker = `${process.pid}:${runnerStat.slice(runnerStat.lastIndexOf(')') + 2).split(' ')[19]}`;
 // The specs of earlier plans were written for a client that started dark: the browser runs as a user who chose dark.
 // e2e/remembered-theme.spec.ts and e2e/dark-blue-theme.spec.ts clear this choice to test the first-start theme.
 const darkChoice = { cookies: [], origins: [{ origin: baseURL, localStorage: [{ name: 'ai-client.theme', value: 'dark' }] }] };
@@ -41,6 +45,8 @@ export default defineConfig({
       AI_CLIENT_DATA_DIR: path.join(os.tmpdir(), 'ai-client-e2e-data'),
       AI_CLIENT_CLAUDE_CLI: fileURLToPath(new URL('./test-support/fake-claude.mjs', import.meta.url)),
       AI_CLIENT_RELEASE_SOURCE_URL: releaseSource,
+      AI_CLIENT_LAUNCHER: launcherMarker,
+      AI_CLIENT_TEST_SERVER: '1',
     },
     reuseExistingServer: !process.env.CI,
   },

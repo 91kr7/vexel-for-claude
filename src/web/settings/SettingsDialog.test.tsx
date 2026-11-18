@@ -46,13 +46,13 @@ describe('SettingsDialog', () => {
     expect(dialog.querySelector('.modal-actions')?.querySelectorAll('button')).toHaveLength(1);
   });
 
-  // plan-settings_dialog/REQ-53, REQ-54: a vertical menu "Settings sections" with "Appearance", "Shortcuts", then "Updates"
-  it('has a vertical menu "Settings sections" with "Appearance", "Shortcuts" and "Updates", in this order', () => {
+  // plan-settings_dialog/REQ-53, REQ-54, plan-app_processes/REQ-1: "Processes" comes after "Updates"
+  it('has a vertical menu "Settings sections" with "Appearance", "Shortcuts", "Updates" and "Processes", in this order', () => {
     const { dialog } = open();
     const menu = dialog.querySelector('[role="tablist"]');
     expect(menu?.getAttribute('aria-label')).toBe('Settings sections');
     expect(menu?.getAttribute('aria-orientation')).toBe('vertical');
-    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Appearance', 'Shortcuts', 'Updates']);
+    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Appearance', 'Shortcuts', 'Updates', 'Processes']);
   });
 
   // plan-settings_dialog/REQ-4, REQ-53: default menu "Appearance", selected and focused on open, with the theme and look sections
@@ -72,6 +72,7 @@ describe('SettingsDialog', () => {
     ['appearance', 'Appearance'],
     ['shortcuts', 'Shortcuts'],
     ['updates', 'Updates'],
+    ['processes', 'Processes'],
   ] as const)('shows the title of the %s menu in its panel header', (start, title) => {
     const { dialog } = open(start);
     expect(visiblePanels(dialog)[0]?.querySelector('h1, h2, h3, h4')?.textContent).toBe(title);
@@ -113,23 +114,24 @@ describe('SettingsDialog', () => {
   // plan-settings_dialog/REQ-11: the tab list is one Tab stop, the shown tab
   it('gives tabindex 0 to the shown tab only', () => {
     const { dialog } = open();
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([0, -1, -1]);
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([0, -1, -1, -1]);
     run(() => tab(dialog, 'Shortcuts').click());
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, 0, -1]);
-    run(() => tab(dialog, 'Updates').click());
-    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, -1, 0]);
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, 0, -1, -1]);
+    run(() => tab(dialog, 'Processes').click());
+    expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, -1, -1, 0]);
   });
 
   // plan-settings_dialog/REQ-11, REQ-54: Down/Up move to the next/previous menu item, wrapping; Home/End to the first/last
   it.each([
     ['ArrowDown', 'appearance', 'Shortcuts'],
     ['ArrowDown', 'shortcuts', 'Updates'],
-    ['ArrowDown', 'updates', 'Appearance'],
-    ['ArrowUp', 'appearance', 'Updates'],
+    ['ArrowDown', 'updates', 'Processes'],
+    ['ArrowDown', 'processes', 'Appearance'],
+    ['ArrowUp', 'appearance', 'Processes'],
     ['ArrowUp', 'shortcuts', 'Appearance'],
-    ['ArrowUp', 'updates', 'Shortcuts'],
-    ['Home', 'updates', 'Appearance'],
-    ['End', 'appearance', 'Updates'],
+    ['ArrowUp', 'processes', 'Updates'],
+    ['Home', 'processes', 'Appearance'],
+    ['End', 'appearance', 'Processes'],
   ] as const)('%s from the %s tab shows and focuses "%s"', (key, start, expected) => {
     const { dialog } = open(start);
     keydown(document.activeElement as Element, key);
@@ -317,5 +319,56 @@ describe('SettingsDialog, "Updates" tab', () => {
     dialog = document.querySelector<HTMLElement>('[role="dialog"]') as HTMLElement;
     expect(resultText(dialog)).toBeNull();
     expect(buttonNamed(dialog, 'Check for Updates').disabled).toBe(false);
+  });
+});
+
+// The "Processes" tab: a fake fetch stands in for GET /api/processes.
+describe('SettingsDialog, "Processes" tab', () => {
+  let processCalls: number;
+
+  beforeEach(() => {
+    processCalls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => {
+        if (url === '/api/processes') processCalls += 1;
+        if (url === '/api/installed-version') return Promise.resolve(new Response(JSON.stringify({ version: '0.6.1' }), { status: 200 }));
+        return Promise.resolve(new Response(JSON.stringify({ processes: [] }), { status: 200 }));
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const shownPanel = (dialog: HTMLElement) => visiblePanels(dialog)[0] as HTMLElement;
+  const until = (check: () => boolean) => vi.waitFor(() => expect(check()).toBe(true));
+
+  // plan-app_processes/REQ-1, spec SettingsDialog: "Refresh" in the header and the "Process List" region as body
+  it('opens on "Processes" when initialTab is "processes", with "Refresh" and the "Process List" region', async () => {
+    const { dialog } = open('processes');
+    const processes = tab(dialog, 'Processes');
+    expect(processes.getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(processes);
+    expect(shownPanel(dialog).getAttribute('aria-labelledby')).toBe(processes.id);
+    expect(buttonNamed(shownPanel(dialog), 'Refresh')).toBeDefined();
+    expect(shownPanel(dialog).querySelector('[role="region"][aria-label="Process List"]')).not.toBeNull();
+    await until(() => shownPanel(dialog).textContent?.includes('No app processes are running.') ?? false);
+  });
+
+  // spec SettingsDialog: ProcessesSection is mounted only while its menu shows
+  it('does not load the process list while another menu shows', () => {
+    open('appearance');
+    expect(processCalls).toBe(0);
+  });
+
+  // plan-app_processes/REQ-10: each time the menu shows, the list loads again
+  it('loads the list again each time the "Processes" menu shows', async () => {
+    const { dialog } = open('processes');
+    await until(() => processCalls === 1);
+    run(() => tab(dialog, 'Appearance').click());
+    run(() => tab(dialog, 'Processes').click());
+    await until(() => processCalls === 2);
   });
 });

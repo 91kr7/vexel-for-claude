@@ -9,3 +9,4 @@
 | external | Claude Code sessions running in other terminals: scan, list entries, read-only conversation, take over | `external/index.md` |
 | desktop | Desktop app: Electron window, backend start or reuse, startup page, icons, application menu entry, system notifications and tray signal | `desktop/index.md` |
 | git | Read-only git explorer of a session: git runner, repository lookup and detection of the covered repositories, explorer button and panel, uncommitted changes and diffs, commit history as a graph | `git/index.md` |
+| processes | The app's processes on the machine: read `/proc`, kind and hanging rules, list route, "Processes" menu of the settings | `processes/index.md` |

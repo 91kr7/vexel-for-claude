@@ -36,6 +36,9 @@ type: configuration
 - release changelogs → only when that check gives `newer`, one readReleaseChangelogs with the same installed version and the list address `releaseListUrl(<source address>)`. Its changelogs are added to the `newer` result as `changelogs`. No changelogs (failure, or no list address) → the result stays as the check gave it. NewerVersionRoute gets the result after this step. The listen does not wait for it.
 - registers InstalledVersionRoute with the same installed version passed to checkLatestRelease.
 - registers UpdateCheckRoute with the same source address and installed version as the launch check. Its changelogs use the same list address.
+- one ProcessList on a ProcessReader, the registry, the tracker, the server's own PID and `name` of `package.json`. Registers ProcessesRoute with it.
+- one ProcessTerminator on the same ProcessReader, the registry, the server's own PID and `name` of `package.json`. Registers TerminateProcessRoute with it.
+- launcher marker → at start it removes `AI_CLIENT_LAUNCHER` from its own environment, so the sessions and their processes do not inherit it. ProcessReader still reads it from `/proc`.
 - serves the files of `dist/web` when the folder exists.
 - on `SIGTERM` or `SIGINT` → it stops every running session of the SessionRegistry and waits for their exit, then closes the server and exits with code `0`. A second signal during this stop changes nothing.
 
@@ -55,6 +58,7 @@ type: configuration
 - SessionHistory, ExternalSessionCheck, PastSessionListRoute, ResumeSessionRoute, PastSessionFavoriteRoute (module history)
 - ExternalSessionScanner, TranscriptReader, ConversationStreamRoute, ItemContentRoute (module external)
 - GitRunner, RepositoryRoute (module git)
+- ProcessReader, ProcessList, ProcessesRoute, ProcessTerminator, TerminateProcessRoute (module processes)
 
 ## Requirements served
 
@@ -67,6 +71,7 @@ type: configuration
 - `plan-usage_limits/REQ-11`, `plan-usage_limits/REQ-13`
 - `plan-git_explorer/REQ-1`
 - `plan-recent_projects/REQ-16`, `plan-recent_projects/REQ-18`
+- `plan-app_processes/REQ-10`, `plan-app_processes/REQ-19`, `plan-app_processes/REQ-23`
 - `plan-update_check/REQ-1`, `plan-update_check/REQ-2`, `plan-update_check/REQ-10`, `plan-update_check/REQ-11`, `plan-update_check/REQ-14`, `plan-update_check/REQ-15`
 - `plan-project_list_actions/REQ-16`, `plan-project_list_actions/REQ-28`, `plan-project_list_actions/REQ-29`
 - `plan-wsl_support/REQ-9`, `plan-wsl_support/REQ-10`, `plan-wsl_support/REQ-12`

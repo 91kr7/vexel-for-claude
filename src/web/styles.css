@@ -3988,6 +3988,76 @@ input {
   margin: 0;
 }
 
+.processes-rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.processes-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* Out by the padding and border, so the text stays aligned with the pane title. */
+  margin: 0 -9px;
+  padding: 8px 12px 8px 8px;
+}
+
+.processes-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.processes-kind {
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+.process-mark-instance {
+  background-color: var(--role-accent-glow);
+  border-color: var(--role-accent-border);
+  color: var(--role-accent);
+}
+
+.process-mark-hanging {
+  background-color: var(--amber-500-15);
+  border-color: var(--amber-500-30);
+  color: var(--amber-400);
+}
+
+.processes-details {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+  row-gap: 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.processes-detail {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.process-terminate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 2px 8px;
+}
+
+.process-error {
+  margin: 0;
+}
+
 .dialog-banner {
   display: flex;
   align-items: flex-start;

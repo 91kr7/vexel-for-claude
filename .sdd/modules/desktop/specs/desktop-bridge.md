@@ -17,6 +17,7 @@ type: Electron preload
   - `closeWindow()` → sends `desktop-bridge:window-close`.
   - `minimizeWindow()` → sends `desktop-bridge:window-minimize`.
   - `toggleMaximizeWindow()` → sends `desktop-bridge:window-toggle-maximize`.
+  - `quitApp()` → sends `desktop-bridge:app-quit`.
   - `isWindowMaximized() → Promise<boolean>` → asks `desktop-bridge:window-is-maximized`. Any answer other than `true` gives `false`.
   - `onWindowMaximizedChange(listener) → unsubscribe` → `listener(maximized)` for each boolean that DesktopApp sends on `desktop-bridge:window-maximized`, until `unsubscribe()`.
 
@@ -30,3 +31,4 @@ type: Electron preload
 - `plan-session_notifications/REQ-12`, `plan-session_notifications/REQ-13`
 - `plan-mac_title_bar/REQ-16`, `plan-mac_title_bar/REQ-17`, `plan-mac_title_bar/REQ-18`, `plan-mac_title_bar/REQ-21`, `plan-mac_title_bar/REQ-23`
 - `plan-terminal_addons/REQ-46`
+- `plan-app_processes/REQ-26`
