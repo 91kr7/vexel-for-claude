@@ -13,4 +13,5 @@
 | limited-test-parallelism | guideline | development, test | Vitest at most 4 workers, Playwright at most 3; never two full suites at once | `entries/limited-test-parallelism.md` |
 | tests-stop-their-processes | guideline | development, test | A test stops every process it starts, with a signal that reaches the real process; no process is left after a run | `entries/tests-stop-their-processes.md` |
 | e2e-green-before-release | guideline | any | A release is published only after the complete e2e suite is green; failing e2e are fixed first | `entries/e2e-green-before-release.md` |
+| pr-to-main-then-release | guideline | any | Every branch reaches `main` through a pull request; a release is tagged on `main` after the merge, never on an unmerged branch | `entries/pr-to-main-then-release.md` |
 | tech-debt-register | guideline | any | A known defect left open by the human's decision is recorded in `.sdd/tech-debt.md` (TD-n), and moved to "Closed" when a fix merges | `entries/tech-debt-register.md` |
