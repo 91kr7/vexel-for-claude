@@ -200,6 +200,21 @@ describe('launchBackend with fake commands', () => {
     expect(text).toContain(`env production ${port}`);
   });
 
+  // plan-app_processes/REQ-19: the started server names the desktop app as its launcher
+  it('starts the command with AI_CLIENT_LAUNCHER=<pid>:<startTicks> of the launching process', async () => {
+    const port = await freePort();
+    const log = logFile();
+    const command = [...fakeServer];
+    command[2] = `console.log('launcher ' + process.env.AI_CLIENT_LAUNCHER);\n${command[2]}`;
+    const result = await launchBackend({ rootDir: tmp, logFile: log, port, command });
+    const text = await readFile(log, 'utf8');
+    pids.push(pidInLog(text));
+    expect(result.status).toBe('ready');
+    const stat = await readFile(`/proc/${process.pid}/stat`, 'utf8');
+    const startTicks = stat.slice(stat.lastIndexOf(')') + 2).split(' ')[19];
+    expect(text).toContain(`launcher ${process.pid}:${startTicks}`);
+  });
+
   it('starts a server on the port when the program there does not answer the health check', async () => {
     const port = await serve((_request, response) => response.writeHead(404).end());
     const result = await launchBackend({ rootDir: tmp, logFile: logFile(), port, command: [node, '-e', 'console.log("started"); process.exit(1)'] });

@@ -15,3 +15,6 @@
 | 2026-11-18 | plan | question planner | decided | Desktop quit skips the tray quit question; the user just confirmed the terminate |
 | 2026-11-18 | dev processes-list | divergence developer | decided | main.ts drops AI_CLIENT_LAUNCHER from its own env so sessions do not inherit it; within INT-6 and REQ-19 |
 | 2026-11-18 | dev processes-list | G4 development | pass | |
+| 2026-11-18 | dev processes-list | G5 tests | decided | settings-layout:155 measured during the popup zoom of a3d61c7; tester waits for settle, test only |
+| 2026-11-18 | dev processes-list | G5 tests | escalated | Older main-*.test.ts leave 36 inner test servers running; tester's SIGTERM blocked by permissions |
+| 2026-11-18 | dev processes-list | G5 tests | pass | Gatekeeper rerun: 186 unit, 6 e2e; no new leftover process |

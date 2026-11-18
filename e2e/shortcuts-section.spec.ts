@@ -184,7 +184,7 @@ test('with the tooltip "Settings (Alt+S)" shown, Alt+S opens the popup on the "S
   await expect(tooltip).toBeVisible();
 
   await openWithAltS(page);
-  await expect(popup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Appearance', 'Shortcuts', 'Updates']);
+  await expect(popup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Appearance', 'Shortcuts', 'Updates', 'Processes']);
   await expect(shortcutList(page)).toBeVisible();
   await expect(popup(page).getByRole('tabpanel')).toHaveCount(1);
   await expect(shortcutList(page).getByRole('heading')).toHaveText(GROUPS);

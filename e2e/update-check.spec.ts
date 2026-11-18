@@ -142,7 +142,7 @@ test.describe('a newer release exists', () => {
     await page.goto(app.base);
     await settingsButton(page).click();
     const tabs = settingsPopup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab');
-    await expect(tabs).toHaveText(['Appearance', 'Shortcuts', 'Updates']);
+    await expect(tabs).toHaveText(['Appearance', 'Shortcuts', 'Updates', 'Processes']);
     await settingsPopup(page).getByRole('tab', { name: 'Updates', exact: true }).click();
     await expect(settingsPopup(page).getByText(`Installed version: v${installed}`, { exact: true })).toBeVisible();
     await expect(checkButton(page)).toHaveText('Check for Updates');

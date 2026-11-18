@@ -10,7 +10,7 @@ Requirements → `requirements.md`. Execution order: processes-list → terminat
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [processes-list](batches/batch-processes-list.md) | Process list | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22 | — | implemented | The user sees the app processes in the settings |
+| [processes-list](batches/batch-processes-list.md) | Process list | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22 | — | certified | The user sees the app processes in the settings |
 | [terminate-process](batches/batch-terminate-process.md) | Terminate a process | REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34 | processes-list | todo | The confirmation names the process |
 
 ## Assumptions and decisions
