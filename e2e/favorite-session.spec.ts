@@ -600,33 +600,45 @@ type Pop = { name: string; animation: string; duration: string };
 const pops = (page: Page) => page.evaluate(() => (window as unknown as { __pops: Pop[] }).__pops);
 const seconds = (duration: string) => (duration.endsWith('ms') ? parseFloat(duration) / 1000 : parseFloat(duration));
 
-/** Checks that the star sits right after the folder name, on its line, and that the top-right corner holds only "Rename". */
-async function expectStarByNameAndRenameInCorner(page: Page, folder: string, container: Locator) {
+/** Whether two boxes share some area. */
+const overlap = (a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }) =>
+  a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+
+/**
+ * Checks that the star sits right after the folder name, on its line, and that "Rename" sits at the right end of the label row
+ * (plan-session_list_improvements/REQ-40 to REQ-42), not on the first row and not over the star.
+ */
+async function expectStarByNameAndRenameOnLabelRow(page: Page, folder: string, container: Locator, label: string) {
   await item(page, folder).getByTitle(folder, { exact: true }).hover();
   await expect.poll(() => opacityOf(renameButton(page, folder))).toBe(1);
-  const [name, star, rename, outer] = [await box(item(page, folder).getByTitle(folder, { exact: true })), await box(starOf(page, folder)), await box(renameButton(page, folder)), await box(container)];
+  const [name, star, rename, outer, labelBox] = [
+    await box(item(page, folder).getByTitle(folder, { exact: true })),
+    await box(starOf(page, folder)),
+    await box(renameButton(page, folder)),
+    await box(container),
+    await box(container.getByTitle(label, { exact: true })),
+  ];
   expect(star.x, 'the star is right of the name').toBeGreaterThanOrEqual(name.x + name.width - 0.5);
   expect(star.x - (name.x + name.width), 'the star is right after the name').toBeLessThan(12);
   expect(Math.abs(star.y + star.height / 2 - (name.y + name.height / 2)), 'the star is on the line of the name').toBeLessThanOrEqual(2);
   expect(await starOf(page, folder).evaluate((el: HTMLElement) => el.offsetWidth), 'a 20 px button').toBe(20);
-  // "Rename" is in the top-right corner, and the star stays out of that corner
+  // "Rename" is at the right end of the label row, level with the label, and not on the first row
   expect(outer.x + outer.width - (rename.x + rename.width), '"Rename" at the right end').toBeLessThan(16);
-  expect(rename.y - outer.y, '"Rename" at the top').toBeLessThan(16);
-  expect(star.x + star.width, 'the star is left of "Rename"').toBeLessThan(rename.x);
-  // no other control of the entry overlaps the corner of "Rename"
+  expect(Math.abs(rename.y + rename.height / 2 - (labelBox.y + labelBox.height / 2)), '"Rename" is level with the label').toBeLessThanOrEqual(3);
+  expect(rename.y, '"Rename" is under the first row').toBeGreaterThanOrEqual(name.y + name.height - 1);
+  expect(overlap(star, rename), '"Rename" does not cover the star').toBe(false);
+  expect(labelBox.x + labelBox.width, 'the label ends before "Rename"').toBeLessThanOrEqual(rename.x + 0.5);
+  // no other control of the entry overlaps "Rename"
   const others = await item(page, folder).getByRole('button').evaluateAll((buttons) =>
     buttons
       .filter((b) => !b.classList.contains('session-entry') && b.getAttribute('aria-label') !== 'Rename' && !b.closest('.ended-entry-actions'))
       .map((b) => b.getBoundingClientRect().toJSON() as { x: number; y: number; width: number; height: number }),
   );
-  for (const other of others) {
-    const overlaps = other.x < rename.x + rename.width && other.x + other.width > rename.x && other.y < rename.y + rename.height && other.y + other.height > rename.y;
-    expect(overlaps, 'only "Rename" in the top-right corner').toBe(false);
-  }
+  for (const other of others) expect(overlap(other, rename), 'no other control over "Rename"').toBe(false);
 }
 
-// plan-ui_restyle/REQ-29, REQ-31 — scenario "The user marks a session from the star next to its name"
-test('the session star sits right after the folder name on line 1 of a row, and the top-right corner holds only "Rename"', async ({ page, request }) => {
+// plan-ui_restyle/REQ-29, plan-session_list_improvements/REQ-40, REQ-42 — scenario "The user marks a session from the star next to its name"
+test('the session star sits right after the folder name on line 1 of a row, and "Rename" sits on the label row', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const idle = await hostedSession(request, 'star-place');
   const ended = await hostedSession(request, 'star-ended', 'ended');
@@ -635,14 +647,14 @@ test('the session star sits right after the folder name on line 1 of a row, and 
   await expect(item(page, ended.folder)).toHaveCount(1);
 
   for (const { folder, prompt } of [idle, ended]) {
-    await expectStarByNameAndRenameInCorner(page, folder, entry(page, folder));
+    await expectStarByNameAndRenameOnLabelRow(page, folder, entry(page, folder), prompt);
     const [star, label] = [await box(starOf(page, folder)), await box(entry(page, folder).getByTitle(prompt, { exact: true }))];
     expect(star.y + star.height, `${folder}: the star is above line 2`).toBeLessThanOrEqual(label.y + 1);
   }
 });
 
-// plan-ui_restyle/REQ-32 — scenario "The card of a session waiting for input has the same star"
-test('the needs-input card has the star right after the session name, and its top-right corner holds only "Rename"', async ({ page, request }) => {
+// plan-ui_restyle/REQ-32, plan-session_list_improvements/REQ-41, REQ-42 — scenario "The card of a session waiting for input has the same star"
+test('the needs-input card has the star right after the session name, and "Rename" sits on its label row', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const session = await hostedSession(request, 'star-card', 'needs_input');
   await page.goto('/');
@@ -651,7 +663,7 @@ test('the needs-input card has the star right after the session name, and its to
   await page.mouse.move(1, 1);
   await expect.poll(() => opacityOf(markButton(page, session.folder)), 'hidden with no hover and no focus').toBe(0);
 
-  await expectStarByNameAndRenameInCorner(page, session.folder, card);
+  await expectStarByNameAndRenameOnLabelRow(page, session.folder, card, session.prompt);
   await expect.poll(() => opacityOf(markButton(page, session.folder)), 'outline shown on card hover').toBeCloseTo(0.7, 2);
   await expect(card.getByRole('button', { name: 'Mark as Favorite', exact: true })).toHaveCount(1);
 });
@@ -668,7 +680,7 @@ test('with a long folder name the name is cut and the star keeps its 20 px insid
   expect(await starOf(page, session.folder).evaluate((el: HTMLElement) => el.offsetWidth), 'the star keeps its 20 px').toBe(20);
   expect(star.x).toBeGreaterThanOrEqual(row.x);
   expect(star.x + star.width).toBeLessThanOrEqual(row.x + row.width);
-  expect(star.x + star.width, 'the star stays out of the corner of "Rename"').toBeLessThanOrEqual(rename.x);
+  expect(overlap(star, rename), 'the star stays out of "Rename"').toBe(false);
 });
 
 // plan-ui_restyle/REQ-30 (as REQ-15, REQ-16, REQ-28)

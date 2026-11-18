@@ -72,14 +72,14 @@ Hosted needs-input card (look of `#permission-banner`): a block with the class `
 Session star (every entry, rows and the needs-input card, in every group):
 - FavoriteButton, "Remove Favorite" when the entry has `favorite: true`. It sits right after the folder name on line 1 of a row, and right after the folder name in the needs-input card. It is a sibling of the entry button, never inside it.
 - the star place never shrinks, so the folder name is cut first. A row of an external session needing input keeps the "External" chip after it.
-- the star never enters the corner of "Rename": in a row the state name keeps it apart; in the needs-input card, line 1 leaves room for "Rename" at its right.
+- the star stays on line 1 and never meets "Rename", which is on the label row.
 - a marked entry shows the filled star always; an unmarked entry shows the outline star only on hover or visible keyboard focus (FavoriteButton). The entry keeps its place and its group.
 - Tab order of a row: entry, FavoriteButton, EndedEntryActions, "Rename". Of the needs-input card: entry, FavoriteButton, "Reply", "Rename".
 - it is hidden with "Rename" during a rename. Its error shows under the entry; in the needs-input card, at the bottom of the card.
 
 "Rename" (every entry, rows and the needs-input card):
 - a 20 px square icon button (pencil icon, 14 px, `--text-muted` on `--bg-surface-2`, 4 px radius), with the accessible name and the tooltip "Rename". It sits beside the entry button, not inside it, after the EndedEntryActions in the tab order.
-- place → top right of the card, over its state name; top right inside the needs-input card. It is the only action of that corner. On an ended row, EndedEntryActions move to its left.
+- place → the right end of the label row (line 2 of the entry), level with the label, in a row and in the needs-input card; never on line 1. The label row always keeps room for it on its right: a longer label is cut with an ellipsis before it. During the edit that room goes to the editor. On an ended row, EndedEntryActions keep the top right corner of line 1, with no gap beside them.
 - hidden (opacity 0) until the pointer is over the entry or the focus inside the entry is visible from the keyboard. Hover → `--bg-surface-3` and `--text-primary`. The focused button shows the focus ring.
 - pressed → the entry shows SessionNameEditor in place of its label (row line 2, or the card label). Only one entry edits at a time. The other parts of the entry stay.
 - during the edit → the entry is no longer a button: a click on it opens nothing and it cannot be dragged. "Rename" is hidden.
