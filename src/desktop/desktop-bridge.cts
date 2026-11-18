@@ -8,6 +8,7 @@ const WINDOW_MINIMIZE_CHANNEL = 'desktop-bridge:window-minimize';
 const WINDOW_TOGGLE_MAXIMIZE_CHANNEL = 'desktop-bridge:window-toggle-maximize';
 const WINDOW_IS_MAXIMIZED_CHANNEL = 'desktop-bridge:window-is-maximized';
 const WINDOW_MAXIMIZED_CHANNEL = 'desktop-bridge:window-maximized';
+const APP_QUIT_CHANNEL = 'desktop-bridge:app-quit';
 
 const windowControls = {
   closeWindow(): void {
@@ -18,6 +19,9 @@ const windowControls = {
   },
   toggleMaximizeWindow(): void {
     electron.ipcRenderer.send(WINDOW_TOGGLE_MAXIMIZE_CHANNEL);
+  },
+  quitApp(): void {
+    electron.ipcRenderer.send(APP_QUIT_CHANNEL);
   },
   async isWindowMaximized(): Promise<boolean> {
     return (await electron.ipcRenderer.invoke(WINDOW_IS_MAXIMIZED_CHANNEL)) === true;

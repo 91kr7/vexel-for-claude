@@ -5,10 +5,11 @@ export const WINDOW_MINIMIZE_CHANNEL = 'desktop-bridge:window-minimize';
 export const WINDOW_TOGGLE_MAXIMIZE_CHANNEL = 'desktop-bridge:window-toggle-maximize';
 export const WINDOW_IS_MAXIMIZED_CHANNEL = 'desktop-bridge:window-is-maximized';
 export const WINDOW_MAXIMIZED_CHANNEL = 'desktop-bridge:window-maximized';
+export const APP_QUIT_CHANNEL = 'desktop-bridge:app-quit';
 
 type WindowIpc = Pick<IpcMain, 'on' | 'handle'>;
 
-export function connectWindowActions(window: BrowserWindow, ipc: WindowIpc): void {
+export function connectWindowActions(window: BrowserWindow, ipc: WindowIpc, quitApp: () => void = () => {}): void {
   const fromWindow = (event: IpcMainEvent | IpcMainInvokeEvent) => !window.isDestroyed() && event.sender === window.webContents;
 
   ipc.on(WINDOW_CLOSE_CHANNEL, (event) => {
@@ -21,6 +22,9 @@ export function connectWindowActions(window: BrowserWindow, ipc: WindowIpc): voi
     if (!fromWindow(event)) return;
     if (window.isMaximized()) window.unmaximize();
     else window.maximize();
+  });
+  ipc.on(APP_QUIT_CHANNEL, (event) => {
+    if (fromWindow(event)) quitApp();
   });
   ipc.handle(WINDOW_IS_MAXIMIZED_CHANNEL, (event) => fromWindow(event) && window.isMaximized());
 

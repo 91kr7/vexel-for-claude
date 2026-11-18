@@ -28,7 +28,9 @@ import { PlanLimitsReader } from './plan-limits-reader.js';
 import { registerPlanUsageRoute } from './plan-usage-route.js';
 import { ProcessList } from './processes/process-list.js';
 import { LAUNCHER_VARIABLE, ProcessReader } from './processes/process-reader.js';
+import { ProcessTerminator } from './processes/process-terminator.js';
 import { registerProcessesRoute } from './processes/processes-route.js';
+import { registerTerminateProcessRoute } from './processes/terminate-process-route.js';
 import { latestReleaseApiUrl } from './release-check.js';
 import { registerAttachSessionRoute } from './sessions/attach-session-route.js';
 import { AttentionMonitor } from './sessions/attention-monitor.js';
@@ -132,9 +134,14 @@ registerPlanUsageRoute(app, new PlanLimitsReader());
 registerNewerVersionRoute(app, releaseCheck);
 registerInstalledVersionRoute(app, packageJson.version);
 registerUpdateCheckRoute(app, releaseCheckOptions);
+const processReader = new ProcessReader();
 registerProcessesRoute(
   app,
-  new ProcessList({ reader: new ProcessReader(), registry, tracker, ownPid: process.pid, appName: packageJson.name }),
+  new ProcessList({ reader: processReader, registry, tracker, ownPid: process.pid, appName: packageJson.name }),
+);
+registerTerminateProcessRoute(
+  app,
+  new ProcessTerminator({ reader: processReader, registry, ownPid: process.pid, appName: packageJson.name }),
 );
 
 // In dev the page comes from Vite, so dist/web may not exist yet.

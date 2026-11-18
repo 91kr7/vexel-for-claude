@@ -18,3 +18,6 @@
 | 2026-11-18 | dev processes-list | G5 tests | decided | settings-layout:155 measured during the popup zoom of a3d61c7; tester waits for settle, test only |
 | 2026-11-18 | dev processes-list | G5 tests | escalated | Older main-*.test.ts leave 36 inner test servers running; tester's SIGTERM blocked by permissions |
 | 2026-11-18 | dev processes-list | G5 tests | pass | Gatekeeper rerun: 186 unit, 6 e2e; no new leftover process |
+| 2026-11-18 | dev terminate-process | divergence developer | decided | WarningDialog accent="error" is the rose tone; no new prop |
+| 2026-11-18 | dev terminate-process | divergence developer | decided | Desktop quit tested through WindowActions only; main.ts has no testable export, no refactor for it |
+| 2026-11-18 | dev terminate-process | G4 development | pass | Terminate route registered after the local access guard |

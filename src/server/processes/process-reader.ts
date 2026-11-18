@@ -32,12 +32,15 @@ export interface ProcessReaderOptions {
   uid?: number;
 }
 
-function parseStat(text: string): { ppid: number; startTicks: string } | undefined {
+const ENDED_STATES = new Set(['Z', 'X']);
+
+function parseStat(text: string): { state: string; ppid: number; startTicks: string } | undefined {
   const fields = text.slice(text.lastIndexOf(')') + 2).split(' ');
+  const state = fields[0] ?? '';
   const ppid = Number(fields[1]);
   const startTicks = fields[19];
   if (!Number.isInteger(ppid) || startTicks === undefined || !/^\d+$/.test(startTicks)) return undefined;
-  return { ppid, startTicks };
+  return { state, ppid, startTicks };
 }
 
 function parseMarkers(environ: string | undefined): ProcessMarkers {
@@ -123,6 +126,12 @@ export class ProcessReader {
       }),
     );
     return ports;
+  }
+
+  async isRunning(pid: number, startTicks: string): Promise<boolean> {
+    const statText = await readFile(path.join(this.#procDir, String(pid), 'stat'), 'utf8').catch(() => undefined);
+    const parsed = statText === undefined ? undefined : parseStat(statText);
+    return parsed !== undefined && parsed.startTicks === startTicks && !ENDED_STATES.has(parsed.state);
   }
 
   async #bootTime(): Promise<number> {

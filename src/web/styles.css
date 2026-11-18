@@ -4046,6 +4046,18 @@ input {
   overflow-wrap: anywhere;
 }
 
+.process-terminate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 2px 8px;
+}
+
+.process-error {
+  margin: 0;
+}
+
 .dialog-banner {
   display: flex;
   align-items: flex-start;

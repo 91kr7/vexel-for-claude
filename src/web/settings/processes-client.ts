@@ -47,3 +47,22 @@ export async function loadProcesses(signal?: AbortSignal): Promise<ProcessesResu
     return FAILED;
   }
 }
+
+export type TerminateOutcome = 'ended' | 'gone' | 'running' | 'not_allowed' | 'failed';
+
+const SERVER_OUTCOMES: readonly string[] = ['ended', 'gone', 'running', 'not_allowed'];
+
+export async function terminateProcess(pid: number, startedAt: number): Promise<TerminateOutcome> {
+  try {
+    const response = await fetch('/api/processes/terminate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pid, startedAt }),
+    });
+    if (response.status !== 200) return 'failed';
+    const outcome = ((await response.json()) as { outcome?: unknown } | null)?.outcome;
+    return typeof outcome === 'string' && SERVER_OUTCOMES.includes(outcome) ? (outcome as TerminateOutcome) : 'failed';
+  } catch {
+    return 'failed';
+  }
+}

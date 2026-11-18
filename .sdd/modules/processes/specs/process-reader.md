@@ -28,6 +28,7 @@ type: backend service
 - `readListeningPorts(pids) → Promise<Map<pid, number[]>>` → for each pid, the TCP ports it listens on, sorted.
   - a port counts when a socket inode in `/proc/<pid>/fd` is in the `LISTEN` state of `/proc/net/tcp` or `/proc/net/tcp6`.
   - a process with no listening socket, or whose `fd` folder cannot be read → no entry.
+- `isRunning(pid, startTicks) → Promise<boolean>` → `true` when `/proc/<pid>/stat` exists, has the same `startTicks` and the process is not a zombie (`Z`) or dead (`X`). Else `false`, also when the PID now names another process run.
 
 ## Rules and invariants
 
@@ -37,4 +38,4 @@ type: backend service
 
 ## Requirements served
 
-- `plan-app_processes/REQ-6`, `plan-app_processes/REQ-8`, `plan-app_processes/REQ-9`, `plan-app_processes/REQ-20`
+- `plan-app_processes/REQ-6`, `plan-app_processes/REQ-8`, `plan-app_processes/REQ-9`, `plan-app_processes/REQ-20`, `plan-app_processes/REQ-30`, `plan-app_processes/REQ-32`
