@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { loadProcesses } from './processes-client';
+import { loadProcesses, terminateProcess } from './processes-client';
 
 // Unit tests of loadProcesses, plan-app_processes/REQ-10, REQ-11: a fake fetch stands in for GET /api/processes.
 const SERVER = { kind: 'app-server', pid: 10, startedAt: 1000, port: 4001, thisInstance: true, hosted: false, hanging: false };
@@ -98,5 +98,34 @@ describe('loadProcesses', () => {
     controller.abort();
     expect(await result).toEqual({ status: 'failed' });
     expect(calls[0]?.init?.signal).toBe(controller.signal);
+  });
+});
+
+// Unit tests of terminateProcess, plan-app_processes/REQ-31, REQ-32, REQ-34: a fake fetch stands in for the route.
+describe('terminateProcess', () => {
+  it('makes one POST /api/processes/terminate call with the JSON body { pid, startedAt }', async () => {
+    answer(json({ outcome: 'ended' }));
+    await terminateProcess(42, 1_700_000_000_123);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.url).toBe('/api/processes/terminate');
+    expect(calls[0]?.init?.method).toBe('POST');
+    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({ pid: 42, startedAt: 1_700_000_000_123 });
+  });
+
+  it.each(['ended', 'gone', 'running', 'not_allowed'])('gives the outcome "%s" of a 200 answer', async (outcome) => {
+    answer(json({ outcome }));
+    expect(await terminateProcess(42, 1000)).toBe(outcome);
+  });
+
+  it.each([
+    ['a network error', () => Promise.reject(new TypeError('network'))],
+    ['a 400 answer', json({ error: 'invalid_body' }, 400)],
+    ['a 500 answer with an outcome', json({ outcome: 'ended' }, 500)],
+    ['a body that is not JSON', () => Promise.resolve(new Response('<html>', { status: 200 }))],
+    ['another outcome', json({ outcome: 'killed' })],
+    ['an answer with no outcome', json({})],
+  ])('gives "failed" on %s', async (_, response) => {
+    answer(response);
+    expect(await terminateProcess(42, 1000)).toBe('failed');
   });
 });

@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ProcessesResult, ProcessRow } from './processes-client';
+import type { ProcessesResult, ProcessRow, TerminateOutcome } from './processes-client';
 import { ProcessesSection } from './ProcessesSection';
-import { mount, run, unmountAll } from './settings-test-support';
+import { keydown, mount, run, unmountAll } from './settings-test-support';
 
 // Unit tests of the "Processes" section, plan-app_processes/REQ-10 to REQ-19, REQ-21: a fake load stands in for the route.
 const NOW = 1_800_000_000_000;
@@ -174,5 +174,174 @@ describe('ProcessesSection', () => {
     expect(refresh(host).tagName).toBe('BUTTON');
     expect(refresh(host).disabled).toBe(false);
     expect(region(host)?.tabIndex).toBe(0);
+  });
+});
+
+// Terminate on each row, plan-app_processes/REQ-23, REQ-26, REQ-31 to REQ-34: fake load, terminate and quitApp.
+describe('ProcessesSection terminate', () => {
+  /** A terminate that stays pending until `finish` is called. */
+  function heldTerminate() {
+    const finishers: Array<(outcome: TerminateOutcome) => void> = [];
+    return {
+      finish: (outcome: TerminateOutcome) => run(() => finishers.shift()?.(outcome)),
+      terminate: vi.fn((_pid: number, _startedAt: number) => new Promise<TerminateOutcome>((resolve) => finishers.push(resolve))),
+    };
+  }
+
+  /** The section with the rows of `first` loaded; each later load answers the next entry of `later`. */
+  async function section(first: ProcessRow[], later: ProcessRow[][] = []) {
+    const loads = [first, ...later];
+    const load = vi.fn(async () => ({ status: 'loaded' as const, processes: loads.length > 1 ? loads.shift()! : loads[0]! }));
+    const held = heldTerminate();
+    const quitApp = vi.fn();
+    const host = mount(<ProcessesSection load={load} terminate={held.terminate} quitApp={quitApp} now={() => NOW} />);
+    await until(() => rows(host).length === first.length && host.querySelector('[role="status"]') === null);
+    return { host, load, held, quitApp };
+  }
+
+  const nameOf = (element: Element) => element.getAttribute('aria-label') ?? text(element);
+  const rowOf = (host: HTMLElement, pid: number) => rows(host).find((row) => new RegExp(`PID ${pid}(?!\\d)`).test(row.textContent ?? ''));
+  const rowText = (host: HTMLElement, pid: number) => text(rowOf(host, pid)) ?? '';
+  const terminateOf = (host: HTMLElement, pid: number) =>
+    [...(rowOf(host, pid)?.querySelectorAll('button') ?? [])].find((button) => nameOf(button) === 'Terminate') as HTMLButtonElement | undefined;
+  const openDialog = () => document.querySelector<HTMLElement>('[role="alertdialog"][aria-modal="true"]');
+  const dialogButton = (name: string) => [...(openDialog()?.querySelectorAll('button') ?? [])].find((button) => text(button) === name) as HTMLButtonElement;
+
+  async function confirmOn(host: HTMLElement, pid: number) {
+    run(() => terminateOf(host, pid)?.click());
+    await until(() => openDialog() !== null);
+    run(() => dialogButton('Terminate').click());
+  }
+
+  // plan-app_processes/REQ-23
+  it('shows a "Terminate" button on every row, the current instance included', async () => {
+    const { host } = await section([OWN, OTHER, LEFTOVER, SESSION]);
+    for (const pid of [101, 102, 104, 103]) expect(terminateOf(host, pid), `row ${pid}`).toBeDefined();
+  });
+
+  // plan-app_processes/REQ-24
+  it('"Terminate" opens the confirmation for that row', async () => {
+    const { host, held } = await section([OWN, OTHER]);
+    run(() => terminateOf(host, 102)?.click());
+    await until(() => openDialog() !== null);
+    expect(text(openDialog())).toContain('App server · PID 102 · port 4001');
+    expect(held.terminate).not.toHaveBeenCalled();
+  });
+
+  it('"Cancel" closes the confirmation and changes nothing', async () => {
+    const { host, held, load } = await section([OWN, OTHER]);
+    run(() => terminateOf(host, 102)?.click());
+    await until(() => openDialog() !== null);
+    run(() => dialogButton('Cancel').click());
+    await until(() => openDialog() === null);
+    expect(held.terminate).not.toHaveBeenCalled();
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(terminateOf(host, 102)?.disabled).toBe(false);
+  });
+
+  // plan-app_processes/REQ-33
+  it('Esc closes the confirmation and changes nothing', async () => {
+    const { host, held } = await section([OWN, OTHER]);
+    run(() => terminateOf(host, 102)?.click());
+    await until(() => openDialog() !== null);
+    run(() => keydown(document.activeElement ?? openDialog()!, 'Escape'));
+    await until(() => openDialog() === null);
+    expect(held.terminate).not.toHaveBeenCalled();
+  });
+
+  // plan-app_processes/REQ-31
+  it('a confirm closes the dialog, makes the button busy, terminates by PID and start time, then loads again', async () => {
+    const { host, held, load } = await section([OWN, OTHER], [[OWN]]);
+    await confirmOn(host, 102);
+    await until(() => openDialog() === null);
+    expect(held.terminate.mock.calls).toEqual([[102, OTHER.startedAt]]);
+    expect(terminateOf(host, 102)?.disabled).toBe(true);
+    expect(load).toHaveBeenCalledTimes(1);
+    held.finish('ended');
+    await until(() => rows(host).length === 1);
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(rowOf(host, 102)).toBeUndefined();
+  });
+
+  // plan-app_processes/REQ-32
+  it.each([
+    ['running', 'The process did not end.'],
+    ['not_allowed', 'You are not allowed to end this process.'],
+    ['failed', 'Could not terminate the process.'],
+  ] as const)('an outcome "%s" keeps the row with the error "%s" after the reload', async (outcome, message) => {
+    const { host, held, load } = await section([OWN, OTHER]);
+    await confirmOn(host, 102);
+    held.finish(outcome);
+    await until(() => load.mock.calls.length === 2 && host.querySelector('[role="status"]') === null);
+    await until(() => rowText(host, 102).includes(message));
+    expect(rowText(host, 101)).not.toContain(message);
+    expect(terminateOf(host, 102)?.disabled).toBe(false);
+  });
+
+  it('"gone" leaves no error', async () => {
+    const { host, held, load } = await section([OWN, OTHER]);
+    await confirmOn(host, 102);
+    held.finish('gone');
+    await until(() => load.mock.calls.length === 2 && host.querySelector('[role="status"]') === null);
+    await flush();
+    for (const message of ['The process did not end.', 'You are not allowed', 'Could not terminate']) expect(text(region(host))).not.toContain(message);
+  });
+
+  it('an "ended" or "gone" outcome removes an older error of the row', async () => {
+    const { host, held } = await section([OWN, OTHER]);
+    await confirmOn(host, 102);
+    held.finish('running');
+    await until(() => rowText(host, 102).includes('The process did not end.'));
+    await confirmOn(host, 102);
+    held.finish('gone');
+    await until(() => !rowText(host, 102).includes('The process did not end.'));
+  });
+
+  it('keeps a row error after "Refresh" while the row is listed', async () => {
+    const { host, held } = await section([OWN, OTHER]);
+    await confirmOn(host, 102);
+    held.finish('not_allowed');
+    await until(() => rowText(host, 102).includes('You are not allowed to end this process.'));
+    run(() => refresh(host).click());
+    await until(() => host.querySelector('[role="status"]') === null && rowOf(host, 102) !== undefined);
+    expect(rowText(host, 102)).toContain('You are not allowed to end this process.');
+  });
+
+  // plan-app_processes/REQ-30: the error belongs to the process run, not to the PID
+  it('does not show the error on a row with the same PID and another start time', async () => {
+    const reused = { ...OTHER, startedAt: OTHER.startedAt + 60_000 };
+    const { host, held } = await section([OWN, OTHER], [[OWN, reused]]);
+    await confirmOn(host, 102);
+    held.finish('running');
+    await until(() => host.querySelector('[role="status"]') === null && rowOf(host, 102) !== undefined && !(terminateOf(host, 102)?.disabled ?? true));
+    await flush();
+    expect(rowText(host, 102)).not.toContain('The process did not end.');
+  });
+
+  // plan-app_processes/REQ-26: the desktop app quits after the current instance ended
+  it('asks the app to quit after "ended" on the current instance row', async () => {
+    const { host, held, quitApp } = await section([OWN, OTHER]);
+    await confirmOn(host, 101);
+    expect(quitApp).not.toHaveBeenCalled();
+    held.finish('ended');
+    await until(() => quitApp.mock.calls.length === 1);
+  });
+
+  it.each(['running', 'gone', 'failed'] as const)('does not ask the app to quit after "%s" on the current instance row', async (outcome) => {
+    const { host, held, quitApp, load } = await section([OWN, OTHER]);
+    await confirmOn(host, 101);
+    held.finish(outcome);
+    await until(() => load.mock.calls.length === 2);
+    await flush();
+    expect(quitApp).not.toHaveBeenCalled();
+  });
+
+  it('does not ask the app to quit after "ended" on another row', async () => {
+    const { host, held, quitApp, load } = await section([OWN, OTHER], [[OWN]]);
+    await confirmOn(host, 102);
+    held.finish('ended');
+    await until(() => load.mock.calls.length === 2);
+    await flush();
+    expect(quitApp).not.toHaveBeenCalled();
   });
 });

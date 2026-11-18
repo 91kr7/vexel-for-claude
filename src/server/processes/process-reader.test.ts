@@ -23,6 +23,8 @@ interface FakeProcess {
   pid: number;
   ppid?: number;
   comm?: string;
+  /** Field 3 of stat, default `S`. */
+  state?: string;
   startTicks?: string;
   argv?: string[];
   cwd?: string;
@@ -49,7 +51,7 @@ async function fakeProc(processes: FakeProcess[], tcp: string[] = [], tcp6: stri
     await mkdir(dir);
     const middle = Array.from({ length: 17 }, () => '0').join(' ');
     if (!fake.noStat)
-      await writeFile(path.join(dir, 'stat'), `${fake.pid} (${fake.comm ?? 'node'}) S ${fake.ppid ?? 1} ${middle} ${fake.startTicks ?? '500'} 0 0 0\n`);
+      await writeFile(path.join(dir, 'stat'), `${fake.pid} (${fake.comm ?? 'node'}) ${fake.state ?? 'S'} ${fake.ppid ?? 1} ${middle} ${fake.startTicks ?? '500'} 0 0 0\n`);
     if (!fake.noCmdline) await writeFile(path.join(dir, 'cmdline'), (fake.argv ?? ['node']).map((arg) => `${arg}\0`).join(''));
     if (fake.cwd) await symlink(fake.cwd, path.join(dir, 'cwd'));
     if (!fake.noEnviron)
@@ -195,6 +197,29 @@ describe('ProcessReader.readListeningPorts on a fake /proc', () => {
   });
 });
 
+// plan-app_processes/REQ-30, REQ-32: the end check names one process run by PID and start ticks
+describe('ProcessReader.isRunning on a fake /proc', () => {
+  it('is true for the same PID and start ticks', async () => {
+    const root = await fakeProc([{ pid: 40, startTicks: '777' }]);
+    expect(await reader(root).isRunning(40, '777')).toBe(true);
+  });
+
+  it('is false when the PID now names another process run', async () => {
+    const root = await fakeProc([{ pid: 40, startTicks: '778' }]);
+    expect(await reader(root).isRunning(40, '777')).toBe(false);
+  });
+
+  it('is false when the PID no longer exists', async () => {
+    const root = await fakeProc([{ pid: 41 }]);
+    expect(await reader(root).isRunning(40, '500')).toBe(false);
+  });
+
+  it.each(['Z', 'X'])('is false for a process in state %s', async (state) => {
+    const root = await fakeProc([{ pid: 40, startTicks: '777', state }]);
+    expect(await reader(root).isRunning(40, '777')).toBe(false);
+  });
+});
+
 describe('ProcessReader on the real /proc', () => {
   // plan-app_processes/REQ-8: only the processes of the current user
   it('lists the own process and only processes of the current user', async () => {
@@ -214,6 +239,11 @@ describe('ProcessReader on the real /proc', () => {
     const facts = (await new ProcessReader().readProcesses()).find((entry) => entry.pid === child.pid);
     expect(facts?.ppid).toBe(process.pid);
     expect(facts?.markers).toMatchObject({ sessionId: 'real-1', testServer: true, launcher: { pid: 7, startTicks: '8' } });
+  });
+
+  it('isRunning is true for this process with its own start ticks', async () => {
+    const own = (await new ProcessReader().readProcesses()).find((entry) => entry.pid === process.pid);
+    expect(await new ProcessReader().isRunning(process.pid, own?.startTicks ?? '')).toBe(true);
   });
 
   it('gives the port this process listens on', async () => {
