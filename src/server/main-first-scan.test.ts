@@ -45,7 +45,8 @@ async function externalTerminal(claudeDir: string, sessionId: string, folder: st
 
 function startServer(port: number, claudeDir: string, dataDir: string): void {
   children.push(
-    spawn(path.join(repoRoot, 'node_modules/.bin/tsx'), ['src/server/main.ts'], {
+    // Node runs the server itself, not the tsx wrapper: the SIGKILL of the cleanup then reaches the server.
+    spawn(process.execPath, ['--import', 'tsx', 'src/server/main.ts'], {
       cwd: repoRoot,
       env: { ...process.env, PORT: String(port), AI_CLIENT_CLAUDE_CLI: FAKE_CLI, CLAUDE_CONFIG_DIR: claudeDir, AI_CLIENT_DATA_DIR: dataDir },
       stdio: 'ignore',

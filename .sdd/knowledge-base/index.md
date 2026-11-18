@@ -11,3 +11,4 @@
 | no-kill-by-pattern | guideline | development, test | Never stop processes by name or pattern; a process you started is stopped only by its PID | `entries/no-kill-by-pattern.md` |
 | wsl-keeps-ubuntu-working | guideline | any | A change made for WSL never breaks the app on Ubuntu | `entries/wsl-keeps-ubuntu-working.md` |
 | limited-test-parallelism | guideline | development, test | Vitest at most 4 workers, Playwright at most 3; never two full suites at once | `entries/limited-test-parallelism.md` |
+| tests-stop-their-processes | guideline | development, test | A test stops every process it starts, with a signal that reaches the real process; no process is left after a run | `entries/tests-stop-their-processes.md` |
