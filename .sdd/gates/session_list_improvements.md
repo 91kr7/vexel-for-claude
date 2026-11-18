@@ -30,3 +30,5 @@
 | 2026-11-18 | plan | question planner Q1 | decided | Ended actions return to the top right corner of row 1; source commit f856169 (unmerged, branch feat/card_metrics_spacing) |
 | 2026-11-18 | plan | G2 requirements | pass | REQ-40 to REQ-43 trace to the fix lines of the analysis; ended-actions assumption corrected |
 | 2026-11-18 | plan | G3 coverage | pass | One batch rename-pencil, REQ-40 to REQ-43 each have an INT, paths exist, no departure |
+| 2026-11-18 | dev | G4 development | pass | Diff holds `SessionList.tsx`, `styles.css`, the session-list spec and index; build green re-run by the gatekeeper |
+| 2026-11-18 | dev | divergence developer | decided | `RenameSlot` is an internal span of `SessionList.tsx`, like the star slot; no spec of its own |

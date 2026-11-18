@@ -49,6 +49,10 @@ function EntryHeading({ session }: { session: SessionSummary }) {
   );
 }
 
+function RenameSlot() {
+  return <span className="session-entry-rename-slot" aria-hidden="true" />;
+}
+
 function ToolLine({ tool }: { tool: RunningTool }) {
   const text = tool.argument === undefined ? tool.name : `${tool.name}: ${tool.argument}`;
   const others = tool.others > 0 ? `+${tool.others}` : undefined;
@@ -114,6 +118,7 @@ function EntryRow({ session, open, onOpen, editor, star }: EntryProps) {
             {externalNeedsInput ? <PermissionText session={session} /> : session.label}
           </span>
         )}
+        {!editor && <RenameSlot />}
       </span>
       {session.state === 'working' && session.runningTool && <ToolLine tool={session.runningTool} />}
       {session.state === 'working' && !session.external && <ProgressBar />}
@@ -153,6 +158,7 @@ function NeedsInputCard({ session, open, onOpen, editor, star }: EntryProps) {
             {session.label}
           </span>
         )}
+        {!editor && <RenameSlot />}
       </span>
       {(session.usage?.context || session.usage?.cost) && (
         <span className="session-entry-line session-entry-metrics">
