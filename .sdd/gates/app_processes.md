@@ -23,3 +23,5 @@
 | 2026-11-18 | dev terminate-process | G4 development | pass | Terminate route registered after the local access guard |
 | 2026-11-18 | dev terminate-process | G5 tests | sent back | REQ-33: focus lost after a terminate removes the row, Esc no longer closes the popup |
 | 2026-11-18 | dev terminate-process | G4 development | pass | Round 2, focus after terminate |
+| 2026-11-18 | dev terminate-process | G5 tests | pass | Round 2: settings unit 192, processes e2e 13; full suites green in round 1 (unit 4348, e2e 958) |
+| 2026-11-18 | closing | full rerun | decided | Fix after the full pass touched only ProcessesSection; scoped rerun per human preference, full unit run leaks 36 test servers |

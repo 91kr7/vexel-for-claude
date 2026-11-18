@@ -184,6 +184,11 @@ test.describe('another app server', () => {
     await expect(rowOf(page, bystander.pid as number)).toHaveCount(1);
     await expect(rowWith(page, 'This instance')).toHaveCount(1);
     expect(isAlive(bystander.pid as number)).toBe(true);
+
+    // spec ProcessesSection, "focus after that load": the row left, so "Refresh" has the focus and Esc closes the popup
+    await expect(popup(page).getByRole('button', { name: 'Refresh', exact: true })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(popup(page)).toHaveCount(0);
   });
 
   test('Esc closes the confirmation and the server keeps running', async ({ page }) => {

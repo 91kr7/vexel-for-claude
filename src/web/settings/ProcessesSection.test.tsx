@@ -189,9 +189,12 @@ describe('ProcessesSection terminate', () => {
   }
 
   /** The section with the rows of `first` loaded; each later load answers the next entry of `later`. */
-  async function section(first: ProcessRow[], later: ProcessRow[][] = []) {
-    const loads = [first, ...later];
-    const load = vi.fn(async () => ({ status: 'loaded' as const, processes: loads.length > 1 ? loads.shift()! : loads[0]! }));
+  async function section(first: ProcessRow[], later: Array<ProcessRow[] | 'failed'> = []) {
+    const loads: Array<ProcessRow[] | 'failed'> = [first, ...later];
+    const load = vi.fn(async (): Promise<ProcessesResult> => {
+      const next = loads.length > 1 ? loads.shift()! : loads[0]!;
+      return next === 'failed' ? { status: 'failed' } : { status: 'loaded', processes: next };
+    });
     const held = heldTerminate();
     const quitApp = vi.fn();
     const host = mount(<ProcessesSection load={load} terminate={held.terminate} quitApp={quitApp} now={() => NOW} />);
@@ -343,5 +346,51 @@ describe('ProcessesSection terminate', () => {
     await until(() => load.mock.calls.length === 2);
     await flush();
     expect(quitApp).not.toHaveBeenCalled();
+  });
+
+  // spec ProcessesSection, "focus after that load": a lost focus comes back inside the section
+  describe('focus after the reload of a terminate', () => {
+    /** Confirms on `pid`, waits until the dialog has left the page, then moves the focus with `moveFocus`. */
+    async function confirmThenFocus(host: HTMLElement, pid: number, moveFocus: () => void) {
+      await confirmOn(host, pid);
+      await until(() => document.querySelector('[role="alertdialog"]') === null);
+      run(moveFocus);
+    }
+    const loseFocus = () => (document.activeElement as HTMLElement | null)?.blur();
+
+    it('gives the focus to the row\'s "Terminate" when the row is still listed', async () => {
+      const { host, held, load } = await section([OWN, OTHER]);
+      await confirmThenFocus(host, 102, loseFocus);
+      expect(document.activeElement).toBe(document.body);
+      held.finish('running');
+      await until(() => load.mock.calls.length === 2 && host.querySelector('[role="status"]') === null);
+      await until(() => document.activeElement === terminateOf(host, 102));
+    });
+
+    it('gives the focus to "Refresh" when the row left the list', async () => {
+      const { host, held } = await section([OWN, OTHER], [[OWN]]);
+      await confirmThenFocus(host, 102, loseFocus);
+      held.finish('ended');
+      await until(() => rowOf(host, 102) === undefined && rows(host).length === 1);
+      await until(() => document.activeElement === refresh(host));
+    });
+
+    it('gives the focus to "Refresh" when the load fails', async () => {
+      const { host, held } = await section([OWN, OTHER], ['failed']);
+      await confirmThenFocus(host, 102, loseFocus);
+      held.finish('ended');
+      await until(() => text(host.querySelector('[role="alert"]'))?.includes('Could not load the processes.') ?? false);
+      await until(() => document.activeElement === refresh(host));
+    });
+
+    it('leaves the focus where the user moved it', async () => {
+      const { host, held, load } = await section([OWN, OTHER], [[OWN]]);
+      await confirmThenFocus(host, 102, () => region(host)?.focus());
+      expect(document.activeElement).toBe(region(host));
+      held.finish('ended');
+      await until(() => load.mock.calls.length === 2 && rows(host).length === 1);
+      await flush();
+      expect(document.activeElement).toBe(region(host));
+    });
   });
 });
