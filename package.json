@@ -41,7 +41,7 @@
     "desktop:install": "npm run --silent build && npm run --silent build:desktop && tsx src/desktop/install-menu-entry.ts"
   },
   "dependencies": {
-    "@fastify/static": "^10.1.10",
+    "@fastify/static": "^10.1.11",
     "@fastify/websocket": "^11.3.7",
     "@jellybrick/dbus-next": "^0.11.4",
     "@xterm/addon-fit": "^0.11.0",
