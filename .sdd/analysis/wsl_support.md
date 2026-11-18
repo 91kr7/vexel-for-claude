@@ -1,9 +1,9 @@
 ---
 request_slug: wsl_support
-date: 2026-11-13
-type: new
+date: 2026-11-18
+type: fix
 size: ordinary
-reference: none
+reference: .sdd/analysis/wsl_support.md
 ---
 
 # Analysis — Port the WSL support branch to main
@@ -15,9 +15,22 @@ reference: none
 
 Human decision of 2026-11-13: "porta tutta la branch ma analizza cosa stai portando per capire se va bene!" The whole branch is in scope, not only its WSL part.
 
+## Reference
+
+Fix of 2026-11-18 to this analysis. Fix request:
+
+> fix: riprendendo con Alt+R (o col bottone Resume) una sessione esterna terminata, a volte l'area principale resta su "No open session" invece di mostrare la sessione ripresa. Causa trovata dal test ended-external-sessions.spec.ts:229: in src/web/AppLayout.tsx (righe 136-138) l'effetto che azzera openSessionId quando la sessione aperta esce dalla lista può girare dopo openHosted(newId) e cancella la sessione appena ripresa. Contratti violati: plan-wsl_support REQ-12 e REQ-13. Non partire da zero: identifica l'analisi e il batch relativi alla ripresa delle sessioni esterne terminate e correggi.
+
+Starting point: Resume of an ended external entry follows [session_list_improvements.md](session_list_improvements.md), line 48: the resumed session must be open in the main area. The shortcuts must do what the buttons do (line 41 below). Today, after a resume, the main area sometimes shows "No open session". The removal of the ended entry from the list closes the session that the resume has just opened.
+
+Changes:
+- Functional → new requirements on the main area after a resume of an ended external session.
+- Non-functional → the result must be the same on every run.
+- Assumptions and Scope → entries on this fix.
+
 ## Summary
 
-Bring to main the four changes of `feature/wsl-support`: quiet failed notifications, ended external sessions that stay in the list, a Windows 11 look with its own switch, and a lock file sync. The app must work under WSL, and every behaviour of main today must keep working.
+Bring to main the four changes of `feature/wsl-support`: quiet failed notifications, ended external sessions that stay in the list, a Windows 11 look with its own switch, and a lock file sync. The app must work under WSL, and every behaviour of main today must keep working. After a resume of an ended external session, the main area shows the resumed session every time.
 
 ## Requirements
 
@@ -38,6 +51,10 @@ Ended external sessions
 - An ended external entry must offer "Dismiss" and "Resume", with the rules of [session_list_improvements.md](session_list_improvements.md), lines 39-48.
 - "Resume here" on an ended external session must not show the running-elsewhere warning.
 - When the user resumes an ended external session in the client, the ended external entry must leave the list. Only the new hosted entry stays.
+- After a resume of an ended external session, the main area must show the new hosted session. This holds for the entry's "Resume", for "Resume here" and for the keyboard shortcut.
+- The removal of the ended external entry from the list must not close the session that the resume opened. The main area must never fall back to "No open session" after a resume that succeeded.
+- Dismiss of an open session must still bring the main area back to no open session ([session_list_improvements.md](session_list_improvements.md), line 45).
+- Resume of an ended hosted session must keep its current behaviour ([session_list_improvements.md](session_list_improvements.md), lines 48-49).
 - On an open ended external session, the keyboard shortcuts must do what its buttons do.
 - An external session that ends must show no system notification, as today.
 - An ended external session must keep its client name and favorite mark.
@@ -66,6 +83,8 @@ Lock file
 - Text must meet WCAG 2.2 AA contrast in all four combinations of look and theme. The accent blue gets a darker or lighter tone only where needed to reach it.
 - Status colours (working, needs input, error, waiting, ended) must stay distinguishable in the Windows 11 look.
 - The look switch and the Windows-style buttons must work with the keyboard, with a visible focus. Each button must have an accessible name that says its action.
+- The main area after a resume must not depend on the order in which the list update and the opening of the new session arrive. A resume that opens the session only on some runs counts as failing.
+- The resume fix must hold on Ubuntu and under WSL.
 
 ## Assumptions
 
@@ -80,6 +99,9 @@ Lock file
 - The accent blue is the Windows 11 default accent. The client does not read the user's own Windows accent colour.
 - "Mica-like" means surfaces drawn with the client's own colours. Real Mica takes its tint from the Windows wallpaper ([Mica material](https://learn.microsoft.com/windows/apps/design/style/mica)), which a Linux window does not get.
 - When Segoe UI is not installed on the machine, the Windows 11 look uses the next sans-serif font of its font list.
+- The 2026-11-18 change is a fix of this analysis. The human wrote "fix" and asked to correct the existing analysis and batch.
+- The fix covers "Resume here" too, although the human named only Alt+R and the Resume button. All three resume the same session and must end in the same state.
+- A resume that fails keeps the rule of [session_list_improvements.md](session_list_improvements.md), line 51: the entry stays and the user sees an error.
 
 ## Constraints
 
@@ -99,6 +121,7 @@ Lock file
 In scope:
 - The one-line, once-per-reason log of failed system notifications.
 - Ended external sessions kept in the list, with Dismiss, Resume and "Resume here" without warning.
+- The resumed session shown in the main area after every resume of an ended external session.
 - The Windows 11 look, its switch in the top bar, and the Windows-style window buttons of the desktop app.
 - The license sync of `package-lock.json`.
 

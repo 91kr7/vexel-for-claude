@@ -78,9 +78,22 @@ Words used below, as in the spec:
 |----|-------------|
 | REQ-41 | `package-lock.json` carries the same license as `package.json`, with no dependency version changed. |
 
+## Feature: Resumed session in the main area
+
+Added by the fix of 2026-11-18 to the spec.
+
+| ID | Requirement |
+|----|-------------|
+| REQ-42 | After a resume of an ended external session with "Resume" on its entry, with "Resume Here" or with the resume shortcut, the main area shows the new hosted session. |
+| REQ-43 | The removal of the ended external entry from the list does not close the session that the resume opened: after a resume that succeeded, the main area never falls back to "No open session". |
+| REQ-44 | REQ-42 and REQ-43 hold whatever the order in which the list update and the opening of the new session arrive. |
+| REQ-45 | When the user dismisses the open session, the main area still returns to no open session, as `plan-session_list_improvements/REQ-7` requires. |
+| REQ-46 | A resume of an ended hosted session keeps the behaviour of `plan-session_list_improvements/REQ-10` and `REQ-11`. |
+| REQ-47 | REQ-42 to REQ-46 hold on Ubuntu and under WSL. |
+
 ## Assumptions
 
-All come from the spec, unless marked as a gatekeeper decision. The gatekeeper validated REQ-1 to REQ-41 on 2026-11-13.
+All come from the spec, unless marked as a gatekeeper decision. The gatekeeper validated REQ-1 to REQ-41 on 2026-11-13, and REQ-42 to REQ-47 on 2026-11-18.
 
 - **Environment.** WSL means a Linux distribution under WSL 2, with the desktop app shown through WSLg. The app stays a Linux app.
 - **Dismissed entry (REQ-9).** A dismissed ended external entry does not come back as an ended entry. Gatekeeper decision: when the same conversation later runs again in a terminal, it shows as a live external entry, like any external session.
@@ -92,6 +105,11 @@ All come from the spec, unless marked as a gatekeeper decision. The gatekeeper v
 - **Mica-like (REQ-25).** Surfaces drawn with the client's own colours. They take no tint from the Windows wallpaper.
 - **Look storage (REQ-22).** The client remembers the look where the user chose it, as it does for the theme (`plan-light_theme`).
 - **Terminal panel.** The terminal panel of hosted sessions stays dark in both looks.
+- **Fix of 2026-11-18 (REQ-42 to REQ-47).** These REQs make precise what REQ-10 (through `plan-session_list_improvements/REQ-10`), REQ-12 and REQ-13 already asked. REQ-1 to REQ-41 and their certified batches do not change.
+- **Every run (REQ-44).** A resume that opens the session only on some runs fails REQ-42 and REQ-43.
+- **Resume from the history (REQ-42).** Gatekeeper decision: no REQ and no test of its own. The spec names only "Resume", "Resume Here" and the shortcut. The history opens the resumed session in the same way, so the same fix serves it.
+- **WSL (REQ-47).** Gatekeeper decision: REQ-47 is checked on Ubuntu only. The fix lives in the web client and has no path that depends on the operating system. Under WSL only the timing changes, and the order test of REQ-44 covers any timing. No WSL machine is available for the test run.
+- **Failed resume.** It keeps the rule of `plan-session_list_improvements/REQ-12`, already part of REQ-10. No new REQ.
 
 ## Constraints on the whole plan
 

@@ -212,12 +212,12 @@ test('terminating a hanging fake Claude removes only its row', async ({ page }) 
   await openProcesses(page);
   await expect(rowOf(page, target.pid as number)).toContainText('Fake Claude');
   await expect(rowOf(page, target.pid as number)).toContainText('Hanging');
-  const before = await rows(page).count();
+  await expect(rowOf(page, bystander.pid as number)).toHaveCount(1);
 
   await confirmTerminate(page, target.pid as number);
 
+  // Only rows this test owns: other workers start and stop processes, so the total row count is not stable.
   await expect(rowOf(page, target.pid as number)).toHaveCount(0);
-  await expect(rows(page)).toHaveCount(before - 1);
   await expect(rowOf(page, bystander.pid as number)).toHaveCount(1);
   await expect(rowWith(page, 'This instance')).toHaveCount(1);
   await exited(target);

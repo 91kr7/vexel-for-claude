@@ -132,10 +132,10 @@ export function AppLayout() {
   }
   const openEndedWhileAway = endedWhileAwayId === openSessionId && !listedSummary && lastSummary !== undefined;
   const openSummary = openEndedWhileAway ? { ...lastSummary, state: 'ended' as const } : lastSummary;
-  const openLeftList = !openEndedWhileAway && !listedSummary && openSummary !== undefined;
+  const leftListId = !openEndedWhileAway && !listedSummary && openSummary !== undefined ? openSessionId : null;
   useEffect(() => {
-    if (openLeftList) setOpenSessionId(null);
-  }, [openLeftList]);
+    if (leftListId !== null) setOpenSessionId((current) => (current === leftListId ? null : current));
+  }, [leftListId]);
   const openHosted = (sessionId: string) => {
     setOpenSessionId(sessionId);
     setOpenIsExternal(false);

@@ -96,9 +96,9 @@ async function runInTerminal(sessionId: string, folder: string): Promise<{ close
 }
 
 /** An external session with a saved conversation, listed in the page, then its terminal closed: it waits for the "Ended" group. */
-async function endedExternal(page: Page, name: string, options: { open?: boolean } = {}): Promise<{ sessionId: string; folder: string }> {
+async function endedExternal(page: Page, name: string, options: { open?: boolean; sessionId?: string } = {}): Promise<{ sessionId: string; folder: string }> {
   const folder = await newFolder(name);
-  const sessionId = randomUUID();
+  const sessionId = options.sessionId ?? randomUUID();
   await transcript(sessionId, folder, `Check the ${name} tests`);
   const session = await runInTerminal(sessionId, folder);
   await page.goto('/');
@@ -265,3 +265,128 @@ test('a failed "Resume" on an ended external entry shows the error under it, and
   await expect(endedItem(page, ended.folder)).toHaveCount(1);
   await expect(terminal(page)).toHaveCount(0);
 });
+
+// Batch resumed-session-main-area: the page holds the resume response and the `session-removed` frame of the ended
+// session, and the test releases them in a fixed order. No order depends on timing.
+type OrderHooks = { resume?: () => void; removal?: () => void; sawEmpty: boolean; watching: boolean };
+
+/** Init script: holds the first resume response and the first removal frame of `heldId` until the test releases them. */
+function holdResumeAndRemoval(heldId: string): void {
+  const hooks: OrderHooks = { sawEmpty: false, watching: false };
+  Object.assign(globalThis, { e2eOrder: hooks });
+  new MutationObserver(() => {
+    if (hooks.watching && document.querySelector('main')?.textContent?.includes('No open session.')) hooks.sawEmpty = true;
+  }).observe(document, { childList: true, subtree: true, characterData: true });
+
+  const nativeFetch = window.fetch.bind(window);
+  let resumeHeld = false;
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = new URL(input instanceof Request ? input.url : String(input), location.href);
+    const method = init?.method ?? (input instanceof Request ? input.method : 'GET');
+    if (resumeHeld || method !== 'POST' || !url.pathname.endsWith('/resume')) return nativeFetch(input, init);
+    resumeHeld = true;
+    const response = await nativeFetch(input, init);
+    const text = await response.text();
+    await new Promise<void>((release) => (hooks.resume = release));
+    const held = new Response(text, { status: response.status, headers: response.headers });
+    // The body is already read: json() settles in microtasks, so the page opens the session inside the releasing task.
+    Object.defineProperty(held, 'json', { value: () => Promise.resolve(JSON.parse(text)) });
+    return held;
+  };
+
+  const NativeWebSocket = window.WebSocket;
+  let removalHeld = false;
+  window.WebSocket = class extends NativeWebSocket {
+    override addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: AddEventListenerOptions | boolean): void {
+      const events = new URL(this.url).pathname === '/api/sessions/events';
+      if (!events || type !== 'message' || typeof listener !== 'function') return super.addEventListener(type, listener, options);
+      super.addEventListener(
+        type,
+        (event) => {
+          const frame = JSON.parse(String((event as MessageEvent).data)) as { type?: string; id?: string };
+          if (!removalHeld && frame.type === 'session-removed' && frame.id === heldId) {
+            removalHeld = true;
+            hooks.removal = () => listener.call(this, event);
+            return;
+          }
+          listener.call(this, event);
+        },
+        options,
+      );
+    }
+  };
+}
+
+const orderHooks = (page: Page) => page.evaluate(() => (globalThis as unknown as { e2eOrder: OrderHooks }).e2eOrder);
+const bothHeld = (page: Page) =>
+  page.waitForFunction(() => {
+    const hooks = (globalThis as unknown as { e2eOrder: OrderHooks }).e2eOrder;
+    return hooks.resume !== undefined && hooks.removal !== undefined;
+  });
+const watchEmpty = (page: Page) =>
+  page.evaluate(() => {
+    const hooks = (globalThis as unknown as { e2eOrder: OrderHooks }).e2eOrder;
+    hooks.watching = true;
+    if (document.querySelector('main')?.textContent?.includes('No open session.')) hooks.sawEmpty = true;
+  });
+const releaseResume = (page: Page) => page.evaluate(() => (globalThis as unknown as { e2eOrder: OrderHooks }).e2eOrder.resume?.());
+const releaseRemoval = (page: Page) => page.evaluate(() => (globalThis as unknown as { e2eOrder: OrderHooks }).e2eOrder.removal?.());
+/** Releases the resume, lets the page call its open within the same task, then delivers the removal before any render. */
+const releaseResumeThenRemovalInOneTask = (page: Page) =>
+  page.evaluate(async () => {
+    const hooks = (globalThis as unknown as { e2eOrder: OrderHooks }).e2eOrder;
+    hooks.resume?.();
+    for (let tick = 0; tick < 100; tick++) await Promise.resolve();
+    hooks.removal?.();
+  });
+
+const resumeTriggers: Record<string, (page: Page, folder: string) => Promise<void>> = {
+  '"Resume" on the entry': (page, folder) => action(page, folder, 'Resume').click(),
+  '"Resume Here"': (page) => page.getByRole('button', { name: 'Resume Here', exact: true }).click(),
+  'Alt+R': (page) => page.keyboard.press('Alt+KeyR'),
+};
+
+const orders: Record<string, (page: Page, sessionId: string) => Promise<void>> = {
+  'the removal reaches the page first': async (page) => {
+    await releaseRemoval(page);
+    await expect(noOpenSession(page)).toBeVisible();
+    await releaseResume(page);
+  },
+  'the open is requested first, the removal arrives before the page renders it': async (page) => {
+    await watchEmpty(page);
+    await releaseResumeThenRemovalInOneTask(page);
+  },
+  'the resumed session is shown first': async (page, sessionId) => {
+    await watchEmpty(page);
+    await releaseResume(page);
+    await expect(terminal(page)).toContainText(`"--resume","${sessionId}"`);
+    await releaseRemoval(page);
+  },
+};
+
+for (const [triggerName, trigger] of Object.entries(resumeTriggers)) {
+  for (const [orderName, releaseInOrder] of Object.entries(orders)) {
+    // plan-wsl_support/REQ-42, REQ-43, REQ-44, REQ-47 — scenario "Alt+R on an ended external session opens the resumed session every time"
+    test(`${triggerName} on the open ended external session, ${orderName}: the main area keeps the resumed session`, async ({ page }) => {
+      const folder = `order-${Object.keys(resumeTriggers).indexOf(triggerName)}-${Object.keys(orders).indexOf(orderName)}`;
+      const sessionId = randomUUID();
+      await page.addInitScript(holdResumeAndRemoval, sessionId);
+      const ended = await endedExternal(page, folder, { open: true, sessionId });
+      const response = resumeResponse(page);
+
+      await trigger(page, ended.folder);
+      await resumed(response);
+      await bothHeld(page);
+      await releaseInOrder(page, ended.sessionId);
+
+      await expectOnlyHostedEntry(page, ended.sessionId, ended.folder);
+      await expect(noOpenSession(page)).toHaveCount(0);
+      await page.waitForTimeout(500);
+      await expect(terminal(page)).toContainText(`"--resume","${ended.sessionId}"`);
+      await expect(noOpenSession(page)).toHaveCount(0);
+      if (orderName !== 'the removal reaches the page first') {
+        expect((await orderHooks(page)).sawEmpty, 'the main area never showed "No open session."').toBe(false);
+      }
+    });
+  }
+}

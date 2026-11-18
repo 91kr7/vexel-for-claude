@@ -38,3 +38,21 @@
 | 2026-11-13 | dev | G4 windows-look fix 1 | pass | Only `windows11.css` and two specs; build re-run green |
 | 2026-11-13 | dev | G5 windows-look | pass | Green after fix 1: 21 unit, 120 browser e2e, 24 Electron (desktop-window) |
 | 2026-11-13 | closing | full suites | pass | Unit 3191/3191, Electron 36/36. Browser e2e: 1 then 4 different timing failures under heavy machine load (human: parallel builds); all pass when re-run alone |
+
+## Fix of 2026-11-18: main area after the resume of an ended external session
+
+| Date | Phase | Gate | Verdict | Reason |
+|------|-------|------|---------|--------|
+| 2026-11-18 | analysis | type of request | decided | Fix: the human wrote fix and asked to correct the existing analysis and batch |
+| 2026-11-18 | analysis | G1 analysis | pass | Small diff on `wsl_support.md`, 136 lines under the ordinary budget; "Resume here" and no-regression lines kept as derived from the same resume rules |
+| 2026-11-18 | plan | question planner Q1 | decided | No own REQ for Resume from the history; the analysis names only Resume, Resume here and the shortcut |
+| 2026-11-18 | plan | question planner Q2 | decided | REQ-47 checked on Ubuntu only; no OS-dependent path, no WSL machine, REQ-44 order test covers timing |
+| 2026-11-18 | plan | G2 requirements | pass | REQ-42 to REQ-47 trace to the fix lines of the analysis |
+| 2026-11-18 | plan | G3 coverage | sent back | INT-2 was a test as an intervention; tests belong to the tester notes, INT-1 serves REQ-42 to REQ-47 |
+| 2026-11-18 | plan | G3 coverage | pass | INT-1 serves REQ-42 to REQ-47; order test is a binding tester note; lists consistent |
+| 2026-11-18 | dev | G4 development | pass | Diff is INT-1 in `AppLayout.tsx` plus the app-layout spec; build green re-run by the gatekeeper |
+| 2026-11-18 | test | G5 batch tests | pass | Re-run by the gatekeeper: ended-external-sessions 16/16; order test fails 9/9 on the old code in order 2, passes 27/27 on the fix |
+| 2026-11-18 | test | failure outside perimeter | decided | `terminate-process:209` counts every Claude process of the machine; fix the test now per knowledge base `e2e-green-before-release` (human rule), then a new complete e2e run |
+| 2026-11-18 | test | app defect outside perimeter | escalated | `terminate-process:209` stays flaky with 3 workers: overlapping process-list reads return stale rows after a terminate (plan-app_processes REQ-31) |
+| 2026-11-18 | test | release without the Processes fix | human decision | The human chose to release v1.2.1 without that fix; one-off exception to `e2e-green-before-release` |
+| 2026-11-18 | test | G5 tests | pass | Batch 16/16, unit 4352/4352, e2e 981/982 with only the Processes defect above |
