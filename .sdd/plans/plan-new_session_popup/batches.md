@@ -11,7 +11,7 @@ Requirements: `requirements.md`.
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [popup-size](batches/batch-popup-size.md) | New-session popup aligned to the Resume popup | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7 | — | implemented | The new-session popup has the size and place of the Resume popup |
+| [popup-size](batches/batch-popup-size.md) | New-session popup aligned to the Resume popup | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7 | — | certified | The new-session popup has the size and place of the Resume popup |
 
 Execution order: popup-size only.
 
@@ -19,6 +19,7 @@ Execution order: popup-size only.
 
 - **One size rule.** The Resume size rule is already in `src/web/styles.css`, on `.resume-dialog`. The new-session popup shares it through one rule with both selectors. This is the design the analysis leaves to the plan. The shared `Dialog` and `ResumeDialog.tsx` do not change.
 - **REQ-2 as written** (gatekeeper decision, review G2). The Resume height follows its content up to a cap. So "same height" means the same height when both reach the cap, and the same rule below it. This follows the analysis assumption "same size rule".
+- **280 px is a cap bound, not a minimum height** (gatekeeper decision). With one folder the popups measure 249 px (Resume) and 384 px (new session). Scenario 2 of popup-size says the height cap is never below 280 px.
 - **Other dialogs** (gatekeeper decision, review G2). The analysis lists them only as out of scope, so no REQ covers them. As a care in INT-1, the rule is limited to `.resume-dialog` and `.folder-chooser`. The `Dialog` frame and the settings popup, the confirmations and the name dialog are not touched.
 - **Place.** Both popups already sit centred in the `Dialog` backdrop. The plan adds no position rule. If a test finds a difference, INT-1 gets the fix.
 - **Test groups.** Browser e2e and unit tests only. No desktop code changes, so no Electron test (knowledge base `electron-e2e-separate`).

@@ -38,7 +38,7 @@ Notes:
 - REQ → REQ-2
 - Given → a window of 1280 × 800 px, and one project folder in the history
 - When → the user opens "Resume", then "New Claude Code Session"
-- Then → neither popup is taller than its content needs, and neither is under 280 px high
+- Then → neither popup is taller than its content needs, and the height cap of both is never below 280 px
 
 ### Scenario: The match holds in a small window and after a resize
 
