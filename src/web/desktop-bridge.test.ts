@@ -6,6 +6,7 @@ import {
   desktopFilePathLookup,
   isDesktopWindow,
   minimizeWindow,
+  quitApp,
   toggleMaximizeWindow,
 } from './desktop-bridge';
 
@@ -57,6 +58,26 @@ describe('window functions', () => {
   it.each(windowFunctions)('%s does nothing with a bridge that has no window functions', (_, call) => {
     vi.stubGlobal('window', { desktopBridge: bridge });
     expect(() => call()).not.toThrow();
+  });
+});
+
+// plan-app_processes/REQ-26, REQ-34: the quit request quits the desktop app and does nothing in a browser
+describe('quitApp', () => {
+  it('calls quitApp of the bridge once', () => {
+    const spy = vi.fn();
+    vi.stubGlobal('window', { desktopBridge: { ...bridge, quitApp: spy } });
+    quitApp();
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing in a browser, with no bridge', () => {
+    vi.stubGlobal('window', {});
+    expect(() => quitApp()).not.toThrow();
+  });
+
+  it('does nothing with a bridge that has no quitApp', () => {
+    vi.stubGlobal('window', { desktopBridge: bridge });
+    expect(() => quitApp()).not.toThrow();
   });
 });
 

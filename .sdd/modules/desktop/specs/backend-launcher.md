@@ -24,7 +24,7 @@ type: backend service
     - `command` → optional. The executable and its arguments. Default: `<nodePath> --import tsx src/server/main.ts`.
     - `readyTimeoutMs` → optional, default `15000`.
   - a backend already runs on the port → `{ status: "ready", origin, startedByApp: false }`. Nothing starts and the log file is not touched.
-  - otherwise it starts the command with `NODE_ENV=production` and `PORT=<port>`, and it waits:
+  - otherwise it starts the command with `NODE_ENV=production`, `PORT=<port>` and the launcher marker `AI_CLIENT_LAUNCHER=<pid>:<startTicks>` of the desktop app (field 22 of its `/proc/<pid>/stat`; left out when it cannot be read), and it waits:
     - the backend runs before the command exits and within the timeout → `{ status: "ready", origin, startedByApp: true }`.
     - the command exits first → `{ status: "failed", outputLines }`.
     - the command cannot start → `{ status: "failed", outputLines }`.
@@ -55,4 +55,5 @@ type: backend service
 
 ## Requirements served
 
+- `plan-app_processes/REQ-19`
 - `plan-desktop_app/REQ-4`, `plan-desktop_app/REQ-5`, `plan-desktop_app/REQ-7`, `plan-desktop_app/REQ-8`, `plan-desktop_app/REQ-9`, `plan-desktop_app/REQ-10`, `plan-desktop_app/REQ-15`, `plan-desktop_app/REQ-16`

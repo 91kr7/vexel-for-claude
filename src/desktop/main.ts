@@ -89,6 +89,14 @@ async function requestQuit(): Promise<void> {
   }
 }
 
+// The page asks it after the user confirmed terminating the current instance: no second question.
+async function quitWithoutQuestion(): Promise<void> {
+  if (quitConfirmed) return;
+  quitConfirmed = true;
+  await stopStartedBackend();
+  app.quit();
+}
+
 // Mutter's auto-maximize maximizes a frameless window when it maps; the window opens at its own size.
 function undoAutoMaximize(window: BrowserWindow): void {
   const keepStartSize = () => {
@@ -137,7 +145,7 @@ async function start(): Promise<void> {
     if (current.isDestroyed() || event.sender !== current.webContents) return;
     if (typeof sessionId === 'string' || sessionId === null) runNotificationCommands(notificationRules.setOpenSession(sessionId));
   });
-  connectWindowActions(current, ipcMain);
+  connectWindowActions(current, ipcMain, () => void quitWithoutQuestion());
   notifications.onClick(openNotifiedSession);
   notifications.onClosed((sessionId) => notificationRules.notificationClosed(sessionId));
   current.on('close', (event) => {

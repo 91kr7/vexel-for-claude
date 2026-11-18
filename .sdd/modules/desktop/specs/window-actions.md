@@ -10,10 +10,11 @@ type: backend service
 
 ## Contract
 
-- `connectWindowActions(window, ipc)` → listens on `ipc` (Electron's `ipcMain`) for requests of the window's own web contents:
+- `connectWindowActions(window, ipc, quitApp?)` → listens on `ipc` (Electron's `ipcMain`) for requests of the window's own web contents:
   - `desktop-bridge:window-close` → `window.close()`. It is the same close as the native close button, so the `close` handler of DesktopApp decides what happens.
   - `desktop-bridge:window-minimize` → the window minimizes.
   - `desktop-bridge:window-toggle-maximize` → a maximized window restores (unmaximize). Any other window maximizes.
+  - `desktop-bridge:app-quit` → `quitApp()`, the quit flow that DesktopApp gives. Without `quitApp` → nothing.
   - `desktop-bridge:window-is-maximized` (invoke) → answers `true` when the window is maximized, else `false`.
 - each `maximize` and `unmaximize` of the window, from any cause → it sends `window.isMaximized()` to the page on `desktop-bridge:window-maximized`.
 
@@ -26,3 +27,4 @@ type: backend service
 ## Requirements served
 
 - `plan-mac_title_bar/REQ-16`, `plan-mac_title_bar/REQ-17`, `plan-mac_title_bar/REQ-18`, `plan-mac_title_bar/REQ-21`, `plan-mac_title_bar/REQ-23`
+- `plan-app_processes/REQ-26`

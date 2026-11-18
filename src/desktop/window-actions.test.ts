@@ -68,10 +68,10 @@ function fakeWindow(maximized = false) {
   };
 }
 
-function connected(maximized = false) {
+function connected(maximized = false, quitApp?: () => void) {
   const ipc = fakeIpc();
   const win = fakeWindow(maximized);
-  connectWindowActions(win.asWindow, ipc.ipc);
+  connectWindowActions(win.asWindow, ipc.ipc, quitApp);
   return { ipc, win, own: win.window.webContents };
 }
 
@@ -80,6 +80,7 @@ const MINIMIZE = 'desktop-bridge:window-minimize';
 const TOGGLE = 'desktop-bridge:window-toggle-maximize';
 const IS_MAXIMIZED = 'desktop-bridge:window-is-maximized';
 const MAXIMIZED = 'desktop-bridge:window-maximized';
+const QUIT = 'desktop-bridge:app-quit';
 
 describe('connectWindowActions', () => {
   // WindowActions contract, REQ-16: close asks the window's own close, never hides or shows it
@@ -162,5 +163,36 @@ describe('connectWindowActions', () => {
     expect(win.window.maximize).not.toHaveBeenCalled();
     expect(win.window.unmaximize).not.toHaveBeenCalled();
     expect(own.send).not.toHaveBeenCalled();
+  });
+
+  // plan-app_processes/REQ-26: the quit request of the window's own page runs the quit flow of DesktopApp
+  it('the quit request from the window\'s own page runs the quit flow once and touches no window', () => {
+    const quitApp = vi.fn();
+    const { ipc, win, own } = connected(false, quitApp);
+    ipc.send(QUIT, own);
+    expect(quitApp).toHaveBeenCalledTimes(1);
+    expect(win.window.close).not.toHaveBeenCalled();
+    expect(win.window.hide).not.toHaveBeenCalled();
+  });
+
+  it('a quit request from another web contents does nothing', () => {
+    const quitApp = vi.fn();
+    const { ipc } = connected(false, quitApp);
+    ipc.send(QUIT, { send: vi.fn() });
+    expect(quitApp).not.toHaveBeenCalled();
+  });
+
+  it('a quit request after the window is destroyed does nothing', () => {
+    const quitApp = vi.fn();
+    const { ipc, win, own } = connected(false, quitApp);
+    win.state.destroyed = true;
+    ipc.send(QUIT, own);
+    expect(quitApp).not.toHaveBeenCalled();
+  });
+
+  it('a quit request with no quit flow given does nothing', () => {
+    const { ipc, win, own } = connected(false);
+    expect(() => ipc.send(QUIT, own)).not.toThrow();
+    expect(win.window.close).not.toHaveBeenCalled();
   });
 });
