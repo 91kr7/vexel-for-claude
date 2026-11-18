@@ -38,3 +38,10 @@
 | 2026-11-13 | dev | G4 windows-look fix 1 | pass | Only `windows11.css` and two specs; build re-run green |
 | 2026-11-13 | dev | G5 windows-look | pass | Green after fix 1: 21 unit, 120 browser e2e, 24 Electron (desktop-window) |
 | 2026-11-13 | closing | full suites | pass | Unit 3191/3191, Electron 36/36. Browser e2e: 1 then 4 different timing failures under heavy machine load (human: parallel builds); all pass when re-run alone |
+
+## Fix of 2026-11-18: main area after the resume of an ended external session
+
+| Date | Phase | Gate | Verdict | Reason |
+|------|-------|------|---------|--------|
+| 2026-11-18 | analysis | type of request | decided | Fix: the human wrote fix and asked to correct the existing analysis and batch |
+| 2026-11-18 | analysis | G1 analysis | pass | Small diff on `wsl_support.md`, 136 lines under the ordinary budget; "Resume here" and no-regression lines kept as derived from the same resume rules |
