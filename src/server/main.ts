@@ -26,6 +26,9 @@ import { registerLocalAccessGuard } from './local-access-guard.js';
 import { registerNewerVersionRoute } from './newer-version-route.js';
 import { PlanLimitsReader } from './plan-limits-reader.js';
 import { registerPlanUsageRoute } from './plan-usage-route.js';
+import { ProcessList } from './processes/process-list.js';
+import { LAUNCHER_VARIABLE, ProcessReader } from './processes/process-reader.js';
+import { registerProcessesRoute } from './processes/processes-route.js';
 import { latestReleaseApiUrl } from './release-check.js';
 import { registerAttachSessionRoute } from './sessions/attach-session-route.js';
 import { AttentionMonitor } from './sessions/attention-monitor.js';
@@ -53,6 +56,8 @@ const port = Number(process.env.PORT ?? 3000);
 const webRoot = fileURLToPath(new URL('../../dist/web', import.meta.url));
 // Set only by `npm run dev`: a missing or invalid value means production.
 const viteDevPort = parsePort(process.env.AI_CLIENT_VITE_DEV_PORT);
+// The launcher marker names who started this server: the sessions and the processes they start must not inherit it.
+delete process.env[LAUNCHER_VARIABLE];
 
 function parsePort(value: string | undefined): number | undefined {
   const port = Number(value);
@@ -60,6 +65,7 @@ function parsePort(value: string | undefined): number | undefined {
 }
 
 const packageJson = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
+  name: string;
   version: string;
   repository: { url: string };
 };
@@ -126,6 +132,10 @@ registerPlanUsageRoute(app, new PlanLimitsReader());
 registerNewerVersionRoute(app, releaseCheck);
 registerInstalledVersionRoute(app, packageJson.version);
 registerUpdateCheckRoute(app, releaseCheckOptions);
+registerProcessesRoute(
+  app,
+  new ProcessList({ reader: new ProcessReader(), registry, tracker, ownPid: process.pid, appName: packageJson.name }),
+);
 
 // In dev the page comes from Vite, so dist/web may not exist yet.
 if (existsSync(webRoot)) {

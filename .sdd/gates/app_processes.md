@@ -13,3 +13,5 @@
 | 2026-11-18 | plan | question planner | decided | Keep REQ-12, covered by a component test |
 | 2026-11-18 | plan | G3 coverage | pass | Desktop quit INT added to terminate-process |
 | 2026-11-18 | plan | question planner | decided | Desktop quit skips the tray quit question; the user just confirmed the terminate |
+| 2026-11-18 | dev processes-list | divergence developer | decided | main.ts drops AI_CLIENT_LAUNCHER from its own env so sessions do not inherit it; within INT-6 and REQ-19 |
+| 2026-11-18 | dev processes-list | G4 development | pass | |
