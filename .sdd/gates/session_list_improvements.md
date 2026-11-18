@@ -32,3 +32,7 @@
 | 2026-11-18 | plan | G3 coverage | pass | One batch rename-pencil, REQ-40 to REQ-43 each have an INT, paths exist, no departure |
 | 2026-11-18 | dev | G4 development | pass | Diff holds `SessionList.tsx`, `styles.css`, the session-list spec and index; build green re-run by the gatekeeper |
 | 2026-11-18 | dev | divergence developer | decided | `RenameSlot` is an internal span of `SessionList.tsx`, like the star slot; no spec of its own |
+| 2026-11-18 | test | G5 tests round 1 | sent back | REQ-43 defect: pencil still displayed during the name edit (`hidden` overridden by the global button rule, anchor missing); sent to the developer with a diagnosis |
+| 2026-11-18 | dev | G4 development round 2 | pass | Diff of the fix is one rule `.entry-rename[hidden]` in `styles.css`; build green |
+| 2026-11-18 | test | G5 tests | pass | Re-run by the gatekeeper after the fix: unit 4352/4352; e2e 965 passed, 2 failed outside the plan (`history-search:417`, `tab-change-transitions:305`); rename-pencil 9/9 |
+| 2026-11-18 | test | failure outside perimeter | human decision | `history-search:417` (latency) and `context-occupancy:172` fail on `main` too; the human asked to fix both in separate branches; `tab-change-transitions:305` passed 3 of 3 alone |
