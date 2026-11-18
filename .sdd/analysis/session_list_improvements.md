@@ -25,6 +25,9 @@ Changes:
 - The user can give any session a name, which replaces its label.
 - Every other requirement of the reference stays true.
 
+Fix (2026-11-18):
+- The Rename pencil moves one row down, to the row of the session name. The user asked for this earlier, and the position is not as asked.
+
 ## Summary
 
 Three changes to the session list. The user can dismiss or resume an ended hosted session from its entry. A working entry shows the running tool. The user can give a session a name that replaces its label.
@@ -70,6 +73,10 @@ Rename
 - A new name must appear in every open page and in the desktop app without a reload.
 - Renaming must not change the place of the session in the list.
 - Every new text must be in English, like the rest of the UI.
+- The Rename pencil must sit on the row of the entry that shows the session name, at the right end of that row. It must not sit on the row above.
+- The pencil must never cover the name or the favorite star. A long name must be cut before it.
+- The same position must apply to the cards of sessions waiting for input.
+- Only the position changes. The pencil keeps its look, its visibility rules and its behaviour.
 
 ### Non-functional
 
@@ -86,6 +93,8 @@ Rename
 - A resumed session moves to the end of its new group, per the order rules of the reference.
 - The 200-character limit matches the limit of Claude Code session names ([Claude Code commands](https://code.claude.com/docs/en/commands)).
 - The 1-second minimum keeps fast tools from making the line blink.
+- The fix replaces the rule of [ui_restyle.md](ui_restyle.md) that the top-right corner keeps the Rename action. The corner stays free of actions. The analyst did not read the code, so the current row of the pencil is not verified here.
+- "The name row" is the row that holds the session label and the star. The right end of that row is the natural place, as the star and the project-row actions already follow this pattern.
 
 ## Risks
 

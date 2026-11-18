@@ -19,3 +19,10 @@
 | 2026-11-06 | test | G5 running-tool round 2 | pass | Re-run by gatekeeper: 5 batch files 51/51; e2e 4/4 and session-entries 11/11 from round 1 untouched by the fix |
 | 2026-11-06 | dev | G4 rename | pass | Build green (re-run); files map to INT-1..10; name reaches notifications and tray through the label (checked in code, to be tested); accepted: name moves with a new Claude id, 3 old tests count list buttons and must follow REQ-25, fixed e2e names folder |
 | 2026-11-06 | test | G5 rename | pass | Re-run by gatekeeper: 5 batch files 70/70. Closing pass: unit 1458/1458; default e2e 333 + 9 resolved (7 page-frame button counts, feedback-states setup rewritten per REQ-7 (gatekeeper decision a), local-access passed alone: race on the global list) |
+
+## Fix of 2026-11-18: Rename pencil position
+
+| Date | Phase | Gate | Verdict | Reason |
+|------|-------|------|---------|--------|
+| 2026-11-18 | analysis | type of request | decided | Fix of the rename batch; the human named it a fix and pointed at the rename batch |
+| 2026-11-18 | analysis | G1 analysis | pass | Minimal diff on the existing analysis, 118 lines under the ordinary budget; today layout not verified, left to plan and dev |
