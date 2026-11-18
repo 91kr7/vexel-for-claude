@@ -336,6 +336,8 @@ test.describe('the popover next to the rest of the client', () => {
     });
   });
 
+  // The fake CLI runs a hook process for each line: on a loaded machine the terminal lags behind the typing.
+  const ECHO_LAG = { timeout: 30_000 };
   const terminal = (page: Page) => page.locator('.xterm-rows');
   const terminalInput = (page: Page) => page.locator('.xterm-helper-textarea');
   // The first visible row stands for the scroll position of the terminal.
@@ -359,7 +361,7 @@ test.describe('the popover next to the rest of the client', () => {
       await page.keyboard.type(`line${n}`);
       await page.keyboard.press('Enter');
     }
-    await expect(terminal(page)).toContainText('IN:');
+    await expect(terminal(page)).toContainText('LINE:line44', ECHO_LAG);
     const atEnd = await firstRow(page);
     await page.locator('.xterm-screen').hover();
     await page.mouse.wheel(0, -300);
@@ -381,8 +383,7 @@ test.describe('the popover next to the rest of the client', () => {
 
     await page.keyboard.type('after');
     await page.keyboard.press('Enter');
-    // The fake CLI echoes line by line: under a loaded machine the terminal can lag behind the typing.
-    await expect(terminal(page)).toContainText('LINE:after', { timeout: 30_000 });
+    await expect(terminal(page)).toContainText('LINE:after', ECHO_LAG);
     await expect(page.getByTitle(folder, { exact: true }).first()).toBeVisible();
   });
 

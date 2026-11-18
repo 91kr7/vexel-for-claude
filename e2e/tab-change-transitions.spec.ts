@@ -127,6 +127,38 @@ async function slowMotion(page: Page): Promise<void> {
   await page.evaluate((ms) => document.documentElement.style.setProperty('--motion-duration-enter', `${ms}ms`), SLOW_MS);
 }
 
+interface ThemeClick {
+  effectsAtClick: number;
+  appliedMs: number;
+  effectsAtApply: number;
+}
+
+/** Records in the page the first click on a theme card: from the runner, a loaded machine adds its round trips to the app's time. */
+function recordThemeClick(): void {
+  const record: ThemeClick = { effectsAtClick: -1, appliedMs: Infinity, effectsAtApply: -1 };
+  (window as unknown as { __themeClick: ThemeClick }).__themeClick = record;
+  let clickAt: number | null = null;
+  let section: Element | null = null;
+  const playing = () =>
+    section?.getAnimations().filter((animation) => animation instanceof CSSAnimation && animation.playState === 'running').length ?? 0;
+  document.addEventListener(
+    'click',
+    (event) => {
+      const card = event.target instanceof Element ? event.target.closest('.settings-card') : null;
+      if (clickAt !== null || !card) return;
+      clickAt = performance.now();
+      section = card.closest('[role="tabpanel"]');
+      record.effectsAtClick = playing();
+    },
+    true,
+  );
+  new MutationObserver(() => {
+    if (clickAt === null || record.effectsAtApply !== -1) return;
+    record.appliedMs = performance.now() - clickAt;
+    record.effectsAtApply = playing();
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+}
+
 const runningEffects = (panel: Locator) =>
   panel.evaluate((element) => element.getAnimations().filter((animation) => animation instanceof CSSAnimation && animation.playState === 'running').length);
 
@@ -310,12 +342,17 @@ test.describe('Settings menu change', () => {
     await pageSettled(page);
     await slowMotion(page);
 
+    await page.evaluate(recordThemeClick);
+
     await menuItem(page, 'Appearance').click();
     // force: the click lands while the card still rises.
-    await cardOf(pane(page, 'Appearance').getByRole('radio', { name: 'Light', exact: true })).click({ force: true, timeout: 300 });
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light', { timeout: 300 });
+    await cardOf(pane(page, 'Appearance').getByRole('radio', { name: 'Light', exact: true })).click({ force: true });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     await expect(pane(page, 'Appearance').getByRole('radio', { name: 'Light', exact: true })).toBeChecked();
-    expect(await runningEffects(pane(page, 'Appearance')), 'the effect is still playing').toBeGreaterThan(0);
+    const record = await page.evaluate(() => (window as unknown as { __themeClick: ThemeClick }).__themeClick);
+    expect(record.effectsAtClick, 'the click lands while the section fades in').toBeGreaterThan(0);
+    expect(record.appliedMs, 'the theme applies at once').toBeLessThan(300);
+    expect(record.effectsAtApply, 'the effect is still playing').toBeGreaterThan(0);
   });
 
   // plan-ui_transitions/REQ-24 with reduced motion (REQ-25)

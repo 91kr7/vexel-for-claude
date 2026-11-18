@@ -4,6 +4,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
+import { currentView } from './motion';
 
 interface Effect {
   duration: number;
@@ -40,7 +41,8 @@ const notice = (page: Page) => page.getByRole('status', { name: 'Update Availabl
 const allNotices = (page: Page) => page.locator('.update-notice');
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
-const terminal = (page: Page) => page.locator('.xterm-rows');
+// The view that stays: during the cross-fade of a session switch the leaving view, with its terminal, is still in the page.
+const terminal = (page: Page) => currentView(page).locator('.xterm-rows');
 
 /** Shows in the page only the sessions of this file: other tests start sessions on the same server at the same time. */
 async function showOnlyOwnSessions(page: Page): Promise<void> {
