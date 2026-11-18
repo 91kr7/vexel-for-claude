@@ -44,6 +44,10 @@ Terminate:
   - `failed` → "Could not terminate the process."
   - `ended`, `gone` → no error; an older error of that row is removed.
   - then a new load, as "Refresh".
+- focus after that load, when the focus was lost (on the page body):
+  - the row is still listed → its "Terminate" button gets the focus.
+  - the row left the list, or the load failed → "Refresh" gets the focus. So Esc still closes the popup.
+  - a focus that the user moved elsewhere in the meantime stays where it is.
 - a row error is kept by PID and start time: it shows again under the row after each load, as long as the row is listed. A row with the same PID and another start time does not get it.
 
 Keyboard:

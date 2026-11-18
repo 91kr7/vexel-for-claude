@@ -59,6 +59,7 @@ function ProcessItem({ row, now, actions }: { row: ProcessRow; now: number; acti
         <button
           type="button"
           className="button-danger process-terminate"
+          data-process-key={key}
           disabled={busy}
           aria-busy={busy || undefined}
           onClick={() => actions.onTerminate(row)}
@@ -106,6 +107,9 @@ export function ProcessesSection({
   const loadRef = useRef(load);
   loadRef.current = load;
   const mountedRef = useRef(true);
+  const refreshRef = useRef<HTMLButtonElement>(null);
+  /** The row whose terminate just answered: the focus goes back to it, or to "Refresh" when it left the list. */
+  const focusAfterLoadRef = useRef<string | null>(null);
 
   const reload = useCallback(() => {
     controllerRef.current?.abort();
@@ -145,13 +149,24 @@ export function ProcessesSection({
       else next.set(key, error);
       return next;
     });
+    focusAfterLoadRef.current = key;
     reload();
   };
+
+  useEffect(() => {
+    const key = focusAfterLoadRef.current;
+    if (result === null || key === null) return;
+    focusAfterLoadRef.current = null;
+    const active = document.activeElement;
+    if (active !== null && active !== document.body) return;
+    const rowButton = document.querySelector<HTMLButtonElement>(`.processes-rows button[data-process-key="${key}"]`);
+    (rowButton ?? refreshRef.current)?.focus();
+  }, [result]);
 
   const actions: RowActions = { busy, errors, onTerminate: setConfirming };
 
   const refreshButton = (
-    <button type="button" className="button-neutral" onClick={reload}>
+    <button ref={refreshRef} type="button" className="button-neutral" onClick={reload}>
       Refresh
     </button>
   );
