@@ -1700,6 +1700,10 @@ input {
   transition: opacity 0.12s ease;
 }
 
+.entry-rename[hidden] {
+  display: none;
+}
+
 .session-list li:hover > .entry-rename,
 .session-list li:has(:focus-visible) > .entry-rename {
   opacity: 1;
