@@ -13,6 +13,7 @@ Words used below:
 - "Default label" → the start of the first user message, the label every entry shows today.
 - "Tool line" → the new line of a list entry that shows the running tool.
 - "Name" → the client-only name the user gives a session. It is not the Claude Code session name.
+- "Label row" (fix of 2026-11-18) → the second row of a list entry: the row that shows the label, or the name when set. In an external entry that needs input, the permission text takes the label's place on that row. The first row holds the dot or tag, the folder name, the star and the state name. The spec calls the label row "the row of the session name". This plan says "label row", because "name" already means the client-only name and the folder name sits on the first row.
 
 ## Feature: Dismiss and Resume
 
@@ -68,6 +69,17 @@ Words used below:
 | REQ-38 | Renaming does not change the place of the session in the list. |
 | REQ-39 | Rename is usable with the keyboard, with visible focus. |
 
+## Feature: Rename pencil position (fix of 2026-11-18)
+
+Today "Rename" sits in the top-right corner, on the first row of every entry and of the needs-input card. The fix moves it one row down. These REQs replace the rule of `plan-ui_restyle` that the top-right corner keeps the Rename action (its REQ-31).
+
+| ID | Requirement |
+|----|-------------|
+| REQ-40 | In a row of the list, "Rename" sits on the label row, at the right end of that row, and not on the first row. |
+| REQ-41 | In the needs-input card, "Rename" sits on the label row, at the right end of that row, and not on the first row. |
+| REQ-42 | "Rename" covers neither the label nor the star. A label longer than the room before "Rename" is cut with an ellipsis before it, in a row and in the needs-input card. |
+| REQ-43 | Only the place of "Rename" changes. Its look, its visibility rules and its behaviour stay as before. |
+
 ## Assumptions
 
 The gatekeeper confirmed "Length limit", "Resume Here" and "Notifications and tray" on 2026-11-06. The others apply the spec.
@@ -78,6 +90,13 @@ The gatekeeper confirmed "Length limit", "Resume Here" and "Notifications and tr
 - **"Resume Here" (REQ-36).** The spec says the name survives "a Resume of the session". "Resume Here" resumes the same conversation, so the name survives it too.
 - **Notifications and tray (REQ-27, REQ-28).** The name applies to notifications and tray entries shown after the rename. A notification already on screen does not change.
 
+Fix of 2026-11-18. REQ-40 to REQ-43 are validated by the gatekeeper.
+
+- **Label row (REQ-40, REQ-41). Gatekeeper decision.** The spec's assumption says the name row holds the label and the star. In the code the star sits on the first row, after the folder name, and the label sits on the second row. The pencil is on the first row today, so "one row down" is the label row (row 2). The pencil then no longer shares a row with the star.
+- **Ended actions. Gatekeeper decision.** "Dismiss" and "Resume" stay on the first row and keep its top right corner, with no 32 px offset, as in commit f856169. No REQ for this: the spec does not ask it. It is an intervention and an acceptance scenario of the batch.
+- **Existing tests.** The checks of `plan-ui_restyle` that put "Rename" in the top-right corner contradict REQ-40 to REQ-42 and must follow them.
+- **Git history.** An earlier attempt exists: commit f856169 "Move the session rename button to the label line" (2026-11-17), on the local branch `feat/card_metrics_spacing` only. It is not on origin and not in main, so it was never released. It is the human's intent, not code to copy: it used a fixed `top: 31px`.
+
 ## Constraints on the whole plan
 
 These are not REQs. They apply to every REQ above.
@@ -86,4 +105,4 @@ These are not REQs. They apply to every REQ above.
 - The name lives only in the client. It never becomes the Claude Code session name, and the client writes nothing to Claude Code files.
 - The client never removes an ended session by itself.
 - Out of scope: Dismiss or Resume for external sessions, removing several sessions at once, undo of a dismiss, new actions in the header of an open session, Claude Code session names, tool history or tool details beyond the current tool, any change to the state groups, their order or drag and drop.
-- Every requirement of `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order` and of the plans before it stays true.
+- Every requirement of `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui-history_search-fixed_order` and of the plans before it stays true, except `plan-ui_restyle` REQ-31 (the top-right corner keeps only "Rename"), which REQ-40 to REQ-42 replace.

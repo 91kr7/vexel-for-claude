@@ -15,6 +15,10 @@ Description:
 - in the body, from top to bottom: the description, the field "Working Directory Path", then one scrolling area with "Recent" and "Folders". Then the footer with "Cancel" and "Start Session" (primary action).
 - the path field has the focus on open.
 
+Size:
+- the dialog has the size and the place of ResumeDialog (module history), in the same window and at every window size, also after a resize while it is open: width, height rule (cap, minimum, backdrop limit) and centred place.
+- at the cap → the header, the field and the footer stay in view. Only the scrolling area scrolls, and it keeps at least 56 px.
+
 Props:
 - `onStarted(sessionId)` → called after the session started.
 - `onCancel()` → called when the user closes the dialog.
@@ -74,4 +78,5 @@ Errors (an ErrorMessage under the scrolling area, the dialog stays open):
 - `plan-claude_sessions_client-ui_redesign/REQ-25`, `plan-claude_sessions_client-ui_redesign/REQ-26`, `plan-claude_sessions_client-ui_redesign/REQ-27`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`, `plan-claude_sessions_client-ui_redesign/REQ-31`, `plan-claude_sessions_client-ui_redesign/REQ-32`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-46`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-13`
+- `plan-new_session_popup/REQ-1`, `plan-new_session_popup/REQ-2`, `plan-new_session_popup/REQ-3`, `plan-new_session_popup/REQ-4`, `plan-new_session_popup/REQ-5`, `plan-new_session_popup/REQ-6`, `plan-new_session_popup/REQ-7`
 - `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-45`, `plan-dark_blue_theme/REQ-46`, `plan-dark_blue_theme/REQ-47`, `plan-dark_blue_theme/REQ-49`

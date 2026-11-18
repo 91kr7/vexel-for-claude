@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { currentView } from './motion';
 
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 // The external scanner reads the sessions folder every 2 seconds.
@@ -35,7 +36,8 @@ test.afterAll(async () => {
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).locator('.session-entry').filter({ has: page.getByTitle(folder, { exact: true }) });
 const percent = (target: Locator) => target.locator('.session-entry-context');
-const footer = (page: Page) => page.locator('.session-footer');
+// The view that stays: during the cross-fade of a session switch the leaving view, with its footer, is still in the page.
+const footer = (page: Page) => currentView(page).locator('.session-footer');
 const chip = (page: Page) => footer(page).locator('.session-figure-context');
 const chipValue = (page: Page) => chip(page).locator('span').last();
 

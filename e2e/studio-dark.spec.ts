@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, type WebSocketRoute, expect, test } from '@playwright/test';
-import { currentView, settled } from './motion';
+import { currentView, pageSettled, settled } from './motion';
 
 type Box = { x: number; y: number; width: number; height: number };
 type Rgba = [number, number, number, number];
@@ -839,7 +839,8 @@ test.describe('dialogs', () => {
     expect(await style(dialog, 'background-color')).toBe(SURFACE_2);
     expect(await style(dialog, 'border-top-color')).toBe(BORDER_STRONG);
     expect(await style(dialog, 'border-top-left-radius')).toBe('8px');
-    expect((await box(dialog)).width).toBeLessThanOrEqual(448 + TOLERANCE);
+    // plan-new_session_popup/REQ-1: the new-session dialog has the width of the Resume popup, at most 672 px.
+    expect((await box(dialog)).width).toBeLessThanOrEqual(672 + TOLERANCE);
 
     // REQ-44: the accent dot, the title and the mono "[Esc]"
     const title = dialog.getByRole('heading', { name: 'New Claude Code Session' });
@@ -848,6 +849,8 @@ test.describe('dialogs', () => {
     expect(await style(esc, 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     expect(await style(esc, 'color')).toBe(TEXT_MUTED);
     expect((await box(esc)).x).toBeGreaterThan((await box(title)).x);
+    // The dialog zooms in when it opens: the dot is measured at rest.
+    await pageSettled(page);
     const dot = await title.evaluate((el) => {
       const dotEl = el.previousElementSibling;
       if (!dotEl) return null;
@@ -984,6 +987,8 @@ test.describe('dialogs', () => {
     expect(await style(heading, 'color')).toBe(TEXT_MUTED);
     const avatars = dialog.locator('.avatar');
     await expect(avatars).toHaveCount(2);
+    // The dialog zooms in when it opens: the avatar is measured at rest.
+    await pageSettled(page);
     const a = await box(avatars.first());
     expect(a.width).toBeCloseTo(24, 0);
     expect(await style(avatars.first(), 'background-color')).toBe(SURFACE_3);

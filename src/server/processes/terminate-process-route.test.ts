@@ -168,7 +168,11 @@ describe('POST /api/processes/terminate on real processes', () => {
 
   // plan-app_processes/REQ-32: a process that ignores SIGTERM keeps running and the answer says so
   it('answers "running" when the process ignores SIGTERM', async () => {
-    const child = startFakeClaude(`process.on('SIGTERM', () => {}); ${IDLE}`);
+    const child = startFakeClaude(`process.on('SIGTERM', () => {}); console.log('ready'); ${IDLE}`);
+    // The process is listed as soon as it execs, before Node runs its code: wait until the handler is installed.
+    let output = '';
+    child.stdout?.on('data', (data) => (output += String(data)));
+    await waitFor(() => output.includes('ready'), 'the SIGTERM handler is installed');
     const pid = child.pid as number;
     const startedAt = await listedStartedAt(pid);
     const response = await post(await realRoute({ endTimeoutMs: 500 }), { pid, startedAt });

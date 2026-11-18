@@ -1419,7 +1419,7 @@ input {
 
 .session-list li {
   position: relative;
-  anchor-scope: --session-star;
+  anchor-scope: --session-star, --session-rename;
 }
 
 .session-list li.dragging {
@@ -1688,7 +1688,8 @@ input {
 
 .entry-rename {
   position: absolute;
-  top: 10px;
+  position-anchor: --session-rename;
+  top: anchor(top);
   right: 10px;
   width: 20px;
   height: 20px;
@@ -1697,6 +1698,10 @@ input {
   background-color: var(--role-card-active);
   opacity: 0;
   transition: opacity 0.12s ease;
+}
+
+.entry-rename[hidden] {
+  display: none;
 }
 
 .session-list li:hover > .entry-rename,
@@ -1722,6 +1727,14 @@ input {
   anchor-name: --session-star;
 }
 
+.session-entry-rename-slot {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: -2px 0;
+  anchor-name: --session-rename;
+}
+
 .entry-favorite {
   position: absolute;
   position-anchor: --session-star;
@@ -1738,24 +1751,11 @@ input {
   padding: 0;
 }
 
-.session-list li:has(> .entry-rename:not([hidden])) .ended-entry-actions {
-  right: 32px;
-}
-
-.session-list li:has(> .session-card) > .entry-rename {
-  top: 10px;
-  right: 10px;
-}
-
 .session-entry-title {
   max-width: max-content;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
-}
-
-.session-card > .session-entry > .session-entry-line:first-child {
-  padding-right: 20px;
 }
 
 .favorite-indicator {
@@ -3452,12 +3452,15 @@ input {
   height: 540px;
 }
 
-.resume-dialog {
+/* One size rule for the two large popups, so they cannot drift apart. */
+.resume-dialog,
+.folder-chooser {
   max-width: 672px;
   max-height: min(100%, max(70vh, 280px));
 }
 
-.resume-dialog .dialog-scroll {
+.resume-dialog .dialog-scroll,
+.folder-chooser .dialog-scroll {
   min-height: 56px;
 }
 

@@ -13,7 +13,7 @@ type: UI component
 Description:
 - a Dialog with the title "Resume Session" and no description. In the body, a search bar with the toggle "Only Favorites" on its right, then one scrolling area with the past sessions grouped by folder. Then the footer with "Cancel" and "Resume" (primary action).
 
-Size:
+Size (shared with FolderChooser, module folders, which has the same size and place):
 - width → 672 px, about 1.5 times the 448 px of the other dialogs. Never wider than the backdrop: in a narrower window the frame takes the backdrop width, inside its 16 px padding.
 - height → follows the content, capped at 70 % of the window height, but never below 280 px and never taller than the backdrop. With many sessions the frame stops at that cap, with clear space above and below it.
 - at the cap → the header, the search bar, the toggle and the footer stay in view. Only the past sessions area scrolls, and it keeps at least 56 px, room for one row.
@@ -110,6 +110,7 @@ Errors (an ErrorMessage under the scrolling area, the dialog stays open):
 ## Requirements served
 
 - `plan-claude_sessions_client/REQ-25`, `plan-claude_sessions_client/REQ-26`, `plan-claude_sessions_client/REQ-27`
+- `plan-new_session_popup/REQ-7`
 - `plan-claude_sessions_client-ui_redesign/REQ-25`, `plan-claude_sessions_client-ui_redesign/REQ-26`, `plan-claude_sessions_client-ui_redesign/REQ-27`, `plan-claude_sessions_client-ui_redesign/REQ-29`, `plan-claude_sessions_client-ui_redesign/REQ-30`, `plan-claude_sessions_client-ui_redesign/REQ-31`, `plan-claude_sessions_client-ui_redesign/REQ-32`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-12`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-50`
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-1`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-4`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-7`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-8`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-9`
