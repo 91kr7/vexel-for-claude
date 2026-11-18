@@ -703,7 +703,8 @@ test.describe('Studio dialogs', () => {
     await page.mouse.move(0, 0);
     const dialog = chooser(page);
 
-    await expectStudioFrame(page, dialog, 'new-session dialog');
+    // plan-new_session_popup/REQ-1: the new-session dialog has the width of the Resume popup.
+    await expectStudioFrame(page, dialog, 'new-session dialog', 672);
     const title = await expectStudioHeader(page, dialog, 'New Claude Code Session', 'new-session dialog');
 
     const description = dialog.getByText('Choose the project where Claude Code starts.', { exact: true });
