@@ -11,18 +11,20 @@ status: validated
 | [ended-external-sessions](batches/batch-ended-external-sessions.md) | Ended external sessions | REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15 | — | certified | A closed terminal leaves an ended entry in the list |
 | [windows-look](batches/batch-windows-look.md) | Windows 11 look | REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40 | — | certified | The user switches to the Windows 11 look and back |
 | [lock-file](batches/batch-lock-file.md) | Lock file | REQ-41 | — | certified | The lock file names the project license |
+| [resumed-session-main-area](batches/batch-resumed-session-main-area.md) | Resumed session in the main area | REQ-42, REQ-43, REQ-44, REQ-45, REQ-46, REQ-47 | ended-external-sessions | todo | Alt+R on an ended external session opens the resumed session every time |
 
-Execution order: the four batches share no file and depend on no other batch. They run in the table order.
+Execution order: the first four batches share no file and depend on no other batch. They run in the table order. resumed-session-main-area comes from the fix of 2026-11-18. It runs after ended-external-sessions, and it is the last batch.
 
 ## Assumptions and decisions
 
-The gatekeeper validated the coverage on 2026-11-13. It accepted three items below as gatekeeper decisions: "Ended external entries in the scanner", "No notification change for ended external entries", and the `resume` shortcut acting once through ConversationView (`batch-ended-external-sessions/INT-9`).
+The gatekeeper validated the coverage on 2026-11-13, and the coverage of the fix batch on 2026-11-18. It accepted three items below as gatekeeper decisions: "Ended external entries in the scanner", "No notification change for ended external entries", and the `resume` shortcut acting once through ConversationView (`batch-ended-external-sessions/INT-9`).
 
 - **Port, not rewrite.** Each batch ports the branch code for its feature and adapts it to main. The branch started before release 0.3.0, so every batch keeps the existing tests green, the project list actions included.
 - **Placement of the new components.** The look store and the Windows 11 stylesheet go in `src/web/theme`, beside ThemeStore and ThemeTokens. The look switch goes in `src/web`, beside ThemeSwitch. This is the placement of the branch, and it follows `.archi`.
 - **Ended external entries in the scanner.** ExternalSessionScanner keeps the ended external entries. It uses `SessionStateTracker.liveClaudeSessionIds()` to drop an entry that was resumed in the client. DismissSessionRoute and ResumeEndedSessionRoute fall back to the scanner when the tracker has no such id. This follows the files the branch touches.
 - **No notification change for ended external entries.** AttentionMonitor already gives no session-end event for external sessions, so REQ-14 needs no INT there. A test checks it.
 - **Electron tests.** Tests that open the desktop window run in the Electron e2e group only (knowledge base `electron-e2e-separate`).
+- **Fix of 2026-11-18 in a new batch.** The certified batches stay as they are. The fix adds the batch resumed-session-main-area, which changes only `src/web/AppLayout.tsx`. Its tester notes ask for an order test.
 
 ## Departures
 
@@ -61,6 +63,7 @@ Every REQ is served by at least one INT, and every INT serves at least one REQ. 
 | REQ-39 | batch-windows-look/INT-7, INT-8 | windows-look |
 | REQ-40 | batch-windows-look/INT-8 | windows-look |
 | REQ-41 | batch-lock-file/INT-1 | lock-file |
+| REQ-42, REQ-43, REQ-44, REQ-45, REQ-46, REQ-47 | batch-resumed-session-main-area/INT-1 | resumed-session-main-area |
 
 INT → REQ, batch by batch:
 
@@ -68,3 +71,4 @@ INT → REQ, batch by batch:
 - ended-external-sessions → INT-1: REQ-7, REQ-8, REQ-14, REQ-15. INT-2: REQ-12. INT-3: REQ-8, REQ-9. INT-4: REQ-9. INT-5: REQ-10, REQ-12. INT-6: REQ-9, REQ-10, REQ-12. INT-7: REQ-9, REQ-10. INT-8, INT-9: REQ-11, REQ-13.
 - windows-look → INT-1: REQ-16, REQ-20, REQ-21, REQ-22, REQ-24. INT-2: REQ-23, REQ-24. INT-3: REQ-17, REQ-25, REQ-26, REQ-27. INT-4: REQ-36, REQ-37, REQ-38. INT-5: REQ-17, REQ-34. INT-6: REQ-19, REQ-28. INT-7: REQ-18, REQ-19, REQ-39. INT-8: REQ-28 to REQ-31, REQ-34, REQ-39, REQ-40. INT-9: REQ-18, REQ-28, REQ-32, REQ-33, REQ-35.
 - lock-file → INT-1: REQ-41.
+- resumed-session-main-area → INT-1: REQ-42 to REQ-47. The order test of the batch's tester notes checks REQ-42, REQ-43, REQ-44 and REQ-47. The existing tests listed there check REQ-45 and REQ-46.

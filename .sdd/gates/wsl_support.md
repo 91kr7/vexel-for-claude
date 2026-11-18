@@ -45,3 +45,8 @@
 |------|-------|------|---------|--------|
 | 2026-11-18 | analysis | type of request | decided | Fix: the human wrote fix and asked to correct the existing analysis and batch |
 | 2026-11-18 | analysis | G1 analysis | pass | Small diff on `wsl_support.md`, 136 lines under the ordinary budget; "Resume here" and no-regression lines kept as derived from the same resume rules |
+| 2026-11-18 | plan | question planner Q1 | decided | No own REQ for Resume from the history; the analysis names only Resume, Resume here and the shortcut |
+| 2026-11-18 | plan | question planner Q2 | decided | REQ-47 checked on Ubuntu only; no OS-dependent path, no WSL machine, REQ-44 order test covers timing |
+| 2026-11-18 | plan | G2 requirements | pass | REQ-42 to REQ-47 trace to the fix lines of the analysis |
+| 2026-11-18 | plan | G3 coverage | sent back | INT-2 was a test as an intervention; tests belong to the tester notes, INT-1 serves REQ-42 to REQ-47 |
+| 2026-11-18 | plan | G3 coverage | pass | INT-1 serves REQ-42 to REQ-47; order test is a binding tester note; lists consistent |
