@@ -11,7 +11,7 @@ Requirements: `requirements.md`.
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [popup-size](batches/batch-popup-size.md) | New-session popup aligned to the Resume popup | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7 | — | todo | The new-session popup has the size and place of the Resume popup |
+| [popup-size](batches/batch-popup-size.md) | New-session popup aligned to the Resume popup | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7 | — | implemented | The new-session popup has the size and place of the Resume popup |
 
 Execution order: popup-size only.
 
