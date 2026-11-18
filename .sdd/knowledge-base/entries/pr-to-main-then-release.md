@@ -16,3 +16,18 @@ source: release of v1.2.1
 - orchestration: the reintegration of a cycle is a pull request of its branch into `main`, merged once its CI is green. This replaces the local `git merge` into `main` of the closing step of `/sdd-auto`: `main` on GitHub accepts changes only through pull requests. Never merge into the local `main`; keep it equal to `origin/main`.
 - release: set the version on a branch, open its pull request, merge it into `main`, then tag and publish the release on that commit of `main` (with the complete e2e suite green, `e2e-green-before-release`).
 - never cherry-pick the same change onto two branches; merge the branch that holds it.
+
+## Steps of a reintegration
+
+This entry refines `.claude/sdd/conventions/branching.md` ("Reintegration") and the closing step of `/sdd-auto` without changing those files. Where they say "merge into `main`", do this:
+
+1. Open the branch from `origin/main`, after `git fetch`. The local `main` stays equal to `origin/main`.
+2. When the work is complete, push the branch: `git push -u origin <branch>`.
+3. Open the pull request: `gh pr create --base main --head <branch>`.
+4. Wait for its CI. Red → the work is not complete: fix it on the branch and push again.
+5. Merge it with a merge commit: `gh pr merge <number> --merge`. Keep the branch.
+6. Update the local `main`: `git pull --ff-only origin main`, then run the build on `main`.
+
+- Manual commands → ask the human before step 5. `/sdd-auto` → step 5 without asking, once every batch is `certified`, the suites are green and the CI is green.
+- The pull request cannot be merged (a conflict, a blocked merge) → never force it: report it to the human and stop.
+- Release → after step 6, tag and publish on the commit of `main` that sets the version.
