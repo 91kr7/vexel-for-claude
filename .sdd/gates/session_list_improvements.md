@@ -26,3 +26,7 @@
 |------|-------|------|---------|--------|
 | 2026-11-18 | analysis | type of request | decided | Fix of the rename batch; the human named it a fix and pointed at the rename batch |
 | 2026-11-18 | analysis | G1 analysis | pass | Minimal diff on the existing analysis, 118 lines under the ordinary budget; today layout not verified, left to plan and dev |
+| 2026-11-18 | plan | question planner Q2 | decided | Name row is the label row (row 2); pencil is on row 1 today (code check by the planner) |
+| 2026-11-18 | plan | question planner Q1 | decided | Ended actions return to the top right corner of row 1; source commit f856169 (unmerged, branch feat/card_metrics_spacing) |
+| 2026-11-18 | plan | G2 requirements | pass | REQ-40 to REQ-43 trace to the fix lines of the analysis; ended-actions assumption corrected |
+| 2026-11-18 | plan | G3 coverage | pass | One batch rename-pencil, REQ-40 to REQ-43 each have an INT, paths exist, no departure |
