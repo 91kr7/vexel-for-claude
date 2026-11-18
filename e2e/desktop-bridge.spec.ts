@@ -3,6 +3,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Page, expect, test } from '@playwright/test';
+import { currentView } from './motion';
 
 let projectsRoot: string;
 const createdIds: string[] = [];
@@ -18,8 +19,9 @@ test.afterEach(async ({ request }) => {
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const mainArea = (page: Page) => page.getByRole('main');
-const header = (page: Page) => mainArea(page).locator('.session-header');
-const terminal = (page: Page) => page.locator('.xterm-rows');
+// The view that stays: during the cross-fade of a session switch the leaving view, with its terminal, is still in the page.
+const header = (page: Page) => currentView(page).locator('.session-header');
+const terminal = (page: Page) => currentView(page).locator('.xterm-rows');
 
 async function startSession(request: APIRequestContext, name: string): Promise<{ id: string; folder: string }> {
   const folder = path.join(projectsRoot, name);

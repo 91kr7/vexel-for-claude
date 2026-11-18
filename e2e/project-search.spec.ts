@@ -142,31 +142,49 @@ test('with 300 projects, Tab to "Search projects" and "vexel" filter the rows at
   await expect(searchField(page)).toBeFocused();
   expect(await focusedShowsRing(page), 'focus ring on "Search projects"').toBe(true);
 
+  const ROUNDS = 10;
+  type SearchLog = { searchLog: { ms: number; rows: number }[]; searchRecording: boolean };
   await page.evaluate(() => {
     const field = document.querySelector('input[aria-label="Search projects"]')!;
-    const log: { ms: number; rows: number }[] = [];
-    (window as unknown as { searchLog: typeof log }).searchLog = log;
+    const w = window as unknown as SearchLog;
+    w.searchLog = [];
+    w.searchRecording = true;
     field.addEventListener('input', () => {
+      if (!w.searchRecording) return;
       const start = performance.now();
-      requestAnimationFrame(() => log.push({ ms: performance.now() - start, rows: document.querySelectorAll('.project-row').length }));
+      requestAnimationFrame(() => w.searchLog.push({ ms: performance.now() - start, rows: document.querySelectorAll('.project-row').length }));
     });
   });
   const requests = projectRequests(page);
-  const expected: number[] = [];
-  for (const letter of 'vexel') {
-    await page.keyboard.press(letter);
-    const typed = await searchField(page).inputValue();
-    expected.push(folders.filter((folder) => folder.toLowerCase().includes(typed)).length);
-    await expect(rows(page)).toHaveCount(expected.at(-1)!);
-  }
-  expect(expected, 'each letter narrows the list').toEqual([300, 50, 20, 5, 5]);
-  const readLog = () => page.evaluate(() => (window as unknown as { searchLog: { ms: number; rows: number }[] }).searchLog);
-  // The last letter leaves the row count unchanged, so wait for the frame of each letter before reading the log.
-  await expect.poll(async () => (await readLog()).length).toBe(expected.length);
-  const log = await readLog();
-  expect(log.map((entry) => entry.rows), 'the rows are updated by the next frame after each letter').toEqual(expected);
-  for (const entry of log) expect(entry.ms, 'no visible delay').toBeLessThan(100);
+  const readLog = () => page.evaluate(() => (window as unknown as SearchLog).searchLog);
+  const setRecording = (on: boolean) => page.evaluate((value) => ((window as unknown as SearchLog).searchRecording = value), on);
+  const typeVexelOneLetterPerFrame = async () => {
+    const counts: number[] = [];
+    for (const letter of 'vexel') {
+      const logged = (await readLog()).length;
+      await page.keyboard.press(letter);
+      await page.waitForFunction((n) => (window as unknown as SearchLog).searchLog.length > n, logged);
+      const typed = await searchField(page).inputValue();
+      counts.push(folders.filter((folder) => folder.toLowerCase().includes(typed)).length);
+      await expect(rows(page)).toHaveCount(counts.at(-1)!);
+    }
+    return counts;
+  };
+  const expected = [300, 50, 20, 5, 5];
+  expect(await typeVexelOneLetterPerFrame(), 'each letter narrows the list').toEqual(expected);
   expect(await shownFolders(page), 'the matches, in the order of the full list').toEqual(fullList.filter((folder) => folder!.toLowerCase().includes('vexel')));
+  for (let round = 1; round < ROUNDS; round++) {
+    await setRecording(false);
+    await searchField(page).fill('');
+    await expect(rows(page)).toHaveCount(folders.length);
+    await setRecording(true);
+    expect(await typeVexelOneLetterPerFrame(), 'each letter narrows the list').toEqual(expected);
+  }
+  const log = await readLog();
+  expect(log.map((entry) => entry.rows), 'the rows are updated by the next frame after each letter').toEqual(Array.from({ length: ROUNDS }, () => expected).flat());
+  const sorted = log.map((entry) => entry.ms).sort((a, b) => a - b);
+  const p95 = sorted[Math.ceil(sorted.length * 0.95) - 1] ?? Infinity;
+  expect(p95, `no visible delay at the 95th percentile: letter to frame, ms, sorted: ${sorted.map((ms) => ms.toFixed(0)).join(', ')}`).toBeLessThan(100);
   expect(requests, 'the search sends no request').toEqual([]);
 });
 

@@ -83,6 +83,26 @@ async function runInTerminal(sessionId: string, folder: string): Promise<void> {
 
 const uuid = () => crypto.randomUUID();
 
+interface ToolLineRecord {
+  shownAt: number;
+  goneAt: number;
+}
+
+/** Records in the page when the tool line of `folder` shows and goes: the runner's polling would see it late and shorten the time. */
+function recordToolLine(folder: string): void {
+  const record: ToolLineRecord = { shownAt: NaN, goneAt: NaN };
+  (window as unknown as { __toolLine: ToolLineRecord }).__toolLine = record;
+  const line = () =>
+    [...document.querySelectorAll('.session-entry')]
+      .find((entry) => [...entry.querySelectorAll('[title]')].some((el) => el.getAttribute('title') === folder))
+      ?.querySelector('.session-entry-tool');
+  new MutationObserver(() => {
+    const shown = line() != null;
+    if (shown && Number.isNaN(record.shownAt)) record.shownAt = performance.now();
+    else if (!shown && !Number.isNaN(record.shownAt) && Number.isNaN(record.goneAt)) record.goneAt = performance.now();
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+}
+
 test.describe('Running tool line', () => {
   // plan-session_list_improvements/REQ-14, REQ-15, REQ-24: a hosted working entry shows "Bash: npm test" within 2 s
   test('a hosted working session shows its running tool within 2 seconds', async ({ page, request }) => {
@@ -166,12 +186,13 @@ test.describe('Running tool line', () => {
     const row = entry(page, folder);
     await expect(row).toBeVisible();
 
+    await page.evaluate(recordToolLine, folder);
     await write(toolUse([['t1', 'Bash', { command: 'true' }]]));
     await expect(toolLine(row)).toHaveText('Bash: true', WITHIN_2_S);
-    const shownAt = Date.now();
     await write(toolResult('t1'));
     await expect(toolLine(row)).toHaveCount(0, WITHIN_2_S);
-    expect(Date.now() - shownAt, 'shown for about 1 second at least').toBeGreaterThanOrEqual(700);
+    const shown = await page.evaluate(() => (window as unknown as { __toolLine: ToolLineRecord }).__toolLine);
+    expect(shown.goneAt - shown.shownAt, 'shown for about 1 second at least').toBeGreaterThanOrEqual(700);
 
     await write(toolUse([['t2', 'Bash', { command: 'sleep 60' }]]));
     await expect(toolLine(row)).toHaveText('Bash: sleep 60', WITHIN_2_S);
