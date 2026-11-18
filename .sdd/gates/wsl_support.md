@@ -51,3 +51,8 @@
 | 2026-11-18 | plan | G3 coverage | sent back | INT-2 was a test as an intervention; tests belong to the tester notes, INT-1 serves REQ-42 to REQ-47 |
 | 2026-11-18 | plan | G3 coverage | pass | INT-1 serves REQ-42 to REQ-47; order test is a binding tester note; lists consistent |
 | 2026-11-18 | dev | G4 development | pass | Diff is INT-1 in `AppLayout.tsx` plus the app-layout spec; build green re-run by the gatekeeper |
+| 2026-11-18 | test | G5 batch tests | pass | Re-run by the gatekeeper: ended-external-sessions 16/16; order test fails 9/9 on the old code in order 2, passes 27/27 on the fix |
+| 2026-11-18 | test | failure outside perimeter | decided | `terminate-process:209` counts every Claude process of the machine; fix the test now per knowledge base `e2e-green-before-release` (human rule), then a new complete e2e run |
+| 2026-11-18 | test | app defect outside perimeter | escalated | `terminate-process:209` stays flaky with 3 workers: overlapping process-list reads return stale rows after a terminate (plan-app_processes REQ-31) |
+| 2026-11-18 | test | release without the Processes fix | human decision | The human chose to release v1.2.1 without that fix; one-off exception to `e2e-green-before-release` |
+| 2026-11-18 | test | G5 tests | pass | Batch 16/16, unit 4352/4352, e2e 981/982 with only the Processes defect above |
