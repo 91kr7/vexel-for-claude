@@ -84,7 +84,7 @@ describe('SessionList session star', () => {
     );
   });
 
-  // SessionList spec "Session star", plan-ui_restyle/REQ-31: Tab follows the new visual order, "Rename" last
+  // SessionList spec "Session star", plan-session_list_improvements/REQ-43: the Tab order is unchanged, "Rename" last
   it.each([
     ['ended row', session('a', 'ended', { resumable: true }), ['entry', 'Mark as Favorite', 'Resume', 'Dismiss', 'Rename']],
     ['working row', session('a', 'working'), ['entry', 'Mark as Favorite', 'Rename']],
