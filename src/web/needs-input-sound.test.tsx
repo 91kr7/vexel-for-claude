@@ -4,6 +4,7 @@ import { flushSync } from 'react-dom';
 import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { playNeedsInputSound, useNeedsInputSound } from './needs-input-sound';
+import { SoundSwitchStore, pageSoundSwitchStore } from './settings/sound-switch-store';
 
 /** Stands in for the browser audio element: records each element and each play. */
 let audios: { src: string; plays: number }[];
@@ -50,10 +51,15 @@ function Player() {
 const roots: Root[] = [];
 
 // The shell may export NODE_ENV=production, where React has no `act`: flushSync commits the render and its effects at once.
-function mount(): Root {
+function SwitchedPlayer({ store }: { store: SoundSwitchStore }) {
+  useNeedsInputSound(store);
+  return null;
+}
+
+function mount(store?: SoundSwitchStore): Root {
   const root = createRoot(document.createElement('div'));
   roots.push(root);
-  flushSync(() => root.render(<Player />));
+  flushSync(() => root.render(store ? <SwitchedPlayer store={store} /> : <Player />));
   return root;
 }
 
@@ -151,5 +157,63 @@ describe('useNeedsInputSound', () => {
   it('plays nothing and does not fail in a browser, with no bridge', () => {
     expect(() => mount()).not.toThrow();
     expect(audios).toHaveLength(0);
+  });
+});
+
+// plan-input_sound, batch sound-switch: the player reads the sound switch at each request.
+describe('useNeedsInputSound with the sound switch', () => {
+  // plan-input_sound/REQ-13
+  it('plays nothing on a request while the switch is off', () => {
+    const bridge = installBridge();
+    const store = new SoundSwitchStore();
+    store.set(false);
+    mount(store);
+    bridge.requestSound();
+    expect(audios).toHaveLength(0);
+  });
+
+  // plan-input_sound/REQ-11, REQ-13: the switch is read at each request, so a change applies to the next one
+  it('follows a switch changed while mounted: off stops the next play, on lets the next one play', () => {
+    const bridge = installBridge();
+    const store = new SoundSwitchStore();
+    mount(store);
+
+    store.set(false);
+    bridge.requestSound();
+    expect(audios).toHaveLength(0);
+
+    store.set(true);
+    bridge.requestSound();
+    expect(audios).toHaveLength(1);
+  });
+
+  // assumption "Switch turned on late": turning the switch on plays nothing by itself
+  it('plays nothing when the switch is turned on, only at the next request', () => {
+    const bridge = installBridge();
+    const store = new SoundSwitchStore();
+    store.set(false);
+    mount(store);
+    bridge.requestSound();
+
+    store.set(true);
+    expect(audios).toHaveLength(0);
+    bridge.requestSound();
+    expect(audios).toHaveLength(1);
+  });
+
+  // spec useNeedsInputSound: the default store is the page store
+  it('reads the page store by default', () => {
+    const bridge = installBridge();
+    mount();
+    pageSoundSwitchStore().set(false);
+    try {
+      bridge.requestSound();
+      expect(audios).toHaveLength(0);
+    } finally {
+      pageSoundSwitchStore().set(true);
+      localStorage.clear();
+    }
+    bridge.requestSound();
+    expect(audios).toHaveLength(1);
   });
 });

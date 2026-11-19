@@ -1,5 +1,5 @@
-// e2e of plan-input_sound, batch needs-input-sound, in the desktop app. Each launch gets its own HOME, free port and Claude folder,
-// and a private D-Bus session bus whose notification server is a fake: no real notification reaches the user's display.
+// e2e of plan-input_sound, batches needs-input-sound and sound-switch, in the desktop app. Each launch gets its own HOME, free port and Claude folder,
+// and a private D-Bus session bus whose notification server and tray host are fakes: nothing reaches the user's panel or notifications.
 // The page plays the chime at volume 0, so no sound reaches the user's speakers.
 import { type ChildProcess, type ChildProcessByStdio, execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -10,21 +10,26 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
-import { Message, type MessageBus, sessionBus } from '@jellybrick/dbus-next';
+import { Message, type MessageBus, Variant, sessionBus } from '@jellybrick/dbus-next';
 import { type ElectronApplication, type Page, _electron, expect, test } from '@playwright/test';
 import { killLeftovers } from './leftovers';
+import { settingsButton, settingsPopup } from './settings';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
 const fakeClaude = fileURLToPath(new URL('../test-support/fake-claude.mjs', import.meta.url));
 const NAME = 'org.freedesktop.Notifications';
 const OBJECT_PATH = '/org/freedesktop/Notifications';
+const WATCHER = 'org.kde.StatusNotifierWatcher';
+const WATCHER_PATH = '/StatusNotifierWatcher';
+const PROPERTIES = 'org.freedesktop.DBus.Properties';
+const TRAY_UPDATE = 10_000;
 // REQ-3: within 5 seconds of the state change.
 const FIVE_SECONDS = 5000;
 // REQ-4, REQ-6: the 5-second window, with a margin.
 const AFTER_WINDOW = 5500;
 
-const fake = { notifyCalls: [] as { summary: string; body: string }[], nextId: 70 };
+const fake = { notifyCalls: [] as { summary: string; body: string }[], nextId: 70, trayItems: [] as { service: string; path: string }[] };
 let daemon: ChildProcessByStdio<null, Readable, null>;
 let busAddress: string;
 let service: MessageBus;
@@ -34,7 +39,34 @@ const ports: number[] = [];
 const dirs: string[] = [];
 const terminals: ChildProcess[] = [];
 
+const watcherProperties = (): Record<string, Variant> => ({
+  IsStatusNotifierHostRegistered: new Variant('b', true),
+  ProtocolVersion: new Variant('i', 0),
+  RegisteredStatusNotifierItems: new Variant('as', fake.trayItems.map((item) => item.service)),
+});
+
+/** The fake tray host: it records the tray items that register. */
+function handleWatcher(msg: Message): boolean {
+  const reply = (signature = '', values: unknown[] = []) => {
+    service.send(Message.newMethodReturn(msg, signature, values));
+    return true;
+  };
+  if (msg.interface === WATCHER && msg.member === 'RegisterStatusNotifierItem') {
+    const [item] = msg.body as [string];
+    fake.trayItems.push(item.startsWith('/') ? { service: msg.sender, path: item } : { service: item, path: '/StatusNotifierItem' });
+    return reply();
+  }
+  if (msg.interface === WATCHER && msg.member === 'RegisterStatusNotifierHost') return reply();
+  if (msg.interface === PROPERTIES && msg.member === 'GetAll') return reply('a{sv}', [watcherProperties()]);
+  if (msg.interface === PROPERTIES && msg.member === 'Get') {
+    const value = watcherProperties()[(msg.body as [string, string])[1]];
+    return value ? reply('v', [value]) : false;
+  }
+  return false;
+}
+
 function handle(msg: Message): boolean {
+  if (msg.path === WATCHER_PATH) return handleWatcher(msg);
   if (msg.interface !== NAME || msg.path !== OBJECT_PATH) return false;
   const body = msg.body as unknown[];
   switch (msg.member) {
@@ -71,6 +103,7 @@ test.beforeAll(async () => {
   service.addMethodHandler(handle);
   // 4 = DO_NOT_QUEUE; 1 = primary owner.
   expect(await service.requestName(NAME, 4)).toBe(1);
+  expect(await service.requestName(WATCHER, 4)).toBe(1);
 });
 
 test.afterAll(() => {
@@ -80,6 +113,7 @@ test.afterAll(() => {
 
 test.beforeEach(() => {
   fake.notifyCalls.length = 0;
+  fake.trayItems.length = 0;
 });
 
 test.afterEach(async () => {
@@ -144,9 +178,9 @@ async function stopListeners(port: number): Promise<void> {
 }
 
 /** Environment of an isolated desktop session: its own HOME (own Electron profile and single-instance lock), port and private bus. */
-async function desktopEnv(port: number): Promise<Record<string, string>> {
-  const home = await mkdtemp(path.join(os.tmpdir(), 'ai-client-e2e-sound-'));
-  dirs.push(home);
+async function desktopEnv(port: number, reusedHome?: string): Promise<Record<string, string>> {
+  const home = reusedHome ?? (await mkdtemp(path.join(os.tmpdir(), 'ai-client-e2e-sound-')));
+  if (!reusedHome) dirs.push(home);
   const base = Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined));
   delete base.ELECTRON_RUN_AS_NODE;
   return {
@@ -170,10 +204,13 @@ interface Desktop {
   home: string;
 }
 
-/** Launches the app; `prepare` runs on its HOME before the launch. Records the sound requests of DesktopApp and the plays of the page. */
-async function readyDesktop(prepare?: (home: string) => Promise<void>): Promise<Desktop> {
-  const port = await freePort();
-  const env = await desktopEnv(port);
+/**
+ * Launches the app; `prepare` runs on its HOME before the launch. Records the sound requests of DesktopApp and the plays of the page.
+ * `restart` launches it again on the HOME and port of a quit app: the same profile and page origin, as after a restart.
+ */
+async function readyDesktop(prepare?: (home: string) => Promise<void>, restart?: { home: string; port: number }): Promise<Desktop> {
+  const port = restart?.port ?? (await freePort());
+  const env = await desktopEnv(port, restart?.home);
   await prepare?.(env.HOME!);
   const app = await _electron.launch({ executablePath: electronBinary, args: ['.'], cwd: repoRoot, env });
   apps.push(app);
@@ -293,6 +330,34 @@ const focusWindow = (app: ElectronApplication) =>
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).getByRole('button').filter({ has: page.getByTitle(folder, { exact: true }) });
 const header = (page: Page) => page.getByRole('main').locator('.session-header');
+
+const SWITCH = 'Play a sound when a session needs input';
+const soundSwitch = (page: Page) => settingsPopup(page).getByRole('switch', { name: SWITCH, exact: true });
+
+async function openSoundMenu(page: Page): Promise<void> {
+  await settingsButton(page).click();
+  await settingsPopup(page).getByRole('tab', { name: 'Sound', exact: true }).click();
+  await expect(soundSwitch(page)).toBeVisible();
+}
+
+async function closeSettings(page: Page): Promise<void> {
+  await settingsPopup(page).getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.locator('.modal-backdrop')).toHaveCount(0);
+}
+
+/** The tooltip of the app's tray item, read from the fake tray host. */
+async function trayTooltip(): Promise<string | undefined> {
+  const item = fake.trayItems.at(-1);
+  if (!item) return undefined;
+  try {
+    const reply = await service.call(
+      new Message({ destination: item.service, path: item.path, interface: PROPERTIES, member: 'Get', signature: 'ss', body: ['org.kde.StatusNotifierItem', 'ToolTip'] }),
+    );
+    return ((reply?.body[0] as Variant).value as [string, unknown, string, string])[2];
+  } catch {
+    return undefined;
+  }
+}
 
 /** Waits until the sound count reaches `count` within 5 s of `changedAt`, then checks that the page played the chime. */
 async function expectSound(desktop: Desktop, count: number, changedAt: number): Promise<number> {
@@ -417,6 +482,59 @@ test.describe('Needs-input sound in the desktop app', () => {
     await expect.poll(() => fake.notifyCalls.some((call) => call.summary.startsWith('turn-project')), { timeout: FIVE_SECONDS }).toBe(true);
     await window.waitForTimeout(1500);
     expect(await soundSends(app)).toEqual([]);
+    expect(await plays(window)).toEqual([]);
+  });
+
+  // Scenarios "The user turns the sound off" and "No sound with the switch off"
+  test('REQ-10, REQ-11, REQ-13, REQ-14: the switch is on at first start and turns off at once; then a permission request in the background plays nothing, while its notification and the tray show as before', async () => {
+    const desktop = await readyDesktop();
+    const { app, window, port, home } = desktop;
+    await expect.poll(trayTooltip, { timeout: TRAY_UPDATE }).toBe('Vexel for Claude');
+
+    await openSoundMenu(window);
+    await expect(soundSwitch(window), 'REQ-10: on at first start').toHaveAttribute('aria-checked', 'true');
+    await soundSwitch(window).click();
+    await expect(soundSwitch(window)).toHaveAttribute('aria-checked', 'false');
+    await closeSettings(window);
+
+    const folder = path.join(home, 'quiet-project');
+    const id = await startSession(port, folder);
+    await expect(entry(window, folder)).toBeVisible();
+    await minimizeWindow(app);
+    await expect.poll(async () => (await windowState(app))?.focused).toBe(false);
+
+    await askPermission(port, id, 'Fix the login form', 'Bash');
+    await expect.poll(() => sessionState(port, id)).toBe('needs_input');
+    await expect.poll(async () => (await soundSends(app)).length, { timeout: FIVE_SECONDS, message: 'REQ-14: the desktop app still asks for the sound' }).toBe(1);
+    await expect
+      .poll(() => fake.notifyCalls.some((call) => call.summary.startsWith('quiet-project')), { timeout: FIVE_SECONDS, message: 'REQ-14: notification' })
+      .toBe(true);
+    await expect.poll(trayTooltip, { timeout: TRAY_UPDATE, message: 'REQ-14: tray' }).toBe('Vexel for Claude · 1 session needs input');
+    await window.waitForTimeout(1500);
+    expect(await plays(window), 'REQ-13: no play').toEqual([]);
+  });
+
+  // Scenario "The switch stays off after a restart"
+  test('REQ-12, REQ-13: the switch turned off stays off after the app quits and starts again, and a permission request then plays nothing', async () => {
+    const first = await readyDesktop();
+    await openSoundMenu(first.window);
+    await soundSwitch(first.window).click();
+    await expect(soundSwitch(first.window)).toHaveAttribute('aria-checked', 'false');
+    await closeSettings(first.window);
+    await quitDesktop(first.app);
+
+    const desktop = await readyDesktop(undefined, { home: first.home, port: first.port });
+    const { app, window, port, home } = desktop;
+    await openSoundMenu(window);
+    await expect(soundSwitch(window)).toHaveAttribute('aria-checked', 'false');
+    await closeSettings(window);
+
+    const folder = path.join(home, 'restart-project');
+    const id = await startSession(port, folder);
+    await expect(entry(window, folder)).toBeVisible();
+    await askPermission(port, id, 'Run the migrations', 'Bash');
+    await expect.poll(async () => (await soundSends(app)).length, { timeout: FIVE_SECONDS }).toBe(1);
+    await window.waitForTimeout(1500);
     expect(await plays(window)).toEqual([]);
   });
 });
