@@ -351,6 +351,8 @@ test.describe('theme choice', () => {
     await page.evaluate(() => ((window as unknown as { pageMarker: number }).pageMarker = 42));
     await settingsButton(page).click();
     await cardOf(settingsPopup(page).getByRole('radio', { name: 'Light', exact: true })).click();
+    // The change dissolves (ColorDissolve): the mark moves once the old picture is taken, a frame or more after the click.
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     expect(await style(page.locator('body'), 'background-color')).toBe(LIGHT['--bg-canvas']);
     expect(await style(page.locator('body'), 'color')).toBe(LIGHT['--text-primary']);
     // TopBar (plan-dark_blue_theme, batch window-frame): the title bar role surface
