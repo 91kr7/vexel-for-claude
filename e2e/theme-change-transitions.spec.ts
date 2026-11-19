@@ -20,6 +20,9 @@ interface Watch {
   active: number;
   pictures: Picture[];
   clicksDuringDissolve: number;
+  // Page clock (performance.now) of the first press during a dissolve, and of the end of the last dissolve.
+  pressedAt: number | null;
+  endedAt: number | null;
 }
 
 // Values of the earlier theme plans (light_theme, dark_blue_theme), in computed form.
@@ -52,7 +55,7 @@ const entry = (page: Page, folder: string) => list(page).getByRole('button').fil
  * the canvas and the terminal, and the cross-fade animations. Also counts the clicks that land while one plays.
  */
 function installDissolveWatcher(): void {
-  const watch: Watch = { calls: 0, active: 0, pictures: [], clicksDuringDissolve: 0 };
+  const watch: Watch = { calls: 0, active: 0, pictures: [], clicksDuringDissolve: 0, pressedAt: null, endedAt: null };
   (window as unknown as { dissolveWatch: Watch }).dissolveWatch = watch;
   const native = document.startViewTransition?.bind(document);
   if (!native) return;
@@ -84,10 +87,23 @@ function installDissolveWatcher(): void {
       },
       () => undefined,
     );
-    transition.finished.finally(() => watch.active--).catch(() => undefined);
+    transition.finished
+      .finally(() => {
+        watch.active--;
+        watch.endedAt = performance.now();
+      })
+      .catch(() => undefined);
     return transition;
   }) as typeof document.startViewTransition;
-  document.addEventListener('pointerdown', () => watch.active > 0 && watch.clicksDuringDissolve++, true);
+  document.addEventListener(
+    'pointerdown',
+    () => {
+      if (watch.active === 0) return;
+      watch.clicksDuringDissolve++;
+      watch.pressedAt ??= performance.now();
+    },
+    true,
+  );
 }
 
 const watchOf = (page: Page) => page.evaluate(() => (window as unknown as { dissolveWatch: Watch }).dissolveWatch);
@@ -248,11 +264,12 @@ test.describe('colour dissolve', () => {
 
     await page.keyboard.press('Alt+KeyA');
     await expect.poll(async () => (await watchOf(page)).active, { timeout: 1000 }).toBeGreaterThan(0);
-    const clickedAt = Date.now();
     await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
     expect((await watchOf(page)).clicksDuringDissolve, 'the click landed while the dissolve played').toBeGreaterThan(0);
     await waitForDissolveEnd(page);
-    expect(Date.now() - clickedAt, 'the press ends the dissolve at once').toBeLessThan(SLOW_MS / 2);
+    // Measured on the page clock: the test runner's round trips and poll intervals are not part of the dissolve.
+    const { pressedAt, endedAt } = await watchOf(page);
+    expect(endedAt! - pressedAt!, 'the press ends the dissolve at once').toBeLessThan(SLOW_MS / 2);
     await expect(html(page)).toHaveAttribute('data-theme', 'dark-blue');
     expect(await effectiveBackground(page.locator('body')), 'the page is in the new colours').toBe(DARK_BLUE_CANVAS);
     await expect(settingsPopup(page), 'the Settings button takes the click').toBeVisible();

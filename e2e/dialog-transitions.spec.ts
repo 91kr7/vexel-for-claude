@@ -3,6 +3,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Page, expect, test } from '@playwright/test';
+import { presses, recordPresses } from './motion';
 import { settingsButton, settingsPopup } from './settings';
 
 interface Effect {
@@ -13,6 +14,9 @@ interface Snapshot {
   phase: 'open' | 'leave';
   backdrop: Effect[];
   frame: Effect[];
+  // The dialog frame is hidden from assistive technologies, and its `aria-modal`.
+  hidden: boolean;
+  modal: string | null;
 }
 
 let projectsRoot: string;
@@ -53,7 +57,14 @@ async function watchDialogs(page: Page): Promise<void> {
         }));
     const snap = (backdrop: Element, phase: Snapshot['phase']) => {
       getComputedStyle(backdrop).opacity;
-      store.__motion.push({ phase, backdrop: effects(backdrop), frame: effects(backdrop.querySelector('[role="dialog"], [role="alertdialog"]')) });
+      const frame = backdrop.querySelector('[role="dialog"], [role="alertdialog"]');
+      store.__motion.push({
+        phase,
+        backdrop: effects(backdrop),
+        frame: effects(frame),
+        hidden: frame?.closest('[aria-hidden="true"]') != null,
+        modal: frame?.getAttribute('aria-modal') ?? null,
+      });
     };
     new MutationObserver((records) => {
       for (const record of records) {
@@ -97,10 +108,12 @@ function expectOpening(snapshot: Snapshot | undefined, label: string): void {
   }
 }
 
-/** Checks the leaving snapshot: frame zooms out slightly, backdrop fades out, each within 300 ms. */
+/** Checks the leaving snapshot: closed at once (hidden, not modal), frame zooms out slightly, backdrop fades out, each within 300 ms. */
 function expectLeaving(snapshot: Snapshot | undefined, label: string): void {
   expect(snapshot, `${label}: no leaving recorded`).toBeDefined();
-  const { backdrop, frame } = snapshot as Snapshot;
+  const { backdrop, frame, hidden, modal } = snapshot as Snapshot;
+  expect(hidden, `${label}: closed, no longer exposed from the start of its exit`).toBe(true);
+  expect(modal, `${label}: no aria-modal while it leaves`).toBeNull();
   expect(transparentAt(backdrop, 1), `${label}: backdrop fades out ${JSON.stringify(backdrop)}`).toBe(true);
   expect(slightZoomAt(frame, 1), `${label}: frame ends slightly smaller ${JSON.stringify(frame)}`).toBe(true);
   // plan-ui_transitions/REQ-31
@@ -142,7 +155,7 @@ test('Settings fades and zooms in on open, Esc closes it at once and it zooms ou
   await expect.poll(() => settingsPopup(page).evaluate((dialog) => dialog.contains(document.activeElement))).toBe(true);
 
   await page.keyboard.press('Escape');
-  await expect(settingsPopup(page)).toHaveCount(0, { timeout: 100 });
+  await expect(settingsPopup(page)).toHaveCount(0);
   await expect(backdrops(page)).toHaveCount(0, { timeout: 1000 });
 
   const [opening, leaving] = await snapshots(page);
@@ -163,7 +176,7 @@ for (const { label, key, dialog } of [
     await page.keyboard.press(key);
     await expect(dialog(page)).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(dialog(page)).toHaveCount(0, { timeout: 100 });
+    await expect(dialog(page)).toHaveCount(0);
     await expect(backdrops(page)).toHaveCount(0, { timeout: 1000 });
 
     const [opening, leaving] = await snapshots(page);
@@ -176,15 +189,20 @@ for (const { label, key, dialog } of [
 test('Alt+H then Esc at once closes the Resume session dialog, and the next keys reach the page', async ({ page }) => {
   await page.goto('/');
   await slowExit(page);
+  await watchDialogs(page);
 
   await page.keyboard.press('Alt+KeyH');
   await page.keyboard.press('Escape');
-  await expect(history(page)).toHaveCount(0, { timeout: 100 });
+  await expect(history(page)).toHaveCount(0);
   await expect(leavingBackdrops(page), 'the dialog plays its exit').toHaveCount(1);
+  const leaving = (await snapshots(page)).find((snapshot) => snapshot.phase === 'leave');
+  expect(leaving?.hidden, 'closed, no longer exposed from the start of its exit').toBe(true);
 
   // A page shortcut works while the Resume session dialog is still leaving.
+  await recordPresses(page, '.modal-backdrop.is-leaving');
   await page.keyboard.press('Alt+KeyN');
-  await expect(chooser(page)).toBeVisible({ timeout: 1000 });
+  await expect(chooser(page)).toBeVisible();
+  expect((await presses(page)).find((press) => press.key.toLowerCase() === 'n')?.during, 'Alt+N lands while the dialog leaves').toBe(true);
   await expect(chooser(page).evaluate((element) => element.contains(document.activeElement))).resolves.toBe(true);
 
   await expect(backdrops(page)).toHaveCount(1, { timeout: 3000 });
@@ -196,14 +214,18 @@ test('Alt+H then Esc at once closes the Resume session dialog, and the next keys
 test('a click on the gear while Settings leaves opens Settings again, and it stays open', async ({ page }) => {
   await page.goto('/');
   await slowExit(page);
+  await watchDialogs(page);
 
   await settingsButton(page).click();
   await expect(settingsPopup(page)).toBeVisible();
+  await recordPresses(page, '.modal-backdrop.is-leaving');
   await page.keyboard.press('Escape');
-  await expect(settingsPopup(page)).toHaveCount(0, { timeout: 100 });
+  await expect(settingsPopup(page)).toHaveCount(0);
   await expect(leavingBackdrops(page)).toHaveCount(1);
+  expect((await snapshots(page)).find((snapshot) => snapshot.phase === 'leave')?.hidden, 'closed, no longer exposed from the start of its exit').toBe(true);
 
-  await settingsButton(page).click({ timeout: 1000 });
+  await settingsButton(page).click();
+  expect((await presses(page)).find((press) => press.type === 'pointerdown')?.during, 'the click lands while Settings leaves').toBe(true);
 
   await expect(settingsPopup(page)).toBeVisible();
   await expect(leavingBackdrops(page)).toHaveCount(0);
@@ -221,7 +243,7 @@ test('the "Terminate" warning dialog fades and zooms in, and out on "Cancel"', a
   await page.getByRole('button', { name: 'Terminate', exact: true }).first().click();
   await expect(confirmation(page)).toBeVisible();
   await confirmation(page).getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect(confirmation(page)).toHaveCount(0, { timeout: 100 });
+  await expect(confirmation(page)).toHaveCount(0);
   await expect(backdrops(page)).toHaveCount(0, { timeout: 1000 });
 
   const [opening, leaving] = await snapshots(page);

@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
-import { pageSettled } from './motion';
+import { pageSettled, presses, recordPresses } from './motion';
 import { cardOf, settingsButton, settingsPopup } from './settings';
 
 interface Effect {
@@ -15,6 +15,8 @@ interface Effect {
 }
 interface Shown {
   label: string;
+  // Page clock (performance.now) of the moment it shows.
+  t: number;
   effects: Effect[];
 }
 interface Watch {
@@ -98,7 +100,7 @@ function installTabWatcher(selector: string): void {
           from: { opacity: first?.opacity as string | undefined, transform: first?.transform as string | undefined },
         };
       });
-    watch.shown.push({ label: labelOf(panel), effects });
+    watch.shown.push({ label: labelOf(panel), t: performance.now(), effects });
   };
   new MutationObserver((records) => {
     for (const record of records) {
@@ -203,7 +205,7 @@ test.describe('Git Explorer tab change', () => {
 
     await gitTab(page, 'History').click();
     await expect(gitPanel(page, 'History')).toBeVisible();
-    await expect(gitPanel(page, 'Changes')).toBeHidden({ timeout: 50 });
+    await expect(gitPanel(page, 'Changes')).toBeHidden();
     await pageSettled(page);
 
     await gitTab(page, 'Changes').click();
@@ -230,22 +232,31 @@ test.describe('Git Explorer tab change', () => {
     await pageSettled(page);
     await slowMotion(page);
     await watchTabs(page, GIT_PANELS);
+    await recordPresses(page, GIT_PANELS);
 
     await gitTab(page, 'History').click();
-    await gitTab(page, 'Changes').click({ timeout: 300 });
-    await expect(gitTab(page, 'Changes')).toHaveAttribute('aria-selected', 'true', { timeout: 300 });
-    await expect(gitPanel(page, 'Changes')).toBeVisible({ timeout: 300 });
-    await expect(gitPanel(page, 'History')).toBeHidden({ timeout: 50 });
+    await gitTab(page, 'Changes').click();
+    await expect(gitTab(page, 'Changes')).toHaveAttribute('aria-selected', 'true');
+    await expect(gitPanel(page, 'Changes')).toBeVisible();
+    await expect(gitPanel(page, 'History')).toBeHidden();
 
     await gitTab(page, 'History').focus();
     await page.keyboard.press('Enter');
-    await expect(gitTab(page, 'History')).toHaveAttribute('aria-selected', 'true', { timeout: 300 });
-    await expect(gitPanel(page, 'History')).toBeVisible({ timeout: 300 });
+    await expect(gitTab(page, 'History')).toHaveAttribute('aria-selected', 'true');
+    await expect(gitPanel(page, 'History')).toBeVisible();
     expect(await runningEffects(gitPanel(page, 'History')), 'the effect is still playing').toBeGreaterThan(0);
 
     const watch = await tabWatch(page);
     expect(watch.shown.map((shown) => shown.label)).toEqual(['History', 'Changes', 'History']);
     expect(watch.maxVisible, 'two panels never show together').toBe(1);
+    // On the page clock: the runner's round trips are not part of the app's time.
+    const all = await presses(page);
+    const click = all.filter((press) => press.type === 'pointerdown')[1];
+    const key = all.find((press) => press.key === 'Enter');
+    expect(click?.during, 'the click on "Changes" lands during the effect').toBe(true);
+    expect(key?.during, 'Enter lands during the effect').toBe(true);
+    expect(watch.shown[1]!.t - click!.t, 'the click acts at once').toBeLessThan(300);
+    expect(watch.shown[2]!.t - key!.t, 'Enter acts at once').toBeLessThan(300);
   });
 
   // plan-ui_transitions/REQ-23 with reduced motion (REQ-25)
@@ -282,7 +293,7 @@ test.describe('Settings menu change', () => {
 
     await menuItem(page, 'Shortcuts').click();
     await expect(pane(page, 'Shortcuts')).toBeVisible();
-    await expect(pane(page, 'Appearance')).toBeHidden({ timeout: 50 });
+    await expect(pane(page, 'Appearance')).toBeHidden();
     await pageSettled(page);
 
     await menuItem(page, 'Shortcuts').click();
@@ -315,22 +326,27 @@ test.describe('Settings menu change', () => {
     await pageSettled(page);
     await slowMotion(page);
     await watchTabs(page, SETTINGS_PANES);
+    await recordPresses(page, SETTINGS_PANES);
 
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('ArrowDown');
-    await expect(menuItem(page, 'Updates')).toHaveAttribute('aria-selected', 'true', { timeout: 300 });
-    await expect(menuItem(page, 'Updates')).toBeFocused({ timeout: 300 });
-    await expect(pane(page, 'Updates')).toBeVisible({ timeout: 300 });
-    await expect(pane(page, 'Shortcuts')).toBeHidden({ timeout: 50 });
-    await expect(pane(page, 'Appearance')).toBeHidden({ timeout: 50 });
+    await expect(menuItem(page, 'Updates')).toHaveAttribute('aria-selected', 'true');
+    await expect(menuItem(page, 'Updates')).toBeFocused();
+    await expect(pane(page, 'Updates')).toBeVisible();
+    await expect(pane(page, 'Shortcuts')).toBeHidden();
+    await expect(pane(page, 'Appearance')).toBeHidden();
 
     await page.keyboard.press('Tab');
-    await expect(settingsPopup(page).getByRole('button', { name: 'Check for Updates', exact: true })).toBeFocused({ timeout: 300 });
+    await expect(settingsPopup(page).getByRole('button', { name: 'Check for Updates', exact: true })).toBeFocused();
     expect(await runningEffects(pane(page, 'Updates')), 'the effect is still playing').toBeGreaterThan(0);
 
     const watch = await tabWatch(page);
     expect(watch.shown.map((shown) => shown.label)).toEqual(['Shortcuts', 'Updates']);
     expect(watch.maxVisible, 'two sections never show together').toBe(1);
+    // On the page clock: the runner's round trips are not part of the app's time.
+    const [, second] = (await presses(page)).filter((press) => press.key === 'ArrowDown');
+    expect(second?.during, 'the second Down lands during the effect').toBe(true);
+    expect(watch.shown[1]!.t - second!.t, 'the second Down acts at once').toBeLessThan(300);
   });
 
   // plan-ui_transitions/REQ-26: the new section takes clicks while it fades in

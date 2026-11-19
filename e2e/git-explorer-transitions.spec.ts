@@ -6,11 +6,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
-import { settled } from './motion';
+import { presses, recordPresses, settled } from './motion';
 
 interface Sample {
   t: number;
   leaving: boolean;
+  // Hidden from assistive technologies.
+  hidden: boolean;
   left: number;
   edge: number;
 }
@@ -107,6 +109,7 @@ function installPanelWatcher(): void {
       store.__panel.push({
         t: performance.now(),
         leaving: panel.classList.contains('is-leaving'),
+        hidden: panel.closest('[aria-hidden="true"]') !== null,
         left: panel.getBoundingClientRect().left,
         edge: row.getBoundingClientRect().right,
       });
@@ -148,6 +151,7 @@ function expectSlideIn(opening: Sample[]): void {
 /** The panel leaves to the right edge: it moves right, never back, and ends near the edge. */
 function expectSlideOut(leaving: Sample[], openLeft: number): void {
   expect(leaving.length, 'frames of the closing slide').toBeGreaterThan(5);
+  expect(leaving.filter((sample) => !sample.hidden), 'no longer exposed in any frame of the exit').toEqual([]);
   const first = leaving[0]!;
   const last = leaving[leaving.length - 1]!;
   expect(first.left, 'starts from the open position').toBeLessThanOrEqual(openLeft + 2);
@@ -203,14 +207,19 @@ test.describe('Git Explorer slide of a hosted session', () => {
     await page.goto('/');
     await openHosted(page, repo);
     await slowMotion(page);
+    await recordPresses(page, '.git-explorer-panel');
 
     await explorerButton(page).click();
     // force: the click lands while the panel still moves.
-    await tab(page, 'History').click({ force: true, timeout: 300 });
-    await expect(tab(page, 'History')).toHaveAttribute('aria-selected', 'true', { timeout: 300 });
+    await tab(page, 'History').click({ force: true });
+    await expect(tab(page, 'History')).toHaveAttribute('aria-selected', 'true');
     await tab(page, 'Changes').focus();
     await page.keyboard.press('Enter');
-    await expect(tab(page, 'Changes')).toHaveAttribute('aria-selected', 'true', { timeout: 300 });
+    await expect(tab(page, 'Changes')).toHaveAttribute('aria-selected', 'true');
+    // On the page clock: both presses land while the panel slides in.
+    const all = await presses(page);
+    expect(all.filter((press) => press.type === 'pointerdown')[1]?.during, 'the click on "History" lands during the slide').toBe(true);
+    expect(all.find((press) => press.key === 'Enter')?.during, 'Enter lands during the slide').toBe(true);
     expect(
       await panels(page).evaluate((panel) => panel.getAnimations().some((animation) => animation.playState === 'running')),
       'the slide is still playing',
@@ -227,13 +236,17 @@ test.describe('Git Explorer slide of a hosted session', () => {
     await expect(explorer(page)).toBeVisible();
     await settled(panels(page));
     await slowMotion(page);
+    await watchPanel(page);
 
     await explorerButton(page).click();
-    await expect(explorer(page), 'closed: no longer exposed').toHaveCount(0, { timeout: SLOW_MS / 3 });
+    await expect(explorer(page), 'closed: no longer exposed').toHaveCount(0);
     await expect(panels(page), 'the panel plays its exit').toHaveCount(1);
     await expect(panels(page)).toHaveAttribute('aria-hidden', 'true');
     expect(await pointerGoesThrough(panels(page)), 'the leaving panel takes no pointer input').toBe(true);
     await expect(panels(page)).toHaveCount(0, { timeout: SLOW_MS + 1000 });
+    const leaving = (await samples(page)).filter((sample) => sample.leaving);
+    expect(leaving.length, 'frames of the closing slide').toBeGreaterThan(0);
+    expect(leaving.filter((sample) => !sample.hidden), 'no longer exposed in any frame of the exit').toEqual([]);
   });
 
   // plan-ui_transitions/REQ-26, REQ-28 — scenario "a click during the slide wins"
@@ -245,12 +258,15 @@ test.describe('Git Explorer slide of a hosted session', () => {
     await openHosted(page, repo);
     const startCols = resizes[resizes.length - 1]?.cols;
     const before = await terminalPanel(page).boundingBox();
+    await slowMotion(page);
+    await recordPresses(page, '.git-explorer-panel');
 
     await explorerButton(page).click();
-    await explorerButton(page).click({ timeout: 300 });
+    await explorerButton(page).click();
+    expect((await presses(page))[1]?.during, 'the second click lands during the slide').toBe(true);
 
     await expect(explorerButton(page)).toHaveAttribute('aria-expanded', 'false');
-    await expect(panels(page)).toHaveCount(0, { timeout: 2000 });
+    await expect(panels(page)).toHaveCount(0, { timeout: SLOW_MS + 1000 });
     await page.waitForTimeout(600);
     const after = await terminalPanel(page).boundingBox();
     expect(after?.width, 'the terminal panel has its full width').toBeCloseTo(before!.width, 0);
@@ -268,10 +284,12 @@ test.describe('Git Explorer slide of a hosted session', () => {
     await page.waitForTimeout(400);
     const open = await explorer(page).boundingBox();
     await slowMotion(page);
+    await recordPresses(page, '.git-explorer-panel.is-leaving');
 
     await explorerButton(page).click();
     await expect(panels(page)).toHaveClass(/is-leaving/);
-    await explorerButton(page).click({ timeout: 300 });
+    await explorerButton(page).click();
+    expect((await presses(page))[1]?.during, 'the click lands while the panel slides out').toBe(true);
 
     await expect(explorerButton(page)).toHaveAttribute('aria-expanded', 'true');
     await expect(explorer(page)).toBeVisible();
@@ -365,7 +383,7 @@ test.describe('Git Explorer slide of an external session', () => {
     expectSlideIn(opening);
 
     await button.click();
-    await expect(explorer(page), 'closed: no longer exposed').toHaveCount(0, { timeout: SLOW_MS / 3 });
+    await expect(explorer(page), 'closed: no longer exposed').toHaveCount(0);
     await expect(panels(page), 'the panel plays its exit').toHaveCount(1);
     await expect(panels(page)).toHaveAttribute('aria-hidden', 'true');
     await expect(panels(page)).toHaveCount(0, { timeout: SLOW_MS + 1000 });

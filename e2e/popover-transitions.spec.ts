@@ -4,7 +4,7 @@ import { mkdir, mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
-import { currentView } from './motion';
+import { currentView, presses, recordPresses } from './motion';
 
 interface Effect {
   duration: number;
@@ -14,6 +14,8 @@ interface Snapshot {
   kind: string;
   phase: 'open' | 'leave';
   effects: Effect[];
+  // Hidden from assistive technologies.
+  hidden: boolean;
 }
 
 const KINDS = ['plan-usage-popover', 'snackbar', 'short-message', 'update-notice'] as const;
@@ -112,7 +114,7 @@ function installWatcher(kinds: string[]): void {
             transform: frame.transform as string | undefined,
           })),
         }));
-      store.__motion.push({ kind, phase, effects });
+      store.__motion.push({ kind, phase, effects, hidden: node.closest('[aria-hidden="true"]') !== null });
     };
     const selector = kinds.map((kind) => `.${kind}`).join(', ');
     new MutationObserver((records) => {
@@ -173,7 +175,8 @@ function expectRiseIn(snapshot: Snapshot | undefined, label: string, direction: 
 
 function expectRiseOut(snapshot: Snapshot | undefined, label: string, direction: 1 | -1 = 1): void {
   expect(snapshot, `${label}: no leaving recorded`).toBeDefined();
-  const { effects } = snapshot as Snapshot;
+  const { effects, hidden } = snapshot as Snapshot;
+  expect(hidden, `${label}: no longer exposed from the start of its exit`).toBe(true);
   const where = direction === 1 ? 'lower' : 'higher';
   expect(offPlaceAndTransparentAt(effects, 1, direction), `${label}: ends ${where} and transparent ${JSON.stringify(effects)}`).toBe(true);
   for (const effect of effects) expect(effect.duration, `${label}: leaving duration`).toBeGreaterThan(0);
@@ -205,7 +208,7 @@ test('the Plan Usage popover drops from its button with a fade on open, and lift
   await usageButton(page).click();
   await expect(popover(page)).toBeVisible();
   await popover(page).getByRole('button', { name: 'Close', exact: true }).click();
-  await expect(popover(page)).toHaveCount(0, { timeout: 100 });
+  await expect(popover(page)).toHaveCount(0);
   await expect(allPopovers(page)).toHaveCount(0, { timeout: 1000 });
 
   const [opening, leaving] = await snapshots(page, 'plan-usage-popover');
@@ -221,16 +224,25 @@ test('the Plan Usage popover closes at once while it enters, lets the pointer th
   await showOnlyOwnSessions(page);
   await page.goto('/');
   await slowExit(page);
+  // A slow enter too: the Close click must land while the popover enters.
+  await page.evaluate(() => document.documentElement.style.setProperty('--motion-duration-enter', '1500ms'));
+  await watchElements(page);
+  await recordPresses(page, '.plan-usage-popover');
 
   await usageButton(page).click();
   // force: the click lands while the popover still moves.
-  await popover(page).getByRole('button', { name: 'Close', exact: true }).click({ force: true, timeout: 100 });
-  await expect(popover(page), 'closed: no longer exposed').toHaveCount(0, { timeout: 100 });
+  await popover(page).getByRole('button', { name: 'Close', exact: true }).click({ force: true });
+  const clicks = async () => (await presses(page)).filter((press) => press.type === 'pointerdown');
+  expect((await clicks())[1]?.during, 'the Close click lands while the popover enters').toBe(true);
+  await expect(popover(page), 'closed: no longer exposed').toHaveCount(0);
   await expect(allPopovers(page), 'the popover plays its exit').toHaveCount(1);
   await expect(allPopovers(page)).toHaveAttribute('aria-hidden', 'true');
+  const leaving = (await snapshots(page, 'plan-usage-popover')).find((snapshot) => snapshot.phase === 'leave');
+  expect(leaving?.hidden, 'no longer exposed from the start of its exit').toBe(true);
   expect(await pointerGoesThrough(allPopovers(page)), 'the leaving popover takes no pointer input').toBe(true);
 
-  await usageButton(page).click({ timeout: 1000 });
+  await usageButton(page).click();
+  expect((await clicks())[2]?.during, 'the reopening click lands while the popover leaves').toBe(true);
   await expect(popover(page)).toBeVisible();
   await expect(allPopovers(page)).toHaveCount(1);
   await page.waitForTimeout(1800);
@@ -310,7 +322,7 @@ test('the newer-version notice slides up with a fade, closes at once and slides 
   await slowExit(page);
 
   await notice(page).getByRole('button', { name: 'Close Update Notice', exact: true }).click({ force: true, timeout: 2000 });
-  await expect(notice(page)).toHaveCount(0, { timeout: 100 });
+  await expect(notice(page)).toHaveCount(0);
   await expect(allNotices(page), 'the notice plays its exit').toHaveCount(1);
   await expect(allNotices(page)).toHaveAttribute('aria-hidden', 'true');
   expect(await pointerGoesThrough(allNotices(page)), 'the leaving notice takes no pointer input').toBe(true);
