@@ -10,7 +10,7 @@ Requirements → `requirements.md`. Execution order: needs-input-sound → sound
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [needs-input-sound](batches/batch-needs-input-sound.md) | Needs-input sound | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9 | — | implemented | A sound plays when Claude asks for a permission |
+| [needs-input-sound](batches/batch-needs-input-sound.md) | Needs-input sound | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9 | — | certified | A sound plays when Claude asks for a permission |
 | [sound-switch](batches/batch-sound-switch.md) | Sound switch | REQ-10, REQ-11, REQ-12, REQ-13, REQ-14 | needs-input-sound | todo | The user turns the sound off |
 
 ## Assumptions and decisions
