@@ -14,3 +14,4 @@
 | 2026-11-19 | plan | question planner Q3 place of switch | decided | New "Sound" section after the existing ones; touches least |
 | 2026-11-19 | plan | G2 requirements | pass | REQ-1 to REQ-14 plus plan constraints cover every analysis requirement |
 | 2026-11-19 | plan | G3 coverage | pass | REQ-1 to REQ-14 covered; batch sound-switch INT-4 modifies the player of needs-input-sound INT-6, no path yet as it does not exist; page-load gap kept as a risk in `batches.md` |
+| 2026-11-19 | dev | G4 needs-input-sound | pass | Diff is INT-1 to INT-7 plus specs and indexes; build green re-run by the gatekeeper; chime generated in-house, no third-party notice |

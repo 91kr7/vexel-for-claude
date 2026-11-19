@@ -6,7 +6,7 @@ type: Electron preload
 
 # DesktopBridge
 
-**Purpose** → the preload of the window. The page reports its open session through it, receives "open this session", reads the absolute path of a dropped file, and drives the window buttons.
+**Purpose** → the preload of the window. The page reports its open session through it, receives "open this session" and the sound requests, reads the absolute path of a dropped file, and drives the window buttons.
 
 ## Contract
 
@@ -20,6 +20,7 @@ type: Electron preload
   - `quitApp()` → sends `desktop-bridge:app-quit`.
   - `isWindowMaximized() → Promise<boolean>` → asks `desktop-bridge:window-is-maximized`. Any answer other than `true` gives `false`.
   - `onWindowMaximizedChange(listener) → unsubscribe` → `listener(maximized)` for each boolean that DesktopApp sends on `desktop-bridge:window-maximized`, until `unsubscribe()`.
+  - `onPlaySound(listener) → unsubscribe` → `listener()`, with no argument, for each message that DesktopApp sends on `desktop-bridge:play-sound`, until `unsubscribe()`.
 
 ## Rules and invariants
 
@@ -32,3 +33,4 @@ type: Electron preload
 - `plan-mac_title_bar/REQ-16`, `plan-mac_title_bar/REQ-17`, `plan-mac_title_bar/REQ-18`, `plan-mac_title_bar/REQ-21`, `plan-mac_title_bar/REQ-23`
 - `plan-terminal_addons/REQ-46`
 - `plan-app_processes/REQ-26`
+- `plan-input_sound/REQ-1`

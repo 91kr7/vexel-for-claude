@@ -6,6 +6,7 @@ import { type LaunchResult, launchBackend, stopStartedBackend } from './backend-
 import { type NotificationCommand, NotificationRules } from './notification-rules.js';
 import { groupNotificationTexts, notificationTexts } from './notification-texts.js';
 import { confirmQuit } from './quit-check.js';
+import { SoundRule } from './sound-rule.js';
 import { startupPageUrl } from './startup-page.js';
 import { SystemNotifications } from './system-notifications.js';
 import { trayIconFile, trayMenuTemplate, trayTooltip } from './tray-icon.js';
@@ -17,6 +18,7 @@ const iconPath = path.join(iconsDir, 'vexel-for-claude.png');
 const preloadPath = fileURLToPath(new URL('desktop-bridge.cjs', import.meta.url));
 const OPEN_SESSION_CHANGED_CHANNEL = 'desktop-bridge:open-session-changed';
 const OPEN_SESSION_CHANNEL = 'desktop-bridge:open-session';
+const PLAY_SOUND_CHANNEL = 'desktop-bridge:play-sound';
 const PAGE_ZOOM_ROLES = new Set(['zoomin', 'zoomout', 'resetzoom']);
 
 let mainWindow: BrowserWindow | undefined;
@@ -25,6 +27,7 @@ let backend: LaunchResult | undefined;
 let quitRunning = false;
 let quitConfirmed = false;
 const notificationRules = new NotificationRules();
+const soundRule = new SoundRule();
 const notifications = new SystemNotifications({ appName: 'Vexel for Claude', iconPath });
 
 function showWindow(): void {
@@ -160,7 +163,10 @@ async function start(): Promise<void> {
   if (current.isDestroyed() || quitRunning || quitConfirmed) return;
   if (result.status === 'ready') {
     connectAttention(result.origin, {
-      onEvent: (event) => runNotificationCommands(notificationRules.receiveEvent(event)),
+      onEvent: (event) => {
+        if (soundRule.receiveEvent(event) && !current.isDestroyed()) current.webContents.send(PLAY_SOUND_CHANNEL);
+        runNotificationCommands(notificationRules.receiveEvent(event));
+      },
       onNeedsInput: (sessions) => {
         updateTray(sessions);
         runNotificationCommands(notificationRules.receiveNeedsInput(sessions));

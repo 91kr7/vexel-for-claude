@@ -46,6 +46,12 @@ Notifications:
 - a notification that the desktop closes by itself → the rules get `notificationClosed` with its session.
 - a click on a notification → the same as "Open Window", then it sends the session id to the page on `desktop-bridge:open-session`.
 
+Sound:
+
+- one SoundRule. It gets every event of the AttentionClient, whatever the window focus, before the NotificationRules.
+- `true` → it sends `desktop-bridge:play-sound` to the page of the window, also when the window is hidden or minimized. The page plays the sound (useNeedsInputSound, module app).
+- an event while the window still shows the StartupPage → no sound. Its notification still shows.
+
 Tray:
 
 - each list of the AttentionClient → the TrayIcon gets the icon, the tooltip and the menu of that list. This happens whatever the window focus.
@@ -64,7 +70,7 @@ Tray:
 ## Dependencies
 
 - BackendLauncher, StartupPage, AppIcon, TrayIcon, QuitCheck
-- DesktopBridge, WindowActions, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon
+- DesktopBridge, WindowActions, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon, SoundRule
 
 ## Requirements served
 
@@ -74,3 +80,4 @@ Tray:
 - `plan-mac_title_bar/REQ-1`, `plan-mac_title_bar/REQ-2`, `plan-mac_title_bar/REQ-3`, `plan-mac_title_bar/REQ-4`, `plan-mac_title_bar/REQ-5`, `plan-mac_title_bar/REQ-16`, `plan-mac_title_bar/REQ-17`, `plan-mac_title_bar/REQ-18`, `plan-mac_title_bar/REQ-21`
 - `plan-terminal_addons/REQ-9`, `plan-terminal_addons/REQ-11`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-39`
 - `plan-app_processes/REQ-26`
+- `plan-input_sound/REQ-1`, `plan-input_sound/REQ-2`, `plan-input_sound/REQ-3`

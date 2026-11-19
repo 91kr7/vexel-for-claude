@@ -6,11 +6,11 @@ type: frontend hook
 
 # useDesktopBridge
 
-**Purpose** → the page side of the DesktopBridge: it reports the open session, passes on the "open this session" requests, gives the path lookup of dropped files, keeps a dropped file from replacing the page, and drives the window. In a browser it does nothing.
+**Purpose** → the page side of the DesktopBridge: it reports the open session, passes on the "open this session" requests, gives the path lookup of dropped files, keeps a dropped file from replacing the page, and drives the window, and passes on the sound requests. In a browser it does nothing.
 
 ## Contract
 
-- `DesktopBridge` → `{ reportOpenSession(sessionId | null), onOpenSession(listener) → unsubscribe, getPathForFile(file) → string }`, read from `window.desktopBridge`. The window functions of the DesktopBridge are optional members.
+- `DesktopBridge` → `{ reportOpenSession(sessionId | null), onOpenSession(listener) → unsubscribe, getPathForFile(file) → string }`, read from `window.desktopBridge`. The window functions and `onPlaySound` of the DesktopBridge are optional members.
 - `desktopFilePathLookup() → ((file) → string) | null`:
   - the bridge exists → a function that gives `getPathForFile(file)` of the bridge (an empty string means no path).
   - no bridge (a browser) → `null`.
@@ -23,6 +23,7 @@ type: frontend hook
 - `quitApp()` → calls `quitApp()` of the bridge: the desktop app quits. No bridge, or a bridge without it → nothing.
 - `useWindowMaximized() → boolean` → `false` at first. At mount it asks `isWindowMaximized()` and then follows each `onWindowMaximizedChange`. A change that arrives before the answer wins over it. It stops listening on unmount.
 - no bridge, or a bridge without the window functions → the three functions do nothing and `useWindowMaximized()` stays `false`.
+- `onSoundRequest(listener) → unsubscribe` → `listener()` for each sound request of the bridge (`onPlaySound`), until `unsubscribe()`. No bridge, or a bridge without `onPlaySound` → no call, and `unsubscribe()` does nothing.
 - `isDesktopWindow() → boolean` → `true` when the page runs in the desktop window (`window.desktopBridge` exists). `false` in a browser, and where there is no `window`.
 
 ## Dependencies
@@ -35,3 +36,4 @@ type: frontend hook
 - `plan-mac_title_bar/REQ-6`, `plan-mac_title_bar/REQ-14`, `plan-mac_title_bar/REQ-16`, `plan-mac_title_bar/REQ-17`, `plan-mac_title_bar/REQ-18`, `plan-mac_title_bar/REQ-21`, `plan-mac_title_bar/REQ-25`
 - `plan-terminal_addons/REQ-46`, `plan-terminal_addons/REQ-53`
 - `plan-app_processes/REQ-26`
+- `plan-input_sound/REQ-1`

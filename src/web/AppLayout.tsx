@@ -10,6 +10,7 @@ import { ResumeDialog } from './history/ResumeDialog';
 import { ListPanelEdge } from './ListPanelEdge';
 import { listWidthLimit, pageListWidthStore, shownListWidth, useListWidth } from './list-width-store';
 import { NavigationRail, type SideView } from './NavigationRail';
+import { useNeedsInputSound } from './needs-input-sound';
 import { NeedsInputSnackbar, useNeedsInputSnackbar } from './NeedsInputSnackbar';
 import { NewerVersionNotice } from './newer-version/NewerVersionNotice';
 import { type NewerVersion, useNewerVersion } from './newer-version/newer-version-loader';
@@ -149,6 +150,7 @@ export function AppLayout() {
   useDesktopBridge(openSessionId, (sessionId) => {
     if (sessions.some((session) => session.id === sessionId)) openFromList(sessionId);
   });
+  useNeedsInputSound();
 
   const snackbar = snackbarSession && <NeedsInputSnackbar session={snackbarSession} onOpen={openFromList} />;
 

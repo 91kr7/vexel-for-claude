@@ -46,7 +46,7 @@ export function isDesktopWindow(): boolean {
   return typeof window !== 'undefined' && window.desktopBridge !== undefined;
 }
 
-// Optional: a bridge without the window functions, like a test fake, keeps the page working.
+// Optional: a bridge without these members, like a test fake, keeps the page working.
 export interface DesktopBridge {
   closeWindow?(): void;
   minimizeWindow?(): void;
@@ -54,6 +54,7 @@ export interface DesktopBridge {
   isWindowMaximized?(): Promise<boolean>;
   onWindowMaximizedChange?(listener: (maximized: boolean) => void): () => void;
   quitApp?(): void;
+  onPlaySound?(listener: () => void): () => void;
 }
 
 export function closeWindow(): void {
@@ -70,6 +71,10 @@ export function toggleMaximizeWindow(): void {
 
 export function quitApp(): void {
   window.desktopBridge?.quitApp?.();
+}
+
+export function onSoundRequest(listener: () => void): () => void {
+  return window.desktopBridge?.onPlaySound?.(listener) ?? (() => {});
 }
 
 export function useWindowMaximized(): boolean {
