@@ -1,4 +1,5 @@
 import { type KeyboardEvent, useId, useRef, useState } from 'react';
+import { isDesktopWindow } from '../desktop-bridge';
 import { Dialog } from '../dialogs/Dialog';
 import type { NewerVersion } from '../newer-version/newer-version-loader';
 import type { LookStore } from '../theme/look-store';
@@ -7,10 +8,11 @@ import { LookSection } from './LookSection';
 import { ProcessesSection } from './ProcessesSection';
 import { SettingsPane } from './SettingsPane';
 import { ShortcutsSection } from './ShortcutsSection';
+import { SoundSection } from './SoundSection';
 import { ThemeSection } from './ThemeSection';
 import { UpdatesSection } from './UpdatesSection';
 
-export type SettingsTab = 'appearance' | 'shortcuts' | 'updates' | 'processes';
+export type SettingsTab = 'appearance' | 'shortcuts' | 'updates' | 'processes' | 'sound';
 
 const TABS: { tab: SettingsTab; title: string }[] = [
   { tab: 'appearance', title: 'Appearance' },
@@ -18,6 +20,8 @@ const TABS: { tab: SettingsTab; title: string }[] = [
   { tab: 'updates', title: 'Updates' },
   { tab: 'processes', title: 'Processes' },
 ];
+
+const DESKTOP_TABS: { tab: SettingsTab; title: string }[] = [...TABS, { tab: 'sound', title: 'Sound' }];
 
 interface SettingsDialogProps {
   initialTab?: SettingsTab;
@@ -46,12 +50,20 @@ function Section({ tab, themeStore, lookStore, onNewerVersion }: SectionProps) {
     );
   }
   if (tab === 'processes') return <ProcessesSection />;
+  if (tab === 'sound') {
+    return (
+      <SettingsPane title="Sound">
+        <SoundSection />
+      </SettingsPane>
+    );
+  }
   return <ShortcutsSection />;
 }
 
 export function SettingsDialog({ initialTab = 'appearance', onClose, themeStore, lookStore, onNewerVersion }: SettingsDialogProps) {
   const [tab, setTab] = useState<SettingsTab>(initialTab);
   const [tabSwitched, setTabSwitched] = useState(false);
+  const tabs = isDesktopWindow() ? DESKTOP_TABS : TABS;
   const baseId = useId();
   const tabRefs = useRef(new Map<SettingsTab, HTMLButtonElement>());
   const tabId = (id: SettingsTab) => `${baseId}-tab-${id}`;
@@ -63,7 +75,7 @@ export function SettingsDialog({ initialTab = 'appearance', onClose, themeStore,
   };
 
   const moveTo = (index: number) => {
-    const next = TABS[(index + TABS.length) % TABS.length];
+    const next = tabs[(index + tabs.length) % tabs.length];
     if (!next) return;
     choose(next.tab);
     tabRefs.current.get(next.tab)?.focus();
@@ -73,7 +85,7 @@ export function SettingsDialog({ initialTab = 'appearance', onClose, themeStore,
     if (event.key === 'ArrowDown') moveTo(index + 1);
     else if (event.key === 'ArrowUp') moveTo(index - 1);
     else if (event.key === 'Home') moveTo(0);
-    else if (event.key === 'End') moveTo(TABS.length - 1);
+    else if (event.key === 'End') moveTo(tabs.length - 1);
     else return;
     event.preventDefault();
   };
@@ -82,7 +94,7 @@ export function SettingsDialog({ initialTab = 'appearance', onClose, themeStore,
     <Dialog title="Settings" onCancel={onClose} className="settings-dialog">
       <div className="settings-layout">
         <div className="settings-menu" role="tablist" aria-label="Settings sections" aria-orientation="vertical">
-          {TABS.map(({ tab: id, title }, index) => (
+          {tabs.map(({ tab: id, title }, index) => (
             <button
               key={id}
               ref={(element) => {
@@ -104,7 +116,7 @@ export function SettingsDialog({ initialTab = 'appearance', onClose, themeStore,
             </button>
           ))}
         </div>
-        {TABS.map(({ tab: id }) => (
+        {tabs.map(({ tab: id }) => (
           <div
             key={id}
             className={tabSwitched ? 'settings-pane tab-panel-enter' : 'settings-pane'}

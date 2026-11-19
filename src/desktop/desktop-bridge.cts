@@ -9,6 +9,7 @@ const WINDOW_TOGGLE_MAXIMIZE_CHANNEL = 'desktop-bridge:window-toggle-maximize';
 const WINDOW_IS_MAXIMIZED_CHANNEL = 'desktop-bridge:window-is-maximized';
 const WINDOW_MAXIMIZED_CHANNEL = 'desktop-bridge:window-maximized';
 const APP_QUIT_CHANNEL = 'desktop-bridge:app-quit';
+const PLAY_SOUND_CHANNEL = 'desktop-bridge:play-sound';
 
 const windowControls = {
   closeWindow(): void {
@@ -51,6 +52,13 @@ electron.contextBridge.exposeInMainWorld('desktopBridge', {
     electron.ipcRenderer.on(OPEN_SESSION_CHANNEL, forward);
     return () => {
       electron.ipcRenderer.removeListener(OPEN_SESSION_CHANNEL, forward);
+    };
+  },
+  onPlaySound(listener: () => void): () => void {
+    const forward = () => listener();
+    electron.ipcRenderer.on(PLAY_SOUND_CHANNEL, forward);
+    return () => {
+      electron.ipcRenderer.removeListener(PLAY_SOUND_CHANNEL, forward);
     };
   },
   getPathForFile(file: unknown): string {

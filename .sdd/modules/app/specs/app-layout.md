@@ -58,6 +58,7 @@ else → "New Claude Code Session" in the rail
 - ConversationView resumes the session ("Resume Here") → the new hosted session becomes the open one.
 - "open this session" from the desktop app (useDesktopBridge) → when LiveSessionStore lists the session, it becomes the open one, hosted or external as for a list click. Else nothing changes.
 - each change of the open session is reported to the desktop app (useDesktopBridge).
+- a sound request of the desktop app → the needs-input sound plays (useNeedsInputSound, mounted once for the page). Nothing changes on screen.
 - the SettingsButton at the bottom of the NavigationRail (`onOpenSettings`) → opens the SettingsDialog on the "Appearance" menu. The popup closes ("[Esc]", "Close", Esc) → it goes; the focus goes back to where it was before it opened (Dialog). The side view, the open session and the list scroll do not change.
 - "Close Update Notice" → the notice goes, and nothing else changes. The closed state lives only in this page: a reload or a new tab shows it again.
 - a `newer` result of the user's check in the SettingsDialog (`onNewerVersion`) → the notice shows that version and its closed state is cleared, so it shows again, also when the launch check found nothing. It stays under the popup and is visible when the popup closes.
@@ -92,7 +93,7 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 
 ## Dependencies
 
-- TopBar, SettingsDialog, PlanUsagePopover, PlanUsageStore, NewerVersionNotice, useNewerVersion, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, ExitPresence (`motionDurationMs`), MotionTokens, useDesktopBridge, ListWidthStore, ListPanelEdge
+- TopBar, SettingsDialog, PlanUsagePopover, PlanUsageStore, NewerVersionNotice, useNewerVersion, NavigationRail, NeedsInputSnackbar, EmptyState, WebEntry, ExitPresence (`motionDurationMs`), MotionTokens, useDesktopBridge, useNeedsInputSound, ListWidthStore, ListPanelEdge
 - useShortcutKeys, ShortcutMap, ShortcutChannel, ShortMessageToast, ThemeStore
 - ExitPresence
 - FolderChooser, ProjectList, ProjectListStore, SessionNameDialog (module folders)
@@ -121,3 +122,4 @@ Shortcuts (useShortcutKeys, while the page is mounted):
 - `plan-ui_restyle/REQ-1`, `plan-ui_restyle/REQ-2`, `plan-ui_restyle/REQ-3`
 - `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-4`, `plan-settings_dialog/REQ-9`, `plan-settings_dialog/REQ-18`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-25`, `plan-settings_dialog/REQ-49`, `plan-settings_dialog/REQ-53`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-16`
+- `plan-input_sound/REQ-1`

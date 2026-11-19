@@ -372,3 +372,80 @@ describe('SettingsDialog, "Processes" tab', () => {
     await until(() => processCalls === 2);
   });
 });
+
+// plan-input_sound, batch sound-switch: the "Sound" menu, in the desktop window only. A fake bridge makes the page a desktop window.
+describe('SettingsDialog, "Sound" tab', () => {
+  const SWITCH = 'Play a sound when a session needs input';
+
+  beforeEach(() => {
+    Object.assign(window, { desktopBridge: { reportOpenSession: () => {}, onOpenSession: () => () => {}, getPathForFile: () => '' } });
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(JSON.stringify({ processes: [] }), { status: 200 }))));
+  });
+
+  afterEach(() => {
+    delete (window as { desktopBridge?: unknown }).desktopBridge;
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  const shownPanel = (dialog: HTMLElement) => visiblePanels(dialog)[0] as HTMLElement;
+  const soundSwitch = (dialog: HTMLElement) => shownPanel(dialog).querySelector<HTMLElement>('[role="switch"]');
+
+  // plan-input_sound/REQ-10; assumption "Place of the switch": "Sound" follows "Processes"
+  it('lists "Sound" after "Processes" in the desktop window', () => {
+    const { dialog } = open();
+    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Appearance', 'Shortcuts', 'Updates', 'Processes', 'Sound']);
+  });
+
+  // plan-input_sound/REQ-10: the switch belongs to the desktop app
+  it('has no "Sound" menu in a browser', () => {
+    delete (window as { desktopBridge?: unknown }).desktopBridge;
+    const { dialog } = open();
+    expect(tabs(dialog).map((element) => element.textContent)).not.toContain('Sound');
+  });
+
+  // plan-input_sound/REQ-10: the panel "Sound" holds the switch, on by default
+  it('opens on "Sound" when initialTab is "sound", with the title "Sound" and the switch on', () => {
+    const { dialog } = open('sound');
+    const sound = tab(dialog, 'Sound');
+    expect(sound.getAttribute('aria-selected')).toBe('true');
+    expect(shownPanel(dialog).getAttribute('aria-labelledby')).toBe(sound.id);
+    expect(shownPanel(dialog).querySelector('h1, h2, h3, h4')?.textContent).toBe('Sound');
+    expect(soundSwitch(dialog)?.textContent?.trim()).toBe(SWITCH);
+    expect(soundSwitch(dialog)?.getAttribute('aria-checked')).toBe('true');
+  });
+
+  // spec SettingsDialog: "Sound" → SoundSection
+  it('a click on "Sound" shows the switch', () => {
+    const { dialog } = open();
+    run(() => tab(dialog, 'Sound').click());
+    expect(visiblePanels(dialog)).toHaveLength(1);
+    expect(soundSwitch(dialog)).not.toBeNull();
+  });
+
+  // spec SettingsDialog, Keyboard: the arrows, Home and End go through "Sound" too
+  it.each([
+    ['ArrowDown', 'processes', 'Sound'],
+    ['ArrowDown', 'sound', 'Appearance'],
+    ['ArrowUp', 'appearance', 'Sound'],
+    ['ArrowUp', 'sound', 'Processes'],
+    ['End', 'appearance', 'Sound'],
+    ['Home', 'sound', 'Appearance'],
+  ] as const)('%s from the %s tab shows and focuses "%s"', (key, start, expected) => {
+    const { dialog } = open(start);
+    keydown(document.activeElement as Element, key);
+    expect(tab(dialog, expected).getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(tab(dialog, expected));
+    expect(visiblePanels(dialog).map((panel) => panel.getAttribute('aria-labelledby'))).toEqual([tab(dialog, expected).id]);
+  });
+
+  // plan-input_sound/REQ-11: the switch applies at once and the popup stays open
+  it('a click on the switch turns it off at once and keeps the popup open', () => {
+    const { dialog, onClose } = open('sound');
+    run(() => soundSwitch(dialog)?.click());
+    expect(soundSwitch(dialog)?.getAttribute('aria-checked')).toBe('false');
+    expect(onClose).not.toHaveBeenCalled();
+    run(() => soundSwitch(dialog)?.click());
+    expect(soundSwitch(dialog)?.getAttribute('aria-checked')).toBe('true');
+  });
+});
