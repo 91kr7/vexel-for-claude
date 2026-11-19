@@ -20,3 +20,5 @@
 | 2026-11-19 | dev | divergence storage key | decided | Own `localStorage` key `ai-client.needs-input-sound`; technical, no REQ changed |
 | 2026-11-19 | dev | divergence initialTab sound in browser | decided | No caller passes it; no visible behaviour changed |
 | 2026-11-19 | dev | G4 sound-switch | pass | Diff is INT-1 to INT-4 plus styles of the section, specs and index; build green re-run by the gatekeeper |
+| 2026-11-19 | test | failures outside perimeter | decided | `light-theme.spec.ts:343` and `theme-change-transitions.spec.ts:243` failed under load in the full run, pass alone on the branch (re-run by the gatekeeper); the branch adds only `.sound-*` styles, no theme code |
+| 2026-11-19 | test | G5 sound-switch | pass | Re-run by the gatekeeper: unit 87/87, browser e2e 5/5, Electron e2e 5/5; tester full runs unit 4422/4422, browser e2e 987/989, Electron 45/45 |
