@@ -125,7 +125,8 @@
     .modal,
     .dialog-banner,
     .settings-card,
-    .updates-card
+    .updates-card,
+    .sound-card
   ) {
   border-radius: var(--radius-overlay);
 }

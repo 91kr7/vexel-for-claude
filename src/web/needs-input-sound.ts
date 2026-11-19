@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { onSoundRequest } from './desktop-bridge';
+import { pageSoundSwitchStore, type SoundSwitchStore } from './settings/sound-switch-store';
 import chimeUrl from './sounds/needs-input-chime.wav';
 
 export function playNeedsInputSound(): void {
@@ -10,6 +11,12 @@ export function playNeedsInputSound(): void {
   }
 }
 
-export function useNeedsInputSound(): void {
-  useEffect(() => onSoundRequest(playNeedsInputSound), []);
+export function useNeedsInputSound(store: SoundSwitchStore = pageSoundSwitchStore()): void {
+  useEffect(
+    () =>
+      onSoundRequest(() => {
+        if (store.getSnapshot()) playNeedsInputSound();
+      }),
+    [store],
+  );
 }

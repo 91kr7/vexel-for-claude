@@ -17,3 +17,6 @@
 | 2026-11-19 | dev | G4 needs-input-sound | pass | Diff is INT-1 to INT-7 plus specs and indexes; build green re-run by the gatekeeper; chime generated in-house, no third-party notice |
 | 2026-11-19 | test | G5 needs-input-sound | pass | Re-run by the gatekeeper: unit 42/42, browser e2e 6/6, Electron e2e 4/4; diff holds tests and the Electron spec pattern only |
 | 2026-11-19 | test | stale test outside perimeter | decided | `desktop-notifications.spec.ts:251` lacked `quitApp` since plan-app_processes; tester updated the list, test-only change |
+| 2026-11-19 | dev | divergence storage key | decided | Own `localStorage` key `ai-client.needs-input-sound`; technical, no REQ changed |
+| 2026-11-19 | dev | divergence initialTab sound in browser | decided | No caller passes it; no visible behaviour changed |
+| 2026-11-19 | dev | G4 sound-switch | pass | Diff is INT-1 to INT-4 plus styles of the section, specs and index; build green re-run by the gatekeeper |

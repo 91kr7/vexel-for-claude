@@ -3991,6 +3991,63 @@ input {
   margin: 0;
 }
 
+.sound-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--role-border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--role-card);
+}
+
+.sound-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: none;
+  border-radius: inherit;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sound-switch-track {
+  flex: none;
+  display: flex;
+  align-items: center;
+  width: 34px;
+  height: 20px;
+  padding: 2px;
+  box-sizing: border-box;
+  border: 1px solid var(--role-border-strong);
+  border-radius: 9999px;
+  background-color: var(--role-card-active);
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.sound-switch-knob {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background-color: var(--text-secondary);
+  transition: transform 0.12s ease, background-color 0.12s ease;
+}
+
+.sound-switch[aria-checked='true'] .sound-switch-track {
+  border-color: var(--role-accent);
+  background-color: var(--role-accent);
+}
+
+.sound-switch[aria-checked='true'] .sound-switch-knob {
+  transform: translateX(12px);
+  background-color: var(--on-accent);
+}
+
 .processes-rows {
   display: flex;
   flex-direction: column;
