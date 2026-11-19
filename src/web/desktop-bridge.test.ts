@@ -1,4 +1,4 @@
-// Tests of plan-mac_title_bar, batches title-bar and window-buttons: useDesktopBridge spec, `isDesktopWindow` (REQ-6, REQ-14) and the window functions (REQ-16, REQ-17, REQ-18, REQ-25).
+// Tests of plan-mac_title_bar, batches title-bar and window-buttons: useDesktopBridge spec, `isDesktopWindow` (REQ-6, REQ-14) and the window functions (REQ-16, REQ-17, REQ-18, REQ-25). Also plan-input_sound, batch needs-input-sound: `onSoundRequest`.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   closeWindow,
@@ -6,6 +6,7 @@ import {
   desktopFilePathLookup,
   isDesktopWindow,
   minimizeWindow,
+  onSoundRequest,
   quitApp,
   toggleMaximizeWindow,
 } from './desktop-bridge';
@@ -78,6 +79,54 @@ describe('quitApp', () => {
   it('does nothing with a bridge that has no quitApp', () => {
     vi.stubGlobal('window', { desktopBridge: bridge });
     expect(() => quitApp()).not.toThrow();
+  });
+});
+
+// plan-input_sound/REQ-1: the sound requests of the bridge reach the page listener until it unsubscribes
+describe('onSoundRequest', () => {
+  function soundBridge() {
+    const listeners = new Set<() => void>();
+    vi.stubGlobal('window', {
+      desktopBridge: {
+        ...bridge,
+        onPlaySound: (listener: () => void) => {
+          listeners.add(listener);
+          return () => listeners.delete(listener);
+        },
+      },
+    });
+    return () => listeners.forEach((listener) => listener());
+  }
+
+  it('calls the listener once for each sound request, until unsubscribe', () => {
+    const requestSound = soundBridge();
+    const listener = vi.fn();
+    const unsubscribe = onSoundRequest(listener);
+
+    requestSound();
+    requestSound();
+    expect(listener).toHaveBeenCalledTimes(2);
+    expect(listener).toHaveBeenCalledWith();
+
+    unsubscribe();
+    requestSound();
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+
+  it('does nothing in a browser, with no bridge', () => {
+    vi.stubGlobal('window', {});
+    const listener = vi.fn();
+    const unsubscribe = onSoundRequest(listener);
+    expect(() => unsubscribe()).not.toThrow();
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('does nothing with a bridge that has no onPlaySound', () => {
+    vi.stubGlobal('window', { desktopBridge: bridge });
+    const listener = vi.fn();
+    const unsubscribe = onSoundRequest(listener);
+    expect(() => unsubscribe()).not.toThrow();
+    expect(listener).not.toHaveBeenCalled();
   });
 });
 

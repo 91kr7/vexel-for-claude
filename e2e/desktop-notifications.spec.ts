@@ -265,7 +265,9 @@ test.describe('Needs-input notification in the desktop app', () => {
       'isWindowMaximized',
       'minimizeWindow',
       'onOpenSession',
+      'onPlaySound',
       'onWindowMaximizedChange',
+      'quitApp',
       'reportOpenSession',
       'toggleMaximizeWindow',
     ];

@@ -10,7 +10,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 // These specs share the server's fixture Claude Code folder, so they must never run at the same time.
 const claudeDirSpecs = /(resume-session|dismiss-resume|ended-external-sessions|history-search|external-sessions|session-entries|open-session-external|dialogs|desktop-bridge-external|running-tool|rename|context-occupancy|tokens-consumed|estimated-cost|header-footer|navigation-shortcuts-external|session-action-shortcuts-resume|git-explorer|git-explorer-transitions|session-switch-transitions|favorite-session|project-list|project-session-start|favorite-project|remove-project|project-search|project-row|shared-shapes|window-frame|session-cards|list-cards|list-polish|popup-size|popup-mark|favorites-filter|project-path)\.spec\.ts$/;
 // Specs that launch Electron open windows on the user's display: only `npm run test:e2e:desktop` runs them (E2E_DESKTOP=1).
-const electronSpecs = /desktop-(window|notifications|tray|links|font-zoom|file-drop|list-width|reconnection|shortcuts|git-explorer-window)\.spec\.ts$/;
+const electronSpecs = /desktop-(window|notifications|tray|links|font-zoom|file-drop|list-width|reconnection|shortcuts|git-explorer-window|sound)\.spec\.ts$/;
 const electron = process.env.E2E_DESKTOP === '1';
 // No e2e server asks GitHub for releases: port 9 refuses, unless a spec points this at a fake source.
 const releaseSource = (process.env.AI_CLIENT_RELEASE_SOURCE_URL ??= 'http://127.0.0.1:9/releases/latest');
