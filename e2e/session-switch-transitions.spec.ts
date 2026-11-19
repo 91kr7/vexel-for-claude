@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { presses, recordPresses } from './motion';
 
 interface Layer {
   leaving: boolean;
@@ -209,7 +210,7 @@ test.describe('cross-fade between hosted sessions', () => {
 
     const clickedAt = Date.now();
     await entry(page, b).getByTitle(b, { exact: true }).click();
-    await expect(layers(page), 'both views share the main area during the fade').toHaveCount(2, { timeout: 500 });
+    await expect(layers(page), 'both views share the main area during the fade').toHaveCount(2);
     await expect(layerOf(page, b)).toContainText('READY');
     await expect(layers(page), 'the old view goes when the fade ends').toHaveCount(1, { timeout: SLOW_MS + 1000 });
     await page.waitForTimeout(500);
@@ -240,14 +241,26 @@ test.describe('cross-fade between hosted sessions', () => {
     await page.goto('/');
     await openHosted(page, a);
     await slowMotion(page);
+    await recordPresses(page, 'main .main-view.is-leaving');
+    await watchLayers(page, [`CWD:${a}`, `CWD:${b}`, `CWD:${c}`]);
 
     await entry(page, b).getByTitle(b, { exact: true }).click();
-    await expect(leavingLayer(page)).toHaveCount(1, { timeout: 500 });
-    const clickedAt = Date.now();
-    await entry(page, c).getByTitle(c, { exact: true }).click({ timeout: 300 });
+    await expect(leavingLayer(page)).toHaveCount(1);
+    await entry(page, c).getByTitle(c, { exact: true }).click();
 
-    await expect(layers(page), 'only one view').toHaveCount(1, { timeout: 300 });
-    expect(Date.now() - clickedAt, 'the old views went at once, not at the end of a fade').toBeLessThan(SLOW_MS / 2);
+    await expect(layers(page), 'only one view').toHaveCount(1);
+    // On the page clock: the runner's round trips are not part of the app's time.
+    const press = (await presses(page)).at(-1);
+    expect(press?.during, 'the click on C lands during the fade').toBe(true);
+    const after = (await frames(page)).filter((frame) => frame.t >= press!.t);
+    const gone = after.find((frame) => frame.layers.length === 1);
+    expect(gone, 'one view after the click').toBeDefined();
+    expect(gone!.t - press!.t, 'the old views went at once, not at the end of a fade').toBeLessThan(SLOW_MS / 2);
+    const rest = after.filter((frame) => frame.t >= gone!.t);
+    expect(
+      rest.filter((frame) => frame.layers.length !== 1 || frame.layers[0]!.entering || frame.layers[0]!.leaving || frame.layers[0]!.opacity < 1),
+      'C shows at once, opaque, with no fade',
+    ).toEqual([]);
     await expect(layers(page)).not.toHaveClass(/is-(entering|leaving)/);
     await expect(layers(page), 'C shows at once, opaque').toHaveCSS('opacity', '1');
     await expect(layerOf(page, c)).toContainText('READY');
@@ -283,10 +296,12 @@ test.describe('cross-fade between hosted sessions', () => {
     await tagTerminal(page, a, 'kept');
     await slowMotion(page);
     const resizesBefore = ofSession(resizes, idA).length;
+    await recordPresses(page, 'main .main-view.is-leaving');
 
     await entry(page, b).getByTitle(b, { exact: true }).click();
-    await expect(layerOf(page, a)).toHaveClass(/is-leaving/, { timeout: 500 });
-    await entry(page, a).getByTitle(a, { exact: true }).click({ timeout: 300 });
+    await expect(layerOf(page, a)).toHaveClass(/is-leaving/);
+    await entry(page, a).getByTitle(a, { exact: true }).click();
+    expect((await presses(page)).at(-1)?.during, 'the click on A lands during the fade').toBe(true);
 
     await expect(layers(page), 'only A').toHaveCount(1, { timeout: SLOW_MS + 1000 });
     await page.waitForTimeout(SLOW_MS + 300);
@@ -330,7 +345,7 @@ test.describe('cross-fade between hosted sessions', () => {
 
     await entry(page, b).getByTitle(b, { exact: true }).click();
     const leaving = leavingLayer(page);
-    await expect(leaving).toHaveCount(1, { timeout: 500 });
+    await expect(leaving).toHaveCount(1);
     await expect(leaving).toContainText(`CWD:${a}`);
     await expect(leaving).toHaveAttribute('aria-hidden', 'true');
     expect(await leaving.evaluate((element) => (element as HTMLElement).inert), 'inert').toBe(true);
