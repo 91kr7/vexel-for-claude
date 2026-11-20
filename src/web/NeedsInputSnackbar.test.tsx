@@ -105,8 +105,10 @@ describe('NeedsInputSnackbar', () => {
     expect(html).not.toContain('/srv/clienti');
   });
 
-  // plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-41: the box is the glass toast
-  it('draws the box with the .vx-glass class', () => {
-    expect(render('/p/web-dashboard')).toMatch(/^<\w+\b[^>]*class="[^"]*\bvx-glass\b/);
+  // plan-popup_glass/REQ-3: the box is on the popup glass, no longer on .vx-glass
+  it('draws the box with the .vx-popup-glass class', () => {
+    const html = render('/p/web-dashboard');
+    expect(html).toMatch(/^<\w+\b[^>]*class="[^"]*\bvx-popup-glass\b/);
+    expect(html).not.toMatch(/^<\w+\b[^>]*class="[^"]*\bvx-glass\b/);
   });
 });

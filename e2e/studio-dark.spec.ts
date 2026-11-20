@@ -418,7 +418,8 @@ test.describe('page frame', () => {
     const tip = await box(tooltip);
     const btn = await box(resume);
     expect(tip.x, 'the tooltip sits on the right of the button').toBeGreaterThan(btn.x + btn.width - TOLERANCE);
-    expect(await style(tooltip, 'background-color')).toBe(SURFACE_3);
+    // plan-popup_glass/REQ-1: the tooltip is on the popup glass
+    expect(await style(tooltip, 'background-color')).toBe(await colour(page, 'var(--popup-glass-bg)'));
     for (const name of ['Sessions', 'Resume']) {
       const b = await box(railButton(page, name));
       expect(b.height, `${name}: no label under the icon`).toBeCloseTo(32, 0);
@@ -680,7 +681,7 @@ test.describe('hosted session view', () => {
     // plan-session_list_width, assumption "Key hint": no keyboard badges under the terminal
     await expect(mainArea(page).locator('kbd')).toHaveCount(0);
 
-    // REQ-42, REQ-41: the snackbar is the glass toast, fixed 20 px from the bottom right corner of the window
+    // REQ-42, REQ-41, plan-popup_glass/REQ-3: the snackbar is on the popup glass, fixed 20 px from the bottom right corner of the window
     const before = await box(region);
     await askPermission(request, otherId);
     await expect(snackbar(page)).toBeVisible();
@@ -689,8 +690,8 @@ test.describe('hosted session view', () => {
     expect(toast.x + toast.width).toBeCloseTo(1440 - 20, 0);
     expect(toast.y + toast.height).toBeCloseTo(900 - 20, 0);
     expect(await style(snackbar(page), 'position')).toBe('fixed');
-    expect(await style(snackbar(page), 'background-color')).toBe('rgba(24, 24, 31, 0.82)');
-    expect.soft(await style(snackbar(page), 'backdrop-filter')).toBe('blur(14px)');
+    expect(await style(snackbar(page), 'background-color')).toBe(await colour(page, 'var(--popup-glass-bg)'));
+    expect.soft(await style(snackbar(page), 'backdrop-filter')).toBe('blur(8px)');
     expect(await style(snackbar(page), 'border-top-left-radius')).toBe('8px');
     expect(await style(snackbar(page), 'font-family')).toMatch(/^["']?Roboto Mono["']?/);
     expect(await style(button(snackbar(page), 'Open'), 'color')).toBe(ACCENT);
@@ -826,17 +827,18 @@ test.describe('external session view', () => {
 // ---------------------------------------------------------------------------------------------------------------------
 test.describe('dialogs', () => {
   // REQ-43, REQ-44, REQ-46, REQ-47 — scenario "The new-session dialog uses the Studio modal"
-  test('the new-session dialog has the mock modal: dark backdrop with no blur, header with dot and "[Esc]", mono field, surface-1 footer', async ({ page }) => {
+  test('the new-session dialog has the mock modal: dark backdrop with no blur, header with dot and "[Esc]", mono field, footer with no fill', async ({ page }) => {
     await page.goto('/');
     await railButton(page, 'New Claude Code Session').click();
     const dialog = chooser(page);
     await expect(dialog).toBeVisible();
 
-    // REQ-43: backdrop and frame
+    // REQ-43, plan-popup_glass/REQ-1: backdrop and frame, the frame on the popup glass. The dim is read once it has faded in.
     const backdrop = dialog.locator('xpath=..');
+    await settled(backdrop);
     expect(await style(backdrop, 'background-color')).toBe('rgba(0, 0, 0, 0.65)');
     expect(await style(backdrop, 'backdrop-filter')).toBe('none');
-    expect(await style(dialog, 'background-color')).toBe(SURFACE_2);
+    expect(await style(dialog, 'background-color')).toBe(await colour(page, 'var(--popup-glass-bg)'));
     expect(await style(dialog, 'border-top-color')).toBe(BORDER_STRONG);
     expect(await style(dialog, 'border-top-left-radius')).toBe('8px');
     // plan-new_session_popup/REQ-1: the new-session dialog has the width of the Resume popup, at most 672 px.
@@ -872,11 +874,11 @@ test.describe('dialogs', () => {
     expect(await style(field, 'border-top-color')).toBe(ACCENT);
     expect((await box(label)).y).toBeLessThan((await box(field)).y);
 
-    // REQ-47: surface-1 footer, neutral "Cancel", accent "Start Session"
+    // REQ-47, plan-popup_glass/REQ-1: footer with no fill of its own, neutral "Cancel", accent "Start Session"
     const cancel = button(dialog, 'Cancel');
     const start = button(dialog, 'Start Session');
     const footer = cancel.locator('xpath=..');
-    expect(await style(footer, 'background-color')).toBe(SURFACE_1);
+    expect(await style(footer, 'background-color')).toBe('rgba(0, 0, 0, 0)');
     expect(await style(footer, 'border-top-color')).toBe(BORDER_SUBTLE);
     expect(await style(cancel, 'background-color')).toBe(SURFACE_2);
     expect(await style(cancel, 'color')).toBe(TEXT_PRIMARY);

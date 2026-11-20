@@ -386,7 +386,8 @@ test.describe('needs-input snackbar', () => {
     await askPermission(request, waitingId);
     await expect(snackbar(page)).toBeVisible();
 
-    expect(await style(snackbar(page), 'background-color')).toBe(await computedColour(page, 'var(--bg-glass)'));
+    // plan-popup_glass/REQ-3: the popup glass in place of .vx-glass
+    expect(await style(snackbar(page), 'background-color')).toBe(await computedColour(page, 'var(--popup-glass-bg)'));
     expect(await style(snackbar(page), 'color')).toBe(await computedColour(page, 'var(--text-primary)'));
     expect(await style(snackbar(page), 'border-radius')).toBe('8px');
     expect(await style(snackbar(page), 'font-size')).toBe('12px');

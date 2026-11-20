@@ -654,8 +654,8 @@ test.describe('light screens', () => {
     expect(await style(page.getByRole('region', { name: 'Terminal: working-row' }), 'background-color')).toBe(DARK_CANVAS);
   });
 
-  // REQ-6, NavigationRail: the rail tooltip on hover takes the light surface 3, strong border and primary text
-  test('a rail tooltip shown in the light theme is on surface 3 with the primary text', async ({ page }) => {
+  // REQ-6, NavigationRail, plan-popup_glass/REQ-1: the rail tooltip on hover takes the light popup glass, strong border and primary text
+  test('a rail tooltip shown in the light theme is on the popup glass with the primary text', async ({ page }) => {
     await page.goto('/');
     await toLight(page);
     const sessions = rail(page).getByRole('button', { name: 'Sessions', exact: true });
@@ -663,7 +663,7 @@ test.describe('light screens', () => {
     const tooltip = sessions.locator('.vx-tooltip');
     await expect.poll(() => style(tooltip, 'opacity')).toBe('1');
     await expect.poll(() => style(tooltip, 'color')).toBe(LIGHT['--text-primary']);
-    expect(await style(tooltip, 'background-color')).toBe(LIGHT['--bg-surface-3']);
+    expect(await style(tooltip, 'background-color')).toBe(await colour(page, 'var(--popup-glass-bg)'));
     expect(await style(tooltip, 'border-top-color')).toBe(LIGHT['--border-strong']);
   });
 
@@ -738,18 +738,20 @@ test.describe('light screens', () => {
     expect(result.lowContrast, 'text under 4.5:1').toEqual([]);
   });
 
-  // REQ-6, REQ-8, REQ-14: the new-session dialog in the light theme
-  test('the new-session dialog is light, keeps the mock backdrop, and all its text reaches 4.5:1', async ({ page }) => {
+  // REQ-6, REQ-8: the new-session dialog in the light theme. REQ-14 (4.5:1) no longer applies inside popups: the 60 %
+  // glass of plan-popup_glass/REQ-1 supersedes it (human decision, 2026-11-20).
+  test('the new-session dialog is light, keeps the mock backdrop, and keeps no dark-set colour', async ({ page }) => {
     await page.goto('/');
     await toLight(page);
     await button(rail(page), 'New Claude Code Session').click();
     const dialog = chooser(page);
     await expect(dialog).toBeVisible();
+    // The dim fades in with the dialog (plan-popup_glass/REQ-10): it is read at rest.
+    await pageSettled(page);
     expect(await style(dialog.locator('xpath=..'), 'background-color')).toBe('rgba(0, 0, 0, 0.65)');
-    expect(await style(dialog, 'background-color')).toBe(LIGHT['--bg-surface-2']);
+    expect(await style(dialog, 'background-color')).toBe(await colour(page, 'var(--popup-glass-bg)'));
     expect(await style(button(dialog, 'Start Session'), 'background-color')).toBe(LIGHT['--accent-primary']);
     const result = await audit(dialog, DARK_ONLY);
     expect(result.dark, 'elements that keep a dark-set colour').toEqual([]);
-    expect(result.lowContrast, 'text under 4.5:1').toEqual([]);
   });
 });
