@@ -25,3 +25,6 @@
 | 2026-11-20 | dev | G4 light-terminal fix | pass | Build green; Light inner tint; Dialog frame glass on ::before, fade on layer and content; heading = frame at rest in all themes |
 | 2026-11-20 | dev | fix light-terminal | human decision | Human: FolderChooser RECENT (cards) and FOLDERS (plain rows) must be normalised; FOLDERS rows take the ListStyles card, every theme |
 | 2026-11-20 | dev | G4 light-terminal fix | pass | Build green; FOLDERS rows on .list-card, identical to RECENT in Light and Dark |
+| 2026-11-20 | dev | G5 light-terminal | pass | Unit 4436/4436; e2e 1038/1040; plan tests all green |
+| 2026-11-20 | dev | G5 light-terminal | pass | page-frame.spec.ts:300 flaky under full load only: passes 5/5 on branch, passes on main |
+| 2026-11-20 | dev | G5 light-terminal | escalated | termination-margins.spec.ts:175 (plan-popup_glass) fails intermittently on main too: terminal never shows READY at 360 px |
