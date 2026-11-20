@@ -14,3 +14,5 @@
 | 2026-11-20 | dev | G5 glass-popups | human decision | 60% wins; REQ-14 superseded inside popups; light-theme.spec.ts:742 adapted |
 | 2026-11-20 | dev | G5 glass-popups | pass | Batch e2e and unit re-run green (40 e2e, 52 unit) |
 | 2026-11-20 | dev | G4 termination-margins | pass | Build green; Dialog portal to body; session popup already met the contract, the fault was the nested process confirmation (REQ-13) |
+| 2026-11-20 | dev | G5 termination-margins | pass | Batch tests re-run green (56 unit, 59 e2e); full suites 1002/1012 with 9 old tests aligned and re-run green |
+| 2026-11-20 | dev | G5 termination-margins | pass | session-cards.spec.ts:317 flaky under load, passes alone; not a regression |
