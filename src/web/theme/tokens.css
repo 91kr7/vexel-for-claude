@@ -221,6 +221,8 @@
   --shadow-card-active: 0 2px 8px rgba(37, 99, 235, 0.1);
   /* A light slate dim, so the 60 % popup glass still reads as a light surface. */
   --color-backdrop: rgba(15, 23, 42, 0.2);
+  /* Light fill of cards, rows, fields and neutral buttons inside popups: a soft tint over the glass. */
+  --popup-inner-fill: rgba(255, 255, 255, 0.5);
 
   /* Terminal palette (table B). Search highlights take the warning tones; they stay in #RRGGBB form. */
   --term-bg: #ffffff;
@@ -292,4 +294,12 @@
   --field-bg: var(--role-raised);
   --field-border: #3b445c;
   --field-focus-ring: rgba(56, 189, 248, 0.25);
+}
+
+/* Light: inside a popup, the white raised fills become the soft tint, so they blend with the glass. */
+:root[data-theme='light'] .vx-popup-glass {
+  --bg-surface-2: var(--popup-inner-fill);
+  --role-card: var(--popup-inner-fill);
+  --role-raised: var(--popup-inner-fill);
+  --field-bg: var(--popup-inner-fill);
 }

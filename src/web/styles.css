@@ -3175,10 +3175,15 @@ input {
   animation-name: vx-backdrop-in;
 }
 
+/* The fade runs on the glass layer and the content, not on the frame: a frame below opacity 1 would hide the page
+   from the glass blur. Backwards fill: once open, no animation holds them. */
 .modal {
-  animation:
-    vx-fade-in var(--motion-duration-fade) ease-out var(--motion-stagger) both,
-    vx-dialog-in var(--motion-duration-pop) var(--motion-ease-spring) var(--motion-stagger) both;
+  animation: vx-dialog-in var(--motion-duration-pop) var(--motion-ease-spring) var(--motion-stagger) backwards;
+}
+
+.modal::before,
+.modal > * {
+  animation: vx-fade-in var(--motion-duration-fade) ease-out var(--motion-stagger) backwards;
 }
 
 .modal-backdrop.is-leaving {
@@ -3194,6 +3199,11 @@ input {
 
 .modal-backdrop.is-leaving .modal {
   animation: vx-dialog-out var(--motion-duration-exit) var(--motion-ease-exit) both;
+}
+
+.modal-backdrop.is-leaving .modal::before,
+.modal-backdrop.is-leaving .modal > * {
+  animation: vx-fade-out var(--motion-duration-exit) var(--motion-ease-exit) both;
 }
 
 /* The dim fades, not the opacity: an ancestor below opacity 1 would hide the page from the frame's blur. */
@@ -3217,7 +3227,6 @@ input {
 
 @keyframes vx-dialog-out {
   to {
-    opacity: 0;
     transform: scale(0.96);
   }
 }
@@ -3388,6 +3397,31 @@ input {
   overflow: hidden;
 }
 
+/* The glass, border and top line sit on a layer behind the content: the frame is then no backdrop root,
+   so a blur inside it (the sticky Resume headings) sees the page too. */
+.modal.vx-popup-glass {
+  position: relative;
+  border-color: transparent;
+  background-color: transparent;
+  backdrop-filter: none;
+  box-shadow: var(--shadow-frame);
+  overflow: clip;
+  overflow-clip-margin: border-box;
+}
+
+.modal.vx-popup-glass::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border: 1px solid var(--role-border-strong);
+  border-radius: inherit;
+  background-color: var(--popup-glass-bg);
+  backdrop-filter: blur(var(--popup-glass-blur));
+  box-shadow: inset 0 1px 0 0 var(--specular-top);
+  pointer-events: none;
+}
+
 .dialog-header {
   flex: none;
   display: flex;
@@ -3481,7 +3515,6 @@ input {
   top: 0;
   z-index: 1;
   padding-bottom: 4px;
-  background-color: var(--popup-glass-bg);
   backdrop-filter: blur(var(--popup-glass-blur));
   direction: rtl;
   text-align: left;

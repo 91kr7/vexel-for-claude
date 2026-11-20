@@ -18,3 +18,8 @@
 | 2026-11-20 | dev | G5 light-terminal | human decision | Human stopped the tests: Light popups grey (60% glass over 65% black backdrop) with solid white content |
 | 2026-11-20 | dev | fix light-terminal | decided | Light-only backdrop light slate dim; solid bands inside popups go transparent; frame keeps 60% glass and 8px blur |
 | 2026-11-20 | dev | G4 light-terminal fix | pass | Build green; Light backdrop rgba(15,23,42,0.2); Resume folder headings on popup glass (sticky, so not transparent) |
+| 2026-11-20 | dev | fix light-terminal | human decision | Human: inner elements still solid white on the light glass; Light-only translucent fill for cards, fields and neutral buttons inside popups (supersedes popup_glass REQ-5 there) |
+| 2026-11-20 | dev | fix light-terminal | human decision | Human: Resume folder headings are white bands; they become transparent with blur only, every theme |
+| 2026-11-20 | dev | question developer | decided | Resume heading band: Dialog frame glass moved to a pseudo-element (option c), scoped to the Dialog frame |
+| 2026-11-20 | dev | question developer | decided | Warning banner white fill takes the Light inner tint; amber border and icon stay |
+| 2026-11-20 | dev | G4 light-terminal fix | pass | Build green; Light inner tint; Dialog frame glass on ::before, fade on layer and content; heading = frame at rest in all themes |

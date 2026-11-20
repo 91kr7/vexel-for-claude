@@ -164,6 +164,7 @@ type: configuration
 
 - Tool output block: `--tool-output-bg` `#ffffff`, `--tool-output-text` `#1e293b`, `--tool-output-line` `#0f172a` at 10 % (the divider of table B).
 - `--color-backdrop` → `#0f172a` at 20 %: the lightest slate dim that still sets a dialog apart from the page. Over it the 60 % popup glass composites to a light surface (about `#e8e9ec` on the canvas), not grey (Gatekeeper decision, 2026-11-20, on the human's request).
+- `--popup-inner-fill` → white at 50 %. Inside any `.vx-popup-glass` element, `--bg-surface-2`, `--role-card`, `--role-raised` and `--field-bg` take this value, so cards, rows, fields and neutral buttons of a popup are a soft tint over the glass, never solid white. Hover (`--role-hover`), selected (`--role-card-active`), accent and status fills keep their values (Gatekeeper decision, 2026-11-20, on the human's request; for these elements in Light it supersedes `plan-popup_glass/REQ-5`).
 - `--shadow-frame`, the Tailwind shadows, the fonts and `--term-size` keep the dark values.
 
 ### Dark Blue set

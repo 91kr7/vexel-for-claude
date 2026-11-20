@@ -62,7 +62,8 @@ Focus:
 - Stacked dialogs → Esc and Enter act on the dialog that holds the focus, which is the top one. The dialog below stays open.
 - The dialog never submits a page form. It sends no request on its own.
 - The frame blur always reaches the page behind the backdrop, during the open and leave effects too: the backdrop fades its dim, never its opacity.
-- Text, icons, borders, buttons, fields and banners inside the frame stay fully opaque.
+- A backdrop blur inside the frame (the sticky folder headings of ResumeDialog) also sees the page behind the frame, once the open effect ends. So a transparent element with a blur looks like the frame at rest and blurs only what scrolls under it. Gatekeeper decision, 2026-11-20, on the human's request: the glass, border and top line are one layer behind the content, with the same look as before.
+- Text, icons, borders, accent buttons and banners inside the frame stay fully opaque. In Light, cards, rows, fields and neutral buttons take the soft tint `--popup-inner-fill` (white at 50 %) in place of solid white (Gatekeeper decision, 2026-11-20, on the human's request; for these elements in Light it supersedes `plan-popup_glass/REQ-5`).
 - A frame taller than the backdrop allows does not grow past it. The caller's content decides what scrolls.
 - Desktop window: the frame is never a drag area (`-webkit-app-region: no-drag`), also over the TopBar. The backdrop sets no drag value, so the TopBar drag area outside the frame still moves the window.
 - Desktop window: the WindowButtons stay above the backdrop, visible and clickable. They are outside the dialog: Tab never reaches them, and a click on them leaves the focus in the dialog.
