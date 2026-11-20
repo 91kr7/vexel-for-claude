@@ -76,10 +76,10 @@
   --preview-dark-surface: #21212b;
   --preview-dark-line: #f3f2ee;
   --preview-dark-accent: #8ccfff;
-  --preview-light-canvas: #f4f1ea;
-  --preview-light-surface: #e4ded2;
-  --preview-light-line: #1c1917;
-  --preview-light-accent: #0065ae;
+  --preview-light-canvas: #f3f5f8;
+  --preview-light-surface: #ffffff;
+  --preview-light-line: #0f172a;
+  --preview-light-accent: #2563eb;
   --preview-dark-blue-canvas: #12151e;
   --preview-dark-blue-surface: #212736;
   --preview-dark-blue-line: #f1f5f9;
@@ -111,6 +111,16 @@
   --role-accent: var(--accent-primary);
   --role-accent-glow: var(--accent-glow);
   --role-accent-border: var(--accent-border);
+  /* Roles that only the Light set separates from a level. */
+  --role-rail: var(--role-canvas);
+  --role-hover: var(--bg-surface-3);
+  --role-pill: var(--role-raised);
+  --role-track: var(--bg-surface-3);
+  --role-context-bg: var(--role-pill);
+  --role-context-text: var(--text-secondary);
+  --role-context-border: var(--role-border-strong);
+  --emerald-dot: var(--emerald-400);
+  --zinc-dot: var(--zinc-400);
 
   /* Popup glass: the raised surface of the active set at 60 %, so every theme and look follows. */
   --popup-glass-bg: color-mix(in srgb, var(--role-raised) 60%, transparent);
@@ -128,39 +138,70 @@
   --radius-frame: 8px;
   --border-pill: 1px solid var(--role-border-strong);
   --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.28);
+  --shadow-card-active: var(--shadow-card);
   --shadow-frame: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
 }
 
 :root[data-theme='light'] {
-  --bg-canvas: #f4f1ea;
-  --bg-surface-1: #fcfaf5;
-  --bg-surface-2: #efeae0;
-  --bg-surface-3: #e4ded2;
-  --bg-glass: rgba(252, 250, 245, 0.86);
-  --border-subtle: rgba(28, 25, 23, 0.08);
-  --border-strong: rgba(28, 25, 23, 0.15);
+  --bg-canvas: #f3f5f8;
+  --bg-surface-1: #f6f8fb;
+  --bg-surface-2: #ffffff;
+  --bg-surface-3: #e9eef5;
+  --bg-glass: rgba(255, 255, 255, 0.86);
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.14);
   --specular-top: rgba(255, 255, 255, 0.75);
-  --text-primary: #1c1917;
-  --text-secondary: #57534e;
-  /* Mock #8a847c, darkened to reach 4.5:1 on surface 3. */
-  --text-muted: #67625c;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  /* Mock #64748b, darkened to reach 4.5:1 on the context pill. */
+  --text-muted: #5c6a7f;
 
-  --accent-primary: #0065ae;
-  --accent-secondary: #004c82;
-  --accent-glow: rgba(0, 101, 174, 0.12);
-  --accent-border: rgba(0, 101, 174, 0.35);
-  --accent-deep: #004577;
-  --accent-selection: rgba(0, 101, 174, 0.3);
+  --accent-primary: #2563eb;
+  --accent-secondary: #1d4ed8;
+  --accent-glow: rgba(37, 99, 235, 0.12);
+  --accent-border: rgba(37, 99, 235, 0.22);
+  --accent-deep: #1e40af;
+  --accent-selection: rgba(37, 99, 235, 0.3);
   --on-accent: #ffffff;
 
-  --emerald-400: #065f46;
-  --amber-300: #92400e;
-  --amber-400: #92400e;
-  --rose-300: #9f1239;
-  --rose-400: #9f1239;
-  /* OKLCH hue 32, between rose (14) and amber (46). */
-  --orange-400: #b62a12;
-  --zinc-400: #52525b;
+  --role-rail: #eef1f6;
+  --role-hover: #f1f5f9;
+  --role-card-active: #eef4ff;
+  --role-pill: #e9eef5;
+  --role-track: #e9eef5;
+  --role-context-bg: #dbeafe;
+  --role-context-text: #1d4ed8;
+  --role-context-border: rgba(37, 99, 235, 0.22);
+
+  /* Status text tones: the mock's, darkened to reach 4.5:1 on their tints and on the diff lines. */
+  --emerald-400: #137638;
+  --emerald-500: #16a34a;
+  --emerald-500-15: #dcfce7;
+  --emerald-500-30: #86efac;
+  --emerald-dot: #16a34a;
+  --amber-300: #a84d08;
+  --amber-400: #a84d08;
+  --amber-500-15: #fef3c7;
+  --amber-500-20: #fef3c7;
+  --amber-500-25: #fde68a;
+  --amber-500-30: #fcd34d;
+  --amber-500-40: #fcd34d;
+  --rose-300: #b81c1c;
+  --rose-400: #b81c1c;
+  --rose-500-15: #fee2e2;
+  --rose-500-25: #fecaca;
+  --rose-500-30: #fca5a5;
+  /* "Interrupt" takes the warning colours. */
+  --orange-400: #a84d08;
+  --orange-500: #f59e0b;
+  --orange-500-15: #fef3c7;
+  --orange-500-25: #fde68a;
+  --orange-500-30: #fcd34d;
+  --zinc-400: #5c6a7f;
+  --zinc-500: #64748b;
+  --zinc-500-15: #e9eef5;
+  --zinc-500-30: rgba(15, 23, 42, 0.14);
+  --zinc-dot: #64748b;
 
   --repo-color-1: #0369a1;
   --repo-color-2: #047857;
@@ -168,6 +209,12 @@
   --repo-color-4: #e11d48;
   --repo-color-5: #4d7c0f;
   --repo-color-6: #1d4ed8;
+
+  --scrollbar-thumb: rgba(100, 116, 139, 0.28);
+  --scrollbar-thumb-hover: rgba(100, 116, 139, 0.45);
+
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-card-active: 0 2px 8px rgba(37, 99, 235, 0.1);
 }
 
 /* Dark Blue: colours of .sdd/mockups/dark_blue_theme/mock.html. */

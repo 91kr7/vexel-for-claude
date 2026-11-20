@@ -18,8 +18,8 @@ Description:
 - a 38 px bar across the top, the height of the client top bar, then one centred column on the light background of the client. Title of the document: "Vexel for Claude".
 
 Shows:
-- both states → the top bar, in the light top bar colours (`#efeae0`, 1 px line `rgba(28, 25, 23, 0.08)` at the bottom). It is a drag area (`-webkit-app-region: drag`): it moves the window, and a double click maximizes or restores it.
-- both states → the three window buttons at the left of the bar, 14 px from the edge and centred in its height. Same look, symbols, names and hover rule as the WindowButtons (module app): flat 12 px circles 8 px apart, `#e0443c`, `#e8b616`, `#25b033`, symbols in black at 60 %. Focus from the keyboard shows a 2 px `#0065ae` ring 2 px away. The group is not a drag area.
+- both states → the top bar, in the light top bar colours (`#f6f8fb`, 1 px line `rgba(15, 23, 42, 0.08)` at the bottom). It is a drag area (`-webkit-app-region: drag`): it moves the window, and a double click maximizes or restores it.
+- both states → the three window buttons at the left of the bar, 14 px from the edge and centred in its height. Same look, symbols, names and hover rule as the WindowButtons (module app): flat 12 px circles 8 px apart, `#e0443c`, `#e8b616`, `#25b033`, symbols in black at 60 %. Focus from the keyboard shows a 2 px `#2563eb` ring 2 px away. The group is not a drag area.
 - at rest → no border (removed on the human request of 2026-11-16), no gloss, no shadow.
 - pointer over a button → `brightness(1.08)` and a glow `0 0 8px 1px color-mix(in srgb, <colour> 60%, transparent)`, with a 0.2 s transition. Pressed → `brightness(0.85)`.
 - loading → "Starting the backend…" with a rotating indicator.
@@ -33,7 +33,7 @@ Actions (through `window.desktopBridge`, the DesktopBridge):
 
 ## Rules and invariants
 
-- English text. Always the client's light theme, whatever theme the client saved: canvas `#f4f1ea`, text `#1c1917`, error `#9f1239`, indicator in the accent `#0065ae`. The other tones are light ThemeTokens values too. `color-scheme` is `light`.
+- English text. Always the client's light theme, whatever theme the client saved: canvas `#f3f5f8`, text `#0f172a`, error `#b81c1c`, indicator in the accent `#2563eb` on a `#e9eef5` track. The other tones are light ThemeTokens values too. `color-scheme` is `light`.
 - The page loads nothing: no network request. Its Content-Security-Policy allows inline styles and only the page's own inline script, by its SHA-256 hash. Any other script never runs.
 - It does not import `src/web`.
 
@@ -48,3 +48,4 @@ Actions (through `window.desktopBridge`, the DesktopBridge):
 - `plan-mac_title_bar/REQ-10`, `plan-mac_title_bar/REQ-23`
 - `plan-ui_restyle/REQ-36`, `plan-ui_restyle/REQ-37`, `plan-ui_restyle/REQ-38`, `plan-ui_restyle/REQ-39`, `plan-ui_restyle/REQ-40`
 - `plan-dark_blue_theme/REQ-6`, `plan-dark_blue_theme/REQ-8`
+- `plan-cool_slate_light/REQ-9`, `plan-cool_slate_light/REQ-11`, `plan-cool_slate_light/REQ-12`

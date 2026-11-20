@@ -8,13 +8,13 @@ const STYLE = `
   body {
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
     padding: 80px 32px 32px; box-sizing: border-box;
-    background: #f4f1ea; color: #1c1917;
+    background: #f3f5f8; color: #0f172a;
     font: 14px/20px 'Roboto Flex', Roboto, system-ui, sans-serif;
   }
   .title-bar {
     position: fixed; top: 0; left: 0; right: 0; height: 38px; box-sizing: border-box;
     display: flex; align-items: center; padding: 0 14px;
-    background: #efeae0; border-bottom: 1px solid rgba(28, 25, 23, 0.08);
+    background: #f6f8fb; border-bottom: 1px solid rgba(15, 23, 42, 0.08);
     -webkit-app-region: drag;
   }
   .window-buttons {
@@ -33,7 +33,7 @@ const STYLE = `
     box-shadow: 0 0 8px 1px color-mix(in srgb, var(--window-colour) 60%, transparent);
   }
   .window-button:active { filter: brightness(0.85); }
-  .window-button:focus-visible { outline: 2px solid #0065ae; outline-offset: 2px; }
+  .window-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
   .window-close { --window-colour: #e0443c; }
   .window-minimize { --window-colour: #e8b616; }
   .window-maximize { --window-colour: #25b033; }
@@ -45,16 +45,16 @@ const STYLE = `
   .window-maximize.maximized .maximize-symbol, .window-maximize:not(.maximized) .restore-symbol { display: none; }
   .spinner {
     width: 24px; height: 24px; border-radius: 50%;
-    border: 3px solid #e4ded2; border-top-color: #0065ae;
+    border: 3px solid #e9eef5; border-top-color: #2563eb;
     animation: spin 0.9s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .message { margin: 0; color: #57534e; }
-  .error { margin: 0; color: #9f1239; font-weight: 600; }
+  .message { margin: 0; color: #475569; }
+  .error { margin: 0; color: #b81c1c; font-weight: 600; }
   .output {
     margin: 0; max-width: min(960px, 100%); max-height: 60vh; overflow: auto;
-    padding: 12px 16px; border: 1px solid #e4ded2; border-radius: 8px; background: #fcfaf5;
-    color: #67625c; font: 12px/18px 'Roboto Mono', ui-monospace, monospace; white-space: pre-wrap;
+    padding: 12px 16px; border: 1px solid rgba(15, 23, 42, 0.14); border-radius: 8px; background: #f6f8fb;
+    color: #5c6a7f; font: 12px/18px 'Roboto Mono', ui-monospace, monospace; white-space: pre-wrap;
   }
 `;
 

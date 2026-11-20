@@ -13,9 +13,9 @@ type: UI component
 Props:
 - `usage` → the `usage` of the session summary. Optional.
 
-Shows, in this order, 10 px apart, each a pill: padding 2 × 10 px, `--radius-pill` corners, `--border-pill`, on `--role-raised`, mono 10.5 px with tabular figures:
+Shows, in this order, 10 px apart, each a pill: padding 2 × 10 px, `--radius-pill` corners, `--border-pill`, on `--role-pill`, mono 10.5 px with tabular figures:
 - with `usage.context` → the context chip: "Context" in `--text-muted`, then "<used> / <window> · <percent>%", e.g. "Context 45.2k / 200k · 23%". `used` and `window` in short form (`shortTokens`), `percent` by `percentOf`.
-  - the value is in `--text-secondary` at level `normal`, amber-400 at `warning`, rose-400 at `error` (`usageLevelOf`).
+  - the chip takes the context pill role of ThemeTokens (module app): `--role-context-bg` fill, `--role-context-border` border, `--role-context-text` text. The value is in `--role-context-text` at level `normal`, amber-400 at `warning`, rose-400 at `error` (`usageLevelOf`).
   - a fill from the left edge of the pill, under the text, as wide as `percent` % of the pill (kept between 0 and 100). Its colour follows the level: `--role-accent` at `normal`, amber-400 at `warning`, rose-400 at `error`, at 25 % with a 1 px right edge at 45 %. No fill at 0 %. Decorative: hidden from assistive technology.
 - with `usage.tokens` → the tokens chip, in `--text-secondary`: "<total> tokens", e.g. "1.3M tokens". `total` = input + output + cacheWrite + cacheRead, in short form.
   - it is focusable with the keyboard (Tab).
@@ -42,3 +42,4 @@ Shows, in this order, 10 px apart, each a pill: padding 2 × 10 px, `--radius-pi
 - `plan-session_usage/REQ-23`, `plan-session_usage/REQ-29`, `plan-session_usage/REQ-30`, `plan-session_usage/REQ-32`, `plan-session_usage/REQ-33`, `plan-session_usage/REQ-34`
 - `plan-dark_blue_theme/REQ-12`, `plan-dark_blue_theme/REQ-13`, `plan-dark_blue_theme/REQ-14`
 - `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`
+- `plan-cool_slate_light/REQ-2`
