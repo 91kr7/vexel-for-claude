@@ -314,7 +314,7 @@ test.describe('Look choice and look store', () => {
 
     await setLook(page, 'vexel');
     expect(await page.locator('html').getAttribute('data-theme'), 'the look change keeps the light theme').toBe('light');
-    expect((await tokens(page, ['--bg-canvas']))['--bg-canvas'], 'current light canvas').toBe('rgb(244, 241, 234)');
+    expect((await tokens(page, ['--bg-canvas']))['--bg-canvas'], 'current light canvas').toBe('rgb(243, 245, 248)');
   });
 });
 
@@ -471,7 +471,9 @@ test.describe('Windows 11 look styles', () => {
         for (const text of ['--text-primary', '--text-secondary', '--text-muted', '--accent-primary'])
           for (const background of backgrounds) {
             const ratio = contrast(t[text]!, t[background]!);
-            if (ratio < 4.5) failures.push(`${text} ${t[text]} on ${background} ${t[background]}: ${ratio.toFixed(2)}`);
+            // ThemeTokens (plan-cool_slate_light): in the current look's Light set the accent paints only icons, fills and focus on surface 3, so 3:1.
+            const needed = look === 'vexel' && theme === 'light' && text === '--accent-primary' && background === '--bg-surface-3' ? 3 : 4.5;
+            if (ratio < needed) failures.push(`${text} ${t[text]} on ${background} ${t[background]}: ${ratio.toFixed(2)}`);
           }
         const onAccent = contrast(t['--on-accent']!, t['--accent-primary']!);
         if (onAccent < 4.5) failures.push(`--on-accent on --accent-primary: ${onAccent.toFixed(2)}`);
@@ -524,9 +526,12 @@ test.describe('Windows 11 look styles', () => {
       await setLook(page, 'windows11');
       const windows = await tokens(page, names);
       const [working, needsInput, error, grey] = names.map((name) => hsl(windows[name]!));
+      // In Light the status tones are those of plan-cool_slate_light table A: amber and red are about 26° apart.
+      const gap = theme === 'light' ? 20 : 30;
       for (const [a, b, label] of [[working!, needsInput!, 'working/needs input'], [working!, error!, 'working/error'], [needsInput!, error!, 'needs input/error']] as const)
-        expect(hueGap(a.h, b.h), label).toBeGreaterThanOrEqual(30);
-      expect(grey!.s, 'waiting and ended are grey').toBeLessThan(0.15);
+        expect(hueGap(a.h, b.h), label).toBeGreaterThanOrEqual(gap);
+      // The Light grey is the table A slate, a little more saturated than a neutral grey.
+      expect(grey!.s, 'waiting and ended are grey').toBeLessThan(theme === 'light' ? 0.2 : 0.15);
       for (const tone of [working!, needsInput!, error!]) expect(tone.s, 'the other states are coloured').toBeGreaterThan(0.5);
       for (const name of names.slice(0, 3)) {
         const [a, b] = [hsl(current[name]!), hsl(windows[name]!)];

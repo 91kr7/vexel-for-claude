@@ -439,20 +439,20 @@ test.describe('Uncommitted changes in the git explorer', () => {
       red: await cssColour(page, '--color-error'),
       text: await cssColour(page, '--text-primary'),
       muted: await cssColour(page, '--text-muted'),
-      surface3: await cssColour(page, '--bg-surface-3'),
+      cardActive: await cssColour(page, '--role-card-active'),
     });
     const expectThemeColours = async () => {
       const t = await tokens();
       // The selected row fades between themes: wait for its colour to settle.
       await expect
         .poll(() => fileEntry(page, 'Unstaged', 'notes.md').evaluate((el) => getComputedStyle(el).backgroundColor), { message: 'selected entry on the active card surface' })
-        .toBe(t.surface3);
+        .toBe(t.cardActive);
       const c = await colours();
       expect(c.added, 'added line in the success colour').toBe(t.green);
       expect(c.removed, 'removed line in the error colour').toBe(t.red);
       expect(c.context, 'context line in the normal text colour').toBe(t.text);
       expect(c.hunk, 'hunk header muted').toBe(t.muted);
-      expect(c.selected, 'selected entry on the active card surface').toBe(t.surface3);
+      expect(c.selected, 'selected entry on the active card surface').toBe(t.cardActive);
       expect(c.addedTint, 'added line on a tint').not.toBe('rgba(0, 0, 0, 0)');
       return c;
     };

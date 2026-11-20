@@ -11,7 +11,6 @@ import { cardOf, settingsButton, settingsPopup } from './settings';
 type Theme = 'light' | 'dark';
 const THEMES: Theme[] = ['light', 'dark'];
 const FRAME_SHADOW = 'rgba(0, 0, 0, 0.45) 0px 8px 24px -4px';
-const CARD_SHADOW = 'rgba(0, 0, 0, 0.28) 0px 2px 10px 0px';
 
 let projectsRoot: string;
 
@@ -110,9 +109,20 @@ const shapeOf = (locator: Locator): Promise<Shape> =>
     };
   });
 
-/** Colours of the active theme's levels, as the browser computes them. */
+/** The computed `box-shadow` of a shadow value or `var()`. */
+const shadowOf = (page: Page, value: string) =>
+  page.evaluate((v) => {
+    const probe = document.createElement('div');
+    probe.style.boxShadow = v;
+    document.body.append(probe);
+    const result = getComputedStyle(probe).boxShadow;
+    probe.remove();
+    return result;
+  }, value);
+
+/** Colours of the active theme's levels and of the role tokens with a Light value of their own, as the browser computes them. */
 async function levels(page: Page) {
-  const names = ['--bg-canvas', '--bg-surface-1', '--bg-surface-2', '--bg-surface-3', '--border-subtle', '--border-strong', '--accent-primary', '--accent-border'];
+  const names = ['--bg-canvas', '--bg-surface-1', '--bg-surface-2', '--bg-surface-3', '--border-subtle', '--border-strong', '--accent-primary', '--accent-border', '--role-card-active', '--role-pill'];
   const values = await Promise.all(names.map((n) => colourOf(page, `var(${n})`)));
   return Object.fromEntries(names.map((n, i) => [n, values[i] as string])) as Record<string, string>;
 }
@@ -149,7 +159,8 @@ for (const theme of THEMES) {
       ['--role-chrome', '--bg-surface-1'],
       ['--role-card', '--bg-surface-2'],
       ['--role-raised', '--bg-surface-2'],
-      ['--role-card-active', '--bg-surface-3'],
+      // ThemeTokens (plan-cool_slate_light): Light gives the active card a value of its own.
+      ...(theme === 'dark' ? ([['--role-card-active', '--bg-surface-3']] as Array<[string, string]>) : []),
       ['--role-border-subtle', '--border-subtle'],
       ['--role-border-strong', '--border-strong'],
       ['--role-accent', '--accent-primary'],
@@ -225,7 +236,7 @@ for (const theme of THEMES) {
     expect([plain.borderWidth, plain.borderColour], 'choice card: subtle border').toEqual(['1px', level['--border-subtle']]);
     const checked = await shapeOf(active);
     expect(checked.borderColour, 'checked card: accent border').toBe(level['--accent-primary']);
-    expect(checked.shadow, 'checked card: card shadow').toContain(CARD_SHADOW);
+    expect(checked.shadow, 'checked card: card shadow').toContain(await shadowOf(page, 'var(--shadow-card)'));
 
     await popup.getByRole('tab', { name: 'Shortcuts', exact: true }).click();
     const badge = popup.locator('.kbd-badge').first();
@@ -233,7 +244,7 @@ for (const theme of THEMES) {
     const pill = await shapeOf(badge);
     expect(pill.radius, 'key badge: pill radius').toBe('5px');
     expect([pill.borderWidth, pill.borderColour], 'key badge: pill border').toEqual(['1px', level['--border-strong']]);
-    expect(pill.background, 'key badge: raised surface').toBe(level['--bg-surface-2']);
+    expect(pill.background, 'key badge: pill surface').toBe(level['--role-pill']);
 
     await popup.getByRole('tab', { name: 'Updates', exact: true }).click();
     const card = await shapeOf(popup.getByRole('region', { name: 'Updates', exact: true }));
@@ -266,11 +277,11 @@ for (const theme of THEMES) {
 
     await radio.check();
     await page.mouse.move(0, 0);
-    await expect.poll(async () => (await shapeOf(row)).background, { message: 'chosen row: active card' }).toBe(level['--bg-surface-3']);
+    await expect.poll(async () => (await shapeOf(row)).background, { message: 'chosen row: active card' }).toBe(level['--role-card-active']);
     // The border eases to the accent: wait for the end of the transition.
     await expect.poll(async () => (await shapeOf(row)).borderColour, { message: 'chosen row: accent border' }).toBe(level['--accent-primary']);
     const chosen = await shapeOf(row);
-    expect(chosen.shadow, 'chosen row: card shadow').toContain(CARD_SHADOW);
+    expect(chosen.shadow, 'chosen row: active card shadow').toContain(await shadowOf(page, 'var(--shadow-card-active)'));
 
     const field = dialog.getByRole('textbox', { name: 'Search Past Sessions' });
     const idle = await shapeOf(field);

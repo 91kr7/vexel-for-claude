@@ -223,8 +223,8 @@ test.describe('StartupPage title bar', () => {
         expect(bar.box).toEqual([0, 0, width, 38]);
         expect(bar.text, 'the bar holds no text').toBe('');
         expect(bar.controls, 'the window buttons are its only controls').toEqual(['Close', 'Minimize', 'Maximize']);
-        expect(bar.background).toBe('rgb(239, 234, 224)');
-        expect(bar.border).toEqual(['1px', 'solid', 'rgba(28, 25, 23, 0.08)']);
+        expect(bar.background).toBe('rgb(246, 248, 251)');
+        expect(bar.border).toEqual(['1px', 'solid', 'rgba(15, 23, 42, 0.08)']);
 
         const message = page.getByText(state.kind === 'loading' ? 'Starting the backend…' : 'The backend could not start.', { exact: true });
         await expect(message).toBeVisible();

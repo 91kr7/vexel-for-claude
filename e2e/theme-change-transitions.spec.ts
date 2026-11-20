@@ -25,10 +25,10 @@ interface Watch {
   endedAt: number | null;
 }
 
-// Values of the earlier theme plans (light_theme, dark_blue_theme), in computed form.
+// Values of the theme plans (dark_blue_theme, cool_slate_light), in computed form.
 const DARK_BLUE_CANVAS = 'rgb(18, 21, 30)';
 const DARK_BLUE_TERM_BG = 'rgb(17, 20, 28)';
-const LIGHT_CANVAS = 'rgb(244, 241, 234)';
+const LIGHT_CANVAS = 'rgb(243, 245, 248)';
 const LIGHT_TERM_BG = 'rgb(11, 11, 14)';
 const SLOW_MS = 1500;
 

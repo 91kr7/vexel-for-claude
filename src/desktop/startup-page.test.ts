@@ -1,4 +1,4 @@
-// Tests of plan-desktop_app, batch desktop-window: StartupPage spec (REQ-7), of plan-mac_title_bar, batch window-buttons (REQ-23), and of plan-ui_restyle, batch startup-page (REQ-36 to REQ-39).
+// Tests of plan-desktop_app, batch desktop-window: StartupPage spec (REQ-7), of plan-mac_title_bar, batch window-buttons (REQ-23), and of plan-ui_restyle, batch startup-page (REQ-36 to REQ-39), and of plan-cool_slate_light, batch cool-slate-palette (light palette).
 // The computed look is checked in the browser by e2e/window-buttons.spec.ts and e2e/title-bar.spec.ts.
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -105,5 +105,44 @@ describe('startupPageHtml style (plan-ui_restyle)', () => {
 
   it('REQ-39: the symbols are black at 60 %', () => {
     expect(css).toMatch(/rgba\(0, ?0, ?0, ?0?\.6\)/);
+  });
+});
+
+// plan-cool_slate_light/REQ-11, REQ-12, StartupPage rules: the page always shows the Cool Slate light palette
+describe('startupPageHtml style (plan-cool_slate_light)', () => {
+  const style = (html: string) => [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map((match) => match[1]).join('\n');
+  const css = style(startupPageHtml({ kind: 'error', outputLines: ['x'] })).replace(/\s+/g, ' ').toLowerCase();
+  const rule = (selector: string) => css.match(new RegExp(`(?:^|[\\s}])${selector.replace('.', '\\.')} \\{([^}]*)\\}`))?.[1] ?? '';
+
+  it('canvas #f3f5f8 and main text #0f172a', () => {
+    expect(css).toMatch(/\bbody \{[^}]*background: ?#f3f5f8;[^}]*color: ?#0f172a;/);
+  });
+
+  it('top bar #f6f8fb with a 1 px rgba(15, 23, 42, 0.08) line at the bottom', () => {
+    expect(rule('.title-bar')).toMatch(/background: ?#f6f8fb/);
+    expect(rule('.title-bar')).toMatch(/border-bottom: ?1px solid rgba\(15, ?23, ?42, ?0?\.08\)/);
+  });
+
+  it('error text #b81c1c', () => {
+    expect(rule('.error')).toMatch(/color: ?#b81c1c/);
+  });
+
+  it('indicator in the accent #2563eb on a #e9eef5 track', () => {
+    expect(rule('.spinner')).toMatch(/border: ?3px solid #e9eef5/);
+    expect(rule('.spinner')).toMatch(/border-top-color: ?#2563eb/);
+  });
+
+  it('keyboard focus of a window button is a 2 px #2563eb ring 2 px away', () => {
+    expect(css).toMatch(/\.window-button:focus-visible \{[^}]*outline: ?2px solid #2563eb;[^}]*outline-offset: ?2px/);
+  });
+
+  it('no colour of the previous light set is left', () => {
+    for (const old of ['#f4f1ea', '#efeae0', '#1c1917', '#0065ae', '#e4ded2', '#57534e', '#9f1239', '#fcfaf5', '#67625c', 'rgba(28, 25, 23']) {
+      expect(css, old).not.toContain(old);
+    }
+  });
+
+  it('color-scheme is light', () => {
+    expect(startupPageHtml({ kind: 'loading' })).toMatch(/color-scheme[^;"]*light/);
   });
 });

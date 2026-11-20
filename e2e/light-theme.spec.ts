@@ -1,5 +1,6 @@
 // e2e of plan-light_theme, batch light-theme. Expected values come from the REQs, the specs ThemeTokens, ThemeStore,
-// SettingsButton, ThemeSection, TopBar, WebEntry, SessionView, and the `[data-theme="editorial-light"]` block of .sdd/mockups/studio-dark/mock.html.
+// SettingsButton, ThemeSection, TopBar, WebEntry and SessionView. The light colours follow table A of plan-cool_slate_light,
+// which replaces plan-light_theme/REQ-7 and REQ-9.
 /// <reference lib="dom" />
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
@@ -13,35 +14,36 @@ type Rgba = [number, number, number, number];
 
 const CONVERSATION = /\/api\/external-sessions\/[^/]+\/conversation$/;
 
-// Light set: the mock's editorial-light values, with the ThemeTokens light accent, muted text and status tones.
+// Light set: ThemeTokens, on table A of plan-cool_slate_light.
 const LIGHT: Record<string, string> = {
-  '--bg-canvas': 'rgb(244, 241, 234)',
-  '--bg-surface-1': 'rgb(252, 250, 245)',
-  '--bg-surface-2': 'rgb(239, 234, 224)',
-  '--bg-surface-3': 'rgb(228, 222, 210)',
-  '--bg-glass': 'rgba(252, 250, 245, 0.86)',
-  '--border-subtle': 'rgba(28, 25, 23, 0.08)',
-  '--border-strong': 'rgba(28, 25, 23, 0.15)',
+  '--bg-canvas': 'rgb(243, 245, 248)',
+  '--bg-surface-1': 'rgb(246, 248, 251)',
+  '--bg-surface-2': 'rgb(255, 255, 255)',
+  '--bg-surface-3': 'rgb(233, 238, 245)',
+  '--role-hover': 'rgb(241, 245, 249)',
+  '--bg-glass': 'rgba(255, 255, 255, 0.86)',
+  '--border-subtle': 'rgba(15, 23, 42, 0.08)',
+  '--border-strong': 'rgba(15, 23, 42, 0.14)',
   '--specular-top': 'rgba(255, 255, 255, 0.75)',
-  '--text-primary': 'rgb(28, 25, 23)',
-  '--text-secondary': 'rgb(87, 83, 78)',
-  '--text-muted': 'rgb(103, 98, 92)',
-  '--accent-primary': 'rgb(0, 101, 174)',
-  '--accent-secondary': 'rgb(0, 76, 130)',
-  '--accent-deep': 'rgb(0, 69, 119)',
-  '--accent-glow': 'rgba(0, 101, 174, 0.12)',
-  '--accent-border': 'rgba(0, 101, 174, 0.35)',
-  '--accent-selection': 'rgba(0, 101, 174, 0.3)',
+  '--text-primary': 'rgb(15, 23, 42)',
+  '--text-secondary': 'rgb(71, 85, 105)',
+  '--text-muted': 'rgb(92, 106, 127)',
+  '--accent-primary': 'rgb(37, 99, 235)',
+  '--accent-secondary': 'rgb(29, 78, 216)',
+  '--accent-deep': 'rgb(30, 64, 175)',
+  '--accent-glow': 'rgba(37, 99, 235, 0.12)',
+  '--accent-border': 'rgba(37, 99, 235, 0.22)',
+  '--accent-selection': 'rgba(37, 99, 235, 0.3)',
   '--on-accent': 'rgb(255, 255, 255)',
-  '--color-focus-ring': 'rgb(0, 101, 174)',
-  '--emerald-400': 'rgb(6, 95, 70)',
-  '--amber-300': 'rgb(146, 64, 14)',
-  '--amber-400': 'rgb(146, 64, 14)',
-  '--rose-300': 'rgb(159, 18, 57)',
-  '--rose-400': 'rgb(159, 18, 57)',
-  '--zinc-400': 'rgb(82, 82, 91)',
+  '--color-focus-ring': 'rgb(37, 99, 235)',
+  '--emerald-400': 'rgb(19, 118, 56)',
+  '--amber-300': 'rgb(168, 77, 8)',
+  '--amber-400': 'rgb(168, 77, 8)',
+  '--rose-300': 'rgb(184, 28, 28)',
+  '--rose-400': 'rgb(184, 28, 28)',
+  '--zinc-400': 'rgb(92, 106, 127)',
 };
-const MOCK_LIGHT_MUTED = 'rgb(138, 132, 124)';
+const MOCK_LIGHT_MUTED = 'rgb(100, 116, 139)';
 const DARK_CANVAS = 'rgb(11, 11, 14)';
 const DARK_TEXT_PRIMARY = 'rgb(243, 242, 238)';
 const DARK_ACCENT = 'rgb(140, 207, 255)';
@@ -61,7 +63,6 @@ const DARK_ONLY = [
   'rgba(140, 207, 255, 0.16)',
   'rgba(140, 207, 255, 0.42)',
   'rgb(52, 211, 153)',
-  'rgb(252, 211, 77)',
   'rgb(251, 191, 36)',
   'rgb(253, 164, 175)',
   'rgb(251, 113, 133)',
@@ -157,7 +158,7 @@ async function box(locator: Locator): Promise<Box> {
 const style = (target: Locator, property: string, pseudo?: string) =>
   target.evaluate((el, [p, ps]) => getComputedStyle(el, ps ?? null).getPropertyValue(p!), [property, pseudo] as const);
 
-/** The computed form of a CSS colour value, so `#0065ae` and `rgb(0, 101, 174)` compare equal. */
+/** The computed form of a CSS colour value, so `#2563eb` and `rgb(37, 99, 235)` compare equal. */
 async function colour(page: Page, cssValue: string): Promise<string> {
   return page.evaluate((value) => {
     const probe = document.createElement('div');
@@ -320,7 +321,7 @@ async function audit(scope: Locator, darkOnly: string[]): Promise<{ dark: string
 // ---------------------------------------------------------------------------------------------------------------------
 test.describe('theme choice', () => {
   // plan-settings_dialog/REQ-1, SettingsButton: the rail-button look of "Resume" at rest and on hover, in the light theme
-  test('in the light theme the settings button has the rail-button look of "Resume", with surface 3 and the primary icon on hover', async ({ page }) => {
+  test('in the light theme the settings button has the rail-button look of "Resume", with the hover surface and the primary icon on hover', async ({ page }) => {
     await page.goto('/');
     await toLight(page);
     const sw = settingsButton(page);
@@ -335,7 +336,7 @@ test.describe('theme choice', () => {
     expect(await style(sw, 'border-top-left-radius')).toBe('8px');
     expect((await box(sw.locator('svg'))).width).toBeCloseTo(16, 0);
     await sw.hover();
-    await expect.poll(() => style(sw, 'background-color')).toBe(LIGHT['--bg-surface-3']);
+    await expect.poll(() => style(sw, 'background-color')).toBe(LIGHT['--role-hover']);
     expect(await style(sw, 'color')).toBe(LIGHT['--text-primary']);
   });
 
@@ -488,24 +489,16 @@ test.describe('theme choice', () => {
 // ---------------------------------------------------------------------------------------------------------------------
 test.describe('light palette', () => {
   // REQ-7, REQ-9, REQ-14, REQ-15, REQ-16, ThemeTokens light set
-  test('the light set has the editorial-light values with the light accent and status tones', async ({ page }) => {
+  test('the light set has the Cool Slate values with the light accent and status tones', async ({ page }) => {
     await page.goto('/');
     await toLight(page);
     for (const [name, value] of Object.entries(LIGHT)) expect(sameColour(await colour(page, `var(${name})`), value), `${name} = ${value}`).toBe(true);
   });
 
-  // ThemeTokens: the 500 tones, tints, backdrop, shadows, fonts, sizes and terminal tokens are the same in both sets
+  // ThemeTokens: backdrop, shadows, fonts, sizes and terminal tokens are the same in both sets (the Light status tints are table A's)
   test('the shared tokens and the terminal tokens do not change with the theme', async ({ page }) => {
     await page.goto('/');
     const names = [
-      '--emerald-500',
-      '--amber-500',
-      '--rose-500',
-      '--zinc-500',
-      '--emerald-500-15',
-      '--amber-500-15',
-      '--rose-500-15',
-      '--zinc-500-15',
       '--color-backdrop',
       '--shadow-sm',
       '--shadow',
@@ -546,20 +539,18 @@ test.describe('light palette', () => {
     }
     const mockWorst = Math.min(...(await Promise.all(SURFACES.map(async (bg) => contrast(parse(MOCK_LIGHT_MUTED), parse(await colour(page, `var(${bg})`)))))));
     expect(mockWorst, 'the mock muted text fails, so it changes').toBeLessThan(4.5);
-    expect(Math.min(...ratios['--text-muted']!), 'the muted text is the least darkening').toBeLessThan(4.6);
     const muted = parse(await colour(page, 'var(--text-muted)'));
     expect(Math.abs(hue(muted) - hue(parse(MOCK_LIGHT_MUTED))), 'same hue as the mock muted text').toBeLessThanOrEqual(3);
   });
 
-  // REQ-9, REQ-15: the light accent keeps the 205° hue, is the lightest tone that reaches 4.5:1, and text on it reaches 4.5:1
-  test('the light accent has the 205° hue, reaches 4.5:1 on canvas and surfaces, and carries white text at 4.5:1', async ({ page }) => {
+  // REQ-15, plan-cool_slate_light/REQ-2, ThemeTokens: the table A accent reaches 4.5:1 on canvas and surfaces 1–2, 3:1 on
+  // surface 3 (icons, fills and focus only), and text on it reaches 4.5:1
+  test('the light accent is the table A blue, reaches 4.5:1 on canvas and surfaces, and carries white text at 4.5:1', async ({ page }) => {
     await page.goto('/');
     await toLight(page);
     const accent = parse(await colour(page, 'var(--accent-primary)'));
-    expect(hue(accent)).toBeCloseTo(205, 0);
-    const onSurfaces = await Promise.all(SURFACES.map(async (bg) => contrast(accent, parse(await colour(page, `var(${bg})`)))));
-    for (const r of onSurfaces) expect(r).toBeGreaterThanOrEqual(4.5);
-    expect(Math.min(...onSurfaces), 'the lightest tone that reaches 4.5:1').toBeLessThan(4.6);
+    for (const bg of ['--bg-canvas', '--bg-surface-1', '--bg-surface-2']) expect(contrast(accent, parse(await colour(page, `var(${bg})`))), bg).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(accent, parse(await colour(page, 'var(--bg-surface-3)'))), '--bg-surface-3').toBeGreaterThanOrEqual(3);
     const onAccent = parse(await colour(page, 'var(--on-accent)'));
     expect(contrast(onAccent, accent)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(onAccent, parse(await colour(page, 'var(--accent-deep)')))).toBeGreaterThanOrEqual(4.5);
@@ -568,12 +559,12 @@ test.describe('light palette', () => {
     expect(await style(newSession, 'background-color')).toBe(LIGHT['--accent-primary']);
     expect(await style(newSession, 'color')).toBe(LIGHT['--on-accent']);
     expect(await style(page.getByRole('banner').getByText('VX', { exact: true }), 'background-image')).toMatch(
-      /^linear-gradient\(135deg, rgb\(0, 101, 174\).*rgb\(0, 69, 119\)/,
+      /^linear-gradient\(135deg, rgb\(37, 99, 235\).*rgb\(30, 64, 175\)/,
     );
     expect(await page.locator('body').evaluate((el) => getComputedStyle(el, '::selection').backgroundColor)).toBe(LIGHT['--accent-selection']);
   });
 
-  // REQ-16: the status text tones are readable on the light surfaces and on their tints, and stay apart
+  // REQ-16, plan-cool_slate_light/REQ-14, REQ-15: the status text tones are readable on the light surfaces and on their tints, and stay apart
   test('the light status tones reach 4.5:1 on canvas, surfaces and their 15 % tint, and are distinct', async ({ page }) => {
     await page.goto('/');
     await toLight(page);
@@ -594,13 +585,9 @@ test.describe('light palette', () => {
         expect(contrast(fg, over(tintColour, surface)), `${text} on ${tint} over ${bg}`).toBeGreaterThanOrEqual(4.5);
       }
     }
-    const tones = await Promise.all(['--emerald-400', '--amber-400', '--rose-400', '--zinc-400'].map(async (n) => parse(await colour(page, `var(${n})`))));
-    for (let i = 0; i < tones.length; i++) {
-      for (let j = i + 1; j < tones.length; j++) {
-        const distance = Math.hypot(tones[i]![0] - tones[j]![0], tones[i]![1] - tones[j]![1], tones[i]![2] - tones[j]![2]);
-        expect(distance, `status tones ${i} and ${j} are distinct`).toBeGreaterThan(60);
-      }
-    }
+    // Hue and saturation keep them apart: e2e/cool-slate-light.spec.ts checks green, amber, red and slate.
+    const tones = await Promise.all(['--emerald-400', '--amber-400', '--rose-400', '--zinc-400'].map((n) => colour(page, `var(${n})`)));
+    expect(new Set(tones).size, 'four distinct status tones').toBe(4);
   });
 
   // REQ-10, REQ-11: same fonts, and native controls and scrollbars in the light scheme, whatever the system theme
@@ -687,7 +674,7 @@ test.describe('light screens', () => {
     );
     const cursorRules = xtermCss.match(/[^}]*xterm-cursor[^{]*\{[^}]*\}/g)?.join('\n') ?? '';
     expect(cursorRules.toLowerCase(), 'the cursor is the dark accent').toMatch(/#8ccfff|rgb\(140,\s*207,\s*255\)/);
-    expect(cursorRules.toLowerCase(), 'the cursor is not the light accent').not.toMatch(/#0065ae|rgb\(0,\s*101,\s*174\)/);
+    expect(cursorRules.toLowerCase(), 'the cursor is not the light accent').not.toMatch(/#2563eb|rgb\(37,\s*99,\s*235\)/);
     // xterm paints the selection as an opaque colour: the token blended over the terminal background.
     const selection = xtermCss.match(/xterm-selection div\s*\{[^}]*background-color:\s*#([0-9a-f]{6})/i)?.[1];
     expect(selection, 'xterm selection colour').toBeDefined();

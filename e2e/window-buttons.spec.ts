@@ -601,7 +601,7 @@ test.describe('WindowButtons on the StartupPage', () => {
     await expect.poll(() => symbolsShown(all)).toEqual([true, true, true]);
   });
 
-  // REQ-28, StartupPage "Shows": keyboard focus shows a 2 px #0065ae ring 2 px away
+  // REQ-28, StartupPage "Shows": keyboard focus shows a 2 px #2563eb ring 2 px away
   test('keyboard focus on a button shows the 2 px accent ring 2 px away', async ({ page }) => {
     await installFakeBridge(page);
     await page.goto(startupPageUrl({ kind: 'loading' }));
@@ -613,7 +613,7 @@ test.describe('WindowButtons on the StartupPage', () => {
       const s = getComputedStyle(e);
       return [s.outlineStyle, s.outlineWidth, s.outlineColor, s.outlineOffset];
     });
-    expect(ring).toEqual(['solid', '2px', 'rgb(0, 101, 174)', '2px']);
+    expect(ring).toEqual(['solid', '2px', 'rgb(37, 99, 235)', '2px']);
   });
 
   // StartupPage "Actions": with no bridge the buttons show and do nothing

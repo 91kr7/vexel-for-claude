@@ -150,7 +150,7 @@ async function expectRestingRow(entry: Locator, what: string): Promise<void> {
 /** The hover of an inactive session card: active card surface, strong border, primary text. */
 async function expectHovered(page: Page, entry: Locator, what: string): Promise<void> {
   await entry.hover();
-  await expect.poll(() => style(entry, 'background-color'), { message: `${what}: hover surface` }).toBe(await colourOf(page, 'var(--role-card-active)'));
+  await expect.poll(() => style(entry, 'background-color'), { message: `${what}: hover surface` }).toBe(await colourOf(page, 'var(--role-hover)'));
   await expectBorder(entry, await colourOf(page, 'var(--role-border-strong)'), `hovered ${what}`);
   await expect.poll(() => style(entry, 'color'), { message: `${what}: primary text on hover` }).toBe(await colourOf(page, 'var(--text-primary)'));
 }
@@ -163,7 +163,7 @@ async function expectActive(page: Page, entry: Locator, what: string): Promise<v
   const bar = await accentBarOf(entry, await colourOf(page, 'var(--role-accent)'));
   expect(bar, `${what}: accent bar on the left`).not.toBeNull();
   expect(Math.abs(bar!.width - 3.5), `${what}: accent bar width ${bar!.width}`).toBeLessThanOrEqual(0.05);
-  expect(await style(entry, 'box-shadow'), `${what}: card shadow`).toContain(await computed(page, 'box-shadow', 'var(--shadow-card)'));
+  expect(await style(entry, 'box-shadow'), `${what}: active card shadow`).toContain(await computed(page, 'box-shadow', 'var(--shadow-card-active)'));
   await expect.poll(() => style(entry, 'color'), { message: `${what}: primary text` }).toBe(await colourOf(page, 'var(--text-primary)'));
 }
 
