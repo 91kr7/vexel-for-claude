@@ -12,3 +12,4 @@
 | 2026-11-20 | plan | G3 coverage | pass | 2 batches, modify paths exist, REQ lists consistent |
 | 2026-11-20 | dev | G4 cool-slate-palette | pass | Builds green; 5 text tones darkened to reach 4.5:1 (REQ-14); separate pill and track tokens keep Dark unchanged |
 | 2026-11-20 | dev | G4 cool-slate-palette | decided | Windows 11 Light keeps its Interrupt text #b32912 on the new amber fill, per the Q1 rule; human to review |
+| 2026-11-20 | dev | G5 cool-slate-palette | pass | Re-run green (20 unit, 81 e2e); old thresholds (hue gap, slate saturation, accent 3:1 on surface 3) aligned to the binding palette |
