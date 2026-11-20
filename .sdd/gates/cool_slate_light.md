@@ -23,3 +23,5 @@
 | 2026-11-20 | dev | question developer | decided | Resume heading band: Dialog frame glass moved to a pseudo-element (option c), scoped to the Dialog frame |
 | 2026-11-20 | dev | question developer | decided | Warning banner white fill takes the Light inner tint; amber border and icon stay |
 | 2026-11-20 | dev | G4 light-terminal fix | pass | Build green; Light inner tint; Dialog frame glass on ::before, fade on layer and content; heading = frame at rest in all themes |
+| 2026-11-20 | dev | fix light-terminal | human decision | Human: FolderChooser RECENT (cards) and FOLDERS (plain rows) must be normalised; FOLDERS rows take the ListStyles card, every theme |
+| 2026-11-20 | dev | G4 light-terminal fix | pass | Build green; FOLDERS rows on .list-card, identical to RECENT in Light and Dark |

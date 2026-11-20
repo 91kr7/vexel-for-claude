@@ -4321,7 +4321,7 @@ button.dialog-row {
   font-weight: 600;
 }
 
-.dialog-rows:has(> .list-card, > .past-session-row) {
+.dialog-rows:has(> .list-card, > li > .list-card, > .past-session-row) {
   gap: 6px;
 }
 
