@@ -60,6 +60,10 @@
   --term-match-current-bg: #92400e;
   --term-match-current-border: #fcd34d;
   --term-frame: var(--role-border-strong);
+  /* Tool output block of external sessions. */
+  --tool-output-bg: var(--role-canvas);
+  --tool-output-text: var(--text-secondary);
+  --tool-output-line: var(--role-border-subtle);
   --color-error: var(--rose-400);
   --color-focus-ring: var(--accent-primary);
   --color-backdrop: rgba(0, 0, 0, 0.65);
@@ -215,6 +219,35 @@
 
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
   --shadow-card-active: 0 2px 8px rgba(37, 99, 235, 0.1);
+
+  /* Terminal palette (table B). Search highlights take the warning tones; they stay in #RRGGBB form. */
+  --term-bg: #ffffff;
+  --term-fg: #1e293b;
+  --term-cursor: #2563eb;
+  --term-selection: rgba(37, 99, 235, 0.2);
+  --term-match-bg: #fef3c7;
+  --term-match-current-bg: #fcd34d;
+  --term-match-current-border: #b45309;
+  /* ANSI colours, set only here: the other themes keep the xterm.js defaults. */
+  --term-ansi-black: #0f172a;
+  --term-ansi-red: #b91c1c;
+  --term-ansi-green: #15803d;
+  --term-ansi-yellow: #b45309;
+  --term-ansi-blue: #1d4ed8;
+  --term-ansi-magenta: #a21caf;
+  --term-ansi-cyan: #0e7490;
+  --term-ansi-white: #475569;
+  --term-ansi-bright-black: #64748b;
+  --term-ansi-bright-red: #dc2626;
+  --term-ansi-bright-green: #047857;
+  --term-ansi-bright-yellow: #a16207;
+  --term-ansi-bright-blue: #2563eb;
+  --term-ansi-bright-magenta: #c026d3;
+  --term-ansi-bright-cyan: #0f766e;
+  --term-ansi-bright-white: #5c6a7f;
+  --tool-output-bg: #ffffff;
+  --tool-output-text: #1e293b;
+  --tool-output-line: rgba(15, 23, 42, 0.1);
 }
 
 /* Dark Blue: colours of .sdd/mockups/dark_blue_theme/mock.html. */

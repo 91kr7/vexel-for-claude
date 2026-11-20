@@ -46,10 +46,12 @@ type: configuration
   - `--color-error` → `--rose-400`
   - `--color-focus-ring` → `--accent-primary`
   - `--color-backdrop` → black at 65 %
-- Terminal tokens, the same in Dark and Light (this batch leaves them as they are): `--term-bg` `#0b0b0e`, `--term-fg` `#f3f2ee`, `--term-cursor` `#8ccfff`, `--term-selection` `rgba(140, 207, 255, 0.3)`, `--term-frame` (frame border) → `--role-border-strong`.
+- Terminal tokens: `--term-bg` `#0b0b0e`, `--term-fg` `#f3f2ee`, `--term-cursor` `#8ccfff`, `--term-selection` `rgba(140, 207, 255, 0.3)`, `--term-frame` (frame border) → `--role-border-strong`.
+- No ANSI token (`--term-ansi-*`) is set: the terminal keeps the xterm.js ANSI defaults.
+- Tool output block of external sessions: `--tool-output-bg` → `--role-canvas`, `--tool-output-text` → `--text-secondary`, `--tool-output-line` (its top line) → `--role-border-subtle`.
 - Theme preview tokens, the same in every set, so each preview card of ThemeSection shows its own theme: `--preview-dark-canvas` `#0b0b0e`, `--preview-dark-surface` `#21212b`, `--preview-dark-line` `#f3f2ee`, `--preview-dark-accent` `#8ccfff`; `--preview-light-canvas` `#f3f5f8`, `--preview-light-surface` `#ffffff`, `--preview-light-line` `#0f172a`, `--preview-light-accent` `#2563eb`; `--preview-dark-blue-canvas` `#12151e`, `--preview-dark-blue-surface` `#212736`, `--preview-dark-blue-line` `#f1f5f9`, `--preview-dark-blue-accent` `#38bdf8`.
 - Window button tokens, the same in both sets: `--window-close` `#e0443c`, `--window-minimize` `#e8b616`, `--window-maximize` `#25b033`, `--window-symbol` black at 60 %.
-- Terminal search tokens, the same in both sets, in `#RRGGBB` form: `--term-match-bg` `#713f12` (a match), `--term-match-current-bg` `#92400e` and `--term-match-current-border` `#fcd34d` (the current match).
+- Terminal search tokens, in `#RRGGBB` form: `--term-match-bg` `#713f12` (a match), `--term-match-current-bg` `#92400e` and `--term-match-current-border` `#fcd34d` (the current match).
 - Other groups, the same in both sets: `--font-ui` (Roboto Flex), `--font-mono` (Roboto Mono), `--focus-ring-width` and `--focus-ring-offset` (2 px), and the Tailwind shadows `--shadow-sm`, `--shadow`, `--shadow-lg`, `--shadow-2xl`.
 
 ### Role tokens
@@ -145,7 +147,23 @@ type: configuration
 - Scrollbars: `--scrollbar-thumb` `rgba(100, 116, 139, 0.28)`, `--scrollbar-thumb-hover` `rgba(100, 116, 139, 0.45)`.
 - Shadows: `--shadow-card` `0 1px 2px rgba(15, 23, 42, 0.05)`, `--shadow-card-active` `0 2px 8px rgba(37, 99, 235, 0.1)`.
 - Repository colours: `--repo-color-1` to `-6` → `#0369a1`, `#047857`, `#9a6700`, `#e11d48`, `#4d7c0f`, `#1d4ed8`.
-- `--color-backdrop`, `--shadow-frame`, the Tailwind shadows, the fonts, `--term-size` and the terminal tokens keep the dark values.
+- Terminal, table B of `plan-cool_slate_light`: `--term-bg` `#ffffff`, `--term-fg` `#1e293b`, `--term-cursor` `#2563eb`, `--term-selection` `#2563eb` at 20 %. `--term-frame` follows `--role-border-strong`, `#0f172a` at 14 %.
+- Terminal search, warning tones of table A: `--term-match-bg` `#fef3c7`, `--term-match-current-bg` `#fcd34d`, `--term-match-current-border` `#b45309`.
+- ANSI tokens, set only in Light:
+
+| Colour | Token | Value | Bright token | Value |
+|--------|-------|-------|--------------|-------|
+| black | `--term-ansi-black` | `#0f172a` (strong text) | `--term-ansi-bright-black` | `#64748b` (muted text) |
+| red | `--term-ansi-red` | `#b91c1c` | `--term-ansi-bright-red` | `#dc2626` |
+| green | `--term-ansi-green` | `#15803d` | `--term-ansi-bright-green` | `#047857` |
+| yellow | `--term-ansi-yellow` | `#b45309` | `--term-ansi-bright-yellow` | `#a16207` |
+| blue | `--term-ansi-blue` | `#1d4ed8` (blue, links) | `--term-ansi-bright-blue` | `#2563eb` |
+| magenta | `--term-ansi-magenta` | `#a21caf` | `--term-ansi-bright-magenta` | `#c026d3` |
+| cyan | `--term-ansi-cyan` | `#0e7490` | `--term-ansi-bright-cyan` | `#0f766e` |
+| white | `--term-ansi-white` | `#475569` (mid-grey) | `--term-ansi-bright-white` | `#5c6a7f` (mid-grey) |
+
+- Tool output block: `--tool-output-bg` `#ffffff`, `--tool-output-text` `#1e293b`, `--tool-output-line` `#0f172a` at 10 % (the divider of table B).
+- `--color-backdrop`, `--shadow-frame`, the Tailwind shadows, the fonts and `--term-size` keep the dark values.
 
 ### Dark Blue set
 
@@ -175,7 +193,7 @@ type: configuration
 | `--on-accent` | `#090d16`, the mock's text on the accent badge |
 
 - Status: emerald, amber and rose keep the dark set values (the mock's Tailwind tones). Ended and waiting take the mock's slate: `--zinc-400` `#94a3b8`, `--zinc-500` `#64748b`, `--zinc-500-15/30` at 15 % / 30 %.
-- Terminal: `--term-bg` `#11141c`, `--term-frame` `#333b4f`. The focus border and ring of the frame are the role accent at 75 % and 22 %, the mock's values. `--term-fg`, `--term-cursor`, `--term-selection` and the search tokens keep the dark values.
+- Terminal: `--term-bg` `#11141c`, `--term-frame` `#333b4f`. The focus border and ring of the frame are the role accent at 75 % and 22 %, the mock's values. `--term-fg`, `--term-cursor`, `--term-selection`, the search tokens and the tool output tokens keep the dark values. No ANSI token is set.
 - Native parts: `--scrollbar-thumb` `#2e3546`, `--scrollbar-thumb-hover` `#434e66`, `--field-bg` → `--role-raised`, `--field-border` `#3b445c`, `--field-focus-ring` accent at 25 % (the mock's prompt box).
 - Any other token keeps the dark set value.
 
@@ -197,9 +215,12 @@ type: configuration
 - `--orange-400` reaches 4.5:1 on surface 1 and on the `--orange-500-15` and `--orange-500-25` tints over it. Dark: about 8.3, 6.7 and 5.6:1. Light: about 5.3, 5.1 and 4.52:1.
 - Dark and Dark Blue: `--orange-400` keeps its OKLCH hue apart from `--amber-400` and `--rose-400` of the same set (Dark: 56 against 84 and 13).
 - Light: every `--orange-*` token equals the `--amber-*` token of the same use: "Interrupt" takes the warning colours.
-- The terminal tokens are the same in Dark and Light. Only Dark Blue has its own `--term-bg` and `--term-frame`; the ANSI palette is the same in every theme.
+- Dark and Dark Blue: no ANSI token is set, so the ANSI palette is the xterm.js default. Only Dark Blue has its own `--term-bg` and `--term-frame`.
+- Light: every ANSI token reaches 4.5:1 on `--term-bg` (lowest: bright magenta, about 4.7:1). `--term-fg` reaches 4.5:1 on `--term-selection` over `--term-bg` (about 11:1).
+- Light: `--term-fg` reaches 4.5:1 on `--term-match-bg` (about 13:1) and on `--term-match-current-bg` (about 10:1). `--term-match-current-border` reaches 3:1 on `--term-bg` (about 5.0:1).
+- Light: `--tool-output-text` reaches 4.5:1 on `--tool-output-bg` (about 14.6:1).
 - `--window-symbol` over each window button colour reaches 3:1 (about 3.16:1 on the red, the lowest). 52 % would give 2.72:1.
-- `--term-fg` reaches 4.5:1 on `--term-match-bg` (about 7.7:1) and on `--term-match-current-bg` (about 6.3:1). `--term-match-current-border` reaches 3:1 on `--term-bg` (about 13.6:1).
+- Dark and Dark Blue: `--term-fg` reaches 4.5:1 on `--term-match-bg` (about 7.7:1) and on `--term-match-current-bg` (about 6.3:1). `--term-match-current-border` reaches 3:1 on `--term-bg` (about 13.6:1).
 - `--font-ui` and `--font-mono` load the BundledFont files.
 - In Dark a role token never has a value of its own: it always equals its level. In Dark Blue only `--role-list` and `--role-raised` have their own value. In Light only `--role-rail`, `--role-hover`, `--role-card-active`, `--role-pill`, `--role-track` and the three context pill tokens have their own value.
 - Dark and Dark Blue: `--role-rail`, `--role-hover`, `--role-pill`, `--role-track`, the context pill tokens, `--emerald-dot`, `--zinc-dot` and `--shadow-card-active` equal the level or token they replace, so these themes look as before.
@@ -225,3 +246,4 @@ type: configuration
 - `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-3`, `plan-popup_glass/REQ-4`, `plan-popup_glass/REQ-6`
 - `plan-cool_slate_light/REQ-1`, `plan-cool_slate_light/REQ-2`, `plan-cool_slate_light/REQ-3`, `plan-cool_slate_light/REQ-4`, `plan-cool_slate_light/REQ-5`, `plan-cool_slate_light/REQ-6`, `plan-cool_slate_light/REQ-7`
 - `plan-cool_slate_light/REQ-8`, `plan-cool_slate_light/REQ-10`, `plan-cool_slate_light/REQ-11`, `plan-cool_slate_light/REQ-13`, `plan-cool_slate_light/REQ-14`, `plan-cool_slate_light/REQ-15`, `plan-cool_slate_light/REQ-16`
+- `plan-cool_slate_light/REQ-17` to `plan-cool_slate_light/REQ-22`, `plan-cool_slate_light/REQ-24`

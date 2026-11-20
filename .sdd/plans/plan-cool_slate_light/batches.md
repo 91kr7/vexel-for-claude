@@ -10,7 +10,7 @@ status: validated
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
 | cool-slate-palette | Cool Slate palette | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-12, REQ-15, REQ-16 | — | certified | The Light theme shows the Cool Slate colours |
-| light-terminal | Light terminal | REQ-11, REQ-13, REQ-14, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25 | cool-slate-palette | in progress | The hosted terminal turns light |
+| light-terminal | Light terminal | REQ-11, REQ-13, REQ-14, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25 | cool-slate-palette | implemented | The hosted terminal turns light |
 
 Execution order: cool-slate-palette, then light-terminal. Both change `src/web/theme/tokens.css`. The terminal frame and the external view also use the role tokens of the first batch.
 

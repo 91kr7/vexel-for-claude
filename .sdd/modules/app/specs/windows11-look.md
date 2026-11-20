@@ -62,7 +62,7 @@ type: configuration
 
 - With any other `data-look`, or none, nothing here applies: the current look stays exactly as it is.
 - The look does not depend on the theme: each theme has its own token set, and a theme change keeps the look.
-- `--font-mono` and the terminal tokens do not change: the terminal panel stays dark in both looks.
+- `--font-mono` and the terminal tokens do not change: the terminal panel keeps the colours of the active theme in both looks.
 - No font file is bundled. Where Segoe UI is not installed (Linux by default), the next font of the list shows.
 - The app reads no Windows accent colour and no wallpaper.
 - Contrast (WCAG 2.2 AA), in Dark and Light:

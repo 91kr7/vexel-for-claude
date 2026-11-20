@@ -3114,9 +3114,9 @@ input {
 .tool-card-output {
   margin: 0;
   padding: 8px 12px;
-  border-top: 1px solid var(--role-border-subtle);
-  background-color: var(--role-canvas);
-  color: var(--text-secondary);
+  border-top: 1px solid var(--tool-output-line);
+  background-color: var(--tool-output-bg);
+  color: var(--tool-output-text);
   font-family: var(--font-mono);
   font-size: var(--term-size);
   line-height: 1.625;

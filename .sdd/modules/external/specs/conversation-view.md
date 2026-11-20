@@ -56,7 +56,7 @@ Tool cards (look of the tool card built by `selectSession()`):
   - the outcome, 8 px after, mono 10 px: no result yet → "▾" alone in `--text-muted`; result with `isError` → "Error ▾" in rose-400; any other result → "Completed ▾" in emerald-400. "▾" is decorative.
 - no tool icon.
 - closed (default) → "▾" turned to point right, nothing below the row.
-- open → "▾" points down. Below the row, one block on `--bg-canvas` with a 1 px `--border-subtle` line on top, padding 8 × 12 px, mono 12 px (`--term-size`), line height 1.625, `--text-secondary`. It holds, in this order, separated by an empty line:
+- open → "▾" points down. Below the row, one block on `--tool-output-bg` with a 1 px `--tool-output-line` line on top, padding 8 × 12 px, mono 12 px (`--term-size`), line height 1.625, `--tool-output-text`. In Light that is white, dark slate text and a thin grey line; in the other themes the canvas, secondary text and the subtle border. It holds, in this order, separated by an empty line:
   - the full input, when the call has `moreInput`. It comes from ItemContentRoute.
   - the output: the full text from ItemContentRoute when the result is `truncated`; otherwise its text. Before the full text is loaded, the cut text and a last line "…".
 - an open card with nothing to show in the block shows no block.
@@ -113,3 +113,4 @@ Scrolling:
 - `plan-wsl_support/REQ-11`, `plan-wsl_support/REQ-13`
 - `plan-dark_blue_theme/REQ-3`
 - `plan-ui_transitions/REQ-6`
+- `plan-cool_slate_light/REQ-21`, `plan-cool_slate_light/REQ-22`
