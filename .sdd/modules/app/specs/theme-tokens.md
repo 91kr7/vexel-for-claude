@@ -45,7 +45,7 @@ type: configuration
 - Names kept because components read them:
   - `--color-error` → `--rose-400`
   - `--color-focus-ring` → `--accent-primary`
-  - `--color-backdrop` → black at 65 %
+  - `--color-backdrop` → black at 65 % (dark set and Dark Blue)
 - Terminal tokens: `--term-bg` `#0b0b0e`, `--term-fg` `#f3f2ee`, `--term-cursor` `#8ccfff`, `--term-selection` `rgba(140, 207, 255, 0.3)`, `--term-frame` (frame border) → `--role-border-strong`.
 - No ANSI token (`--term-ansi-*`) is set: the terminal keeps the xterm.js ANSI defaults.
 - Tool output block of external sessions: `--tool-output-bg` → `--role-canvas`, `--tool-output-text` → `--text-secondary`, `--tool-output-line` (its top line) → `--role-border-subtle`.
@@ -163,7 +163,8 @@ type: configuration
 | white | `--term-ansi-white` | `#475569` (mid-grey) | `--term-ansi-bright-white` | `#5c6a7f` (mid-grey) |
 
 - Tool output block: `--tool-output-bg` `#ffffff`, `--tool-output-text` `#1e293b`, `--tool-output-line` `#0f172a` at 10 % (the divider of table B).
-- `--color-backdrop`, `--shadow-frame`, the Tailwind shadows, the fonts and `--term-size` keep the dark values.
+- `--color-backdrop` → `#0f172a` at 20 %: the lightest slate dim that still sets a dialog apart from the page. Over it the 60 % popup glass composites to a light surface (about `#e8e9ec` on the canvas), not grey (Gatekeeper decision, 2026-11-20, on the human's request).
+- `--shadow-frame`, the Tailwind shadows, the fonts and `--term-size` keep the dark values.
 
 ### Dark Blue set
 

@@ -25,7 +25,7 @@ Props:
 - `accent` → `error` (default) or `attn`. The colour of a `warning` tone. No effect on the `default` tone.
 
 Shows (sizes in px):
-- the backdrop → the whole page, black at 65 % (`--color-backdrop`), no blur, padding 16. The frame sits centred in it.
+- the backdrop → the whole page, dimmed by `--color-backdrop` (black at 65 %; in Light a slate tint, `#0f172a` at 20 %), no blur, padding 16. In Light the light dim keeps the 60 % frame a light surface close to the page canvas, not grey (Gatekeeper decision, 2026-11-20, on the human's request). The frame sits centred in it.
 - the frame → `.vx-popup-glass` (the raised surface at 60 %, the page behind it blurred by 8) with a 1 `--role-border-strong` border, `--radius-frame`, top line and `--shadow-frame`, full width up to 448, as tall as the backdrop allows. No icon.
 - the header → no fill of its own (the frame glass shows), padding 12 × 16, 1 `--role-border-subtle` line below. From the left: an 8 accent dot (decorative), the title (14/20, weight 600), and on the right the button "[Esc]" (mono 12/16, `--text-muted`, `--text-primary` on hover).
 - the body → padding 16, items 14 apart, text 12/16. The description first, in `--text-secondary`; bold parts in `--text-primary`.
@@ -85,3 +85,4 @@ Focus:
 - `plan-dark_blue_theme/REQ-3`
 - `plan-ui_transitions/REQ-1`, `plan-ui_transitions/REQ-2`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-27`
 - `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-5`, `plan-popup_glass/REQ-8`, `plan-popup_glass/REQ-9`, `plan-popup_glass/REQ-10`, `plan-popup_glass/REQ-11`, `plan-popup_glass/REQ-12`, `plan-popup_glass/REQ-13`
+- `plan-cool_slate_light/REQ-1`, `plan-cool_slate_light/REQ-11`

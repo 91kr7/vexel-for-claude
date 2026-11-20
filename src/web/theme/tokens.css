@@ -219,6 +219,8 @@
 
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
   --shadow-card-active: 0 2px 8px rgba(37, 99, 235, 0.1);
+  /* A light slate dim, so the 60 % popup glass still reads as a light surface. */
+  --color-backdrop: rgba(15, 23, 42, 0.2);
 
   /* Terminal palette (table B). Search highlights take the warning tones; they stay in #RRGGBB form. */
   --term-bg: #ffffff;

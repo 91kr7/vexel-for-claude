@@ -3481,7 +3481,8 @@ input {
   top: 0;
   z-index: 1;
   padding-bottom: 4px;
-  background-color: var(--role-raised);
+  background-color: var(--popup-glass-bg);
+  backdrop-filter: blur(var(--popup-glass-blur));
   direction: rtl;
   text-align: left;
   white-space: nowrap;

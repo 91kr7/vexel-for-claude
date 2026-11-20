@@ -15,3 +15,6 @@
 | 2026-11-20 | dev | G5 cool-slate-palette | pass | Re-run green (20 unit, 81 e2e); old thresholds (hue gap, slate saturation, accent 3:1 on surface 3) aligned to the binding palette |
 | 2026-11-20 | dev | G4 light-terminal | pass | Build green; INT-7 in styles.css (allowed by batch notes); search colours re-read on theme change |
 | 2026-11-20 | dev | G4 light-terminal | decided | REQ-19 "slate family": red, magenta, cyan keep their hue at >= 4.5:1; only white and bright white are slate grey |
+| 2026-11-20 | dev | G5 light-terminal | human decision | Human stopped the tests: Light popups grey (60% glass over 65% black backdrop) with solid white content |
+| 2026-11-20 | dev | fix light-terminal | decided | Light-only backdrop light slate dim; solid bands inside popups go transparent; frame keeps 60% glass and 8px blur |
+| 2026-11-20 | dev | G4 light-terminal fix | pass | Build green; Light backdrop rgba(15,23,42,0.2); Resume folder headings on popup glass (sticky, so not transparent) |
