@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Spinner } from '../feedback/ProgressIndicator';
 import { useLeaving } from '../motion/ExitPresence';
 import { TriangleAlertIcon } from '../icons/Icons';
@@ -121,7 +122,7 @@ export function Dialog({
     </p>
   );
 
-  return (
+  const dialog = (
     <div
       className={['modal-backdrop', warning ? 'warning-backdrop' : '', leaving ? 'is-leaving' : ''].filter(Boolean).join(' ')}
       aria-hidden={leaving || undefined}
@@ -131,7 +132,7 @@ export function Dialog({
     >
       <div
         ref={frameRef}
-        className={['modal vx-surface-2', warning ? `dialog-warning dialog-${accent}` : '', className ?? ''].filter(Boolean).join(' ')}
+        className={['modal vx-surface-2 vx-popup-glass', warning ? `dialog-warning dialog-${accent}` : '', className ?? ''].filter(Boolean).join(' ')}
         role={warning ? 'alertdialog' : 'dialog'}
         aria-modal={leaving ? undefined : true}
         aria-labelledby={titleId}
@@ -181,4 +182,7 @@ export function Dialog({
       </div>
     </div>
   );
+
+  // Mounted on the body: no style or containing block of the caller reaches the frame. No document → inline (static render).
+  return typeof document === 'undefined' ? dialog : createPortal(dialog, document.body);
 }

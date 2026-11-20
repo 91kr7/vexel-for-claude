@@ -117,14 +117,26 @@ async function levels(page: Page) {
   return Object.fromEntries(names.map((n, i) => [n, values[i] as string])) as Record<string, string>;
 }
 
-/** A frame or floating panel: 8 px corners, 1 px strong border, frame shadow, raised surface. */
+/** The channels of a computed colour: `rgb()`, `rgba()` or `color(srgb …)`, on a 0-255 scale, alpha 0-1. */
+function channels(colour: string): number[] {
+  const rgb = colour.match(/^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)$/);
+  if (rgb) return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3]), rgb[4] === undefined ? 1 : Number(rgb[4])];
+  const srgb = colour.match(/^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)(?: \/ ([\d.]+))?\)$/);
+  if (srgb) return [Number(srgb[1]) * 255, Number(srgb[2]) * 255, Number(srgb[3]) * 255, srgb[4] === undefined ? 1 : Number(srgb[4])];
+  throw new Error(`unknown colour ${colour}`);
+}
+
+/** A frame or floating panel: 8 px corners, 1 px strong border, frame shadow, popup glass (raised surface at 60 %, plan-popup_glass/REQ-1). */
 async function expectFrame(page: Page, locator: Locator, what: string): Promise<void> {
   const level = await levels(page);
   const s = await shapeOf(locator);
   expect(s.radius, `${what}: radius`).toBe('8px');
   expect([s.borderWidth, s.borderColour], `${what}: border`).toEqual(['1px', level['--border-strong']]);
   expect(s.shadow, `${what}: frame shadow`).toContain(FRAME_SHADOW);
-  expect(s.background, `${what}: raised surface`).toBe(level['--bg-surface-2']);
+  const [r, g, b, a] = channels(level['--bg-surface-2']!);
+  const glass = [r!, g!, b!, a! * 0.6];
+  const got = channels(s.background);
+  for (let i = 0; i < 4; i++) expect(Math.abs(got[i]! - glass[i]!), `${what}: popup glass ${s.background}`).toBeLessThanOrEqual(i < 3 ? 1 : 0.01);
 }
 
 // plan-dark_blue_theme/REQ-2 (started here), REQ-3: the role tokens of ThemeTokens point to the levels of the active set.

@@ -30,7 +30,7 @@ function TokensChip({ tokens }: { tokens: TokenTotals }) {
   return (
     <span className="mono-chip vx-surface-2 session-figure-tokens" tabIndex={0} aria-describedby={tooltipId}>
       {`${shortTokens(total)} tokens`}
-      <span className="session-figure-tokens-tooltip" id={tooltipId} role="tooltip">
+      <span className="session-figure-tokens-tooltip vx-popup-glass" id={tooltipId} role="tooltip">
         {TOKEN_PARTS.map(([label, part]) => (
           <span className="session-figure-tokens-part" key={part}>
             <span className="session-figure-label">{label}</span>

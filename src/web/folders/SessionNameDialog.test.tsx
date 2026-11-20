@@ -37,10 +37,12 @@ function mount() {
   const root = createRoot(host);
   roots.push(root);
   flushSync(() => root.render(<SessionNameDialog project={project} onStarted={onStarted} onCancel={onCancel} />));
-  const dialog = host.querySelector<HTMLElement>('[role="dialog"]')!;
-  const field = [...host.querySelectorAll('label')].find((label) => label.textContent?.includes('Session name'))?.querySelector('input') as HTMLInputElement;
-  const button = (name: string) => [...host.querySelectorAll('button')].find((b) => b.textContent?.trim() === name) as HTMLButtonElement;
-  return { host, dialog, field, button, onStarted, onCancel };
+  // The Dialog mounts at the end of the page body, not in the render container (Dialog spec, "Mount").
+  const page = document.body;
+  const dialog = page.querySelector<HTMLElement>('[role="dialog"]')!;
+  const field = [...page.querySelectorAll('label')].find((label) => label.textContent?.includes('Session name'))?.querySelector('input') as HTMLInputElement;
+  const button = (name: string) => [...page.querySelectorAll('button')].find((b) => b.textContent?.trim() === name) as HTMLButtonElement;
+  return { host: page, dialog, field, button, onStarted, onCancel };
 }
 
 function type(field: HTMLInputElement, value: string) {

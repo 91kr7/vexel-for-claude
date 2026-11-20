@@ -39,7 +39,7 @@ export function TerminalSearchBox({ query, results, inputRef, onQueryChange, onN
   };
 
   return (
-    <div className="terminal-search" role="search" aria-label="Terminal search" onKeyDown={onBoxKeyDown}>
+    <div className="terminal-search vx-popup-glass" role="search" aria-label="Terminal search" onKeyDown={onBoxKeyDown}>
       <SearchIcon />
       <input
         ref={inputRef}

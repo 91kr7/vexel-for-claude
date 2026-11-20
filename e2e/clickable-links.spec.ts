@@ -109,8 +109,10 @@ async function leaveLinks(page: Page): Promise<void> {
 }
 
 function luminance(colour: string): number {
+  // `color(srgb …)`, the form of a `color-mix()` such as the popup glass, has channels from 0 to 1.
+  const scale = colour.startsWith('color(srgb') ? 1 : 255;
   const [r, g, b] = (colour.match(/[\d.]+/g) ?? []).slice(0, 3).map((value) => {
-    const channel = Number(value) / 255;
+    const channel = Number(value) / scale;
     return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
   });
   return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;

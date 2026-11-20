@@ -36,7 +36,7 @@ Shows:
 - `[Session disconnected]` in the terminal when the connection closes.
 - links in the terminal → the web addresses of WebAddressLinks and the terminal hyperlinks (OSC 8) with an `http` or `https` address. An OSC 8 hyperlink with another scheme is not a link.
   - pointer over a link → the link is underlined in its own text colour and the pointer is a hand.
-  - pointer over a hyperlink whose visible text on that row differs from its address → a tooltip (`role="tooltip"`) 12 px right of and below the pointer shows the full address, kept 12 px inside the window's left and right edges. Mono 11 px, `--text-primary` on `--bg-surface-3` with a `--border-strong` border, at most 480 px wide, long addresses break. It does not take the pointer. It hides when the pointer leaves the link and when the session changes.
+  - pointer over a hyperlink whose visible text on that row differs from its address → a tooltip (`role="tooltip"`) 12 px right of and below the pointer shows the full address, kept 12 px inside the window's left and right edges. Mono 11 px, `--text-primary` on the popup glass (`.vx-popup-glass` of WebEntry, module app) with a `--border-strong` border, at most 480 px wide, long addresses break. It does not take the pointer. It hides when the pointer leaves the link and when the session changes.
 - the connection closes, between the header and the panel → an ErrorMessage on surface 1:
   - code `1000` (the session process ended) → no message. The header shows "Ended".
   - code `4404` → "The session no longer exists."
@@ -129,3 +129,4 @@ Actions:
 - `plan-dark_blue_theme/REQ-31`, `plan-dark_blue_theme/REQ-38`
 - `plan-ui_transitions/REQ-6`, `plan-ui_transitions/REQ-11`, `plan-ui_transitions/REQ-12`, `plan-ui_transitions/REQ-13`, `plan-ui_transitions/REQ-28`, `plan-ui_transitions/REQ-33`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-26`, `plan-dark_blue_theme/REQ-27`, `plan-dark_blue_theme/REQ-28`, `plan-dark_blue_theme/REQ-29`
+- `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-6`

@@ -112,6 +112,10 @@
   --role-accent-glow: var(--accent-glow);
   --role-accent-border: var(--accent-border);
 
+  /* Popup glass: the raised surface of the active set at 60 %, so every theme and look follows. */
+  --popup-glass-bg: color-mix(in srgb, var(--role-raised) 60%, transparent);
+  --popup-glass-blur: 8px;
+
   --scrollbar-thumb: var(--border-strong);
   --scrollbar-thumb-hover: var(--scrollbar-thumb);
   --field-bg: var(--role-canvas);

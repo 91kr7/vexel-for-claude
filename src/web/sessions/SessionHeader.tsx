@@ -22,7 +22,7 @@ function LineChip({ text }: { text: string }) {
     >
       <span className="session-header-subtitle-text">{text}</span>
       {open && (
-        <span className="session-header-subtitle-tooltip" id={tooltipId} role="tooltip">
+        <span className="session-header-subtitle-tooltip vx-popup-glass" id={tooltipId} role="tooltip">
           {text}
         </span>
       )}

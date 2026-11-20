@@ -472,7 +472,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
         </ExitPresence>
       </div>
       {linkTooltip && (
-        <div className="terminal-link-tooltip" role="tooltip" style={{ left: linkTooltip.left, top: linkTooltip.top }}>
+        <div className="terminal-link-tooltip vx-popup-glass" role="tooltip" style={{ left: linkTooltip.left, top: linkTooltip.top }}>
           {linkTooltip.address}
         </div>
       )}
