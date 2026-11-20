@@ -9,3 +9,4 @@
 | 2026-11-20 | plan | G2 requirements | sent back | REQ-6 not yes/no verifiable |
 | 2026-11-20 | plan | G2 requirements | pass | REQ-6 rewritten yes/no |
 | 2026-11-20 | plan | G3 coverage | pass | 2 batches, all modify paths exist; "N new messages" button kept out as a button, not a popup |
+| 2026-11-20 | dev | G4 glass-popups | pass | Build green; SettingsButton.tsx justified by INT-7; backdrop fades its colour, not opacity (blur visible during open); vx-surface-2 kept for the border |

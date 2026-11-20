@@ -27,7 +27,7 @@ Shows, top to bottom:
 - the button of `shownView` ("Sessions" or "Projects") → the active style. The other one and "Resume" have none. The active style: `aria-current="page"`, `--accent-glow` background, `--accent-primary` icon, 1 px `--accent-border` border, glow `0 0 14px -2px`. A bar 3 px wide on the left edge of the rail, fully rounded on the right, in `--role-accent`, 4 px from the button's top and bottom, with a soft glow `0 0 8px` of the accent at 80 %.
 - the badge on "Sessions" → shown in both views. The number `needsInputCount` in a pill on the top-right corner (4 px out on each side): at least 14 px wide, 14 px high, padding 0 × 3 px, `--amber-400` fill, mono 10 px weight 500 in `--bg-canvas`. Not shown when the number is 0. Hidden from assistive technology.
 - the SettingsButton → at the bottom of the rail, apart from the top group, under the free space. It stays visible at every window height and every list panel width.
-- a tooltip per button → on hover, its name ("New Claude Code Session", "Sessions", "Projects", "Resume", "Settings") 44 px from the button's left edge: `--bg-surface-3`, 1 px `--border-strong`, padding 3 × 8 px, 6 px radius, 11 px weight 500, shadow `0 6px 16px` black at 40 %. It fades in and slides 4 px in 0.12 s. No shortcut, for every button; the SettingsButton is the exception that gets its keys in batch shortcuts-section of `plan-settings_dialog`. Hidden from assistive technology.
+- a tooltip per button → on hover, its name ("New Claude Code Session", "Sessions", "Projects", "Resume", "Settings") 44 px from the button's left edge: the popup glass (`.vx-popup-glass` of WebEntry), 1 px `--border-strong`, padding 3 × 8 px, 6 px radius, 11 px weight 500, shadow `0 6px 16px` black at 40 %. It fades in and slides 4 px in 0.12 s. No shortcut, for every button; the SettingsButton is the exception that gets its keys in batch shortcuts-section of `plan-settings_dialog`. Hidden from assistive technology.
 
 Actions:
 - click on "New Claude Code Session" → `onNewSession()`.
@@ -53,3 +53,4 @@ Actions:
 - `plan-recent_projects/REQ-1`, `plan-recent_projects/REQ-2`, `plan-recent_projects/REQ-11`, `plan-recent_projects/REQ-13`
 - `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-2`, `plan-settings_dialog/REQ-4`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-9`, `plan-dark_blue_theme/REQ-10`, `plan-dark_blue_theme/REQ-11`
+- `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-10`

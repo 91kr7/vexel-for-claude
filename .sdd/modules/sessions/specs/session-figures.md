@@ -19,7 +19,7 @@ Shows, in this order, 10 px apart, each a pill: padding 2 × 10 px, `--radius-pi
   - a fill from the left edge of the pill, under the text, as wide as `percent` % of the pill (kept between 0 and 100). Its colour follows the level: `--role-accent` at `normal`, amber-400 at `warning`, rose-400 at `error`, at 25 % with a 1 px right edge at 45 %. No fill at 0 %. Decorative: hidden from assistive technology.
 - with `usage.tokens` → the tokens chip, in `--text-secondary`: "<total> tokens", e.g. "1.3M tokens". `total` = input + output + cacheWrite + cacheRead, in short form.
   - it is focusable with the keyboard (Tab).
-  - hover or keyboard focus → a tooltip above the chip, aligned to its right edge: four rows "Input", "Output", "Cache write", "Cache read", each with its count in short form. The tooltip is the chip's description (`role="tooltip"`, `aria-describedby`).
+  - hover or keyboard focus → a tooltip above the chip, aligned to its right edge: four rows "Input", "Output", "Cache write", "Cache read", each with its count in short form, on the popup glass (`.vx-popup-glass` of WebEntry, module app). The tooltip is the chip's description (`role="tooltip"`, `aria-describedby`).
   - pointer away and focus elsewhere → no tooltip.
 - with `usage.cost` → the cost chip: the amount `costText(usage.cost.usd)` in `--text-secondary`, with the tooltip (`title`) "Estimated cost at API list prices", the same as the list entry. "<$0.01" below one cent, "—" when there is no `usd`.
   - `usage.cost.incomplete` → the amber-400 word "incomplete" right after the amount. Its tooltip and accessible name: "Incomplete: the price of a model is unknown".
@@ -41,3 +41,4 @@ Shows, in this order, 10 px apart, each a pill: padding 2 × 10 px, `--radius-pi
 - `plan-session_usage/REQ-2`, `plan-session_usage/REQ-8`, `plan-session_usage/REQ-9`, `plan-session_usage/REQ-11`, `plan-session_usage/REQ-13`, `plan-session_usage/REQ-18`
 - `plan-session_usage/REQ-23`, `plan-session_usage/REQ-29`, `plan-session_usage/REQ-30`, `plan-session_usage/REQ-32`, `plan-session_usage/REQ-33`, `plan-session_usage/REQ-34`
 - `plan-dark_blue_theme/REQ-12`, `plan-dark_blue_theme/REQ-13`, `plan-dark_blue_theme/REQ-14`
+- `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`

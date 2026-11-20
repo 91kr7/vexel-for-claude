@@ -9,7 +9,7 @@ export function SettingsButton({ onOpen }: { onOpen: () => void }) {
   return (
     <button type="button" className="vx-rail-btn" aria-label={NAME} aria-haspopup="dialog" onClick={onOpen}>
       <SettingsIcon />
-      <span className="vx-tooltip" aria-hidden="true">
+      <span className="vx-tooltip vx-popup-glass" aria-hidden="true">
         {`${NAME} (${commandKeysText('open-shortcut-settings').join(' / ')})`}
       </span>
     </button>

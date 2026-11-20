@@ -131,7 +131,7 @@ export function Dialog({
     >
       <div
         ref={frameRef}
-        className={['modal vx-surface-2', warning ? `dialog-warning dialog-${accent}` : '', className ?? ''].filter(Boolean).join(' ')}
+        className={['modal vx-surface-2 vx-popup-glass', warning ? `dialog-warning dialog-${accent}` : '', className ?? ''].filter(Boolean).join(' ')}
         role={warning ? 'alertdialog' : 'dialog'}
         aria-modal={leaving ? undefined : true}
         aria-labelledby={titleId}

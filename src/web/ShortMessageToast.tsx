@@ -18,7 +18,7 @@ export function ShortMessageToast({ text }: { text: string | null }) {
   const leaving = useLeaving();
   if (text === null) return null;
   return (
-    <div className={leaving ? 'short-message vx-glass is-leaving' : 'short-message vx-glass'} role="status" aria-hidden={leaving || undefined}>
+    <div className={leaving ? 'short-message vx-surface-2 vx-popup-glass is-leaving' : 'short-message vx-surface-2 vx-popup-glass'} role="status" aria-hidden={leaving || undefined}>
       <span className="short-message-dot" aria-hidden="true" />
       {text}
     </div>

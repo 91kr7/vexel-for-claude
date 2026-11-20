@@ -67,6 +67,9 @@ type: configuration
 | `--role-border-subtle` / `--role-border-strong` | subtle / strong border | `--border-subtle` / `--border-strong` |
 | `--role-accent` / `--role-accent-glow` / `--role-accent-border` | accent | `--accent-primary` / `--accent-glow` / `--accent-border` |
 
+- Popup glass tokens, derived from the role tokens, so every theme and the Windows 11 look follow with no value of their own:
+  - `--popup-glass-bg` → `--role-raised` at 60 % opacity
+  - `--popup-glass-blur` → 8 px
 - Native part tokens of WebEntry: `--scrollbar-thumb` → `--border-strong`, `--scrollbar-thumb-hover` → `--scrollbar-thumb`; `--field-bg` → `--role-canvas`, `--field-border` → `--role-border-strong`, `--field-focus-ring` → `--role-accent`.
 
 ### Shape tokens
@@ -189,3 +192,4 @@ type: configuration
 - `plan-ui_restyle/REQ-5`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-5`
 - `plan-dark_blue_theme/REQ-30`, `plan-dark_blue_theme/REQ-36`, `plan-dark_blue_theme/REQ-37`, `plan-dark_blue_theme/REQ-38`, `plan-dark_blue_theme/REQ-39`, `plan-dark_blue_theme/REQ-40`, `plan-dark_blue_theme/REQ-41`, `plan-dark_blue_theme/REQ-42`
+- `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-3`, `plan-popup_glass/REQ-4`, `plan-popup_glass/REQ-6`

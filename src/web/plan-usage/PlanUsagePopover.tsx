@@ -31,7 +31,7 @@ export function PlanUsagePopover({ state, onClose }: PlanUsagePopoverProps) {
   };
   return (
     <section
-      className={leaving ? 'plan-usage-popover vx-surface-1 is-leaving' : 'plan-usage-popover vx-surface-1'}
+      className={leaving ? 'plan-usage-popover vx-surface-1 vx-popup-glass is-leaving' : 'plan-usage-popover vx-surface-1 vx-popup-glass'}
       role="dialog"
       aria-label="Plan Usage"
       aria-hidden={leaving || undefined}

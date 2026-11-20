@@ -16,7 +16,7 @@ type: UI component
   - `show` while a text shows → the new text replaces it, and the 4 s start again. This also holds for the same text.
 
 Description:
-- `ShortMessageToast({ text })` → nothing when `text` is `null`. Else a `.vx-glass` box with `role="status"`: a decorative 8 px round dot in `--role-accent`, then the text, 8 px apart.
+- `ShortMessageToast({ text })` → nothing when `text` is `null`. Else a box on the popup glass (`.vx-popup-glass` of WebEntry) with `role="status"`: a decorative 8 px round dot in `--role-accent`, then the text, 8 px apart.
 
 Shows:
 - fixed at the bottom right of the window, 20 px from the right and bottom edges, at most the window width minus 40 px.
@@ -43,3 +43,4 @@ Motion (MotionTokens):
 - `plan-keyboard_shortcuts/REQ-9`
 - `plan-dark_blue_theme/REQ-15`
 - `plan-ui_transitions/REQ-3`, `plan-ui_transitions/REQ-4`, `plan-ui_transitions/REQ-28`
+- `plan-popup_glass/REQ-3`, `plan-popup_glass/REQ-10`
