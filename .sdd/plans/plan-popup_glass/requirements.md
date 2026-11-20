@@ -40,6 +40,7 @@ Words used below, as in the spec:
 - **Blur on the surface (REQ-2, REQ-8).** The 8px blur is on the popup surface only. The dialog backdrop stays without blur, by the human's decision of 2026-11-06.
 - **Opacity against readability (REQ-1, REQ-6).** REQ-1 wins: every popup stays at exactly 60%, small tooltips in the light theme included. Readability relies on the 8px blur and on the theme's current text colours. Gatekeeper decision: the 60% is exactly what the human asked for.
 - **How REQ-9 is judged.** In a human acceptance scenario: open, scroll and close the Settings dialog in the desktop app, with no visible stutter compared to today. Gatekeeper decision.
+- **Contrast in the light theme (REQ-1).** Human decision, 2026-11-20: the 60% glass wins over plan-light_theme/REQ-14. Inside popups, text may fall under 4.5:1 in the light theme; REQ-14 is superseded there.
 - **Margins (REQ-11).** The image of the request did not reach the session. "Fix the margins" means: align the termination popup with the spacing of the other dialogs.
 
 ## Constraints on the whole plan

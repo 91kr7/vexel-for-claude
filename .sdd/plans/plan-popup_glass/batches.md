@@ -9,8 +9,8 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| glass-popups | Glass popups | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10 | — | implemented | Popups show the terminal through a blurred, see-through background |
-| termination-margins | Termination popup margins | REQ-11, REQ-12, REQ-13 | — | todo | The termination popup has the same margins as the other dialogs |
+| glass-popups | Glass popups | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10 | — | certified | Popups show the terminal through a blurred, see-through background |
+| termination-margins | Termination popup margins | REQ-11, REQ-12, REQ-13 | — | in progress | The termination popup has the same margins as the other dialogs |
 
 Execution order: glass-popups, then termination-margins. They have no logical dependency, but both change `src/web/dialogs/Dialog.tsx`, so they run one after the other.
 
