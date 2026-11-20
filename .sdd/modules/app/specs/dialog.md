@@ -58,6 +58,7 @@ Focus:
 
 ## Rules and invariants
 
+- Mount → the dialog sits at the end of the page body, wherever the caller renders it. No text, spacing or layout style of the caller reaches it: the header, body and footer spacing above holds in every dialog, nested ones included (e.g. inside Settings), and the backdrop always covers the whole window. Long text wraps inside the body; no text or button crosses the frame border.
 - Stacked dialogs → Esc and Enter act on the dialog that holds the focus, which is the top one. The dialog below stays open.
 - The dialog never submits a page form. It sends no request on its own.
 - The frame blur always reaches the page behind the backdrop, during the open and leave effects too: the backdrop fades its dim, never its opacity.
@@ -83,4 +84,4 @@ Focus:
 - `plan-keyboard_shortcuts/REQ-29`, `plan-keyboard_shortcuts/REQ-30`, `plan-keyboard_shortcuts/REQ-33`
 - `plan-dark_blue_theme/REQ-3`
 - `plan-ui_transitions/REQ-1`, `plan-ui_transitions/REQ-2`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-27`
-- `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-5`, `plan-popup_glass/REQ-8`, `plan-popup_glass/REQ-9`, `plan-popup_glass/REQ-10`
+- `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-5`, `plan-popup_glass/REQ-8`, `plan-popup_glass/REQ-9`, `plan-popup_glass/REQ-10`, `plan-popup_glass/REQ-11`, `plan-popup_glass/REQ-12`, `plan-popup_glass/REQ-13`

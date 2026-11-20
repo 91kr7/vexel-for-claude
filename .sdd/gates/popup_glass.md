@@ -13,3 +13,4 @@
 | 2026-11-20 | dev | G5 glass-popups | escalated | Light theme popup text under 4.5:1 conflicts with plan-light_theme/REQ-14 |
 | 2026-11-20 | dev | G5 glass-popups | human decision | 60% wins; REQ-14 superseded inside popups; light-theme.spec.ts:742 adapted |
 | 2026-11-20 | dev | G5 glass-popups | pass | Batch e2e and unit re-run green (40 e2e, 52 unit) |
+| 2026-11-20 | dev | G4 termination-margins | pass | Build green; Dialog portal to body; session popup already met the contract, the fault was the nested process confirmation (REQ-13) |
