@@ -234,11 +234,13 @@ async function expectStudioFrame(page: Page, frame: Locator, what: string, maxWi
   expect(b.width, `${what} width`).toBeLessThanOrEqual(maxWidth + TOLERANCE);
   near(centreX(b), 720, `${what} horizontal centre`);
   near(b.y, 900 - bottom(b), `${what} vertical centring (space above vs below)`);
-  await expectStyles(
-    frame,
-    { 'border-top-left-radius': '8px', 'background-color': await role(page, '--popup-glass-bg'), 'border-top-color': await role(page, '--border-strong') },
-    `${what} frame`,
-  );
+  await expectStyles(frame, { 'border-top-left-radius': '8px' }, `${what} frame`);
+  // Dialog: the glass and its border are painted on a layer behind the content (WebEntry `.vx-popup-glass`).
+  const glass = await frame.evaluate((el) => {
+    const s = getComputedStyle(el, '::before');
+    return { 'background-color': s.backgroundColor, 'border-top-color': s.borderTopColor, 'border-top-left-radius': s.borderTopLeftRadius };
+  });
+  expect(glass, `${what} frame glass`).toEqual({ 'background-color': await role(page, '--popup-glass-bg'), 'border-top-color': await role(page, '--border-strong'), 'border-top-left-radius': '8px' });
   expect((await styles(frame, ['box-shadow']))['box-shadow'], `${what} frame shadow`).toContain(SHADOW_FRAME);
   return b;
 }
@@ -758,7 +760,8 @@ test.describe('Studio dialogs', () => {
     await expectSectionHeading(page, dialog.getByText('Folders', { exact: true }), false, '"Folders"');
     const parent = action(dialog, '..');
     await expect(parent).toHaveAccessibleDescription(path.dirname(billing));
-    await expectStudioRow(page, parent, '..', path.dirname(billing), { checked: false, radio: false }, '".." entry');
+    // FolderChooser: the "Folders" entries are the same card as the "Recent" rows, never checked.
+    await expectStudioRow(page, parent, '..', path.dirname(billing), { checked: false, radio: false, card: true }, '".." entry');
     const tile = parent.locator(':scope > *').first();
     await expectStyles(tile, { 'background-color': await role(page, '--bg-surface-3'), 'border-top-left-radius': '6px' }, '".." folder tile');
     near((await box(tile.locator('svg'))).width, 14, '".." folder icon width');

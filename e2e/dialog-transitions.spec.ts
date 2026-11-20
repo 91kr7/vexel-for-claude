@@ -14,6 +14,8 @@ interface Snapshot {
   phase: 'open' | 'leave';
   backdrop: Effect[];
   frame: Effect[];
+  // The visible layers of the frame (its glass layer `::before` and each child) and whether each fades from or to 0.
+  layers: { name: string; fadesIn: boolean; fadesOut: boolean }[];
   // The dialog frame is hidden from assistive technologies, and its `aria-modal`.
   hidden: boolean;
   modal: string | null;
@@ -59,10 +61,26 @@ async function watchDialogs(page: Page): Promise<void> {
     const snap = (backdrop: Element, phase: Snapshot['phase']) => {
       getComputedStyle(backdrop).opacity;
       const frame = backdrop.querySelector('[role="dialog"], [role="alertdialog"]');
+      const all = frame?.getAnimations({ subtree: true }) ?? [];
+      const fades = (target: Element, pseudo: string | null, offset: number) =>
+        all.some((animation) => {
+          const effect = animation.effect as KeyframeEffect;
+          return effect.target === target && (effect.pseudoElement ?? null) === pseudo && effect.getKeyframes().some((k) => k.computedOffset === offset && Number(k.opacity) === 0);
+        });
+      // The frame fades as a whole, or through its glass layer and each of its children.
+      const layers = !frame
+        ? []
+        : fades(frame, null, 0) || fades(frame, null, 1)
+          ? [{ name: 'frame', fadesIn: fades(frame, null, 0), fadesOut: fades(frame, null, 1) }]
+          : [
+              ...(getComputedStyle(frame, '::before').content !== 'none' ? [{ name: '::before', fadesIn: fades(frame, '::before', 0), fadesOut: fades(frame, '::before', 1) }] : []),
+              ...[...frame.children].map((child) => ({ name: child.className.toString(), fadesIn: fades(child, null, 0), fadesOut: fades(child, null, 1) })),
+            ];
       store.__motion.push({
         phase,
         backdrop: effects(backdrop),
         frame: effects(frame),
+        layers,
         hidden: frame?.closest('[aria-hidden="true"]') != null,
         modal: frame?.getAttribute('aria-modal') ?? null,
       });
@@ -88,7 +106,6 @@ const snapshots = (page: Page) => page.evaluate(() => (window as unknown as { __
 /** The first number of a `scale(...)` or `matrix(...)` transform. */
 const scaleOf = (transform: string | undefined) => Number(transform?.match(/(?:scale|matrix)\(\s*([\d.]+)/)?.[1] ?? Number.NaN);
 const frameAt = (effects: Effect[], offset: number) => effects.flatMap((effect) => effect.keyframes).filter((frame) => frame.offset === offset);
-const transparentAt = (effects: Effect[], offset: number) => frameAt(effects, offset).some((frame) => Number(frame.opacity) === 0);
 // plan-popup_glass/REQ-2, Dialog "Motion": the backdrop fades its dim, never its opacity, so the frame blur reaches the page.
 const dimClearAt = (effects: Effect[], offset: number) =>
   frameAt(effects, offset).some((frame) => frame.opacity === undefined && /^transparent$|^rgba\(.*, 0\)$/.test(frame.backgroundColor ?? ''));
@@ -101,9 +118,10 @@ const slightZoomAt = (effects: Effect[], offset: number) =>
 /** Checks the opening snapshot: backdrop fades in, frame zooms in slightly from transparent, each within 300 ms. */
 function expectOpening(snapshot: Snapshot | undefined, label: string): void {
   expect(snapshot, `${label}: no opening recorded`).toBeDefined();
-  const { backdrop, frame } = snapshot as Snapshot;
+  const { backdrop, frame, layers } = snapshot as Snapshot;
   expect(dimClearAt(backdrop, 0), `${label}: backdrop dim fades in ${JSON.stringify(backdrop)}`).toBe(true);
-  expect(transparentAt(frame, 0), `${label}: frame starts transparent ${JSON.stringify(frame)}`).toBe(true);
+  expect(layers.length, `${label}: the frame has visible layers`).toBeGreaterThan(0);
+  expect(layers.filter((layer) => !layer.fadesIn), `${label}: every layer of the frame starts transparent`).toEqual([]);
   expect(slightZoomAt(frame, 0), `${label}: frame starts slightly smaller ${JSON.stringify(frame)}`).toBe(true);
   // plan-ui_transitions/REQ-31
   for (const effect of [...backdrop, ...frame]) {
@@ -115,7 +133,8 @@ function expectOpening(snapshot: Snapshot | undefined, label: string): void {
 /** Checks the leaving snapshot: closed at once (hidden, not modal), frame zooms out slightly, backdrop fades out, each within 300 ms. */
 function expectLeaving(snapshot: Snapshot | undefined, label: string): void {
   expect(snapshot, `${label}: no leaving recorded`).toBeDefined();
-  const { backdrop, frame, hidden, modal } = snapshot as Snapshot;
+  const { backdrop, frame, layers, hidden, modal } = snapshot as Snapshot;
+  expect(layers.filter((layer) => !layer.fadesOut), `${label}: every layer of the frame fades out`).toEqual([]);
   expect(hidden, `${label}: closed, no longer exposed from the start of its exit`).toBe(true);
   expect(modal, `${label}: no aria-modal while it leaves`).toBeNull();
   expect(dimClearAt(backdrop, 1), `${label}: backdrop dim fades out ${JSON.stringify(backdrop)}`).toBe(true);

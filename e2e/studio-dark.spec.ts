@@ -838,8 +838,10 @@ test.describe('dialogs', () => {
     await settled(backdrop);
     expect(await style(backdrop, 'background-color')).toBe('rgba(0, 0, 0, 0.65)');
     expect(await style(backdrop, 'backdrop-filter')).toBe('none');
-    expect(await style(dialog, 'background-color')).toBe(await colour(page, 'var(--popup-glass-bg)'));
-    expect(await style(dialog, 'border-top-color')).toBe(BORDER_STRONG);
+    // Dialog: the glass and its border sit on a layer behind the content (WebEntry `.vx-popup-glass`).
+    const glass = (property: string) => dialog.evaluate((el, p) => getComputedStyle(el, '::before').getPropertyValue(p), property);
+    expect(await glass('background-color')).toBe(await colour(page, 'var(--popup-glass-bg)'));
+    expect(await glass('border-top-color')).toBe(BORDER_STRONG);
     expect(await style(dialog, 'border-top-left-radius')).toBe('8px');
     // plan-new_session_popup/REQ-1: the new-session dialog has the width of the Resume popup, at most 672 px.
     expect((await box(dialog)).width).toBeLessThanOrEqual(672 + TOLERANCE);

@@ -128,7 +128,16 @@ async function expectCardCorners(entry: Locator, what: string): Promise<void> {
 /** An entry of a card list at rest, as an inactive session card: 7 px corners, 1 px subtle border, card surface. */
 async function expectRestingCard(page: Page, entry: Locator, what: string): Promise<void> {
   await expectCardCorners(entry, what);
-  await expect.poll(() => style(entry, 'background-color'), { message: `${what}: card surface` }).toBe(await colourOf(page, 'var(--role-card)'));
+  // Read where the entry is: inside a Light popup the card fill is the popup's soft tint (ThemeTokens `--popup-inner-fill`).
+  const card = await entry.evaluate((el) => {
+    const probe = document.createElement('div');
+    probe.style.color = 'var(--role-card)';
+    el.parentElement!.append(probe);
+    const result = getComputedStyle(probe).color;
+    probe.remove();
+    return result;
+  });
+  await expect.poll(() => style(entry, 'background-color'), { message: `${what}: card surface` }).toBe(card);
   await expectBorder(entry, await colourOf(page, 'var(--role-border-subtle)'), what);
   expect(await accentBarOf(entry, await colourOf(page, 'var(--role-accent)')), `${what}: no accent bar`).toBeNull();
 }
@@ -280,7 +289,8 @@ test.describe('card lists', () => {
   }
 
   // plan-dark_blue_theme/REQ-44, REQ-45, REQ-46, REQ-47 — scenario "the Resume dialog shows its sessions as cards", And: the "Recent" folders
-  test('"Recent" folders are cards 6 px apart, the chosen one active; the folder browser rows are dense rows', async ({ page }) => {
+  // FolderChooser (gatekeeper decision, 2026-11-20): the "Folders" rows are the same card as the "Recent" rows.
+  test('"Recent" folders are cards 6 px apart, the chosen one active; the folder browser rows are the same cards', async ({ page }) => {
     await pastConversation('echo');
     await pastConversation('foxtrot');
     await openIn(page);
@@ -309,7 +319,7 @@ test.describe('card lists', () => {
     const parent = chooser.getByRole('button', { name: '..', exact: true });
     await expect(parent).toBeVisible();
     await pointerAway(page);
-    await expectRestingRow(parent, 'folder browser row ".."');
+    await expectRestingCard(page, parent, 'folder browser row ".."');
     await expectHovered(page, parent, 'folder browser row ".."');
   });
 

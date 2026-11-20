@@ -127,6 +127,13 @@ async function openNewSession(page: Page, folder: string): Promise<void> {
 }
 
 /** The height rule of the popups: content height up to 70 % of the window, at least 280 px, at most the backdrop. */
+/**
+ * The frame does not scroll: it is no scroll container and its content fits. The glass layer behind the content sits 1 px
+ * outside the padding box (Dialog), so it may add up to 2 px of overflow.
+ */
+const frameFits = (frame: Locator) =>
+  frame.evaluate((el) => !/auto|scroll/.test(getComputedStyle(el).overflowY) && el.scrollHeight <= el.clientHeight + 2);
+
 const heightCap = (windowHeight: number) => Math.min(Math.max(0.7 * windowHeight, 280), windowHeight - 2 * BACKDROP_PADDING);
 
 /** The nearest scrolling ancestor of the "Folders" area of the New Session popup. */
@@ -181,7 +188,7 @@ for (const viewport of [
     expect(scroller.found, 'the folder lists scroll inside the popup').toBe(true);
     expect(scroller.isFrame, 'the frame itself does not scroll').toBe(false);
     expect(scroller.clientHeight, 'the scrolling area keeps room for one row').toBeGreaterThanOrEqual(56);
-    expect(await newSessionDialog(page).evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
+    expect(await frameFits(newSessionDialog(page))).toBe(true);
     const fixed = [newSessionTitle(page), folderField(page), newSessionCancel(page), startButton(page)];
     const before = await Promise.all(fixed.map(box));
     for (const [i, locator] of fixed.entries()) await expectInViewport(page, locator, `fixed part ${i}`);
@@ -297,7 +304,7 @@ test('with many sessions the popup stops below the window height and only the li
   const scroller = await listScroller(page);
   expect(scroller.found, 'the past sessions sit in a scrolling area').toBe(true);
   expect(scroller.isFrame, 'the frame itself does not scroll').toBe(false);
-  expect(await dialog(page).evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
+  expect(await frameFits(dialog(page))).toBe(true);
 
   const fixed = [title(page), searchBar(page), cancelButton(page), resumeButton(page)];
   const before = await Promise.all(fixed.map(box));

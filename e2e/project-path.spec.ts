@@ -164,16 +164,17 @@ async function expectStickyHeadings(page: Page, folders: { long: string; short: 
 }
 
 // plan-resume_favorites/REQ-20 — scenario "The project path stays visible while the list scrolls"
-test('while the list scrolls, the heading of the first rows in view stays at the top, on an opaque background, and changes at the second group', async ({ page, request }) => {
+// ResumeDialog (gatekeeper decision, 2026-11-20): the heading has no fill, only the popup glass blur over the rows under it.
+test('while the list scrolls, the heading of the first rows in view stays at the top, on the glass blur, and changes at the second group', async ({ page, request }) => {
   await showOnlyOwnSessions(page);
   const folders = await twoProjects(request);
   await page.goto('/');
   await openPopup(page);
   await expect(radios(page)).toHaveCount(4 * 6);
 
-  const background = await groupHeading(page, folders.long).evaluate((h) => getComputedStyle(h).backgroundColor);
-  expect(background, 'the heading has a background').not.toMatch(/^rgba\(0, 0, 0, 0\)$|^transparent$/);
-  expect(background, 'the heading background is opaque').not.toMatch(/^rgba\(/);
+  const heading = await groupHeading(page, folders.long).evaluate((h) => ({ background: getComputedStyle(h).backgroundColor, blur: getComputedStyle(h).backdropFilter }));
+  const blur = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--popup-glass-blur').trim());
+  expect(heading, 'the heading has no fill, only the glass blur').toEqual({ background: 'rgba(0, 0, 0, 0)', blur: `blur(${blur})` });
 
   await expectStickyHeadings(page, folders);
 });

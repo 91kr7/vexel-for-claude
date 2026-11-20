@@ -47,6 +47,9 @@ const MOCK_LIGHT_MUTED = 'rgb(100, 116, 139)';
 const DARK_CANVAS = 'rgb(11, 11, 14)';
 const DARK_TEXT_PRIMARY = 'rgb(243, 242, 238)';
 const DARK_ACCENT = 'rgb(140, 207, 255)';
+// Table B of plan-cool_slate_light: the terminal of the Light theme.
+const LIGHT_TERM_BG = 'rgb(255, 255, 255)';
+const LIGHT_TERM_FG = 'rgb(30, 41, 59)';
 // Colours of the dark set that no element may show in the light theme, outside the terminal panel.
 const DARK_ONLY = [
   DARK_CANVAS,
@@ -380,7 +383,7 @@ test.describe('theme choice', () => {
   });
 
   // REQ-4, REQ-12 — scenario "The user switches the client to the light theme"
-  test('switching to light keeps the open session running, its connection, the list scroll position, and the dark terminal panel', async ({ page, request }) => {
+  test('switching to light keeps the open session running, its connection and the list scroll position, and the terminal panel turns light', async ({ page, request }) => {
     await page.setViewportSize({ width: 1440, height: 420 });
     await page.addInitScript(() => {
       const log: string[] = [];
@@ -428,12 +431,12 @@ test.describe('theme choice', () => {
     expect(await page.evaluate(() => [...(window as unknown as { socketLog: string[] }).socketLog]), 'no connection opened or closed').toEqual(sockets);
     expect(await box(region), 'the terminal panel does not move').toEqual(regionBefore);
 
-    // REQ-12: the panel keeps the dark terminal colours
-    expect(await style(region, 'background-color')).toBe(DARK_CANVAS);
+    // plan-cool_slate_light/REQ-17, REQ-18 (they replace REQ-12): the panel takes the light terminal of table B
+    expect(await style(region, 'background-color')).toBe(LIGHT_TERM_BG);
     // plan-dark_blue_theme/REQ-26: the frame border is the strong border role of the light set
     expect(await style(region, 'border-top-color'), 'the panel border follows the light set').toBe(LIGHT['--border-strong']);
-    expect(await effectiveBackground(page.locator('.xterm-screen'))).toBe(DARK_CANVAS);
-    expect(await style(terminal(page), 'color')).toBe(DARK_TEXT_PRIMARY);
+    expect(await effectiveBackground(page.locator('.xterm-screen'))).toBe(LIGHT_TERM_BG);
+    expect(await style(terminal(page), 'color')).toBe(LIGHT_TERM_FG);
   });
 
   // REQ-5, REQ-13 — scenario "The user goes back to the dark theme with the keyboard", through the settings popup (plan-settings_dialog/REQ-11)
@@ -495,11 +498,10 @@ test.describe('light palette', () => {
     for (const [name, value] of Object.entries(LIGHT)) expect(sameColour(await colour(page, `var(${name})`), value), `${name} = ${value}`).toBe(true);
   });
 
-  // ThemeTokens: backdrop, shadows, fonts, sizes and terminal tokens are the same in both sets (the Light status tints are table A's)
-  test('the shared tokens and the terminal tokens do not change with the theme', async ({ page }) => {
+  // ThemeTokens: shadows, fonts and sizes are the same in both sets; the backdrop is lighter in Light (popup fix of light-terminal); the terminal colours change (plan-cool_slate_light/REQ-17, REQ-24)
+  test('the shared tokens do not change with the theme', async ({ page }) => {
     await page.goto('/');
     const names = [
-      '--color-backdrop',
       '--shadow-sm',
       '--shadow',
       '--shadow-lg',
@@ -509,10 +511,6 @@ test.describe('light palette', () => {
       '--term-size',
       '--focus-ring-width',
       '--focus-ring-offset',
-      '--term-bg',
-      '--term-fg',
-      '--term-cursor',
-      '--term-selection',
     ];
     const dark = Object.fromEntries(await Promise.all(names.map(async (n) => [n, await token(page, n)] as const)));
     for (const n of names) expect(dark[n], `${n} is defined`).not.toBe('');
@@ -637,8 +635,8 @@ test.describe('light screens', () => {
 
     // REQ-16: the working row reads in the light emerald
     expect(await style(entry(page, working).getByText('Running', { exact: true }), 'color')).toBe(LIGHT['--emerald-400']);
-    // REQ-12: the terminal panel stays dark
-    expect(await style(page.getByRole('region', { name: 'Terminal: working-row' }), 'background-color')).toBe(DARK_CANVAS);
+    // plan-cool_slate_light/REQ-17 (it replaces REQ-12): the terminal panel is light
+    expect(await style(page.getByRole('region', { name: 'Terminal: working-row' }), 'background-color')).toBe(LIGHT_TERM_BG);
   });
 
   // REQ-6, NavigationRail, plan-popup_glass/REQ-1: the rail tooltip on hover takes the light popup glass, strong border and primary text
@@ -654,8 +652,8 @@ test.describe('light screens', () => {
     expect(await style(tooltip, 'border-top-color')).toBe(LIGHT['--border-strong']);
   });
 
-  // REQ-12, SessionView: a terminal opened in the light theme still takes the dark terminal colours, cursor and selection included
-  test('a terminal opened in the light theme uses the fixed dark terminal colours, cursor and selection', async ({ page, request }) => {
+  // plan-cool_slate_light/REQ-17, REQ-18, REQ-20 (they replace REQ-12), SessionView: a terminal opened in Light takes the table B colours
+  test('a terminal opened in the light theme uses the light terminal colours, cursor and selection', async ({ page, request }) => {
     await showOnly(page);
     const folder = await newFolder('light-terminal');
     await startViaApi(request, folder);
@@ -663,9 +661,9 @@ test.describe('light screens', () => {
     await toLight(page);
     await openFromList(page, folder);
     const region = page.getByRole('region', { name: 'Terminal: light-terminal' });
-    expect(await style(region, 'background-color')).toBe(DARK_CANVAS);
-    expect(await effectiveBackground(page.locator('.xterm-screen'))).toBe(DARK_CANVAS);
-    expect(await style(terminal(page), 'color')).toBe(DARK_TEXT_PRIMARY);
+    expect(await style(region, 'background-color')).toBe(LIGHT_TERM_BG);
+    expect(await effectiveBackground(page.locator('.xterm-screen'))).toBe(LIGHT_TERM_BG);
+    expect(await style(terminal(page), 'color')).toBe(LIGHT_TERM_FG);
     const xtermCss = await page.evaluate(() =>
       [...document.querySelectorAll('style')]
         .map((s) => s.textContent ?? '')
@@ -673,13 +671,13 @@ test.describe('light screens', () => {
         .join('\n'),
     );
     const cursorRules = xtermCss.match(/[^}]*xterm-cursor[^{]*\{[^}]*\}/g)?.join('\n') ?? '';
-    expect(cursorRules.toLowerCase(), 'the cursor is the dark accent').toMatch(/#8ccfff|rgb\(140,\s*207,\s*255\)/);
-    expect(cursorRules.toLowerCase(), 'the cursor is not the light accent').not.toMatch(/#2563eb|rgb\(37,\s*99,\s*235\)/);
+    expect(cursorRules.toLowerCase(), 'the cursor is the table B blue').toMatch(/#2563eb|rgb\(37,\s*99,\s*235\)/);
+    expect(cursorRules.toLowerCase(), 'the cursor is not the dark accent').not.toMatch(/#8ccfff|rgb\(140,\s*207,\s*255\)/);
     // xterm paints the selection as an opaque colour: the token blended over the terminal background.
     const selection = xtermCss.match(/xterm-selection div\s*\{[^}]*background-color:\s*#([0-9a-f]{6})/i)?.[1];
     expect(selection, 'xterm selection colour').toBeDefined();
     const painted = [0, 2, 4].map((i) => parseInt(selection!.slice(i, i + 2), 16));
-    const expected = over([140, 207, 255, 0.3], [11, 11, 14, 1]);
+    const expected = over([37, 99, 235, 0.2], [255, 255, 255, 1]);
     for (const [i, channel] of painted.entries()) expect(Math.abs(channel - expected[i]!), `selection #${selection}`).toBeLessThanOrEqual(1.5);
   });
 
@@ -727,7 +725,7 @@ test.describe('light screens', () => {
 
   // REQ-6, REQ-8: the new-session dialog in the light theme. REQ-14 (4.5:1) no longer applies inside popups: the 60 %
   // glass of plan-popup_glass/REQ-1 supersedes it (human decision, 2026-11-20).
-  test('the new-session dialog is light, keeps the mock backdrop, and keeps no dark-set colour', async ({ page }) => {
+  test('the new-session dialog is light, takes the light slate backdrop, and keeps no dark-set colour', async ({ page }) => {
     await page.goto('/');
     await toLight(page);
     await button(rail(page), 'New Claude Code Session').click();
@@ -735,8 +733,8 @@ test.describe('light screens', () => {
     await expect(dialog).toBeVisible();
     // The dim fades in with the dialog (plan-popup_glass/REQ-10): it is read at rest.
     await pageSettled(page);
-    expect(await style(dialog.locator('xpath=..'), 'background-color')).toBe('rgba(0, 0, 0, 0.65)');
-    expect(await style(dialog, 'background-color')).toBe(await colour(page, 'var(--popup-glass-bg)'));
+    expect(await style(dialog.locator('xpath=..'), 'background-color')).toBe('rgba(15, 23, 42, 0.2)');
+    expect(await dialog.evaluate((el) => getComputedStyle(el, '::before').backgroundColor), 'the frame glass').toBe(await colour(page, 'var(--popup-glass-bg)'));
     expect(await style(button(dialog, 'Start Session'), 'background-color')).toBe(LIGHT['--accent-primary']);
     const result = await audit(dialog, DARK_ONLY);
     expect(result.dark, 'elements that keep a dark-set colour').toEqual([]);

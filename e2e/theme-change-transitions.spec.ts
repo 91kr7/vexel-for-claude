@@ -29,7 +29,7 @@ interface Watch {
 const DARK_BLUE_CANVAS = 'rgb(18, 21, 30)';
 const DARK_BLUE_TERM_BG = 'rgb(17, 20, 28)';
 const LIGHT_CANVAS = 'rgb(243, 245, 248)';
-const LIGHT_TERM_BG = 'rgb(11, 11, 14)';
+const LIGHT_TERM_BG = 'rgb(255, 255, 255)';
 const SLOW_MS = 1500;
 
 let projectsRoot: string;

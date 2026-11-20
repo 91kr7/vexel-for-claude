@@ -35,6 +35,17 @@ const entry = (page: Page, folder: string) => list(page).getByRole('button').fil
 const terminal = (page: Page) => currentView(page).locator('.xterm-rows');
 const backdropOf = (dialog: Locator) => dialog.locator('xpath=..');
 
+/**
+ * A computed property of the surface's glass. The Dialog frame paints its glass, border and top line on a layer behind its
+ * content (its `::before`, WebEntry `.vx-popup-glass`); other popups paint it on themselves.
+ */
+const glassStyle = (surface: Locator, property: string) =>
+  surface.evaluate((el, name) => {
+    const layer = getComputedStyle(el, '::before');
+    const onLayer = getComputedStyle(el).backgroundColor === 'rgba(0, 0, 0, 0)' && layer.content !== 'none' && layer.content !== 'normal';
+    return (onLayer ? layer : getComputedStyle(el)).getPropertyValue(name);
+  }, property);
+
 /** Parses a computed colour: `rgb()`, `rgba()` or the `color(srgb …)` form Chromium gives for `color-mix()`. */
 function parse(colour: string): Rgba {
   const rgb = colour.match(/^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)$/);
@@ -73,8 +84,8 @@ async function glass(page: Page): Promise<Rgba> {
 
 /** REQ-1, REQ-2, REQ-6: the surface is the popup glass with the 8 px blur, and its text keeps the theme's text colour. */
 async function expectGlass(page: Page, surface: Locator, what: string, text = surface): Promise<void> {
-  expectColour(await style(surface, 'background-color'), await glass(page), `${what} background`);
-  expect(await style(surface, 'backdrop-filter'), `${what} blur`).toBe(BLUR);
+  expectColour(await glassStyle(surface, 'background-color'), await glass(page), `${what} background`);
+  expect(await glassStyle(surface, 'backdrop-filter'), `${what} blur`).toBe(BLUR);
   expectColour(await style(text, 'color'), parse(await resolved(page, 'var(--text-primary)')), `${what} text`);
   // Polled: a session switch cross-fades the whole view for a moment.
   await expect.poll(() => blurBlockers(surface), { message: `${what}: ancestors that keep the page from its blur` }).toEqual([]);
@@ -179,7 +190,13 @@ const sharpness = (page: Page, png: Buffer) =>
 async function shotOf(page: Page, surface: Locator, clip: { x: number; y: number; width: number; height: number }, blur: boolean, bare = false): Promise<Buffer> {
   await surface.evaluate(
     (el, [on, hide]) => {
-      (el as HTMLElement).style.backdropFilter = on ? '' : 'none';
+      // The blur may sit on the surface or on its glass layer (`::before`): the switch covers both.
+      if (!document.getElementById('no-glass-blur')) {
+        const sheet = Object.assign(document.createElement('style'), { id: 'no-glass-blur' });
+        sheet.textContent = '[data-no-glass-blur], [data-no-glass-blur]::before { backdrop-filter: none !important; }';
+        document.head.append(sheet);
+      }
+      el.toggleAttribute('data-no-glass-blur', !on);
       for (const child of el.children) (child as HTMLElement).style.visibility = hide ? 'hidden' : '';
     },
     [blur, bare] as const,
@@ -217,7 +234,7 @@ test.describe('dialogs', () => {
     }
 
     // REQ-5: text, borders and controls stay fully opaque.
-    expectColour(await style(dialog, 'border-top-color'), parse(await resolved(page, 'var(--role-border-strong)')), 'frame border');
+    expectColour(await glassStyle(dialog, 'border-top-color'), parse(await resolved(page, 'var(--role-border-strong)')), 'frame border');
     const selected = dialog.getByRole('tab', { selected: true });
     expect(parse(await style(selected, 'background-color'))[3], 'the selected menu row keeps its active fill').toBeGreaterThan(0);
     expect(parse(await style(selected, 'color'))[3], 'menu row text').toBe(1);
@@ -278,7 +295,7 @@ test.describe('dialogs', () => {
     const openDim = parse(opening.dim)[3];
     expect(openDim, 'the dim fades in').toBeGreaterThan(0);
     expect(openDim, 'the dim fades in').toBeLessThan(0.65);
-    expect(await style(dialog, 'backdrop-filter')).toBe(BLUR);
+    expect(await glassStyle(dialog, 'backdrop-filter')).toBe(BLUR);
     await resume();
     await settled(backdrop);
     expectColour(await style(backdrop, 'background-color'), BACKDROP_DIM, 'dim at rest');
@@ -326,10 +343,10 @@ test.describe('dialogs', () => {
   // REQ-7 — scenario "without blur the popup keeps its see-through background"
   test('without backdrop blur the dialog keeps the 60 % background and the theme text colour', async ({ page }) => {
     await page.goto('/');
-    await page.addStyleTag({ content: '* { backdrop-filter: none !important; }' });
+    await page.addStyleTag({ content: '*, *::before, *::after { backdrop-filter: none !important; }' });
     const dialog = await openSettings(page);
-    expect(await style(dialog, 'backdrop-filter')).toBe('none');
-    expectColour(await style(dialog, 'background-color'), await glass(page), 'frame background');
+    expect(await glassStyle(dialog, 'backdrop-filter')).toBe('none');
+    expectColour(await glassStyle(dialog, 'background-color'), await glass(page), 'frame background');
     expectColour(await style(dialog.getByRole('heading').first(), 'color'), parse(await resolved(page, 'var(--text-primary)')), 'title text');
   });
 
