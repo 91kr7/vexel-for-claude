@@ -173,8 +173,10 @@ test('"Terminate the Session?" has the header and footer spacing of the Settings
 
 // plan-popup_glass/REQ-12: at a narrow window the frame narrows and the text wraps inside it
 test('in a narrow window nothing of "Terminate the Session?" crosses its border', async ({ page, request }) => {
-  await page.setViewportSize({ width: 360, height: 640 });
+  // The session opens at the default size: at 360 px the terminal is too narrow to show its READY line.
   await openWorkingSession(page, request, 'working-narrow');
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.waitForFunction(() => window.innerWidth === 360 && document.documentElement.clientWidth <= 360);
   const dialog = await openSessionConfirmation(page);
 
   expect(await crossings(dialog)).toEqual([]);

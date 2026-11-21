@@ -28,3 +28,4 @@
 | 2026-11-20 | dev | G5 light-terminal | pass | Unit 4436/4436; e2e 1038/1040; plan tests all green |
 | 2026-11-20 | dev | G5 light-terminal | pass | page-frame.spec.ts:300 flaky under full load only: passes 5/5 on branch, passes on main |
 | 2026-11-20 | dev | G5 light-terminal | escalated | termination-margins.spec.ts:175 (plan-popup_glass) fails intermittently on main too: terminal never shows READY at 360 px |
+| 2026-11-21 | release | flaky test | decided | termination-margins.spec.ts:175 opens the session at the default size, then narrows to 360 px; 20/20 green |
