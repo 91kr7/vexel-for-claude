@@ -39,7 +39,7 @@ Motion (MotionTokens):
 - It takes no focus when it appears.
 - It may cover part of the main area. It moves no other element.
 - The box is never wider than the window minus 40 px, and at most 320 px wide.
-- The box is never taller than the window below the top bar minus 24 px. Past that height only the changelog area scrolls: the title, the two versions, "View Release" and "Close Update Notice" stay visible at any changelog length.
+- The box is never taller than the window below the top bar minus 24 px. Past that height only the changelog area scrolls: the title, the two versions, "View Release" and "Close Update Notice" stay visible at any changelog length. Its scrollbar sits at the right edge of the box, under the close button column; the changelog text keeps its width.
 - No changelogs, or an empty list → the box is the same as before the changelogs existed.
 
 ## Dependencies
