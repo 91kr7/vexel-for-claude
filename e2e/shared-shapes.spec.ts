@@ -11,7 +11,6 @@ import { cardOf, settingsButton, settingsPopup } from './settings';
 type Theme = 'light' | 'dark';
 const THEMES: Theme[] = ['light', 'dark'];
 const FRAME_SHADOW = 'rgba(0, 0, 0, 0.45) 0px 8px 24px -4px';
-const CARD_SHADOW = 'rgba(0, 0, 0, 0.28) 0px 2px 10px 0px';
 
 let projectsRoot: string;
 
@@ -110,21 +109,61 @@ const shapeOf = (locator: Locator): Promise<Shape> =>
     };
   });
 
-/** Colours of the active theme's levels, as the browser computes them. */
+/** The computed `box-shadow` of a shadow value or `var()`. */
+const shadowOf = (page: Page, value: string) =>
+  page.evaluate((v) => {
+    const probe = document.createElement('div');
+    probe.style.boxShadow = v;
+    document.body.append(probe);
+    const result = getComputedStyle(probe).boxShadow;
+    probe.remove();
+    return result;
+  }, value);
+
+/** Colours of the active theme's levels and of the role tokens with a Light value of their own, as the browser computes them. */
 async function levels(page: Page) {
-  const names = ['--bg-canvas', '--bg-surface-1', '--bg-surface-2', '--bg-surface-3', '--border-subtle', '--border-strong', '--accent-primary', '--accent-border'];
+  const names = ['--bg-canvas', '--bg-surface-1', '--bg-surface-2', '--bg-surface-3', '--border-subtle', '--border-strong', '--accent-primary', '--accent-border', '--role-card-active', '--role-pill'];
   const values = await Promise.all(names.map((n) => colourOf(page, `var(${n})`)));
   return Object.fromEntries(names.map((n, i) => [n, values[i] as string])) as Record<string, string>;
 }
 
-/** A frame or floating panel: 8 px corners, 1 px strong border, frame shadow, raised surface. */
+/** `--bg-surface-2` as content inside `scope` sees it: in a Light popup, the soft tint `--popup-inner-fill` (ThemeTokens). */
+const surfaceIn = (scope: Locator) =>
+  scope.evaluate((el) => {
+    const probe = document.createElement('div');
+    probe.style.color = 'var(--bg-surface-2)';
+    el.append(probe);
+    const result = getComputedStyle(probe).color;
+    probe.remove();
+    return { '--bg-surface-2': result };
+  });
+
+/** The channels of a computed colour: `rgb()`, `rgba()` or `color(srgb …)`, on a 0-255 scale, alpha 0-1. */
+function channels(colour: string): number[] {
+  const rgb = colour.match(/^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)$/);
+  if (rgb) return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3]), rgb[4] === undefined ? 1 : Number(rgb[4])];
+  const srgb = colour.match(/^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)(?: \/ ([\d.]+))?\)$/);
+  if (srgb) return [Number(srgb[1]) * 255, Number(srgb[2]) * 255, Number(srgb[3]) * 255, srgb[4] === undefined ? 1 : Number(srgb[4])];
+  throw new Error(`unknown colour ${colour}`);
+}
+
+/** A frame or floating panel: 8 px corners, 1 px strong border, frame shadow, popup glass (raised surface at 60 %, plan-popup_glass/REQ-1). */
 async function expectFrame(page: Page, locator: Locator, what: string): Promise<void> {
   const level = await levels(page);
-  const s = await shapeOf(locator);
+  // A Dialog frame paints its glass and border on a layer behind its content (WebEntry `.vx-popup-glass`).
+  const own = await shapeOf(locator);
+  const layer = await locator.evaluate((el) => {
+    const b = getComputedStyle(el, '::before');
+    return b.content === 'none' || b.content === 'normal' ? null : { background: b.backgroundColor, borderWidth: b.borderTopWidth, borderColour: b.borderTopColor };
+  });
+  const s = own.background === 'rgba(0, 0, 0, 0)' && layer ? { ...own, ...layer } : own;
   expect(s.radius, `${what}: radius`).toBe('8px');
   expect([s.borderWidth, s.borderColour], `${what}: border`).toEqual(['1px', level['--border-strong']]);
   expect(s.shadow, `${what}: frame shadow`).toContain(FRAME_SHADOW);
-  expect(s.background, `${what}: raised surface`).toBe(level['--bg-surface-2']);
+  const [r, g, b, a] = channels(level['--bg-surface-2']!);
+  const glass = [r!, g!, b!, a! * 0.6];
+  const got = channels(s.background);
+  for (let i = 0; i < 4; i++) expect(Math.abs(got[i]! - glass[i]!), `${what}: popup glass ${s.background}`).toBeLessThanOrEqual(i < 3 ? 1 : 0.01);
 }
 
 // plan-dark_blue_theme/REQ-2 (started here), REQ-3: the role tokens of ThemeTokens point to the levels of the active set.
@@ -137,7 +176,8 @@ for (const theme of THEMES) {
       ['--role-chrome', '--bg-surface-1'],
       ['--role-card', '--bg-surface-2'],
       ['--role-raised', '--bg-surface-2'],
-      ['--role-card-active', '--bg-surface-3'],
+      // ThemeTokens (plan-cool_slate_light): Light gives the active card a value of its own.
+      ...(theme === 'dark' ? ([['--role-card-active', '--bg-surface-3']] as Array<[string, string]>) : []),
       ['--role-border-subtle', '--border-subtle'],
       ['--role-border-strong', '--border-strong'],
       ['--role-accent', '--accent-primary'],
@@ -197,6 +237,7 @@ for (const theme of THEMES) {
     const popup = settingsPopup(page);
     await expect(popup).toBeVisible();
     await expectFrame(page, popup, 'Settings frame');
+    const inner = await surfaceIn(popup);
 
     const appearance = popup.getByRole('tab', { name: 'Appearance', exact: true });
     await appearance.click();
@@ -209,11 +250,11 @@ for (const theme of THEMES) {
     await page.mouse.move(0, 0);
     const plain = await shapeOf(other);
     expect(plain.radius, 'choice card: card radius').toBe('7px');
-    expect(plain.background, 'choice card: card surface').toBe(level['--bg-surface-2']);
+    expect(plain.background, 'choice card: card surface').toBe(inner['--bg-surface-2']);
     expect([plain.borderWidth, plain.borderColour], 'choice card: subtle border').toEqual(['1px', level['--border-subtle']]);
     const checked = await shapeOf(active);
     expect(checked.borderColour, 'checked card: accent border').toBe(level['--accent-primary']);
-    expect(checked.shadow, 'checked card: card shadow').toContain(CARD_SHADOW);
+    expect(checked.shadow, 'checked card: card shadow').toContain(await shadowOf(page, 'var(--shadow-card)'));
 
     await popup.getByRole('tab', { name: 'Shortcuts', exact: true }).click();
     const badge = popup.locator('.kbd-badge').first();
@@ -221,12 +262,12 @@ for (const theme of THEMES) {
     const pill = await shapeOf(badge);
     expect(pill.radius, 'key badge: pill radius').toBe('5px');
     expect([pill.borderWidth, pill.borderColour], 'key badge: pill border').toEqual(['1px', level['--border-strong']]);
-    expect(pill.background, 'key badge: raised surface').toBe(level['--bg-surface-2']);
+    expect(pill.background, 'key badge: pill surface').toBe(level['--role-pill']);
 
     await popup.getByRole('tab', { name: 'Updates', exact: true }).click();
     const card = await shapeOf(popup.getByRole('region', { name: 'Updates', exact: true }));
     expect(card.radius, 'update card: card radius').toBe('7px');
-    expect(card.background, 'update card: card surface').toBe(level['--bg-surface-2']);
+    expect(card.background, 'update card: card surface').toBe(inner['--bg-surface-2']);
     expect([card.borderWidth, card.borderColour], 'update card: subtle border').toEqual(['1px', level['--border-subtle']]);
     const button = await shapeOf(popup.getByRole('button', { name: 'Check for Updates', exact: true }));
     expect(button.radius, 'neutral button: frame radius').toBe('8px');
@@ -241,6 +282,7 @@ for (const theme of THEMES) {
     const dialog = page.getByRole('dialog', { name: 'Resume Session' });
     await expect(dialog).not.toContainText('Loading…');
     await expectFrame(page, dialog, 'Resume frame');
+    const inner = await surfaceIn(dialog);
 
     const radio = dialog.getByRole('region', { name: past.folder }).getByRole('radio', { name: past.prompt, exact: true });
     await expect(radio).toHaveCount(1);
@@ -248,22 +290,23 @@ for (const theme of THEMES) {
     await page.mouse.move(0, 0);
     const s = await shapeOf(row);
     expect(s.radius, 'past-session row: card radius').toBe('7px');
-    expect(s.background, 'past-session row: card surface').toBe(level['--bg-surface-2']);
+    expect(s.background, 'past-session row: card surface').toBe(inner['--bg-surface-2']);
     expect([s.borderWidth, s.borderColour], 'past-session row: subtle border').toEqual(['1px', level['--border-subtle']]);
     expect(s.leftWidth, 'past-session row: 1 px left edge, as a session card').toBe('1px');
 
     await radio.check();
     await page.mouse.move(0, 0);
-    await expect.poll(async () => (await shapeOf(row)).background, { message: 'chosen row: active card' }).toBe(level['--bg-surface-3']);
+    await expect.poll(async () => (await shapeOf(row)).background, { message: 'chosen row: active card' }).toBe(level['--role-card-active']);
     // The border eases to the accent: wait for the end of the transition.
     await expect.poll(async () => (await shapeOf(row)).borderColour, { message: 'chosen row: accent border' }).toBe(level['--accent-primary']);
     const chosen = await shapeOf(row);
-    expect(chosen.shadow, 'chosen row: card shadow').toContain(CARD_SHADOW);
+    expect(chosen.shadow, 'chosen row: active card shadow').toContain(await shadowOf(page, 'var(--shadow-card-active)'));
 
     const field = dialog.getByRole('textbox', { name: 'Search Past Sessions' });
     const idle = await shapeOf(field);
     expect(idle.radius, 'field: frame radius').toBe('8px');
-    expect(idle.background, 'field: canvas').toBe(level['--bg-canvas']);
+    // In a Light popup the field takes the soft tint `--popup-inner-fill` (ThemeTokens); elsewhere the canvas.
+    expect(idle.background, 'field: canvas, or the soft tint in Light').toBe(theme === 'light' ? 'rgba(255, 255, 255, 0.5)' : level['--bg-canvas']);
     expect([idle.borderWidth, idle.borderColour], 'field: strong border').toEqual(['1px', level['--border-strong']]);
     await field.focus();
     await expect.poll(async () => (await shapeOf(field)).borderColour, { message: 'focused field: accent border' }).toBe(level['--accent-primary']);

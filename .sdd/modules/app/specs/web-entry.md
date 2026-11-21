@@ -36,8 +36,9 @@ Mock classes, the same as the `<style>` block of the mock:
 | `.vx-surface-1` / `-2` | `--role-chrome` / `--role-raised`, 1 px `--role-border-subtle` border, inset 1 px `--specular-top` line on top |
 | `.vx-surface-3` | `--role-card-active`, 1 px `--role-border-strong` border |
 | `.vx-glass` | `--bg-glass`, 14 px backdrop blur, 1 px `--border-strong` border, top line and `0 12px 32px -8px` black at 35 % |
+| `.vx-popup-glass` | the popup glass: `--popup-glass-bg` background and a `--popup-glass-blur` backdrop blur, nothing else. Without backdrop blur the background stays at 60 %. In Light, the raised, card and field fills of its content take `--popup-inner-fill` (ThemeTokens). On the Dialog frame the glass, the border and the top line sit on a layer behind the content, so a blur inside the frame also sees the page; it looks the same |
 | `.vx-dot-grid` | 1 px dots in `--border-strong` every 18 px |
-| `.kbd-badge` | mono 10 px, padding 1 × 5 px, `--radius-pill`, `--role-raised`, `--border-pill`, `--text-muted` |
+| `.kbd-badge` | mono 10 px, padding 1 × 5 px, `--radius-pill`, `--role-pill`, `--border-pill`, `--text-muted` |
 | `.accent-pill` | `--radius-pill`, `--role-accent-glow` background, `--role-accent` text, `--role-accent-border` border |
 | `.vx-pulse` | Tailwind `animate-pulse`: opacity to 0.5 and back every 2 s |
 
@@ -47,8 +48,8 @@ Client classes built from the mock's parts:
 |-------|-------------------|
 | `.section-label` | mono 10 px, uppercase, letter spacing 0.05em, `--text-muted` ("Orchestrated Sessions") |
 | `.section-label-path` | with `.section-label`: no uppercase, long text wraps |
-| `.mono-chip` | mono 10 px, padding 2 × 6 px, the pill shape (`--radius-pill`, `--role-raised`, `--border-pill`), `--text-secondary`; used with `.vx-surface-2` (`#subbar-model`) |
-| `.button-neutral` | 12/16 px, padding 6 × 12 px, `--radius-frame`, `--role-raised`, `--border-pill`, top line, `--text-primary`; hover → `--role-card-active` and `--role-accent-border` border ("Cancel") |
+| `.mono-chip` | mono 10 px, padding 2 × 6 px, the pill shape (`--radius-pill`, `--role-pill`, `--border-pill`), `--text-secondary`; used with `.vx-surface-2` (`#subbar-model`) |
+| `.button-neutral` | 12/16 px, padding 6 × 12 px, `--radius-frame`, `--role-raised`, `--border-pill`, top line, `--text-primary`; hover → `--role-hover` and `--role-accent-border` border ("Cancel") |
 | `.button-primary` | 12/16 px weight 500, padding 6 × 16 px, `--radius-frame`, `--role-accent` fill, `--on-accent` text, Tailwind `shadow` ("Start Session") |
 | `.button-bar` | with `.button-primary`: 32 px high, padding 0 × 10 px, `shadow-sm`, scaled to 95 % while pressed (e.g. "Resume Here") |
 | `.button-danger` | mono 11 px, padding 4 × 10 px, `--radius-pill`, rose-500 at 15 % fill, rose-400 text, rose-500 at 30 % border; hover → fill at 25 % (`#subbar-stop-btn`) |
@@ -84,3 +85,4 @@ Client classes built from the mock's parts:
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-3`, `plan-dark_blue_theme/REQ-4`
 - `plan-dark_blue_theme/REQ-32`, `plan-dark_blue_theme/REQ-33`, `plan-dark_blue_theme/REQ-35`, `plan-dark_blue_theme/REQ-40`, `plan-dark_blue_theme/REQ-42`
 - `plan-ui_transitions/REQ-25`, `plan-ui_transitions/REQ-30`
+- `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-5`, `plan-popup_glass/REQ-7`

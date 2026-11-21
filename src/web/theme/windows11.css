@@ -69,6 +69,16 @@
   /* Darkened for 4.5:1 on the orange tints over surface 1. */
   --orange-400: #b32912;
 
+  /* The role tokens of the Light set follow the levels above. */
+  --role-rail: var(--role-canvas);
+  --role-hover: var(--bg-surface-3);
+  --role-card-active: var(--bg-surface-3);
+  --role-pill: var(--role-raised);
+  --role-track: var(--bg-surface-3);
+  --role-context-bg: var(--role-pill);
+  --role-context-text: var(--text-secondary);
+  --role-context-border: var(--role-border-strong);
+
   --caption-hover: rgba(0, 0, 0, 0.05);
   --caption-pressed: rgba(0, 0, 0, 0.03);
 }

@@ -49,14 +49,14 @@ any other day                 → "DD/MM/YYYY HH:MM"
 
 Tool cards (look of the tool card built by `selectSession()`):
 - a `tool_call` and the first later `tool_result` whose `toolUseId` equals its `id` form one card, at the place of the call. A `tool_result` with no such call is a card of its own, named "Result".
-- the card (`aria-label` "Tool: <name>"): 36 px from the left, so it lines up with the message text. surface-1 fill through `--role-chrome`, so it stays apart from the surface-2 user box, 1 px `--role-border-subtle` border, `--radius-card`; the row turns `--role-card-active` on hover. Two cards in a row are 8 px apart.
+- the card (`aria-label` "Tool: <name>"): 36 px from the left, so it lines up with the message text. surface-1 fill through `--role-chrome`, so it stays apart from the surface-2 user box, 1 px `--role-border-subtle` border, `--radius-card`; the row turns `--role-hover` on hover. Two cards in a row are 8 px apart.
 - its row is one button (`aria-expanded`), padding 6 × 12 px, 8 px gaps, mono 11 px; surface 2 on hover:
   - the name chip → padding 0 × 6 px, `--radius-pill`, `--role-card-active`, `--role-accent`, weight 500.
   - the summary → `--text-primary`, one line cut with an ellipsis, full text as tooltip.
   - the outcome, 8 px after, mono 10 px: no result yet → "▾" alone in `--text-muted`; result with `isError` → "Error ▾" in rose-400; any other result → "Completed ▾" in emerald-400. "▾" is decorative.
 - no tool icon.
 - closed (default) → "▾" turned to point right, nothing below the row.
-- open → "▾" points down. Below the row, one block on `--bg-canvas` with a 1 px `--border-subtle` line on top, padding 8 × 12 px, mono 12 px (`--term-size`), line height 1.625, `--text-secondary`. It holds, in this order, separated by an empty line:
+- open → "▾" points down. Below the row, one block on `--tool-output-bg` with a 1 px `--tool-output-line` line on top, padding 8 × 12 px, mono 12 px (`--term-size`), line height 1.625, `--tool-output-text`. In Light that is white, dark slate text and a thin grey line; in the other themes the canvas, secondary text and the subtle border. It holds, in this order, separated by an empty line:
   - the full input, when the call has `moreInput`. It comes from ItemContentRoute.
   - the output: the full text from ItemContentRoute when the result is `truncated`; otherwise its text. Before the full text is loaded, the cut text and a last line "…".
 - an open card with nothing to show in the block shows no block.
@@ -113,3 +113,4 @@ Scrolling:
 - `plan-wsl_support/REQ-11`, `plan-wsl_support/REQ-13`
 - `plan-dark_blue_theme/REQ-3`
 - `plan-ui_transitions/REQ-6`
+- `plan-cool_slate_light/REQ-21`, `plan-cool_slate_light/REQ-22`

@@ -116,9 +116,14 @@ const hasFocusVisible = (locator: Locator) => locator.evaluate((el) => el.matche
 /** Relative luminance of the computed background colour of an element. */
 const backgroundLuminance = (locator: Locator) =>
   locator.evaluate((el) => {
-    const [r, g, b] = (getComputedStyle(el).backgroundColor.match(/[\d.]+/g) ?? []).map(Number);
+    // A Dialog frame paints its glass on a layer behind its content (WebEntry `.vx-popup-glass`).
+    const own = getComputedStyle(el).backgroundColor;
+    const colour = own === 'rgba(0, 0, 0, 0)' ? getComputedStyle(el, '::before').backgroundColor : own;
+    const [r, g, b] = (colour.match(/[\d.]+/g) ?? []).map(Number);
+    // `color(srgb …)`, the form of a `color-mix()` such as the popup glass, has channels from 0 to 1.
+    const scale = colour.startsWith('color(srgb') ? 1 : 255;
     const channel = (v = 0) => {
-      const s = v / 255;
+      const s = v / scale;
       return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
     };
     return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);

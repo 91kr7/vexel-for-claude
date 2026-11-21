@@ -66,8 +66,10 @@ const colourOf = (locator: Locator, property: 'color' | 'backgroundColor') => lo
 
 function luminance(colour: string): number {
   const [r, g, b] = (colour.match(/[\d.]+/g) ?? []).map(Number);
+  // `color(srgb …)`, the form of a `color-mix()` such as the popup glass, has channels from 0 to 1.
+  const scale = colour.startsWith('color(srgb') ? 1 : 255;
   const channel = (v = 0) => {
-    const s = v / 255;
+    const s = v / scale;
     return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
   };
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);

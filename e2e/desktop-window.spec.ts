@@ -16,7 +16,7 @@ import { chooseInSettings } from './settings';
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
 const fakeClaude = fileURLToPath(new URL('../test-support/fake-claude.mjs', import.meta.url));
-const LIGHT_CANVAS = 'rgb(244, 241, 234)';
+const LIGHT_CANVAS = 'rgb(243, 245, 248)';
 // Canvas, text, accent and error of the dark theme: the startup page never shows them (plan-light_theme/REQ-20).
 const DARK_ONLY = ['rgb(11, 11, 14)', 'rgb(243, 242, 238)', 'rgb(140, 207, 255)', 'rgb(251, 113, 133)'];
 const LOADING = 'Starting the backend…';
@@ -277,7 +277,7 @@ function buildDesktop(): void {
 }
 
 test.describe('StartupPage in the browser', () => {
-  // plan-light_theme/REQ-20: always the light colours
+  // plan-light_theme/REQ-20, plan-cool_slate_light/REQ-12: always the Cool Slate light colours
   test('loading state: waiting text, rotating accent indicator, light colours', async ({ page }) => {
     await page.goto(startupPageUrl({ kind: 'loading' }));
     await expect(page).toHaveTitle('Vexel for Claude');
@@ -293,8 +293,8 @@ test.describe('StartupPage in the browser', () => {
       return { canvas, text: getComputedStyle(document.body).color, colours, scheme, animations: document.getAnimations().length };
     });
     expect(style.canvas).toContain(LIGHT_CANVAS);
-    expect(style.text).toBe('rgb(28, 25, 23)');
-    expect(style.colours).toContain('rgb(0, 101, 174)');
+    expect(style.text).toBe('rgb(15, 23, 42)');
+    expect(style.colours).toContain('rgb(37, 99, 235)');
     expect(style.scheme).toBe('light');
     expect(style.colours.filter((colour) => DARK_ONLY.includes(colour)), 'no colour of the dark theme').toEqual([]);
     expect(style.animations).toBeGreaterThan(0);
@@ -306,7 +306,7 @@ test.describe('StartupPage in the browser', () => {
     await expect(page.getByText(LOADING)).toHaveCount(0);
     const title = page.getByText(ERROR, { exact: true });
     await expect(title).toBeVisible();
-    await expect(title).toHaveCSS('color', 'rgb(159, 18, 57)');
+    await expect(title).toHaveCSS('color', 'rgb(184, 28, 28)');
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(LIGHT_CANVAS);
     const block = page.getByText(lines[0]!);
     await expect(block).toBeVisible();
@@ -685,6 +685,8 @@ test.describe('Remembered theme in the desktop app', () => {
 
       await expect(list(client)).toBeVisible({ timeout: 20_000 });
       await expect(client.locator('html')).toHaveAttribute('data-theme', theme);
+      // plan-cool_slate_light/REQ-12: the client in the desktop window takes the Cool Slate canvas too.
+      if (theme === 'light') expect(await client.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(LIGHT_CANVAS);
       const marks = await client.evaluate(() => [...new Set((window as unknown as { themeMarks: (string | null)[] }).themeMarks)]);
       expect(marks, `REQ-32, REQ-33: the client page only ever carries the ${theme} mark`).toEqual([theme]);
 

@@ -26,7 +26,7 @@ Shows:
 - the right group, 8 px gaps, from left to right → `leadingActions`, `notice`, `actions`.
 - the line pill:
   - it is focusable with the keyboard (Tab).
-  - hover or keyboard focus → a tooltip under the pill, over the content below, with the full text of the line. The tooltip is the pill's description (`role="tooltip"`, `aria-describedby`).
+  - hover or keyboard focus → a tooltip under the pill, over the content below, with the full text of the line, on the popup glass (`.vx-popup-glass` of WebEntry, module app). The tooltip is the pill's description (`role="tooltip"`, `aria-describedby`).
   - pointer away and focus elsewhere → no tooltip.
 - without `session` → the left group is empty, so there is no state pill. `leadingActions`, `notice` and `actions` still show.
 - no path, no "/", no usage figures (they are in SessionFooter), no project avatar.
@@ -51,3 +51,4 @@ Shows:
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-11`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-30`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-31`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark/REQ-53`
 - `plan-session_list_width/REQ-15`, `plan-session_list_width/REQ-16`, `plan-session_list_width/REQ-17`, `plan-session_list_width/REQ-18`, `plan-session_list_width/REQ-30`, `plan-session_list_width/REQ-31`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-25`, `plan-dark_blue_theme/REQ-52`
+- `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`

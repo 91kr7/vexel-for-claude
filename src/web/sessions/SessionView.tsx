@@ -1,5 +1,5 @@
 import { type DragEvent, type Ref, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { type IBufferRange, Terminal } from '@xterm/xterm';
+import { type IBufferRange, type ITheme, Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { type ISearchOptions, SearchAddon } from '@xterm/addon-search';
 import '@xterm/xterm/css/xterm.css';
@@ -92,14 +92,34 @@ function cssVar(element: Element, name: string): string {
   return getComputedStyle(element).getPropertyValue(name).trim();
 }
 
-function terminalTheme(element: Element) {
-  return {
+const ANSI_COLORS = [
+  'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white',
+  'brightBlack', 'brightRed', 'brightGreen', 'brightYellow', 'brightBlue', 'brightMagenta', 'brightCyan', 'brightWhite',
+] as const;
+
+function ansiToken(color: string): string {
+  return `--term-ansi-${color.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`;
+}
+
+function terminalTheme(element: Element): ITheme {
+  const theme: ITheme = {
     background: cssVar(element, '--term-bg'),
     foreground: cssVar(element, '--term-fg'),
     cursor: cssVar(element, '--term-cursor'),
     cursorAccent: cssVar(element, '--term-bg'),
     selectionBackground: cssVar(element, '--term-selection'),
   };
+  // An unset ANSI token keeps the xterm.js default.
+  for (const color of ANSI_COLORS) {
+    const value = cssVar(element, ansiToken(color));
+    if (value !== '') theme[color] = value;
+  }
+  return theme;
+}
+
+// Only the Light theme lifts text that Claude Code draws in its own colours.
+function minimumContrastRatio(): number {
+  return pageThemeStore().getSnapshot() === 'light' ? 4.5 : 1;
 }
 
 function searchOptions(element: Element): ISearchOptions {
@@ -191,6 +211,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
       fontSize: fontSizeStore.getSnapshot(),
       lineHeight: TERMINAL_LINE_HEIGHT,
       theme: terminalTheme(container),
+      minimumContrastRatio: minimumContrastRatio(),
       linkHandler: {
         activate: openOnCtrlClick,
         hover: (event, address, range) => {
@@ -314,6 +335,8 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
     });
     const unsubscribeTheme = pageThemeStore().subscribe(() => {
       terminal.options.theme = terminalTheme(container);
+      terminal.options.minimumContrastRatio = minimumContrastRatio();
+      if (searchRef.current) searchRef.current.options = searchOptions(container);
     });
     terminal.focus();
 
@@ -472,7 +495,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
         </ExitPresence>
       </div>
       {linkTooltip && (
-        <div className="terminal-link-tooltip" role="tooltip" style={{ left: linkTooltip.left, top: linkTooltip.top }}>
+        <div className="terminal-link-tooltip vx-popup-glass" role="tooltip" style={{ left: linkTooltip.left, top: linkTooltip.top }}>
           {linkTooltip.address}
         </div>
       )}

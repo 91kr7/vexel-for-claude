@@ -49,6 +49,9 @@ type: configuration
 | `--orange-400` | `#b32912` |
 | `--caption-hover` / `--caption-pressed` | black at 5 % / 3 % |
 
+- Light theme, role tokens → the role tokens that ThemeTokens gives a Light value of their own point back at the levels above, with the ThemeTokens default mapping: `--role-rail` → `--role-canvas`; `--role-hover`, `--role-card-active` and `--role-track` → `--bg-surface-3`; `--role-pill` → `--role-raised`; the context pill tokens → `--role-pill`, `--text-secondary`, `--role-border-strong`.
+- Light theme, every other token (status colours and tints, card shadows, scrollbar thumb, `--accent-secondary`, repository colours) → the ThemeTokens Light value.
+
 - corners → `--radius-control` on buttons, chips, fields, list rows (the ListStyles cards and rows included), tooltips and the logo mark. `--radius-overlay` on cards (the session cards through `--radius-card`), popovers, panels, notices, snackbars and dialogs.
 - `.button-primary` → flat accent fill with a darker 1 px bottom edge, a little brighter on hover.
 - "Vexel" in the top bar → no negative letter spacing.
@@ -59,7 +62,7 @@ type: configuration
 
 - With any other `data-look`, or none, nothing here applies: the current look stays exactly as it is.
 - The look does not depend on the theme: each theme has its own token set, and a theme change keeps the look.
-- `--font-mono` and the terminal tokens do not change: the terminal panel stays dark in both looks.
+- `--font-mono` and the terminal tokens do not change: the terminal panel keeps the colours of the active theme in both looks.
 - No font file is bundled. Where Segoe UI is not installed (Linux by default), the next font of the list shows.
 - The app reads no Windows accent colour and no wallpaper.
 - Contrast (WCAG 2.2 AA), in Dark and Light:
@@ -81,3 +84,4 @@ type: configuration
 - `plan-wsl_support/REQ-17`, `plan-wsl_support/REQ-25`, `plan-wsl_support/REQ-26`, `plan-wsl_support/REQ-27`, `plan-wsl_support/REQ-34`, `plan-wsl_support/REQ-36`, `plan-wsl_support/REQ-37`, `plan-wsl_support/REQ-38`
 - `plan-dark_blue_theme/REQ-44`, `plan-dark_blue_theme/REQ-47`
 - `plan-dark_blue_theme/REQ-36`
+- `plan-cool_slate_light/REQ-11`, `plan-cool_slate_light/REQ-13`

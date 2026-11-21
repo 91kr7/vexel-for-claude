@@ -5,7 +5,7 @@
 // Every input chunk is echoed as `IN:<hex>`; every line ended by Enter as `LINE:<text>`.
 // Line commands: STREAM (5 chunks, 300 ms apart), ASK (waits for one key, then ANSWER:<key>),
 // COUNT (400 numbered lines, 5 ms apart), LINKS (web addresses and OSC 8 hyperlinks, see printLinks),
-// PASTE (turns bracketed paste mode on, then prints PASTE-ON),
+// PASTE (turns bracketed paste mode on, then prints PASTE-ON), COLOURS (coloured rows, see printColours),
 // /exit (exits with code 0), /crash <code> (exits with that code), /pid (prints PID:<pid>).
 // With `--settings <file>` it runs the file's hooks like Claude Code: UserPromptSubmit for every line
 // not starting with `/` or `HOOK `, plus TURN (Stop after 1.5 s), WORK (tool use, TICK<n> every 250 ms
@@ -64,6 +64,15 @@ function printLinks() {
   out('LINKS-DONE');
 }
 
+// Rows for the terminal colour tests: `ANSI<n>` in each of the 16 ANSI colours, then text in fixed 24-bit colours:
+// PALE (pale yellow on the default background) and BAND (light grey on a light grey band).
+function printColours() {
+  for (let n = 0; n < 16; n++) out(`\x1b[${n < 8 ? 30 + n : 82 + n}mANSI${n}\x1b[0m`);
+  out('\x1b[38;2;250;250;210mPALE\x1b[0m');
+  out('\x1b[48;2;241;245;249m\x1b[38;2;203;213;225mBAND\x1b[0m');
+  out('COLOURS-DONE');
+}
+
 let line = '';
 let onAnswer;
 
@@ -94,6 +103,8 @@ function runLine(text) {
     out('PERMISSION?(y/n)');
   } else if (text === 'LINKS') {
     printLinks();
+  } else if (text === 'COLOURS') {
+    printColours();
   } else if (text === 'PASTE') {
     process.stdout.write('\x1b[?2004h');
     out('PASTE-ON');

@@ -21,7 +21,7 @@ Description:
 - the frame is 760 × 540 px; each side is at most the window minus 32 px. The size does not change with the menu.
 
 Shows:
-- on the left, a vertical tab list named "Settings sections" (`aria-orientation="vertical"`) with the items "Appearance", "Shortcuts", "Updates" and "Processes", in this order. In the desktop window (`isDesktopWindow()` of useDesktopBridge is `true`) the item "Sound" follows "Processes"; in a browser there is no "Sound" item. Each item is a dense row of ListStyles (`.list-row`) with its hover. The chosen item has `aria-selected="true"`, the active look of ListStyles (`.list-active`) and bold text. The menu column is on `--role-list`.
+- on the left, a vertical tab list named "Settings sections" (`aria-orientation="vertical"`) with the items "Appearance", "Shortcuts", "Updates" and "Processes", in this order. In the desktop window (`isDesktopWindow()` of useDesktopBridge is `true`) the item "Sound" follows "Processes"; in a browser there is no "Sound" item. Each item is a dense row of ListStyles (`.list-row`) with its hover. The chosen item has `aria-selected="true"`, the active look of ListStyles (`.list-active`) and bold text. The menu column has no fill of its own: the frame glass of Dialog shows through it, as through the panel header.
 - on the right, one tab panel, labelled by its item. It has a header with the menu title and an optional action, and a body that scrolls on its own when the content does not fit. A control that Tab scrolls to the edge of the body shows its whole focus ring; the focused body shows its ring inside its own edge. The popup itself never scrolls.
   - "Appearance" → title "Appearance"; the body holds ThemeSection, then LookSection.
   - "Shortcuts" → ShortcutsSection: title "Shortcuts" and the action "Restore All" in the header, the "Shortcut List" region as body.
@@ -66,3 +66,4 @@ Motion (MotionTokens):
 - `plan-input_sound/REQ-10`
 - `plan-app_processes/REQ-1`, `plan-app_processes/REQ-10`, `plan-app_processes/REQ-21`
 - `plan-ui_transitions/REQ-24`, `plan-ui_transitions/REQ-25`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-28`, `plan-ui_transitions/REQ-31`, `plan-ui_transitions/REQ-32`
+- `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-5`, `plan-popup_glass/REQ-9`

@@ -11,7 +11,7 @@ type: UI component
 ## Contract
 
 Description:
-- one row over the top right corner of the terminal panel, 8 px from its top and right edges, above the terminal text. Surface 2, 1 px `--border-strong` border, 8 px radius, shadow.
+- one row over the top right corner of the terminal panel, 8 px from its top and right edges, above the terminal text. The popup glass (`.vx-popup-glass` of WebEntry, module app): the terminal text behind it shows blurred. 1 px `--border-strong` border, 8 px radius, shadow.
 
 Props:
 - `query` → the text of the field.
@@ -49,3 +49,4 @@ Actions:
 ## Requirements served
 
 - `plan-terminal_addons/REQ-24`, `plan-terminal_addons/REQ-25`, `plan-terminal_addons/REQ-26`, `plan-terminal_addons/REQ-27`, `plan-terminal_addons/REQ-28`, `plan-terminal_addons/REQ-30`
+- `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-6`

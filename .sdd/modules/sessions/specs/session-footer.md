@@ -17,7 +17,7 @@ Props:
 
 Shows:
 - a `footer`, 32 px high (its top line included), padding 0 × 14 px, on `--role-chrome`, 1 px `--role-border-subtle` line above. One row, 10 px gaps. Every number in it uses tabular figures.
-- on the left, with `session` → the place, in a pill: padding 2 × 10 px, `--radius-pill` corners, `--border-pill`, on `--role-raised`. Inside, `lead` in `--text-muted` 10.5 px, then the full folder path in mono 10.5 px, `--text-secondary`. One line; text too long ends with "…". The tooltip of the place (`title`) is the full path.
+- on the left, with `session` → the place, in a pill: padding 2 × 10 px, `--radius-pill` corners, `--border-pill`, on `--role-pill`. Inside, `lead` in `--text-muted` 10.5 px, then the full folder path in mono 10.5 px, `--text-secondary`. One line; text too long ends with "…". The tooltip of the place (`title`) is the full path.
 - after the place → the SessionFigures of `session.usage`.
 - `end` at the right end of the row.
 - without `session` → no place, no lead and no figures. `end` still shows.

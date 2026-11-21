@@ -50,7 +50,7 @@ interface FolderRowProps {
 function FolderRow({ id, name, path, onOpen }: FolderRowProps) {
   return (
     <li>
-      <button type="button" className="dialog-row list-row" aria-labelledby={`${id}-name`} aria-describedby={`${id}-path`} onClick={onOpen}>
+      <button type="button" className="dialog-row list-card" aria-labelledby={`${id}-name`} aria-describedby={`${id}-path`} onClick={onOpen}>
         <span className="dialog-row-icon vx-surface-3">
           <FolderIcon />
         </span>

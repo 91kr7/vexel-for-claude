@@ -227,18 +227,20 @@ async function settled(dialog: Locator): Promise<void> {
   );
 }
 
-/** The mock modal frame (Dialog "Shows"): at most `maxWidth` wide, centred, surface 2, strong border, 8 radius, frame shadow. */
+/** The mock modal frame (Dialog "Shows"): at most `maxWidth` wide, centred, popup glass, strong border, 8 radius, frame shadow. */
 async function expectStudioFrame(page: Page, frame: Locator, what: string, maxWidth = 448): Promise<Box> {
   await settled(frame);
   const b = await box(frame);
   expect(b.width, `${what} width`).toBeLessThanOrEqual(maxWidth + TOLERANCE);
   near(centreX(b), 720, `${what} horizontal centre`);
   near(b.y, 900 - bottom(b), `${what} vertical centring (space above vs below)`);
-  await expectStyles(
-    frame,
-    { 'border-top-left-radius': '8px', 'background-color': await role(page, '--bg-surface-2'), 'border-top-color': await role(page, '--border-strong') },
-    `${what} frame`,
-  );
+  await expectStyles(frame, { 'border-top-left-radius': '8px' }, `${what} frame`);
+  // Dialog: the glass and its border are painted on a layer behind the content (WebEntry `.vx-popup-glass`).
+  const glass = await frame.evaluate((el) => {
+    const s = getComputedStyle(el, '::before');
+    return { 'background-color': s.backgroundColor, 'border-top-color': s.borderTopColor, 'border-top-left-radius': s.borderTopLeftRadius };
+  });
+  expect(glass, `${what} frame glass`).toEqual({ 'background-color': await role(page, '--popup-glass-bg'), 'border-top-color': await role(page, '--border-strong'), 'border-top-left-radius': '8px' });
   expect((await styles(frame, ['box-shadow']))['box-shadow'], `${what} frame shadow`).toContain(SHADOW_FRAME);
   return b;
 }
@@ -266,13 +268,13 @@ async function expectStudioHeader(page: Page, dialog: Locator, title: string, wh
   return titleBox;
 }
 
-/** The footer (Dialog "Shows"): surface 1, subtle line above, "Cancel" neutral, then the primary action 8 apart on the right. */
+/** The footer (Dialog "Shows"): no fill of its own, subtle line above, "Cancel" neutral, then the primary action 8 apart on the right. */
 async function expectStudioFooter(page: Page, cancel: Locator, primary: Locator, what: string): Promise<{ cancel: Box; primary: Box }> {
   const footer = cancel.locator('xpath=..');
   const f = await box(footer);
   await expectStyles(
     footer,
-    { 'background-color': await role(page, '--bg-surface-1'), 'border-top-color': await role(page, '--border-subtle'), 'padding-top': '12px', 'padding-right': '16px' },
+    { 'background-color': 'rgba(0, 0, 0, 0)', 'border-top-color': await role(page, '--border-subtle'), 'padding-top': '12px', 'padding-right': '16px' },
     `${what} footer`,
   );
   const c = await box(cancel);
@@ -570,14 +572,14 @@ test.describe('new-session dialog', () => {
     await expect(pathField(page)).toBeFocused();
   });
 
-  // FolderChooser: an unchecked row or entry under the pointer gets surface 3 (the dialog itself is surface 2)
+  // FolderChooser: an unchecked row or entry under the pointer gets surface 3. Without the pointer it keeps its own look:
+  // the dialog behind it is now the popup glass (plan-popup_glass/REQ-1, REQ-5), so that look is no longer surface 2.
   test('an unchecked "Recent" row and a "Folders" entry under the pointer show surface 3', async ({ page }) => {
     await boardRecents();
     await page.goto('/');
     await openChooser(page);
     await recent(page, 'billing-api').click();
     await expect(loading(chooser(page))).toHaveCount(0);
-    const surface = await channels(page, await role(page, '--bg-surface-2'));
     const hover = await channels(page, await role(page, '--bg-surface-3'));
 
     for (const [what, row] of [
@@ -587,7 +589,8 @@ test.describe('new-session dialog', () => {
       const b = await box(row);
       const sample = { x: b.x + 6, y: centreY(b) };
       await page.mouse.move(0, 0);
-      await expect.poll(() => pixel(page, sample.x, sample.y).then((p) => closeTo(p, surface.slice(0, 3))), `${what} without the pointer`).toBe(true);
+      await settled(chooser(page));
+      await expect.poll(async () => closeTo(await pixel(page, sample.x, sample.y), hover.slice(0, 3)), `${what} without the pointer is not surface 3`).toBe(false);
       await page.mouse.move(centreX(b), centreY(b));
       const expected = hover.slice(0, 3);
       await expect
@@ -757,7 +760,8 @@ test.describe('Studio dialogs', () => {
     await expectSectionHeading(page, dialog.getByText('Folders', { exact: true }), false, '"Folders"');
     const parent = action(dialog, '..');
     await expect(parent).toHaveAccessibleDescription(path.dirname(billing));
-    await expectStudioRow(page, parent, '..', path.dirname(billing), { checked: false, radio: false }, '".." entry');
+    // FolderChooser: the "Folders" entries are the same card as the "Recent" rows, never checked.
+    await expectStudioRow(page, parent, '..', path.dirname(billing), { checked: false, radio: false, card: true }, '".." entry');
     const tile = parent.locator(':scope > *').first();
     await expectStyles(tile, { 'background-color': await role(page, '--bg-surface-3'), 'border-top-left-radius': '6px' }, '".." folder tile');
     near((await box(tile.locator('svg'))).width, 14, '".." folder icon width');

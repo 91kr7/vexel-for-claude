@@ -479,8 +479,9 @@ test.describe('Order and look of the header actions of a hosted session', () => 
     await expect(tooltip(page)).toHaveCount(0);
   });
 
-  // plan-session_list_width/REQ-34, REQ-35 — scenario "The orange of "Interrupt" stays apart from the amber of needs input"
-  test('in both themes "Interrupt" is orange, readable on the header, and apart from the amber of needs input', async ({ page, request }) => {
+  // plan-session_list_width/REQ-34, REQ-35 — scenario "The orange of "Interrupt" stays apart from the amber of needs input".
+  // In Light plan-cool_slate_light/REQ-5 replaces it: "Interrupt" takes the amber of needs input.
+  test('"Interrupt" is orange and apart from the amber of needs input in Dark, amber in Light, and readable on the header', async ({ page, request }) => {
     const folder = await newFolder('needs-input');
     const id = await hosted(request, folder, 'Explain the code', [], { working: true });
     await hookEvent(request, id, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
@@ -500,7 +501,8 @@ test.describe('Order and look of the header actions of a hosted session', () => 
       await expect(interrupt, `${theme}: orange text`).toHaveCSS('color', orange);
       expect(await style(interrupt.locator('svg'), 'stroke'), `${theme}: orange icon`).toBe(orange);
       const amber = rgbaOf(await style(pill, 'color'));
-      expect(distance(rgbaOf(orange), amber), `${theme}: orange apart from the amber state`).toBeGreaterThanOrEqual(CLEARLY_APART);
+      if (theme === 'dark') expect(distance(rgbaOf(orange), amber), `${theme}: orange apart from the amber state`).toBeGreaterThanOrEqual(CLEARLY_APART);
+      else expect(orange, 'light: "Interrupt" takes the amber of needs input').toBe(await colourOf(page, '--amber-400'));
 
       const surface = rgbaOf(await style(header(page), 'background-color'));
       const restingFill = await colourOf(page, '--orange-500-15');

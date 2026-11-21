@@ -27,7 +27,9 @@ Props:
 
 Shows:
 - the terminal panel → a frame with `role="region"` named "Terminal: <folder name>" ("Terminal" without `session`). 12 px gap on all four sides (it keeps the frame off the header, the SessionFooter and the GitExplorerPanel), `--radius-frame` (8 px) corners, 1 px `--term-frame` border, `--shadow-frame` shadow, `--term-bg` background, padding 12 px. The terminal fills the box inside the padding. Nothing of the frame or its shadow paints outside its 12 px gap.
-- the terminal → Roboto Mono at the size of TerminalFontSizeStore (12 px by default), line height 1.2. Background `--term-bg`, default text `--term-fg`, cursor `--term-cursor`, selection `--term-selection`. These tokens are dark in every theme, so the panel stays dark in the light theme; Dark Blue has its own terminal background. On a theme change the open terminal takes the new colours at once, with no new connection and no lost output. The font is loaded before the terminal opens and fits; if it fails to load, the terminal opens with the next font of `--font-mono`. The ANSI colours that Claude Code writes stay as written.
+- the terminal → Roboto Mono at the size of TerminalFontSizeStore (12 px by default), line height 1.2. Background `--term-bg`, default text `--term-fg`, cursor `--term-cursor`, selection `--term-selection`. Each ANSI colour takes its `--term-ansi-*` token when the token is set (Light); an unset token keeps the xterm.js default (Dark, Dark Blue). So the terminal is light in the Light theme and dark in the others; Dark Blue has its own terminal background. The font is loaded before the terminal opens and fits; if it fails to load, the terminal opens with the next font of `--font-mono`.
+- minimum contrast → in the Light theme, any text drawn under 4.5:1 against its background (selection included) is shown at 4.5:1. In the other themes the text keeps the colours Claude Code writes.
+- on a theme change the open terminal takes the new colours, ANSI colours, minimum contrast and search highlight colours at once, with no new connection and no lost output.
 - while the terminal or the search box has the keyboard focus, the frame shows an accent border (`--role-accent` at 75 %) and a 1 px accent ring outside it (`--role-accent` at 22 %), around its rounded edge. The ring stays inside the 12 px gap: it touches neither the header nor the SessionFooter nor the GitExplorerPanel.
 - the SessionFooter with `session` (path and figures). Its end holds the TerminalZoomControls, at the right end.
 - no on-screen hint for Ctrl+Shift+L (human decision, 2026-11-07).
@@ -36,7 +38,7 @@ Shows:
 - `[Session disconnected]` in the terminal when the connection closes.
 - links in the terminal → the web addresses of WebAddressLinks and the terminal hyperlinks (OSC 8) with an `http` or `https` address. An OSC 8 hyperlink with another scheme is not a link.
   - pointer over a link → the link is underlined in its own text colour and the pointer is a hand.
-  - pointer over a hyperlink whose visible text on that row differs from its address → a tooltip (`role="tooltip"`) 12 px right of and below the pointer shows the full address, kept 12 px inside the window's left and right edges. Mono 11 px, `--text-primary` on `--bg-surface-3` with a `--border-strong` border, at most 480 px wide, long addresses break. It does not take the pointer. It hides when the pointer leaves the link and when the session changes.
+  - pointer over a hyperlink whose visible text on that row differs from its address → a tooltip (`role="tooltip"`) 12 px right of and below the pointer shows the full address, kept 12 px inside the window's left and right edges. Mono 11 px, `--text-primary` on the popup glass (`.vx-popup-glass` of WebEntry, module app) with a `--border-strong` border, at most 480 px wide, long addresses break. It does not take the pointer. It hides when the pointer leaves the link and when the session changes.
 - the connection closes, between the header and the panel → an ErrorMessage on surface 1:
   - code `1000` (the session process ended) → no message. The header shows "Ended".
   - code `4404` → "The session no longer exists."
@@ -129,3 +131,5 @@ Actions:
 - `plan-dark_blue_theme/REQ-31`, `plan-dark_blue_theme/REQ-38`
 - `plan-ui_transitions/REQ-6`, `plan-ui_transitions/REQ-11`, `plan-ui_transitions/REQ-12`, `plan-ui_transitions/REQ-13`, `plan-ui_transitions/REQ-28`, `plan-ui_transitions/REQ-33`
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-26`, `plan-dark_blue_theme/REQ-27`, `plan-dark_blue_theme/REQ-28`, `plan-dark_blue_theme/REQ-29`
+- `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-6`
+- `plan-cool_slate_light/REQ-11`, `plan-cool_slate_light/REQ-14`, `plan-cool_slate_light/REQ-17` to `plan-cool_slate_light/REQ-20`, `plan-cool_slate_light/REQ-23` to `plan-cool_slate_light/REQ-25`

@@ -359,18 +359,16 @@ test('the focused frame and its shadow paint nothing over the header, the footer
   for (const [n, { what }] of strips.entries()) expect(withFrame[n]!.equals(without[n]!), `the frame paints over the ${what}`).toBe(true);
 });
 
-// plan-dark_blue_theme/REQ-29 — scenario "the terminal stays dark in Light"
-test('in the Light theme the terminal stays dark inside its frame', async ({ page, request }) => {
+// plan-cool_slate_light/REQ-17, REQ-18 (they replace plan-dark_blue_theme/REQ-29): the terminal is light in Light
+test('in the Light theme the terminal is light inside its frame', async ({ page, request }) => {
   const folder = await newFolder('light-terminal');
   await idleSession(request, folder, 'light');
   await openIn(page, 'light', folder);
 
   const termBg = await colourOf(page, 'var(--term-bg)');
   expect(await style(frame(page), 'background-color')).toBe(termBg);
-  expect(luminance(termBg), 'terminal background is dark').toBeLessThan(0.05);
-  const viewport = page.locator('.xterm-viewport');
-  expect(luminance(await style(viewport, 'background-color')), 'xterm background is dark').toBeLessThan(0.05);
-  expect(luminance(await style(frame(page), 'color')), 'terminal text is light').toBeGreaterThan(0.5);
+  expect(termBg, 'terminal background is the table B white').toBe('rgb(255, 255, 255)');
+  expect(await style(terminal(page), 'color'), 'terminal text is the table B dark slate').toBe('rgb(30, 41, 59)');
   // The page around the frame is light.
   expect(luminance(await style(header(page), 'background-color')), 'header is light').toBeGreaterThan(0.5);
 });

@@ -9,7 +9,7 @@ import { type Page, chromium, expect, test } from '@playwright/test';
 import { chooseInSettings, settingsButton, settingsPopup, toggleThemeInSettings } from './settings';
 
 const KEY = 'ai-client.theme';
-const CANVAS = { dark: 'rgb(11, 11, 14)', light: 'rgb(244, 241, 234)', 'dark-blue': 'rgb(18, 21, 30)' };
+const CANVAS = { dark: 'rgb(11, 11, 14)', light: 'rgb(243, 245, 248)', 'dark-blue': 'rgb(18, 21, 30)' };
 const FIRST_START = { mark: 'dark-blue', meta: 'dark', canvas: CANVAS['dark-blue'], scheme: 'dark' };
 
 // A browser that has never opened the client: no saved choice (the config default saves dark). A light system theme,

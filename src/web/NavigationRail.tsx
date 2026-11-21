@@ -17,7 +17,7 @@ interface NavigationRailProps {
 
 function Tooltip({ text }: { text: string }) {
   return (
-    <span className="vx-tooltip" aria-hidden="true">
+    <span className="vx-tooltip vx-popup-glass" aria-hidden="true">
       {text}
     </span>
   );

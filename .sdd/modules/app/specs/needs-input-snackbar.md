@@ -32,7 +32,7 @@ else → null
 - `onOpen(sessionId)` → called by "Open".
 
 Shows:
-- a `role="status"` `.vx-glass` box, fixed 20 px from the right and bottom edges of the window, above the page (z-index 50) and below the dialogs. Padding 8 × 14 px, `--radius-frame`, 1 px `--role-border-strong` border, top line and `--shadow-frame`, mono 12/16 px in `--text-primary`, 12 px gap.
+- a `role="status"` box on the popup glass (`.vx-popup-glass`), fixed 20 px from the right and bottom edges of the window, above the page (z-index 50) and below the dialogs. Padding 8 × 14 px, `--radius-frame`, 1 px `--role-border-strong` border, top line and `--shadow-frame`, mono 12/16 px in `--text-primary`, 12 px gap.
 - the text "<project> needs your input". "<project>" is the last segment of the session folder, in bold (mono 500).
 - the button "Open" → a text button, mono 12 px weight 500, `--accent-primary`, underlined on hover.
 
@@ -57,7 +57,7 @@ Motion (MotionTokens):
 ## Dependencies
 
 - LiveSessionStore (module sessions): `SessionSummary`, `LoadStatus`
-- WebEntry (`.vx-glass`)
+- WebEntry (`.vx-surface-2`, `.vx-popup-glass`)
 - MotionTokens, ExitPresence (`useLeaving`)
 
 ## Requirements served
@@ -68,3 +68,4 @@ Motion (MotionTokens):
 - `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-3`, `plan-claude_sessions_client-ui_redesign-material3_mock-studio_dark-english_ui/REQ-5`
 - `plan-dark_blue_theme/REQ-3`
 - `plan-ui_transitions/REQ-3`, `plan-ui_transitions/REQ-4`, `plan-ui_transitions/REQ-26`, `plan-ui_transitions/REQ-28`
+- `plan-popup_glass/REQ-3`, `plan-popup_glass/REQ-10`

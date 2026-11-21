@@ -118,20 +118,38 @@ function contrast(a: Rgba, b: Rgba): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-/** Text colour of the element and the first non-transparent background from it up to the root. */
-function colours(target: Locator): Promise<{ text: string; icon: string; background: string }> {
+/**
+ * Text colour of the element and the background it is read on: the backgrounds from it up to the first opaque one,
+ * painted one over the other. The popup glass (plan-popup_glass/REQ-1) is translucent, so it counts with the dim and
+ * the page below it; the blurred page content is not counted.
+ */
+function colours(target: Locator): Promise<{ text: string; icon: string; background: string[] }> {
   return target.evaluate((el) => {
-    let background = 'rgb(255, 255, 255)';
+    const background: string[] = [];
     for (let node: Element | null = el; node; node = node.parentElement) {
       const bg = getComputedStyle(node).backgroundColor;
-      if (bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
-        background = bg;
-        break;
-      }
+      if (bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') continue;
+      background.push(bg);
+      if (!/\/\s*0?\.\d|rgba\(/.test(bg)) break;
     }
     const svg = el.querySelector('svg');
     return { text: getComputedStyle(el).color, icon: svg ? getComputedStyle(svg).color : '', background };
   });
+}
+
+/** The opaque colour of backgrounds painted from the last (outermost) to the first, over white. */
+function painted(page: Page, layers: string[]): Promise<Rgba> {
+  return page.evaluate((colours) => {
+    const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
+    ctx.canvas.width = ctx.canvas.height = 1;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, 1, 1);
+    for (const colour of [...colours].reverse()) {
+      ctx.fillStyle = colour;
+      ctx.fillRect(0, 0, 1, 1);
+    }
+    return [...ctx.getImageData(0, 0, 1, 1).data] as Rgba;
+  }, layers);
 }
 
 /** Icon in `iconToken`, text in `textToken` when given, and the text at AA contrast on its background. */
@@ -139,8 +157,8 @@ async function expectLook(page: Page, target: Locator, iconToken: string, textTo
   const look = await colours(target);
   expect(await resolved(page, look.icon), `icon in ${iconToken}`).toEqual(await resolved(page, await token(page, iconToken)));
   if (textToken) expect(await resolved(page, look.text), `text in ${textToken}`).toEqual(await resolved(page, await token(page, textToken)));
-  const ratio = contrast(await resolved(page, look.text), await resolved(page, look.background));
-  expect(ratio, `contrast of the text on ${look.background}`).toBeGreaterThanOrEqual(4.5);
+  const ratio = contrast(await resolved(page, look.text), await painted(page, look.background));
+  expect(ratio, `contrast of the text on ${look.background.join(' over ')}`).toBeGreaterThanOrEqual(4.5);
 }
 
 /** The animations of every element inside the target: name and duration. */

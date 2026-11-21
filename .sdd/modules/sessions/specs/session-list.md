@@ -29,8 +29,8 @@ Shows:
 - the groups of `groupSessions` with `order`, in its order. Each group is a level-2 heading with the group title in `.section-label` (all muted, padding 0 × 6 px), 4 px above a list with one item per session. Cards are 8 px apart.
 
 Card (every entry): 7 px corners (`--radius-card`), a 1 px border, the "card" role surface (`--role-card`), padding 10 × 12 px plus the room of the 3.5 px accent bar on the left.
-- inactive → `--role-border-subtle` border. Hover → the "active card" surface (`--role-card-active`) and the `--role-border-strong` border.
-- open (`aria-current="true"`) → `--role-accent` border, a 3.5 px `--role-accent` bar on the left edge, the "active card" surface, the soft card shadow (`--shadow-card`). Hover changes nothing.
+- inactive → `--role-border-subtle` border. Hover → the hover surface (`--role-hover`) and the `--role-border-strong` border.
+- open (`aria-current="true"`) → `--role-accent` border, a 3.5 px `--role-accent` bar on the left edge, the "active card" surface, the active card shadow (`--shadow-card-active`). Hover changes nothing.
 
 Entry row (every entry but the hosted needs-input card): a button with the class `session-entry`, 12/18 px text in `--text-secondary`, `--text-primary` on hover and when open.
 - line 1, 8 px gaps → the StateBadge `dot` (8 px), the folder name (13 px, weight 600, `folderNameOf`, tooltip: the full folder path), the star place, then on the right the StateBadge `inline` name (11 px, weight 500, in the state colour).

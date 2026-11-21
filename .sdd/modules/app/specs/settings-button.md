@@ -14,7 +14,7 @@ Props:
 - `onOpen()` → called by a click, Enter or Space.
 
 Shows:
-- one button with the look of the rail buttons (`.vx-rail-btn`), as "Resume": a 32 × 32 px square, `--radius-frame` corners, the gear icon at 16 px in `--text-secondary`, never the active style. Hover → `--bg-surface-3` and `--text-primary`.
+- one button with the look of the rail buttons (`.vx-rail-btn`), as "Resume": a 32 × 32 px square, `--radius-frame` corners, the gear icon at 16 px in `--text-secondary`, never the active style. Hover → `--role-hover` and `--text-primary`.
 - accessible name "Settings", `aria-haspopup="dialog"`.
 - the rail tooltip on hover, as the other rail buttons: "Settings" and, in brackets, the keys of the ShortcutMap row "Shortcut settings" (`commandKeysText('open-shortcut-settings')`, joined by " / "), e.g. "Settings (Alt+S)". It follows the active keys: a change of them shows at once. Hidden from assistive technology.
 - keyboard focus → the focus ring of the page.

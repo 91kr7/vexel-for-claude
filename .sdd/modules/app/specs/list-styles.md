@@ -12,8 +12,8 @@ type: configuration
 
 - `.list-card` → an entry of a card list: 1 px `--role-border-subtle` border, `--radius-card` corners, `--role-card` surface.
 - `.list-row` → a row of a dense list: same corners, transparent border and surface at rest. It keeps the height and padding of its own list.
-- hover on `.list-card` or `.list-row` → `--role-card-active` surface, `--role-border-strong` border, `--text-primary` text. Not on an active entry, nor on an entry with the class `unavailable`.
-- `.list-active` with `.list-card` or `.list-row` → the open session card: `--role-card-active` surface, `--role-accent` border, a 3.5 px `--role-accent` bar on the left edge (border plus a 2.5 px inner bar), `--shadow-card`, `--text-primary` text. Hover changes nothing.
+- hover on `.list-card` or `.list-row` → `--role-hover` surface, `--role-border-strong` border, `--text-primary` text. Not on an active entry, nor on an entry with the class `unavailable`.
+- `.list-active` with `.list-card` or `.list-row` → the open session card: `--role-card-active` surface, `--role-accent` border, a 3.5 px `--role-accent` bar on the left edge (border plus a 2.5 px inner bar), `--shadow-card-active`, `--text-primary` text. Hover changes nothing.
 - keyboard focus on a `.list-card` or `.list-row` → the focus ring is drawn inside its edge, so a clipping or scrolling list never cuts it.
 - `.list-scroll` → a list scroll area. It reaches `--list-scroll-reach` to the right of its own box, into the frame's right padding. A shown scrollbar sits at that right edge, and the gap between the right edge of the entries and the scrollbar is `--list-scroll-gap`, the left gap of the entries.
   - with no scrollbar, the entries end `--list-scroll-gap` minus `--list-scroll-reach` before the box edge.

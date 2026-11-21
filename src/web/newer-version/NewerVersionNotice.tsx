@@ -12,7 +12,7 @@ export function NewerVersionNotice({ version, onClose }: NewerVersionNoticeProps
   const leaving = useLeaving();
   return (
     <section
-      className={leaving ? 'update-notice vx-glass is-leaving' : 'update-notice vx-glass'}
+      className={leaving ? 'update-notice vx-surface-2 vx-popup-glass is-leaving' : 'update-notice vx-surface-2 vx-popup-glass'}
       role="status"
       aria-label="Update Available"
       aria-hidden={leaving || undefined}

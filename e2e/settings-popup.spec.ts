@@ -192,21 +192,23 @@ test('choosing "Light" and "Windows 11" restyles the whole client at once, keeps
   await expect(popup(page)).toBeVisible();
   await expect(radio(page, 'Dark')).toBeChecked();
   await expect(radio(page, 'Light')).not.toBeChecked();
-  const darkBackground = await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor);
+  // The frame's glass sits on its layer behind the content (WebEntry `.vx-popup-glass`).
+  const glassOf = () => popup(page).evaluate((element) => getComputedStyle(element, '::before').backgroundColor);
+  const darkBackground = await glassOf();
 
   // The colour dissolve applies the change a frame or two after the click.
   await cardOf(radio(page, 'Light')).click();
   await expect.poll(() => rootMark(page, 'data-theme')).toBe('light');
   await expect(radio(page, 'Light')).toBeChecked();
-  expect(await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor), 'the popup turns light').not.toBe(darkBackground);
+  expect(await glassOf(), 'the popup turns light').not.toBe(darkBackground);
   expect(await page.evaluate(() => localStorage.getItem('ai-client.theme'))).toBe('light');
 
   await expect(radio(page, 'macOS')).toBeChecked();
-  const macBackground = await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor);
+  const macBackground = await glassOf();
   await cardOf(radio(page, 'Windows 11')).click();
   await expect.poll(() => rootMark(page, 'data-look')).toBe('windows11');
   await expect(radio(page, 'Windows 11')).toBeChecked();
-  expect(await popup(page).evaluate((element) => getComputedStyle(element).backgroundColor), 'the popup takes the Windows 11 look').not.toBe(macBackground);
+  expect(await glassOf(), 'the popup takes the Windows 11 look').not.toBe(macBackground);
   expect(await page.evaluate(() => localStorage.getItem('ai-client.look'))).toBe('windows11');
   // In the browser the Windows 11 look shows no window buttons.
   await expect(topBar(page).getByRole('button', { name: 'Minimize' })).toHaveCount(0);

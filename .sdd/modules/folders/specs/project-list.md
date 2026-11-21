@@ -34,7 +34,7 @@ Shows:
   - no "New session" label.
 - a row with `available` false → `aria-disabled="true"`, opacity 0.55, the `not-allowed` cursor, no hover style. Before "Last activity" it shows "Folder not found" in `--amber-400`, then " · ".
 - each row is a card of ListStyles (`.list-card`): `--radius-card`, `--role-card` background, 1 px `--role-border-subtle` border.
-- an available row on hover → the hover of ListStyles: `--role-card-active` background, `--role-border-strong` border.
+- an available row on hover → the hover of ListStyles: `--role-hover` background, `--role-border-strong` border.
 - the ProjectRemoveButton → in the right column of the row, 8 px from the right edge, centred on the height of the row button. It shows while the pointer is over the row, while the keyboard focus is visible on the row or on a control of the row, and while its request runs; else it is hidden (opacity 0).
 - the ProjectFavoriteButton → its visibility rules are in its spec; the row is the area whose hover or keyboard focus shows an outline star.
 - the errors of both buttons show under the row button. Unavailable rows have both buttons too. They are not dimmed there, and they work.

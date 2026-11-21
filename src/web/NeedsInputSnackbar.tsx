@@ -54,7 +54,7 @@ interface NeedsInputSnackbarProps {
 export function NeedsInputSnackbar({ session, onOpen }: NeedsInputSnackbarProps) {
   const leaving = useLeaving();
   return (
-    <div className={leaving ? 'snackbar vx-glass is-leaving' : 'snackbar vx-glass'} role="status" aria-hidden={leaving || undefined}>
+    <div className={leaving ? 'snackbar vx-surface-2 vx-popup-glass is-leaving' : 'snackbar vx-surface-2 vx-popup-glass'} role="status" aria-hidden={leaving || undefined}>
       <span className="snackbar-text">
         <b>{projectName(session.folder)}</b> needs your input
       </span>
