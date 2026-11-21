@@ -1005,6 +1005,9 @@ input {
 .update-notice-changelogs {
   align-self: stretch;
   min-height: 0;
+  /* The list reaches under the close button column (12 px gap + 16 px button), so its scrollbar sits at the right edge; the text keeps its width. */
+  margin-right: -28px;
+  padding-right: 28px;
   overflow-y: auto;
   overflow-wrap: anywhere;
 }
