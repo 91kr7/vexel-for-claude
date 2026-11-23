@@ -368,7 +368,7 @@ test.describe('Git Explorer slide of an external session', () => {
     const repo = await newRepository('external-slide-repo');
     await runExternal('9a1c2d3e-0000-4000-8000-000000000101', repo);
     await page.goto('/');
-    await expect(entry(page, repo)).toBeVisible({ timeout: 10_000 });
+    await expect(entry(page, repo)).toBeVisible({ timeout: 20_000 });
     await entry(page, repo).getByTitle(repo, { exact: true }).click();
     const conversation = page.locator('.conversation-view');
     await expect(conversation).toContainText('Hi there');

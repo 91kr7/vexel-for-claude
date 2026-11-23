@@ -8,6 +8,11 @@ import { type APIRequestContext, type Locator, type Page, expect, test } from '@
 import { pageSettled } from './motion';
 import { chooseInSettings, settingsButton, settingsPopup } from './settings';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 type Rgba = [number, number, number, number];
 
 // Table A, with the text tones that ThemeTokens darkens for 4.5:1 (plan-cool_slate_light/REQ-14).

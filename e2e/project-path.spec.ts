@@ -8,6 +8,11 @@ import path from 'node:path';
 import { type APIRequestContext, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 const SESSIONS_PER_GROUP = 10;
 const LONG_TAIL = 'tail-project';
 

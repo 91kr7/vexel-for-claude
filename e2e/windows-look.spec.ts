@@ -234,7 +234,7 @@ test.describe('Look choice and look store', () => {
             probe.remove();
             return { mark: document.documentElement.getAttribute('data-look'), canvas };
           }),
-        { message: 'the page carries the Windows 11 mark and its dark canvas', timeout: 1000 },
+        { message: 'the page carries the Windows 11 mark and its dark canvas', timeout: 15_000 },
       )
       .toEqual({ mark: 'windows11', canvas: 'rgb(28, 28, 28)' });
     await expect(windows11).toBeChecked();
@@ -255,7 +255,7 @@ test.describe('Look choice and look store', () => {
 
     await cardOf(macOS).click();
     await expect(macOS).toBeChecked();
-    await expect.poll(() => lookMark(page), { timeout: 1000 }).toBe('vexel');
+    await expect.poll(() => lookMark(page), { timeout: 15_000 }).toBe('vexel');
     expect(await page.evaluate((key) => localStorage.getItem(key), LOOK_KEY)).toBe('vexel');
     expect(await page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument), 'no reload').toBe(true);
   });

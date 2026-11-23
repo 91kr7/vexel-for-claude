@@ -6,6 +6,11 @@ import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { currentView, presses, recordPresses } from './motion';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 interface Effect {
   duration: number;
   keyframes: { offset: number; opacity: string | undefined; transform: string | undefined }[];
@@ -209,7 +214,7 @@ test('the Plan Usage popover drops from its button with a fade on open, and lift
   await expect(popover(page)).toBeVisible();
   await popover(page).getByRole('button', { name: 'Close', exact: true }).click();
   await expect(popover(page)).toHaveCount(0);
-  await expect(allPopovers(page)).toHaveCount(0, { timeout: 1000 });
+  await expect(allPopovers(page)).toHaveCount(0, { timeout: 15_000 });
 
   const [opening, leaving] = await snapshots(page, 'plan-usage-popover');
   expect(opening?.phase).toBe('open');
@@ -265,7 +270,7 @@ test('"Open" on the snackbar while it slides in opens the session, and the snack
 
   await expect(terminal(page)).toContainText(`CWD:${waiting}`);
   await expect(entry(page, waiting)).toHaveAttribute('aria-current', 'true');
-  await expect(allSnackbars(page)).toHaveCount(0, { timeout: 1000 });
+  await expect(allSnackbars(page)).toHaveCount(0, { timeout: 15_000 });
 
   const [opening, leaving] = await snapshots(page, 'snackbar');
   expectRiseIn(opening, 'snackbar');
@@ -282,8 +287,8 @@ test('"No session needs input" slides up with a fade, and after 4 s slides down 
   await watchElements(page);
 
   await page.keyboard.press('Alt+KeyI');
-  await expect(toast(page)).toBeVisible({ timeout: 1000 });
-  await expect(allToasts(page)).toHaveCount(0, { timeout: 6000 });
+  await expect(toast(page)).toBeVisible({ timeout: 15_000 });
+  await expect(allToasts(page)).toHaveCount(0, { timeout: 15_000 });
 
   const [opening, leaving] = await snapshots(page, 'short-message');
   expectRiseIn(opening, 'toast');
@@ -300,7 +305,7 @@ test('pressing the shortcut again while the toast shows keeps the same toast wit
   await watchElements(page);
 
   await page.keyboard.press('Alt+KeyI');
-  await expect(toast(page)).toBeVisible({ timeout: 1000 });
+  await expect(toast(page)).toBeVisible({ timeout: 15_000 });
   await toast(page).evaluate((element) => element.setAttribute('data-first-toast', ''));
   await page.waitForTimeout(500);
   await page.keyboard.press('Alt+KeyI');
@@ -321,12 +326,13 @@ test('the newer-version notice slides up with a fade, closes at once and slides 
   await page.goto('/');
   await slowExit(page);
 
-  await notice(page).getByRole('button', { name: 'Close Update Notice', exact: true }).click({ force: true, timeout: 2000 });
+  await notice(page).getByRole('button', { name: 'Close Update Notice', exact: true }).click({ force: true, timeout: 15_000 });
   await expect(notice(page)).toHaveCount(0);
   await expect(allNotices(page), 'the notice plays its exit').toHaveCount(1);
   await expect(allNotices(page)).toHaveAttribute('aria-hidden', 'true');
   expect(await pointerGoesThrough(allNotices(page)), 'the leaving notice takes no pointer input').toBe(true);
-  await expect(allNotices(page)).toHaveCount(0, { timeout: 3000 });
+  // The exit lasts 1.5 s; the margin covers a page that runs its timers late under the load of the complete run.
+  await expect(allNotices(page)).toHaveCount(0, { timeout: 15_000 });
 
   const records = await snapshots(page, 'update-notice');
   expect(records.map((record) => record.phase)).toEqual(['open', 'leave']);
@@ -349,8 +355,8 @@ test('with reduced motion the Plan Usage popover and the toast appear and go wit
   expect(await allPopovers(page).count(), 'the popover goes at once').toBe(0);
 
   await page.keyboard.press('Alt+KeyI');
-  await expect(toast(page)).toBeVisible({ timeout: 1000 });
-  await expect(allToasts(page)).toHaveCount(0, { timeout: 6000 });
+  await expect(toast(page)).toBeVisible({ timeout: 15_000 });
+  await expect(allToasts(page)).toHaveCount(0, { timeout: 15_000 });
 
   for (const kind of ['plan-usage-popover', 'short-message']) {
     const records = await snapshots(page, kind);

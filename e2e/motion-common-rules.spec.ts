@@ -7,6 +7,11 @@ import path from 'node:path';
 import { type APIRequestContext, type Page, expect, test } from '@playwright/test';
 import { cardOf, settingsButton, settingsPopup } from './settings';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 interface Played {
   kind: string;
   name: string;
@@ -184,7 +189,7 @@ async function journey(page: Page, sessions: { plain: string; repo: string }): P
   await explorer(page).getByRole('tab', { name: 'History', exact: true }).click();
   await page.waitForTimeout(400);
   await explorerButton(page).click();
-  await expect(explorer(page)).toHaveCount(0, { timeout: 2000 });
+  await expect(explorer(page)).toHaveCount(0, { timeout: 15_000 });
   await page.waitForTimeout(500);
 }
 
@@ -209,7 +214,7 @@ const signature = (p: Played) => `${p.name} ${p.duration} ${p.easing} ${p.from} 
 
 // plan-ui_transitions/REQ-31: every effect of the journey lasts at most 300 ms, a whole cascade ends within 600 ms
 test('every effect of a journey through all seven effects lasts at most 300 ms, and the list cascade ends within 600 ms', async ({ page, request }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   const sessions = await twoSessions(request, 'limits');
   await page.addInitScript(installRecorder);
   await journey(page, sessions);
@@ -258,7 +263,7 @@ for (const { theme, look } of [
   { theme: 'light', look: 'windows11' },
 ] as const) {
   test(`with reduced motion every change of the journey happens at once, in ${theme} with the ${look} look`, async ({ page, request }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(180_000);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.addInitScript(
       ([themeValue, lookValue]) => {

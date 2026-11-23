@@ -7,6 +7,11 @@ import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, type WebSocketRoute, expect, test } from '@playwright/test';
 import { currentView, settled } from './motion';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 type Box = { x: number; y: number; width: number; height: number };
 
 let projectsRoot: string;
@@ -308,9 +313,10 @@ test.describe('rail "Sessions" moves the focus to the list', () => {
     const started = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/sessions' && r.request().method() === 'POST');
     await page.getByRole('button', { name: 'Start Session' }).click();
     createdIds.push(((await (await started).json()) as { id: string }).id);
-    await expect(terminal(page)).toContainText(`CWD:${unlisted}`);
+    // Under the load of the complete run the terminal can take more than the default 5 s to attach.
+    await expect(terminal(page)).toContainText(`CWD:${unlisted}`, { timeout: 15_000 });
     await expect(entries(page)).toHaveCount(1);
-    await page.locator('.xterm-screen').click();
+    await currentView(page).locator('.xterm-screen').click();
 
     await page.keyboard.press('Control+Shift+L');
 

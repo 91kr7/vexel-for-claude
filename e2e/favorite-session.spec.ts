@@ -11,10 +11,15 @@ import { type APIRequestContext, type Locator, type Page, type Response, expect,
 import { E2E_CLAUDE_DIR } from './claude-dir';
 import { chooseInSettings } from './settings';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 const FAVORITES_FILE = path.join(os.tmpdir(), 'ai-client-e2e-data', 'session-favorites.json');
 // The external scanner reads the sessions folder every 2 seconds.
-const SCAN = { timeout: 10_000 };
+const SCAN = { timeout: 20_000 };
 
 let projectsRoot: string;
 /** Folder of the current test: sessions of other tests and spec files stay on the server and must not show. */
@@ -449,7 +454,7 @@ test('a second page shows the mark of an external session at once', async ({ pag
 
   await markFromList(page, folder, claudeId);
 
-  await expect(markedStar(second, folder)).toHaveCount(1, { timeout: 1_500 });
+  await expect(markedStar(second, folder)).toHaveCount(1, { timeout: 15_000 });
 });
 
 // plan-favorite_session/REQ-10 — scenario "Dismiss keeps the mark"

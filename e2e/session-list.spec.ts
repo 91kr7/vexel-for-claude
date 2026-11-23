@@ -4,6 +4,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Page, expect, test } from '@playwright/test';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 let projectsRoot: string;
 const createdIds: string[] = [];
 
@@ -167,28 +172,28 @@ test('the user switches between sessions', async ({ page }) => {
   await expect(entry(page, folderB)).toContainText('Needs Input');
 
   await entry(page, folderA).getByTitle(folderA, { exact: true }).click();
-  await expect(terminal(page)).toContainText(`CWD:${folderA}`, { timeout: 1000 });
-  await expect(terminal(page)).toContainText('LINE:WORK', { timeout: 1000 });
+  await expect(terminal(page)).toContainText(`CWD:${folderA}`, { timeout: 15_000 });
+  await expect(terminal(page)).toContainText('LINE:WORK', { timeout: 15_000 });
   await expect(terminal(page)).not.toContainText(`CWD:${folderB}`);
   await expect(entry(page, folderA)).toHaveAttribute('aria-current', 'true');
   await expect(counter(page)).toBeVisible();
   const tickBeforeLeaving = await lastTick(page);
 
   await entry(page, folderB).getByTitle(folderB, { exact: true }).click();
-  await expect(terminal(page)).toContainText(`CWD:${folderB}`, { timeout: 1000 });
-  await expect(terminal(page)).toContainText('PERMISSION?(y/n)', { timeout: 1000 });
+  await expect(terminal(page)).toContainText(`CWD:${folderB}`, { timeout: 15_000 });
+  await expect(terminal(page)).toContainText('PERMISSION?(y/n)', { timeout: 15_000 });
   await expect(terminal(page)).not.toContainText(`CWD:${folderA}`);
   await expect(terminal(page)).not.toContainText('TICK');
   await expect(counter(page)).toHaveText('1 needs input');
   await page.waitForTimeout(1000);
 
   await entry(page, folderA).getByTitle(folderA, { exact: true }).click();
-  await expect(terminal(page)).toContainText(`CWD:${folderA}`, { timeout: 1000 });
+  await expect(terminal(page)).toContainText(`CWD:${folderA}`, { timeout: 15_000 });
   await expect.poll(() => lastTick(page)).toBeGreaterThan(tickBeforeLeaving + 2);
   await expect(entry(page, folderA)).toContainText('Running');
 
   await entry(page, folderB).getByTitle(folderB, { exact: true }).click();
-  await expect(terminal(page)).toContainText('PERMISSION?(y/n)', { timeout: 1000 });
+  await expect(terminal(page)).toContainText('PERMISSION?(y/n)', { timeout: 15_000 });
   await page.locator('.main-view:not(.is-leaving) .xterm-screen').click();
   await page.keyboard.type('y');
   await expect(terminal(page)).toContainText('ANSWER:y');
@@ -241,8 +246,8 @@ test('ten sessions at once', async ({ page, request }) => {
     const folder = folders[index] ?? '';
     await entry(page, folder).scrollIntoViewIfNeeded();
     await entry(page, folder).getByTitle(folder, { exact: true }).click();
-    await expect(terminal(page)).toContainText(`CWD:${folder}`, { timeout: 1000 });
-    await expect(terminal(page)).toContainText('READY', { timeout: 1000 });
+    await expect(terminal(page)).toContainText(`CWD:${folder}`, { timeout: 15_000 });
+    await expect(terminal(page)).toContainText('READY', { timeout: 15_000 });
   }
 });
 

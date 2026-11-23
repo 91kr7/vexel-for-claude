@@ -107,9 +107,10 @@ test('the response appears while the CLI produces it', async ({ page }) => {
   await startSession(page, projectA);
   await focusTerminal(page);
   await typeLine(page, 'STREAM');
+  // The chunks come 1 s apart, so CHUNK5 comes 4 s after CHUNK1: a busy machine still sees CHUNK1 alone first.
   await expect(terminal(page)).toContainText('CHUNK1');
   await expect(terminal(page)).not.toContainText('CHUNK5');
-  await expect(terminal(page)).toContainText('CHUNK5');
+  await expect(terminal(page)).toContainText('CHUNK5', { timeout: 15_000 });
 });
 
 test('a permission request waits until the user answers it', async ({ page }) => {

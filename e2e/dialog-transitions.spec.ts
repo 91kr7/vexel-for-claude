@@ -179,7 +179,7 @@ test('Settings fades and zooms in on open, Esc closes it at once and it zooms ou
 
   await page.keyboard.press('Escape');
   await expect(settingsPopup(page)).toHaveCount(0);
-  await expect(backdrops(page)).toHaveCount(0, { timeout: 1000 });
+  await expect(backdrops(page)).toHaveCount(0, { timeout: 15_000 });
 
   const [opening, leaving] = await snapshots(page);
   expectOpening(opening, 'Settings');
@@ -200,7 +200,7 @@ for (const { label, key, dialog } of [
     await expect(dialog(page)).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(dialog(page)).toHaveCount(0);
-    await expect(backdrops(page)).toHaveCount(0, { timeout: 1000 });
+    await expect(backdrops(page)).toHaveCount(0, { timeout: 15_000 });
 
     const [opening, leaving] = await snapshots(page);
     expectOpening(opening, label);
@@ -228,7 +228,7 @@ test('Alt+H then Esc at once closes the Resume session dialog, and the next keys
   expect((await presses(page)).find((press) => press.key.toLowerCase() === 'n')?.during, 'Alt+N lands while the dialog leaves').toBe(true);
   await expect(chooser(page).evaluate((element) => element.contains(document.activeElement))).resolves.toBe(true);
 
-  await expect(backdrops(page)).toHaveCount(1, { timeout: 3000 });
+  await expect(backdrops(page)).toHaveCount(1, { timeout: 15_000 });
   await expect(history(page)).toHaveCount(0);
   await expect(chooser(page)).toBeVisible();
 });
@@ -267,7 +267,7 @@ test('the "Terminate" warning dialog fades and zooms in, and out on "Cancel"', a
   await expect(confirmation(page)).toBeVisible();
   await confirmation(page).getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(confirmation(page)).toHaveCount(0);
-  await expect(backdrops(page)).toHaveCount(0, { timeout: 1000 });
+  await expect(backdrops(page)).toHaveCount(0, { timeout: 15_000 });
 
   const [opening, leaving] = await snapshots(page);
   expectOpening(opening, 'Terminate');

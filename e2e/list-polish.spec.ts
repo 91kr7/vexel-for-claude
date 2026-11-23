@@ -8,6 +8,11 @@ import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, type WebSocketRoute, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 type Box = { x: number; y: number; width: number; height: number };
 
 // Headless Chromium hides scrollbars by default; the gap to a shown scrollbar needs them drawn.
