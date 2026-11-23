@@ -7,6 +7,11 @@ import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 type Theme = 'light' | 'dark';
 const THEMES: Theme[] = ['dark', 'light'];
 const LIST_WIDTH_KEY = 'ai-client.list-width';
@@ -37,7 +42,19 @@ const needsInputCard = (page: Page, folder: string) => list(page).locator('.sess
 const dotOf = (card: Locator) => card.locator('.state-dot').first();
 const terminal = (page: Page) => page.locator('.xterm-rows');
 
+/** Waits for the effects that end (list cascade, entry slide-in, pops): a box read while one plays sits where the effect has moved it. */
+const effectsDone = (page: Page) =>
+  page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
+
 async function box(locator: Locator) {
+  await effectsDone(locator.page());
   const b = await locator.boundingBox();
   expect(b, 'element is rendered').not.toBeNull();
   return b!;

@@ -8,6 +8,11 @@ import { type APIRequestContext, type Locator, type Page, expect, test } from '@
 import { currentView, pageSettled, settled } from './motion';
 import { cardOf, settingsButton, settingsPopup } from './settings';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 type Rgba = [number, number, number, number];
 
 const BLUR = 'blur(8px)';
@@ -87,8 +92,20 @@ async function expectGlass(page: Page, surface: Locator, what: string, text = su
   expectColour(await glassStyle(surface, 'background-color'), await glass(page), `${what} background`);
   expect(await glassStyle(surface, 'backdrop-filter'), `${what} blur`).toBe(BLUR);
   expectColour(await style(text, 'color'), parse(await resolved(page, 'var(--text-primary)')), `${what} text`);
-  // Polled: a session switch cross-fades the whole view for a moment.
-  await expect.poll(() => blurBlockers(surface), { message: `${what}: ancestors that keep the page from its blur` }).toEqual([]);
+  // Polled: a session switch cross-fades the whole view for a moment, longer under the load of the complete run.
+  let found: string[] = [];
+  await expect
+    .poll(
+      async () => {
+        found = await blurBlockers(surface);
+        return found;
+      },
+      { timeout: 20_000, message: `${what}: ancestors that keep the page from its blur` },
+    )
+    .toEqual([])
+    .catch((error: Error) => {
+      throw new Error(`${error.message}\nLast found: ${JSON.stringify(found)}`);
+    });
 }
 
 /**
@@ -318,7 +335,7 @@ test.describe('dialogs', () => {
     expect(leaveDim, 'the dim fades out').toBeGreaterThan(0);
     expect(leaveDim, 'the dim fades out').toBeLessThan(0.65);
     await leavingBackdrop.evaluate((el) => el.getAnimations().forEach((animation) => animation.play()));
-    await expect(page.locator('.modal-backdrop')).toHaveCount(0, { timeout: 10_000 });
+    await expect(page.locator('.modal-backdrop')).toHaveCount(0, { timeout: 20_000 });
   });
 
   // REQ-4, REQ-6 — scenario "the glass looks the same in every theme"

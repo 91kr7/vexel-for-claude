@@ -8,6 +8,11 @@ import { type APIRequestContext, type Page, expect, test } from '@playwright/tes
 import { E2E_CLAUDE_DIR } from './claude-dir';
 import { presses, recordPresses } from './motion';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 interface Layer {
   leaving: boolean;
   entering: boolean;
@@ -118,7 +123,7 @@ async function openHosted(page: Page, folder: string): Promise<void> {
   await entry(page, folder).getByTitle(folder, { exact: true }).click();
   await expect(layerOf(page, folder)).toContainText('READY');
   // The fit at connection and the fade of the open settle before the test starts counting.
-  await expect(layers(page)).toHaveCount(1, { timeout: 2000 });
+  await expect(layers(page)).toHaveCount(1, { timeout: 15_000 });
   await page.waitForTimeout(500);
 }
 
@@ -283,7 +288,7 @@ test.describe('cross-fade between hosted sessions', () => {
     await layerOf(page, a).locator('.xterm-screen').click();
     await page.keyboard.type('COUNT');
     await page.keyboard.press('Enter');
-    await expect(layerOf(page, a)).toContainText('L00400', { timeout: 10_000 });
+    await expect(layerOf(page, a)).toContainText('L00400', { timeout: 20_000 });
     await page.waitForTimeout(500);
     const screen = await layerOf(page, a).locator('.xterm-screen').boundingBox();
     await page.mouse.move(screen!.x + screen!.width / 2, screen!.y + screen!.height / 2);
@@ -450,7 +455,7 @@ test.describe('typing right after a switch', () => {
 
     await expect(layerOf(page, second).locator('.xterm-helper-textarea'), 'the new terminal takes the focus').toBeFocused();
     await page.waitForTimeout(SLOW_MS);
-    await expect(layerOf(page, second), 'B received "z" then "q"').toContainText(/IN:7a(71|[\s\S]*IN:71)/, { timeout: 3000 });
+    await expect(layerOf(page, second), 'B received "z" then "q"').toContainText(/IN:7a(71|[\s\S]*IN:71)/, { timeout: 15_000 });
     await expect(layers(page)).toHaveCount(1, { timeout: SLOW_MS + 1000 });
 
     await openHosted(page, first);
@@ -487,7 +492,7 @@ test.describe('cross-fade to an external session', () => {
     const outside = await newFolder('ext-x');
     await runExternal('9a1c2d3e-0000-4000-8000-000000000201', outside);
     await page.goto('/');
-    await expect(entry(page, outside)).toBeVisible({ timeout: 10_000 });
+    await expect(entry(page, outside)).toBeVisible({ timeout: 20_000 });
     await openHosted(page, a);
     await slowMotion(page);
     await watchLayers(page, [`CWD:${a}`, 'Hi from outside']);

@@ -9,10 +9,15 @@ import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 const ERROR = 'Could not change the favorite mark.';
 // The external scanner reads the sessions folder every 2 seconds.
-const SCAN = { timeout: 10_000 };
+const SCAN = { timeout: 20_000 };
 
 let projectsRoot: string;
 let testRoot: string;

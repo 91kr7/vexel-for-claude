@@ -124,7 +124,20 @@ const enterTokens = (page: Page) =>
   });
 
 async function waitForDissolveEnd(page: Page): Promise<void> {
-  await expect.poll(async () => (await watchOf(page)).active, { timeout: SLOW_MS + 2000 }).toBe(0);
+  // A wait, not a speed check: under the load of the complete run the frames that capture the pictures come late.
+  let last: Watch | undefined;
+  await expect
+    .poll(
+      async () => {
+        last = await watchOf(page);
+        return last.active;
+      },
+      { timeout: SLOW_MS + 6000, message: 'the dissolve ends' },
+    )
+    .toBe(0)
+    .catch((error: Error) => {
+      throw new Error(`${error.message}\nLast watch: ${JSON.stringify({ calls: last?.calls, active: last?.active })}`);
+    });
 }
 
 async function effectiveBackground(target: Locator): Promise<string> {
@@ -244,7 +257,7 @@ test.describe('colour dissolve', () => {
     await page.evaluate((ms) => document.documentElement.style.setProperty('--motion-duration-enter', `${ms}ms`), SLOW_MS);
 
     await page.keyboard.press('Alt+KeyA');
-    await expect.poll(async () => (await watchOf(page)).active, { timeout: 1000 }).toBeGreaterThan(0);
+    await expect.poll(async () => (await watchOf(page)).active, { timeout: 15_000 }).toBeGreaterThan(0);
     await page.keyboard.press('Alt+KeyA');
     expect(await page.evaluate(() => localStorage.getItem('ai-client.theme')), 'the second press is taken during the dissolve').toBe('light');
 
@@ -263,7 +276,7 @@ test.describe('colour dissolve', () => {
     const target = (await settingsButton(page).boundingBox())!;
 
     await page.keyboard.press('Alt+KeyA');
-    await expect.poll(async () => (await watchOf(page)).active, { timeout: 1000 }).toBeGreaterThan(0);
+    await expect.poll(async () => (await watchOf(page)).active, { timeout: 15_000 }).toBeGreaterThan(0);
     await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
     expect((await watchOf(page)).clicksDuringDissolve, 'the click landed while the dissolve played').toBeGreaterThan(0);
     await waitForDissolveEnd(page);

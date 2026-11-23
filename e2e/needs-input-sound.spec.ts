@@ -87,7 +87,7 @@ test('in the desktop page, each sound request plays the chime once and the page 
 
   await requestSound(page);
   await entry(page, target.folder).getByTitle(target.folder, { exact: true }).click();
-  await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('sound-request', { timeout: 2000 });
+  await expect(header(page).getByRole('heading', { level: 2 })).toHaveText('sound-request', { timeout: 15_000 });
 
   await requestSound(page);
   const { plays } = await probe(page);

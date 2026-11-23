@@ -10,6 +10,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const FAKE_CLI = path.join(repoRoot, 'test-support/fake-claude.mjs');
 const OWN_TEXT = 'This is the instance you are using. Terminating it closes the app and ends every session it hosts.';
@@ -264,7 +269,7 @@ test('the confirmation of "This instance" warns that the app closes, and "Cancel
 
 // Scenario "The process does not end", plan-app_processes/REQ-32
 test('a process that ignores SIGTERM keeps its row with "The process did not end."', async ({ page }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(180_000);
   const stubborn = startFakeClaude(true);
   const pid = stubborn.pid as number;
   await openProcesses(page);

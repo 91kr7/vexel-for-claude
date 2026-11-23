@@ -40,7 +40,7 @@ type: backend service
 - `stop()` → sends `SIGTERM` to the process. If the process is still alive after `stopTimeoutMs`, sends `SIGKILL`.
   - no effect after the process ended, or while a previous `stop()` is still waiting.
   - the end of the process follows the normal path: `exited`, `onExit` listeners, viewers' `end()`.
-- `resize(cols, rows)` → resizes the pty and its mirror. No effect after the process ended.
+- `resize(cols, rows)` → resizes the pty and its mirror. No effect after the process ended, also when the pty is already closed before the exit event (it never throws).
 - `attach(viewer) → detach()` → connects a viewer `{ send(data), end() }`.
   - the first `send` carries the snapshot of the mirror (TerminalMirror)
   - after it, every new pty output reaches `send`, in order, with nothing lost or repeated between snapshot and live output

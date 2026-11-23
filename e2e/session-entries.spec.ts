@@ -8,9 +8,14 @@ import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 // The external scanner reads the sessions folder every 2 seconds.
-const SCAN = { timeout: 10_000 };
+const SCAN = { timeout: 20_000 };
 const GROUPS = ['Needs Input', 'Running', 'In Other Terminals', 'Ended'];
 
 let projectsRoot: string;
@@ -186,6 +191,17 @@ const MONO = /^["']?Roboto Mono["']?/;
 /** The decorative status dot of a row: its first aria-hidden element. */
 const dot = (row: Locator) => row.locator('[aria-hidden="true"]').first();
 
+/** Waits for the effects that end (list cascade, entry slide-in, pops): a box read while one plays sits where the effect has moved it. */
+const effectsDone = (page: Page) =>
+  page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
+
 /** Card geometry of an entry (SessionList "Card", plan-dark_blue_theme/REQ-18): padding 10 × 12 px, 7 px corners, 1 px border, 8 px dot, no avatar. */
 async function expectStudioRow(row: Locator, name: string): Promise<void> {
   const s = await styleOf(row);
@@ -193,8 +209,12 @@ async function expectStudioRow(row: Locator, name: string): Promise<void> {
   expect([s.borderTopWidth, s.borderLeftWidth], `${name}: 1 px border`).toEqual(['1px', '1px']);
   expect(s.borderRadius, `${name}: radius`).toBe('7px');
   await expect(avatar(row), `${name}: no avatar`).toHaveCount(0);
+  await effectsDone(row.page());
   const box = await dot(row).boundingBox();
-  expect([box?.width, box?.height], `${name}: 8 px dot`).toEqual([8, 8]);
+  expect(box, `${name}: dot rendered`).not.toBeNull();
+  // Sub-pixel rounding of the layout: the dot is 8 px within half a pixel.
+  expect(Math.abs(box!.width - 8), `${name}: 8 px dot wide (${box!.width})`).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(box!.height - 8), `${name}: 8 px dot high (${box!.height})`).toBeLessThanOrEqual(0.5);
 }
 
 /** Text styles of a card (SessionList "Entry row"): 13 px weight 600 folder name, 11 px weight 500 state in its colour, mono 10.5 px muted time. */

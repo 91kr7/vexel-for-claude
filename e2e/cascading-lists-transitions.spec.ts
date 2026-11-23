@@ -6,6 +6,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Page, expect, test } from '@playwright/test';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 interface ItemFrame {
   key: string;
   cascade: boolean;
@@ -289,7 +294,7 @@ test('a new session slides in, a dismissed one fades out with no click, and the 
   expect(hit, 'the leaving entry takes no pointer').toBe(false);
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect(leaving.locator('.session-entry')).not.toHaveAttribute('aria-current', 'true');
-  await expect(leaving).toHaveCount(0, { timeout: 4000 });
+  await expect(leaving).toHaveCount(0, { timeout: 15_000 });
   recorded = (await frames(page)).flatMap((frame) => frame.items);
   const leavingOpacities = recorded.filter((entry) => entry.key === ended.folder && entry.leaving).map((entry) => entry.opacity);
   expect(Math.min(...leavingOpacities), 'the dismissed entry fades').toBeLessThan(1);

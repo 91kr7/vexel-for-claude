@@ -9,6 +9,11 @@ import { E2E_CLAUDE_DIR } from './claude-dir';
 import { settingsButton } from './settings';
 import { currentView, settled } from './motion';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 type Theme = 'light' | 'dark';
 const THEMES: Theme[] = ['dark', 'light'];
 const TOLERANCE = 1;

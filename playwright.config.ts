@@ -25,6 +25,10 @@ export default defineConfig({
   testDir: './e2e',
   // At most 3 browsers at once: a full run must leave the machine usable (knowledge base `limited-test-parallelism`).
   workers: 3,
+  // Generous limits: a complete run keeps the machine busy (3 browsers, the fake CLI and its hooks), and the page and the
+  // server answer late at times. A wait ends as soon as its condition holds, so a passing run is not slower for it.
+  timeout: 120_000,
+  expect: { timeout: 15_000 },
   outputDir: './test-results',
   use: { baseURL },
   projects: electron

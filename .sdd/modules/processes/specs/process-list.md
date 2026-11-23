@@ -22,7 +22,7 @@ type: backend service
   - `hosted` → `true` when the pid is in `hostedPids()`.
   - `hanging` → isHanging.
 - order → the current instance first, then app servers, test servers, fake Claude, Claude sessions. Inside a kind: oldest `startedAt` first, then lower pid.
-- calls that overlap share one read and get the same rows. A call after the read ends starts a new read.
+- a call never gets the rows of a read that started before it. A call with no read running starts a read. Calls that arrive while a read runs share the next read, which starts when the running one ends, and get the same rows.
 
 ## Rules and invariants
 

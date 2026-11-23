@@ -168,8 +168,9 @@ describe('plan-claude_sessions_client/REQ-4 progressive response', () => {
     const firstAt = Date.now();
     expect(client.text()).not.toContain('CHUNK5');
     await waitFor(() => client.text().includes('CHUNK5'), 'last chunk');
-    expect(Date.now() - firstAt).toBeGreaterThan(800);
-  });
+    // The fake CLI prints its 5 chunks 1 s apart.
+    expect(Date.now() - firstAt).toBeGreaterThan(3000);
+  }, 15_000);
 });
 
 describe('plan-claude_sessions_client/REQ-5 answer a request from the page', () => {

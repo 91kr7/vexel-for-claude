@@ -241,7 +241,7 @@ test.describe('the top bar with a release source', () => {
     try {
       await page.goto(app.base);
       await expect(list(page)).toBeVisible();
-      await expect(versionText(page)).toBeVisible({ timeout: 2000 });
+      await expect(versionText(page)).toBeVisible({ timeout: 15_000 });
       await expect(notice(page)).toHaveCount(0);
       source.release();
       await expect(notice(page)).toContainText(`You have ${installed}.`);

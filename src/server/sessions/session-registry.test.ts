@@ -1,6 +1,7 @@
 import { chmod, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import * as nodePty from 'node-pty';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   FAKE_CLI,
   RecordingViewer,
@@ -311,6 +312,24 @@ describe('Session input and size', () => {
     expect(() => session.resize(80, 24)).not.toThrow();
     expect(registry.get(session.id)).toBe(session);
     expect(viewer.text).toContain('BYE');
+  });
+
+  // spec Session: resize has no effect, and never throws, when the pty closed before the exit event (TD-2)
+  it('resize does not throw when the pty is already closed before the exit event', async () => {
+    const session = startFake();
+    await attachReady(session);
+    const probe = nodePty.spawn('true', [], {});
+    const resize = vi.spyOn(Object.getPrototypeOf(probe) as { resize(cols: number, rows: number): void }, 'resize');
+    resize.mockImplementation(() => {
+      throw new Error('ioctl(2) failed, EBADF');
+    });
+    try {
+      expect(session.exited).toBe(false);
+      expect(() => session.resize(70, 20)).not.toThrow();
+    } finally {
+      resize.mockRestore();
+      probe.kill();
+    }
   });
 });
 

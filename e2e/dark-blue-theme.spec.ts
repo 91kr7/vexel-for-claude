@@ -9,6 +9,11 @@ import { type APIRequestContext, type Locator, type Page, expect, test } from '@
 import { pageSettled } from './motion';
 import { cardOf, chooseInSettings, settingsButton, settingsPopup } from './settings';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 type Rgba = [number, number, number, number];
 
 // The REQ-36 table and the Dark Blue set of ThemeTokens, in computed form.
@@ -406,7 +411,7 @@ test.describe('theme choice', () => {
     expect(await style(page.locator('body'), 'background-color')).toBe(DARK_BLUE['--bg-canvas']);
     expect(await style(page.locator('body'), 'color')).toBe(DARK_BLUE['--text-primary']);
     // The terminal takes the new colours at once (REQ-38), with no new connection (REQ-31).
-    await expect.poll(() => effectiveBackground(page.locator('.xterm-screen')), { timeout: 2000 }).toBe(TERM_BG);
+    await expect.poll(() => effectiveBackground(page.locator('.xterm-screen')), { timeout: 15_000 }).toBe(TERM_BG);
     expect(await style(region, 'background-color')).toBe(TERM_BG);
     await popup.getByRole('button', { name: 'Close', exact: true }).click();
     await expect(popup).toHaveCount(0);

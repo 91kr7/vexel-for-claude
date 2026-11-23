@@ -115,7 +115,7 @@ function projectRequests(page: Page): string[] {
 
 // plan-project_list_actions/REQ-1, REQ-2, REQ-3, REQ-9, REQ-10, REQ-11 — scenario "the user finds a project by typing part of its path"
 test('with 300 projects, Tab to "Search projects" and "vexel" filter the rows at each letter, by the next frame', async ({ page }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   const folders = [await project('work/Vexel-Client', hoursAgo(1))];
   for (let i = 0; i < 250; i += 1) folders.push(await project(`service-${i}`));
   for (let i = 0; i < 30; i += 1) folders.push(await project(`river-${i}`));

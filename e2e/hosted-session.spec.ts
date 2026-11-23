@@ -6,6 +6,11 @@ import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { currentView, settled } from './motion';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 type Box = { x: number; y: number; width: number; height: number };
 
 // Rounding of fractional layout sizes.

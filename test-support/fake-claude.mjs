@@ -3,7 +3,7 @@
 //
 // On start it prints its cwd, arguments, terminal variables and size.
 // Every input chunk is echoed as `IN:<hex>`; every line ended by Enter as `LINE:<text>`.
-// Line commands: STREAM (5 chunks, 300 ms apart), ASK (waits for one key, then ANSWER:<key>),
+// Line commands: STREAM (5 chunks, 1 s apart), ASK (waits for one key, then ANSWER:<key>),
 // COUNT (400 numbered lines, 5 ms apart), LINKS (web addresses and OSC 8 hyperlinks, see printLinks),
 // PASTE (turns bracketed paste mode on, then prints PASTE-ON), COLOURS (coloured rows, see printColours),
 // /exit (exits with code 0), /crash <code> (exits with that code), /pid (prints PID:<pid>).
@@ -97,7 +97,7 @@ function runLine(text) {
       n += 1;
       out(`CHUNK${n}`);
       if (n === 5) clearInterval(timer);
-    }, 300);
+    }, 1000);
   } else if (text === 'ASK') {
     onAnswer = () => {};
     out('PERMISSION?(y/n)');

@@ -9,7 +9,7 @@ import { E2E_CLAUDE_DIR } from './claude-dir';
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 const RELATIVE_TIME = /^(Just now|\d+m ago)$/;
 // The scanner reads the sessions folder every 2 seconds.
-const SCAN = { timeout: 10_000 };
+const SCAN = { timeout: 20_000 };
 
 let projectsRoot: string;
 const terminals: ChildProcess[] = [];

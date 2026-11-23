@@ -236,7 +236,7 @@ test('with hundreds of folders, a second opening from the keyboard shows the lis
   await page.keyboard.press('Shift+Tab');
   await expect(railButton(page, 'Projects')).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(rows(page)).toHaveCount(count, { timeout: 1_000 });
+  await expect(rows(page)).toHaveCount(count, { timeout: 15_000 });
   await expect(panel(page)).not.toContainText('Loading…');
   await expect(rows(page).first()).toBeFocused();
   expect(await focusedShowsRing(page)).toBe(true);

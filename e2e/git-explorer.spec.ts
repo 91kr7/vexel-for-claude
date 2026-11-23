@@ -16,7 +16,7 @@ import { toggleThemeInSettings } from './settings';
 
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 // The scanner reads the sessions folder every 2 seconds.
-const SCAN = { timeout: 10_000 };
+const SCAN = { timeout: 20_000 };
 
 let projectsRoot: string;
 const createdIds: string[] = [];
@@ -376,7 +376,7 @@ test.describe('Uncommitted changes in the git explorer', () => {
 
     const started = Date.now();
     await fileEntry(page, 'Unstaged', 'data.txt').click();
-    await expect(explorer(page)).toContainText('Diff cut at 5,000 lines', { timeout: 10_000 });
+    await expect(explorer(page)).toContainText('Diff cut at 5,000 lines', { timeout: 20_000 });
     expect(Date.now() - started, 'the cut diff shows within 5 s').toBeLessThan(5_000);
     await expect(diffLines(page).first()).toHaveText(/^@@ /);
     await expect(diffLines(page).nth(1)).toHaveText('-old 1');
@@ -609,7 +609,7 @@ test.describe('History in the git explorer', () => {
 
   // plan-git_explorer/REQ-21, REQ-22: human acceptance scenario "A long history and a binary file in a commit"
   test('a history of 250 commits loads in pages, keeps the scroll on "Back", and an image of a commit shows the binary note', async ({ page, request }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(180_000);
     const repo = await newRepository('long-repo');
     for (let i = 2; i <= 249; i++) git(repo, 'commit', '-q', '--allow-empty', '-m', `commit ${i}`);
     await writeFile(path.join(repo, 'logo.png'), PNG);
@@ -1030,7 +1030,7 @@ test.describe('Graph history in the git explorer', () => {
 
   // plan-git_graph/REQ-11, REQ-18, REQ-19: human acceptance scenario "The user loads a long history"
   test('a long history with no merges stays one straight line, and "Load more" joins the line with no gap', async ({ page, request }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(180_000);
     const repo = await newRepository('graph-long-repo');
     for (let i = 2; i <= 150; i++) git(repo, 'commit', '-q', '--allow-empty', '-m', `commit ${i}`);
     await openHistory(page, request, repo);

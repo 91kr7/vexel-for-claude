@@ -10,9 +10,14 @@ import { type APIRequestContext, type Page, type Response, expect, test } from '
 import { E2E_CLAUDE_DIR } from './claude-dir';
 import { STAYING_ENTRY, currentView } from './motion';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 // The external scanner reads the sessions folder every 2 seconds.
-const SCAN = { timeout: 10_000 };
+const SCAN = { timeout: 20_000 };
 
 let projectsRoot: string;
 /** Folder of the current test: sessions of other tests and spec files stay on the server and must not show. */

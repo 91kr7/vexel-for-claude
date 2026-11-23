@@ -10,10 +10,15 @@ import { type APIRequestContext, type Locator, type Page, expect, test } from '@
 import { E2E_CLAUDE_DIR } from './claude-dir';
 import { STAYING_ENTRY } from './motion';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 const WIDTH_KEY = 'ai-client.list-width';
 // The external scanner reads the sessions folder every 2 seconds.
-const SCAN = { timeout: 10_000 };
+const SCAN = { timeout: 20_000 };
 // The server keeps 80 characters of a prompt as the label: wide letters make it longer than any list width.
 const LONG_LABEL = 'WMWMWMWMW '.repeat(7).trim();
 

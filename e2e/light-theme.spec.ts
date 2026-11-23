@@ -9,6 +9,11 @@ import { type APIRequestContext, type Locator, type Page, type WebSocketRoute, e
 import { pageSettled } from './motion';
 import { cardOf, chooseInSettings, settingsButton, settingsPopup } from './settings';
 
+// A route handler can still wait on the server when a test ends: its error then must not fail the test.
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 type Box = { x: number; y: number; width: number; height: number };
 type Rgba = [number, number, number, number];
 

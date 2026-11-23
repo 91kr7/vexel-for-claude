@@ -12,7 +12,7 @@ type Box = { x: number; y: number; width: number; height: number };
 
 const SESSIONS_DIR = path.join(E2E_CLAUDE_DIR, 'sessions');
 // The external scanner reads the sessions folder every 2 seconds.
-const SCAN = { timeout: 10_000 };
+const SCAN = { timeout: 20_000 };
 const TOLERANCE = 1;
 const COST_TOOLTIP = 'Estimated cost at API list prices';
 
@@ -361,7 +361,7 @@ test.describe('Header and footer of an open session', () => {
     await header(page).getByRole('button', { name: 'Terminate' }).click();
     const confirmation = page.getByRole('alertdialog', { name: 'Terminate the Session?' });
     await confirmation.getByRole('button', { name: 'Terminate' }).click();
-    await expect(header(page).getByText('Ended', { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(header(page).getByText('Ended', { exact: true })).toBeVisible({ timeout: 20_000 });
     await page.waitForTimeout(1_500);
     await expect(contextChip(page)).toHaveText(/45\.2k \/ 200k · 23%/);
     await expect(tokensChip(page)).toHaveText(/^\s*47\.2k tokens/);
