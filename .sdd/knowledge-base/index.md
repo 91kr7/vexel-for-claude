@@ -15,3 +15,5 @@
 | e2e-green-before-release | guideline | any | A release is published only after the complete e2e suite is green; failing e2e are fixed first | `entries/e2e-green-before-release.md` |
 | pr-to-main-then-release | guideline | any | Every branch reaches `main` through a pull request; a release is tagged on `main` after the merge, never on an unmerged branch | `entries/pr-to-main-then-release.md` |
 | tech-debt-register | guideline | any | A known defect left open by the human's decision is recorded in `.sdd/tech-debt.md` (TD-n), and moved to "Closed" when a fix merges | `entries/tech-debt-register.md` |
+| push-with-gh-auth | guideline | any | Push with the authentication of `gh` (already logged in); plain `git push` has no credentials | `entries/push-with-gh-auth.md` |
+| delete-merged-branch | guideline | any | A merged or closed pull request deletes its source branch, on GitHub and locally (`--delete-branch`) | `entries/delete-merged-branch.md` |

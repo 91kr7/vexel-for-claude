@@ -22,10 +22,10 @@ source: release of v1.2.1
 This entry refines `.claude/sdd/conventions/branching.md` ("Reintegration") and the closing step of `/sdd-auto` without changing those files. Where they say "merge into `main`", do this:
 
 1. Open the branch from `origin/main`, after `git fetch`. The local `main` stays equal to `origin/main`.
-2. When the work is complete, push the branch: `git push -u origin <branch>`.
+2. When the work is complete, push the branch with the authentication of `gh` (`push-with-gh-auth`): `git -c credential.helper= -c credential.helper='!gh auth git-credential' push -u origin <branch>`.
 3. Open the pull request: `gh pr create --base main --head <branch>`.
 4. Wait for its CI. Red → the work is not complete: fix it on the branch and push again.
-5. Merge it with a merge commit: `gh pr merge <number> --merge`. Keep the branch.
+5. Merge it with a merge commit and delete its source branch (`delete-merged-branch`): `gh pr merge <number> --merge --delete-branch`.
 6. Update the local `main`: `git pull --ff-only origin main`, then run the build on `main`.
 
 - Manual commands → ask the human before step 5. `/sdd-auto` → step 5 without asking, once every batch is `certified`, the suites are green and the CI is green.
