@@ -6,7 +6,7 @@
 // Line commands: STREAM (5 chunks, 1 s apart), ASK (waits for one key, then ANSWER:<key>),
 // COUNT (400 numbered lines, 5 ms apart), LINKS (web addresses and OSC 8 hyperlinks, see printLinks),
 // PASTE (turns bracketed paste mode on, then prints PASTE-ON), COLOURS (coloured rows, see printColours),
-// /exit (exits with code 0), /crash <code> (exits with that code), /pid (prints PID:<pid>).
+// RULER <tag> (a row as wide as the pty, see printRuler), /exit (exits with code 0), /crash <code> (exits with that code), /pid (prints PID:<pid>).
 // With `--settings <file>` it runs the file's hooks like Claude Code: UserPromptSubmit for every line
 // not starting with `/` or `HOOK `, plus TURN (Stop after 1.5 s), WORK (tool use, TICK<n> every 250 ms
 // for 30 s, then Stop), PERM (PermissionRequest, waits for one key, then Stop) and
@@ -73,6 +73,13 @@ function printColours() {
   out('COLOURS-DONE');
 }
 
+// `<tag`, then `=` up to a `>` in the last column of the pty, then the size it was printed for.
+function printRuler(tag) {
+  const { columns, rows } = process.stdout;
+  out(`<${tag}${'='.repeat(Math.max(0, columns - tag.length - 2))}>`);
+  out(`RULER-DONE ${tag} ${columns}x${rows}`);
+}
+
 let line = '';
 let onAnswer;
 
@@ -105,6 +112,8 @@ function runLine(text) {
     printLinks();
   } else if (text === 'COLOURS') {
     printColours();
+  } else if (text.startsWith('RULER ')) {
+    printRuler(text.slice('RULER '.length));
   } else if (text === 'PASTE') {
     process.stdout.write('\x1b[?2004h');
     out('PASTE-ON');

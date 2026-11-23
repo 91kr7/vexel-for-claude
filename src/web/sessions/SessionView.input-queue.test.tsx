@@ -31,7 +31,6 @@ class FakeTerminal {
 
 vi.mock('@xterm/xterm', () => ({ Terminal: FakeTerminal }));
 vi.mock('@xterm/xterm/css/xterm.css', () => ({}));
-vi.mock('@xterm/addon-fit', () => ({ FitAddon: class { fit() {} proposeDimensions() { return undefined; } activate() {} dispose() {} } }));
 vi.mock('@xterm/addon-search', () => ({
   SearchAddon: class {
     onDidChangeResults = () => disposable();
