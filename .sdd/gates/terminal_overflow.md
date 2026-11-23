@@ -14,3 +14,6 @@
 | 2026-11-23 | dev | G4 terminal-width | decided | Own fit replaces FitAddon (INT-1: measure on the panel); private `_renderService` as FitAddon reads it; no visible change |
 | 2026-11-23 | dev | G4 terminal-width | decided | `@xterm/addon-fit` now unused, kept in `package.json`: removal outside the batch; human to review |
 | 2026-11-23 | dev | G4 terminal-width | pass | Leaving view may send one `resize` when a resize lands during the fade: pre-existing, unchanged by the batch |
+| 2026-11-23 | dev | G5 terminal-width | pass | Diff = tests and test infra only; no disabled tests; REQ-1..10 each tested |
+| 2026-11-23 | dev | G5 terminal-width | pass | Re-run green: 44 unit (SessionView), 11 e2e `terminal-width.spec.ts`; tester closing run 4450 unit, 1050/1051 e2e, Electron 1/1 |
+| 2026-11-23 | dev | G5 terminal-width | pass | `tab-change-transitions.spec.ts:353` (Settings, 300 ms limit) failed under full load only: 5/5 on branch, 5/5 on main; no terminal involved |
