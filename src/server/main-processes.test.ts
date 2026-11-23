@@ -234,7 +234,20 @@ describe('GET /api/processes on real servers', () => {
   it('lists no process of another user', async () => {
     const uid = process.getuid?.();
     const rows = await processes(a.base);
-    for (const row of rows) expect(statSync(`/proc/${row.pid}`).uid).toBe(uid);
+    // Other test files start and stop servers at the same time: a listed process can end before its check.
+    let checked = 0;
+    for (const row of rows) {
+      let owner: number;
+      try {
+        owner = statSync(`/proc/${row.pid}`).uid;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+        throw error;
+      }
+      expect(owner, `owner of pid ${row.pid}`).toBe(uid);
+      checked++;
+    }
+    expect(checked, 'at least this test server is checked').toBeGreaterThan(0);
   });
 
   // plan-app_processes/REQ-11: each call reads again
