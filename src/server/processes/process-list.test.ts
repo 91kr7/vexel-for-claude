@@ -123,19 +123,36 @@ describe('ProcessList', () => {
     expect(rows.map((row) => row.pid)).toEqual([OWN, 42, 40, 41, 50, 61, 60, 71, 70]);
   });
 
-  // spec ProcessList: overlapping calls share one read
-  it('shares one read between overlapping calls and gives them the same rows', async () => {
-    let release: (facts: ProcessFacts[]) => void = () => {};
+  // spec ProcessList: a call never gets the rows of a read that started before it (TD-1)
+  it('gives a call during a read the rows of the next read, shared by the calls that arrived meanwhile', async () => {
+    const releases: ((facts: ProcessFacts[]) => void)[] = [];
     const reader = fakeReader([]);
-    reader.readProcesses.mockImplementation(() => new Promise<ProcessFacts[]>((resolve) => (release = resolve)));
+    reader.readProcesses.mockImplementation(() => new Promise<ProcessFacts[]>((resolve) => releases.push(resolve)));
     const list = listOf(reader);
     const first = list.list();
     const second = list.list();
-    release([own]);
-    const [a, b] = await Promise.all([first, second]);
+    const third = list.list();
     expect(reader.readProcesses).toHaveBeenCalledTimes(1);
-    expect(a).toEqual(b);
-    expect(a.map((row) => row.pid)).toEqual([OWN]);
+    releases[0]?.([own, server(42, { startedAt: 1 })]);
+    expect((await first).map((row) => row.pid)).toEqual([OWN, 42]);
+    await vi.waitFor(() => expect(reader.readProcesses).toHaveBeenCalledTimes(2));
+    releases[1]?.([own]);
+    const [b, c] = await Promise.all([second, third]);
+    expect(reader.readProcesses).toHaveBeenCalledTimes(2);
+    expect(b).toEqual(c);
+    expect(b.map((row) => row.pid)).toEqual([OWN]);
+  });
+
+  it('gives a call during a failed read the rows of the next read', async () => {
+    let fail: (error: Error) => void = () => {};
+    const reader = fakeReader([own]);
+    reader.readProcesses.mockImplementationOnce(() => new Promise<ProcessFacts[]>((_, reject) => (fail = reject)));
+    const list = listOf(reader);
+    const first = list.list();
+    const second = list.list();
+    fail(new Error('EACCES'));
+    await expect(first).rejects.toThrow();
+    expect((await second).map((row) => row.pid)).toEqual([OWN]);
   });
 
   it('starts a new read for a call after the previous read ended', async () => {

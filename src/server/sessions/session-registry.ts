@@ -107,7 +107,12 @@ export class Session {
 
   resize(cols: number, rows: number): void {
     if (this.#exited) return;
-    this.#pty.resize(cols, rows);
+    try {
+      this.#pty.resize(cols, rows);
+    } catch {
+      // The pty can close before the exit event arrives (EBADF): the process has ended, so the resize has no effect.
+      return;
+    }
     this.#mirror.resize(cols, rows);
   }
 

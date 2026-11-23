@@ -36,16 +36,29 @@ function compareRows(a: ProcessRow, b: ProcessRow): number {
 export class ProcessList {
   readonly #deps: ProcessListDeps;
   #inFlight: Promise<ProcessRow[]> | undefined;
+  #next: Promise<ProcessRow[]> | undefined;
 
   constructor(deps: ProcessListDeps) {
     this.#deps = deps;
   }
 
+  // A call never gets the rows of a read that started before it: calls that arrive during a read share the next one.
   list(): Promise<ProcessRow[]> {
-    this.#inFlight ??= this.#read().finally(() => {
-      this.#inFlight = undefined;
+    if (!this.#inFlight) return this.#start();
+    this.#next ??= this.#inFlight.then(
+      () => this.#start(),
+      () => this.#start(),
+    );
+    return this.#next;
+  }
+
+  #start(): Promise<ProcessRow[]> {
+    this.#next = undefined;
+    const read = this.#read().finally(() => {
+      if (this.#inFlight === read) this.#inFlight = undefined;
     });
-    return this.#inFlight;
+    this.#inFlight = read;
+    return read;
   }
 
   async #read(): Promise<ProcessRow[]> {
