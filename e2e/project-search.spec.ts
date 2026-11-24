@@ -182,9 +182,12 @@ test('with 300 projects, Tab to "Search projects" and "vexel" filter the rows at
   }
   const log = await readLog();
   expect(log.map((entry) => entry.rows), 'the rows are updated by the next frame after each letter').toEqual(Array.from({ length: ROUNDS }, () => expected).flat());
-  const sorted = log.map((entry) => entry.ms).sort((a, b) => a - b);
-  const p95 = sorted[Math.ceil(sorted.length * 0.95) - 1] ?? Infinity;
-  expect(p95, `no visible delay at the 95th percentile: letter to frame, ms, sorted: ${sorted.map((ms) => ms.toFixed(0)).join(', ')}`).toBeLessThan(100);
+  // The verdict is the median of the slowest letter of each round, as in the history search: a stall of the machine,
+  // even one that spans several letters, slows one or two rounds, while a slow search is slow in every round.
+  const letters = expected.length;
+  const slowestPerRound = Array.from({ length: ROUNDS }, (_, r) => Math.max(...log.slice(r * letters, (r + 1) * letters).map((entry) => entry.ms))).sort((a, b) => a - b);
+  const median = slowestPerRound[Math.floor(ROUNDS / 2)] ?? Infinity;
+  expect(median, `no visible delay: slowest letter to frame of each round, ms: ${slowestPerRound.map((ms) => ms.toFixed(0)).join(', ')}`).toBeLessThan(100);
   expect(requests, 'the search sends no request').toEqual([]);
 });
 

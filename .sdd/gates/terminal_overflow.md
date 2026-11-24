@@ -17,3 +17,5 @@
 | 2026-11-23 | dev | G5 terminal-width | pass | Diff = tests and test infra only; no disabled tests; REQ-1..10 each tested |
 | 2026-11-23 | dev | G5 terminal-width | pass | Re-run green: 44 unit (SessionView), 11 e2e `terminal-width.spec.ts`; tester closing run 4450 unit, 1050/1051 e2e, Electron 1/1 |
 | 2026-11-23 | dev | G5 terminal-width | pass | `tab-change-transitions.spec.ts:353` (Settings, 300 ms limit) failed under full load only: 5/5 on branch, 5/5 on main; no terminal involved |
+| 2026-11-24 | closing | flaky `tab-change-transitions.spec.ts:353` | human decision | Human: load failures must not remain after the timeout raise; limit now `SLOW_MS / 2`; KB `e2e-load-proof-time-limits` |
+| 2026-11-24 | closing | same class, `project-search.spec.ts:187`, `cascading-lists-transitions.spec.ts:174` | decided | Median of the slowest letter per round; cascade fails only on a frame that proves the overrun; 48/48 green at 3 workers |
