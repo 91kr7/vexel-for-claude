@@ -171,7 +171,10 @@ async function expectCascade(page: Page, recorded: Frame[], count: number): Prom
   expect(first!.items.at(-1)!.opacity, 'the last item is not on screen yet at the start').toBeLessThan(1);
   const settled = recorded.find((frame) => frame.t > first!.t && frame.items.every((entry) => entry.opacity === 1));
   expect(settled, 'every item reaches full opacity').toBeDefined();
-  expect(settled!.t - first!.t, 'the whole cascade ends within the limit').toBeLessThanOrEqual(CASCADE_MAX_MS + FRAME_SLACK_MS);
+  // A late frame on a loaded machine delays only the frame that shows the end: the check fails only on a frame
+  // that proves the cascade still ran after the limit.
+  const lastRunning = recorded.filter((frame) => frame.t >= first!.t && frame.t < settled!.t).at(-1)!;
+  expect(lastRunning.t - first!.t, 'the whole cascade ends within the limit').toBeLessThanOrEqual(CASCADE_MAX_MS + FRAME_SLACK_MS);
 }
 
 // plan-ui_transitions/REQ-16, REQ-22 — scenario "the session list enters in cascade"

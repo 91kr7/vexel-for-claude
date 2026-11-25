@@ -1,6 +1,5 @@
 import { type DragEvent, type Ref, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { type IBufferRange, type ITheme, Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
 import { type ISearchOptions, SearchAddon } from '@xterm/addon-search';
 import '@xterm/xterm/css/xterm.css';
 import { desktopFilePathLookup } from '../desktop-bridge';
@@ -34,6 +33,9 @@ const TERMINAL_LINE_HEIGHT = 1.2;
 const LINK_TOOLTIP_OFFSET = 12;
 const LINK_TOOLTIP_MAX_WIDTH = 480;
 const DROP_NOTICE_MS = 4000;
+const MINIMUM_COLS = 2;
+const MINIMUM_ROWS = 1;
+const XTERM_SCROLLBAR_WIDTH = 14;
 
 interface SessionViewProps {
   sessionId: string;
@@ -145,6 +147,49 @@ function loadTerminalFont(fontFamily: string, fontSize: number): Promise<unknown
   return Promise.all(faces).catch(() => undefined);
 }
 
+interface TerminalRenderService {
+  dimensions: { device: { cell: { width: number; height: number } } };
+  handleDevicePixelRatioChange?(): void;
+}
+
+// xterm.js has no public cell size; FitAddon reads the same private render service.
+function renderServiceOf(terminal: Terminal): TerminalRenderService | undefined {
+  return (terminal as unknown as { _core?: { _renderService?: TerminalRenderService } })._core?._renderService;
+}
+
+// The most cells whose length, as xterm.js rounds it to CSS pixels, fits in `space`.
+function cellsThatFit(space: number, deviceCellLength: number, minimum: number): number {
+  const cellLength = deviceCellLength / window.devicePixelRatio;
+  let cells = Math.floor(space / cellLength);
+  if (Math.round(cells * cellLength) > space) cells -= 1;
+  return Math.max(minimum, cells);
+}
+
+function contentBox(element: Element): { width: number; height: number } {
+  const style = getComputedStyle(element);
+  const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0;
+  const frame = (start: string, end: string) =>
+    style.boxSizing === 'border-box' ? px(`padding-${start}`) + px(`padding-${end}`) + px(`border-${start}-width`) + px(`border-${end}-width`) : 0;
+  return { width: px('width') - frame('left', 'right'), height: px('height') - frame('top', 'bottom') };
+}
+
+// Before its first draw the scrollbar has no width yet: use the one xterm.js draws it with.
+function scrollbarWidth(terminal: Terminal): number {
+  const scrollbar = terminal.element?.querySelector<HTMLElement>('.xterm-scrollable-element > .scrollbar.vertical');
+  return scrollbar?.offsetWidth || XTERM_SCROLLBAR_WIDTH;
+}
+
+function fittedSize(terminal: Terminal, panel: Element): { cols: number; rows: number } | undefined {
+  const cell = renderServiceOf(terminal)?.dimensions.device.cell;
+  if (!cell || cell.width <= 0 || cell.height <= 0) return undefined;
+  const box = contentBox(panel);
+  if (box.width <= 0 || box.height <= 0) return undefined;
+  return {
+    cols: cellsThatFit(box.width - scrollbarWidth(terminal), cell.width, MINIMUM_COLS),
+    rows: cellsThatFit(box.height, cell.height, MINIMUM_ROWS),
+  };
+}
+
 export function SessionView({ sessionId, session, sessions, onLeaveTerminal, focusRef }: SessionViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
@@ -220,8 +265,11 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
         leave: () => setLinkTooltip(null),
       },
     });
-    const fitAddon = new FitAddon();
-    terminal.loadAddon(fitAddon);
+    const panel = container.closest('.session-terminal-panel') ?? container;
+    const fit = () => {
+      const size = fittedSize(terminal, panel);
+      if (size) terminal.resize(size.cols, size.rows);
+    };
     const webAddressLinks = loadWebAddressLinks(terminal, openOnCtrlClick);
     const searchAddon = new SearchAddon();
     terminal.loadAddon(searchAddon);
@@ -229,7 +277,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
       setSearchResults({ index: resultIndex, total: resultCount }),
     );
     terminal.open(container);
-    fitAddon.fit();
+    fit();
     terminalRef.current = terminal;
     searchRef.current = { addon: searchAddon, options: searchOptions(container) };
 
@@ -312,26 +360,45 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
     });
     const inputSubscription = terminal.onData(sendInput);
     const resizeSubscription = terminal.onResize(sendSize);
-    // While the Git Explorer slides or the main area cross-fades, the terminal fits once at the end, not at each frame.
+    // While the Git Explorer slides or the main view animates, the terminal fits once at the end, not at each frame.
     const workspace = container.closest('.session-workspace');
     const mainView = container.closest('.main-view');
-    const running = (element: Element | null | undefined) =>
-      element?.getAnimations?.().some((animation) => animation.playState === 'running') ?? false;
-    const fitUnlessSliding = () => {
-      if (!running(workspace?.querySelector('.git-explorer-panel')) && !running(mainView)) fitAddon.fit();
+    const runningEffects = () =>
+      [workspace?.querySelector('.git-explorer-panel'), mainView]
+        .flatMap((element) => element?.getAnimations?.() ?? [])
+        .filter((animation) => animation.playState === 'running');
+    let fitWaits = false;
+    const fitAfterEffects = () => {
+      if (signal.aborted || fitWaits) return;
+      const effects = runningEffects();
+      if (effects.length === 0) return fit();
+      fitWaits = true;
+      void Promise.allSettled(effects.map((effect) => effect.finished)).then(() => {
+        fitWaits = false;
+        fitAfterEffects();
+      });
     };
-    const fitAtFadeEnd = (event: Event) => {
-      if (event.target === mainView) fitUnlessSliding();
+    const resizeObserver = new ResizeObserver(fitAfterEffects);
+    resizeObserver.observe(panel);
+    // xterm.js measures its cells again by itself only on a new pixel ratio, possibly after this listener.
+    const fitNewCells = () => {
+      renderServiceOf(terminal)?.handleDevicePixelRatioChange?.();
+      fitAfterEffects();
     };
-    const resizeObserver = new ResizeObserver(fitUnlessSliding);
-    resizeObserver.observe(container);
-    workspace?.addEventListener('animationend', fitUnlessSliding, { signal });
-    workspace?.addEventListener('animationcancel', fitUnlessSliding, { signal });
-    mainView?.addEventListener('animationend', fitAtFadeEnd, { signal });
-    mainView?.addEventListener('animationcancel', fitAtFadeEnd, { signal });
+    const watchPixelRatio = () =>
+      window.matchMedia?.(`(resolution: ${window.devicePixelRatio}dppx)`).addEventListener(
+        'change',
+        () => {
+          fitNewCells();
+          watchPixelRatio();
+        },
+        { once: true, signal },
+      );
+    watchPixelRatio();
+    document.fonts.addEventListener?.('loadingdone', fitNewCells, { signal });
     const unsubscribeFontSize = fontSizeStore.subscribe(() => {
       terminal.options.fontSize = fontSizeStore.getSnapshot();
-      fitAddon.fit();
+      fit();
     });
     const unsubscribeTheme = pageThemeStore().subscribe(() => {
       terminal.options.theme = terminalTheme(container);

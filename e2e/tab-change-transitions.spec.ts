@@ -367,7 +367,8 @@ test.describe('Settings menu change', () => {
     await expect(pane(page, 'Appearance').getByRole('radio', { name: 'Light', exact: true })).toBeChecked();
     const record = await page.evaluate(() => (window as unknown as { __themeClick: ThemeClick }).__themeClick);
     expect(record.effectsAtClick, 'the click lands while the section fades in').toBeGreaterThan(0);
-    expect(record.appliedMs, 'the theme applies at once').toBeLessThan(300);
+    // The limit is half the slowed fade, as in the other transition tests: a loaded machine delays the click handling, not the fade.
+    expect(record.appliedMs, 'the theme applies at once, not at the end of the fade').toBeLessThan(SLOW_MS / 2);
     expect(record.effectsAtApply, 'the effect is still playing').toBeGreaterThan(0);
   });
 

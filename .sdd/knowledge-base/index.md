@@ -17,3 +17,4 @@
 | tech-debt-register | guideline | any | A known defect left open by the human's decision is recorded in `.sdd/tech-debt.md` (TD-n), and moved to "Closed" when a fix merges | `entries/tech-debt-register.md` |
 | push-with-gh-auth | guideline | any | Push with the authentication of `gh` (already logged in); plain `git push` has no credentials | `entries/push-with-gh-auth.md` |
 | delete-merged-branch | guideline | any | A merged or closed pull request deletes its source branch, on GitHub and locally (`--delete-branch`) | `entries/delete-merged-branch.md` |
+| e2e-load-proof-time-limits | guideline | development, test | No e2e test fails only from load: timeouts and limits on measured durations are load-proof | `entries/e2e-load-proof-time-limits.md` |
