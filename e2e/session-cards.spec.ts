@@ -339,6 +339,8 @@ test.describe('session cards', () => {
     await expect(card.locator('.session-entry-tool')).toContainText('Bash');
     await expect(card.locator('.session-entry-context')).toHaveText('23%');
     await expect(card.locator('.session-entry-cost')).toContainText('$');
+    // plan-session_activity: the "Working." text of the transcript is the latest-text line, between the tool line and the bar
+    await expect(card.locator('.session-entry-latest')).toContainText('Working.');
 
     const dot = await box(dotOf(card));
     const name = await box(card.getByTitle(folder, { exact: true }));
@@ -359,12 +361,15 @@ test.describe('session cards', () => {
     expect(star.x + star.width, 'star before the state name').toBeLessThanOrEqual(stateName.x + 1);
 
     expect(label.y, 'line 2 below line 1').toBeGreaterThanOrEqual(name.y + name.height - 1);
-    // SessionList "Entry row": line 2 4 px below line 1, the tool line 2 px below line 2, the bar 6 px below the tool line, line 3 15 px below (REQ-53: spacing as before)
+    // SessionList "Entry row": line 2 4 px below line 1, the tool line 2 px below line 2, the latest-text line 2 px below the tool line,
+    // the bar 6 px below it, line 3 15 px below (REQ-53: spacing as before)
     const line1Box = await box(card.locator('.session-entry-line').first());
     const line2Box = await box(card.locator('.session-entry-detail'));
+    const latest = await box(card.locator('.session-entry-latest'));
     near.soft(line2Box.y - (line1Box.y + line1Box.height), 4, 'line 2 under line 1');
     near.soft(tool.y - (line2Box.y + line2Box.height), 2, 'tool line under line 2');
-    near.soft(bar.y - (tool.y + tool.height), 6, 'progress bar under the tool line');
+    near.soft(latest.y - (tool.y + tool.height), 2, 'latest-text line under the tool line');
+    near.soft(bar.y - (latest.y + latest.height), 6, 'progress bar under the latest-text line');
     const contentTop = line3.y + parseFloat(await style(metrics, 'border-top-width')) + parseFloat(await style(metrics, 'padding-top'));
     near.soft(contentTop - (bar.y + bar.height), 15, 'line 3 content 15 px under the progress bar');
     expect(tool.y, 'tool line below line 2').toBeGreaterThanOrEqual(label.y + label.height - 1);
