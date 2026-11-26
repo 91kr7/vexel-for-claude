@@ -28,3 +28,4 @@
 | 2026-11-26 | dev | divergence RemoteSettingsStore read waits for saves | decided | Outside the INTs but closes a race between save and test; one line, store spec updated |
 | 2026-11-26 | dev | divergence reason for a bad stored URL, null result | decided | Technical; the button is disabled on a bad URL, no visible change |
 | 2026-11-26 | dev | G4 test-notification | pass | Diff is INT-1 to INT-5 plus the store line, styles, specs and indexes; build green re-run by the gatekeeper |
+| 2026-11-26 | test | G5 test-notification | pass | Re-run by the gatekeeper: unit 179/179, browser e2e 12/12, Electron e2e 5/5; diff holds tests only |
