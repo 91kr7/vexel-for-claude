@@ -4125,6 +4125,17 @@ input {
   margin: -6px 0 0;
 }
 
+.remote-test-button {
+  align-self: flex-start;
+}
+
+.remote-test-result {
+  margin: -6px 0 0;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 18px;
+}
+
 .processes-rows {
   display: flex;
   flex-direction: column;

@@ -57,7 +57,10 @@ export interface DesktopBridge {
   onPlaySound?(listener: () => void): () => void;
   readRemoteSettings?(): Promise<RemoteSettings>;
   saveRemoteSettings?(settings: RemoteSettings): Promise<void>;
+  sendTestNotification?(): Promise<TestNotificationResult | null>;
 }
+
+export type TestNotificationResult = { status: 'sent' } | { status: 'failed'; reason: string };
 
 export interface RemoteSettings {
   enabled: boolean;
@@ -100,6 +103,14 @@ export async function saveRemoteSettings(settings: RemoteSettings): Promise<void
     await window.desktopBridge?.saveRemoteSettings?.(settings);
   } catch {
     // The section keeps showing the values; the next change saves them again.
+  }
+}
+
+export async function sendTestNotification(): Promise<TestNotificationResult | null> {
+  try {
+    return (await window.desktopBridge?.sendTestNotification?.()) ?? null;
+  } catch {
+    return null;
   }
 }
 

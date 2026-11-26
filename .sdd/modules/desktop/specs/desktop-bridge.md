@@ -6,7 +6,7 @@ type: Electron preload
 
 # DesktopBridge
 
-**Purpose** → the preload of the window. The page reports its open session through it, receives "open this session" and the sound requests, reads the absolute path of a dropped file, drives the window buttons, and reads and saves the remote notification settings.
+**Purpose** → the preload of the window. The page reports its open session through it, receives "open this session" and the sound requests, reads the absolute path of a dropped file, drives the window buttons, reads and saves the remote notification settings, and asks for a test notification.
 
 ## Contract
 
@@ -23,6 +23,7 @@ type: Electron preload
   - `onPlaySound(listener) → unsubscribe` → `listener()`, with no argument, for each message that DesktopApp sends on `desktop-bridge:play-sound`, until `unsubscribe()`.
   - `readRemoteSettings() → Promise<{ enabled, topicUrl, token }>` → asks `desktop-bridge:remote-settings-read`. An answer that is not a boolean `enabled` with a string `topicUrl` and `token` gives the defaults: off, empty URL, empty token. The result has only these three fields.
   - `saveRemoteSettings(settings) → Promise<void>` → sends `{ enabled, topicUrl, token }` of `settings` on `desktop-bridge:remote-settings-save` and resolves when DesktopApp has saved it. A value without a boolean `enabled` and a string `topicUrl` and `token` sends nothing.
+  - `sendTestNotification() → Promise<{ status: 'sent' } | { status: 'failed', reason } | null>` → asks `desktop-bridge:remote-test` and gives the answer of DesktopApp, with only `status` (and `reason` when failed). Any other answer gives `null`.
 
 ## Rules and invariants
 
@@ -36,4 +37,4 @@ type: Electron preload
 - `plan-terminal_addons/REQ-46`
 - `plan-app_processes/REQ-26`
 - `plan-input_sound/REQ-1`
-- `plan-remote_notifications/REQ-11`, `plan-remote_notifications/REQ-12`
+- `plan-remote_notifications/REQ-11`, `plan-remote_notifications/REQ-12`, `plan-remote_notifications/REQ-15`

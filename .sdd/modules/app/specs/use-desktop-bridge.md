@@ -6,11 +6,11 @@ type: frontend hook
 
 # useDesktopBridge
 
-**Purpose** → the page side of the DesktopBridge: it reports the open session, passes on the "open this session" requests, gives the path lookup of dropped files, keeps a dropped file from replacing the page, drives the window, passes on the sound requests, and reads and saves the remote notification settings. In a browser it does nothing.
+**Purpose** → the page side of the DesktopBridge: it reports the open session, passes on the "open this session" requests, gives the path lookup of dropped files, keeps a dropped file from replacing the page, drives the window, passes on the sound requests, reads and saves the remote notification settings, and asks for a test notification. In a browser it does nothing.
 
 ## Contract
 
-- `DesktopBridge` → `{ reportOpenSession(sessionId | null), onOpenSession(listener) → unsubscribe, getPathForFile(file) → string }`, read from `window.desktopBridge`. The window functions, `onPlaySound`, `readRemoteSettings` and `saveRemoteSettings` of the DesktopBridge are optional members.
+- `DesktopBridge` → `{ reportOpenSession(sessionId | null), onOpenSession(listener) → unsubscribe, getPathForFile(file) → string }`, read from `window.desktopBridge`. The window functions, `onPlaySound`, `readRemoteSettings`, `saveRemoteSettings` and `sendTestNotification` of the DesktopBridge are optional members.
 - `desktopFilePathLookup() → ((file) → string) | null`:
   - the bridge exists → a function that gives `getPathForFile(file)` of the bridge (an empty string means no path).
   - no bridge (a browser) → `null`.
@@ -27,6 +27,8 @@ type: frontend hook
 - `RemoteSettings` → `{ enabled: boolean, topicUrl: string, token: string }`.
 - `readRemoteSettings() → Promise<RemoteSettings>` → the answer of `readRemoteSettings()` of the bridge. No bridge, a bridge without it, or a failed read → the defaults: `{ enabled: false, topicUrl: '', token: '' }`. It never rejects.
 - `saveRemoteSettings(settings) → Promise<void>` → calls `saveRemoteSettings(settings)` of the bridge and resolves when it ends. No bridge, or a bridge without it → nothing. A failed save resolves too: it never rejects.
+- `TestNotificationResult` → `{ status: 'sent' }` or `{ status: 'failed', reason: string }`.
+- `sendTestNotification() → Promise<TestNotificationResult | null>` → the answer of `sendTestNotification()` of the bridge. No bridge, a bridge without it, a `null` answer or a failed call → `null`. It never rejects.
 - `isDesktopWindow() → boolean` → `true` when the page runs in the desktop window (`window.desktopBridge` exists). `false` in a browser, and where there is no `window`.
 
 ## Dependencies
@@ -40,4 +42,4 @@ type: frontend hook
 - `plan-terminal_addons/REQ-46`, `plan-terminal_addons/REQ-53`
 - `plan-app_processes/REQ-26`
 - `plan-input_sound/REQ-1`
-- `plan-remote_notifications/REQ-11`, `plan-remote_notifications/REQ-12`
+- `plan-remote_notifications/REQ-11`, `plan-remote_notifications/REQ-12`, `plan-remote_notifications/REQ-15`

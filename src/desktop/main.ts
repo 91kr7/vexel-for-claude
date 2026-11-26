@@ -5,6 +5,7 @@ import { type AttentionSession, connectAttention } from './attention-client.js';
 import { type LaunchResult, launchBackend, stopStartedBackend } from './backend-launcher.js';
 import { type NotificationCommand, NotificationRules } from './notification-rules.js';
 import { groupNotificationTexts, notificationTexts } from './notification-texts.js';
+import { publishToNtfy } from './ntfy-publisher.js';
 import { confirmQuit } from './quit-check.js';
 import { parseRemoteSettings, RemoteSettingsStore } from './remote-settings-store.js';
 import { SoundRule } from './sound-rule.js';
@@ -22,6 +23,8 @@ const OPEN_SESSION_CHANNEL = 'desktop-bridge:open-session';
 const PLAY_SOUND_CHANNEL = 'desktop-bridge:play-sound';
 const REMOTE_SETTINGS_READ_CHANNEL = 'desktop-bridge:remote-settings-read';
 const REMOTE_SETTINGS_SAVE_CHANNEL = 'desktop-bridge:remote-settings-save';
+const REMOTE_TEST_CHANNEL = 'desktop-bridge:remote-test';
+const TEST_MESSAGE = { title: 'Vexel for Claude', message: 'Test notification. Remote notifications reach this device.' };
 const PAGE_ZOOM_ROLES = new Set(['zoomin', 'zoomout', 'resetzoom']);
 
 let mainWindow: BrowserWindow | undefined;
@@ -157,6 +160,11 @@ async function start(): Promise<void> {
   ipcMain.handle(REMOTE_SETTINGS_SAVE_CHANNEL, async (event, value: unknown) => {
     const settings = parseRemoteSettings(value);
     if (fromWindow(event.sender) && settings) await remoteSettings.save(settings);
+  });
+  ipcMain.handle(REMOTE_TEST_CHANNEL, async (event) => {
+    if (!fromWindow(event.sender)) return undefined;
+    const { topicUrl, token } = await remoteSettings.read();
+    return publishToNtfy({ topicUrl, token }, TEST_MESSAGE);
   });
   connectWindowActions(current, ipcMain, () => void quitWithoutQuestion());
   notifications.onClick(openNotifiedSession);

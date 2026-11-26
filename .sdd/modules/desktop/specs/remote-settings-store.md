@@ -17,6 +17,7 @@ type: backend service
   - anything else (a missing field, a wrong type, `null`, not an object) → `undefined`.
 - `new RemoteSettingsStore(filePath)` → the store of that file. It does not touch the file.
 - `read() → Promise<RemoteSettings>`
+  - it waits for the saves called before it: it gives the last of them, also while it is still being written.
   - the file holds JSON that `parseRemoteSettings` accepts → those settings.
   - no file, a file it cannot read, bad JSON or a bad shape → `DEFAULT_REMOTE_SETTINGS`. It never rejects.
 - `save(settings) → Promise<void>`
@@ -32,4 +33,4 @@ type: backend service
 
 ## Requirements served
 
-- `plan-remote_notifications/REQ-5`, `plan-remote_notifications/REQ-12`, `plan-remote_notifications/REQ-13`
+- `plan-remote_notifications/REQ-5`, `plan-remote_notifications/REQ-12`, `plan-remote_notifications/REQ-13`, `plan-remote_notifications/REQ-15`

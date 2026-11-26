@@ -57,7 +57,8 @@ Remote notification settings:
 - one RemoteSettingsStore on the file `remote-notifications.json` in the Electron user data folder.
 - `desktop-bridge:remote-settings-read` (invoke) → the answer is `read()` of the store.
 - `desktop-bridge:remote-settings-save` (invoke) with a value → `save()` of the store with the value that `parseRemoteSettings` gives. A value it rejects saves nothing.
-- both channels answer before the client page loads: they are ready when the window opens.
+- `desktop-bridge:remote-test` (invoke) → it reads the store, then `publishToNtfy` (NtfyPublisher) with its topic URL and token, the title "Vexel for Claude" and the message "Test notification. Remote notifications reach this device.", default priority. The answer is the `PublishResult`. It works with the remote switch on or off.
+- the three channels answer before the client page loads: they are ready when the window opens.
 
 Tray:
 
@@ -69,7 +70,7 @@ Tray:
 - One running app per user session.
 - The page in the window has no Node access (Electron defaults: context isolation, sandbox). It gets only the DesktopBridge.
 - An open-session report from another web contents than the window's is ignored.
-- A read or a save of the remote settings from another web contents than the window's is refused: the read gives no settings and the save writes nothing.
+- A read or a save of the remote settings, or a test request, from another web contents than the window's is refused: the read gives no settings, the save writes nothing and the test sends nothing (the answer is empty).
 - The backend runs outside Electron, with the system Node. node-pty therefore keeps its Node build.
 - A backend that the app did not start keeps running after the app quits, with its sessions.
 - The app quits only from a quit request, never because its window closes.
@@ -78,7 +79,7 @@ Tray:
 ## Dependencies
 
 - BackendLauncher, StartupPage, AppIcon, TrayIcon, QuitCheck
-- DesktopBridge, WindowActions, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon, SoundRule, RemoteSettingsStore
+- DesktopBridge, WindowActions, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon, SoundRule, RemoteSettingsStore, NtfyPublisher
 
 ## Requirements served
 
@@ -89,4 +90,4 @@ Tray:
 - `plan-terminal_addons/REQ-9`, `plan-terminal_addons/REQ-11`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-39`
 - `plan-app_processes/REQ-26`
 - `plan-input_sound/REQ-1`, `plan-input_sound/REQ-2`, `plan-input_sound/REQ-3`
-- `plan-remote_notifications/REQ-11`, `plan-remote_notifications/REQ-12`
+- `plan-remote_notifications/REQ-11`, `plan-remote_notifications/REQ-12`, `plan-remote_notifications/REQ-15`, `plan-remote_notifications/REQ-16`, `plan-remote_notifications/REQ-17`

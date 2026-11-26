@@ -25,6 +25,7 @@ export class RemoteSettingsStore {
   }
 
   async read(): Promise<RemoteSettings> {
+    await this.#lastSave;
     try {
       return parseRemoteSettings(JSON.parse(await readFile(this.#filePath, 'utf8'))) ?? { ...DEFAULT_REMOTE_SETTINGS };
     } catch {

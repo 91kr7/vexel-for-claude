@@ -1,6 +1,13 @@
-import { useEffect, useId, useState } from 'react';
-import { type RemoteSettings, readRemoteSettings, saveRemoteSettings } from '../desktop-bridge';
+import { useEffect, useId, useRef, useState } from 'react';
+import {
+  type RemoteSettings,
+  readRemoteSettings,
+  saveRemoteSettings,
+  sendTestNotification,
+  type TestNotificationResult,
+} from '../desktop-bridge';
 import { ErrorMessage } from '../feedback/ErrorMessage';
+import { Spinner } from '../feedback/ProgressIndicator';
 import { checkTopicUrl } from './topic-url-check';
 
 function locked(settings: RemoteSettings): RemoteSettings {
@@ -9,7 +16,17 @@ function locked(settings: RemoteSettings): RemoteSettings {
 
 export function RemoteNotificationSection() {
   const [settings, setSettings] = useState<RemoteSettings | null>(null);
+  const [sending, setSending] = useState(false);
+  const [testResult, setTestResult] = useState<TestNotificationResult | null>(null);
+  const mounted = useRef(true);
   const reasonId = useId();
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -33,6 +50,16 @@ export function RemoteNotificationSection() {
     const next = locked({ ...settings, ...patch });
     setSettings(next);
     void saveRemoteSettings(next);
+  };
+
+  const sendTest = () => {
+    setSending(true);
+    setTestResult(null);
+    void sendTestNotification().then((result) => {
+      if (!mounted.current) return;
+      setSending(false);
+      setTestResult(result);
+    });
   };
 
   return (
@@ -83,6 +110,22 @@ export function RemoteNotificationSection() {
             onChange={(event) => change({ token: event.target.value })}
           />
         </label>
+        <button
+          type="button"
+          className="button-neutral remote-test-button"
+          disabled={loading || check.status !== 'valid' || sending}
+          aria-busy={sending || undefined}
+          onClick={sendTest}
+        >
+          {sending && <Spinner />}
+          Send test notification
+        </button>
+        {testResult?.status === 'sent' && (
+          <p className="remote-test-result" role="status">
+            Test notification sent.
+          </p>
+        )}
+        {testResult?.status === 'failed' && <ErrorMessage>{testResult.reason}</ErrorMessage>}
       </div>
     </section>
   );
