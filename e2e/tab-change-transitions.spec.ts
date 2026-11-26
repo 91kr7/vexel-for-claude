@@ -302,23 +302,23 @@ test.describe('Settings menu change', () => {
 
     await menuItem(page, 'Shortcuts').focus();
     await page.keyboard.press('ArrowDown');
-    await expect(pane(page, 'Updates')).toBeVisible();
+    await expect(pane(page, 'Processes')).toBeVisible();
     await pageSettled(page);
     await page.keyboard.press('Home');
     await expect(pane(page, 'Appearance')).toBeVisible();
     await pageSettled(page);
 
     const watch = await tabWatch(page);
-    expect(watch.shown.map((shown) => shown.label)).toEqual(['Appearance', 'Shortcuts', 'Updates', 'Appearance']);
+    expect(watch.shown.map((shown) => shown.label)).toEqual(['Appearance', 'Shortcuts', 'Processes', 'Appearance']);
     expectNoEffect(watch.shown[0], 'Appearance');
     expectTabEffect(watch.shown[1], 'Shortcuts');
-    expectTabEffect(watch.shown[2], 'Updates');
+    expectTabEffect(watch.shown[2], 'Processes');
     expectTabEffect(watch.shown[3], 'Appearance');
     expect(watch.maxVisible, 'two sections never show together').toBe(1);
   });
 
   // plan-ui_transitions/REQ-26, REQ-27, REQ-28 — scenario "quick arrow keys in Settings end on the last section"
-  test('two quick Down presses end on "Updates" with its item focused, and Tab moves on during the effect', async ({ page }) => {
+  test('three quick Down presses end on "Updates" with its item focused, and Tab moves on during the effect', async ({ page }) => {
     await page.goto('/');
     await settingsButton(page).click();
     await expect(pane(page, 'Appearance')).toBeVisible();
@@ -328,6 +328,7 @@ test.describe('Settings menu change', () => {
     await watchTabs(page, SETTINGS_PANES);
     await recordPresses(page, SETTINGS_PANES);
 
+    await page.keyboard.press('ArrowDown');
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('ArrowDown');
     await expect(menuItem(page, 'Updates')).toHaveAttribute('aria-selected', 'true');
@@ -341,7 +342,7 @@ test.describe('Settings menu change', () => {
     expect(await runningEffects(pane(page, 'Updates')), 'the effect is still playing').toBeGreaterThan(0);
 
     const watch = await tabWatch(page);
-    expect(watch.shown.map((shown) => shown.label)).toEqual(['Shortcuts', 'Updates']);
+    expect(watch.shown.map((shown) => shown.label)).toEqual(['Shortcuts', 'Processes', 'Updates']);
     expect(watch.maxVisible, 'two sections never show together').toBe(1);
     // On the page clock: the runner's round trips are not part of the app's time.
     const [, second] = (await presses(page)).filter((press) => press.key === 'ArrowDown');
@@ -383,11 +384,11 @@ test.describe('Settings menu change', () => {
     await menuItem(page, 'Shortcuts').click();
     await expect(pane(page, 'Shortcuts')).toBeVisible();
     await page.keyboard.press('ArrowDown');
-    await expect(pane(page, 'Updates')).toBeVisible();
+    await expect(pane(page, 'Processes')).toBeVisible();
 
     const watch = await tabWatch(page);
-    expect(watch.shown.map((shown) => shown.label)).toEqual(['Shortcuts', 'Updates']);
+    expect(watch.shown.map((shown) => shown.label)).toEqual(['Shortcuts', 'Processes']);
     expectNoEffect(watch.shown[0], 'Shortcuts');
-    expectNoEffect(watch.shown[1], 'Updates');
+    expectNoEffect(watch.shown[1], 'Processes');
   });
 });

@@ -50,12 +50,12 @@ async function loadPage(page: Page): Promise<void> {
   await expect(page.getByRole('region', { name: 'Session List' })).toBeVisible();
 }
 
-/** Opens the settings with the keyboard and moves down the menu to "Processes", the item after "Updates". */
+/** Opens the settings with the keyboard and moves down the menu to "Processes", the item after "Shortcuts". */
 async function openProcessesWithKeyboard(page: Page): Promise<void> {
   await settingsButton(page).focus();
   await page.keyboard.press('Enter');
   await expect(tab(page, 'Appearance')).toBeFocused();
-  for (const name of ['Shortcuts', 'Updates', 'Processes']) {
+  for (const name of ['Shortcuts', 'Processes']) {
     await page.keyboard.press('ArrowDown');
     await expect(tab(page, name)).toBeFocused();
   }
