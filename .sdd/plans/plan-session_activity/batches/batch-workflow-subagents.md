@@ -75,7 +75,9 @@ The turn model and the activity monitor come from `batch-latest-text`. The subag
 
 ### Scenario: An ended workflow stops keeping the session at work
 
+Gatekeeper decision, 2026-11-26: the workflow ends inside the current turn. A message from the user would start a new turn, and the panel would then keep only the subagents that still run (REQ-39).
+
 - REQ → REQ-60
-- Given → a session that is idle while its workflow runs
-- When → the user asks Claude to stop the workflow, with 2 agents finished and 2 still running
-- Then → the turn panel shows 2 agents "Finished" and 2 "Stopped", and the entry no longer shows the latest-text line
+- Given → the turn panel shows the 4 agents of a workflow launched in the current turn, and the session is idle while the workflow runs
+- When → the workflow ends with 2 agents finished and 2 cut before they finish, for example because Claude Code stops the run
+- Then → the panel shows 2 agents "Finished" and 2 "Stopped", and the entry no longer shows the latest-text line
