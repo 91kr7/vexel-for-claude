@@ -36,3 +36,5 @@
 | 2026-11-26 | test | stale test inside perimeter | decided | `desktop-notifications.spec.ts:251` bridge list lacked the three new functions; test-only change |
 | 2026-11-26 | test | G5 remote-notification | pass | Re-run by the gatekeeper: unit 206/206, Electron e2e 3/3; tester full runs unit 4719/4719, browser e2e 1058/1058, Electron 52/53 + the stale test fixed |
 | 2026-11-26 | test | `desktop-window.spec.ts` teardown error | escalated | Outside the perimeter; also fails on `main` (2 errors outside tests, `:825` failed) |
+| 2026-11-26 | test | `desktop-window.spec.ts` teardown error | human decision | Fix in this cycle, before the merge |
+| 2026-11-26 | test | `desktop-window.spec.ts` teardown fix | pass | Cause in the test cleanup (theme test :653, Quit wait shorter than the launcher SIGKILL, no killLeftovers); test-only fix, re-run by the gatekeeper 27/27, no errors, no leftovers |

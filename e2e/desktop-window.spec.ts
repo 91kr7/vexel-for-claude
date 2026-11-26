@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { type ElectronApplication, type Page, _electron, expect, test } from '@playwright/test';
 import type { MessageBoxOptions } from 'electron';
 import { startupPageUrl } from '../src/desktop/startup-page.js';
+import { killLeftovers } from './leftovers';
 import { chooseInSettings } from './settings';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -34,6 +35,8 @@ const dirs: string[] = [];
 const holders: http.Server[] = [];
 
 // Not `app.close()`: the detached backend inherits Electron's descriptors, Playwright's connection included, so close() would wait for the backend.
+// The wait outlasts the launcher's 10-second SIGKILL of a backend that does not stop: killing Electron first would orphan that backend.
+const QUIT_WAIT_MS = 20_000;
 async function quitDesktop(app: ElectronApplication): Promise<void> {
   // process() throws once Playwright has disposed of an app that already quit.
   let electron: ChildProcess;
@@ -46,7 +49,7 @@ async function quitDesktop(app: ElectronApplication): Promise<void> {
   const exited = new Promise<void>((resolve) => electron.once('exit', () => resolve()));
   await stubQuitDialog(app, 1).catch(() => undefined);
   await app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
-  await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 10_000))]);
+  await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, QUIT_WAIT_MS))]);
   if (electron.exitCode === null && electron.signalCode === null) electron.kill('SIGKILL');
 }
 
@@ -55,7 +58,10 @@ test.afterEach(async () => {
   for (const child of children.splice(0)) if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
   for (const port of ports.splice(0)) await stopListeners(port);
   for (const server of holders.splice(0)) await new Promise((resolve) => server.close(resolve));
-  for (const dir of dirs.splice(0)) await rm(dir, { recursive: true, force: true });
+  for (const dir of dirs.splice(0)) {
+    killLeftovers(dir);
+    await rm(dir, { recursive: true, force: true });
+  }
 });
 
 async function freePort(): Promise<number> {
@@ -693,6 +699,8 @@ test.describe('Remembered theme in the desktop app', () => {
       await page.goto(`http://127.0.0.1:${port}/`);
       await expect(list(page)).toBeVisible();
       expect(await page.locator('html').getAttribute('data-theme'), 'the browser keeps its own first-start theme').toBe('dark-blue');
+      // The browser page's connections hold the backend's close: Quit in afterEach would wait for the launcher's SIGKILL.
+      await page.close();
     });
   }
 });
