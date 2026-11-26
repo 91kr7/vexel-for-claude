@@ -94,6 +94,18 @@ const claudeSays = (text: string, timestamp?: string, sidechain = false): Line =
   message: { role: 'assistant', content: [{ type: 'text', text }] },
 });
 const subSays = (text: string, timestamp?: string) => claudeSays(text, timestamp, true);
+const toolCall = (id: string, name: string, input: object, timestamp: string, sidechain = false): Line => ({
+  type: 'assistant',
+  isSidechain: sidechain,
+  timestamp,
+  message: { role: 'assistant', content: [{ type: 'tool_use', id, name, input }] },
+});
+const toolResult = (id: string, timestamp: string, sidechain = false): Line => ({
+  type: 'user',
+  isSidechain: sidechain,
+  timestamp,
+  message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: 'done' }] },
+});
 
 interface Hosted {
   id: string;
@@ -134,7 +146,7 @@ describe('ActivityMonitor, reading', () => {
     const monitor = monitorOf();
     expect(monitor.get(session.id), 'no value before the first read').toBeUndefined();
     await monitor.poll();
-    expect(monitor.get(session.id)).toEqual({ atWork: true, latestText: { text: 'I am reading the config files', at: time(1) } });
+    expect(monitor.get(session.id)).toEqual({ atWork: true, latestText: { text: 'I am reading the config files', at: time(1) }, lastEventAt: time(1), waitingFor: 'response' });
   });
 
   // plan-session_activity/REQ-2: an external session, located by its id
@@ -144,7 +156,7 @@ describe('ActivityMonitor, reading', () => {
     await append(session.transcript, userSays('Explain', time(0)), claudeSays('The module has three parts', time(2)));
     const monitor = monitorOf();
     await monitor.poll();
-    expect(monitor.get(session.id)).toEqual({ atWork: true, latestText: { text: 'The module has three parts', at: time(2) } });
+    expect(monitor.get(session.id)).toEqual({ atWork: true, latestText: { text: 'The module has three parts', at: time(2) }, lastEventAt: time(2), waitingFor: 'response' });
   });
 
   // activity-monitor spec: a session added after the construction is followed too
@@ -213,6 +225,8 @@ describe('ActivityMonitor, reading', () => {
     expect(monitor.get(session.id)).toEqual({
       atWork: true,
       latestText: { text: 'Overwriting the whole CommonServiceImpl class', subagentType: 'sdd-developer', at: time(3) },
+      lastEventAt: time(3),
+      waitingFor: 'response',
     });
     await append(session.transcript, claudeSays('Back in the main conversation', time(4)));
     await monitor.poll();
@@ -227,7 +241,7 @@ describe('ActivityMonitor, reading', () => {
     await append(subagentFileOf(session.cwd, session.id, 'agent-b1'), subSays('Untyped text'));
     const monitor = monitorOf();
     await monitor.poll();
-    expect(monitor.get(session.id)).toEqual({ atWork: true, latestText: { text: 'Untyped text' } });
+    expect(monitor.get(session.id)).toEqual({ atWork: true, latestText: { text: 'Untyped text' }, lastEventAt: expect.any(String), waitingFor: 'response' });
   });
 
   // activity-monitor spec: a metadata read with no field keeps the metadata known before
@@ -262,6 +276,8 @@ describe('ActivityMonitor, reading', () => {
     expect(monitor.get(session.id)).toEqual({
       atWork: true,
       latestText: { text: 'Scanning the repository', subagentType: 'general-purpose', at: time(2) },
+      lastEventAt: time(2),
+      waitingFor: 'response',
     });
     await writeMeta(sub, { agentType: 'general-purpose', finished: true });
     await monitor.poll();
@@ -356,17 +372,53 @@ describe('ActivityMonitor, changes', () => {
     const monitor = monitorOf();
     const changes = recordChanges(monitor);
     await monitor.poll();
-    expect(changes).toEqual([[session.id, { atWork: true, latestText: { text: 'One', at: time(1) } }]]);
+    const one = { atWork: true, latestText: { text: 'One', at: time(1) }, waitingFor: 'response' };
+    expect(changes).toEqual([[session.id, { ...one, lastEventAt: time(1) }]]);
     await monitor.poll();
+    expect(changes, 'nothing new, no change').toHaveLength(1);
     await append(session.transcript, { type: 'assistant', isSidechain: false, timestamp: time(2), message: { role: 'assistant', content: [{ type: 'thinking', thinking: 'Hmm' }] } });
     await monitor.poll();
-    expect(changes, 'thinking changes nothing').toHaveLength(1);
+    expect(changes, 'thinking keeps the text and moves the last activity').toEqual([
+      [session.id, { ...one, lastEventAt: time(1) }],
+      [session.id, { ...one, lastEventAt: time(2) }],
+    ]);
     await append(session.transcript, claudeSays('Two', time(3)));
     await monitor.poll();
-    expect(changes).toEqual([
-      [session.id, { atWork: true, latestText: { text: 'One', at: time(1) } }],
-      [session.id, { atWork: true, latestText: { text: 'Two', at: time(3) } }],
-    ]);
+    expect(changes.at(-1)).toEqual([session.id, { atWork: true, latestText: { text: 'Two', at: time(3) }, lastEventAt: time(3), waitingFor: 'response' }]);
+    expect(changes).toHaveLength(3);
+  });
+
+  // plan-session_activity/REQ-17, REQ-22 and activity-monitor spec: a new activity with no new text is a change of lastEventAt
+  it('notifies a change when a subagent writes a tool result, with the text unchanged', async () => {
+    newSources();
+    const session = external('working');
+    await append(session.transcript, userSays('Go', time(0)), claudeSays('Main text', time(1)));
+    const sub = subagentFileOf(session.cwd, session.id, 'agent-r1');
+    await append(sub, toolCall('s1', 'Bash', { command: 'mvn test' }, time(2), true));
+    const monitor = monitorOf();
+    await monitor.poll();
+    const changes = recordChanges(monitor);
+    await append(sub, toolResult('s1', time(3), true));
+    await monitor.poll();
+    expect(changes).toEqual([[session.id, { atWork: true, latestText: { text: 'Main text', at: time(1) }, lastEventAt: time(3), waitingFor: 'response' }]]);
+  });
+
+  // plan-session_activity/REQ-18 and activity-monitor spec: a call that opens or closes changes waitingFor
+  it('notifies the running tool when a call opens, and the response when its result arrives', async () => {
+    newSources();
+    const session = external('working');
+    await append(session.transcript, userSays('Build it', time(0)));
+    const monitor = monitorOf();
+    await monitor.poll();
+    expect(monitor.get(session.id)?.waitingFor).toBe('response');
+    const changes = recordChanges(monitor);
+    await append(session.transcript, toolCall('t1', 'Bash', { command: 'npm run build' }, time(1)));
+    await monitor.poll();
+    expect(changes).toEqual([[session.id, { atWork: true, lastEventAt: time(1), waitingFor: { name: 'Bash', argument: 'npm run build', others: 0 } }]]);
+    await append(session.transcript, toolResult('t1', time(2)));
+    await monitor.poll();
+    expect(changes.at(-1)).toEqual([session.id, { atWork: true, lastEventAt: time(2), waitingFor: 'response' }]);
+    expect(changes).toHaveLength(2);
   });
 
   // activity-monitor spec: the unsubscribe function stops the notifications
@@ -438,7 +490,7 @@ describe('ActivityMonitor, changes', () => {
     expect(changes.filter(([, activity]) => activity?.latestText?.text === 'First task done'), 'never the old text').toEqual([]);
     await append(session.transcript, userSays('Second task', time(10)));
     await monitor.poll();
-    expect(monitor.get(session.id)).toEqual({ atWork: true });
+    expect(monitor.get(session.id)).toEqual({ atWork: true, lastEventAt: time(10), waitingFor: 'response' });
     await append(session.transcript, claudeSays('Second task started', time(11)));
     await monitor.poll();
     expect(monitor.get(session.id)?.latestText?.text).toBe('Second task started');

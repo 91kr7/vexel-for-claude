@@ -1,4 +1,4 @@
-// REQ tests of plan-session_activity, batch latest-text, at the level of the REST API: GET /api/sessions and the session events.
+// REQ tests of plan-session_activity, batches latest-text and stall-signal, at the level of the REST API: GET /api/sessions and the session events.
 import { appendFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import fastifyWebsocket from '@fastify/websocket';
@@ -19,6 +19,7 @@ type Frame = { type: string; id?: string; session?: Entry };
 
 // REQ-12 asks for 2 s from the line to the change. The monitor reads every 500 ms; the margin covers a loaded machine.
 const REQ_12_MS = 2000;
+const REQ_22_MS = REQ_12_MS;
 
 let claudeDir: string;
 let app: FastifyInstance;
@@ -91,6 +92,20 @@ const claudeSays = (content: string | object[], timestamp: string | null = now()
   ...(timestamp !== null && { timestamp }),
   message: { role: 'assistant', content: typeof content === 'string' ? [{ type: 'text', text: content }] : content },
 });
+
+const toolCall = (id: string, name: string, input: object | undefined, timestamp: string, sidechain = false): Line => ({
+  type: 'assistant',
+  isSidechain: sidechain,
+  timestamp,
+  message: { role: 'assistant', content: [{ type: 'tool_use', id, name, ...(input !== undefined && { input }) }] },
+});
+const toolResult = (id: string, timestamp: string, sidechain = false): Line => ({
+  type: 'user',
+  isSidechain: sidechain,
+  timestamp,
+  message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: 'done' }] },
+});
+const MIN = 60_000;
 
 interface Session {
   id: string;
@@ -170,7 +185,7 @@ describe('Latest text, GET /api/sessions', { timeout: 30_000 }, () => {
     await append(session.transcript, userSays('Read the config'), claudeSays('I am **reading** the `config` files', at));
     const entry = await entryWhen(session.id, (e) => e?.liveActivity?.latestText !== undefined, 'latest text');
     expect(entry?.state).toBe('working');
-    expect(entry?.liveActivity).toEqual({ atWork: true, latestText: { text: 'I am reading the config files', at } });
+    expect(entry?.liveActivity).toEqual({ atWork: true, latestText: { text: 'I am reading the config files', at }, lastEventAt: expect.any(String), waitingFor: 'response' });
   });
 
   // plan-session_activity/REQ-2: an external working entry too
@@ -190,7 +205,12 @@ describe('Latest text, GET /api/sessions', { timeout: 30_000 }, () => {
     const at = now();
     await append(sub.file, claudeSays('Overwriting the whole CommonServiceImpl class', at, true));
     const entry = await entryWhen(session.id, (e) => e?.liveActivity?.latestText?.subagentType !== undefined, 'subagent text');
-    expect(entry?.liveActivity).toEqual({ atWork: true, latestText: { text: 'Overwriting the whole CommonServiceImpl class', subagentType: 'sdd-developer', at } });
+    expect(entry?.liveActivity).toEqual({
+      atWork: true,
+      latestText: { text: 'Overwriting the whole CommonServiceImpl class', subagentType: 'sdd-developer', at },
+      lastEventAt: at,
+      waitingFor: 'response',
+    });
   });
 
   // plan-session_activity/REQ-1, REQ-11: an idle entry with a running background subagent is at work, until the subagent finishes
@@ -233,7 +253,7 @@ describe('Latest text, GET /api/sessions', { timeout: 30_000 }, () => {
     tracker.applyHookEvent(session.id, { hook_event_name: 'UserPromptSubmit', prompt: 'Second task' });
     await append(session.transcript, userSays('Second task'), claudeSays([{ type: 'thinking', thinking: 'Let me plan the second task', signature: 'x' }]));
     const thinking = await entryWhen(session.id, (e) => e?.state === 'working' && e.liveActivity?.atWork === true && e.liveActivity.latestText === undefined, 'no text', REQ_12_MS * 4);
-    expect(thinking?.liveActivity).toEqual({ atWork: true });
+    expect(thinking?.liveActivity).toEqual({ atWork: true, lastEventAt: expect.any(String), waitingFor: 'response' });
     await append(session.transcript, claudeSays('Second task started'));
     const next = await entryWhen(session.id, (e) => e?.liveActivity?.latestText !== undefined, 'second turn text');
     expect(next?.liveActivity?.latestText?.text).toBe('Second task started');
@@ -247,7 +267,7 @@ describe('Latest text, GET /api/sessions', { timeout: 30_000 }, () => {
     await sub.meta({ description: 'No type here', agentType: 42 });
     await append(sub.file, claudeSays('Text without type and time', null, true));
     const entry = await entryWhen(session.id, (e) => e?.liveActivity?.latestText !== undefined, 'latest text');
-    expect(entry?.liveActivity).toEqual({ atWork: true, latestText: { text: 'Text without type and time' } });
+    expect(entry?.liveActivity).toEqual({ atWork: true, latestText: { text: 'Text without type and time' }, lastEventAt: expect.any(String), waitingFor: 'response' });
     expect(entry).toMatchObject({ id: session.id, state: 'working', label: session.id, external: true });
   });
 
@@ -271,7 +291,7 @@ describe('Latest text, GET /api/sessions', { timeout: 30_000 }, () => {
     await append(sub.file, claudeSays('All 6000 steps checked', last, true));
     // entryWhen asks the list every 25 ms and expects 200 each time, while the monitor reads the file in chunks.
     const entry = await entryWhen(session.id, (e) => e?.liveActivity?.latestText?.text === 'All 6000 steps checked', 'latest text of the huge subagent', 60_000);
-    expect(entry?.liveActivity).toEqual({ atWork: true, latestText: { text: 'All 6000 steps checked', subagentType: 'sdd-tester', at: last } });
+    expect(entry?.liveActivity).toEqual({ atWork: true, latestText: { text: 'All 6000 steps checked', subagentType: 'sdd-tester', at: last }, lastEventAt: last, waitingFor: 'response' });
   }, 90_000);
 
   // session-list-route spec: without the monitor no entry has liveActivity
@@ -296,7 +316,10 @@ describe('Latest text, session events', { timeout: 30_000 }, () => {
     await append(session.transcript, claudeSays('Second text', at));
     await waitFor(() => framesOf(client, session.id).some((f) => f.session?.liveActivity?.latestText?.text === 'Second text'), 'frame of the new text', REQ_12_MS);
     const frame = framesOf(client, session.id).find((f) => f.session?.liveActivity?.latestText?.text === 'Second text');
-    expect(frame).toEqual({ type: 'session', session: { ...tracker.get(session.id), liveActivity: { atWork: true, latestText: { text: 'Second text', at } } } });
+    expect(frame).toEqual({
+      type: 'session',
+      session: { ...tracker.get(session.id), liveActivity: { atWork: true, latestText: { text: 'Second text', at }, lastEventAt: at, waitingFor: 'response' } },
+    });
   });
 
   // plan-session_activity/REQ-12: external sessions too, with the external summary
@@ -308,10 +331,13 @@ describe('Latest text, session events', { timeout: 30_000 }, () => {
     await append(session.transcript, claudeSays('External text', at));
     await waitFor(() => framesOf(client, session.id).some((f) => f.session?.liveActivity?.latestText !== undefined), 'frame of the external text', REQ_12_MS);
     const frame = framesOf(client, session.id).find((f) => f.session?.liveActivity?.latestText !== undefined);
-    expect(frame).toEqual({ type: 'session', session: { ...externalSessions.get(session.id), liveActivity: { atWork: true, latestText: { text: 'External text', at } } } });
+    expect(frame).toEqual({
+      type: 'session',
+      session: { ...externalSessions.get(session.id), liveActivity: { atWork: true, latestText: { text: 'External text', at }, lastEventAt: at, waitingFor: 'response' } },
+    });
   });
 
-  // plan-session_activity/REQ-11, REQ-12: the change that hides the line reaches the page at once
+  // plan-session_activity/REQ-11, REQ-12, REQ-22: the change that hides the line and the stall signal reaches the page at once
   it('sends the session frame with atWork false when the session ends', async () => {
     const session = workingHosted();
     await append(session.transcript, userSays('Go'), claudeSays('Working'));
@@ -333,5 +359,99 @@ describe('Latest text, session events', { timeout: 30_000 }, () => {
     await waitFor(() => framesOf(client, session.id).some((f) => f.session?.state === 'needs_input'), 'needs input frame', REQ_12_MS);
     const frame = framesOf(client, session.id).find((f) => f.session?.state === 'needs_input');
     expect(frame?.session?.liveActivity).toEqual({ atWork: false });
+  });
+});
+
+describe('Stall signal, GET /api/sessions and session events', { timeout: 30_000 }, () => {
+  // plan-session_activity/REQ-16, REQ-18, REQ-19: a silent hosted session gives the time of its last activity and the tool of its subagent
+  it('gives the time of the last activity and the running tool of a subagent with its type', async () => {
+    const session = workingHosted();
+    const last = now(-8 * MIN);
+    await append(session.transcript, userSays('Run the tests', now(-9 * MIN)), toolCall('toolu_t', 'Agent', { description: 'Run the tests', prompt: 'Run mvn test' }, now(-8.5 * MIN)));
+    const tester = session.subagent('agent-tst1');
+    await tester.meta({ agentType: 'sdd-tester', description: 'Run the tests', toolUseId: 'toolu_t' });
+    await append(tester.file, { ...userSays('Run mvn test', now(-8.4 * MIN)), isSidechain: true }, toolCall('s1', 'Bash', { command: 'mvn test', description: 'Run the tests' }, last, true));
+    const entry = await entryWhen(session.id, (e) => e?.liveActivity?.lastEventAt === last && typeof e.liveActivity.waitingFor === 'object', 'subagent tool');
+    expect(entry?.state).toBe('working');
+    expect(entry?.liveActivity).toEqual({ atWork: true, lastEventAt: last, waitingFor: { subagentType: 'sdd-tester', name: 'Bash', argument: 'mvn test', others: 0 } });
+  });
+
+  // plan-session_activity/REQ-18: with no running tool the session waits for Claude's response
+  it("waits for Claude's response when no tool runs", async () => {
+    const session = external('working');
+    const last = now(-6 * MIN);
+    await append(session.transcript, userSays('List the files', now(-7 * MIN)), toolCall('t1', 'Bash', { command: 'ls' }, now(-6.5 * MIN)), toolResult('t1', last));
+    const entry = await entryWhen(session.id, (e) => e?.liveActivity?.lastEventAt === last, 'last activity');
+    expect(entry?.liveActivity).toEqual({ atWork: true, lastEventAt: last, waitingFor: 'response' });
+  });
+
+  // plan-session_activity/REQ-20: several running tools → the first started and the count of the others
+  it('names the tool that started first and counts the others, without the calls that started the subagents', async () => {
+    const session = external('working');
+    await append(
+      session.transcript,
+      userSays('Build and check', now(-10 * MIN)),
+      toolCall('m1', 'Bash', { command: 'npm run build' }, now(-9 * MIN)),
+      toolCall('toolu_a', 'Agent', { description: 'Explore' }, now(-8 * MIN)),
+      toolCall('toolu_b', 'Agent', { description: 'Run the tests' }, now(-8 * MIN)),
+    );
+    const explorer = session.subagent('agent-exp1');
+    await explorer.meta({ agentType: 'Explore', toolUseId: 'toolu_a' });
+    await append(explorer.file, toolCall('s1', 'Grep', { pattern: 'TODO' }, now(-7 * MIN), true));
+    const tester = session.subagent('agent-tst2');
+    await tester.meta({ agentType: 'sdd-tester', toolUseId: 'toolu_b' });
+    const last = now(-6 * MIN);
+    await append(tester.file, toolCall('s2', 'Bash', { command: 'mvn test' }, last, true));
+    const entry = await entryWhen(session.id, (e) => e?.liveActivity?.lastEventAt === last, 'every file read');
+    expect(entry?.liveActivity).toEqual({ atWork: true, lastEventAt: last, waitingFor: { name: 'Bash', argument: 'npm run build', others: 2 } });
+  });
+
+  // plan-session_activity/REQ-26: no agent type and no tool input hide only the type and the argument
+  it('gives the tool name alone for a subagent with no type and a tool with no input', async () => {
+    const session = external('working');
+    await append(session.transcript, userSays('Search the web', now(-7 * MIN)), toolCall('toolu_w', 'Agent', { description: 'Search' }, now(-6.5 * MIN)));
+    const searcher = session.subagent('agent-web1');
+    await searcher.meta({ description: 'Search', toolUseId: 'toolu_w' });
+    const last = now(-6 * MIN);
+    await append(searcher.file, toolCall('s1', 'WebSearch', undefined, last, true));
+    const entry = await entryWhen(session.id, (e) => e?.liveActivity?.lastEventAt === last, 'subagent tool');
+    expect(entry?.liveActivity).toEqual({ atWork: true, lastEventAt: last, waitingFor: { name: 'WebSearch', others: 0 } });
+    expect(entry?.liveActivity?.waitingFor).not.toHaveProperty('subagentType');
+    expect(entry?.liveActivity?.waitingFor).not.toHaveProperty('argument');
+  });
+
+  // plan-session_activity/REQ-17, REQ-22: a tool result of a subagent sends the new last activity within 2 seconds
+  it('sends a session frame with the new last activity within 2 seconds of a subagent tool result', async () => {
+    const session = external('working');
+    await append(session.transcript, userSays('Run the tests', now(-7 * MIN)), toolCall('toolu_t', 'Agent', { description: 'Run the tests' }, now(-7 * MIN)));
+    const tester = session.subagent('agent-tst3');
+    await tester.meta({ agentType: 'sdd-tester', toolUseId: 'toolu_t' });
+    await append(tester.file, toolCall('s1', 'Bash', { command: 'mvn test' }, now(-6 * MIN), true));
+    await entryWhen(session.id, (e) => typeof e?.liveActivity?.waitingFor === 'object', 'subagent tool');
+    const client = await connect();
+    const at = now();
+    await append(tester.file, toolResult('s1', at, true));
+    await waitFor(() => framesOf(client, session.id).some((f) => f.session?.liveActivity?.lastEventAt === at), 'frame of the new activity', REQ_22_MS);
+    const frame = framesOf(client, session.id).find((f) => f.session?.liveActivity?.lastEventAt === at);
+    expect(frame?.session?.liveActivity).toEqual({ atWork: true, lastEventAt: at, waitingFor: 'response' });
+  });
+
+  // plan-session_activity/REQ-25: the last activity changes neither the state nor the last activity of the session summary
+  it('leaves the state and the summary of the session as they are', async () => {
+    const hosted = workingHosted();
+    const ext = external('working');
+    const scannerTime = now(-30 * MIN);
+    putExternal({ ...externalSessions.get(ext.id)!, lastActivity: scannerTime });
+    const last = now(-6 * MIN);
+    for (const session of [hosted, ext]) await append(session.transcript, userSays('Go', now(-7 * MIN)), toolCall('t1', 'Bash', { command: 'sleep 600' }, last));
+    const hostedEntry = await entryWhen(hosted.id, (e) => e?.liveActivity?.lastEventAt === last, 'hosted last activity');
+    const extEntry = await entryWhen(ext.id, (e) => e?.liveActivity?.lastEventAt === last, 'external last activity');
+    const { liveActivity: _hosted, ...hostedSummary } = hostedEntry!;
+    const { liveActivity: _ext, ...extSummary } = extEntry!;
+    expect(hostedSummary).toEqual(tracker.get(hosted.id));
+    expect(hostedSummary.state).toBe('working');
+    expect(extSummary).toEqual(externalSessions.get(ext.id));
+    expect(extSummary.lastActivity, 'the summary keeps the time of the scanner').toBe(scannerTime);
+    expect(extSummary.state).toBe('working');
   });
 });

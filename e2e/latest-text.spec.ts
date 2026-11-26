@@ -247,7 +247,7 @@ test.describe('Latest-text line', () => {
     await files.write(userText('Now add a test', iso(now - 1_000)), claudeThinks(iso(now)));
     await expect
       .poll(async () => (await summaryOf(request, id))?.liveActivity, { ...PROMPTLY, message: 'the server reads the new turn' })
-      .toEqual({ atWork: true });
+      .toEqual({ atWork: true, lastEventAt: iso(now), waitingFor: 'response' });
     await expect(row.getByText('Running', { exact: true })).toBeVisible();
     await expect(latestLine(row)).toHaveCount(0);
     await expect(row).not.toContainText('The login bug is fixed');

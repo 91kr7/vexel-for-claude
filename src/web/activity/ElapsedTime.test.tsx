@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, rerenderLast, unmountAll } from '../settings/settings-test-support';
-import { ElapsedTime } from './ElapsedTime';
+import { ElapsedTime, useNow } from './ElapsedTime';
 
 const NOW = Date.parse('2026-11-26T10:00:00.000Z');
 const ago = (ms: number) => new Date(NOW - ms).toISOString();
 const timeOf = (host: HTMLElement) => host.querySelector('time');
+
+function Now() {
+  return <output>{useNow()}</output>;
+}
+const nowOf = (host: HTMLElement) => Number(host.querySelector('output')?.textContent);
 
 beforeEach(() => {
   vi.useFakeTimers({ now: NOW });
@@ -87,5 +92,31 @@ describe('ElapsedTime', () => {
     rerenderLast(<ElapsedTime since={ago(180_000)} />);
     expect(timeOf(host)?.textContent).toBe('3 min');
     expect(timeOf(host)?.getAttribute('datetime')).toBe(ago(180_000));
+  });
+});
+
+describe('useNow', () => {
+  // elapsed-time spec and plan-session_activity/REQ-21: the current time, refreshed by the shared timer at the same moment as every ElapsedTime
+  it('gives the current time, refreshed by the one shared timer together with ElapsedTime', async () => {
+    const clock = mount(<Now />);
+    const time = mount(<ElapsedTime since={ago(5_000)} />);
+    expect(nowOf(clock)).toBe(NOW);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(vi.getTimerCount(), 'one timer for useNow and ElapsedTime').toBe(1);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(nowOf(clock)).toBe(NOW + 1000);
+    expect(timeOf(time)?.textContent).toBe('6 s');
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(nowOf(clock)).toBe(NOW + 61_000);
+  });
+
+  // elapsed-time spec: the timer runs only while an ElapsedTime or a useNow is mounted
+  it('keeps the timer running for a useNow alone, and stops it when it goes', async () => {
+    mount(<Now />);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(vi.getTimerCount()).toBe(1);
+    unmountAll();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TurnModel } from './turn-model.js';
 
 type Line = Record<string, unknown>;
@@ -30,6 +30,15 @@ const stopNotice = (taskId: string, status: string, timestamp?: string): Line =>
 });
 
 const viewOf = (model: TurnModel, id: string, sessionEnded = false) => model.subagents(sessionEnded).find((view) => view.id === id);
+const toolCall = (id: string | undefined, name: string, input: unknown, timestamp?: string, sidechain = false) =>
+  claudeSays([{ type: 'tool_use', ...(id !== undefined && { id }), name, ...(input !== undefined && { input }) }], timestamp, sidechain);
+const toolResult = (id: string, timestamp?: string, sidechain = false): Line => ({
+  type: 'user',
+  isSidechain: sidechain,
+  ...(timestamp !== undefined && { timestamp }),
+  message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: 'ok' }] },
+});
+const callIds = (model: TurnModel, sessionEnded = false) => model.openCalls(sessionEnded).map((call) => call.id);
 
 describe('TurnModel, main conversation', () => {
   // turn-model spec: a new model has no text and no subagent
@@ -312,5 +321,190 @@ describe('TurnModel, turns and subagent texts', () => {
     }
     expect(viewOf(model, 'agent-big')?.latestText?.text).toBe('Step 4999');
     expect(model.subagents(false)).toHaveLength(1);
+  });
+});
+
+describe('TurnModel, last activity', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // turn-model spec: a new model has no activity and no open call
+  it('starts with no activity time and no open call', () => {
+    const model = new TurnModel();
+    expect(model.lastEventAt()).toBeUndefined();
+    expect(model.openCalls(false)).toEqual([]);
+  });
+
+  // plan-session_activity/REQ-17: a message, a tool call or a tool result, of the main conversation or of a subagent, is activity
+  it('takes the time of each user and assistant line, main and subagent', () => {
+    const model = new TurnModel();
+    model.addMainEntries([userSays('Go', at(0))]);
+    expect(model.lastEventAt()).toBe(at(0));
+    model.addMainEntries([toolCall('t1', 'Agent', { description: 'Run the tests' }, at(1))]);
+    expect(model.lastEventAt(), 'main tool call').toBe(at(1));
+    model.addSubagentEntries('agent-a1', [subSays('Starting', at(2))]);
+    expect(model.lastEventAt(), 'subagent message').toBe(at(2));
+    model.addSubagentEntries('agent-a1', [toolCall('s1', 'Bash', { command: 'mvn test' }, at(3), true)]);
+    expect(model.lastEventAt(), 'subagent tool call').toBe(at(3));
+    model.addSubagentEntries('agent-a1', [toolResult('s1', at(4), true)]);
+    expect(model.lastEventAt(), 'subagent tool result').toBe(at(4));
+    model.addMainEntries([toolResult('t1', at(5))]);
+    expect(model.lastEventAt(), 'main tool result').toBe(at(5));
+  });
+
+  // batch-stall-signal decision "What counts as activity": a thinking block is an assistant line
+  it('counts a thinking line as activity', () => {
+    const model = new TurnModel();
+    model.addMainEntries([userSays('Plan it', at(0)), claudeSays([{ type: 'thinking', thinking: 'Hmm', signature: 's' }], at(1))]);
+    expect(model.lastEventAt()).toBe(at(1));
+    model.addSubagentEntries('agent-a1', [claudeSays([{ type: 'thinking', thinking: 'Hmm' }], at(2), true)]);
+    expect(model.lastEventAt()).toBe(at(2));
+  });
+
+  // batch-stall-signal decision "What counts as activity": lines of other types are no activity
+  it('takes no time from lines of other types', () => {
+    const model = new TurnModel();
+    model.addMainEntries([userSays('Go', at(1))]);
+    const others: Line[] = [
+      { type: 'summary', summary: 'Earlier work', timestamp: at(5) },
+      { type: 'file-history-snapshot', timestamp: at(6), snapshot: {} },
+      { type: 'system', subtype: 'informational', timestamp: at(7), content: 'Note' },
+      { type: 'attachment', timestamp: at(8), attachment: {} },
+    ];
+    model.addMainEntries(others);
+    model.addSubagentEntries('agent-a1', others.map((line) => ({ ...line, isSidechain: true })));
+    expect(model.lastEventAt()).toBe(at(1));
+  });
+
+  // turn-model spec: the timestamp as written on the line
+  it('gives the timestamp as written on the line', () => {
+    const model = new TurnModel();
+    model.addMainEntries([claudeSays('Text', '2026-11-26T10:05:00Z')]);
+    expect(model.lastEventAt()).toBe('2026-11-26T10:05:00Z');
+  });
+
+  // turn-model spec: a line with no valid timestamp counts at the moment the model takes it
+  it('uses the moment it takes a line with no valid timestamp', () => {
+    const now = Date.parse('2026-11-26T12:00:00.000Z');
+    vi.useFakeTimers({ now, toFake: ['Date'] });
+    const model = new TurnModel();
+    model.addMainEntries([claudeSays('No time')]);
+    expect(model.lastEventAt()).toBe('2026-11-26T12:00:00.000Z');
+    vi.setSystemTime(now + 90_000);
+    model.addSubagentEntries('agent-a1', [{ ...subSays('Bad time'), timestamp: 'yesterday at noon' }]);
+    expect(model.lastEventAt()).toBe('2026-11-26T12:01:30.000Z');
+  });
+
+  // plan-session_activity/REQ-16, REQ-17: the latest activity wins, also when an older line is read after it
+  it('keeps the latest time when a line read later is older', () => {
+    const model = new TurnModel();
+    model.addMainEntries([userSays('Go', at(0)), claudeSays('Main text', at(5))]);
+    model.addSubagentEntries('agent-a1', [subSays('Older subagent line', at(3))]);
+    model.addSubagentEntries('agent-b1', [subSays('Another older line', at(4))]);
+    expect(model.lastEventAt()).toBe(at(5));
+    model.addSubagentEntries('agent-a1', [subSays('Newer subagent line', at(6))]);
+    expect(model.lastEventAt()).toBe(at(6));
+  });
+});
+
+describe('TurnModel, open calls', () => {
+  // plan-session_activity/REQ-18: a main tool call with no result is open, with its raw input and time, and no subagent type
+  it('keeps an open main call with its id, name, raw input and time', () => {
+    const model = new TurnModel();
+    const input = { command: 'mvn test', description: 'Run the tests' };
+    model.addMainEntries([userSays('Test it', at(0)), claudeSays([{ type: 'text', text: 'Running' }, { type: 'tool_use', id: 't1', name: 'Bash', input }], at(1))]);
+    const calls = model.openCalls(false);
+    expect(calls).toEqual([{ id: 't1', name: 'Bash', input, at: at(1), order: expect.any(Number) }]);
+    expect(calls[0]).not.toHaveProperty('subagentType');
+  });
+
+  // turn-model spec: a result closes its call, and only that one
+  it('closes a call when its result arrives, and only that call', () => {
+    const model = new TurnModel();
+    model.addMainEntries([
+      userSays('Go', at(0)),
+      claudeSays([{ type: 'tool_use', id: 't1', name: 'Read', input: { file_path: '/a' } }, { type: 'tool_use', id: 't2', name: 'Grep', input: { pattern: 'x' } }], at(1)),
+    ]);
+    expect(callIds(model)).toEqual(['t1', 't2']);
+    model.addMainEntries([toolResult('t1', at(2))]);
+    expect(callIds(model)).toEqual(['t2']);
+    model.addMainEntries([toolResult('unknown', at(3))]);
+    expect(callIds(model)).toEqual(['t2']);
+  });
+
+  // turn-model spec: a user message closes every call of its own conversation, and of no other
+  it('closes every call of a conversation at a user message of that conversation', () => {
+    const model = new TurnModel();
+    model.addMainEntries([userSays('Go', at(0)), toolCall('m1', 'Bash', { command: 'npm run build' }, at(1)), toolCall('m2', 'Agent', { description: 'Explore' }, at(1))]);
+    model.addSubagentEntries('agent-a1', [toolCall('s1', 'Grep', { pattern: 'TODO' }, at(2), true)]);
+    model.addMainEntries([userSays('Stop the build', at(3))]);
+    expect(callIds(model), 'the main calls close, the subagent call stays').toEqual(['s1']);
+    model.addMainEntries([toolCall('m3', 'Read', { file_path: '/b' }, at(4))]);
+    model.addSubagentEntries('agent-a1', [subUser('Look at the tests too', at(5))]);
+    expect(callIds(model), 'the subagent calls close, the main call stays').toEqual(['m3']);
+  });
+
+  // plan-session_activity/REQ-19, REQ-26: a subagent call carries its subagent type, when the metadata has a non-empty one
+  it('gives a subagent call the type of its subagent, and none when the type is missing or empty', () => {
+    const model = new TurnModel();
+    model.setSubagentMeta('agent-a', { agentType: 'sdd-tester', toolUseId: 'ta' });
+    model.setSubagentMeta('agent-c', { agentType: '' });
+    model.addSubagentEntries('agent-a', [toolCall('sa', 'Bash', { command: 'mvn test' }, at(1), true)]);
+    model.addSubagentEntries('agent-b', [toolCall('sb', 'WebSearch', undefined, at(2), true)]);
+    model.addSubagentEntries('agent-c', [toolCall('sc', 'Read', { file_path: '/c' }, at(3), true)]);
+    const calls = model.openCalls(false);
+    expect(calls.map((call) => [call.id, call.subagentType])).toEqual([
+      ['sa', 'sdd-tester'],
+      ['sb', undefined],
+      ['sc', undefined],
+    ]);
+    expect(calls[1]).not.toHaveProperty('subagentType');
+    expect(calls[2]).not.toHaveProperty('subagentType');
+  });
+
+  // turn-model spec: a subagent that is not running gives no open call
+  it('gives no call of a finished, interrupted or stopped subagent', () => {
+    const model = new TurnModel();
+    model.addMainEntries([userSays('Go', at(0)), toolCall('m1', 'Bash', { command: 'ls' }, at(1))]);
+    model.addSubagentEntries('agent-f', [toolCall('sf', 'Bash', { command: 'ls' }, at(2), true)]);
+    model.addSubagentEntries('agent-i', [toolCall('si', 'Bash', { command: 'ls' }, at(2), true)]);
+    model.addSubagentEntries('agent-r', [toolCall('sr', 'Bash', { command: 'ls' }, at(2), true)]);
+    expect(callIds(model)).toEqual(['m1', 'sf', 'si', 'sr']);
+    model.setSubagentMeta('agent-f', { agentType: 'Explore', finished: true });
+    model.addSubagentEntries('agent-i', [subUser('[Request interrupted by user for tool use]', at(3))]);
+    expect(callIds(model)).toEqual(['m1', 'sr']);
+    expect(callIds(model, true), 'the subagents of an ended session are stopped').toEqual(['m1']);
+  });
+
+  // plan-session_activity/REQ-20: start order, by time when both are known and different, else in the order taken
+  it('lists the calls in start order', () => {
+    const model = new TurnModel();
+    model.addMainEntries([userSays('Go', at(0)), toolCall('m1', 'Bash', { command: 'npm run build' }, at(5))]);
+    model.addSubagentEntries('agent-a', [toolCall('s1', 'Grep', { pattern: 'x' }, at(3), true)]);
+    model.addSubagentEntries('agent-b', [toolCall('s2', 'Read', { file_path: '/x' }, undefined, true)]);
+    model.addSubagentEntries('agent-c', [toolCall('s3', 'Glob', { pattern: '*.ts' }, at(5), true)]);
+    expect(callIds(model)).toEqual(['s1', 'm1', 's2', 's3']);
+    const calls = model.openCalls(false);
+    expect(calls[2]).not.toHaveProperty('at');
+  });
+
+  // turn-model spec: a tool call with no id is never open; a call with no input has no input
+  it('keeps no call with no id, and gives no input to a call with none', () => {
+    const model = new TurnModel();
+    model.addMainEntries([userSays('Go', at(0)), toolCall(undefined, 'Bash', { command: 'ls' }, at(1)), toolCall('w1', 'WebSearch', undefined, at(2))]);
+    const calls = model.openCalls(false);
+    expect(calls).toEqual([{ id: 'w1', name: 'WebSearch', at: at(2), order: expect.any(Number) }]);
+    expect(calls[0]).not.toHaveProperty('input');
+  });
+
+  // plan-session_activity/REQ-14: thousands of closed calls leave no open call behind
+  it('keeps no closed call after thousands of steps', () => {
+    const model = new TurnModel();
+    model.addMainEntries([userSays('Long run', at(0))]);
+    for (let step = 0; step < 5_000; step += 1) {
+      model.addSubagentEntries('agent-big', [toolCall(`c${step}`, 'Bash', { command: 'mvn test' }, at(1), true), toolResult(`c${step}`, at(1), true)]);
+    }
+    expect(model.openCalls(false)).toEqual([]);
   });
 });

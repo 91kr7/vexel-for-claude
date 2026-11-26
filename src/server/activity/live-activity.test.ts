@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionState } from '../sessions/session-state-tracker.js';
 import { liveActivityOf } from './live-activity.js';
-import type { SubagentView, TimedText, TurnModel } from './turn-model.js';
+import type { OpenCall, SubagentView, TimedText, TurnModel } from './turn-model.js';
 
 type Model = Pick<TurnModel, 'mainText' | 'subagents' | 'lastEventAt' | 'openCalls'>;
 
-/** A turn model with fixed values. Its subagents keep their state whatever `sessionEnded` is, and the calls are recorded. */
-function modelOf(main: TimedText | undefined, subagents: SubagentView[] = []): Model & { endedArgs: boolean[] } {
+/** A turn model with fixed values. Its subagents keep their state whatever `sessionEnded` is; `endedArgs` records the calls to `subagents`. */
+function modelOf(
+  main: TimedText | undefined,
+  subagents: SubagentView[] = [],
+  { lastEventAt, calls = [] }: { lastEventAt?: string; calls?: OpenCall[] } = {},
+): Model & { endedArgs: boolean[] } {
   const endedArgs: boolean[] = [];
   return {
     endedArgs,
@@ -15,18 +19,19 @@ function modelOf(main: TimedText | undefined, subagents: SubagentView[] = []): M
       endedArgs.push(sessionEnded);
       return subagents;
     },
-    lastEventAt: () => undefined,
-    openCalls: () => [],
+    lastEventAt: () => lastEventAt,
+    openCalls: () => calls,
   };
 }
 
 const text = (value: string, order: number, at?: string): TimedText => ({ text: value, order, ...(at !== undefined && { at }) });
-const subagent = (id: string, state: SubagentView['state'], latestText?: TimedText, agentType?: string): SubagentView => ({
+const subagent = (id: string, state: SubagentView['state'], latestText?: TimedText, agentType?: string, toolUseId?: string): SubagentView => ({
   id,
-  meta: agentType === undefined ? {} : { agentType },
+  meta: { ...(agentType !== undefined && { agentType }), ...(toolUseId !== undefined && { toolUseId }) },
   state,
   ...(latestText && { latestText }),
 });
+const call = (id: string, name: string, input: unknown, order: number, extra: { subagentType?: string; at?: string } = {}): OpenCall => ({ id, name, input, order, ...extra });
 
 const T1 = '2026-11-26T10:01:00.000Z';
 const T2 = '2026-11-26T10:02:00.000Z';
@@ -35,7 +40,7 @@ const T3 = '2026-11-26T10:03:00.000Z';
 describe('liveActivityOf, at work', () => {
   // plan-session_activity/REQ-1: a working session is at work
   it('is at work while the session is working', () => {
-    expect(liveActivityOf(modelOf(undefined), 'working')).toEqual({ atWork: true });
+    expect(liveActivityOf(modelOf(undefined), 'working')).toEqual({ atWork: true, waitingFor: 'response' });
   });
 
   // plan-session_activity/REQ-1: an idle or needs-input session with a running subagent is at work
@@ -72,7 +77,7 @@ describe('liveActivityOf, latest text', () => {
   // plan-session_activity/REQ-2: the latest text of the main conversation, with no type, and its time
   it('gives the main text with its time and no subagent type', () => {
     const result = liveActivityOf(modelOf(text('Reading the files', 1, T1)), 'working');
-    expect(result).toEqual({ atWork: true, latestText: { text: 'Reading the files', at: T1 } });
+    expect(result).toEqual({ atWork: true, latestText: { text: 'Reading the files', at: T1 }, waitingFor: 'response' });
   });
 
   // plan-session_activity/REQ-3, REQ-4: a running subagent that wrote last wins, with its type
@@ -81,6 +86,7 @@ describe('liveActivityOf, latest text', () => {
     expect(liveActivityOf(model, 'working')).toEqual({
       atWork: true,
       latestText: { text: 'Overwriting the whole CommonServiceImpl class', subagentType: 'sdd-developer', at: T2 },
+      waitingFor: 'response',
     });
   });
 
@@ -107,7 +113,7 @@ describe('liveActivityOf, latest text', () => {
       subagent('agent-b', 'running', text('B text', 1, T3), 'sdd-tester'),
       subagent('agent-c', 'running', text('C text', 5, T2), 'Plan'),
     ]);
-    expect(liveActivityOf(model, 'idle')).toEqual({ atWork: true, latestText: { text: 'B text', subagentType: 'sdd-tester', at: T3 } });
+    expect(liveActivityOf(model, 'idle')).toEqual({ atWork: true, latestText: { text: 'B text', subagentType: 'sdd-tester', at: T3 }, waitingFor: 'response' });
   });
 
   // plan-session_activity/REQ-3: the text of a finished or stopped subagent is never the latest text
@@ -127,7 +133,7 @@ describe('liveActivityOf, latest text', () => {
 
   // plan-session_activity/REQ-10: at work with no text yet → no latestText
   it('has no latestText when no conversation has a text', () => {
-    expect(liveActivityOf(modelOf(undefined, [subagent('agent-a', 'running')]), 'working')).toEqual({ atWork: true });
+    expect(liveActivityOf(modelOf(undefined, [subagent('agent-a', 'running')]), 'working')).toEqual({ atWork: true, waitingFor: 'response' });
   });
 
   // plan-session_activity/REQ-6: the text is plain, on one line
@@ -146,16 +152,65 @@ describe('liveActivityOf, latest text', () => {
 
   // live-activity spec: a text that is empty once plain gives no latestText
   it('has no latestText when the plain text is empty', () => {
-    expect(liveActivityOf(modelOf(text('```\n```', 1, T1)), 'working')).toEqual({ atWork: true });
+    expect(liveActivityOf(modelOf(text('```\n```', 1, T1)), 'working')).toEqual({ atWork: true, waitingFor: 'response' });
   });
 
   // plan-session_activity/REQ-13: an unknown subagent type or time hides only that part
   it('leaves out an empty or missing subagent type and a missing time', () => {
     const noType = modelOf(undefined, [subagent('agent-a', 'running', text('No type', 1, T1))]);
-    expect(liveActivityOf(noType, 'working')).toEqual({ atWork: true, latestText: { text: 'No type', at: T1 } });
+    expect(liveActivityOf(noType, 'working')).toEqual({ atWork: true, latestText: { text: 'No type', at: T1 }, waitingFor: 'response' });
     const emptyType = modelOf(undefined, [subagent('agent-a', 'running', text('Empty type', 1), '')]);
     const result = liveActivityOf(emptyType, 'working');
-    expect(result).toEqual({ atWork: true, latestText: { text: 'Empty type' } });
+    expect(result).toEqual({ atWork: true, latestText: { text: 'Empty type' }, waitingFor: 'response' });
     expect(Object.keys(result.latestText ?? {})).toEqual(['text']);
+  });
+});
+
+describe('liveActivityOf, last activity and waiting for', () => {
+  // plan-session_activity/REQ-16, REQ-18: at work, the time of the last activity and the running tool
+  it('gives the time of the last activity and the running tool of a session at work', () => {
+    const model = modelOf(text('Running the tests', 1, T1), [], { lastEventAt: T2, calls: [call('toolu_1', 'Bash', { command: 'mvn test' }, 2, { at: T2 })] });
+    expect(liveActivityOf(model, 'working')).toEqual({
+      atWork: true,
+      latestText: { text: 'Running the tests', at: T1 },
+      lastEventAt: T2,
+      waitingFor: { name: 'Bash', argument: 'mvn test', others: 0 },
+    });
+  });
+
+  // live-activity spec: lastEventAt and waitingFor only when the session is at work
+  it.each<SessionState>(['idle', 'needs_input', 'ended'])('gives neither the last activity nor waitingFor in state %s when not at work', (state) => {
+    const model = modelOf(text('Main text', 1, T1), [subagent('agent-f', 'finished', undefined, 'Explore')], {
+      lastEventAt: T2,
+      calls: [call('toolu_1', 'Bash', { command: 'ls' }, 2, { at: T2 })],
+    });
+    expect(liveActivityOf(model, state)).toEqual({ atWork: false });
+  });
+
+  // live-activity spec: waitingFor is always present at work; lastEventAt only when the model knows it
+  it('has waitingFor "response" and no lastEventAt when the model has no call and no activity time', () => {
+    const result = liveActivityOf(modelOf(undefined), 'working');
+    expect(result.waitingFor).toBe('response');
+    expect(result).not.toHaveProperty('lastEventAt');
+  });
+
+  // plan-session_activity/REQ-18, REQ-19: the call that started a running subagent is left out, and the subagent tool counts with its type
+  it('leaves out the call that started a running subagent and names the tool of that subagent', () => {
+    const tester = subagent('agent-t', 'running', undefined, 'sdd-tester', 'toolu_agent');
+    const model = modelOf(undefined, [tester], {
+      lastEventAt: T3,
+      calls: [
+        call('toolu_agent', 'Agent', { description: 'Run the tests', prompt: 'Run them' }, 1, { at: T1 }),
+        call('toolu_bash', 'Bash', { command: 'mvn test' }, 2, { subagentType: 'sdd-tester', at: T2 }),
+      ],
+    });
+    expect(liveActivityOf(model, 'idle').waitingFor).toEqual({ subagentType: 'sdd-tester', name: 'Bash', argument: 'mvn test', others: 0 });
+  });
+
+  // live-activity spec: only running subagents leave out their call; a finished subagent does not
+  it('keeps the call of a subagent that is not running', () => {
+    const done = subagent('agent-d', 'finished', undefined, 'sdd-tester', 'toolu_agent');
+    const model = modelOf(undefined, [done], { calls: [call('toolu_agent', 'Agent', { description: 'Run the tests', prompt: 'Run them' }, 1, { at: T1 })] });
+    expect(liveActivityOf(model, 'working').waitingFor).toEqual({ name: 'Agent', argument: 'Run the tests', others: 0 });
   });
 });
