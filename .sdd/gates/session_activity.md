@@ -15,3 +15,9 @@
 | 2026-11-26 | dev | divergences latest-text | decided | Accepted: stop notices of the main transcript mark a subagent stopped; later work clears an interrupt; turn start waits for the next read; metadata kept during rewrites. All refine INT-5/INT-9, no visible change beyond the REQs |
 | 2026-11-26 | dev | question developer nested subagents | decided | Keep the open assumption: every file of `subagents/` is read; confirm with REQ-38 in `turn-panel` |
 | 2026-11-26 | dev | question developer workflow subagents | escalated | `subagents/workflows/` holds 148 agent files of 6 runs (Nov 4-24); excluding them narrows "subagent compresi" |
+| 2026-11-26 | dev | question developer workflow subagents | human decision | Include the subagents of Claude Code workflows (`subagents/workflows/wf_*/`) in this cycle, as a fifth batch |
+| 2026-11-26 | plan | G2 requirements, workflow subagents | pass | REQ-56..60 cover the human decision; REQ-1..55 unchanged; REQ-60 apart for the end detection |
+| 2026-11-26 | plan | question planner workflow type | decided | Show "workflow-subagent", the type Claude Code records (REQ-4 definition); the label shows as the task description in the panel |
+| 2026-11-26 | plan | question planner turn-panel INT-16 | decided | Remove it: an e2e spec is the tester's work; REQ-48 served by turn-panel INT-11, INT-14, INT-15, tested by one Electron spec |
+| 2026-11-26 | plan | G3 coverage, workflow-subagents | pass | REQ-56..60 covered and in scenarios; live workflow check made optional: the run rule must hold whether the journal is written during the run or at its end |
+| 2026-11-26 | test | G5 tests, latest-text | pass | Re-run 547 unit (batch and dependants), 9 e2e green; only test files and `playwright.config.ts`; `session-cards.spec.ts:334` updated to the new line, contract in `session-list.md` |

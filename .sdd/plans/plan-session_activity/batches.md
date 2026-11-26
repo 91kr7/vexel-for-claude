@@ -6,7 +6,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [latest-text](batches/batch-latest-text.md) | Latest text on the list entry | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15 | — | implemented | A working session shows Claude's latest text |
+| [latest-text](batches/batch-latest-text.md) | Latest text on the list entry | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15 | — | certified | A working session shows Claude's latest text |
 | [stall-signal](batches/batch-stall-signal.md) | Stall signal | REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26 | latest-text | todo | A silent session shows what it waits for |
 | [turn-panel](batches/batch-turn-panel.md) | Turn panel | REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42, REQ-43, REQ-44, REQ-45, REQ-46, REQ-47, REQ-48 | stall-signal | todo | The user follows the turn and its subagents |
 | [subagent-conversation](batches/batch-subagent-conversation.md) | Subagent conversation | REQ-49, REQ-50, REQ-51, REQ-52, REQ-53, REQ-54, REQ-55 | turn-panel | todo | The user reads the live conversation of a subagent |
