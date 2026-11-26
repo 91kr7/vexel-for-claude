@@ -344,6 +344,12 @@ test.describe('Desktop window', () => {
     expect(Date.now() - start).toBeLessThan(5000);
     expect(window.url()).toBe(`http://127.0.0.1:${port}/`);
     expect(await healthStatus(port)).toBe(200);
+    await expect
+      .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().map((w) => [w.getSize()[0], w.isMaximized()])), {
+        message: 'DesktopApp: a maximize the desktop did by itself is undone, and the window settles at its own width',
+        timeout: 15_000,
+      })
+      .toEqual([[1280, false]]);
     const [state, ...others] = await windowState(app);
     expect(others).toEqual([]);
     expect(state).toMatchObject({ menuBarVisible: false, minimized: false, visible: true });
@@ -691,6 +697,21 @@ test.describe('Remembered theme in the desktop app', () => {
   }
 });
 
+/** The window area at the left end, the middle and the right end of the row at `y`, all read on one layout: the window can resize between two reads. */
+const regionsAcross = (page: Page, y: number) =>
+  page.evaluate((py) => {
+    const regionAt = (px: number) => {
+      let region = 'none';
+      for (const element of document.querySelectorAll('*')) {
+        const value = getComputedStyle(element).getPropertyValue('-webkit-app-region');
+        const box = element.getBoundingClientRect();
+        if ((value === 'drag' || value === 'no-drag') && px >= box.left && px < box.right && py >= box.top && py < box.bottom) region = value;
+      }
+      return region;
+    };
+    return [1, innerWidth / 2, innerWidth - 1].map((x) => ({ x, region: regionAt(x) }));
+  }, y);
+
 /** The window area at a point: the last element, in document order, that declares a drag value over the point wins. */
 const appRegionAt = (page: Page, x: number, y: number) =>
   page.evaluate(
@@ -722,8 +743,7 @@ test.describe('Frameless window', () => {
     const window = await app.firstWindow();
 
     await expect(window.getByText(LOADING, { exact: true })).toBeVisible();
-    const width = (await window.evaluate(() => innerWidth)) as number;
-    for (const x of [1, width / 2, width - 1]) expect(await appRegionAt(window, x, 24), `REQ-10: startup bar at ${x}`).toBe('drag');
+    for (const { x, region } of await regionsAcross(window, 24)) expect(region, `REQ-10: startup bar at ${x}`).toBe('drag');
 
     await expect(list(window)).toBeVisible({ timeout: 20_000 });
     const banner = window.getByRole('banner');
@@ -759,8 +779,7 @@ test.describe('Frameless window', () => {
     const app = await launchDesktop(await desktopEnv((holder.address() as net.AddressInfo).port));
     const window = await app.firstWindow();
     await expect(window.getByText(ERROR, { exact: true })).toBeVisible({ timeout: 30_000 });
-    const width = (await window.evaluate(() => innerWidth)) as number;
-    for (const x of [1, width / 2, width - 1]) expect(await appRegionAt(window, x, 24), `REQ-10: startup bar at ${x}`).toBe('drag');
+    for (const { x, region } of await regionsAcross(window, 24)) expect(region, `REQ-10: startup bar at ${x}`).toBe('drag');
 
     const menuBar = await app.evaluate(async ({ BrowserWindow, Menu }) => {
       const current = BrowserWindow.getAllWindows()[0]!;
