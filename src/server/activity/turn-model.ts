@@ -1,4 +1,6 @@
 import { type ConversationItem, itemsOf, type SubagentMeta } from '../external/transcript-reader.js';
+import { plainExcerpt } from '../sessions/plain-excerpt.js';
+import { runningToolOf } from '../sessions/running-tool.js';
 import { stoppedTaskIdOf, type SubagentState, subagentStateOf } from './subagent-state.js';
 import { isInterruptMarker, startsTurn } from './turn-rule.js';
 
@@ -19,19 +21,42 @@ export interface OpenCall {
   order: number;
 }
 
+export type ToolOutcome = 'running' | 'completed' | 'error';
+
+export type TurnStep =
+  | { readonly kind: 'text'; readonly text: string }
+  | { readonly kind: 'tool'; readonly name?: string; readonly argument?: string; readonly outcome?: ToolOutcome };
+
+export interface StepLink {
+  parent?: string;
+  step: number;
+}
+
 export interface SubagentView {
   id: string;
   meta: SubagentMeta;
   state: SubagentState;
   latestText?: TimedText;
+  lastText?: TimedText;
+  startedAt?: string;
+  lastLineAt?: string;
+  responseModel?: string;
+  openCalls: OpenCall[];
+  startedBy?: StepLink;
 }
 
 interface Subagent {
   meta: SubagentMeta;
   latestText?: TimedText;
+  lastText?: TimedText;
   interruptedInFile: boolean;
   lastAssistantTime?: number;
   openCalls: Map<string, OpenCall>;
+  firstLine?: TimedEvent;
+  lastLine?: TimedEvent;
+  responseModel?: string;
+  stepCount: number;
+  startedBy?: StepLink;
 }
 
 interface TimedEvent {
@@ -40,6 +65,9 @@ interface TimedEvent {
 }
 
 const AGENT_FILE_PREFIX = 'agent-';
+const STEP_TEXT_LENGTH = 400;
+const REMEMBERED_SUBAGENT_CALLS = 2000;
+const SYNTHETIC_MODEL = '<synthetic>';
 
 function timeOf(entry: Entry): TimedEvent | undefined {
   const at = entry.timestamp;
@@ -70,9 +98,37 @@ function toolInputOf(entry: Entry, id: string): unknown {
   return blocks.find(isCall)?.input;
 }
 
+function cut(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  const characters = Array.from(text.slice(0, 2 * maxLength + 2));
+  return characters.length > maxLength ? `${characters.slice(0, maxLength - 1).join('')}…` : text;
+}
+
+function toolStepOf(name: string, id: string | undefined, entry: Entry): TurnStep {
+  const argument = id === undefined ? undefined : runningToolOf([{ name, input: toolInputOf(entry, id) }])?.argument;
+  return {
+    kind: 'tool',
+    ...(name && { name }),
+    ...(argument && { argument: cut(argument, STEP_TEXT_LENGTH) }),
+    ...(id !== undefined && { outcome: 'running' as const }),
+  };
+}
+
+function responseModelOf(entry: Entry): string | undefined {
+  const model = (entry.message as { model?: unknown } | null | undefined)?.model;
+  return typeof model === 'string' && model !== '' && model !== SYNTHETIC_MODEL ? model : undefined;
+}
+
+const withType = (call: OpenCall, subagentType: string | undefined): OpenCall => ({ ...call, ...(subagentType && { subagentType }) });
+
 export class TurnModel {
   #turnStart: number | undefined;
+  #turnNumber = 0;
   #mainText: TimedText | undefined;
+  #steps: TurnStep[] = [];
+  readonly #mainCallSteps = new Map<string, number>();
+  readonly #subagentCallSteps = new Map<string, StepLink>();
+  readonly #subagentOfStart = new Map<string, string>();
   readonly #subagents = new Map<string, Subagent>();
   readonly #stopNotices = new Map<string, number | undefined>();
   readonly #mainCalls = new Map<string, OpenCall>();
@@ -87,6 +143,7 @@ export class TurnModel {
       if (stoppedTaskId !== undefined) this.#stopNotices.set(`${AGENT_FILE_PREFIX}${stoppedTaskId}`, timeOf(entry)?.time);
       for (const item of itemsOf(entry)) {
         this.#followCalls(this.#mainCalls, item, entry);
+        this.#followSteps(item, entry);
         if (item.kind === 'assistant') this.#mainText = this.#textOf(item.text, entry);
       }
     }
@@ -96,21 +153,48 @@ export class TurnModel {
     const subagent = this.#subagentOf(id);
     for (const entry of entries) {
       this.#noteActivity(entry);
-      const time = timeOf(entry)?.time;
+      const line = timeOf(entry);
+      const time = line?.time;
+      if (line) {
+        subagent.firstLine ??= line;
+        if (!subagent.lastLine || line.time > subagent.lastLine.time) subagent.lastLine = line;
+      }
       if (entry.type === 'assistant') {
         subagent.interruptedInFile = false;
         if (time !== undefined) subagent.lastAssistantTime = Math.max(time, subagent.lastAssistantTime ?? time);
+        subagent.responseModel = responseModelOf(entry) ?? subagent.responseModel;
       }
       for (const item of itemsOf(entry, undefined, { sidechain: true })) {
         this.#followCalls(subagent.openCalls, item, entry);
+        if (item.kind === 'tool_call' || item.kind === 'assistant') this.#countStep(id, subagent, item);
         if (item.kind === 'user' && isInterruptMarker(item.text)) subagent.interruptedInFile = true;
-        else if (item.kind === 'assistant' && !this.#beforeTurn(time)) subagent.latestText = this.#textOf(item.text, entry);
+        else if (item.kind === 'assistant') {
+          const text = this.#textOf(item.text, entry);
+          subagent.lastText = text;
+          if (!this.#beforeTurn(time)) subagent.latestText = text;
+        }
       }
     }
   }
 
   setSubagentMeta(id: string, meta: SubagentMeta): void {
-    this.#subagentOf(id).meta = { ...meta };
+    const subagent = this.#subagentOf(id);
+    subagent.meta = { ...meta };
+    const start = meta.toolUseId;
+    if (!start) return;
+    this.#subagentOfStart.set(start, id);
+    const link = this.#subagentCallSteps.get(start);
+    if (link === undefined) return;
+    subagent.startedBy ??= link;
+    this.#subagentCallSteps.delete(start);
+  }
+
+  turnNumber(): number {
+    return this.#turnNumber;
+  }
+
+  steps(): TurnStep[] {
+    return [...this.#steps];
   }
 
   mainText(): TimedText | undefined {
@@ -118,12 +202,24 @@ export class TurnModel {
   }
 
   subagents(sessionEnded: boolean): SubagentView[] {
-    return [...this.#subagents].map(([id, subagent]) => ({
-      id,
-      meta: { ...subagent.meta },
-      state: this.#stateOf(id, subagent, sessionEnded),
-      ...(subagent.latestText && { latestText: copyOf(subagent.latestText) }),
-    }));
+    return [...this.#subagents].map(([id, subagent]) => {
+      const state = this.#stateOf(id, subagent, sessionEnded);
+      const startedBy = this.#startOf(subagent);
+      const { agentType } = subagent.meta;
+      const openCalls = state === 'running' ? [...subagent.openCalls.values()].map((call) => withType(call, agentType)).sort(byStart) : [];
+      return {
+        id,
+        meta: { ...subagent.meta },
+        state,
+        ...(subagent.latestText && { latestText: copyOf(subagent.latestText) }),
+        ...(subagent.lastText && { lastText: copyOf(subagent.lastText) }),
+        ...(subagent.firstLine && { startedAt: subagent.firstLine.at }),
+        ...(subagent.lastLine && { lastLineAt: subagent.lastLine.at }),
+        ...(subagent.responseModel !== undefined && { responseModel: subagent.responseModel }),
+        openCalls,
+        ...(startedBy && { startedBy: { ...startedBy } }),
+      };
+    });
   }
 
   lastEventAt(): string | undefined {
@@ -134,8 +230,7 @@ export class TurnModel {
     const calls = [...this.#mainCalls.values()].map((call) => ({ ...call }));
     for (const [id, subagent] of this.#subagents) {
       if (this.#stateOf(id, subagent, sessionEnded) !== 'running') continue;
-      const subagentType = subagent.meta.agentType;
-      for (const call of subagent.openCalls.values()) calls.push({ ...call, ...(subagentType && { subagentType }) });
+      for (const call of subagent.openCalls.values()) calls.push(withType(call, subagent.meta.agentType));
     }
     return calls.sort(byStart);
   }
@@ -156,9 +251,50 @@ export class TurnModel {
     else if (item.kind === 'tool_call' && item.id !== undefined) calls.set(item.id, this.#callOf(item.id, item.name, entry));
   }
 
+  #followSteps(item: ConversationItem, entry: Entry): void {
+    if (item.kind === 'assistant') {
+      const text = plainExcerpt(item.text, STEP_TEXT_LENGTH);
+      if (text) this.#steps.push({ kind: 'text', text });
+    } else if (item.kind === 'tool_call') {
+      if (item.id !== undefined) this.#mainCallSteps.set(item.id, this.#steps.length);
+      this.#steps.push(toolStepOf(item.name, item.id, entry));
+    } else if (item.kind === 'tool_result' && item.toolUseId !== undefined) {
+      const index = this.#mainCallSteps.get(item.toolUseId);
+      const step = index === undefined ? undefined : this.#steps[index];
+      const outcome = item.isError ? 'error' : 'completed';
+      if (index !== undefined && step?.kind === 'tool' && step.outcome !== outcome) this.#steps[index] = { ...step, outcome };
+    }
+  }
+
+  #countStep(id: string, subagent: Subagent, item: ConversationItem): void {
+    const link = { parent: id, step: subagent.stepCount };
+    subagent.stepCount += 1;
+    if (item.kind !== 'tool_call' || item.id === undefined) return;
+    const childId = this.#subagentOfStart.get(item.id);
+    const child = childId === undefined ? undefined : this.#subagents.get(childId);
+    if (child) {
+      child.startedBy ??= link;
+      return;
+    }
+    this.#subagentCallSteps.set(item.id, link);
+    if (this.#subagentCallSteps.size > REMEMBERED_SUBAGENT_CALLS) {
+      const oldest = this.#subagentCallSteps.keys().next().value;
+      if (oldest !== undefined) this.#subagentCallSteps.delete(oldest);
+    }
+  }
+
+  #startOf(subagent: Subagent): StepLink | undefined {
+    const start = subagent.meta.toolUseId;
+    const mainStep = start ? this.#mainCallSteps.get(start) : undefined;
+    return mainStep === undefined ? subagent.startedBy : { step: mainStep };
+  }
+
   #startTurn(time: number | undefined): void {
     this.#turnStart = time;
+    this.#turnNumber += 1;
     this.#mainText = undefined;
+    this.#steps = [];
+    this.#mainCallSteps.clear();
     for (const subagent of this.#subagents.values()) {
       const textTime = subagent.latestText && timeOfAt(subagent.latestText);
       if (time === undefined || textTime === undefined || textTime <= time) subagent.latestText = undefined;
@@ -179,7 +315,7 @@ export class TurnModel {
   #subagentOf(id: string): Subagent {
     let subagent = this.#subagents.get(id);
     if (!subagent) {
-      subagent = { meta: {}, interruptedInFile: false, openCalls: new Map() };
+      subagent = { meta: {}, interruptedInFile: false, openCalls: new Map(), stepCount: 0 };
       this.#subagents.set(id, subagent);
     }
     return subagent;

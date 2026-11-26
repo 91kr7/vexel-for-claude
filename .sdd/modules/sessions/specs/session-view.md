@@ -11,9 +11,9 @@ type: UI component
 ## Contract
 
 Description:
-- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with, from left to right in its right group, GitExplorerButton and "Search" (as `leadingActions`), the state pill, "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the SessionFooter.
+- one column that fills the main area, on `--bg-canvas` at 75 % over the dot grid: the SessionHeader with, from left to right in its right group, GitExplorerButton, TurnPanelButton and "Search" (as `leadingActions`), the state pill, "Interrupt" and "Terminate" (StopSessionButton), the terminal panel with the xterm.js terminal inside, and the SessionFooter.
 - the panel takes all the height the header and the footer leave.
-- the GitExplorerPanel, while open, sits at the right of the terminal panel, in the same row, past the panel's 12 px gap. The terminal panel takes the width it leaves, and the terminal fits it.
+- the GitExplorerPanel or the TurnPanel, while open, sits at the right of the terminal panel, in the same row, past the panel's 12 px gap. The terminal panel takes the width it leaves, and the terminal fits it.
 
 Props:
 - `sessionId` → the session to show.
@@ -88,9 +88,11 @@ Actions:
 - a drag that carries no files (e.g. text) → the panel does not change it: no drop state, no message.
 - GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known, and one more at each opening of the panel and each refresh). A click opens the GitExplorerPanel; a second click closes it. The panel is closed when the view opens, so no slide plays then. The panel is mounted through ExitPresence: it slides in on open and out on close. A click during a slide reverses it, and the panel ends in the state of the last click.
 - the GitExplorerPanel gets the session list of the `sessions` prop. Each opening of the panel, and each refresh the panel asks for (`onRefresh`), reads the repository again. While a lookup of a refresh is in flight, the button and the panel stay as they are.
+- TurnPanelButton → shown for every session. A click opens the TurnPanel of `sessionId`; a second click closes it. The panel is closed when the view opens. It is mounted through ExitPresence and slides in and out as the GitExplorerPanel.
+- one side panel at a time → opening the TurnPanel closes the GitExplorerPanel, and opening the GitExplorerPanel closes the TurnPanel. The closed one slides out while the other slides in.
 - "Interrupt" → sends Esc (`\x1b`) as `input`, then gives focus back to the terminal.
-- the box inside the panel padding changes size (window resize, maximize or restore, list panel edge drag or arrow keys, GitExplorerPanel open or close) → the terminal fits it ("Fit" in the rules) and sends the new `resize`. It also sends a `resize` as soon as it connects.
-- while the GitExplorerPanel slides, or the main view cross-fades or runs another CSS animation or transition of its own → the terminal does not fit at each frame. A fit skipped then runs once, when the last of these effects ends or is cancelled. It sends one `resize` if its rows or columns changed, and it keeps its text.
+- the box inside the panel padding changes size (window resize, maximize or restore, list panel edge drag or arrow keys, GitExplorerPanel or TurnPanel open or close) → the terminal fits it ("Fit" in the rules) and sends the new `resize`. It also sends a `resize` as soon as it connects.
+- while the GitExplorerPanel or the TurnPanel slides, or the main view cross-fades or runs another CSS animation or transition of its own → the terminal does not fit at each frame. A fit skipped then runs once, when the last of these effects ends or is cancelled. It sends one `resize` if its rows or columns changed, and it keeps its text.
 - the cell size changes while the panel keeps its size (a new device pixel ratio: another screen or a new system scale; a font load that ends after the terminal opened) → the terminal measures its cells again and fits the panel. It sends a `resize` only if its rows or columns changed.
 - during the cross-fade of a session switch (AppLayout) → both views keep the size of the main area, so the rows and columns of neither session change. The leaving view keeps its connection and sends no `resize`. The new view opens only its own connection and sends its `resize` when it connects, as on any open. A fit skipped during the fade runs once when it ends; it sends a `resize` only if its rows or columns changed. The focus rules of an open stay the same: the new terminal takes the focus when it opens.
 
@@ -116,6 +118,7 @@ Actions:
 - `@xterm/addon-search`
 - SessionHeader, SessionFooter, StopSessionButton, Avatar (`folderNameOf`)
 - useRepositoryLookup, GitExplorerButton, GitExplorerPanel (module git)
+- TurnPanelButton, TurnPanel (module activity)
 - ExitPresence (module app)
 - ProgressIndicator, ErrorMessage, IconSet, ThemeTokens, ThemeStore, WebEntry, BundledFont (module app)
 
@@ -138,3 +141,4 @@ Actions:
 - `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-6`
 - `plan-cool_slate_light/REQ-11`, `plan-cool_slate_light/REQ-14`, `plan-cool_slate_light/REQ-17` to `plan-cool_slate_light/REQ-20`, `plan-cool_slate_light/REQ-23` to `plan-cool_slate_light/REQ-25`
 - `plan-terminal_overflow/REQ-1` to `plan-terminal_overflow/REQ-10`
+- `plan-session_activity/REQ-27`, `plan-session_activity/REQ-48`

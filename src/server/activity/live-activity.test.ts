@@ -30,6 +30,7 @@ const subagent = (id: string, state: SubagentView['state'], latestText?: TimedTe
   meta: { ...(agentType !== undefined && { agentType }), ...(toolUseId !== undefined && { toolUseId }) },
   state,
   ...(latestText && { latestText }),
+  openCalls: [],
 });
 const call = (id: string, name: string, input: unknown, order: number, extra: { subagentType?: string; at?: string } = {}): OpenCall => ({ id, name, input, order, ...extra });
 

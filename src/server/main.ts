@@ -4,6 +4,7 @@ import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
 import { ActivityMonitor } from './activity/activity-monitor.js';
+import { registerTurnRoute } from './activity/turn-route.js';
 import { registerConversationStreamRoute } from './external/conversation-stream-route.js';
 import { ExternalSessionScanner } from './external/external-session-scanner.js';
 import { registerItemContentRoute } from './external/item-content-route.js';
@@ -114,6 +115,7 @@ registerResumeEndedSessionRoute(app, { tracker, history, registry, externalCheck
 registerAttachSessionRoute(app, registry, tracker);
 registerSessionListRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor, activityMonitor);
 registerSessionEventsRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor, activityMonitor);
+registerTurnRoute(app, { monitor: activityMonitor, tracker, scanner: externalScanner });
 registerHookEventRoute(app, tracker);
 registerFolderRoute(app);
 registerProjectFavoriteRoute(app, projectMarks);

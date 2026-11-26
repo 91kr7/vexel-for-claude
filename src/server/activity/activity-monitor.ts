@@ -4,6 +4,7 @@ import { type TranscriptReader, subagentFilesOf, subagentMetaOf } from '../exter
 import type { SessionState, SessionStateTracker } from '../sessions/session-state-tracker.js';
 import { type LiveActivity, liveActivityOf } from './live-activity.js';
 import { TurnModel } from './turn-model.js';
+import { noTurn, type TurnChange, turnChangeOf, type TurnTree, turnTreeOf } from './turn-tree.js';
 import type { WaitingFor } from './waiting-for.js';
 
 export interface ActivityMonitorSources {
@@ -15,6 +16,8 @@ export interface ActivityMonitorSources {
 }
 
 export type ActivityListener = (sessionId: string, activity: LiveActivity | undefined) => void;
+
+export type TurnListener = (sessionId: string, change: TurnChange) => void;
 
 interface Transcript {
   claudeSessionId: string;
@@ -34,6 +37,7 @@ interface WatchedSession {
   settled: boolean;
   transcript?: Transcript;
   activity?: LiveActivity;
+  turn: TurnTree;
 }
 
 interface ObservedSummary {
@@ -81,6 +85,7 @@ export class ActivityMonitor {
   readonly #maxBytesPerPoll: number;
   readonly #sessions = new Map<string, WatchedSession>();
   readonly #listeners = new Set<ActivityListener>();
+  readonly #turnListeners = new Set<TurnListener>();
   #generation = 0;
   #running = false;
   #timer: NodeJS.Timeout | undefined;
@@ -124,6 +129,16 @@ export class ActivityMonitor {
     return () => this.#listeners.delete(listener);
   }
 
+  turnOf(sessionId: string): TurnTree | undefined {
+    const session = this.#sessions.get(sessionId);
+    return session && structuredClone(session.turn);
+  }
+
+  onTurnChange(listener: TurnListener): () => void {
+    this.#turnListeners.add(listener);
+    return () => this.#turnListeners.delete(listener);
+  }
+
   async #loop(generation: number): Promise<void> {
     await this.poll();
     if (generation !== this.#generation) return;
@@ -134,7 +149,7 @@ export class ActivityMonitor {
   #observe({ id, folder, state }: ObservedSummary, hosted: boolean): void {
     const session = this.#sessions.get(id);
     if (!session) {
-      this.#sessions.set(id, { id, hosted, folder, state, settled: false });
+      this.#sessions.set(id, { id, hosted, folder, state, settled: false, turn: noTurn() });
       return;
     }
     const previous = session.state;
@@ -205,9 +220,18 @@ export class ActivityMonitor {
   }
 
   #publish(session: WatchedSession): void {
+    this.#publishTurn(session);
     const next = session.transcript?.loaded ? liveActivityOf(session.transcript.model, session.state) : undefined;
     if (sameActivity(session.activity, next)) return;
     session.activity = next;
     for (const listener of this.#listeners) listener(session.id, copyOf(next));
+  }
+
+  #publishTurn(session: WatchedSession): void {
+    const next = session.transcript?.loaded ? turnTreeOf(session.transcript.model, session.state) : noTurn();
+    const change = turnChangeOf(session.turn, next);
+    if (!change) return;
+    session.turn = next;
+    for (const listener of this.#turnListeners) listener(session.id, structuredClone(change));
   }
 }

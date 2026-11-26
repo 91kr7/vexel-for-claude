@@ -1,4 +1,6 @@
 import { type ReactNode, type Ref, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { TurnPanel } from '../activity/TurnPanel';
+import { TurnPanelButton } from '../activity/TurnPanelButton';
 import { AreaState } from '../feedback/AreaState';
 import { ErrorMessage } from '../feedback/ErrorMessage';
 import { ProgressIndicator } from '../feedback/ProgressIndicator';
@@ -198,10 +200,18 @@ export function ConversationView({ sessionId, session, sessions, onResumed, focu
   const repository = useRepositoryLookup(session?.folder, gitRevision);
   const [gitOpen, setGitOpen] = useState(false);
   const gitShown = gitOpen && (repository.status === 'repositories' || repository.status === 'error');
+  const [turnOpen, setTurnOpen] = useState(false);
   const refreshGit = () => setGitRevision((revision) => revision + 1);
   const toggleGit = () => {
-    if (!gitShown) refreshGit();
+    if (!gitShown) {
+      refreshGit();
+      setTurnOpen(false);
+    }
     setGitOpen(!gitShown);
+  };
+  const toggleTurn = () => {
+    if (!turnOpen) setGitOpen(false);
+    setTurnOpen(!turnOpen);
   };
   useImperativeHandle(focusRef, () => ({ focus: () => listRef.current?.focus({ focusVisible: true }) }), []);
 
@@ -278,6 +288,7 @@ export function ConversationView({ sessionId, session, sessions, onResumed, focu
         actions={
           <>
             <GitExplorerButton lookup={repository} open={gitShown} onToggle={toggleGit} />
+            <TurnPanelButton open={turnOpen} onToggle={toggleTurn} />
             <ResumeHereButton sessionId={sessionId} onResumed={onResumed} ended={session?.state === 'ended'} />
           </>
         }
@@ -318,6 +329,7 @@ export function ConversationView({ sessionId, session, sessions, onResumed, focu
         <ExitPresence>
           {gitShown && <GitExplorerPanel lookup={repository} folder={session?.folder} onRefresh={refreshGit} sessions={sessions} />}
         </ExitPresence>
+        <ExitPresence>{turnOpen && <TurnPanel sessionId={sessionId} />}</ExitPresence>
       </div>
       <SessionFooter session={session} lead="Open in Another Terminal · " />
     </div>

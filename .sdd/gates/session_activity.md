@@ -25,3 +25,6 @@
 | 2026-11-26 | dev | divergence stall-signal test stub | decided | `live-activity.test.ts`: two stubs on the fake model so `tsc -b` compiles after the INT-4 contract; no assertion changed; the tester updates the assertions |
 | 2026-11-26 | dev | divergence stall-signal workflow calls | decided | A subagent with no `toolUseId` excludes no call; workflow subagents belong to batch `workflow-subagents` (REQ-57) |
 | 2026-11-26 | test | G5 tests, stall-signal | pass | Re-run 575 unit, 15 e2e green; only test files and `playwright.config.ts`; thinking now counts as activity (batch decision), one monitor test follows it |
+| 2026-11-26 | dev | G4 development, turn-panel | sent back | `subagentMetaOf` read `model`; real metadata keeps it in `pickedEffortModel` (40 files checked) |
+| 2026-11-26 | dev | G4 development, turn-panel | pass | Build re-run green; files explained by INT-1..15, specs and indexes; one type stub in `live-activity.test.ts` |
+| 2026-11-26 | dev | divergences turn-panel | decided | Accepted: extra pure component `turnTreeOf` (indexed); group under the last call of its run; subagent text of its whole run; 400-char tool argument; nested-link memory of 2,000 calls; texts "Turn not available.", "Show 1 earlier step" |

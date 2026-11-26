@@ -247,11 +247,12 @@ export async function subagentMetaOf(file: string): Promise<SubagentMeta> {
   const meta = await readJson(`${file.replace(/\.jsonl$/, '')}.meta.json`);
   if (!isBlock(meta) || Array.isArray(meta)) return {};
   const text = (key: keyof SubagentMeta) => (typeof meta[key] === 'string' ? { [key]: meta[key] } : {});
+  const model = [meta.pickedEffortModel, meta.model].find((value) => typeof value === 'string');
   return {
     ...text('agentType'),
     ...text('description'),
     ...text('toolUseId'),
-    ...text('model'),
+    ...(model !== undefined && { model }),
     ...(typeof meta.finished === 'boolean' && { finished: meta.finished }),
   };
 }

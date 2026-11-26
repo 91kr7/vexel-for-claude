@@ -31,7 +31,8 @@ type: backend service
   - `undefined` when: `ref.offset` is not the start of a complete line; the line is not valid JSON; the block is not a `tool_use` of an `assistant` line or a `tool_result` of a `user` line; the line is a sidechain or meta entry; the file cannot be read.
 - `subagentFilesOf(file) → Promise<string[]>` (exported function) → the `.jsonl` files of the folder `<file without ".jsonl">/subagents/`, sorted by name. Other files there (for example `*.meta.json`) and sub-folders are left out. No folder, or a folder that cannot be read → `[]`.
 - `subagentMetaOf(file) → Promise<SubagentMeta>` (exported function) → the metadata of the subagent file `file` (`<folder>/agent-<id>.jsonl`), read from `<file without ".jsonl">.meta.json`.
-  - `SubagentMeta` → `{ agentType?, description?, toolUseId?, model?, finished? }`: the fields of the same name. The first four when they are strings, `finished` when it is a boolean. A field of another type is absent.
+  - `SubagentMeta` → `{ agentType?, description?, toolUseId?, model?, finished? }`: the fields of the same name, except `model`. The first four when they are strings, `finished` when it is a boolean. A field of another type is absent.
+  - `model` → `pickedEffortModel` when it is a string; else `model` when it is a string; else absent.
   - no file, a file that cannot be read, bad JSON, or JSON that is not an object (an array too) → `{}`.
 - `itemsOf(entry, lineOffset?, options?) → ConversationItem[]` (exported function) → the items of one parsed transcript line.
   - with `lineOffset` → each tool item carries `ref: { offset: lineOffset, block }`. Without it → no `ref`.
@@ -116,6 +117,7 @@ Metadata file of a subagent, checked on Claude Code 2.1.332, 2026-11-26:
 - Claude Code writes `agent-<id>.meta.json` next to `agent-<id>.jsonl` when the subagent starts. It has no `finished` while the subagent runs, and gets `finished: true` when the subagent completes.
 - A subagent stopped by the user, or cut by the end of its session, often has no `finished`.
 - Workflow subagents live in sub-folders of `subagents/` (`workflows/wf_*/`). Their metadata never gets `finished`. `subagentFilesOf` does not list them.
+- The model of the subagent is under the key `pickedEffortModel`. No metadata file has a key `model` (40 files checked, gatekeeper, 2026-11-26). `model` is read only as a fallback, for other versions.
 
 ## Dependencies
 

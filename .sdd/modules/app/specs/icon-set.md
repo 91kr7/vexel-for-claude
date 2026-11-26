@@ -35,6 +35,7 @@ Components and where the client uses them today:
 - `SettingsIcon` (Lucide "settings", a gear) → the SettingsButton
 - `GitBranchIcon` → the GitExplorerButton and the branch chip of the GitExplorerPanel (module git)
 - `RefreshCwIcon` → "Refresh" in the GitExplorerPanel (module git)
+- `ListTreeIcon` (Lucide "list-tree") → the TurnPanelButton (module activity)
 - `PencilIcon` → "Rename" of a list entry, "Change Keys" of a ShortcutsSection row
 - `RotateCcwIcon` (Lucide "rotate-ccw") → "Restore Default" of a ShortcutsSection row
 - `SunIcon`, `MoonIcon`, `MoonStarIcon` → the "Light", "Dark" and "Dark Blue" cards of ThemeSection; `MacWindowIcon`, `WindowsLogoIcon` → the "macOS" and "Windows 11" cards of LookSection
@@ -71,4 +72,4 @@ Components and where the client uses them today:
 - `plan-favorite_session/REQ-3`, `plan-favorite_session/REQ-4`, `plan-favorite_session/REQ-11`
 - `plan-wsl_support/REQ-19`, `plan-wsl_support/REQ-28`
 - `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-57`, `plan-settings_dialog/REQ-58`
-- `plan-session_activity/REQ-24`
+- `plan-session_activity/REQ-24`, `plan-session_activity/REQ-27`

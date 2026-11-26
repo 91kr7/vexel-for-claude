@@ -22,10 +22,12 @@ Props:
 - `focusRef` → optional. Gets `{ focus() }`: puts the keyboard focus in the message area (the scrolling content), which then shows the focus ring inside its edge. The message area is not in the Tab order.
 
 Shows:
-- the SessionHeader with `session`: folder name, the label or name as its line, the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The actions are GitExplorerButton, then ResumeHereButton, with `ended` when `session.state` is `ended`.
-- the GitExplorerPanel, while open, at the right of the content, in the same row. The content takes the width it leaves.
+- the SessionHeader with `session`: folder name, the label or name as its line, the state pill, then the chip "Read-only" (`.mono-chip` on surface 2, lock icon at 12 px). The actions are GitExplorerButton, TurnPanelButton, then ResumeHereButton, with `ended` when `session.state` is `ended`.
+- the GitExplorerPanel or the TurnPanel, while open, at the right of the content, in the same row. The content takes the width it leaves.
 - GitExplorerButton → shown when useRepositoryLookup gives `repository` or `error` for the session folder (one lookup when the folder is known, and one more at each opening of the panel and each refresh). A click opens the panel; a second click closes it. The panel is closed when the view opens. The panel is mounted through ExitPresence: it slides in on open and out on close, and the content resizes with it.
 - the GitExplorerPanel gets the session list of the `sessions` prop. Each opening of the panel, and each refresh the panel asks for (`onRefresh`), reads the repository again. While a lookup of a refresh is in flight, the button and the panel stay as they are.
+- TurnPanelButton → shown for every session. A click opens the TurnPanel of `sessionId`; a second click closes it. The panel is closed when the view opens. It is mounted through ExitPresence and slides in and out as the GitExplorerPanel; the content resizes with it.
+- one side panel at a time → opening the TurnPanel closes the GitExplorerPanel, and opening the GitExplorerPanel closes the TurnPanel.
 - the SessionFooter with `session` and the lead text "Open in Another Terminal · ": the lead, the path, then the figures. No end items.
 - before the first frame of ConversationStreamRoute → an AreaState `loading` "Loading…".
 - first frame with no items → an AreaState `empty` "No messages.".
@@ -98,6 +100,7 @@ Scrolling:
 - ConversationStreamRoute, ItemContentRoute, ResumeHereButton
 - SessionHeader, SessionFooter (module sessions)
 - useRepositoryLookup, GitExplorerButton, GitExplorerPanel (module git)
+- TurnPanelButton, TurnPanel (module activity)
 - ExitPresence (module app)
 - AreaState, IconSet, ProgressIndicator, ErrorMessage, ThemeTokens, WebEntry (module app)
 
@@ -114,3 +117,4 @@ Scrolling:
 - `plan-dark_blue_theme/REQ-3`
 - `plan-ui_transitions/REQ-6`
 - `plan-cool_slate_light/REQ-21`, `plan-cool_slate_light/REQ-22`
+- `plan-session_activity/REQ-27`, `plan-session_activity/REQ-48`
