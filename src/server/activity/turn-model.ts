@@ -3,6 +3,7 @@ import { plainExcerpt } from '../sessions/plain-excerpt.js';
 import { runningToolOf } from '../sessions/running-tool.js';
 import { stoppedTaskIdOf, type SubagentState, subagentStateOf } from './subagent-state.js';
 import { isInterruptMarker, startsTurn } from './turn-rule.js';
+import { notifiedTaskIdOf, taskStopSucceeded, workflowLaunchOf, workflowSubagentStateOf } from './workflow-state.js';
 
 type Entry = Record<string, unknown>;
 
@@ -57,6 +58,20 @@ interface Subagent {
   responseModel?: string;
   stepCount: number;
   startedBy?: StepLink;
+  runId?: string;
+  workflowResult: boolean;
+}
+
+interface WorkflowCall {
+  time?: number;
+  position?: StepLink;
+}
+
+interface WorkflowLaunch extends WorkflowCall {
+  callId: string;
+  runId: string;
+  taskId?: string;
+  over: boolean;
 }
 
 interface TimedEvent {
@@ -68,6 +83,10 @@ const AGENT_FILE_PREFIX = 'agent-';
 const STEP_TEXT_LENGTH = 400;
 const REMEMBERED_SUBAGENT_CALLS = 2000;
 const SYNTHETIC_MODEL = '<synthetic>';
+const WORKFLOW_TOOL = 'Workflow';
+const TASK_STOP_TOOL = 'TaskStop';
+const JOURNAL_STARTED = 'started';
+const JOURNAL_RESULT = 'result';
 
 function timeOf(entry: Entry): TimedEvent | undefined {
   const at = entry.timestamp;
@@ -139,6 +158,9 @@ export class TurnModel {
   readonly #subagents = new Map<string, Subagent>();
   readonly #stopNotices = new Map<string, number | undefined>();
   readonly #mainCalls = new Map<string, OpenCall>();
+  readonly #workflowCalls = new Map<string, WorkflowCall>();
+  readonly #taskStops = new Map<string, string>();
+  readonly #launches: WorkflowLaunch[] = [];
   #lastEvent: TimedEvent | undefined;
   #order = 0;
 
@@ -152,14 +174,16 @@ export class TurnModel {
       let calls = 0;
       for (const item of itemsOf(entry)) {
         this.#followCalls(this.#mainCalls, item, entry);
+        this.#followWorkflows(item, entry);
         this.#followSteps(item, item.kind === 'tool_call' ? inputs[calls++] : undefined);
         if (item.kind === 'assistant') this.#mainText = this.#textOf(item.text, entry);
       }
     }
   }
 
-  addSubagentEntries(id: string, entries: readonly Entry[]): void {
+  addSubagentEntries(id: string, entries: readonly Entry[], runId?: string): void {
     const subagent = this.#subagentOf(id);
+    if (runId !== undefined) subagent.runId = runId;
     for (const entry of entries) {
       this.#noteActivity(entry);
       const line = timeOf(entry);
@@ -175,6 +199,7 @@ export class TurnModel {
       }
       for (const item of itemsOf(entry, undefined, { sidechain: true })) {
         this.#followCalls(subagent.openCalls, item, entry);
+        this.#followWorkflows(item, entry, { parent: id, step: subagent.stepCount });
         if (item.kind === 'tool_call' || item.kind === 'assistant') this.#countStep(id, subagent, item);
         if (item.kind === 'user' && isInterruptMarker(item.text)) subagent.interruptedInFile = true;
         else if (item.kind === 'assistant') {
@@ -183,6 +208,16 @@ export class TurnModel {
           if (!this.#beforeTurn(time)) subagent.latestText = text;
         }
       }
+    }
+  }
+
+  addWorkflowEntries(runId: string, entries: readonly Entry[]): void {
+    for (const entry of entries) {
+      const { type, agentId } = entry;
+      if ((type !== JOURNAL_STARTED && type !== JOURNAL_RESULT) || typeof agentId !== 'string' || !agentId) continue;
+      const subagent = this.#subagentOf(`${AGENT_FILE_PREFIX}${agentId}`);
+      subagent.runId = runId;
+      if (type === JOURNAL_RESULT) subagent.workflowResult = true;
     }
   }
 
@@ -245,7 +280,23 @@ export class TurnModel {
   }
 
   #stateOf(id: string, subagent: Subagent, sessionEnded: boolean): SubagentState {
+    if (subagent.runId !== undefined) {
+      const { launch, latest } = this.#launchOf(subagent, subagent.runId);
+      return workflowSubagentStateOf({
+        result: subagent.workflowResult,
+        launchOver: launch?.over === true,
+        startedBeforeLatestLaunch: launch !== latest,
+        sessionEnded,
+      });
+    }
     return subagentStateOf({ finished: subagent.meta.finished, interrupted: this.#interrupted(id, subagent), sessionEnded });
+  }
+
+  #launchOf(subagent: Subagent, runId: string): { launch?: WorkflowLaunch; latest?: WorkflowLaunch } {
+    const launches = this.#launches.filter((launch) => launch.runId === runId);
+    const first = subagent.firstLine?.time;
+    const launch = launches.findLast(({ time }) => first === undefined || time === undefined || time <= first);
+    return { launch, latest: launches.at(-1) };
   }
 
   #noteActivity(entry: Entry): void {
@@ -258,6 +309,33 @@ export class TurnModel {
     if (item.kind === 'user') calls.clear();
     else if (item.kind === 'tool_result' && item.toolUseId !== undefined) calls.delete(item.toolUseId);
     else if (item.kind === 'tool_call' && item.id !== undefined) calls.set(item.id, this.#callOf(item.id, item.name, entry));
+  }
+
+  #followWorkflows(item: ConversationItem, entry: Entry, position?: StepLink): void {
+    if (item.kind === 'user') {
+      const taskId = notifiedTaskIdOf(item.text);
+      if (taskId !== undefined) this.#endLaunches(taskId);
+    } else if (item.kind === 'tool_call' && item.id !== undefined) {
+      if (item.name === WORKFLOW_TOOL) {
+        const time = timeOf(entry)?.time;
+        this.#workflowCalls.set(item.id, { ...(time !== undefined && { time }), ...(position && { position }) });
+      } else if (item.name === TASK_STOP_TOOL) {
+        const taskId = (toolInputOf(entry, item.id) as { task_id?: unknown } | null | undefined)?.task_id;
+        if (typeof taskId === 'string' && taskId) this.#taskStops.set(item.id, taskId);
+      }
+    } else if (item.kind === 'tool_result' && item.toolUseId !== undefined) {
+      const call = this.#workflowCalls.get(item.toolUseId);
+      const stoppedTask = this.#taskStops.get(item.toolUseId);
+      this.#workflowCalls.delete(item.toolUseId);
+      this.#taskStops.delete(item.toolUseId);
+      const launch = call && workflowLaunchOf(entry, item.toolUseId);
+      if (launch) this.#launches.push({ ...call, callId: item.toolUseId, ...launch, over: false });
+      if (stoppedTask !== undefined && taskStopSucceeded(entry, item.toolUseId)) this.#endLaunches(stoppedTask);
+    }
+  }
+
+  #endLaunches(taskId: string): void {
+    for (const launch of this.#launches) if (launch.taskId === taskId) launch.over = true;
   }
 
   #followSteps(item: ConversationItem, input: unknown): void {
@@ -293,6 +371,12 @@ export class TurnModel {
   }
 
   #startOf(subagent: Subagent): StepLink | undefined {
+    if (subagent.runId !== undefined) {
+      const { launch } = this.#launchOf(subagent, subagent.runId);
+      if (launch?.position) return launch.position;
+      const step = launch && this.#mainCallSteps.get(launch.callId);
+      return step === undefined ? undefined : { step };
+    }
     const start = subagent.meta.toolUseId;
     const mainStep = start ? this.#mainCallSteps.get(start) : undefined;
     return mainStep === undefined ? subagent.startedBy : { step: mainStep };
@@ -324,7 +408,7 @@ export class TurnModel {
   #subagentOf(id: string): Subagent {
     let subagent = this.#subagents.get(id);
     if (!subagent) {
-      subagent = { meta: {}, interruptedInFile: false, openCalls: new Map(), stepCount: 0 };
+      subagent = { meta: {}, interruptedInFile: false, openCalls: new Map(), stepCount: 0, workflowResult: false };
       this.#subagents.set(id, subagent);
     }
     return subagent;

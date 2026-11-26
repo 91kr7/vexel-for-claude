@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { ExternalSessionScanner } from '../external/external-session-scanner.js';
-import { type TranscriptReader, subagentFilesOf, subagentMetaOf } from '../external/transcript-reader.js';
+import { type TranscriptReader, subagentFilesOf, subagentMetaOf, workflowSubagentFilesOf } from '../external/transcript-reader.js';
 import type { SessionState, SessionStateTracker } from '../sessions/session-state-tracker.js';
 import { type LiveActivity, liveActivityOf } from './live-activity.js';
 import { TurnModel } from './turn-model.js';
@@ -24,7 +24,7 @@ interface Transcript {
   file?: string;
   offsets: Map<string, number>;
   model: TurnModel;
-  finishedSubagents: Set<string>;
+  stableMeta: Set<string>;
   loaded: boolean;
   reading: boolean;
 }
@@ -38,6 +38,11 @@ interface WatchedSession {
   transcript?: Transcript;
   activity?: LiveActivity;
   turn: TurnTree;
+}
+
+interface FileRead {
+  file: string;
+  take: (entries: readonly Record<string, unknown>[]) => void | Promise<void>;
 }
 
 interface ObservedSummary {
@@ -167,7 +172,7 @@ export class ActivityMonitor {
     session.transcript =
       claudeSessionId === undefined
         ? undefined
-        : { claudeSessionId, offsets: new Map(), model: new TurnModel(), finishedSubagents: new Set(), loaded: false, reading: false };
+        : { claudeSessionId, offsets: new Map(), model: new TurnModel(), stableMeta: new Set(), loaded: false, reading: false };
     this.#publish(session);
     return session.transcript;
   }
@@ -194,29 +199,39 @@ export class ActivityMonitor {
 
   /** True when every file reached its end within the byte budget. */
   async #readFiles(transcript: Transcript, main: string): Promise<boolean> {
+    const { model } = transcript;
+    const reads: FileRead[] = [{ file: main, take: (entries) => model.addMainEntries(entries) }];
+    for (const file of await subagentFilesOf(main)) reads.push({ file, take: (entries) => this.#readSubagent(transcript, file, entries) });
+    let run: string | undefined;
+    for (const { file, runId, journal } of await workflowSubagentFilesOf(main)) {
+      if (runId !== run) reads.push({ file: journal, take: (entries) => model.addWorkflowEntries(runId, entries) });
+      run = runId;
+      reads.push({ file, take: (entries) => this.#readSubagent(transcript, file, entries, runId) });
+    }
     let budget = this.#maxBytesPerPoll;
-    for (const file of [main, ...(await subagentFilesOf(main))]) {
+    for (const { file, take } of reads) {
       if (budget <= 0) return false;
       const start = transcript.offsets.get(file) ?? 0;
       const { entries, offset, more } = await this.#reader.readEntriesFrom(file, start, budget);
       transcript.offsets.set(file, offset);
       budget -= offset - start;
-      if (file === main) transcript.model.addMainEntries(entries);
-      else await this.#readSubagent(transcript, file, entries);
+      await take(entries);
       if (more) return false;
     }
     return true;
   }
 
-  async #readSubagent(transcript: Transcript, file: string, entries: readonly Record<string, unknown>[]): Promise<void> {
+  async #readSubagent(transcript: Transcript, file: string, entries: readonly Record<string, unknown>[], runId?: string): Promise<void> {
     const id = subagentIdOf(file);
-    transcript.model.addSubagentEntries(id, entries);
-    if (entries.length === 0 && transcript.finishedSubagents.has(id)) return;
+    transcript.model.addSubagentEntries(id, entries, runId);
+    if (entries.length === 0 && transcript.stableMeta.has(id)) return;
     const meta = await subagentMetaOf(file);
+    const known = Object.keys(meta).length > 0;
     // A metadata file caught while Claude Code rewrites it reads as empty: the known fields stay.
-    if (Object.keys(meta).length > 0) transcript.model.setSubagentMeta(id, meta);
-    if (meta.finished === true) transcript.finishedSubagents.add(id);
-    else if (Object.keys(meta).length > 0) transcript.finishedSubagents.delete(id);
+    if (known) transcript.model.setSubagentMeta(id, meta);
+    // The metadata of a workflow subagent never gets "finished".
+    if (meta.finished === true || (runId !== undefined && known)) transcript.stableMeta.add(id);
+    else if (known) transcript.stableMeta.delete(id);
   }
 
   #publish(session: WatchedSession): void {

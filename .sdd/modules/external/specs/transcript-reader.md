@@ -29,10 +29,22 @@ type: backend service
   - `tool_call` → its whole `input` as JSON indented by 2 spaces. No `input` → `""`.
   - `tool_result` → its whole text, by the "Tool result text" rule below, with no cut.
   - `undefined` when: `ref.offset` is not the start of a complete line; the line is not valid JSON; the block is not a `tool_use` of an `assistant` line or a `tool_result` of a `user` line; the line is a meta entry; the line is a sidechain entry and `options.sidechain` is not `true`; the file cannot be read.
-- `subagentFileOf(file, agentId) → Promise<string | undefined>` (exported function) → the file `<file without ".jsonl">/subagents/<agentId>.jsonl`, when it exists and is a file.
+- `subagentFileOf(file, agentId) → Promise<string | undefined>` (exported function) → the file of one subagent, regular or of a workflow.
   - `agentId` → the subagent file name without `.jsonl`, for example `agent-a1b2`: the subagent id of TurnModel.
-  - an `agentId` with characters other than letters, digits, `-` and `_`, or no such file → `undefined`.
+
+```
+agentId with characters other than letters, digits, "-" and "_"          → undefined
+<file without ".jsonl">/subagents/<agentId>.jsonl is a file              → that file
+agentId starts with "agent-" → for each run id of the folder
+<file without ".jsonl">/subagents/workflows/, as in workflowSubagentFilesOf:
+    <run id>/<agentId>.jsonl is a file                                   → the first such file
+anything else                                                            → undefined
+```
 - `subagentFilesOf(file) → Promise<string[]>` (exported function) → the `.jsonl` files of the folder `<file without ".jsonl">/subagents/`, sorted by name. Other files there (for example `*.meta.json`) and sub-folders are left out. No folder, or a folder that cannot be read → `[]`.
+- `workflowSubagentFilesOf(file) → Promise<WorkflowSubagentFile[]>` (exported function) → the files of the workflow subagents of the session.
+  - run ids → the names of the sub-folders of `<file without ".jsonl">/subagents/workflows/` made of letters, digits, `-` and `_` only, sorted.
+  - for each run id, its files `agent-*.jsonl` sorted by name, each as `WorkflowSubagentFile` → `{ file, runId, journal }`. `journal` → the file `journal.jsonl` of the same folder, whether it exists or not.
+  - other files (for example `*.meta.json` and `journal.jsonl`) are left out. No folder, or a folder that cannot be read → no file from it.
 - `subagentMetaOf(file) → Promise<SubagentMeta>` (exported function) → the metadata of the subagent file `file` (`<folder>/agent-<id>.jsonl`), read from `<file without ".jsonl">.meta.json`.
   - `SubagentMeta` → `{ agentType?, description?, toolUseId?, model?, finished? }`: the fields of the same name, except `model`. The first four when they are strings, `finished` when it is a boolean. A field of another type is absent.
   - `model` → `pickedEffortModel` when it is a string; else `model` when it is a string; else absent.
@@ -119,7 +131,7 @@ Metadata file of a subagent, checked on Claude Code 2.1.332, 2026-11-26:
 
 - Claude Code writes `agent-<id>.meta.json` next to `agent-<id>.jsonl` when the subagent starts. It has no `finished` while the subagent runs, and gets `finished: true` when the subagent completes.
 - A subagent stopped by the user, or cut by the end of its session, often has no `finished`.
-- Workflow subagents live in sub-folders of `subagents/` (`workflows/wf_*/`). Their metadata never gets `finished`. `subagentFilesOf` does not list them.
+- Workflow subagents live in sub-folders of `subagents/` (`workflows/wf_*/`), with their metadata and the run journal `journal.jsonl`. Their metadata never gets `finished`. `subagentFilesOf` does not list them, so usage figures leave them out.
 - The model of the subagent is under the key `pickedEffortModel`. No metadata file has a key `model` (40 files checked, gatekeeper, 2026-11-26). `model` is read only as a fallback, for other versions.
 
 ## Dependencies
@@ -134,3 +146,4 @@ Metadata file of a subagent, checked on Claude Code 2.1.332, 2026-11-26:
 - `plan-session_list_improvements/REQ-15`, `plan-session_list_improvements/REQ-16`
 - `plan-session_usage/REQ-3`, `plan-session_usage/REQ-14`, `plan-session_usage/REQ-21`
 - `plan-session_activity/REQ-1`, `plan-session_activity/REQ-3`, `plan-session_activity/REQ-4`, `plan-session_activity/REQ-13`, `plan-session_activity/REQ-49`, `plan-session_activity/REQ-50`
+- `plan-session_activity/REQ-56`, `plan-session_activity/REQ-57`, `plan-session_activity/REQ-58`, `plan-session_activity/REQ-59`

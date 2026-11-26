@@ -34,3 +34,6 @@
 | 2026-11-26 | dev | G4 development, subagent-conversation | pass | Build re-run green; files explained by INT-1..10, specs and indexes; no test file touched |
 | 2026-11-26 | dev | divergences subagent-conversation | decided | Accepted: extra `locateSubagentFile` (indexed); TurnTreeView passes the open action; avatar "T" with "Task"; read loop repeated rather than changing `conversation-stream-route.ts`; card fields inside a button; focus on "Back" at open |
 | 2026-11-26 | test | G5 tests, subagent-conversation | pass | Re-run 489 unit, 29 e2e (batch and dependants) green; only test files, a test helper and `playwright.config.ts` |
+| 2026-11-26 | dev | G4 development, workflow-subagents | pass | Build re-run green; files explained by INT-1..6, specs and indexes; no test file |
+| 2026-11-26 | dev | divergences workflow-subagents | decided | Accepted: launches read in any conversation; launch time = call line; ids read on the raw result block, "Task ID:" fallback; workflow metadata re-read only after new lines; `agent-` ids only in run folders |
+| 2026-11-26 | dev | question developer REQ-60 scenario | decided | Keep the turn-panel rule (REQ-39: only running subagents of earlier turns stay); reword the scenario so the workflow ends inside the current turn; REQ-60 unchanged |

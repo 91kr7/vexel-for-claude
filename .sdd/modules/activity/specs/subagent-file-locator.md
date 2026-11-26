@@ -26,7 +26,7 @@ else → subagentFileOf(main transcript, agentId)
 ## Rules and invariants
 
 - It reads nothing and writes nothing: it only looks for files.
-- The result is always a file of the `subagents/` folder of the session's own transcript.
+- The result is always a file under the `subagents/` folder of the session's own transcript, workflow run folders included.
 
 ## Dependencies
 
@@ -35,4 +35,4 @@ else → subagentFileOf(main transcript, agentId)
 
 ## Requirements served
 
-- `plan-session_activity/REQ-49`
+- `plan-session_activity/REQ-49`, `plan-session_activity/REQ-59`

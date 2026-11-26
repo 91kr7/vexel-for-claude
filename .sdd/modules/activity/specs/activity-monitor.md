@@ -15,7 +15,7 @@ type: backend service
   - `sources.scanner` → ExternalSessionScanner: the external sessions and their state. The Claude Code session id of an external session is its `id`.
   - `sources.reader` → TranscriptReader: `locate` and `readEntriesFrom`.
   - `sources.intervalMs` → time between two reads. Default: 500.
-  - `sources.maxBytesPerPoll` → the most bytes read for one session in one poll, main transcript and subagent files together. Default: 4 MiB.
+  - `sources.maxBytesPerPoll` → the most bytes read for one session in one poll, main transcript, subagent files and run journals together. Default: 4 MiB.
   - at construction it takes the sessions of `tracker.list()` and `scanner.list()`, then follows their changes and removals.
 - `poll() → Promise<void>` → one read of each session that is not settled (below).
 - `start()` → one `poll()` now, then one `poll()` `intervalMs` after the end of the previous one. A second `start()` changes nothing.
@@ -32,11 +32,14 @@ transcript   → hosted: reader.locate(folder, tracker.claudeSessionId(id)); no 
                external: reader.locate(folder, id)
                no file yet → no value; the next poll tries again
 order        → the main transcript (TurnModel addMainEntries), then each file of subagentFilesOf(main transcript)
-               by name, listed again at each poll (TurnModel addSubagentEntries, id = file name without ".jsonl")
+               by name (TurnModel addSubagentEntries, id = file name without ".jsonl"), then for each run of
+               workflowSubagentFilesOf(main transcript), in its order: the journal of the run (TurnModel addWorkflowEntries),
+               then its files (TurnModel addSubagentEntries with the run id); all listed again at each poll
 each file    → first read from its start, then only the complete lines after the last one read (readEntriesFrom),
                at most maxBytesPerPoll bytes for all the files of the session in one poll
-metadata     → subagentMetaOf(subagent file) after the lines of that file, unless its last metadata had
-               finished: true and the file gave no new line. A read with no field keeps the metadata known before
+metadata     → subagentMetaOf(subagent file) after the lines of that file, unless the file gave no new line and its
+               last metadata had finished: true, or, for a workflow subagent, had any field.
+               A read with no field keeps the metadata known before
 value        → computed after each read, once one read of the session reached the end of every file;
                the tree is computed at the same moments
 the Claude Code session id of a hosted session changes → the old transcript and its model are dropped:
@@ -67,10 +70,11 @@ a state change → the session is no longer settled
 
 - TurnModel, liveActivityOf, turnTreeOf
 - SessionStateTracker (module sessions)
-- ExternalSessionScanner, TranscriptReader, `subagentFilesOf` and `subagentMetaOf` (module external)
+- ExternalSessionScanner, TranscriptReader, `subagentFilesOf`, `workflowSubagentFilesOf` and `subagentMetaOf` (module external)
 
 ## Requirements served
 
 - `plan-session_activity/REQ-1`, `plan-session_activity/REQ-2`, `plan-session_activity/REQ-11`, `plan-session_activity/REQ-12`, `plan-session_activity/REQ-14`
 - `plan-session_activity/REQ-17`, `plan-session_activity/REQ-22`
 - `plan-session_activity/REQ-28`, `plan-session_activity/REQ-40`, `plan-session_activity/REQ-43`, `plan-session_activity/REQ-45`
+- `plan-session_activity/REQ-56`, `plan-session_activity/REQ-57`, `plan-session_activity/REQ-58`
