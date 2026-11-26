@@ -183,7 +183,7 @@ describe('Latest text, GET /api/sessions', { timeout: 30_000 }, () => {
     const session = workingHosted();
     const at = now();
     await append(session.transcript, userSays('Read the config'), claudeSays('I am **reading** the `config` files', at));
-    const entry = await entryWhen(session.id, (e) => e?.liveActivity?.latestText !== undefined, 'latest text');
+    const entry = await entryWhen(session.id, (e) => e?.liveActivity?.latestText?.text === 'I am reading the config files', 'latest text');
     expect(entry?.state).toBe('working');
     expect(entry?.liveActivity).toEqual({ atWork: true, latestText: { text: 'I am reading the config files', at }, lastEventAt: expect.any(String), waitingFor: 'response' });
   });
@@ -192,14 +192,14 @@ describe('Latest text, GET /api/sessions', { timeout: 30_000 }, () => {
   it('gives an external working entry its latest text', async () => {
     const session = external('working');
     await append(session.transcript, userSays('Explain the module'), claudeSays('The module has three parts'));
-    const entry = await entryWhen(session.id, (e) => e?.liveActivity?.latestText !== undefined, 'latest text');
+    const entry = await entryWhen(session.id, (e) => e?.liveActivity?.latestText?.text === 'The module has three parts', 'latest text');
     expect(entry).toMatchObject({ external: true, liveActivity: { atWork: true, latestText: { text: 'The module has three parts' } } });
   });
 
   // plan-session_activity/REQ-3, REQ-4: a running subagent that wrote last gives the text, with its type
   it('gives the text of a running subagent that wrote after the main conversation, with the subagent type', async () => {
     const session = external('working');
-    await append(session.transcript, userSays('Implement the batch'), claudeSays('Starting the developer', now(-5000)));
+    await append(session.transcript, userSays('Implement the batch', now(-6000)), claudeSays('Starting the developer', now(-5000)));
     const sub = session.subagent('agent-dev1');
     await sub.meta({ agentType: 'sdd-developer', description: 'Implement batch', toolUseId: 'toolu_9' });
     const at = now();
@@ -216,12 +216,12 @@ describe('Latest text, GET /api/sessions', { timeout: 30_000 }, () => {
   // plan-session_activity/REQ-1, REQ-11: an idle entry with a running background subagent is at work, until the subagent finishes
   it('keeps an idle entry at work while a subagent runs, and ends it when the subagent finishes', async () => {
     const session = workingHosted();
-    await append(session.transcript, userSays('Start a background agent'), claudeSays('The agent runs in the background', now(-3000)));
+    await append(session.transcript, userSays('Start a background agent', now(-4000)), claudeSays('The agent runs in the background', now(-3000)));
     const sub = session.subagent('agent-bg1');
     await sub.meta({ agentType: 'general-purpose' });
     await append(sub.file, claudeSays('Scanning the repository', now(), true));
     tracker.applyHookEvent(session.id, { hook_event_name: 'Stop' });
-    const atWork = await entryWhen(session.id, (e) => e?.liveActivity?.latestText !== undefined, 'subagent text on the idle entry');
+    const atWork = await entryWhen(session.id, (e) => e?.liveActivity?.latestText?.text === 'Scanning the repository', 'subagent text on the idle entry');
     expect(atWork?.state).toBe('idle');
     expect(atWork?.liveActivity).toMatchObject({ atWork: true, latestText: { text: 'Scanning the repository', subagentType: 'general-purpose' } });
     await sub.meta({ agentType: 'general-purpose', finished: true });
@@ -255,7 +255,7 @@ describe('Latest text, GET /api/sessions', { timeout: 30_000 }, () => {
     const thinking = await entryWhen(session.id, (e) => e?.state === 'working' && e.liveActivity?.atWork === true && e.liveActivity.latestText === undefined, 'no text', REQ_12_MS * 4);
     expect(thinking?.liveActivity).toEqual({ atWork: true, lastEventAt: expect.any(String), waitingFor: 'response' });
     await append(session.transcript, claudeSays('Second task started'));
-    const next = await entryWhen(session.id, (e) => e?.liveActivity?.latestText !== undefined, 'second turn text');
+    const next = await entryWhen(session.id, (e) => e?.liveActivity?.latestText?.text === 'Second task started', 'second turn text');
     expect(next?.liveActivity?.latestText?.text).toBe('Second task started');
   });
 
@@ -266,7 +266,7 @@ describe('Latest text, GET /api/sessions', { timeout: 30_000 }, () => {
     const sub = session.subagent('agent-anon');
     await sub.meta({ description: 'No type here', agentType: 42 });
     await append(sub.file, claudeSays('Text without type and time', null, true));
-    const entry = await entryWhen(session.id, (e) => e?.liveActivity?.latestText !== undefined, 'latest text');
+    const entry = await entryWhen(session.id, (e) => e?.liveActivity?.latestText?.text === 'Text without type and time', 'latest text');
     expect(entry?.liveActivity).toEqual({ atWork: true, latestText: { text: 'Text without type and time' }, lastEventAt: expect.any(String), waitingFor: 'response' });
     expect(entry).toMatchObject({ id: session.id, state: 'working', label: session.id, external: true });
   });
