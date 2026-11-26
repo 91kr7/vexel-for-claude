@@ -10,3 +10,4 @@
 | 2026-11-26 | plan | G3 coverage | pass | Reproduction is a diagnostic step; INT-1/INT-2 modify `SessionView.tsx`; tests and red-before-fix run by the tester |
 | 2026-11-26 | dev | G4 development, terminal-width | pass | Cause reproduced: xterm.js DOM renderer measures glyphs in whole pixels (7.1875 vs 7.2012 px at 12 px), rows clip the last glyph by up to 1.7 px at 1280×800; fix in `SessionView.tsx` only; build green |
 | 2026-11-26 | dev | divergences terminal-width | decided | Accepted: the fix corrects the drawn glyph width, not the fit count; it uses one more private xterm.js path (risk on upgrade, the regression e2e must catch it); INT-2 needs no code |
+| 2026-11-26 | test | Electron group | human decision | An Electron run crashed the GNOME session (mutter SIGSEGV, `/var/crash` 19:49); no automatic cycle runs the Electron group; knowledge base `electron-e2e-separate` updated |
