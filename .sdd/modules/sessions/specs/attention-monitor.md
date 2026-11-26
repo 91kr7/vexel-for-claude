@@ -25,12 +25,13 @@ type: backend service
   - the session enters `needs_input` from a known state → `now()` at that change.
   - the session is in `needs_input` at first sight (at start or later) → its `lastActivity`.
 
-`AttentionEvent` → `{ id, sessionId, kind, folder, label, waitingTool?, excerpt?, error? }`:
+`AttentionEvent` → `{ id, sessionId, kind, folder, label, waitingTool?, waitingDetail?, excerpt?, error? }`:
 
 - `id` → a new random UUID for each event.
 - `kind` → `"needs_input"`, `"turn_end"` or `"session_end"`.
 - `folder`, `label` → those of the session at the time of the state change.
 - `waitingTool` → `needs_input` only. The `waitingTool` of the tracker summary, only when present. External sessions have none.
+- `waitingDetail` → `needs_input` of a hosted session only. The `waitingDetail(id)` of the tracker at the state change, only when known. External sessions have none.
 - `excerpt` → `turn_end` only. `plainExcerpt` of the final response of the turn, only when the turn has one and the excerpt is not empty.
 - `error` → `session_end` only, always present. `true` when the session ended with an error, else `false`.
 
@@ -84,7 +85,7 @@ exitCode is 0 (the user's exit command)           → no event
 
 ## Dependencies
 
-- SessionStateTracker, TurnReader, plainExcerpt, SessionRegistry
+- SessionStateTracker, TurnReader, plainExcerpt, SessionRegistry, waitingDetailOf (the `WaitingDetail` shape)
 - ExternalSessionScanner (module external)
 
 ## Requirements served
@@ -93,3 +94,4 @@ exitCode is 0 (the user's exit command)           → no event
 - `plan-session_notifications/REQ-14`, `plan-session_notifications/REQ-15`, `plan-session_notifications/REQ-16`, `plan-session_notifications/REQ-17`
 - `plan-session_notifications/REQ-21`, `plan-session_notifications/REQ-22`, `plan-session_notifications/REQ-23`
 - `plan-session_notifications/REQ-33`, `plan-session_notifications/REQ-35`
+- `plan-remote_notifications/REQ-31`, `plan-remote_notifications/REQ-32`, `plan-remote_notifications/REQ-33`

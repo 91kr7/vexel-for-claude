@@ -14,7 +14,7 @@ type: REST endpoint (WebSocket)
 - `GET /api/attention` → WebSocket.
   - on connect → one JSON text frame `{ "type": "needs-input", "sessions": [<AttentionSession>] }` with the current list.
   - after each change of the list → the same frame with the new list.
-  - after each event → `{ "type": "event", "event": <AttentionEvent> }`.
+  - after each event → `{ "type": "event", "event": <AttentionEvent> }`, with all its fields, `waitingDetail` included when present.
   - client → server: frames are ignored.
 
 ## Rules and invariants
@@ -30,3 +30,4 @@ type: REST endpoint (WebSocket)
 ## Requirements served
 
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-5`, `plan-session_notifications/REQ-6`, `plan-session_notifications/REQ-11`
+- `plan-remote_notifications/REQ-31`, `plan-remote_notifications/REQ-32`

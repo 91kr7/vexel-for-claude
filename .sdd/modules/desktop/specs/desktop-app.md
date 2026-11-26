@@ -60,6 +60,12 @@ Remote notification settings:
 - `desktop-bridge:remote-test` (invoke) → it reads the store, then `publishToNtfy` (NtfyPublisher) with its topic URL and token, the title "Vexel for Claude" and the message "Test notification. Remote notifications reach this device.", default priority. The answer is the `PublishResult`. It works with the remote switch on or off.
 - the three channels answer before the client page loads: they are ready when the window opens.
 
+Remote notification:
+
+- one RemoteRule. It gets every event and every list of the AttentionClient, whatever the window focus, before the SoundRule, the NotificationRules and the TrayIcon.
+- on its "send" → `sendRemoteNotification` (RemoteNotifier) with the RemoteSettingsStore and `publishToNtfy`. It is started and not awaited: the sound, the notifications and the tray never wait for it.
+- a failed send → at most one line in the main process output, with no token. Nothing shows in the app and nothing is sent again.
+
 Tray:
 
 - each list of the AttentionClient → the TrayIcon gets the icon, the tooltip and the menu of that list. This happens whatever the window focus.
@@ -79,7 +85,7 @@ Tray:
 ## Dependencies
 
 - BackendLauncher, StartupPage, AppIcon, TrayIcon, QuitCheck
-- DesktopBridge, WindowActions, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon, SoundRule, RemoteSettingsStore, NtfyPublisher
+- DesktopBridge, WindowActions, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon, SoundRule, RemoteSettingsStore, NtfyPublisher, RemoteRule, RemoteNotifier
 
 ## Requirements served
 
@@ -91,3 +97,4 @@ Tray:
 - `plan-app_processes/REQ-26`
 - `plan-input_sound/REQ-1`, `plan-input_sound/REQ-2`, `plan-input_sound/REQ-3`
 - `plan-remote_notifications/REQ-11`, `plan-remote_notifications/REQ-12`, `plan-remote_notifications/REQ-15`, `plan-remote_notifications/REQ-16`, `plan-remote_notifications/REQ-17`
+- `plan-remote_notifications/REQ-19`, `plan-remote_notifications/REQ-20`, `plan-remote_notifications/REQ-26`, `plan-remote_notifications/REQ-28`, `plan-remote_notifications/REQ-29`, `plan-remote_notifications/REQ-37`, `plan-remote_notifications/REQ-38`, `plan-remote_notifications/REQ-39`

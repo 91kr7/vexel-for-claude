@@ -5,6 +5,13 @@ export interface AttentionSession {
   waitingSince?: string;
 }
 
+export interface WaitingQuestion {
+  question: string;
+  options: string[];
+}
+
+export type WaitingDetail = { kind: 'argument'; text: string } | { kind: 'questions'; questions: WaitingQuestion[] };
+
 export interface AttentionEvent {
   id: string;
   sessionId: string;
@@ -12,6 +19,7 @@ export interface AttentionEvent {
   folder: string;
   label: string;
   waitingTool?: string;
+  waitingDetail?: WaitingDetail;
   excerpt?: string;
   error?: boolean;
 }
@@ -41,6 +49,32 @@ function isAttentionSession(value: unknown): value is AttentionSession {
   );
 }
 
+function isWaitingQuestion(value: unknown): value is WaitingQuestion {
+  return (
+    isRecord(value) &&
+    typeof value.question === 'string' &&
+    Array.isArray(value.options) &&
+    value.options.every((option) => typeof option === 'string')
+  );
+}
+
+function isWaitingDetail(value: unknown): value is WaitingDetail {
+  if (!isRecord(value)) return false;
+  if (value.kind === 'argument') return typeof value.text === 'string';
+  return (
+    value.kind === 'questions' &&
+    Array.isArray(value.questions) &&
+    value.questions.length > 0 &&
+    value.questions.every(isWaitingQuestion)
+  );
+}
+
+function withValidDetail(event: AttentionEvent): AttentionEvent {
+  if (event.waitingDetail === undefined || (event.kind === 'needs_input' && isWaitingDetail(event.waitingDetail))) return event;
+  const { waitingDetail: _dropped, ...rest } = event;
+  return rest;
+}
+
 function isAttentionEvent(value: unknown): value is AttentionEvent {
   return (
     isRecord(value) &&
@@ -65,7 +99,7 @@ function dispatch(data: unknown, handlers: AttentionHandlers): void {
   }
   if (!isRecord(frame)) return;
   if (frame.type === 'event' && isAttentionEvent(frame.event)) {
-    handlers.onEvent(frame.event);
+    handlers.onEvent(withValidDetail(frame.event));
   } else if (frame.type === 'needs-input' && Array.isArray(frame.sessions) && frame.sessions.every(isAttentionSession)) {
     handlers.onNeedsInput(frame.sessions);
   }

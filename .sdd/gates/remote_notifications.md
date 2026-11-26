@@ -29,3 +29,6 @@
 | 2026-11-26 | dev | divergence reason for a bad stored URL, null result | decided | Technical; the button is disabled on a bad URL, no visible change |
 | 2026-11-26 | dev | G4 test-notification | pass | Diff is INT-1 to INT-5 plus the store line, styles, specs and indexes; build green re-run by the gatekeeper |
 | 2026-11-26 | test | G5 test-notification | pass | Re-run by the gatekeeper: unit 179/179, browser e2e 12/12, Electron e2e 5/5; diff holds tests only |
+| 2026-11-26 | dev | divergence RemoteNotifier component | decided | "On send" logic moved out of `main.ts` so Vitest covers it, as the batch test plan asks; no visible change |
+| 2026-11-26 | dev | divergence waiting time and argument without tool | decided | Time from receipt of the event; argument without `waitingTool` gives "Needs your input"; technical |
+| 2026-11-26 | dev | G4 remote-notification | pass | Diff is INT-1 to INT-8 plus RemoteNotifier, specs and indexes; build green re-run by the gatekeeper |

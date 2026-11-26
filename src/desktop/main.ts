@@ -7,6 +7,8 @@ import { type NotificationCommand, NotificationRules } from './notification-rule
 import { groupNotificationTexts, notificationTexts } from './notification-texts.js';
 import { publishToNtfy } from './ntfy-publisher.js';
 import { confirmQuit } from './quit-check.js';
+import { sendRemoteNotification } from './remote-notifier.js';
+import { RemoteRule } from './remote-rule.js';
 import { parseRemoteSettings, RemoteSettingsStore } from './remote-settings-store.js';
 import { SoundRule } from './sound-rule.js';
 import { startupPageUrl } from './startup-page.js';
@@ -166,6 +168,9 @@ async function start(): Promise<void> {
     const { topicUrl, token } = await remoteSettings.read();
     return publishToNtfy({ topicUrl, token }, TEST_MESSAGE);
   });
+  const remoteRule = new RemoteRule({
+    onSend: (send) => void sendRemoteNotification(send, { settings: remoteSettings, publish: publishToNtfy }),
+  });
   connectWindowActions(current, ipcMain, () => void quitWithoutQuestion());
   notifications.onClick(openNotifiedSession);
   notifications.onClosed((sessionId) => notificationRules.notificationClosed(sessionId));
@@ -182,10 +187,12 @@ async function start(): Promise<void> {
   if (result.status === 'ready') {
     connectAttention(result.origin, {
       onEvent: (event) => {
+        remoteRule.receiveEvent(event);
         if (soundRule.receiveEvent(event) && !current.isDestroyed()) current.webContents.send(PLAY_SOUND_CHANNEL);
         runNotificationCommands(notificationRules.receiveEvent(event));
       },
       onNeedsInput: (sessions) => {
+        remoteRule.receiveNeedsInput(sessions);
         updateTray(sessions);
         runNotificationCommands(notificationRules.receiveNeedsInput(sessions));
       },
