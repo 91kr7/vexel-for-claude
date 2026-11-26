@@ -19,6 +19,7 @@ type: backend service
 - `applyHookEvent(id, event) → boolean` → `false` when the id is unknown, `true` otherwise (also when the event changes nothing).
 - `applyUserInput(id, data)` → user input typed in the session (see rules).
 - `get(id) → SessionSummary | undefined`.
+- `waitingDetail(id) → WaitingDetail | undefined` → a copy of the waiting detail of the session (rule below). `undefined` when the id is unknown or no detail is known.
 - `claudeSessionId(id) → string | undefined` → the Claude Code session id of the session (rule below). `undefined` when the id is unknown or no Claude Code session id is known yet.
 - `liveClaudeSessionIds() → Set<string>` → the Claude Code session ids of the tracked sessions that have not ended. A session with no known id adds nothing.
 - `list() → SessionSummary[]` → every tracked session, in start order, ended ones included.
@@ -87,13 +88,23 @@ any other event or notification_type              → no change at all
   ```
 
   An AskUserQuestion or an `elicitation_dialog` gives no waiting tool.
+- Waiting detail (`waitingDetailOf`), kept next to the waiting tool and never in the summary:
+
+  ```
+  PreToolUse with a non-empty tool_name             → its detail remembered as the last PreToolUse detail (none included)
+  PreToolUse of AskUserQuestion                     → waiting detail = that detail (its questions)
+  PermissionRequest with a non-empty tool_name      → waiting detail = its detail, or none
+  Notification permission_prompt                    → waiting detail kept if already set, else the last PreToolUse detail, else none
+  any other event that keeps needs_input            → waiting detail unchanged
+  the state leaves needs_input (event, input, exit) → waiting detail removed
+  ```
 - `ended` is final: later hook events and input change nothing and notify nothing. Only a name change still changes the label, and only a favorite change still changes `favorite`.
 - Sessions stay in the list until `dismiss` removes them or the server stops. Only ended sessions can be removed.
 - A removed session is unknown from then on: its hook events give `false` and its input changes nothing.
 
 ## Dependencies
 
-- SessionNameStore, SessionFavoriteStore
+- SessionNameStore, SessionFavoriteStore, waitingDetailOf
 
 ## Requirements served
 
@@ -102,4 +113,5 @@ any other event or notification_type              → no change at all
 - `plan-session_notifications/REQ-14`, `plan-session_notifications/REQ-15`, `plan-session_notifications/REQ-16`
 - `plan-session_list_improvements/REQ-2`, `plan-session_list_improvements/REQ-4`, `plan-session_list_improvements/REQ-5`, `plan-session_list_improvements/REQ-6`
 - `plan-favorite_session/REQ-3`, `plan-favorite_session/REQ-7`, `plan-favorite_session/REQ-8`, `plan-favorite_session/REQ-9`
+- `plan-remote_notifications/REQ-31`, `plan-remote_notifications/REQ-32`
 - `plan-session_list_improvements/REQ-26`, `plan-session_list_improvements/REQ-27`, `plan-session_list_improvements/REQ-28`, `plan-session_list_improvements/REQ-36`, `plan-session_list_improvements/REQ-37`

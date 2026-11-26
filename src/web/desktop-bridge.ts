@@ -55,7 +55,20 @@ export interface DesktopBridge {
   onWindowMaximizedChange?(listener: (maximized: boolean) => void): () => void;
   quitApp?(): void;
   onPlaySound?(listener: () => void): () => void;
+  readRemoteSettings?(): Promise<RemoteSettings>;
+  saveRemoteSettings?(settings: RemoteSettings): Promise<void>;
+  sendTestNotification?(): Promise<TestNotificationResult | null>;
 }
+
+export type TestNotificationResult = { status: 'sent' } | { status: 'failed'; reason: string };
+
+export interface RemoteSettings {
+  enabled: boolean;
+  topicUrl: string;
+  token: string;
+}
+
+const DEFAULT_REMOTE_SETTINGS: RemoteSettings = { enabled: false, topicUrl: '', token: '' };
 
 export function closeWindow(): void {
   window.desktopBridge?.closeWindow?.();
@@ -75,6 +88,30 @@ export function quitApp(): void {
 
 export function onSoundRequest(listener: () => void): () => void {
   return window.desktopBridge?.onPlaySound?.(listener) ?? (() => {});
+}
+
+export async function readRemoteSettings(): Promise<RemoteSettings> {
+  try {
+    return (await window.desktopBridge?.readRemoteSettings?.()) ?? { ...DEFAULT_REMOTE_SETTINGS };
+  } catch {
+    return { ...DEFAULT_REMOTE_SETTINGS };
+  }
+}
+
+export async function saveRemoteSettings(settings: RemoteSettings): Promise<void> {
+  try {
+    await window.desktopBridge?.saveRemoteSettings?.(settings);
+  } catch {
+    // The section keeps showing the values; the next change saves them again.
+  }
+}
+
+export async function sendTestNotification(): Promise<TestNotificationResult | null> {
+  try {
+    return (await window.desktopBridge?.sendTestNotification?.()) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function useWindowMaximized(): boolean {

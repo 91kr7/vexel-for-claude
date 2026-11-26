@@ -159,13 +159,13 @@ test.describe('settings button', () => {
     await expect.poll(() => tooltip.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
   });
 
-  // plan-settings_dialog/REQ-4, REQ-5, REQ-6, REQ-21, REQ-53: a click opens the modal popup on the "Appearance" menu
-  test('a click opens the modal "Settings" popup on "Appearance", with the menus "Appearance", "Shortcuts", "Updates" and "Processes"', async ({ page }) => {
+  // plan-settings_dialog/REQ-4, REQ-5, REQ-6, REQ-21, REQ-53, plan-remote_notifications/REQ-3: a click opens the modal popup on the "Appearance" menu
+  test('a click opens the modal "Settings" popup on "Appearance", with the menus "Appearance", "Shortcuts", "Processes" and "Updates"', async ({ page }) => {
     await loadPage(page);
     await settingsButton(page).click();
     await expect(popup(page)).toBeVisible();
     await expect(popup(page)).toHaveAttribute('aria-modal', 'true');
-    await expect(popup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Appearance', 'Shortcuts', 'Updates', 'Processes']);
+    await expect(popup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Appearance', 'Shortcuts', 'Processes', 'Updates']);
     await expect(tab(page, 'Appearance')).toHaveAttribute('aria-selected', 'true');
     await expect(tab(page, 'Appearance')).toBeFocused();
     await expect(popup(page).getByRole('group', { name: 'Theme' })).toBeVisible();

@@ -22,11 +22,13 @@ type: backend service
 Frames (the shapes of AttentionRoute, module sessions):
 
 - `{ type: "needs-input", sessions: AttentionSession[] }`, with `AttentionSession` = `{ sessionId, folder, label, waitingSince? }`, all strings. `waitingSince` is optional, so a backend that does not send it still works.
-- `{ type: "event", event: AttentionEvent }`, with `AttentionEvent` = `{ id, sessionId, kind, folder, label, waitingTool?, excerpt?, error? }`. `kind` is `"needs_input"`, `"turn_end"` or `"session_end"`. `error` is a boolean, required when `kind` is `"session_end"`. The other fields are strings.
+- `{ type: "event", event: AttentionEvent }`, with `AttentionEvent` = `{ id, sessionId, kind, folder, label, waitingTool?, waitingDetail?, excerpt?, error? }`. `kind` is `"needs_input"`, `"turn_end"` or `"session_end"`. `error` is a boolean, required when `kind` is `"session_end"`. `waitingDetail` is an object (below). The other fields are strings.
+- `WaitingDetail` → `{ kind: "argument", text: string }` or `{ kind: "questions", questions: [{ question: string, options: string[] }] }` with at least one question.
 
 ## Rules and invariants
 
 - A frame that is not JSON, or that does not have one of the shapes above, is ignored.
+- A `waitingDetail` of a wrong shape, or on an event that is not `needs_input`, is dropped: the event is passed on without it.
 - At most one socket is open at a time.
 - It uses no Electron API.
 
@@ -39,3 +41,4 @@ Frames (the shapes of AttentionRoute, module sessions):
 - `plan-session_notifications/REQ-1`, `plan-session_notifications/REQ-2`, `plan-session_notifications/REQ-4`, `plan-session_notifications/REQ-14`
 - `plan-session_notifications/REQ-21`
 - `plan-session_notifications/REQ-33`, `plan-session_notifications/REQ-35`
+- `plan-remote_notifications/REQ-31`, `plan-remote_notifications/REQ-32`

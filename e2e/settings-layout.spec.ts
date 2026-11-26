@@ -3,7 +3,7 @@ import { type Locator, type Page, expect, test } from '@playwright/test';
 import { settled } from './motion';
 import { cardOf, settingsButton, settingsPopup } from './settings';
 
-const MENUS = ['Appearance', 'Shortcuts', 'Updates', 'Processes'] as const;
+const MENUS = ['Appearance', 'Shortcuts', 'Processes', 'Updates'] as const;
 
 const menu = (page: Page) => settingsPopup(page).getByRole('tablist', { name: 'Settings sections' });
 const menuItem = (page: Page, name: string) => menu(page).getByRole('tab', { name, exact: true });

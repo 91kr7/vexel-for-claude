@@ -52,6 +52,20 @@ Sound:
 - `true` → it sends `desktop-bridge:play-sound` to the page of the window, also when the window is hidden or minimized. The page plays the sound (useNeedsInputSound, module app).
 - an event while the window still shows the StartupPage → no sound. Its notification still shows.
 
+Remote notification settings:
+
+- one RemoteSettingsStore on the file `remote-notifications.json` in the Electron user data folder.
+- `desktop-bridge:remote-settings-read` (invoke) → the answer is `read()` of the store.
+- `desktop-bridge:remote-settings-save` (invoke) with a value → `save()` of the store with the value that `parseRemoteSettings` gives. A value it rejects saves nothing.
+- `desktop-bridge:remote-test` (invoke) → it reads the store, then `publishToNtfy` (NtfyPublisher) with its topic URL and token, the title "Vexel for Claude" and the message "Test notification. Remote notifications reach this device.", default priority. The answer is the `PublishResult`. It works with the remote switch on or off.
+- the three channels answer before the client page loads: they are ready when the window opens.
+
+Remote notification:
+
+- one RemoteRule. It gets every event and every list of the AttentionClient, whatever the window focus, before the SoundRule, the NotificationRules and the TrayIcon.
+- on its "send" → `sendRemoteNotification` (RemoteNotifier) with the RemoteSettingsStore and `publishToNtfy`. It is started and not awaited: the sound, the notifications and the tray never wait for it.
+- a failed send → at most one line in the main process output, with no token. Nothing shows in the app and nothing is sent again.
+
 Tray:
 
 - each list of the AttentionClient → the TrayIcon gets the icon, the tooltip and the menu of that list. This happens whatever the window focus.
@@ -62,6 +76,7 @@ Tray:
 - One running app per user session.
 - The page in the window has no Node access (Electron defaults: context isolation, sandbox). It gets only the DesktopBridge.
 - An open-session report from another web contents than the window's is ignored.
+- A read or a save of the remote settings, or a test request, from another web contents than the window's is refused: the read gives no settings, the save writes nothing and the test sends nothing (the answer is empty).
 - The backend runs outside Electron, with the system Node. node-pty therefore keeps its Node build.
 - A backend that the app did not start keeps running after the app quits, with its sessions.
 - The app quits only from a quit request, never because its window closes.
@@ -70,7 +85,7 @@ Tray:
 ## Dependencies
 
 - BackendLauncher, StartupPage, AppIcon, TrayIcon, QuitCheck
-- DesktopBridge, WindowActions, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon, SoundRule
+- DesktopBridge, WindowActions, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon, SoundRule, RemoteSettingsStore, NtfyPublisher, RemoteRule, RemoteNotifier
 
 ## Requirements served
 
@@ -81,3 +96,5 @@ Tray:
 - `plan-terminal_addons/REQ-9`, `plan-terminal_addons/REQ-11`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-39`
 - `plan-app_processes/REQ-26`
 - `plan-input_sound/REQ-1`, `plan-input_sound/REQ-2`, `plan-input_sound/REQ-3`
+- `plan-remote_notifications/REQ-11`, `plan-remote_notifications/REQ-12`, `plan-remote_notifications/REQ-15`, `plan-remote_notifications/REQ-16`, `plan-remote_notifications/REQ-17`
+- `plan-remote_notifications/REQ-19`, `plan-remote_notifications/REQ-20`, `plan-remote_notifications/REQ-26`, `plan-remote_notifications/REQ-28`, `plan-remote_notifications/REQ-29`, `plan-remote_notifications/REQ-37`, `plan-remote_notifications/REQ-38`, `plan-remote_notifications/REQ-39`

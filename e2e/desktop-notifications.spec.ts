@@ -268,7 +268,10 @@ test.describe('Needs-input notification in the desktop app', () => {
       'onPlaySound',
       'onWindowMaximizedChange',
       'quitApp',
+      'readRemoteSettings',
       'reportOpenSession',
+      'saveRemoteSettings',
+      'sendTestNotification',
       'toggleMaximizeWindow',
     ];
     expect(page).toEqual({ keys, types: Array<string>(keys.length).fill('function'), require: 'undefined', process: 'undefined' });

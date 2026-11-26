@@ -1,4 +1,5 @@
 // e2e of plan-input_sound, batch sound-switch, in the browser. A fake bridge makes the page a desktop window.
+// plan-remote_notifications renamed the menu "Sound" to "Notifications" and moved it before "Updates".
 // The restart of the desktop app and the notifications with the switch off are in desktop-sound.spec.ts.
 import { type Page, expect, test } from '@playwright/test';
 import { settingsButton, settingsPopup } from './settings';
@@ -53,7 +54,7 @@ async function openDesktopPage(page: Page): Promise<void> {
 async function openSoundMenu(page: Page): Promise<void> {
   await settingsButton(page).click();
   await expect(settingsPopup(page)).toBeVisible();
-  await tab(page, 'Sound').click();
+  await tab(page, 'Notifications').click();
   await expect(soundSwitch(page)).toBeVisible();
 }
 
@@ -65,16 +66,18 @@ const showsFocusRing = (page: Page) =>
     return element.matches(':focus-visible') && ((style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0) || style.boxShadow !== 'none');
   });
 
-// Scenario "The user turns the sound off"; plan-input_sound/REQ-10, REQ-11
-test('in the desktop page, the "Sound" menu follows "Processes" and its switch is on; a click turns it off at once', async ({ page }) => {
+// Scenario "The user turns the sound off"; plan-input_sound/REQ-10, REQ-11; plan-remote_notifications/REQ-1, REQ-2, REQ-3, REQ-4
+test('in the desktop page, the "Notifications" menu follows "Processes", "Updates" is last, and its sound switch is on; a click turns it off at once', async ({
+  page,
+}) => {
   await openDesktopPage(page);
   await settingsButton(page).click();
   const menu = settingsPopup(page).getByRole('tablist', { name: 'Settings sections' });
-  await expect(menu.getByRole('tab')).toHaveText(['Appearance', 'Shortcuts', 'Updates', 'Processes', 'Sound']);
+  await expect(menu.getByRole('tab')).toHaveText(['Appearance', 'Shortcuts', 'Processes', 'Notifications', 'Updates']);
 
-  await tab(page, 'Sound').click();
-  const panel = settingsPopup(page).getByRole('tabpanel', { name: 'Sound' });
-  await expect(panel.getByRole('heading', { name: 'Sound', exact: true })).toBeVisible();
+  await tab(page, 'Notifications').click();
+  const panel = settingsPopup(page).getByRole('tabpanel', { name: 'Notifications' });
+  await expect(panel.getByRole('heading', { name: 'Notifications', exact: true })).toBeVisible();
   await expect(soundSwitch(page)).toHaveAttribute('aria-checked', 'true');
 
   await soundSwitch(page).click();
@@ -104,13 +107,13 @@ test('with the switch off a sound request plays nothing; turning it on plays not
 });
 
 // spec SettingsDialog and SoundSection, Keyboard
-test('the arrow keys reach "Sound", Tab reaches the switch with a focus ring, and Space toggles it', async ({ page }) => {
+test('the arrow keys reach "Notifications", Tab reaches the sound switch with a focus ring, and Space toggles it', async ({ page }) => {
   await openDesktopPage(page);
   await settingsButton(page).click();
   await tab(page, 'Processes').click();
   await page.keyboard.press('ArrowDown');
-  await expect(tab(page, 'Sound')).toBeFocused();
-  await expect(tab(page, 'Sound')).toHaveAttribute('aria-selected', 'true');
+  await expect(tab(page, 'Notifications')).toBeFocused();
+  await expect(tab(page, 'Notifications')).toHaveAttribute('aria-selected', 'true');
 
   await page.keyboard.press('Tab');
   await expect(soundSwitch(page)).toBeFocused();
@@ -121,8 +124,9 @@ test('the arrow keys reach "Sound", Tab reaches the switch with a focus ring, an
   await page.keyboard.press('Space');
   await expect(soundSwitch(page)).toHaveAttribute('aria-checked', 'true');
 
+  // The remote switch is disabled with no topic URL, so no Tab stop (RemoteNotificationSection spec).
   await page.keyboard.press('Tab');
-  await expect(settingsPopup(page).getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+  await expect(settingsPopup(page).getByRole('textbox', { name: 'Topic URL', exact: true })).toBeFocused();
 });
 
 // plan-input_sound/REQ-12 (page side): the choice is kept in the page storage
@@ -141,11 +145,11 @@ test('the switch stays off after a reload of the desktop page, and a request sti
   expect(await plays(page)).toEqual([]);
 });
 
-// plan-input_sound/REQ-10: the switch belongs to the desktop app
-test('in a browser the settings have no "Sound" menu', async ({ page }) => {
+// plan-input_sound/REQ-10: the switch belongs to the desktop app; plan-remote_notifications/REQ-3: "Updates" is last
+test('in a browser the settings have no "Notifications" menu, and "Updates" is last', async ({ page }) => {
   await page.goto('/');
   await settingsButton(page).click();
   const menu = settingsPopup(page).getByRole('tablist', { name: 'Settings sections' });
-  await expect(menu.getByRole('tab')).toHaveText(['Appearance', 'Shortcuts', 'Updates', 'Processes']);
+  await expect(menu.getByRole('tab')).toHaveText(['Appearance', 'Shortcuts', 'Processes', 'Updates']);
   await expect(settingsPopup(page).getByRole('switch', { name: SWITCH })).toHaveCount(0);
 });

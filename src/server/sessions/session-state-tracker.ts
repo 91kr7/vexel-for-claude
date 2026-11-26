@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { SessionFavoriteStore } from './session-favorite-store.js';
 import type { SessionNameStore } from './session-name-store.js';
+import { type WaitingDetail, waitingDetailOf } from './waiting-detail.js';
 
 export type SessionState = 'working' | 'needs_input' | 'idle' | 'ended';
 
@@ -25,6 +26,7 @@ export interface TrackedSession {
 export interface HookEvent {
   hook_event_name: string;
   tool_name?: unknown;
+  tool_input?: unknown;
   notification_type?: unknown;
   prompt?: unknown;
   session_id?: unknown;
@@ -58,6 +60,8 @@ interface Entry {
   labelFromPrompt: boolean;
   claudeSessionId: string | undefined;
   lastPreToolUse?: string;
+  lastPreToolUseDetail?: WaitingDetail | undefined;
+  waitingDetail?: WaitingDetail | undefined;
 }
 
 function isToolName(value: unknown): value is string {
@@ -152,13 +156,20 @@ export class SessionStateTracker {
     if (entry.summary.state === 'ended' || state === undefined) return true;
     const isIdleReminder = event.hook_event_name === 'Notification' && event.notification_type === 'idle_prompt';
     if (isIdleReminder && entry.summary.state === 'idle') return true;
-    if (event.hook_event_name === 'PreToolUse' && isToolName(event.tool_name)) entry.lastPreToolUse = event.tool_name;
+    if (event.hook_event_name === 'PreToolUse' && isToolName(event.tool_name)) {
+      entry.lastPreToolUse = event.tool_name;
+      entry.lastPreToolUseDetail = waitingDetailOf(event);
+    }
     const changes: Partial<SessionSummary> = { state };
     if (!isIdleReminder) changes.lastActivity = this.#now().toISOString();
     if (event.hook_event_name === 'PermissionRequest' && isToolName(event.tool_name)) {
       changes.waitingTool = event.tool_name;
+      entry.waitingDetail = waitingDetailOf(event);
     } else if (event.hook_event_name === 'Notification' && event.notification_type === 'permission_prompt') {
       changes.waitingTool = entry.summary.waitingTool ?? entry.lastPreToolUse;
+      entry.waitingDetail ??= entry.lastPreToolUseDetail;
+    } else if (event.hook_event_name === 'PreToolUse' && event.tool_name === ASK_USER_QUESTION) {
+      entry.waitingDetail = entry.lastPreToolUseDetail;
     }
     if (event.hook_event_name === 'UserPromptSubmit') changes.resumable = true;
     if (event.hook_event_name === 'UserPromptSubmit' && !entry.labelFromPrompt) {
@@ -187,6 +198,11 @@ export class SessionStateTracker {
   get(sessionId: string): SessionSummary | undefined {
     const entry = this.#entries.get(sessionId);
     return entry && { ...entry.summary };
+  }
+
+  waitingDetail(sessionId: string): WaitingDetail | undefined {
+    const detail = this.#entries.get(sessionId)?.waitingDetail;
+    return detail && structuredClone(detail);
   }
 
   claudeSessionId(sessionId: string): string | undefined {
@@ -260,6 +276,7 @@ export class SessionStateTracker {
     if (!entry) return;
     entry.summary = { ...entry.summary, ...changes };
     if (entry.summary.state !== 'needs_input' || entry.summary.waitingTool === undefined) delete entry.summary.waitingTool;
+    if (entry.summary.state !== 'needs_input') entry.waitingDetail = undefined;
     this.#notify(entry.summary, cause);
   }
 

@@ -46,13 +46,13 @@ describe('SettingsDialog', () => {
     expect(dialog.querySelector('.modal-actions')?.querySelectorAll('button')).toHaveLength(1);
   });
 
-  // plan-settings_dialog/REQ-53, REQ-54, plan-app_processes/REQ-1: "Processes" comes after "Updates"
-  it('has a vertical menu "Settings sections" with "Appearance", "Shortcuts", "Updates" and "Processes", in this order', () => {
+  // plan-settings_dialog/REQ-53, REQ-54, plan-app_processes/REQ-1; plan-remote_notifications/REQ-3: "Updates" is last
+  it('has a vertical menu "Settings sections" with "Appearance", "Shortcuts", "Processes" and "Updates", in this order', () => {
     const { dialog } = open();
     const menu = dialog.querySelector('[role="tablist"]');
     expect(menu?.getAttribute('aria-label')).toBe('Settings sections');
     expect(menu?.getAttribute('aria-orientation')).toBe('vertical');
-    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Appearance', 'Shortcuts', 'Updates', 'Processes']);
+    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Appearance', 'Shortcuts', 'Processes', 'Updates']);
   });
 
   // plan-settings_dialog/REQ-4, REQ-53: default menu "Appearance", selected and focused on open, with the theme and look sections
@@ -117,21 +117,21 @@ describe('SettingsDialog', () => {
     expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([0, -1, -1, -1]);
     run(() => tab(dialog, 'Shortcuts').click());
     expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, 0, -1, -1]);
-    run(() => tab(dialog, 'Processes').click());
+    run(() => tab(dialog, 'Updates').click());
     expect(tabs(dialog).map((element) => element.tabIndex)).toEqual([-1, -1, -1, 0]);
   });
 
   // plan-settings_dialog/REQ-11, REQ-54: Down/Up move to the next/previous menu item, wrapping; Home/End to the first/last
   it.each([
     ['ArrowDown', 'appearance', 'Shortcuts'],
-    ['ArrowDown', 'shortcuts', 'Updates'],
-    ['ArrowDown', 'updates', 'Processes'],
-    ['ArrowDown', 'processes', 'Appearance'],
-    ['ArrowUp', 'appearance', 'Processes'],
+    ['ArrowDown', 'shortcuts', 'Processes'],
+    ['ArrowDown', 'processes', 'Updates'],
+    ['ArrowDown', 'updates', 'Appearance'],
+    ['ArrowUp', 'appearance', 'Updates'],
     ['ArrowUp', 'shortcuts', 'Appearance'],
-    ['ArrowUp', 'processes', 'Updates'],
-    ['Home', 'processes', 'Appearance'],
-    ['End', 'appearance', 'Processes'],
+    ['ArrowUp', 'updates', 'Processes'],
+    ['Home', 'updates', 'Appearance'],
+    ['End', 'appearance', 'Updates'],
   ] as const)('%s from the %s tab shows and focuses "%s"', (key, start, expected) => {
     const { dialog } = open(start);
     keydown(document.activeElement as Element, key);
@@ -373,12 +373,25 @@ describe('SettingsDialog, "Processes" tab', () => {
   });
 });
 
-// plan-input_sound, batch sound-switch: the "Sound" menu, in the desktop window only. A fake bridge makes the page a desktop window.
-describe('SettingsDialog, "Sound" tab', () => {
+// plan-input_sound, batch sound-switch, and plan-remote_notifications, batch notifications-section: the "Notifications" menu, in the
+// desktop window only. A fake bridge makes the page a desktop window.
+describe('SettingsDialog, "Notifications" tab', () => {
   const SWITCH = 'Play a sound when a session needs input';
+  const REMOTE = 'Send a remote notification after 60 seconds of waiting';
+  const VALID = { enabled: false, topicUrl: 'https://ntfy.sh/my-topic', token: '' };
+  let saveRemoteSettings: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    Object.assign(window, { desktopBridge: { reportOpenSession: () => {}, onOpenSession: () => () => {}, getPathForFile: () => '' } });
+    saveRemoteSettings = vi.fn(() => Promise.resolve());
+    Object.assign(window, {
+      desktopBridge: {
+        reportOpenSession: () => {},
+        onOpenSession: () => () => {},
+        getPathForFile: () => '',
+        readRemoteSettings: () => Promise.resolve(VALID),
+        saveRemoteSettings,
+      },
+    });
     vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(JSON.stringify({ processes: [] }), { status: 200 }))));
   });
 
@@ -389,47 +402,62 @@ describe('SettingsDialog, "Sound" tab', () => {
   });
 
   const shownPanel = (dialog: HTMLElement) => visiblePanels(dialog)[0] as HTMLElement;
-  const soundSwitch = (dialog: HTMLElement) => shownPanel(dialog).querySelector<HTMLElement>('[role="switch"]');
+  const switchNamed = (dialog: HTMLElement, name: string) =>
+    [...shownPanel(dialog).querySelectorAll<HTMLButtonElement>('[role="switch"]')].find((element) => element.textContent?.trim() === name) ?? null;
+  const soundSwitch = (dialog: HTMLElement) => switchNamed(dialog, SWITCH);
+  const remoteSwitch = (dialog: HTMLElement) => switchNamed(dialog, REMOTE);
+  const loaded = async (dialog: HTMLElement) => {
+    for (let index = 0; index < 5 && remoteSwitch(dialog)?.disabled !== false; index += 1) await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(remoteSwitch(dialog)?.disabled).toBe(false);
+  };
 
-  // plan-input_sound/REQ-10; assumption "Place of the switch": "Sound" follows "Processes"
-  it('lists "Sound" after "Processes" in the desktop window', () => {
+  // plan-remote_notifications/REQ-1, REQ-2, REQ-3
+  it('lists "Notifications" between "Processes" and "Updates" in the desktop window, "Updates" last', () => {
     const { dialog } = open();
-    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Appearance', 'Shortcuts', 'Updates', 'Processes', 'Sound']);
+    expect(tabs(dialog).map((element) => element.textContent)).toEqual(['Appearance', 'Shortcuts', 'Processes', 'Notifications', 'Updates']);
   });
 
-  // plan-input_sound/REQ-10: the switch belongs to the desktop app
-  it('has no "Sound" menu in a browser', () => {
+  // plan-input_sound/REQ-10: the menu belongs to the desktop app; plan-remote_notifications/REQ-3: "Updates" last
+  it('has no "Notifications" or "Sound" menu in a browser, and "Updates" last', () => {
     delete (window as { desktopBridge?: unknown }).desktopBridge;
     const { dialog } = open();
-    expect(tabs(dialog).map((element) => element.textContent)).not.toContain('Sound');
+    const names = tabs(dialog).map((element) => element.textContent);
+    expect(names).not.toContain('Notifications');
+    expect(names).not.toContain('Sound');
+    expect(names.at(-1)).toBe('Updates');
   });
 
-  // plan-input_sound/REQ-10: the panel "Sound" holds the switch, on by default
-  it('opens on "Sound" when initialTab is "sound", with the title "Sound" and the switch on', () => {
+  // plan-remote_notifications/REQ-1, REQ-4, REQ-5: title "Notifications", the sound switch on, then the remote switch off
+  it('opens on "Notifications" when initialTab is "sound": title "Notifications", the sound switch on, then the remote switch', async () => {
     const { dialog } = open('sound');
-    const sound = tab(dialog, 'Sound');
-    expect(sound.getAttribute('aria-selected')).toBe('true');
-    expect(shownPanel(dialog).getAttribute('aria-labelledby')).toBe(sound.id);
-    expect(shownPanel(dialog).querySelector('h1, h2, h3, h4')?.textContent).toBe('Sound');
-    expect(soundSwitch(dialog)?.textContent?.trim()).toBe(SWITCH);
+    const notifications = tab(dialog, 'Notifications');
+    expect(notifications.getAttribute('aria-selected')).toBe('true');
+    expect(shownPanel(dialog).getAttribute('aria-labelledby')).toBe(notifications.id);
+    expect(shownPanel(dialog).querySelector('h1, h2, h3, h4')?.textContent).toBe('Notifications');
+    const switches = [...shownPanel(dialog).querySelectorAll('[role="switch"]')].map((element) => element.textContent?.trim());
+    expect(switches).toEqual([SWITCH, REMOTE]);
     expect(soundSwitch(dialog)?.getAttribute('aria-checked')).toBe('true');
+    await loaded(dialog);
+    expect(remoteSwitch(dialog)?.getAttribute('aria-checked')).toBe('false');
   });
 
-  // spec SettingsDialog: "Sound" → SoundSection
-  it('a click on "Sound" shows the switch', () => {
+  it('a click on "Notifications" shows both switches', () => {
     const { dialog } = open();
-    run(() => tab(dialog, 'Sound').click());
+    run(() => tab(dialog, 'Notifications').click());
     expect(visiblePanels(dialog)).toHaveLength(1);
     expect(soundSwitch(dialog)).not.toBeNull();
+    expect(remoteSwitch(dialog)).not.toBeNull();
   });
 
-  // spec SettingsDialog, Keyboard: the arrows, Home and End go through "Sound" too
+  // spec SettingsDialog, Keyboard: the arrows, Home and End follow the desktop order
   it.each([
-    ['ArrowDown', 'processes', 'Sound'],
-    ['ArrowDown', 'sound', 'Appearance'],
-    ['ArrowUp', 'appearance', 'Sound'],
+    ['ArrowDown', 'processes', 'Notifications'],
+    ['ArrowDown', 'sound', 'Updates'],
+    ['ArrowDown', 'updates', 'Appearance'],
+    ['ArrowUp', 'updates', 'Notifications'],
     ['ArrowUp', 'sound', 'Processes'],
-    ['End', 'appearance', 'Sound'],
+    ['ArrowUp', 'appearance', 'Updates'],
+    ['End', 'appearance', 'Updates'],
     ['Home', 'sound', 'Appearance'],
   ] as const)('%s from the %s tab shows and focuses "%s"', (key, start, expected) => {
     const { dialog } = open(start);
@@ -440,12 +468,34 @@ describe('SettingsDialog, "Sound" tab', () => {
   });
 
   // plan-input_sound/REQ-11: the switch applies at once and the popup stays open
-  it('a click on the switch turns it off at once and keeps the popup open', () => {
+  it('a click on the sound switch turns it off at once and keeps the popup open', () => {
     const { dialog, onClose } = open('sound');
     run(() => soundSwitch(dialog)?.click());
     expect(soundSwitch(dialog)?.getAttribute('aria-checked')).toBe('false');
     expect(onClose).not.toHaveBeenCalled();
     run(() => soundSwitch(dialog)?.click());
     expect(soundSwitch(dialog)?.getAttribute('aria-checked')).toBe('true');
+  });
+
+  // plan-remote_notifications/REQ-13: the two switches work independently
+  it('the sound switch and the remote switch change only themselves', async () => {
+    const { dialog, onClose } = open('sound');
+    await loaded(dialog);
+
+    run(() => soundSwitch(dialog)?.click());
+    expect(soundSwitch(dialog)?.getAttribute('aria-checked')).toBe('false');
+    expect(remoteSwitch(dialog)?.getAttribute('aria-checked')).toBe('false');
+    expect(saveRemoteSettings).not.toHaveBeenCalled();
+
+    run(() => remoteSwitch(dialog)?.click());
+    expect(remoteSwitch(dialog)?.getAttribute('aria-checked')).toBe('true');
+    expect(soundSwitch(dialog)?.getAttribute('aria-checked')).toBe('false');
+    expect(saveRemoteSettings).toHaveBeenLastCalledWith({ ...VALID, enabled: true });
+
+    run(() => soundSwitch(dialog)?.click());
+    expect(soundSwitch(dialog)?.getAttribute('aria-checked')).toBe('true');
+    expect(remoteSwitch(dialog)?.getAttribute('aria-checked')).toBe('true');
+    expect(saveRemoteSettings).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

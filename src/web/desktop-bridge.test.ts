@@ -1,4 +1,4 @@
-// Tests of plan-mac_title_bar, batches title-bar and window-buttons: useDesktopBridge spec, `isDesktopWindow` (REQ-6, REQ-14) and the window functions (REQ-16, REQ-17, REQ-18, REQ-25). Also plan-input_sound, batch needs-input-sound: `onSoundRequest`.
+// Tests of plan-mac_title_bar, batches title-bar and window-buttons: useDesktopBridge spec, `isDesktopWindow` (REQ-6, REQ-14) and the window functions (REQ-16, REQ-17, REQ-18, REQ-25). Also plan-input_sound, batch needs-input-sound: `onSoundRequest`; plan-remote_notifications, batches notifications-section and test-notification: the remote settings and the test notification.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   closeWindow,
@@ -8,6 +8,9 @@ import {
   minimizeWindow,
   onSoundRequest,
   quitApp,
+  readRemoteSettings,
+  saveRemoteSettings,
+  sendTestNotification,
   toggleMaximizeWindow,
 } from './desktop-bridge';
 
@@ -155,5 +158,72 @@ describe('desktopFilePathLookup', () => {
     expect(lookup).not.toBeNull();
     expect(lookup!(new File(['x'], 'shot.png'))).toBe('/home/me/shot.png');
     expect(lookup!(new File(['x'], 'made-by-page'))).toBe('');
+  });
+});
+
+// plan-remote_notifications/REQ-11, REQ-12: the page reads and saves the remote settings through the bridge; it never rejects
+describe('remote settings', () => {
+  const DEFAULTS = { enabled: false, topicUrl: '', token: '' };
+  const SET = { enabled: true, topicUrl: 'https://ntfy.sh/my-topic', token: 'tk' };
+
+  it('reads the answer of the bridge', async () => {
+    vi.stubGlobal('window', { desktopBridge: { ...bridge, readRemoteSettings: () => Promise.resolve(SET) } });
+    expect(await readRemoteSettings()).toEqual(SET);
+  });
+
+  it.each([
+    ['in a browser, with no bridge', () => ({})],
+    ['with a bridge that has no readRemoteSettings', () => ({ desktopBridge: bridge })],
+    ['when the read of the bridge fails', () => ({ desktopBridge: { ...bridge, readRemoteSettings: () => Promise.reject(new Error('ipc')) } })],
+  ])('reads the defaults %s', async (_name, page) => {
+    vi.stubGlobal('window', page());
+    expect(await readRemoteSettings()).toEqual(DEFAULTS);
+  });
+
+  it('saves through the bridge and resolves when the bridge has saved', async () => {
+    let done: () => void = () => {};
+    const save = vi.fn(() => new Promise<void>((resolve) => (done = resolve)));
+    vi.stubGlobal('window', { desktopBridge: { ...bridge, saveRemoteSettings: save } });
+    let resolved = false;
+    const saving = saveRemoteSettings(SET).then(() => (resolved = true));
+    await Promise.resolve();
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledWith(SET);
+    expect(resolved).toBe(false);
+    done();
+    await saving;
+    expect(resolved).toBe(true);
+  });
+
+  it.each([
+    ['in a browser, with no bridge', () => ({})],
+    ['with a bridge that has no saveRemoteSettings', () => ({ desktopBridge: bridge })],
+    ['when the save of the bridge fails', () => ({ desktopBridge: { ...bridge, saveRemoteSettings: () => Promise.reject(new Error('ipc')) } })],
+  ])('resolves %s', async (_name, page) => {
+    vi.stubGlobal('window', page());
+    await expect(saveRemoteSettings(SET)).resolves.toBeUndefined();
+  });
+});
+
+// plan-remote_notifications/REQ-15: the page asks the bridge for a test notification and gets its result; it never rejects
+describe('sendTestNotification', () => {
+  it.each([
+    ['sent', { status: 'sent' }],
+    ['failed with its reason', { status: 'failed', reason: 'The server refused the access token.' }],
+  ])('gives the answer of the bridge: %s', async (_name, answer) => {
+    const send = vi.fn(() => Promise.resolve(answer));
+    vi.stubGlobal('window', { desktopBridge: { ...bridge, sendTestNotification: send } });
+    expect(await sendTestNotification()).toEqual(answer);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['in a browser, with no bridge', () => ({})],
+    ['with a bridge that has no sendTestNotification', () => ({ desktopBridge: bridge })],
+    ['when the bridge answers null', () => ({ desktopBridge: { ...bridge, sendTestNotification: () => Promise.resolve(null) } })],
+    ['when the call of the bridge fails', () => ({ desktopBridge: { ...bridge, sendTestNotification: () => Promise.reject(new Error('ipc')) } })],
+  ])('gives null %s', async (_name, page) => {
+    vi.stubGlobal('window', page());
+    expect(await sendTestNotification()).toBeNull();
   });
 });

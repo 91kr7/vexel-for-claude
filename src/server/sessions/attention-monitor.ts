@@ -4,6 +4,7 @@ import { plainExcerpt } from './plain-excerpt.js';
 import type { Session } from './session-registry.js';
 import type { ChangeCause, SessionState, SessionStateTracker, SessionSummary } from './session-state-tracker.js';
 import { type LastTurn, TurnReader } from './turn-reader.js';
+import type { WaitingDetail } from './waiting-detail.js';
 
 export interface AttentionSession {
   sessionId: string;
@@ -19,6 +20,7 @@ export interface AttentionEvent {
   folder: string;
   label: string;
   waitingTool?: string;
+  waitingDetail?: WaitingDetail;
   excerpt?: string;
   error?: boolean;
 }
@@ -29,6 +31,7 @@ export interface AttentionMonitorSources {
   tracker: Pick<SessionStateTracker, 'list'> & {
     onChange(listener: (summary: SessionSummary, cause?: ChangeCause) => void): () => void;
     claudeSessionId?(sessionId: string): string | undefined;
+    waitingDetail?(sessionId: string): WaitingDetail | undefined;
   };
   scanner: Pick<ExternalSessionScanner, 'list' | 'onChange'>;
   turns?: Pick<TurnReader, 'lastTurn'>;
@@ -46,6 +49,7 @@ interface ObservedSession {
 }
 
 type TurnRead = () => Promise<LastTurn>;
+type DetailRead = () => WaitingDetail | undefined;
 
 const NO_FINAL_RESPONSE: LastTurn = { interrupted: false };
 
@@ -67,7 +71,7 @@ export class AttentionMonitor {
     tracker.onChange((session, cause?: ChangeCause) => {
       const stopped = cause?.type === 'hook' && cause.hookEventName === 'Stop';
       const seen = this.#states.has(session.id);
-      this.#observe(session, stopped ? hostedTurn(session) : undefined);
+      this.#observe(session, stopped ? hostedTurn(session) : undefined, () => tracker.waitingDetail?.(session.id));
       if (seen && cause?.type === 'exit') this.#checkSessionEnd(session, registry?.get(session.id));
     });
     scanner.onChange((change) => {
@@ -94,7 +98,7 @@ export class AttentionMonitor {
     return () => this.#listListeners.delete(listener);
   }
 
-  #observe(session: ObservedSession, readTurn?: TurnRead): void {
+  #observe(session: ObservedSession, readTurn?: TurnRead, readDetail?: DetailRead): void {
     const previous = this.#states.get(session.id);
     this.#states.set(session.id, session.state);
     if (previous !== session.state) this.#turnChecks.delete(session.id);
@@ -103,6 +107,8 @@ export class AttentionMonitor {
     if (needsInput && previous !== undefined && previous !== 'needs_input') {
       const event = this.#event(session, 'needs_input');
       if (session.waitingTool !== undefined) event.waitingTool = session.waitingTool;
+      const detail = readDetail?.();
+      if (detail !== undefined) event.waitingDetail = detail;
       this.#emit(event);
     } else if (previous === 'working' && session.state === 'idle' && readTurn) {
       void this.#checkTurnEnd(session, readTurn);

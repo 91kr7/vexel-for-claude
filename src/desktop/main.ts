@@ -1,11 +1,15 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, shell, Tray } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, shell, Tray, type WebContents } from 'electron';
 import { type AttentionSession, connectAttention } from './attention-client.js';
 import { type LaunchResult, launchBackend, stopStartedBackend } from './backend-launcher.js';
 import { type NotificationCommand, NotificationRules } from './notification-rules.js';
 import { groupNotificationTexts, notificationTexts } from './notification-texts.js';
+import { publishToNtfy } from './ntfy-publisher.js';
 import { confirmQuit } from './quit-check.js';
+import { sendRemoteNotification } from './remote-notifier.js';
+import { RemoteRule } from './remote-rule.js';
+import { parseRemoteSettings, RemoteSettingsStore } from './remote-settings-store.js';
 import { SoundRule } from './sound-rule.js';
 import { startupPageUrl } from './startup-page.js';
 import { SystemNotifications } from './system-notifications.js';
@@ -19,6 +23,10 @@ const preloadPath = fileURLToPath(new URL('desktop-bridge.cjs', import.meta.url)
 const OPEN_SESSION_CHANGED_CHANNEL = 'desktop-bridge:open-session-changed';
 const OPEN_SESSION_CHANNEL = 'desktop-bridge:open-session';
 const PLAY_SOUND_CHANNEL = 'desktop-bridge:play-sound';
+const REMOTE_SETTINGS_READ_CHANNEL = 'desktop-bridge:remote-settings-read';
+const REMOTE_SETTINGS_SAVE_CHANNEL = 'desktop-bridge:remote-settings-save';
+const REMOTE_TEST_CHANNEL = 'desktop-bridge:remote-test';
+const TEST_MESSAGE = { title: 'Vexel for Claude', message: 'Test notification. Remote notifications reach this device.' };
 const PAGE_ZOOM_ROLES = new Set(['zoomin', 'zoomout', 'resetzoom']);
 
 let mainWindow: BrowserWindow | undefined;
@@ -148,6 +156,21 @@ async function start(): Promise<void> {
     if (current.isDestroyed() || event.sender !== current.webContents) return;
     if (typeof sessionId === 'string' || sessionId === null) runNotificationCommands(notificationRules.setOpenSession(sessionId));
   });
+  const remoteSettings = new RemoteSettingsStore(path.join(app.getPath('userData'), 'remote-notifications.json'));
+  const fromWindow = (sender: WebContents) => !current.isDestroyed() && sender === current.webContents;
+  ipcMain.handle(REMOTE_SETTINGS_READ_CHANNEL, (event) => (fromWindow(event.sender) ? remoteSettings.read() : undefined));
+  ipcMain.handle(REMOTE_SETTINGS_SAVE_CHANNEL, async (event, value: unknown) => {
+    const settings = parseRemoteSettings(value);
+    if (fromWindow(event.sender) && settings) await remoteSettings.save(settings);
+  });
+  ipcMain.handle(REMOTE_TEST_CHANNEL, async (event) => {
+    if (!fromWindow(event.sender)) return undefined;
+    const { topicUrl, token } = await remoteSettings.read();
+    return publishToNtfy({ topicUrl, token }, TEST_MESSAGE);
+  });
+  const remoteRule = new RemoteRule({
+    onSend: (send) => void sendRemoteNotification(send, { settings: remoteSettings, publish: publishToNtfy }),
+  });
   connectWindowActions(current, ipcMain, () => void quitWithoutQuestion());
   notifications.onClick(openNotifiedSession);
   notifications.onClosed((sessionId) => notificationRules.notificationClosed(sessionId));
@@ -164,10 +187,12 @@ async function start(): Promise<void> {
   if (result.status === 'ready') {
     connectAttention(result.origin, {
       onEvent: (event) => {
+        remoteRule.receiveEvent(event);
         if (soundRule.receiveEvent(event) && !current.isDestroyed()) current.webContents.send(PLAY_SOUND_CHANNEL);
         runNotificationCommands(notificationRules.receiveEvent(event));
       },
       onNeedsInput: (sessions) => {
+        remoteRule.receiveNeedsInput(sessions);
         updateTray(sessions);
         runNotificationCommands(notificationRules.receiveNeedsInput(sessions));
       },

@@ -137,12 +137,12 @@ test.describe('a newer release exists', () => {
     if (home) await rm(home, { recursive: true, force: true });
   });
 
-  // plan-settings_dialog/REQ-43, REQ-44
-  test('REQ-43, REQ-44, REQ-53: the "Updates" menu comes after "Shortcuts" and shows the installed version and the button', async ({ page }) => {
+  // plan-settings_dialog/REQ-43, REQ-44; plan-remote_notifications/REQ-3: "Updates" is the last menu
+  test('REQ-43, REQ-44, REQ-53: the "Updates" menu comes last and shows the installed version and the button', async ({ page }) => {
     await page.goto(app.base);
     await settingsButton(page).click();
     const tabs = settingsPopup(page).getByRole('tablist', { name: 'Settings sections' }).getByRole('tab');
-    await expect(tabs).toHaveText(['Appearance', 'Shortcuts', 'Updates', 'Processes']);
+    await expect(tabs).toHaveText(['Appearance', 'Shortcuts', 'Processes', 'Updates']);
     await settingsPopup(page).getByRole('tab', { name: 'Updates', exact: true }).click();
     await expect(settingsPopup(page).getByText(`Installed version: v${installed}`, { exact: true })).toBeVisible();
     await expect(checkButton(page)).toHaveText('Check for Updates');

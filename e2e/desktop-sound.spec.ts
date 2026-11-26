@@ -336,7 +336,7 @@ const soundSwitch = (page: Page) => settingsPopup(page).getByRole('switch', { na
 
 async function openSoundMenu(page: Page): Promise<void> {
   await settingsButton(page).click();
-  await settingsPopup(page).getByRole('tab', { name: 'Sound', exact: true }).click();
+  await settingsPopup(page).getByRole('tab', { name: 'Notifications', exact: true }).click();
   await expect(soundSwitch(page)).toBeVisible();
 }
 
