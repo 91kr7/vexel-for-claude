@@ -22,7 +22,7 @@ function onTick(listener: TickListener): () => void {
   };
 }
 
-function useNow(): number {
+export function useNow(): number {
   const [now, setNow] = useState(Date.now);
   useEffect(() => onTick(setNow), []);
   return now;

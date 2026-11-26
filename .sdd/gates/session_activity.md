@@ -21,3 +21,6 @@
 | 2026-11-26 | plan | question planner turn-panel INT-16 | decided | Remove it: an e2e spec is the tester's work; REQ-48 served by turn-panel INT-11, INT-14, INT-15, tested by one Electron spec |
 | 2026-11-26 | plan | G3 coverage, workflow-subagents | pass | REQ-56..60 covered and in scenarios; live workflow check made optional: the run rule must hold whether the journal is written during the run or at its end |
 | 2026-11-26 | test | G5 tests, latest-text | pass | Re-run 547 unit (batch and dependants), 9 e2e green; only test files and `playwright.config.ts`; `session-cards.spec.ts:334` updated to the new line, contract in `session-list.md` |
+| 2026-11-26 | dev | G4 development, stall-signal | pass | Build re-run green; files explained by INT-1..7, specs and indexes; `useNow` export of ElapsedTime follows the shared-timer decision |
+| 2026-11-26 | dev | divergence stall-signal test stub | decided | `live-activity.test.ts`: two stubs on the fake model so `tsc -b` compiles after the INT-4 contract; no assertion changed; the tester updates the assertions |
+| 2026-11-26 | dev | divergence stall-signal workflow calls | decided | A subagent with no `toolUseId` excludes no call; workflow subagents belong to batch `workflow-subagents` (REQ-57) |

@@ -35,8 +35,8 @@ Card (every entry): 7 px corners (`--radius-card`), a 1 px border, the "card" ro
 Entry row (every entry but the hosted needs-input card): a button with the class `session-entry`, 12/18 px text in `--text-secondary`, `--text-primary` on hover and when open.
 - line 1, 8 px gaps → the StateBadge `dot` (8 px), the folder name (13 px, weight 600, `folderNameOf`, tooltip: the full folder path), the star place, then on the right the StateBadge `inline` name (11 px, weight 500, in the state colour).
 - line 2, 4 px below and 16 px in from the left → the label (11.5/16 px, `--text-muted`, `--text-secondary` when open, tooltip: the full label).
-- a working entry → its tool line and its progress bar between line 2 and line 3. An entry at work → its latest-text line, between the tool line (or line 2) and the progress bar.
-- line 3, 15 px below line 2 (or the tool line, the latest-text line, or the progress bar), 16 px in, with no top border → on the left the context percentage and the estimated cost, 6 px apart; on the right the RelativeTime of the last activity (`--text-muted`, `--text-secondary` when open). It is there also with no usage: then only the time shows.
+- a working entry → its tool line and its progress bar between line 2 and line 3. An entry at work → its latest-text line and its stall signal, in this order, between the tool line (or line 2) and the progress bar.
+- line 3, 15 px below line 2 (or the tool line, the latest-text line, the stall signal, or the progress bar), 16 px in, with no top border → on the left the context percentage and the estimated cost, 6 px apart; on the right the RelativeTime of the last activity (`--text-muted`, `--text-secondary` when open). It is there also with no usage: then only the time shows.
 - percentage and cost → mono 10 px with tabular figures; time → mono 10.5 px with tabular figures. All on a 15 px line.
 - context percentage → only when the summary has `usage.context`: "<percent>%" by `percentOf`. Colour by `usageLevelOf`: `normal` in `--text-secondary` (`--role-accent`, weight 600, when open), `warning` in amber-400, `error` in rose-400. No `usage.context` → nothing, never "0%". Every state shows it, ended included.
 - estimated cost → only when the summary has `usage.cost`: the text of `costText(usage.cost.usd)`, e.g. "$1.27", "<$0.01", or "—" when there is no `usd`. In `--text-secondary`.
@@ -51,7 +51,12 @@ Entry row (every entry but the hosted needs-input card): a button with the class
   - the text wraps on two lines at most, cut with an ellipsis at the end of the second line. The time sits after the text, on its last line, and is never cut.
   - no `subagentType` → no prefix. No `at` → no " · " and no time.
   - tooltip: the prefix and the text.
-- a hosted working entry → a ProgressBar 6 px below line 2, the tool line or the latest-text line, 16 px in. An external entry never shows it.
+- stall signal, only for an entry whose summary has `liveActivity.atWork` true and a valid `liveActivity.lastEventAt`, in a state other than `needs_input` and `ended`, from 5 minutes after `lastEventAt` → 2 px below the latest-text line (or the tool line, or line 2), 16 px in:
+  - the 12 px ClockIcon, 4 px before the text `stallText(now - lastEventAt, liveActivity.waitingFor)`.
+  - mono 10/15 px in amber-400, also on hover and when open. One line, cut with an ellipsis. Tooltip: the whole text.
+  - `now` comes from the shared timer of ElapsedTime (`useNow`): the signal shows at 5 minutes and its time counts up. A new `lastEventAt` less than 5 minutes old hides it at once.
+  - the latest-text line and the stall signal can show together.
+- a hosted working entry → a ProgressBar 6 px below line 2, the tool line, the latest-text line or the stall signal, 16 px in. An external entry never shows it.
 - folder name and label longer than the card are cut on one line with an ellipsis.
 - at every list panel width from 180 to 480 px, each line stays on one row inside the card, except the latest-text line (two rows at most). The context percentage and the cost are never cut. When they still do not fit:
   - line 3 → after the percentage and the cost, the time is cut with an ellipsis.
@@ -137,6 +142,7 @@ Drag feedback (the mock has no drag state):
 - No card shows a horizontal divider above line 3.
 - The list scrolls with ListStyles `.list-scroll` (module app): a shown scrollbar is as far from the right edge of the cards as the panel edge is from their left edge. The scrollbar stays clear of the resize handle of the panel.
 - Only `working` entries show a tool line.
+- The stall signal changes nothing that `groupSessions` or `orderSessions` read: the entry keeps its state, its group and its place.
 - Only the open session's button has `aria-current="true"`.
 - Only the entries of ended sessions, hosted or external, show "Dismiss" or "Resume". Working, needs-input and idle entries, hosted or external, show neither.
 - Every entry, hosted or external, in any state, has "Rename".
@@ -158,7 +164,7 @@ Drag feedback (the mock has no drag state):
 
 - groupSessions, SessionOrderStore (`SessionOrder`), usage format (`percentOf`, `usageLevelOf`, `costText`, `INCOMPLETE_COST_TEXT`), StateBadge, RelativeTime, ProgressBar, Avatar (`folderNameOf`), EndedEntryActions, SessionNameEditor, FavoriteButton
 - AreaState, ListStyles, IconSet, ShortcutChannel, ThemeTokens, WebEntry, ListCascade, ListPresence (module app)
-- ElapsedTime (module activity)
+- ElapsedTime (`useNow` included), stallText (module activity)
 
 ## Requirements served
 
@@ -180,3 +186,4 @@ Drag feedback (the mock has no drag state):
 - `plan-dark_blue_theme/REQ-1`, `plan-dark_blue_theme/REQ-2`, `plan-dark_blue_theme/REQ-18` to `plan-dark_blue_theme/REQ-22`, `plan-dark_blue_theme/REQ-43`, `plan-dark_blue_theme/REQ-49`, `plan-dark_blue_theme/REQ-50`, `plan-dark_blue_theme/REQ-53`
 - `plan-ui_transitions/REQ-16`, `plan-ui_transitions/REQ-18`, `plan-ui_transitions/REQ-19`, `plan-ui_transitions/REQ-20`, `plan-ui_transitions/REQ-21`, `plan-ui_transitions/REQ-26`
 - `plan-session_activity/REQ-2`, `plan-session_activity/REQ-4`, `plan-session_activity/REQ-7`, `plan-session_activity/REQ-8`, `plan-session_activity/REQ-9`, `plan-session_activity/REQ-11`, `plan-session_activity/REQ-13`
+- `plan-session_activity/REQ-16`, `plan-session_activity/REQ-21`, `plan-session_activity/REQ-22`, `plan-session_activity/REQ-23`, `plan-session_activity/REQ-24`, `plan-session_activity/REQ-25`

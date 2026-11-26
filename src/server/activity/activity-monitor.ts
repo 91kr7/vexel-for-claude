@@ -4,6 +4,7 @@ import { type TranscriptReader, subagentFilesOf, subagentMetaOf } from '../exter
 import type { SessionState, SessionStateTracker } from '../sessions/session-state-tracker.js';
 import { type LiveActivity, liveActivityOf } from './live-activity.js';
 import { TurnModel } from './turn-model.js';
+import type { WaitingFor } from './waiting-for.js';
 
 export interface ActivityMonitorSources {
   tracker: Pick<SessionStateTracker, 'list' | 'onChange' | 'onRemove' | 'claudeSessionId'>;
@@ -47,7 +48,20 @@ const DEFAULT_MAX_BYTES_PER_POLL = 4 * 1024 * 1024;
 const subagentIdOf = (file: string) => path.basename(file, '.jsonl');
 
 const copyOf = (activity: LiveActivity | undefined): LiveActivity | undefined =>
-  activity && { ...activity, ...(activity.latestText && { latestText: { ...activity.latestText } }) };
+  activity && {
+    ...activity,
+    ...(activity.latestText && { latestText: { ...activity.latestText } }),
+    ...(typeof activity.waitingFor === 'object' && { waitingFor: { ...activity.waitingFor } }),
+  };
+
+const sameWaitingFor = (a: WaitingFor | undefined, b: WaitingFor | undefined) =>
+  a === b ||
+  (typeof a === 'object' &&
+    typeof b === 'object' &&
+    a.subagentType === b.subagentType &&
+    a.name === b.name &&
+    a.argument === b.argument &&
+    a.others === b.others);
 
 const sameActivity = (a: LiveActivity | undefined, b: LiveActivity | undefined) =>
   a === b ||
@@ -56,7 +70,9 @@ const sameActivity = (a: LiveActivity | undefined, b: LiveActivity | undefined) 
     a.atWork === b.atWork &&
     a.latestText?.text === b.latestText?.text &&
     a.latestText?.subagentType === b.latestText?.subagentType &&
-    a.latestText?.at === b.latestText?.at);
+    a.latestText?.at === b.latestText?.at &&
+    a.lastEventAt === b.lastEventAt &&
+    sameWaitingFor(a.waitingFor, b.waitingFor));
 
 export class ActivityMonitor {
   readonly #tracker: ActivityMonitorSources['tracker'];

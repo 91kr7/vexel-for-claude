@@ -18,7 +18,7 @@ type: REST endpoint
   - then the current external sessions: `{ id, folder, label, state, lastActivity, external: true }` (ExternalSessionScanner `list()`).
   - each entry, hosted or external, also has `runningTool` when RunningToolMonitor `get(id)` gives one.
   - each entry, hosted or external, in any state, also has `usage` (`{ context?, tokens?, cost? }`) when UsageMonitor `get(id)` gives one.
-  - each entry, hosted or external, in any state, also has `liveActivity` (`{ atWork, latestText? }`) when ActivityMonitor `get(id)` gives one.
+  - each entry, hosted or external, in any state, also has `liveActivity` (`{ atWork, latestText?, lastEventAt?, waitingFor? }`) when ActivityMonitor `get(id)` gives one.
 
 ## Rules and invariants
 
@@ -38,4 +38,4 @@ type: REST endpoint
 - `plan-session_list_improvements/REQ-2`, `plan-session_list_improvements/REQ-5`
 - `plan-session_list_improvements/REQ-14`
 - `plan-session_usage/REQ-1`, `plan-session_usage/REQ-2`
-- `plan-session_activity/REQ-2`
+- `plan-session_activity/REQ-2`, `plan-session_activity/REQ-16`

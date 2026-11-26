@@ -21,7 +21,7 @@ type: backend service
 - `start()` → one `poll()` now, then one `poll()` `intervalMs` after the end of the previous one. A second `start()` changes nothing.
 - `stop()` → no more reads.
 - `get(id) → LiveActivity | undefined` → the last value computed: `liveActivityOf(<turn model of the session>, <its state>)`. `undefined` when the id is unknown, or before the first read of the session that reached the end of every file.
-- `onChange(listener) → unsubscribe` → `listener(id, activity | undefined)` after each change of `get(id)`. No call when the value stays the same.
+- `onChange(listener) → unsubscribe` → `listener(id, activity | undefined)` after each change of `get(id)`, `lastEventAt` and `waitingFor` included. No call when the value stays the same.
 
 Reading:
 
@@ -52,7 +52,7 @@ a state change → the session is no longer settled
 
 - A state change of the tracker or the scanner computes the value again at once, with no file read. So a session that ends loses `atWork` at once.
 - Exception: a change to `working` from `idle` or `ended` is computed by the next read. The user line of a new turn reaches the transcript just after the state change, so the working entry does not show the text of the previous turn.
-- A new text, or a subagent that finishes, shows in `get` within one interval after its line or its metadata reaches its file, unless more than `maxBytesPerPoll` bytes came after the previous poll.
+- A new text, a new activity, a call that opens or closes, or a subagent that finishes, shows in `get` within one interval after its line or its metadata reaches its file, unless more than `maxBytesPerPoll` bytes came after the previous poll.
 - `get` reads only values in memory. No file read runs on the path of a request.
 - A removed session (tracker removal, scanner removal) has no value. The removal gives no `onChange` call.
 - Each line is read once. Memory per session does not grow with the number of lines (TurnModel).
@@ -68,3 +68,4 @@ a state change → the session is no longer settled
 ## Requirements served
 
 - `plan-session_activity/REQ-1`, `plan-session_activity/REQ-2`, `plan-session_activity/REQ-11`, `plan-session_activity/REQ-12`, `plan-session_activity/REQ-14`
+- `plan-session_activity/REQ-17`, `plan-session_activity/REQ-22`

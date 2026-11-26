@@ -44,4 +44,4 @@ type: REST endpoint (WebSocket)
 - `plan-session_list_improvements/REQ-4`
 - `plan-session_list_improvements/REQ-14`, `plan-session_list_improvements/REQ-24`
 - `plan-session_usage/REQ-1`, `plan-session_usage/REQ-12`
-- `plan-session_activity/REQ-2`, `plan-session_activity/REQ-12`
+- `plan-session_activity/REQ-2`, `plan-session_activity/REQ-12`, `plan-session_activity/REQ-22`

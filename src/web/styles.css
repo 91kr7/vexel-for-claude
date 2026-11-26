@@ -1602,6 +1602,29 @@ input {
   white-space: pre;
 }
 
+.session-entry-stall {
+  gap: 4px;
+  margin-top: 2px;
+  padding-left: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 15px;
+  color: var(--amber-400);
+}
+
+.session-entry-stall .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.session-entry-stall-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .session-entry-permission b,
 .session-card-line b {
   font-weight: 500;

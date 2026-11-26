@@ -3,7 +3,7 @@ import type { SessionState } from '../sessions/session-state-tracker.js';
 import { liveActivityOf } from './live-activity.js';
 import type { SubagentView, TimedText, TurnModel } from './turn-model.js';
 
-type Model = Pick<TurnModel, 'mainText' | 'subagents'>;
+type Model = Pick<TurnModel, 'mainText' | 'subagents' | 'lastEventAt' | 'openCalls'>;
 
 /** A turn model with fixed values. Its subagents keep their state whatever `sessionEnded` is, and the calls are recorded. */
 function modelOf(main: TimedText | undefined, subagents: SubagentView[] = []): Model & { endedArgs: boolean[] } {
@@ -15,6 +15,8 @@ function modelOf(main: TimedText | undefined, subagents: SubagentView[] = []): M
       endedArgs.push(sessionEnded);
       return subagents;
     },
+    lastEventAt: () => undefined,
+    openCalls: () => [],
   };
 }
 
