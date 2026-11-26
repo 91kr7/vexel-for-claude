@@ -33,3 +33,4 @@
 | 2026-11-26 | test | G5 tests, turn-panel | pass | Re-test after f5be575: 618 unit, 12 browser e2e green, Electron 1 from report; one intermittent API test of `latest-text` fixed in its fixture (turn start and subagent line in the same millisecond), 17 runs green under load |
 | 2026-11-26 | dev | G4 development, subagent-conversation | pass | Build re-run green; files explained by INT-1..10, specs and indexes; no test file touched |
 | 2026-11-26 | dev | divergences subagent-conversation | decided | Accepted: extra `locateSubagentFile` (indexed); TurnTreeView passes the open action; avatar "T" with "Task"; read loop repeated rather than changing `conversation-stream-route.ts`; card fields inside a button; focus on "Back" at open |
+| 2026-11-26 | test | G5 tests, subagent-conversation | pass | Re-run 489 unit, 29 e2e (batch and dependants) green; only test files, a test helper and `playwright.config.ts` |
