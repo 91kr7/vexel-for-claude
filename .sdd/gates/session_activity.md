@@ -24,3 +24,4 @@
 | 2026-11-26 | dev | G4 development, stall-signal | pass | Build re-run green; files explained by INT-1..7, specs and indexes; `useNow` export of ElapsedTime follows the shared-timer decision |
 | 2026-11-26 | dev | divergence stall-signal test stub | decided | `live-activity.test.ts`: two stubs on the fake model so `tsc -b` compiles after the INT-4 contract; no assertion changed; the tester updates the assertions |
 | 2026-11-26 | dev | divergence stall-signal workflow calls | decided | A subagent with no `toolUseId` excludes no call; workflow subagents belong to batch `workflow-subagents` (REQ-57) |
+| 2026-11-26 | test | G5 tests, stall-signal | pass | Re-run 575 unit, 15 e2e green; only test files and `playwright.config.ts`; thinking now counts as activity (batch decision), one monitor test follows it |
