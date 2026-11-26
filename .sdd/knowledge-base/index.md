@@ -18,3 +18,4 @@
 | push-with-gh-auth | guideline | any | Push with the authentication of `gh` (already logged in); plain `git push` has no credentials | `entries/push-with-gh-auth.md` |
 | delete-merged-branch | guideline | any | A merged or closed pull request deletes its source branch, on GitHub and locally (`--delete-branch`) | `entries/delete-merged-branch.md` |
 | e2e-load-proof-time-limits | guideline | development, test | No e2e test fails only from load: timeouts and limits on measured durations are load-proof | `entries/e2e-load-proof-time-limits.md` |
+| settings-updates-last | guideline | analysis, planning, development, test | The Updates section is always the last one of the settings popup | `entries/settings-updates-last.md` |
