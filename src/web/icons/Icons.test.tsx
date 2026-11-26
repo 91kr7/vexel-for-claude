@@ -17,6 +17,7 @@ import {
   FolderIcon,
   FolderPlusIcon,
   HistoryIcon,
+  ListTreeIcon,
   LoaderCircleIcon,
   LockIcon,
   Maximize2Icon,
@@ -67,6 +68,7 @@ const icons: [string, ComponentType][] = [
   ['MoonStarIcon', MoonStarIcon],
   ['Maximize2Icon', Maximize2Icon],
   ['Minimize2Icon', Minimize2Icon],
+  ['ListTreeIcon', ListTreeIcon],
 ];
 
 const FOLDER = 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z';
@@ -191,6 +193,13 @@ describe('IconSet', () => {
   // IconSet and plan-terminal_addons/REQ-25: "Previous match" uses Lucide chevron-up
   it('ChevronUpIcon draws the Lucide chevron-up', () => {
     expect(drawnShapes(renderToStaticMarkup(<ChevronUpIcon />))).toEqual(subpathsOf(['m18 15-6-6-6 6']));
+  });
+
+  // IconSet and plan-session_activity/REQ-27: "Turn Panel" uses Lucide list-tree
+  it('ListTreeIcon draws the Lucide list-tree', () => {
+    expect(drawnShapes(renderToStaticMarkup(<ListTreeIcon />))).toEqual(
+      subpathsOf(['M8 5h13', 'M13 12h8', 'M13 19h8', 'M3 10a2 2 0 0 0 2 2h3', 'M3 5v12a2 2 0 0 0 2 2h3']),
+    );
   });
 
   // IconSet and plan-terminal_addons/REQ-35: "Smaller text" uses Lucide minus

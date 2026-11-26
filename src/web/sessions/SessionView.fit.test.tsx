@@ -306,6 +306,27 @@ describe('SessionView fit', () => {
     ]);
   });
 
+  // SessionView spec, "Actions": the TurnPanel slide; plan-session_activity/REQ-27
+  it('opens the Turn Panel from the header and fits the terminal once, at the end of its slide', async () => {
+    const socket = await connected();
+    flushSync(() => document.querySelector<HTMLButtonElement>('button[aria-label="Turn Panel"]')!.click());
+    const turnPanel = document.querySelector('section[aria-label="Turn Panel"]')!;
+    expect(turnPanel).not.toBeNull();
+    const slide = new FakeEffect();
+    playing(turnPanel, [slide]);
+    panelSize(440, 300);
+    panelResized();
+    await settle();
+    expect(resizes(socket), 'no fit during the slide').toEqual([{ cols: 57, rows: 17 }]);
+
+    slide.finish();
+    await settle();
+    expect(resizes(socket)).toEqual([
+      { cols: 57, rows: 17 },
+      { cols: 50, rows: 17 },
+    ]);
+  });
+
   // SessionView spec, "Actions": a new device pixel ratio at the same panel size; plan-terminal_overflow/REQ-9
   it('measures the cells again on a new device pixel ratio and fits the panel', async () => {
     const socket = await connected();

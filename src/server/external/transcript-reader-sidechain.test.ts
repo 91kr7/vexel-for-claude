@@ -108,6 +108,24 @@ describe('subagentMetaOf', () => {
     expect(await subagentMetaOf(file)).toEqual({ model: 'claude-haiku-5-5' });
   });
 
+  // plan-session_activity/REQ-32: the model is read from pickedEffortModel, the key Claude Code writes
+  it('reads the model from pickedEffortModel', async () => {
+    const file = await subagentWith(JSON.stringify({ agentType: 'sdd-tester', toolUseId: 'toolu_02', pickedEffortModel: 'claude-sonnet-5' }));
+    expect(await subagentMetaOf(file)).toEqual({ agentType: 'sdd-tester', toolUseId: 'toolu_02', model: 'claude-sonnet-5' });
+  });
+
+  // plan-session_activity/REQ-32: pickedEffortModel wins over model when both are strings
+  it('prefers pickedEffortModel to model when both are present', async () => {
+    const file = await subagentWith(JSON.stringify({ model: 'claude-haiku-5-5', pickedEffortModel: 'claude-opus-5-5' }));
+    expect(await subagentMetaOf(file)).toEqual({ model: 'claude-opus-5-5' });
+  });
+
+  // plan-session_activity/REQ-44: a pickedEffortModel that is not a string falls back to model, else no model
+  it('falls back to model when pickedEffortModel is not a string, and gives no model when neither is', async () => {
+    expect(await subagentMetaOf(await subagentWith(JSON.stringify({ pickedEffortModel: 7, model: 'claude-haiku-5-5' })))).toEqual({ model: 'claude-haiku-5-5' });
+    expect(await subagentMetaOf(await subagentWith(JSON.stringify({ pickedEffortModel: null, model: ['x'], agentType: 'Explore' })))).toEqual({ agentType: 'Explore' });
+  });
+
   // plan-session_activity/REQ-13: no file, bad JSON, or JSON that is not an object → no field
   it.each([
     ['no metadata file', undefined],
