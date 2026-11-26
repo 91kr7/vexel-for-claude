@@ -24,3 +24,4 @@
 | 2026-11-26 | dev | divergence menu id `sound` | decided | Internal id kept, label and title read "Notifications"; no visible change |
 | 2026-11-26 | dev | divergence topic over 64 chars, trailing slash | decided | Reasons BAD_TOPIC and NO_TOPIC; technical, stated in the spec |
 | 2026-11-26 | dev | G4 notifications-section | pass | Diff is INT-1 to INT-8 plus styles, specs and indexes; build green re-run by the gatekeeper |
+| 2026-11-26 | test | G5 notifications-section | pass | Re-run by the gatekeeper: unit 153/153, browser e2e 25/25, Electron e2e 2/2; diff holds tests and the Electron spec pattern only |
