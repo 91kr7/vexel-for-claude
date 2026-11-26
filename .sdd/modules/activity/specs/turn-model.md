@@ -65,7 +65,8 @@ assistant item              → a step { kind: "text", text: plainExcerpt(text, 
 tool_call                   → a step { kind: "tool", name?, argument?, outcome? }
                                   name     → the tool name, when not empty
                                   argument → the argument of runningToolOf for that one call (first line of the
-                                             main argument, trimmed), cut at 400 characters with "…"; absent when none
+                                             main argument, trimmed), cut at 400 characters with "…"; absent when none.
+                                             The input is the one of its tool_use block, also for a call with no id
                                   outcome  → "running"; absent for a call with no id
 tool_result with toolUseId  → the step of the call with that id in the current turn: outcome "error"
                               when the result is an error, else "completed"

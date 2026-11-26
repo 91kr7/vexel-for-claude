@@ -104,8 +104,15 @@ function cut(text: string, maxLength: number): string {
   return characters.length > maxLength ? `${characters.slice(0, maxLength - 1).join('')}…` : text;
 }
 
-function toolStepOf(name: string, id: string | undefined, entry: Entry): TurnStep {
-  const argument = id === undefined ? undefined : runningToolOf([{ name, input: toolInputOf(entry, id) }])?.argument;
+function toolInputsOf(entry: Entry): unknown[] {
+  const content = (entry.message as { content?: unknown } | undefined)?.content;
+  const blocks: unknown[] = Array.isArray(content) ? content : [];
+  const isToolUse = (part: unknown): part is Entry => typeof part === 'object' && part !== null && (part as Entry).type === 'tool_use';
+  return blocks.filter(isToolUse).map((block) => block.input);
+}
+
+function toolStepOf(name: string, id: string | undefined, input: unknown): TurnStep {
+  const argument = runningToolOf([{ name, input }])?.argument;
   return {
     kind: 'tool',
     ...(name && { name }),
@@ -141,9 +148,11 @@ export class TurnModel {
       if (startsTurn(entry)) this.#startTurn(timeOf(entry)?.time);
       const stoppedTaskId = stoppedTaskIdOf(entry);
       if (stoppedTaskId !== undefined) this.#stopNotices.set(`${AGENT_FILE_PREFIX}${stoppedTaskId}`, timeOf(entry)?.time);
+      const inputs = toolInputsOf(entry);
+      let calls = 0;
       for (const item of itemsOf(entry)) {
         this.#followCalls(this.#mainCalls, item, entry);
-        this.#followSteps(item, entry);
+        this.#followSteps(item, item.kind === 'tool_call' ? inputs[calls++] : undefined);
         if (item.kind === 'assistant') this.#mainText = this.#textOf(item.text, entry);
       }
     }
@@ -251,13 +260,13 @@ export class TurnModel {
     else if (item.kind === 'tool_call' && item.id !== undefined) calls.set(item.id, this.#callOf(item.id, item.name, entry));
   }
 
-  #followSteps(item: ConversationItem, entry: Entry): void {
+  #followSteps(item: ConversationItem, input: unknown): void {
     if (item.kind === 'assistant') {
       const text = plainExcerpt(item.text, STEP_TEXT_LENGTH);
       if (text) this.#steps.push({ kind: 'text', text });
     } else if (item.kind === 'tool_call') {
       if (item.id !== undefined) this.#mainCallSteps.set(item.id, this.#steps.length);
-      this.#steps.push(toolStepOf(item.name, item.id, entry));
+      this.#steps.push(toolStepOf(item.name, item.id, input));
     } else if (item.kind === 'tool_result' && item.toolUseId !== undefined) {
       const index = this.#mainCallSteps.get(item.toolUseId);
       const step = index === undefined ? undefined : this.#steps[index];
