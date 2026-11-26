@@ -1,5 +1,5 @@
 // e2e of plan-session_list_width, batch list-width, in the desktop app (Electron group only).
-import { type ChildProcess, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -8,6 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type ElectronApplication, type Page, _electron, expect, test } from '@playwright/test';
+import { quitDesktop } from './desktop-quit';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
@@ -20,27 +21,6 @@ const dirs: string[] = [];
 function listenerPids(listening: number): number[] {
   const out = execFileSync('ss', ['-Hltnp', `sport = :${listening}`], { encoding: 'utf8' });
   return [...out.matchAll(/pid=(\d+)/g)].map((match) => Number(match[1]));
-}
-
-// Not `app.close()`: the detached backend inherits Electron's descriptors, so close() would wait for it.
-async function quitDesktop(app: ElectronApplication): Promise<void> {
-  let electron: ChildProcess;
-  try {
-    electron = app.process();
-  } catch {
-    return;
-  }
-  if (electron.exitCode !== null || electron.signalCode !== null) return;
-  const exited = new Promise<void>((resolve) => electron.once('exit', () => resolve()));
-  // "Quit" may ask first while a session runs: answer 1 is "Quit".
-  await app
-    .evaluate(({ dialog }) => {
-      dialog.showMessageBox = (() => Promise.resolve({ response: 1, checkboxChecked: false })) as never;
-    })
-    .catch(() => undefined);
-  await app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
-  await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 10_000))]);
-  if (electron.exitCode === null && electron.signalCode === null) electron.kill('SIGKILL');
 }
 
 test.afterEach(async () => {

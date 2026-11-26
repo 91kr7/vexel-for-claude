@@ -1,6 +1,6 @@
 // e2e of plan-session_notifications, batch tray-signal, in the desktop app. Each launch gets its own HOME, free port and Claude folder,
 // and a private D-Bus session bus whose notification server and tray host are fakes: nothing reaches the user's panel or notifications.
-import { type ChildProcess, type ChildProcessByStdio, execFileSync, spawn } from 'node:child_process';
+import { type ChildProcessByStdio, execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { Message, type MessageBus, sessionBus, Variant } from '@jellybrick/dbus-next';
 import { type ElectronApplication, type Page, _electron, expect, test } from '@playwright/test';
 import { killLeftovers } from './leftovers';
+import { quitDesktop } from './desktop-quit';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
@@ -115,26 +116,6 @@ test.afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
-
-// Not `app.close()`: the detached backend inherits Electron's descriptors, Playwright's connection included, so close() would wait for the backend.
-async function quitDesktop(app: ElectronApplication): Promise<void> {
-  let electron: ChildProcess;
-  try {
-    electron = app.process();
-  } catch {
-    return;
-  }
-  if (electron.exitCode !== null || electron.signalCode !== null) return;
-  const exited = new Promise<void>((resolve) => electron.once('exit', () => resolve()));
-  await app
-    .evaluate(({ dialog }) => {
-      dialog.showMessageBox = (() => Promise.resolve({ response: 1, checkboxChecked: false })) as never;
-    })
-    .catch(() => undefined);
-  await app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
-  await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 10_000))]);
-  if (electron.exitCode === null && electron.signalCode === null) electron.kill('SIGKILL');
-}
 
 async function freePort(): Promise<number> {
   const server = net.createServer();

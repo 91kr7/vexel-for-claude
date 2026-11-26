@@ -1,6 +1,6 @@
 // e2e of plan-session_activity, batch turn-panel, in the desktop app (Electron group only).
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { appendFile, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import net from 'node:net';
@@ -8,6 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type ElectronApplication, type Page, _electron, expect, test } from '@playwright/test';
+import { quitDesktop } from './desktop-quit';
 
 type Line = Record<string, unknown>;
 
@@ -24,62 +25,6 @@ const processes: ChildProcess[] = [];
 function listenerPids(listening: number): number[] {
   const out = execFileSync('ss', ['-Hltnp', `sport = :${listening}`], { encoding: 'utf8' });
   return [...out.matchAll(/pid=(\d+)/g)].map((match) => Number(match[1]));
-}
-
-/** Start time of process `pid` (field 22 of its stat), so that a reused PID is not taken for it. */
-function startTimeOf(pid: number): string | undefined {
-  try {
-    const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
-    return stat.slice(stat.lastIndexOf(')') + 2).split(' ')[19];
-  } catch {
-    return undefined;
-  }
-}
-
-function processTreeOf(root: number): { pid: number; start: string }[] {
-  const childrenOf = new Map<number, number[]>();
-  for (const row of execFileSync('ps', ['-e', '-o', 'pid=,ppid='], { encoding: 'utf8' }).trim().split('\n')) {
-    const [pid, ppid] = row.trim().split(/\s+/).map(Number) as [number, number];
-    childrenOf.set(ppid, [...(childrenOf.get(ppid) ?? []), pid]);
-  }
-  const tree: { pid: number; start: string }[] = [];
-  for (const queue = [...(childrenOf.get(root) ?? [])]; queue.length > 0; ) {
-    const pid = queue.shift()!;
-    const start = startTimeOf(pid);
-    if (start !== undefined) tree.push({ pid, start });
-    queue.push(...(childrenOf.get(pid) ?? []));
-  }
-  return tree;
-}
-
-// Not `app.close()`: the detached backend inherits Electron's descriptors, so close() would wait for it.
-// A child left alive (e.g. the network service) keeps those descriptors open: the worker teardown would wait for it.
-async function quitDesktop(app: ElectronApplication): Promise<void> {
-  let electron: ChildProcess;
-  try {
-    electron = app.process();
-  } catch {
-    return;
-  }
-  if (electron.exitCode !== null || electron.signalCode !== null) return;
-  const children = electron.pid === undefined ? [] : processTreeOf(electron.pid);
-  const exited = new Promise<void>((resolve) => electron.once('exit', () => resolve()));
-  // "Quit" may ask first while a session runs: answer 1 is "Quit".
-  await app
-    .evaluate(({ dialog }) => {
-      dialog.showMessageBox = (() => Promise.resolve({ response: 1, checkboxChecked: false })) as never;
-    })
-    .catch(() => undefined);
-  await app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
-  await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 10_000))]);
-  if (electron.exitCode === null && electron.signalCode === null) electron.kill('SIGKILL');
-  for (const { pid, start } of children) {
-    try {
-      if (startTimeOf(pid) === start) process.kill(pid, 'SIGKILL');
-    } catch {
-      // It exited between the check and the signal.
-    }
-  }
 }
 
 test.afterEach(async () => {

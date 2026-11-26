@@ -1,5 +1,5 @@
 // e2e of plan-terminal_addons, batch file-drop, in the desktop app (Electron group only): the preload gives the real path of a file on disk.
-import { type ChildProcess, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -8,6 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type ElectronApplication, type Locator, _electron, expect, test } from '@playwright/test';
+import { quitDesktop } from './desktop-quit';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
@@ -31,28 +32,8 @@ async function freePort(): Promise<number> {
   return address.port;
 }
 
-// Not `app.close()`: the detached backend inherits Electron's descriptors, so close() would wait for it.
 test.afterEach(async () => {
-  if (app) {
-    let electron: ChildProcess | undefined;
-    try {
-      electron = app.process();
-    } catch {
-      electron = undefined;
-    }
-    if (electron && electron.exitCode === null && electron.signalCode === null) {
-      const exited = new Promise<void>((resolve) => electron.once('exit', () => resolve()));
-      // "Quit" may ask first while a session runs: answer 1 is "Quit".
-      await app
-        .evaluate(({ dialog }) => {
-          dialog.showMessageBox = (() => Promise.resolve({ response: 1, checkboxChecked: false })) as never;
-        })
-        .catch(() => undefined);
-      await app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
-      await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 10_000))]);
-      if (electron.exitCode === null && electron.signalCode === null) electron.kill('SIGKILL');
-    }
-  }
+  if (app) await quitDesktop(app);
   if (port) for (const pid of listenerPids(port)) if (pid !== process.pid) process.kill(pid, 'SIGKILL');
   if (home) await rm(home, { recursive: true, force: true });
   app = undefined;

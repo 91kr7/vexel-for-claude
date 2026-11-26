@@ -13,6 +13,7 @@ import type { MessageBoxOptions } from 'electron';
 import { startupPageUrl } from '../src/desktop/startup-page.js';
 import { killLeftovers } from './leftovers';
 import { chooseInSettings } from './settings';
+import { quitDesktop as quitDesktopApp } from './desktop-quit';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
@@ -34,24 +35,9 @@ const ports: number[] = [];
 const dirs: string[] = [];
 const holders: http.Server[] = [];
 
-// Not `app.close()`: the detached backend inherits Electron's descriptors, Playwright's connection included, so close() would wait for the backend.
 // The wait outlasts the launcher's 10-second SIGKILL of a backend that does not stop: killing Electron first would orphan that backend.
 const QUIT_WAIT_MS = 20_000;
-async function quitDesktop(app: ElectronApplication): Promise<void> {
-  // process() throws once Playwright has disposed of an app that already quit.
-  let electron: ChildProcess;
-  try {
-    electron = app.process();
-  } catch {
-    return;
-  }
-  if (electron.exitCode !== null || electron.signalCode !== null) return;
-  const exited = new Promise<void>((resolve) => electron.once('exit', () => resolve()));
-  await stubQuitDialog(app, 1).catch(() => undefined);
-  await app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
-  await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, QUIT_WAIT_MS))]);
-  if (electron.exitCode === null && electron.signalCode === null) electron.kill('SIGKILL');
-}
+const quitDesktop = (app: ElectronApplication) => quitDesktopApp(app, QUIT_WAIT_MS);
 
 test.afterEach(async () => {
   for (const app of apps.splice(0)) await quitDesktop(app);
