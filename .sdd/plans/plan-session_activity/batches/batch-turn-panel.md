@@ -34,12 +34,11 @@ The turn model, the activity monitor, the short duration format and the elapsed 
 | INT-8 | create | frontend, module `activity` | Turn store of the open session: opens the route, applies the frames, opens a new socket 2 s after a lost one, as ConversationView. The first frame of a new socket replaces the tree. | REQ-43 | INT-5 |
 | INT-9 | create | frontend, module `activity` | "Turn Panel" icon button (`list-tree`) with the look of GitExplorerButton: accessible name and tooltip "Turn Panel", `aria-expanded`, global focus ring. It shows for every session. | REQ-27, REQ-47 | INT-7 |
 | INT-10 | create | frontend, module `activity` | Subagent card: type chip, description, model, state pill "Running", "Finished" or "Stopped", duration (elapsed time while running, fixed once ended), latest text on two lines, current tool as the running-tool line. A missing field leaves its place empty. | REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-44 | — |
-| INT-11 | create | frontend, module `activity` | Turn panel: region "Turn Panel", look, size and slide of GitExplorerPanel. Header "Current Turn" with the chip "Running" or "Ended". Before the first turn → AreaState `empty` "No turn yet.". | REQ-27, REQ-40, REQ-41, REQ-47 | INT-8 |
+| INT-11 | create | frontend, module `activity` | Turn panel: region "Turn Panel", look, size and slide of GitExplorerPanel. Header "Current Turn" with the chip "Running" or "Ended". Before the first turn → AreaState `empty` "No turn yet.". | REQ-27, REQ-40, REQ-41, REQ-47, REQ-48 | INT-8 |
 | INT-12 | create | frontend, module `activity` | Tree of the panel: the steps in order, a tool step with name, argument and outcome. At its step, a subagent group in a grid of columns of at least 180 px that wraps. Nested groups inside the parent card. Section "Still running from earlier turns" at the top. | REQ-29, REQ-30, REQ-31, REQ-37, REQ-38, REQ-39, REQ-46 | INT-10, INT-11 |
 | INT-13 | create | frontend, module `activity`: same tree as INT-12 | Scrolling: at the end (8 px rule of ConversationView) the tree follows the latest step; scrolled up, it stays still. It shows the last 200 steps, with the button "Show N earlier steps" for 200 more. The tree area takes the keyboard focus. | REQ-42, REQ-45, REQ-47 | INT-12 |
-| INT-14 | modify | `src/web/sessions/SessionView.tsx` | Puts INT-9 after GitExplorerButton, and INT-11 in the place of the GitExplorerPanel. One side panel at a time: opening one closes the other. The terminal fits the width that is left. | REQ-27 | INT-9, INT-11 |
-| INT-15 | modify | `src/web/external/ConversationView.tsx` | Same as INT-14, beside the conversation. INT-9 sits after GitExplorerButton and before "Resume Here". | REQ-27 | INT-9, INT-11 |
-| INT-16 | create | e2e, Electron group | Electron e2e spec: in the desktop window, "Turn Panel" opens the panel, and the panel shows the tree of a fixture turn with one subagent. | REQ-48 | INT-14 |
+| INT-14 | modify | `src/web/sessions/SessionView.tsx` | Puts INT-9 after GitExplorerButton, and INT-11 in the place of the GitExplorerPanel. One side panel at a time: opening one closes the other. The terminal fits the width that is left. | REQ-27, REQ-48 | INT-9, INT-11 |
+| INT-15 | modify | `src/web/external/ConversationView.tsx` | Same as INT-14, beside the conversation. INT-9 sits after GitExplorerButton and before "Resume Here". | REQ-27, REQ-48 | INT-9, INT-11 |
 
 ## Decisions
 
@@ -53,7 +52,8 @@ The turn model, the activity monitor, the short duration format and the elapsed 
 - **Shape of the panel.** Gatekeeper decision of 2026-11-26, recorded in the requirements ("Shape of the turn panel"). The panel is closed when the session view opens, as the git explorer.
 - **Look of the subagent card.** Surface `--role-card`, 1 px `--role-border-subtle` border, `--radius-card`, padding 8 × 10 px. The type is a mono chip. The state pill uses the status colours: emerald for running, muted for finished, orange of "Interrupt" for stopped. The latest text and the current tool follow the look of the latest-text line and of the running-tool line.
 - **Long turns (REQ-45).** The panel renders the last 200 steps. It renders the earlier ones only on demand, so a turn with thousands of steps does not slow the page.
-- **Tests.** Vitest for INT-1 to INT-5 and INT-8, with fake files and a fake clock. Playwright e2e in the browser for the panel, with fixture files. INT-16 is the only Electron spec, in the Electron group (knowledge base `electron-e2e-separate`).
+- **Tests.** Vitest for INT-1 to INT-5 and INT-8, with fake files and a fake clock. Playwright e2e in the browser for the panel, with fixture files.
+- **Desktop window (REQ-48). Gatekeeper decision, 2026-11-26.** The tester covers REQ-48 with one Electron e2e spec, in the Electron group (knowledge base `electron-e2e-separate`). It is the only Electron spec of the plan.
 
 ## Human acceptance
 

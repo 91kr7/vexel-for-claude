@@ -10,20 +10,22 @@ status: validated
 | [stall-signal](batches/batch-stall-signal.md) | Stall signal | REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26 | latest-text | todo | A silent session shows what it waits for |
 | [turn-panel](batches/batch-turn-panel.md) | Turn panel | REQ-27, REQ-28, REQ-29, REQ-30, REQ-31, REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42, REQ-43, REQ-44, REQ-45, REQ-46, REQ-47, REQ-48 | stall-signal | todo | The user follows the turn and its subagents |
 | [subagent-conversation](batches/batch-subagent-conversation.md) | Subagent conversation | REQ-49, REQ-50, REQ-51, REQ-52, REQ-53, REQ-54, REQ-55 | turn-panel | todo | The user reads the live conversation of a subagent |
+| [workflow-subagents](batches/batch-workflow-subagents.md) | Workflow subagents | REQ-56, REQ-57, REQ-58, REQ-59, REQ-60 | subagent-conversation | todo | The turn panel shows the agents of a workflow |
 
-Execution order: `latest-text`, `stall-signal`, `turn-panel`, `subagent-conversation`.
+Execution order: `latest-text`, `stall-signal`, `turn-panel`, `subagent-conversation`, `workflow-subagents`.
 
 ## Assumptions and decisions
 
-- **Four batches, one per feature, in a line.** Each batch extends the turn model and the activity monitor of the one before. `stall-signal` adds the open tool calls of each conversation, which the subagent cards of `turn-panel` show. `subagent-conversation` opens from the cards of `turn-panel`.
+- **Five batches, one per feature, in a line.** Each batch extends the turn model and the activity monitor of the one before. `stall-signal` adds the open tool calls of each conversation, which the subagent cards of `turn-panel` show. `subagent-conversation` opens from the cards of `turn-panel`.
 - **New module `activity`**, backend and frontend, born in `batch-latest-text`. It holds the new components of this plan, except the conversation body, which stays in the module `external` with ConversationView.
-- **New components.** Each batch names them in "What this batch builds". There are 19: 7 in `latest-text`, 2 in `stall-signal`, 6 in `turn-panel`, 4 in `subagent-conversation`.
+- **New components.** Each batch names them in "What this batch builds". There are 20: 7 in `latest-text`, 2 in `stall-signal`, 6 in `turn-panel`, 4 in `subagent-conversation`, 1 in `workflow-subagents`.
+- **Workflow subagents, human decision of 2026-11-26.** The fifth batch comes last, because it extends the turn model, the activity monitor and the subagent file lookup of the four batches before it. How it tells the state of a workflow subagent and where it places it come from the real files (`batch-workflow-subagents`, "Facts read in the real files").
 - **The transcripts are the only source**, read-only, for hosted and external sessions. Some facts about Claude Code's files are checked on a real session at the start of `latest-text`. If one does not hold, the batch stops and asks the human (`batch-latest-text`, "Claude Code data to check").
 - **Name `liveActivity`** for the new field of a session summary, because `lastActivity` already exists and orders the list (`batch-latest-text`, "Name `liveActivity`").
 - **Gatekeeper decisions of 2026-11-26** (text of the stall signal, the call that starts a subagent, shape of the turn panel) are in `requirements.md`, "Assumptions".
 - **Group rule of the turn panel. Gatekeeper decision, 2026-11-26.** Subagents started at the same step form one group (requirements, "At the same time"; `batch-turn-panel`, "Group rule").
 - **"Task" for the user items of a subagent conversation. Gatekeeper decision, 2026-11-26** (`batch-subagent-conversation`, "Name of the user items").
-- **Tests.** Vitest and Playwright in the browser in every batch. One Electron e2e spec, in the Electron group, for REQ-48 (`batch-turn-panel/INT-16`, knowledge base `electron-e2e-separate`).
+- **Tests.** Vitest and Playwright in the browser in every batch. The tester writes one Electron e2e spec, in the Electron group, for REQ-48 (`batch-turn-panel`, "Desktop window", knowledge base `electron-e2e-separate`).
 - **Technical debt.** The register has no open item, so no batch closes one.
 
 ## Departures
@@ -83,7 +85,7 @@ Every REQ is served by at least one INT, and closes in the batch that serves it.
 | REQ-45 | `batch-turn-panel/INT-5`, `INT-13` | turn-panel |
 | REQ-46 | `batch-turn-panel/INT-12` | turn-panel |
 | REQ-47 | `batch-turn-panel/INT-9`, `INT-11`, `INT-13` | turn-panel |
-| REQ-48 | `batch-turn-panel/INT-16` | turn-panel |
+| REQ-48 | `batch-turn-panel/INT-11`, `INT-14`, `INT-15` | turn-panel |
 | REQ-49 | `batch-subagent-conversation/INT-1`, `INT-2`, `INT-3`, `INT-5`, `INT-8`, `INT-9` | subagent-conversation |
 | REQ-50 | `batch-subagent-conversation/INT-1`, `INT-4`, `INT-6`, `INT-7`, `INT-8` | subagent-conversation |
 | REQ-51 | `batch-subagent-conversation/INT-3`, `INT-6` | subagent-conversation |
@@ -91,5 +93,10 @@ Every REQ is served by at least one INT, and closes in the batch that serves it.
 | REQ-53 | `batch-subagent-conversation/INT-10` | subagent-conversation |
 | REQ-54 | `batch-subagent-conversation/INT-8`, `INT-10` | subagent-conversation |
 | REQ-55 | `batch-subagent-conversation/INT-8`, `INT-9`, `INT-10` | subagent-conversation |
+| REQ-56 | `batch-workflow-subagents/INT-1`, `INT-3`, `INT-5`, `INT-6` | workflow-subagents |
+| REQ-57 | `batch-workflow-subagents/INT-1`, `INT-5`, `INT-6` | workflow-subagents |
+| REQ-58 | `batch-workflow-subagents/INT-1`, `INT-4`, `INT-5`, `INT-6` | workflow-subagents |
+| REQ-59 | `batch-workflow-subagents/INT-2` | workflow-subagents |
+| REQ-60 | `batch-workflow-subagents/INT-3`, `INT-4`, `INT-5` | workflow-subagents |
 
 Every INT serves at least one REQ. There is no enabling intervention.

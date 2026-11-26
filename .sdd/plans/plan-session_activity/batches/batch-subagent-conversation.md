@@ -40,7 +40,7 @@ The turn panel and the subagent card come from `batch-turn-panel`. The sidechain
 - **Name of the user items. Gatekeeper decision, 2026-11-26.** In a subagent conversation the user items come from the parent agent, not from the user. So they are named "Task", not "You". The first one is the task.
 - **Read-only.** The two routes open files read-only, as ConversationStreamRoute and ItemContentRoute. The agent id check of INT-2 keeps a request inside the `subagents/` folder.
 - **A subagent that leaves the tree.** An open conversation stays open when its subagent ends or a new turn starts. A new session in the view closes the panel, as today.
-- **Tests.** Vitest for INT-1 to INT-4, with fake subagent files. Vitest or Playwright for INT-6 and INT-7: the existing ConversationView tests must pass unchanged. Playwright e2e in the browser for the conversation, with fixture files. No Electron e2e: the panel's desktop check is in `batch-turn-panel/INT-16` (knowledge base `electron-e2e-separate`).
+- **Tests.** Vitest for INT-1 to INT-4, with fake subagent files. Vitest or Playwright for INT-6 and INT-7: the existing ConversationView tests must pass unchanged. Playwright e2e in the browser for the conversation, with fixture files. No Electron e2e: the panel's desktop check belongs to `batch-turn-panel`, "Desktop window" (knowledge base `electron-e2e-separate`).
 
 ## Human acceptance
 

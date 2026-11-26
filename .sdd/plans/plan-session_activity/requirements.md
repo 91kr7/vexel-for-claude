@@ -23,6 +23,8 @@ Words used below:
 - "Stall signal" → the new line of an entry that says the session had no activity for some minutes.
 - "Turn panel" → the new panel next to the session view, with the tree of the turn.
 - "Subagent conversation" → the conversation of one subagent, opened from the turn panel.
+- "Workflow" → one run of Claude Code's Workflow tool. It is not the SDD workflow of this project.
+- "Workflow subagent" → a subagent that a workflow starts. Claude Code writes its files apart from the other subagents.
 
 ## Feature: Latest text on the list entry
 
@@ -99,6 +101,18 @@ Words used below:
 | REQ-54 | One action returns from the subagent conversation to the tree. |
 | REQ-55 | The subagent conversation is usable with the keyboard, with visible focus. |
 
+## Feature: Workflow subagents
+
+Human decision, 2026-11-26: workflow subagents are part of this plan, because the request says "subagent compresi".
+
+| ID | Requirement |
+|----|-------------|
+| REQ-56 | A workflow subagent counts as a subagent of its session for "at work" and for the latest-text line (REQ-1 to REQ-14). |
+| REQ-57 | A workflow subagent counts as a subagent of its session for the stall signal: its activity and its running tools (REQ-16 to REQ-26). |
+| REQ-58 | The turn panel shows each workflow subagent as a subagent, at the step that started its workflow (REQ-28 to REQ-47). |
+| REQ-59 | A click on a workflow subagent in the turn panel opens its conversation, as for any subagent (REQ-49 to REQ-55). |
+| REQ-60 | A workflow subagent that has ended shows as finished or stopped, and no longer keeps its session at work. |
+
 ## Assumptions
 
 - **Text of a subagent from an earlier turn (REQ-3, REQ-10).** A text belongs to the turn in which Claude writes it. A subagent started in an earlier turn that still runs can write the latest text of the current turn.
@@ -108,6 +122,7 @@ Words used below:
 - **The call that starts a subagent (REQ-18, REQ-20). Gatekeeper decision, 2026-11-26.** For the stall signal, the tool call that started a running subagent is not a running tool. The tools of that subagent count instead. Reason: that call always started first, so the signal would always name it and hide the tool that really runs.
 - **Both lines on one entry (REQ-24).** An entry can show the latest-text line and the stall signal at the same time.
 - **At the same time (REQ-37). Gatekeeper decision, 2026-11-26.** Subagents run "at the same time" when they were started at the same step. Subagents started at different steps stay at their own steps, also when their runs overlap. Reason: REQ-31 places each subagent at the step that started it, and Claude Code starts parallel subagents with calls in one message.
+- **One group per workflow (REQ-58).** Every subagent of a workflow starts from the step that started the workflow. So, by "At the same time", the subagents of one workflow form one group.
 - **Stopped (REQ-33).** A subagent with no record that it finished also counts as stopped once its session has ended.
 - **Latest text in the turn panel (REQ-35).** No subagent type before it and no time after it: the subagent already shows its type and its duration (REQ-32, REQ-34).
 - **Shape of the turn panel (REQ-27, REQ-48). Gatekeeper decision, 2026-11-26.** As the git explorer: a panel at the right of the session content, opened and closed by a button in the session header. The turn panel and the git explorer use the same place: opening one closes the other. Reason: two panels of 50 % would leave too little room for the terminal.
