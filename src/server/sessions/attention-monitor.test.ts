@@ -3,6 +3,7 @@ import type { ExternalSessionChange, ExternalSessionSummary } from '../external/
 import { type AttentionEvent, type AttentionSession, AttentionMonitor } from './attention-monitor.js';
 import type { ChangeCause, SessionState, SessionSummary } from './session-state-tracker.js';
 import type { LastTurn } from './turn-reader.js';
+import type { WaitingDetail } from './waiting-detail.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -1022,5 +1023,121 @@ describe('AttentionMonitor session-end events', () => {
     tracker.set(hosted('h1', 'ended'), EXIT);
 
     expect(calls).toEqual(['list of 0', 'session_end']);
+  });
+});
+
+describe('AttentionMonitor waiting detail of hosted sessions', () => {
+  class DetailTracker extends FakeTracker {
+    readonly details = new Map<string, WaitingDetail>();
+    readonly asked: string[] = [];
+
+    waitingDetail(id: string): WaitingDetail | undefined {
+      this.asked.push(id);
+      return this.details.get(id);
+    }
+  }
+
+  function start(tracker: FakeTracker, scanner = new FakeScanner(), registry = new FakeRegistry()) {
+    const monitor = new AttentionMonitor({ tracker, scanner, turns: new FakeTurns(), registry });
+    const events: AttentionEvent[] = [];
+    monitor.onEvent((event) => events.push(event));
+    return events;
+  }
+
+  const command: WaitingDetail = { kind: 'argument', text: 'npm run deploy' };
+  const questions: WaitingDetail = { kind: 'questions', questions: [{ question: 'Which library?', options: ['React', 'Vue'] }] };
+
+  // plan-remote_notifications/REQ-31, REQ-32
+  it.each([
+    ['an argument', command],
+    ['questions', questions],
+  ])('puts the waiting detail of the tracker on the needs_input event: %s', (_case, detail) => {
+    const tracker = new DetailTracker();
+    tracker.seed(hosted('h1', 'working'));
+    const events = start(tracker);
+
+    tracker.details.set('h1', detail);
+    tracker.set(hosted('h1', 'needs_input', { waitingTool: 'Bash' }));
+
+    expect(events).toEqual([
+      {
+        id: expect.stringMatching(UUID),
+        sessionId: 'h1',
+        kind: 'needs_input',
+        folder: '/projects/ai-client',
+        label: 'Fix the login form',
+        waitingTool: 'Bash',
+        waitingDetail: detail,
+      },
+    ]);
+  });
+
+  it('takes the detail at the state change: a later change of the tracker does not alter the event', () => {
+    const tracker = new DetailTracker();
+    tracker.seed(hosted('h1', 'working'));
+    const events = start(tracker);
+
+    tracker.details.set('h1', command);
+    tracker.set(hosted('h1', 'needs_input', { waitingTool: 'Bash' }));
+    tracker.details.set('h1', { kind: 'argument', text: 'something else' });
+    tracker.set(hosted('h1', 'needs_input', { waitingTool: 'Bash' }));
+
+    expect(events).toHaveLength(1);
+    expect(events[0]?.waitingDetail).toEqual(command);
+  });
+
+  it('has no waitingDetail when the tracker knows none', () => {
+    const tracker = new DetailTracker();
+    tracker.seed(hosted('h1', 'working'));
+    const events = start(tracker);
+
+    tracker.set(hosted('h1', 'needs_input', { waitingTool: 'Bash' }));
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).not.toHaveProperty('waitingDetail');
+  });
+
+  it('has no waitingDetail with a tracker that gives no waiting detail', () => {
+    const tracker = new FakeTracker();
+    tracker.seed(hosted('h1', 'working'));
+    const events = start(tracker);
+
+    tracker.set(hosted('h1', 'needs_input', { waitingTool: 'Bash' }));
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).not.toHaveProperty('waitingDetail');
+  });
+
+  // plan-remote_notifications/REQ-33
+  it('gives no waitingDetail to an external session, also when the tracker has a detail for its id', () => {
+    const tracker = new DetailTracker();
+    tracker.details.set('e1', command);
+    const scanner = new FakeScanner();
+    scanner.seed(external('e1', 'working'));
+    const events = start(tracker, scanner);
+
+    scanner.set(external('e1', 'needs_input'));
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).not.toHaveProperty('waitingDetail');
+    expect(events[0]).not.toHaveProperty('waitingTool');
+  });
+
+  it('gives no waitingDetail on turn_end and session_end events', async () => {
+    const tracker = new DetailTracker();
+    tracker.details.set('h1', command);
+    tracker.details.set('h2', command);
+    tracker.seed(hosted('h1', 'working'));
+    tracker.seed(hosted('h2', 'working'));
+    const registry = new FakeRegistry();
+    const events = start(tracker, new FakeScanner(), registry);
+
+    tracker.set(hosted('h1', 'idle'), STOP);
+    registry.end('h2', { exitCode: 1 });
+    tracker.set(hosted('h2', 'ended'), EXIT);
+    await settle();
+
+    expect(events.map((event) => event.kind).sort()).toEqual(['session_end', 'turn_end']);
+    for (const event of events) expect(event).not.toHaveProperty('waitingDetail');
   });
 });

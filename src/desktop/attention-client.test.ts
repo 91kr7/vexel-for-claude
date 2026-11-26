@@ -475,3 +475,68 @@ describe('connectAttention waiting-since times', () => {
     expect(calls).toEqual([['list', [session]]]);
   });
 });
+
+describe('connectAttention waiting detail', () => {
+  const command = { kind: 'argument', text: 'npm run deploy' } as const;
+  const questions = { kind: 'questions', questions: [{ question: 'Which library?', options: ['React', 'Vue'] }, { question: 'Why?', options: [] }] } as const;
+
+  // plan-remote_notifications/REQ-31, REQ-32
+  it('passes on the waiting detail of a needs_input event: an argument or questions', async () => {
+    const { server, origin } = await backend();
+    const { calls, handlers } = recorder();
+    connect(origin, handlers);
+    await waitFor(() => server.connections.length === 1, 'connection');
+
+    server.send({ type: 'event', event: { ...event, waitingDetail: command } });
+    server.send({ type: 'event', event: { ...event, id: 'ev-2', waitingDetail: questions } });
+    await waitFor(() => calls.length >= 2, 'two events');
+
+    expect(calls).toEqual([
+      ['event', { ...event, waitingDetail: command }],
+      ['event', { ...event, id: 'ev-2', waitingDetail: questions }],
+    ]);
+  });
+
+  it.each([
+    ['a string', 'npm run deploy'],
+    ['null', null],
+    ['an unknown kind', { kind: 'command', text: 'npm run deploy' }],
+    ['an argument with no text', { kind: 'argument' }],
+    ['an argument whose text is not a string', { kind: 'argument', text: 42 }],
+    ['questions with an empty list', { kind: 'questions', questions: [] }],
+    ['questions that are not an array', { kind: 'questions', questions: 'Which?' }],
+    ['a question that is not a string', { kind: 'questions', questions: [{ question: 1, options: [] }] }],
+    ['a question with no options', { kind: 'questions', questions: [{ question: 'Which?' }] }],
+    ['an option that is not a string', { kind: 'questions', questions: [{ question: 'Which?', options: ['A', 2] }] }],
+  ])('drops a waiting detail that is %s and passes on the event without it', async (_case, waitingDetail) => {
+    const { server, origin } = await backend();
+    const { calls, handlers } = recorder();
+    connect(origin, handlers);
+    await waitFor(() => server.connections.length === 1, 'connection');
+
+    server.send({ type: 'event', event: { ...event, waitingDetail } });
+    await waitFor(() => calls.length >= 1, 'the event');
+
+    expect(calls).toEqual([['event', event]]);
+    expect(calls[0]?.[1]).not.toHaveProperty('waitingDetail');
+  });
+
+  it('drops a waiting detail on an event that is not needs_input, and passes on the event', async () => {
+    const { server, origin } = await backend();
+    const { calls, handlers } = recorder();
+    connect(origin, handlers);
+    await waitFor(() => server.connections.length === 1, 'connection');
+
+    const { waitingTool: _tool, ...base } = event;
+    const finished: AttentionEvent = { ...base, id: 'ev-turn', kind: 'turn_end', excerpt: 'Done.' };
+    const ended: AttentionEvent = { ...base, id: 'ev-end', kind: 'session_end', error: false };
+    server.send({ type: 'event', event: { ...finished, waitingDetail: command } });
+    server.send({ type: 'event', event: { ...ended, waitingDetail: questions } });
+    await waitFor(() => calls.length >= 2, 'two events');
+
+    expect(calls).toEqual([
+      ['event', finished],
+      ['event', ended],
+    ]);
+  });
+});
