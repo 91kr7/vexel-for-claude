@@ -11,3 +11,13 @@
 | 2026-11-26 | analysis | extras test button and token | human decision | Both included |
 | 2026-11-26 | analysis | analyst defaults | decided | Needs input only, desktop app only, full detail, failures do not touch local alerts; follows `input_sound.md` |
 | 2026-11-26 | analysis | G1 analysis | pass | 118 lines, ordinary; additions trace to the request, the human decisions or the gatekeeper defaults |
+| 2026-11-26 | plan | question planner Q1 URL broken while on | decided | Switch turns off by itself; source REQ-10 |
+| 2026-11-26 | plan | question planner Q2 test button | decided | Works with switch on or off, disabled on empty/invalid URL |
+| 2026-11-26 | plan | question planner Q3 switch read time | decided | Read at the end of the 60 s; touches less |
+| 2026-11-26 | plan | question planner Q4 waiting at start | decided | Nothing until a new entry; source spec rule, REQ-24 |
+| 2026-11-26 | plan | question planner Q5 REQ-27 | decided | Confirmed; source spec Assumptions, no grouping |
+| 2026-11-26 | plan | G2 requirements | pass | REQ-1 to REQ-39 cover every analysis requirement |
+| 2026-11-26 | plan | question planner external sessions detail | escalated | Visible behaviour; the request asks for full information |
+| 2026-11-26 | plan | question planner external sessions detail | human decision | Generic text only for external sessions |
+| 2026-11-26 | plan | question planner token storage | decided | Plain text in a 0600 file; touches less, recorded as a risk |
+| 2026-11-26 | plan | G3 coverage | pass | REQ-1 to REQ-39 covered; test-notification INT-5 modifies the section of notifications-section INT-6, no path yet as it does not exist |
