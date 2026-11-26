@@ -263,6 +263,15 @@ export function ArrowDownIcon() {
   );
 }
 
+export function ArrowLeftIcon() {
+  return (
+    <LucideIcon>
+      <path d="m12 19-7-7 7-7" />
+      <path d="M19 12H5" />
+    </LucideIcon>
+  );
+}
+
 export function SearchIcon() {
   return (
     <LucideIcon>

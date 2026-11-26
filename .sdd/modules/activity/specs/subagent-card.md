@@ -6,16 +6,22 @@ type: UI component
 
 # SubagentCard
 
-**Purpose** → one subagent in the turn tree: what it is, what it does now and for how long.
+**Purpose** → one subagent in the turn tree: what it is, what it does now and for how long. It opens the subagent conversation.
 
 ## Contract
 
 Description:
-- an `article` named "Subagent: <type>" ("Subagent" with no type). Surface `--role-card`, 1 px `--role-border-subtle` border, `--radius-card`, padding 8 × 10 px. It takes the width of its grid column.
+- an `article` named "Subagent: <type>" ("Subagent" with no type). Surface `--role-card`, 1 px `--role-border-subtle` border, `--radius-card`. It takes the width of its grid column.
+- its own fields are one button named "Open Conversation: <type>" ("Open Conversation" with no type), padding 8 × 10 px. The button turns `--role-hover` on hover. With the keyboard focus it shows the focus ring inside its edge.
+- the `children` sit below the button, inside the card, 10 px from its sides and 8 px from its bottom.
 
 Props:
 - `subagent` → a `TurnSubagent` of useTurn: `{ id, type?, description?, model?, state, startedAt?, endedAt?, latestText?, currentTool?, groups }`.
-- `children` → optional content at the bottom of the card: the nested groups, given by TurnTreeView.
+- `onOpen(subagent, opener)` → optional. Called by a click on the button, or Enter or Space on it, with this `subagent` and the button element.
+- `children` → optional content at the bottom of the card: the nested groups, given by TurnTreeView. A click inside them does not call this card's `onOpen`.
+
+Exports:
+- `SubagentStatePill({ state })` → the state pill below, on its own.
 
 Shows, top to bottom:
 - first row → the type as a mono chip (cut with an ellipsis, full text as tooltip), and at the right end the state pill:
@@ -33,7 +39,7 @@ Shows, top to bottom:
 ## Rules and invariants
 
 - A missing field leaves its place empty, and the other fields keep their place: no type → no chip; no description, no model, no latest text, no current tool → an empty line; no `startedAt`, or a finished subagent with no valid `endedAt` → no duration.
-- The card has no action of its own.
+- The button is the only action of the card.
 
 ## Dependencies
 
@@ -42,4 +48,4 @@ Shows, top to bottom:
 
 ## Requirements served
 
-- `plan-session_activity/REQ-32`, `plan-session_activity/REQ-33`, `plan-session_activity/REQ-34`, `plan-session_activity/REQ-35`, `plan-session_activity/REQ-36`, `plan-session_activity/REQ-44`
+- `plan-session_activity/REQ-32`, `plan-session_activity/REQ-33`, `plan-session_activity/REQ-34`, `plan-session_activity/REQ-35`, `plan-session_activity/REQ-36`, `plan-session_activity/REQ-44`, `plan-session_activity/REQ-49`, `plan-session_activity/REQ-55`

@@ -2817,8 +2817,50 @@ input {
   color: var(--accent-primary);
 }
 
+.turn-panel-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hidden, not removed: the tree keeps its scroll place under the subagent conversation. */
+.turn-panel-body.is-covered > :not(.subagent-conversation) {
+  visibility: hidden;
+}
+
 .turn-panel-state {
   margin: 16px;
+}
+
+.subagent-conversation {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--role-list);
+}
+
+.subagent-conversation-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--role-border-subtle);
+}
+
+.subagent-conversation-description {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .turn-tree {
@@ -2928,11 +2970,33 @@ input {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
   border: 1px solid var(--role-border-subtle);
   border-radius: var(--radius-card);
   background-color: var(--role-card);
+}
+
+.subagent-card-open {
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: calc(var(--radius-card) - 1px);
+  text-align: left;
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.subagent-card-open:hover {
+  background-color: var(--role-hover);
+}
+
+.subagent-card-open:focus-visible {
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+.subagent-card > .subagent-group {
+  margin: -4px 10px 8px;
 }
 
 .subagent-card-head {
@@ -2942,7 +3006,8 @@ input {
   min-height: 20px;
 }
 
-.subagent-card-type {
+.subagent-card-type,
+.subagent-conversation-type {
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;

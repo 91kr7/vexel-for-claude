@@ -31,3 +31,5 @@
 | 2026-11-26 | test | G5 tests, turn-panel | sent back | 1 red: `turn-model-steps.test.ts` "keeps the name and the argument of a call with no id"; spec `turn-model.md` line 69 drops only the outcome; diff holds test files and `playwright.config.ts` only |
 | 2026-11-26 | dev | G4 fix, turn-panel | pass | `turn-model.ts` takes the input from the call's own block; spec line updated; build green; no test file |
 | 2026-11-26 | test | G5 tests, turn-panel | pass | Re-test after f5be575: 618 unit, 12 browser e2e green, Electron 1 from report; one intermittent API test of `latest-text` fixed in its fixture (turn start and subagent line in the same millisecond), 17 runs green under load |
+| 2026-11-26 | dev | G4 development, subagent-conversation | pass | Build re-run green; files explained by INT-1..10, specs and indexes; no test file touched |
+| 2026-11-26 | dev | divergences subagent-conversation | decided | Accepted: extra `locateSubagentFile` (indexed); TurnTreeView passes the open action; avatar "T" with "Task"; read loop repeated rather than changing `conversation-stream-route.ts`; card fields inside a button; focus on "Back" at open |

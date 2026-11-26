@@ -24,6 +24,7 @@ Components and where the client uses them today:
 - `TerminalIcon` → "Sessions" in the rail, the pill "Running in a terminal" of the ResumeDialog
 - `LockIcon` → the "Read-only" chip of the external view
 - `ArrowDownIcon` → the "N new messages" button
+- `ArrowLeftIcon` (Lucide "arrow-left") → "Back" of the SubagentConversation (module activity)
 - `TriangleAlertIcon` → the amber banner of a WarningDialog (RunningElsewhereWarning)
 - `FolderIcon` → the "Folders" rows of the FolderChooser
 - `SearchIcon` → the search bar of the ResumeDialog, "Search" in the SessionView subbar, the TerminalSearchBox
@@ -72,4 +73,4 @@ Components and where the client uses them today:
 - `plan-favorite_session/REQ-3`, `plan-favorite_session/REQ-4`, `plan-favorite_session/REQ-11`
 - `plan-wsl_support/REQ-19`, `plan-wsl_support/REQ-28`
 - `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-57`, `plan-settings_dialog/REQ-58`
-- `plan-session_activity/REQ-24`, `plan-session_activity/REQ-27`
+- `plan-session_activity/REQ-24`, `plan-session_activity/REQ-27`, `plan-session_activity/REQ-54`

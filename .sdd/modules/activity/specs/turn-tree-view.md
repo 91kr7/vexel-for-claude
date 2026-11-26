@@ -15,6 +15,7 @@ Description:
 
 Props:
 - `turn` → the `TurnTree` of useTurn.
+- `onOpenSubagent(subagent, opener)` → optional. Given as `onOpen` to every SubagentCard of the tree, nested and earlier ones included.
 
 Shows, top to bottom:
 - when `earlier` is not empty → a section named "Still running from earlier turns", with that title (11 px, weight 600) and one group of the cards of `earlier`.
@@ -41,7 +42,7 @@ Scrolling:
 ## Rules and invariants
 
 - The number of steps in the page does not grow with the length of the turn while the view follows: at most 200 steps, plus the pages the user asked for.
-- It sends nothing and has no other action.
+- It sends nothing. Its only actions are "Show N earlier steps" and the buttons of the cards.
 
 ## Dependencies
 
@@ -50,4 +51,4 @@ Scrolling:
 
 ## Requirements served
 
-- `plan-session_activity/REQ-29`, `plan-session_activity/REQ-30`, `plan-session_activity/REQ-31`, `plan-session_activity/REQ-37`, `plan-session_activity/REQ-38`, `plan-session_activity/REQ-39`, `plan-session_activity/REQ-42`, `plan-session_activity/REQ-45`, `plan-session_activity/REQ-46`, `plan-session_activity/REQ-47`
+- `plan-session_activity/REQ-29`, `plan-session_activity/REQ-30`, `plan-session_activity/REQ-31`, `plan-session_activity/REQ-37`, `plan-session_activity/REQ-38`, `plan-session_activity/REQ-39`, `plan-session_activity/REQ-42`, `plan-session_activity/REQ-45`, `plan-session_activity/REQ-46`, `plan-session_activity/REQ-47`, `plan-session_activity/REQ-49`

@@ -141,8 +141,8 @@ export function itemsOf(entry: unknown, lineOffset?: number, options: ItemsOptio
   return items;
 }
 
-function fullContentOf(entry: unknown, blockIndex: number): string | undefined {
-  const record = conversationEntryOf(entry);
+function fullContentOf(entry: unknown, blockIndex: number, sidechain?: boolean): string | undefined {
+  const record = conversationEntryOf(entry, sidechain);
   const content = record && contentOf(record);
   const block: unknown = Array.isArray(content) ? content[blockIndex] : undefined;
   if (!record || !isBlock(block)) return undefined;
@@ -153,7 +153,7 @@ function fullContentOf(entry: unknown, blockIndex: number): string | undefined {
   return undefined;
 }
 
-function parseLines(buffer: Buffer, baseOffset: number): ConversationItem[] {
+function parseLines(buffer: Buffer, baseOffset: number, options: ItemsOptions): ConversationItem[] {
   const items: ConversationItem[] = [];
   let start = 0;
   while (start <= buffer.length) {
@@ -168,7 +168,7 @@ function parseLines(buffer: Buffer, baseOffset: number): ConversationItem[] {
     } catch {
       continue;
     }
-    items.push(...itemsOf(entry, lineOffset));
+    items.push(...itemsOf(entry, lineOffset, options));
   }
   return items;
 }
@@ -226,8 +226,16 @@ async function readLineAt(handle: FileHandle, offset: number): Promise<string | 
 
 const isFile = (file: string) => stat(file).then((stats) => stats.isFile(), () => false);
 
+const subagentsFolderOf = (file: string) => path.join(file.replace(/\.jsonl$/, ''), 'subagents');
+
+export async function subagentFileOf(file: string, agentId: string): Promise<string | undefined> {
+  if (!SESSION_ID_PATTERN.test(agentId)) return undefined;
+  const candidate = path.join(subagentsFolderOf(file), `${agentId}.jsonl`);
+  return (await isFile(candidate)) ? candidate : undefined;
+}
+
 export async function subagentFilesOf(file: string): Promise<string[]> {
-  const folder = path.join(file.replace(/\.jsonl$/, ''), 'subagents');
+  const folder = subagentsFolderOf(file);
   const children = await readdir(folder, { withFileTypes: true }).catch(() => []);
   return children
     .filter((child) => child.isFile() && child.name.endsWith('.jsonl'))
@@ -278,7 +286,7 @@ export class TranscriptReader {
     return undefined;
   }
 
-  async readFrom(file: string, offset: number): Promise<{ items: ConversationItem[]; offset: number }> {
+  async readFrom(file: string, offset: number, options: ItemsOptions = {}): Promise<{ items: ConversationItem[]; offset: number }> {
     let handle;
     try {
       handle = await open(file, 'r');
@@ -289,7 +297,7 @@ export class TranscriptReader {
       const lastNewline = buffer.subarray(0, bytesRead).lastIndexOf(NEWLINE);
       if (lastNewline === -1) return { items: [], offset };
       return {
-        items: parseLines(buffer.subarray(0, lastNewline), offset),
+        items: parseLines(buffer.subarray(0, lastNewline), offset, options),
         offset: offset + lastNewline + 1,
       };
     } catch {
@@ -331,14 +339,14 @@ export class TranscriptReader {
     }
   }
 
-  async readItem(file: string, ref: ItemRef): Promise<string | undefined> {
+  async readItem(file: string, ref: ItemRef, options: ItemsOptions = {}): Promise<string | undefined> {
     const valid = [ref.offset, ref.block].every((value) => Number.isSafeInteger(value) && value >= 0);
     if (!valid) return undefined;
     let handle;
     try {
       handle = await open(file, 'r');
       const line = await readLineAt(handle, ref.offset);
-      return line === undefined ? undefined : fullContentOf(JSON.parse(line), ref.block);
+      return line === undefined ? undefined : fullContentOf(JSON.parse(line), ref.block, options.sidechain);
     } catch {
       return undefined;
     } finally {

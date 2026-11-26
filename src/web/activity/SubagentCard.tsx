@@ -25,36 +25,48 @@ function CurrentTool({ tool }: { tool?: RunningTool }) {
   );
 }
 
+export function SubagentStatePill({ state }: { state: SubagentState }) {
+  return <span className={`status-pill subagent-state subagent-state-${state}`}>{STATE_NAMES[state]}</span>;
+}
+
 interface SubagentCardProps {
   subagent: TurnSubagent;
+  onOpen?: (subagent: TurnSubagent, opener: HTMLElement) => void;
   children?: ReactNode;
 }
 
-export function SubagentCard({ subagent, children }: SubagentCardProps) {
+export function SubagentCard({ subagent, onOpen, children }: SubagentCardProps) {
   const { type, description, model, state, latestText } = subagent;
   return (
     <article className="subagent-card" aria-label={type ? `Subagent: ${type}` : 'Subagent'}>
-      <div className="subagent-card-head">
-        <span className={type ? 'mono-chip subagent-card-type' : 'subagent-card-type'} title={type}>
-          {type}
+      <button
+        type="button"
+        className="subagent-card-open"
+        aria-label={type ? `Open Conversation: ${type}` : 'Open Conversation'}
+        onClick={(event) => onOpen?.(subagent, event.currentTarget)}
+      >
+        <span className="subagent-card-head">
+          <span className={type ? 'mono-chip subagent-card-type' : 'subagent-card-type'} title={type}>
+            {type}
+          </span>
+          <SubagentStatePill state={state} />
         </span>
-        <span className={`status-pill subagent-state subagent-state-${state}`}>{STATE_NAMES[state]}</span>
-      </div>
-      <p className="subagent-card-description" title={description}>
-        {description}
-      </p>
-      <div className="subagent-card-meta">
-        <span className="subagent-card-model" title={model}>
-          {model}
+        <span className="subagent-card-description" title={description}>
+          {description}
         </span>
-        <span className="subagent-card-duration">
-          <Duration subagent={subagent} />
+        <span className="subagent-card-meta">
+          <span className="subagent-card-model" title={model}>
+            {model}
+          </span>
+          <span className="subagent-card-duration">
+            <Duration subagent={subagent} />
+          </span>
         </span>
-      </div>
-      <p className="subagent-card-text" title={latestText}>
-        {latestText}
-      </p>
-      <CurrentTool tool={subagent.currentTool} />
+        <span className="subagent-card-text" title={latestText}>
+          {latestText}
+        </span>
+        <CurrentTool tool={subagent.currentTool} />
+      </button>
       {children}
     </article>
   );

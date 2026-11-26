@@ -10,16 +10,24 @@ const isAtEnd = (element: HTMLElement) => element.scrollHeight - element.scrollT
 
 const lastPageStart = (length: number) => Math.max(0, length - STEP_PAGE);
 
-function Group({ ids, subagents }: { ids: readonly string[]; subagents: ReadonlyMap<string, TurnSubagent> }) {
+type OpenSubagent = (subagent: TurnSubagent, opener: HTMLElement) => void;
+
+interface GroupProps {
+  ids: readonly string[];
+  subagents: ReadonlyMap<string, TurnSubagent>;
+  onOpen?: OpenSubagent;
+}
+
+function Group({ ids, subagents, onOpen }: GroupProps) {
   return (
     <div className="subagent-group">
       {ids.map((id) => {
         const subagent = subagents.get(id);
         return (
           subagent && (
-            <SubagentCard key={id} subagent={subagent}>
+            <SubagentCard key={id} subagent={subagent} onOpen={onOpen}>
               {subagent.groups.map((nested) => (
-                <Group key={nested.step} ids={nested.subagents} subagents={subagents} />
+                <Group key={nested.step} ids={nested.subagents} subagents={subagents} onOpen={onOpen} />
               ))}
             </SubagentCard>
           )
@@ -42,7 +50,7 @@ function StepRow({ step }: { step: TurnStep }) {
   );
 }
 
-export function TurnTreeView({ turn }: { turn: TurnTree }) {
+export function TurnTreeView({ turn, onOpenSubagent }: { turn: TurnTree; onOpenSubagent?: OpenSubagent }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const followRef = useRef(true);
   const length = turn.steps.length;
@@ -70,7 +78,7 @@ export function TurnTreeView({ turn }: { turn: TurnTree }) {
       {turn.earlier.length > 0 && (
         <section className="turn-earlier" aria-label="Still running from earlier turns">
           <h4 className="turn-section-title">Still running from earlier turns</h4>
-          <Group ids={turn.earlier} subagents={subagents} />
+          <Group ids={turn.earlier} subagents={subagents} onOpen={onOpenSubagent} />
         </section>
       )}
       {start > 0 && (
@@ -85,7 +93,7 @@ export function TurnTreeView({ turn }: { turn: TurnTree }) {
           return (
             <li key={index} className="turn-step">
               <StepRow step={step} />
-              {group && <Group ids={group.subagents} subagents={subagents} />}
+              {group && <Group ids={group.subagents} subagents={subagents} onOpen={onOpenSubagent} />}
             </li>
           );
         })}
