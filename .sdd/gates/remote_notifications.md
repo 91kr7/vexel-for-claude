@@ -32,3 +32,7 @@
 | 2026-11-26 | dev | divergence RemoteNotifier component | decided | "On send" logic moved out of `main.ts` so Vitest covers it, as the batch test plan asks; no visible change |
 | 2026-11-26 | dev | divergence waiting time and argument without tool | decided | Time from receipt of the event; argument without `waitingTool` gives "Needs your input"; technical |
 | 2026-11-26 | dev | G4 remote-notification | pass | Diff is INT-1 to INT-8 plus RemoteNotifier, specs and indexes; build green re-run by the gatekeeper |
+| 2026-11-26 | test | G5 remote-notification | sent back | `desktop-remote-notification.spec.ts:366`, `:369` tight 65 s limit on a measured duration; KB `e2e-load-proof-time-limits` |
+| 2026-11-26 | test | stale test inside perimeter | decided | `desktop-notifications.spec.ts:251` bridge list lacked the three new functions; test-only change |
+| 2026-11-26 | test | G5 remote-notification | pass | Re-run by the gatekeeper: unit 206/206, Electron e2e 3/3; tester full runs unit 4719/4719, browser e2e 1058/1058, Electron 52/53 + the stale test fixed |
+| 2026-11-26 | test | `desktop-window.spec.ts` teardown error | escalated | Outside the perimeter; also fails on `main` (2 errors outside tests, `:825` failed) |
