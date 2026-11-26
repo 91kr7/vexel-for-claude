@@ -15,3 +15,4 @@ source: release of v1.2.0
 **How to apply** →
 - orchestration: before `gh release create`, run the complete e2e suite on the release commit and wait for its result. Any failure → fix it (a test fix or a code fix), then run the suite again. No release while it is red.
 - test: a failure that passes on a re-run is not green. Find the cause and fix it before the release.
+- orchestration: a complete run already green in the cycle of this release counts, when only test files or the version changed after it. Do not run the suite again. The human, 2026-11-26: "spe!! la suitte completa ha già girato!!"
