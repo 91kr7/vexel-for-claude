@@ -11,3 +11,7 @@
 | 2026-11-26 | plan | question planner group rule | decided | Subagents started at the same step form one group; REQ-31 places each subagent at its step; Claude Code starts parallel subagents in one message |
 | 2026-11-26 | plan | question planner "Task" items | decided | User items of a subagent conversation are written by the parent agent, so "Task", not "You" |
 | 2026-11-26 | plan | G3 coverage | pass | 55 REQs covered, lists consistent, linear dependencies, acceptance covers every REQ; modify of components born in earlier batches names the module (no path yet); `turn-panel/INT-16` is a test spec, as `plan-git_explorer` INT-11: goes to the tester at dev time |
+| 2026-11-26 | dev | G4 development, latest-text | pass | Build re-run green; 18 files, all explained by INT-1..16, specs and indexes; no test file; module `activity` indexed |
+| 2026-11-26 | dev | divergences latest-text | decided | Accepted: stop notices of the main transcript mark a subagent stopped; later work clears an interrupt; turn start waits for the next read; metadata kept during rewrites. All refine INT-5/INT-9, no visible change beyond the REQs |
+| 2026-11-26 | dev | question developer nested subagents | decided | Keep the open assumption: every file of `subagents/` is read; confirm with REQ-38 in `turn-panel` |
+| 2026-11-26 | dev | question developer workflow subagents | escalated | `subagents/workflows/` holds 148 agent files of 6 runs (Nov 4-24); excluding them narrows "subagent compresi" |

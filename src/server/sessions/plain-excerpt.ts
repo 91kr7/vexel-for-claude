@@ -29,7 +29,7 @@ function plainLine(line: string): string {
   return result + plainText(body.slice(rest));
 }
 
-export function plainExcerpt(markdown: string): string {
+export function plainExcerpt(markdown: string, maxLength = MAX_LENGTH): string {
   const lines: string[] = [];
   let inFence = false;
   for (const line of markdown.split('\n')) {
@@ -37,5 +37,5 @@ export function plainExcerpt(markdown: string): string {
     else lines.push(inFence ? line : plainLine(line));
   }
   const text = Array.from(lines.join(' ').replace(/\s+/g, ' ').trim());
-  return text.length > MAX_LENGTH ? `${text.slice(0, MAX_LENGTH - 1).join('')}…` : text.join('');
+  return text.length > maxLength ? `${text.slice(0, maxLength - 1).join('')}…` : text.join('');
 }

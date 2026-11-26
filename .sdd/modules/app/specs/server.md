@@ -30,6 +30,7 @@ type: configuration
 - one TranscriptReader with the default Claude Code folder. Registers ConversationStreamRoute and ItemContentRoute with it and the scanner.
 - one RunningToolMonitor on the tracker, the scanner and that TranscriptReader, created before the scanner starts. It starts with the server and stops on `SIGTERM` or `SIGINT`. Passed to SessionListRoute and SessionEventsRoute.
 - one UsageMonitor on the tracker, the scanner and that TranscriptReader, created before the scanner starts. It starts with the server and stops on `SIGTERM` or `SIGINT`. Passed to SessionListRoute and SessionEventsRoute.
+- one ActivityMonitor on the tracker, the scanner and that TranscriptReader, created before the scanner starts. It starts with the server and stops on `SIGTERM` or `SIGINT`. Passed to SessionListRoute and SessionEventsRoute.
 - one PlanLimitsReader with the default Claude Code folder. Registers PlanUsageRoute with it.
 - one GitRunner. Registers RepositoryRoute with it.
 - release check → at start, one checkLatestRelease with `version` of `package.json` as the installed version. The source address comes from `AI_CLIENT_RELEASE_SOURCE_URL`. Missing or empty → `latestReleaseApiUrl` of `repository.url` of `package.json` (the GitHub API). The listen does not wait for the check. Registers NewerVersionRoute with its result.
@@ -52,6 +53,7 @@ type: configuration
 
 - LocalAccessGuard
 - SessionRegistry, SessionStateTracker, SessionNameStore, SessionFavoriteStore, RenameSessionRoute, FavoriteSessionRoute, HookSettings, StartSessionRoute, StopSessionRoute, AttachSessionRoute, SessionListRoute, SessionEventsRoute, HookEventRoute, DismissSessionRoute, ResumeEndedSessionRoute, AttentionMonitor, AttentionRoute, RunningToolMonitor, UsageMonitor (module sessions)
+- ActivityMonitor (module activity)
 - PlanUsageRoute, PlanLimitsReader
 - checkLatestRelease, releaseListUrl, readReleaseChangelogs, NewerVersionRoute, InstalledVersionRoute, UpdateCheckRoute (`checkForUpdate`)
 - FolderRoute, ProjectMarkStore, ProjectFavoriteRoute, ProjectRemoveRoute, ProjectMarkEventsRoute (module folders)
@@ -78,3 +80,4 @@ type: configuration
 - `plan-release_changelog/REQ-7`, `plan-release_changelog/REQ-14`, `plan-release_changelog/REQ-15`, `plan-release_changelog/REQ-16`
 - `plan-settings_dialog/REQ-45`, `plan-settings_dialog/REQ-52`
 - `plan-resume_favorites/REQ-8`
+- `plan-session_activity/REQ-2`

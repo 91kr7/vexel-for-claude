@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
+import { ActivityMonitor } from './activity/activity-monitor.js';
 import { registerConversationStreamRoute } from './external/conversation-stream-route.js';
 import { ExternalSessionScanner } from './external/external-session-scanner.js';
 import { registerItemContentRoute } from './external/item-content-route.js';
@@ -98,6 +99,7 @@ const transcriptReader = new TranscriptReader();
 const attentionMonitor = new AttentionMonitor({ tracker, scanner: externalScanner, registry });
 const runningToolMonitor = new RunningToolMonitor({ tracker, scanner: externalScanner, reader: transcriptReader });
 const usageMonitor = new UsageMonitor({ tracker, scanner: externalScanner, reader: transcriptReader });
+const activityMonitor = new ActivityMonitor({ tracker, scanner: externalScanner, reader: transcriptReader });
 
 registerLocalAccessGuard(app, { viteDevPort });
 await app.register(fastifyWebsocket);
@@ -110,8 +112,8 @@ registerRenameSessionRoute(app, { tracker, scanner: externalScanner, names });
 registerFavoriteSessionRoute(app, { tracker, scanner: externalScanner, favorites });
 registerResumeEndedSessionRoute(app, { tracker, history, registry, externalCheck, scanner: externalScanner });
 registerAttachSessionRoute(app, registry, tracker);
-registerSessionListRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor);
-registerSessionEventsRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor);
+registerSessionListRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor, activityMonitor);
+registerSessionEventsRoute(app, tracker, externalScanner, runningToolMonitor, usageMonitor, activityMonitor);
 registerHookEventRoute(app, tracker);
 registerFolderRoute(app);
 registerProjectFavoriteRoute(app, projectMarks);
@@ -154,11 +156,13 @@ await externalScanner.scan().catch(() => undefined);
 externalScanner.start();
 runningToolMonitor.start();
 usageMonitor.start();
+activityMonitor.start();
 await app.listen({ host: HOST, port });
 
 async function stopServer(): Promise<void> {
   runningToolMonitor.stop();
   usageMonitor.stop();
+  activityMonitor.stop();
   const running = registry.list().filter((session) => !session.exited);
   await Promise.all(
     running.map(

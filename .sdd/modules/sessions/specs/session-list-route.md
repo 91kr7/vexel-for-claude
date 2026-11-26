@@ -12,11 +12,13 @@ type: REST endpoint
 
 - `registerSessionListRoute(app, tracker, external?, runningTools?)` → `external` is the ExternalSessionScanner. Without it, the array has only hosted sessions. `runningTools` is the RunningToolMonitor. Without it, no entry has `runningTool`.
 - `registerSessionListRoute(app, tracker, external?, runningTools?, usageMonitor?)` → `usageMonitor` is the UsageMonitor. Without it, no entry has `usage`.
+- `registerSessionListRoute(app, tracker, external?, runningTools?, usageMonitor?, activityMonitor?)` → `activityMonitor` is the ActivityMonitor. Without it, no entry has `liveActivity`.
 - `GET /api/sessions` → `200`. Body: array of:
   - the hosted sessions: `{ id, folder, label, state, lastActivity, waitingTool?, resumable? }` (SessionSummary of SessionStateTracker), in start order;
   - then the current external sessions: `{ id, folder, label, state, lastActivity, external: true }` (ExternalSessionScanner `list()`).
   - each entry, hosted or external, also has `runningTool` when RunningToolMonitor `get(id)` gives one.
   - each entry, hosted or external, in any state, also has `usage` (`{ context?, tokens?, cost? }`) when UsageMonitor `get(id)` gives one.
+  - each entry, hosted or external, in any state, also has `liveActivity` (`{ atWork, latestText? }`) when ActivityMonitor `get(id)` gives one.
 
 ## Rules and invariants
 
@@ -28,6 +30,7 @@ type: REST endpoint
 - SessionStateTracker
 - ExternalSessionScanner (module external)
 - RunningToolMonitor, UsageMonitor
+- ActivityMonitor (module activity)
 
 ## Requirements served
 
@@ -35,3 +38,4 @@ type: REST endpoint
 - `plan-session_list_improvements/REQ-2`, `plan-session_list_improvements/REQ-5`
 - `plan-session_list_improvements/REQ-14`
 - `plan-session_usage/REQ-1`, `plan-session_usage/REQ-2`
+- `plan-session_activity/REQ-2`

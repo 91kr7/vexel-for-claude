@@ -30,8 +30,12 @@ type: backend service
   - `tool_result` → its whole text, by the "Tool result text" rule below, with no cut.
   - `undefined` when: `ref.offset` is not the start of a complete line; the line is not valid JSON; the block is not a `tool_use` of an `assistant` line or a `tool_result` of a `user` line; the line is a sidechain or meta entry; the file cannot be read.
 - `subagentFilesOf(file) → Promise<string[]>` (exported function) → the `.jsonl` files of the folder `<file without ".jsonl">/subagents/`, sorted by name. Other files there (for example `*.meta.json`) and sub-folders are left out. No folder, or a folder that cannot be read → `[]`.
-- `itemsOf(entry, lineOffset?) → ConversationItem[]` (exported function) → the items of one parsed transcript line.
+- `subagentMetaOf(file) → Promise<SubagentMeta>` (exported function) → the metadata of the subagent file `file` (`<folder>/agent-<id>.jsonl`), read from `<file without ".jsonl">.meta.json`.
+  - `SubagentMeta` → `{ agentType?, description?, toolUseId?, model?, finished? }`: the fields of the same name. The first four when they are strings, `finished` when it is a boolean. A field of another type is absent.
+  - no file, a file that cannot be read, bad JSON, or JSON that is not an object (an array too) → `{}`.
+- `itemsOf(entry, lineOffset?, options?) → ConversationItem[]` (exported function) → the items of one parsed transcript line.
   - with `lineOffset` → each tool item carries `ref: { offset: lineOffset, block }`. Without it → no `ref`.
+  - `options.sidechain: true` → a line with `isSidechain: true` (a line of a subagent file) gives its items as any other line, user message included. Without the option, such a line gives none.
 - `mainArgumentOf(input) → string | undefined` (exported function) → the main argument of a tool input, by the "Main argument" rule below. The text is returned as it is: no trim, no cut.
 
 `ConversationItem`:
@@ -49,9 +53,11 @@ type: backend service
 Line to items:
 
 ```
-not valid JSON, not an object, isSidechain = true or isMeta = true    → none
+not valid JSON, not an object, isMeta = true                          → none
+isSidechain = true, without options.sidechain                         → none
 type "user":
     the user message by SessionHistory userMessageOf, when not null    → user item
+    (with options.sidechain, the line is read as if isSidechain were false)
     each block of message.content with type "tool_result"             → tool_result item
 type "assistant", message.content a string, not blank                 → assistant item
 type "assistant", for each block of message.content, in order:
@@ -103,6 +109,14 @@ not an object)                                             → moreInput: true
 - It opens files read-only. It never creates, changes or deletes anything under `claudeDir`.
 - It reads `projects` only.
 
+## Assumptions
+
+Metadata file of a subagent, checked on Claude Code 2.1.332, 2026-11-26:
+
+- Claude Code writes `agent-<id>.meta.json` next to `agent-<id>.jsonl` when the subagent starts. It has no `finished` while the subagent runs, and gets `finished: true` when the subagent completes.
+- A subagent stopped by the user, or cut by the end of its session, often has no `finished`.
+- Workflow subagents live in sub-folders of `subagents/` (`workflows/wf_*/`). Their metadata never gets `finished`. `subagentFilesOf` does not list them.
+
 ## Dependencies
 
 - SessionHistory (module history), for `defaultClaudeDir()` and `userMessageOf`
@@ -114,3 +128,4 @@ not an object)                                             → moreInput: true
 - `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-36`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-39`, `plan-claude_sessions_client-ui_redesign-material3_mock/REQ-40`
 - `plan-session_list_improvements/REQ-15`, `plan-session_list_improvements/REQ-16`
 - `plan-session_usage/REQ-3`, `plan-session_usage/REQ-14`, `plan-session_usage/REQ-21`
+- `plan-session_activity/REQ-1`, `plan-session_activity/REQ-3`, `plan-session_activity/REQ-4`, `plan-session_activity/REQ-13`

@@ -10,3 +10,4 @@
 | desktop | Desktop app: Electron window, backend start or reuse, startup page, icons, application menu entry, system notifications, tray signal, needs-input sound, remote notification settings and remote notification to the phone | `desktop/index.md` |
 | git | Read-only git explorer of a session: git runner, repository lookup and detection of the covered repositories, explorer button and panel, uncommitted changes and diffs, commit history as a graph | `git/index.md` |
 | processes | The app's processes on the machine: read `/proc`, kind and hanging rules, list route, "Processes" menu of the settings | `processes/index.md` |
+| activity | Live activity of a session's turn: turn and subagent state rules, turn model, activity monitor, latest text, short durations and elapsed time | `activity/index.md` |

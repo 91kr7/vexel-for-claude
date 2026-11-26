@@ -1,4 +1,4 @@
-import { type FileHandle, open, readdir, stat } from 'node:fs/promises';
+import { type FileHandle, open, readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { defaultClaudeDir, userMessageOf } from '../history/session-history.js';
 
@@ -15,6 +15,18 @@ export type ConversationItem =
 
 export interface TranscriptReaderOptions {
   claudeDir?: string;
+}
+
+export interface ItemsOptions {
+  sidechain?: boolean;
+}
+
+export interface SubagentMeta {
+  agentType?: string;
+  description?: string;
+  toolUseId?: string;
+  model?: string;
+  finished?: boolean;
 }
 
 const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -107,21 +119,21 @@ function assistantItems(content: unknown, lineOffset: number | undefined): Conve
   return items;
 }
 
-function conversationEntryOf(entry: unknown): Record<string, unknown> | undefined {
+function conversationEntryOf(entry: unknown, sidechain = false): Record<string, unknown> | undefined {
   if (!isBlock(entry) || Array.isArray(entry)) return undefined;
-  return entry.isSidechain === true || entry.isMeta === true ? undefined : entry;
+  return (entry.isSidechain === true && !sidechain) || entry.isMeta === true ? undefined : entry;
 }
 
 const contentOf = (record: Record<string, unknown>): unknown => (record.message as { content?: unknown } | undefined)?.content;
 
-export function itemsOf(entry: unknown, lineOffset?: number): ConversationItem[] {
-  const record = conversationEntryOf(entry);
+export function itemsOf(entry: unknown, lineOffset?: number, options: ItemsOptions = {}): ConversationItem[] {
+  const record = conversationEntryOf(entry, options.sidechain);
   if (!record) return [];
   const content = contentOf(record);
   if (record.type === 'assistant') return assistantItems(content, lineOffset);
   if (record.type !== 'user') return [];
   const items: ConversationItem[] = [];
-  const text = userMessageOf(record);
+  const text = userMessageOf(record.isSidechain === true ? { ...record, isSidechain: false } : record);
   if (text !== null) items.push({ kind: 'user', text, ...(typeof record.timestamp === 'string' && { timestamp: record.timestamp }) });
   for (const { block, index } of indexedBlocksOf(content)) {
     if (block.type === 'tool_result') items.push(withRef(toolResultItem(block), lineOffset, index));
@@ -221,6 +233,27 @@ export async function subagentFilesOf(file: string): Promise<string[]> {
     .filter((child) => child.isFile() && child.name.endsWith('.jsonl'))
     .map((child) => path.join(folder, child.name))
     .sort();
+}
+
+async function readJson(file: string): Promise<unknown> {
+  try {
+    return JSON.parse(await readFile(file, 'utf8'));
+  } catch {
+    return undefined;
+  }
+}
+
+export async function subagentMetaOf(file: string): Promise<SubagentMeta> {
+  const meta = await readJson(`${file.replace(/\.jsonl$/, '')}.meta.json`);
+  if (!isBlock(meta) || Array.isArray(meta)) return {};
+  const text = (key: keyof SubagentMeta) => (typeof meta[key] === 'string' ? { [key]: meta[key] } : {});
+  return {
+    ...text('agentType'),
+    ...text('description'),
+    ...text('toolUseId'),
+    ...text('model'),
+    ...(typeof meta.finished === 'boolean' && { finished: meta.finished }),
+  };
 }
 
 export class TranscriptReader {

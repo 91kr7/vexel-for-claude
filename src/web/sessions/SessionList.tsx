@@ -1,4 +1,5 @@
 import { type DragEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { ElapsedTime } from '../activity/ElapsedTime';
 import { AreaState } from '../feedback/AreaState';
 import { PencilIcon } from '../icons/Icons';
 import { useListCascade } from '../motion/list-cascade';
@@ -7,7 +8,7 @@ import { useSessionCommand } from '../shortcut-channel';
 import { folderNameOf } from './Avatar';
 import { EndedEntryActions } from './EndedEntryActions';
 import { FavoriteButton } from './FavoriteButton';
-import type { ContextOccupancy, LoadStatus, RunningTool, SessionSummary, SessionUsage } from './live-session-store';
+import type { ContextOccupancy, LatestText, LoadStatus, RunningTool, SessionSummary, SessionUsage } from './live-session-store';
 import { ProgressBar } from './ProgressBar';
 import { RelativeTime } from './RelativeTime';
 import { type NameEditorEnd, SessionNameEditor } from './SessionNameEditor';
@@ -64,6 +65,29 @@ function ToolLine({ tool }: { tool: RunningTool }) {
   );
 }
 
+function latestTextOf(session: SessionSummary): LatestText | undefined {
+  const shown = session.liveActivity?.atWork === true && session.state !== 'needs_input' && session.state !== 'ended';
+  return shown ? session.liveActivity?.latestText : undefined;
+}
+
+function LatestTextLine({ latest }: { latest: LatestText }) {
+  const prefix = latest.subagentType === undefined ? '' : `${latest.subagentType}: `;
+  return (
+    <span className="session-entry-line session-entry-latest" title={`${prefix}${latest.text}`}>
+      <span className="session-entry-latest-text">
+        {prefix && <b className="session-entry-latest-type">{prefix}</b>}
+        {latest.text}
+      </span>
+      {latest.at !== undefined && (
+        <span className="session-entry-latest-time">
+          {' · '}
+          <ElapsedTime since={latest.at} />
+        </span>
+      )}
+    </span>
+  );
+}
+
 function EntryFigures({ usage }: { usage?: SessionUsage }) {
   return (
     <span className="session-entry-figures">
@@ -104,6 +128,7 @@ interface EntryProps {
 
 function EntryRow({ session, open, onOpen, editor, star }: EntryProps) {
   const externalNeedsInput = session.external === true && session.state === 'needs_input';
+  const latestText = latestTextOf(session);
   const content = (
     <>
       <span className="session-entry-line">
@@ -121,6 +146,7 @@ function EntryRow({ session, open, onOpen, editor, star }: EntryProps) {
         {!editor && <RenameSlot />}
       </span>
       {session.state === 'working' && session.runningTool && <ToolLine tool={session.runningTool} />}
+      {latestText && <LatestTextLine latest={latestText} />}
       {session.state === 'working' && !session.external && <ProgressBar />}
       <span className="session-entry-line session-entry-metrics">
         <EntryFigures usage={session.usage} />

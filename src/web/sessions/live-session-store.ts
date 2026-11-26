@@ -31,6 +31,17 @@ export interface SessionUsage {
   cost?: CostTotal;
 }
 
+export interface LatestText {
+  text: string;
+  subagentType?: string;
+  at?: string;
+}
+
+export interface LiveActivity {
+  atWork: boolean;
+  latestText?: LatestText;
+}
+
 export interface SessionSummary {
   id: string;
   folder: string;
@@ -43,6 +54,7 @@ export interface SessionSummary {
   favorite?: true;
   runningTool?: RunningTool;
   usage?: SessionUsage;
+  liveActivity?: LiveActivity;
 }
 
 export type LoadStatus = 'loading' | 'ready' | 'error';
