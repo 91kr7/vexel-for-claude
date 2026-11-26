@@ -7,6 +7,6 @@
 | folders | Browse and choose the project folder of a new session; list the project folders of the machine, mark favorite projects and remove projects from the list | `folders/index.md` |
 | history | Past Claude Code sessions of the machine: read the history, detect external terminals, resume | `history/index.md` |
 | external | Claude Code sessions running in other terminals: scan, list entries, read-only conversation, take over | `external/index.md` |
-| desktop | Desktop app: Electron window, backend start or reuse, startup page, icons, application menu entry, system notifications, tray signal and needs-input sound | `desktop/index.md` |
+| desktop | Desktop app: Electron window, backend start or reuse, startup page, icons, application menu entry, system notifications, tray signal, needs-input sound and remote notification settings | `desktop/index.md` |
 | git | Read-only git explorer of a session: git runner, repository lookup and detection of the covered repositories, explorer button and panel, uncommitted changes and diffs, commit history as a graph | `git/index.md` |
 | processes | The app's processes on the machine: read `/proc`, kind and hanging rules, list route, "Processes" menu of the settings | `processes/index.md` |

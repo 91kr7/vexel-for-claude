@@ -52,6 +52,13 @@ Sound:
 - `true` → it sends `desktop-bridge:play-sound` to the page of the window, also when the window is hidden or minimized. The page plays the sound (useNeedsInputSound, module app).
 - an event while the window still shows the StartupPage → no sound. Its notification still shows.
 
+Remote notification settings:
+
+- one RemoteSettingsStore on the file `remote-notifications.json` in the Electron user data folder.
+- `desktop-bridge:remote-settings-read` (invoke) → the answer is `read()` of the store.
+- `desktop-bridge:remote-settings-save` (invoke) with a value → `save()` of the store with the value that `parseRemoteSettings` gives. A value it rejects saves nothing.
+- both channels answer before the client page loads: they are ready when the window opens.
+
 Tray:
 
 - each list of the AttentionClient → the TrayIcon gets the icon, the tooltip and the menu of that list. This happens whatever the window focus.
@@ -62,6 +69,7 @@ Tray:
 - One running app per user session.
 - The page in the window has no Node access (Electron defaults: context isolation, sandbox). It gets only the DesktopBridge.
 - An open-session report from another web contents than the window's is ignored.
+- A read or a save of the remote settings from another web contents than the window's is refused: the read gives no settings and the save writes nothing.
 - The backend runs outside Electron, with the system Node. node-pty therefore keeps its Node build.
 - A backend that the app did not start keeps running after the app quits, with its sessions.
 - The app quits only from a quit request, never because its window closes.
@@ -70,7 +78,7 @@ Tray:
 ## Dependencies
 
 - BackendLauncher, StartupPage, AppIcon, TrayIcon, QuitCheck
-- DesktopBridge, WindowActions, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon, SoundRule
+- DesktopBridge, WindowActions, AttentionClient, NotificationRules, NotificationTexts, SystemNotifications, AttentionIcon, SoundRule, RemoteSettingsStore
 
 ## Requirements served
 
@@ -81,3 +89,4 @@ Tray:
 - `plan-terminal_addons/REQ-9`, `plan-terminal_addons/REQ-11`, `plan-terminal_addons/REQ-12`, `plan-terminal_addons/REQ-39`
 - `plan-app_processes/REQ-26`
 - `plan-input_sound/REQ-1`, `plan-input_sound/REQ-2`, `plan-input_sound/REQ-3`
+- `plan-remote_notifications/REQ-11`, `plan-remote_notifications/REQ-12`

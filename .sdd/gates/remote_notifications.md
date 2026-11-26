@@ -21,3 +21,6 @@
 | 2026-11-26 | plan | question planner external sessions detail | human decision | Generic text only for external sessions |
 | 2026-11-26 | plan | question planner token storage | decided | Plain text in a 0600 file; touches less, recorded as a risk |
 | 2026-11-26 | plan | G3 coverage | pass | REQ-1 to REQ-39 covered; test-notification INT-5 modifies the section of notifications-section INT-6, no path yet as it does not exist |
+| 2026-11-26 | dev | divergence menu id `sound` | decided | Internal id kept, label and title read "Notifications"; no visible change |
+| 2026-11-26 | dev | divergence topic over 64 chars, trailing slash | decided | Reasons BAD_TOPIC and NO_TOPIC; technical, stated in the spec |
+| 2026-11-26 | dev | G4 notifications-section | pass | Diff is INT-1 to INT-8 plus styles, specs and indexes; build green re-run by the gatekeeper |

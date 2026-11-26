@@ -6,22 +6,27 @@ import type { LookStore } from '../theme/look-store';
 import type { ThemeStore } from '../theme/theme-store';
 import { LookSection } from './LookSection';
 import { ProcessesSection } from './ProcessesSection';
+import { RemoteNotificationSection } from './RemoteNotificationSection';
 import { SettingsPane } from './SettingsPane';
 import { ShortcutsSection } from './ShortcutsSection';
 import { SoundSection } from './SoundSection';
 import { ThemeSection } from './ThemeSection';
 import { UpdatesSection } from './UpdatesSection';
 
-export type SettingsTab = 'appearance' | 'shortcuts' | 'updates' | 'processes' | 'sound';
+export type SettingsTab = 'appearance' | 'shortcuts' | 'processes' | 'sound' | 'updates';
 
 const TABS: { tab: SettingsTab; title: string }[] = [
   { tab: 'appearance', title: 'Appearance' },
   { tab: 'shortcuts', title: 'Shortcuts' },
-  { tab: 'updates', title: 'Updates' },
   { tab: 'processes', title: 'Processes' },
+  { tab: 'updates', title: 'Updates' },
 ];
 
-const DESKTOP_TABS: { tab: SettingsTab; title: string }[] = [...TABS, { tab: 'sound', title: 'Sound' }];
+const DESKTOP_TABS: { tab: SettingsTab; title: string }[] = [
+  ...TABS.slice(0, -1),
+  { tab: 'sound', title: 'Notifications' },
+  ...TABS.slice(-1),
+];
 
 interface SettingsDialogProps {
   initialTab?: SettingsTab;
@@ -52,8 +57,9 @@ function Section({ tab, themeStore, lookStore, onNewerVersion }: SectionProps) {
   if (tab === 'processes') return <ProcessesSection />;
   if (tab === 'sound') {
     return (
-      <SettingsPane title="Sound">
+      <SettingsPane title="Notifications">
         <SoundSection />
+        <RemoteNotificationSection />
       </SettingsPane>
     );
   }

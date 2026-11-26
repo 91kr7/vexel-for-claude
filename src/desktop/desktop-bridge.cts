@@ -10,6 +10,21 @@ const WINDOW_IS_MAXIMIZED_CHANNEL = 'desktop-bridge:window-is-maximized';
 const WINDOW_MAXIMIZED_CHANNEL = 'desktop-bridge:window-maximized';
 const APP_QUIT_CHANNEL = 'desktop-bridge:app-quit';
 const PLAY_SOUND_CHANNEL = 'desktop-bridge:play-sound';
+const REMOTE_SETTINGS_READ_CHANNEL = 'desktop-bridge:remote-settings-read';
+const REMOTE_SETTINGS_SAVE_CHANNEL = 'desktop-bridge:remote-settings-save';
+
+interface RemoteSettings {
+  enabled: boolean;
+  topicUrl: string;
+  token: string;
+}
+
+function remoteSettingsOf(value: unknown): RemoteSettings | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const { enabled, topicUrl, token } = value as Record<string, unknown>;
+  if (typeof enabled !== 'boolean' || typeof topicUrl !== 'string' || typeof token !== 'string') return undefined;
+  return { enabled, topicUrl, token };
+}
 
 const windowControls = {
   closeWindow(): void {
@@ -60,6 +75,14 @@ electron.contextBridge.exposeInMainWorld('desktopBridge', {
     return () => {
       electron.ipcRenderer.removeListener(PLAY_SOUND_CHANNEL, forward);
     };
+  },
+  async readRemoteSettings(): Promise<RemoteSettings> {
+    const answer = remoteSettingsOf(await electron.ipcRenderer.invoke(REMOTE_SETTINGS_READ_CHANNEL));
+    return answer ?? { enabled: false, topicUrl: '', token: '' };
+  },
+  async saveRemoteSettings(settings: unknown): Promise<void> {
+    const value = remoteSettingsOf(settings);
+    if (value) await electron.ipcRenderer.invoke(REMOTE_SETTINGS_SAVE_CHANNEL, value);
   },
   getPathForFile(file: unknown): string {
     try {

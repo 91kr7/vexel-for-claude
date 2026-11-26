@@ -6,7 +6,7 @@ type: UI component
 
 # SoundSection
 
-**Purpose** → the body of the "Sound" menu of the settings popup: the on/off switch of the needs-input sound.
+**Purpose** → the on/off switch of the needs-input sound, first in the "Notifications" menu of the settings popup.
 
 ## Contract
 

@@ -1,11 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, shell, Tray } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, shell, Tray, type WebContents } from 'electron';
 import { type AttentionSession, connectAttention } from './attention-client.js';
 import { type LaunchResult, launchBackend, stopStartedBackend } from './backend-launcher.js';
 import { type NotificationCommand, NotificationRules } from './notification-rules.js';
 import { groupNotificationTexts, notificationTexts } from './notification-texts.js';
 import { confirmQuit } from './quit-check.js';
+import { parseRemoteSettings, RemoteSettingsStore } from './remote-settings-store.js';
 import { SoundRule } from './sound-rule.js';
 import { startupPageUrl } from './startup-page.js';
 import { SystemNotifications } from './system-notifications.js';
@@ -19,6 +20,8 @@ const preloadPath = fileURLToPath(new URL('desktop-bridge.cjs', import.meta.url)
 const OPEN_SESSION_CHANGED_CHANNEL = 'desktop-bridge:open-session-changed';
 const OPEN_SESSION_CHANNEL = 'desktop-bridge:open-session';
 const PLAY_SOUND_CHANNEL = 'desktop-bridge:play-sound';
+const REMOTE_SETTINGS_READ_CHANNEL = 'desktop-bridge:remote-settings-read';
+const REMOTE_SETTINGS_SAVE_CHANNEL = 'desktop-bridge:remote-settings-save';
 const PAGE_ZOOM_ROLES = new Set(['zoomin', 'zoomout', 'resetzoom']);
 
 let mainWindow: BrowserWindow | undefined;
@@ -147,6 +150,13 @@ async function start(): Promise<void> {
   ipcMain.on(OPEN_SESSION_CHANGED_CHANNEL, (event, sessionId: unknown) => {
     if (current.isDestroyed() || event.sender !== current.webContents) return;
     if (typeof sessionId === 'string' || sessionId === null) runNotificationCommands(notificationRules.setOpenSession(sessionId));
+  });
+  const remoteSettings = new RemoteSettingsStore(path.join(app.getPath('userData'), 'remote-notifications.json'));
+  const fromWindow = (sender: WebContents) => !current.isDestroyed() && sender === current.webContents;
+  ipcMain.handle(REMOTE_SETTINGS_READ_CHANNEL, (event) => (fromWindow(event.sender) ? remoteSettings.read() : undefined));
+  ipcMain.handle(REMOTE_SETTINGS_SAVE_CHANNEL, async (event, value: unknown) => {
+    const settings = parseRemoteSettings(value);
+    if (fromWindow(event.sender) && settings) await remoteSettings.save(settings);
   });
   connectWindowActions(current, ipcMain, () => void quitWithoutQuestion());
   notifications.onClick(openNotifiedSession);

@@ -4091,6 +4091,40 @@ input {
   background-color: var(--on-accent);
 }
 
+.sound-switch:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.sound-switch:disabled .sound-switch-track {
+  opacity: 0.5;
+}
+
+.remote-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 18px 16px;
+}
+
+.remote-fields .field-input:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.remote-fields .field-input::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.remote-fields .field-input:disabled {
+  opacity: 0.6;
+}
+
+.remote-fields .error-message {
+  margin: -6px 0 0;
+}
+
 .processes-rows {
   display: flex;
   flex-direction: column;
