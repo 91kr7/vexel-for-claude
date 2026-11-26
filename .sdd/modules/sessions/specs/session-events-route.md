@@ -12,14 +12,17 @@ type: REST endpoint (WebSocket)
 
 - `registerSessionEventsRoute(app, tracker, external?, runningTools?)` → `external` is the ExternalSessionScanner. Without it, only hosted changes are sent. `runningTools` is the RunningToolMonitor. Without it, no frame has `runningTool`.
 - `registerSessionEventsRoute(app, tracker, external?, runningTools?, usageMonitor?)` → `usageMonitor` is the UsageMonitor. Without it, no frame has `usage`.
+- `registerSessionEventsRoute(app, tracker, external?, runningTools?, usageMonitor?, activityMonitor?)` → `activityMonitor` is the ActivityMonitor. Without it, no frame has `liveActivity`.
 - `GET /api/sessions/events` → WebSocket.
   - server → client: one JSON text frame per SessionStateTracker change: `{ "type": "session", "session": <SessionSummary> }`. A new session is a change too.
   - server → client: one JSON text frame per SessionStateTracker removal (`dismiss`): `{ "type": "session-removed", "id" }`.
   - server → client: one JSON text frame per ExternalSessionScanner change: `{ "type": "session", "session": <ExternalSessionSummary> }` for an addition or a change, `{ "type": "session-removed", "id" }` for a removal.
   - each `session` frame carries `runningTool` in its session when RunningToolMonitor `get(id)` gives one at send time.
   - each `session` frame carries `usage` in its session when UsageMonitor `get(id)` gives one at send time.
-  - server → client: one JSON text frame per RunningToolMonitor change: `{ "type": "session", "session" }` with the current summary of that session (tracker `get`, else scanner `get`) and its current `runningTool` and `usage`. No frame when neither knows the id.
+  - each `session` frame carries `liveActivity` in its session when ActivityMonitor `get(id)` gives one at send time.
+  - server → client: one JSON text frame per RunningToolMonitor change: `{ "type": "session", "session" }` with the current summary of that session (tracker `get`, else scanner `get`) and its current `runningTool`, `usage` and `liveActivity`. No frame when neither knows the id.
   - server → client: one JSON text frame per UsageMonitor change, built the same way.
+  - server → client: one JSON text frame per ActivityMonitor change, built the same way.
   - client → server: frames are ignored.
   - nothing is sent on connect. The page loads the current list from SessionListRoute.
 
@@ -33,6 +36,7 @@ type: REST endpoint (WebSocket)
 - SessionStateTracker
 - ExternalSessionScanner (module external)
 - RunningToolMonitor, UsageMonitor
+- ActivityMonitor (module activity)
 
 ## Requirements served
 
@@ -40,3 +44,4 @@ type: REST endpoint (WebSocket)
 - `plan-session_list_improvements/REQ-4`
 - `plan-session_list_improvements/REQ-14`, `plan-session_list_improvements/REQ-24`
 - `plan-session_usage/REQ-1`, `plan-session_usage/REQ-12`
+- `plan-session_activity/REQ-2`, `plan-session_activity/REQ-12`, `plan-session_activity/REQ-22`

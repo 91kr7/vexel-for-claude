@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { ActivityMonitor } from '../activity/activity-monitor.js';
 import type { ExternalSessionScanner } from '../external/external-session-scanner.js';
 import type { RunningToolMonitor } from './running-tool-monitor.js';
 import type { SessionStateTracker } from './session-state-tracker.js';
@@ -10,12 +11,14 @@ export function registerSessionListRoute(
   external?: Pick<ExternalSessionScanner, 'list'>,
   runningTools?: Pick<RunningToolMonitor, 'get'>,
   usageMonitor?: Pick<UsageMonitor, 'get'>,
+  activityMonitor?: Pick<ActivityMonitor, 'get'>,
 ): void {
   app.get('/api/sessions', async () =>
     [...tracker.list(), ...(external?.list() ?? [])].map((session) => {
       const runningTool = runningTools?.get(session.id);
       const usage = usageMonitor?.get(session.id);
-      return { ...session, ...(runningTool && { runningTool }), ...(usage && { usage }) };
+      const liveActivity = activityMonitor?.get(session.id);
+      return { ...session, ...(runningTool && { runningTool }), ...(usage && { usage }), ...(liveActivity && { liveActivity }) };
     }),
   );
 }

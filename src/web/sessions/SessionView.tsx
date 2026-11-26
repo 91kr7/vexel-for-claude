@@ -2,6 +2,8 @@ import { type DragEvent, type Ref, useEffect, useImperativeHandle, useRef, useSt
 import { type IBufferRange, type ITheme, Terminal } from '@xterm/xterm';
 import { type ISearchOptions, SearchAddon } from '@xterm/addon-search';
 import '@xterm/xterm/css/xterm.css';
+import { TurnPanel } from '../activity/TurnPanel';
+import { TurnPanelButton } from '../activity/TurnPanelButton';
 import { desktopFilePathLookup } from '../desktop-bridge';
 import { rowKeysText, shortcutCommandOf, terminalShortcutOf } from '../shortcut-map';
 import { ErrorMessage } from '../feedback/ErrorMessage';
@@ -213,10 +215,18 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
   const repository = useRepositoryLookup(session?.folder, gitRevision);
   const [gitOpen, setGitOpen] = useState(false);
   const gitShown = gitOpen && (repository.status === 'repositories' || repository.status === 'error');
+  const [turnOpen, setTurnOpen] = useState(false);
   const refreshGit = () => setGitRevision((revision) => revision + 1);
   const toggleGit = () => {
-    if (!gitShown) refreshGit();
+    if (!gitShown) {
+      refreshGit();
+      setTurnOpen(false);
+    }
     setGitOpen(!gitShown);
+  };
+  const toggleTurn = () => {
+    if (!turnOpen) setGitOpen(false);
+    setTurnOpen(!turnOpen);
   };
   useImperativeHandle(focusRef, () => ({ focus: () => terminalRef.current?.focus() }), []);
 
@@ -360,11 +370,11 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
     });
     const inputSubscription = terminal.onData(sendInput);
     const resizeSubscription = terminal.onResize(sendSize);
-    // While the Git Explorer slides or the main view animates, the terminal fits once at the end, not at each frame.
+    // While a side panel slides or the main view animates, the terminal fits once at the end, not at each frame.
     const workspace = container.closest('.session-workspace');
     const mainView = container.closest('.main-view');
     const runningEffects = () =>
-      [workspace?.querySelector('.git-explorer-panel'), mainView]
+      [workspace?.querySelector('.git-explorer-panel'), workspace?.querySelector('.turn-panel'), mainView]
         .flatMap((element) => element?.getAnimations?.() ?? [])
         .filter((animation) => animation.playState === 'running');
     let fitWaits = false;
@@ -507,6 +517,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
         leadingActions={
           <>
             <GitExplorerButton lookup={repository} open={gitShown} onToggle={toggleGit} />
+            <TurnPanelButton open={turnOpen} onToggle={toggleTurn} />
             <button type="button" className="session-search-button" aria-label="Search" title={`Search (${rowKeysText('terminal-search')})`} onClick={openSearch}>
               <SearchIcon />
             </button>
@@ -560,6 +571,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
         <ExitPresence>
           {gitShown && <GitExplorerPanel lookup={repository} folder={session?.folder} onRefresh={refreshGit} sessions={sessions} />}
         </ExitPresence>
+        <ExitPresence>{turnOpen && <TurnPanel sessionId={sessionId} />}</ExitPresence>
       </div>
       {linkTooltip && (
         <div className="terminal-link-tooltip vx-popup-glass" role="tooltip" style={{ left: linkTooltip.left, top: linkTooltip.top }}>

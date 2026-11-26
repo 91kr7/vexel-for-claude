@@ -13,6 +13,7 @@ import type { MessageBoxOptions } from 'electron';
 import { startupPageUrl } from '../src/desktop/startup-page.js';
 import { killLeftovers } from './leftovers';
 import { chooseInSettings } from './settings';
+import { quitDesktop as quitDesktopApp } from './desktop-quit';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
@@ -34,24 +35,9 @@ const ports: number[] = [];
 const dirs: string[] = [];
 const holders: http.Server[] = [];
 
-// Not `app.close()`: the detached backend inherits Electron's descriptors, Playwright's connection included, so close() would wait for the backend.
 // The wait outlasts the launcher's 10-second SIGKILL of a backend that does not stop: killing Electron first would orphan that backend.
 const QUIT_WAIT_MS = 20_000;
-async function quitDesktop(app: ElectronApplication): Promise<void> {
-  // process() throws once Playwright has disposed of an app that already quit.
-  let electron: ChildProcess;
-  try {
-    electron = app.process();
-  } catch {
-    return;
-  }
-  if (electron.exitCode !== null || electron.signalCode !== null) return;
-  const exited = new Promise<void>((resolve) => electron.once('exit', () => resolve()));
-  await stubQuitDialog(app, 1).catch(() => undefined);
-  await app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
-  await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, QUIT_WAIT_MS))]);
-  if (electron.exitCode === null && electron.signalCode === null) electron.kill('SIGKILL');
-}
+const quitDesktop = (app: ElectronApplication) => quitDesktopApp(app, QUIT_WAIT_MS);
 
 test.afterEach(async () => {
   for (const app of apps.splice(0)) await quitDesktop(app);
@@ -358,6 +344,12 @@ test.describe('Desktop window', () => {
     expect(Date.now() - start).toBeLessThan(5000);
     expect(window.url()).toBe(`http://127.0.0.1:${port}/`);
     expect(await healthStatus(port)).toBe(200);
+    await expect
+      .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().map((w) => [w.getSize()[0], w.isMaximized()])), {
+        message: 'DesktopApp: a maximize the desktop did by itself is undone, and the window settles at its own width',
+        timeout: 15_000,
+      })
+      .toEqual([[1280, false]]);
     const [state, ...others] = await windowState(app);
     expect(others).toEqual([]);
     expect(state).toMatchObject({ menuBarVisible: false, minimized: false, visible: true });
@@ -705,6 +697,21 @@ test.describe('Remembered theme in the desktop app', () => {
   }
 });
 
+/** The window area at the left end, the middle and the right end of the row at `y`, all read on one layout: the window can resize between two reads. */
+const regionsAcross = (page: Page, y: number) =>
+  page.evaluate((py) => {
+    const regionAt = (px: number) => {
+      let region = 'none';
+      for (const element of document.querySelectorAll('*')) {
+        const value = getComputedStyle(element).getPropertyValue('-webkit-app-region');
+        const box = element.getBoundingClientRect();
+        if ((value === 'drag' || value === 'no-drag') && px >= box.left && px < box.right && py >= box.top && py < box.bottom) region = value;
+      }
+      return region;
+    };
+    return [1, innerWidth / 2, innerWidth - 1].map((x) => ({ x, region: regionAt(x) }));
+  }, y);
+
 /** The window area at a point: the last element, in document order, that declares a drag value over the point wins. */
 const appRegionAt = (page: Page, x: number, y: number) =>
   page.evaluate(
@@ -736,8 +743,7 @@ test.describe('Frameless window', () => {
     const window = await app.firstWindow();
 
     await expect(window.getByText(LOADING, { exact: true })).toBeVisible();
-    const width = (await window.evaluate(() => innerWidth)) as number;
-    for (const x of [1, width / 2, width - 1]) expect(await appRegionAt(window, x, 24), `REQ-10: startup bar at ${x}`).toBe('drag');
+    for (const { x, region } of await regionsAcross(window, 24)) expect(region, `REQ-10: startup bar at ${x}`).toBe('drag');
 
     await expect(list(window)).toBeVisible({ timeout: 20_000 });
     const banner = window.getByRole('banner');
@@ -773,8 +779,7 @@ test.describe('Frameless window', () => {
     const app = await launchDesktop(await desktopEnv((holder.address() as net.AddressInfo).port));
     const window = await app.firstWindow();
     await expect(window.getByText(ERROR, { exact: true })).toBeVisible({ timeout: 30_000 });
-    const width = (await window.evaluate(() => innerWidth)) as number;
-    for (const x of [1, width / 2, width - 1]) expect(await appRegionAt(window, x, 24), `REQ-10: startup bar at ${x}`).toBe('drag');
+    for (const { x, region } of await regionsAcross(window, 24)) expect(region, `REQ-10: startup bar at ${x}`).toBe('drag');
 
     const menuBar = await app.evaluate(async ({ BrowserWindow, Menu }) => {
       const current = BrowserWindow.getAllWindows()[0]!;

@@ -47,6 +47,15 @@ export function HistoryIcon() {
   );
 }
 
+export function ClockIcon() {
+  return (
+    <LucideIcon>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </LucideIcon>
+  );
+}
+
 const FOLDER_PATH = 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z';
 
 export function FolderIcon() {
@@ -254,6 +263,15 @@ export function ArrowDownIcon() {
   );
 }
 
+export function ArrowLeftIcon() {
+  return (
+    <LucideIcon>
+      <path d="m12 19-7-7 7-7" />
+      <path d="M19 12H5" />
+    </LucideIcon>
+  );
+}
+
 export function SearchIcon() {
   return (
     <LucideIcon>
@@ -352,6 +370,18 @@ export function GitBranchIcon() {
       <path d="M15 6a9 9 0 0 0-9 9V3" />
       <circle cx="18" cy="6" r="3" />
       <circle cx="6" cy="18" r="3" />
+    </LucideIcon>
+  );
+}
+
+export function ListTreeIcon() {
+  return (
+    <LucideIcon>
+      <path d="M8 5h13" />
+      <path d="M13 12h8" />
+      <path d="M13 19h8" />
+      <path d="M3 10a2 2 0 0 0 2 2h3" />
+      <path d="M3 5v12a2 2 0 0 0 2 2h3" />
     </LucideIcon>
   );
 }

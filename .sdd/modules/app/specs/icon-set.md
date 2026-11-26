@@ -24,6 +24,7 @@ Components and where the client uses them today:
 - `TerminalIcon` → "Sessions" in the rail, the pill "Running in a terminal" of the ResumeDialog
 - `LockIcon` → the "Read-only" chip of the external view
 - `ArrowDownIcon` → the "N new messages" button
+- `ArrowLeftIcon` (Lucide "arrow-left") → "Back" of the SubagentConversation (module activity)
 - `TriangleAlertIcon` → the amber banner of a WarningDialog (RunningElsewhereWarning)
 - `FolderIcon` → the "Folders" rows of the FolderChooser
 - `SearchIcon` → the search bar of the ResumeDialog, "Search" in the SessionView subbar, the TerminalSearchBox
@@ -35,6 +36,7 @@ Components and where the client uses them today:
 - `SettingsIcon` (Lucide "settings", a gear) → the SettingsButton
 - `GitBranchIcon` → the GitExplorerButton and the branch chip of the GitExplorerPanel (module git)
 - `RefreshCwIcon` → "Refresh" in the GitExplorerPanel (module git)
+- `ListTreeIcon` (Lucide "list-tree") → the TurnPanelButton (module activity)
 - `PencilIcon` → "Rename" of a list entry, "Change Keys" of a ShortcutsSection row
 - `RotateCcwIcon` (Lucide "rotate-ccw") → "Restore Default" of a ShortcutsSection row
 - `SunIcon`, `MoonIcon`, `MoonStarIcon` → the "Light", "Dark" and "Dark Blue" cards of ThemeSection; `MacWindowIcon`, `WindowsLogoIcon` → the "macOS" and "Windows 11" cards of LookSection
@@ -42,6 +44,7 @@ Components and where the client uses them today:
 - `CheckIcon` → the mark of the active card in ThemeSection and LookSection
 - `StarIcon` → "Mark as Favorite" and "Remove Favorite" of a list entry (FavoriteButton), and the FavoriteIndicator. It has a filled variant (`filled`): the SVG has the class `icon-filled` and its computed `fill` is `currentColor`; the other icons keep `fill: none`
 - `CirclePauseIcon` → "Interrupt" in the SessionView subbar
+- `ClockIcon` (Lucide "clock") → the stall signal of a list entry (SessionList, module sessions)
 - no user since the dark Studio restyle → `FolderPlusIcon`, `CircleStopIcon`, `PowerIcon`, `CircleAlertIcon`, `CircleOffIcon`, `CircleMinusIcon`, `WrenchIcon`, `ChevronRightIcon`, and `SparkIcon` (the ember four-point star, mock artwork and not a Lucide icon: a filled shape with the class `spark`, painted with `currentColor`)
 
 ## Rules and invariants
@@ -70,3 +73,4 @@ Components and where the client uses them today:
 - `plan-favorite_session/REQ-3`, `plan-favorite_session/REQ-4`, `plan-favorite_session/REQ-11`
 - `plan-wsl_support/REQ-19`, `plan-wsl_support/REQ-28`
 - `plan-settings_dialog/REQ-1`, `plan-settings_dialog/REQ-24`, `plan-settings_dialog/REQ-57`, `plan-settings_dialog/REQ-58`
+- `plan-session_activity/REQ-24`, `plan-session_activity/REQ-27`, `plan-session_activity/REQ-54`

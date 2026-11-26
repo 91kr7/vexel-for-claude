@@ -389,3 +389,12 @@ describe('plan-claude_sessions_client/REQ-44 the Origin rule covers the HTTP req
     expect(forbidden(reply)).toEqual({ status: 403, body: { error: 'forbidden' } });
   });
 });
+
+describe('plan-session_activity/REQ-27 the turn socket of a session is covered by the local access guard', () => {
+  // server spec: LocalAccessGuard covers TurnRoute, as every route
+  it('opens the turn socket from the own origins and refuses it from another local page', async () => {
+    const id = await startedId(production);
+    for (const origin of production.own) expect(await webSocket(production, `/api/sessions/${id}/turn`, origin), origin).toEqual({ opened: true });
+    expect(await webSocket(production, `/api/sessions/${id}/turn`, 'http://localhost:8080')).toEqual({ opened: false, status: 403 });
+  });
+});

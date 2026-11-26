@@ -85,9 +85,19 @@ describe('SessionView', () => {
     }
   });
 
-  // plan-session_list_width/REQ-15: the header actions are "Search", "Interrupt" and "Terminate", in this order
-  it('shows only "Search", "Interrupt" and "Terminate" as header actions', () => {
-    expect(accessibleNames(partOf(render('idle'), 'header'))).toEqual(['Search', 'Interrupt', 'Terminate']);
+  // plan-session_list_width/REQ-15, plan-session_activity/REQ-27: with no repository, the header actions are "Turn Panel", "Search", "Interrupt" and "Terminate", in this order
+  it('shows only "Turn Panel", "Search", "Interrupt" and "Terminate" as header actions', () => {
+    expect(accessibleNames(partOf(render('idle'), 'header'))).toEqual(['Turn Panel', 'Search', 'Interrupt', 'Terminate']);
+  });
+
+  // plan-session_activity/REQ-27: "Turn Panel" shows in every state, before "Search", and the panel is closed when the view opens
+  it.each<SessionState | undefined>(['working', 'needs_input', 'idle', 'ended', undefined])('shows the closed "Turn Panel" button before "Search" when the state is %s', (state) => {
+    const header = partOf(render(state), 'header');
+    const tag = header.match(/<button\b[^>]*\saria-label="Turn Panel"[^>]*>/)?.[0];
+    expect(tag).toBeDefined();
+    expect(tag).toContain('aria-expanded="false"');
+    expect(header.indexOf(tag!)).toBeLessThan(header.search(/<button\b[^>]*\saria-label="Search"/));
+    expect(render(state)).not.toMatch(/<section\b[^>]*\saria-label="Turn Panel"/);
   });
 
   // plan-terminal_addons/REQ-35, REQ-43, plan-session_list_width/REQ-29: the zoom controls show the page size in every state, at the end of the footer

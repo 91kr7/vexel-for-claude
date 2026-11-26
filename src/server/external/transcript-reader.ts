@@ -1,4 +1,4 @@
-import { type FileHandle, open, readdir, stat } from 'node:fs/promises';
+import { type FileHandle, open, readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { defaultClaudeDir, userMessageOf } from '../history/session-history.js';
 
@@ -17,12 +17,33 @@ export interface TranscriptReaderOptions {
   claudeDir?: string;
 }
 
+export interface ItemsOptions {
+  sidechain?: boolean;
+}
+
+export interface SubagentMeta {
+  agentType?: string;
+  description?: string;
+  toolUseId?: string;
+  model?: string;
+  finished?: boolean;
+}
+
+export interface WorkflowSubagentFile {
+  file: string;
+  runId: string;
+  journal: string;
+}
+
 const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
 const RESULT_LINES = 5;
 const SUMMARY_LENGTH = 120;
 const SUMMARY_KEYS = ['command', 'file_path', 'path', 'pattern', 'url', 'query', 'description', 'prompt'];
 const NEWLINE = 0x0a;
 const LINE_CHUNK_BYTES = 64 * 1024;
+const WORKFLOWS_FOLDER = 'workflows';
+const AGENT_FILE_PREFIX = 'agent-';
+const JOURNAL_FILE = 'journal.jsonl';
 
 type Block = Record<string, unknown>;
 
@@ -107,21 +128,21 @@ function assistantItems(content: unknown, lineOffset: number | undefined): Conve
   return items;
 }
 
-function conversationEntryOf(entry: unknown): Record<string, unknown> | undefined {
+function conversationEntryOf(entry: unknown, sidechain = false): Record<string, unknown> | undefined {
   if (!isBlock(entry) || Array.isArray(entry)) return undefined;
-  return entry.isSidechain === true || entry.isMeta === true ? undefined : entry;
+  return (entry.isSidechain === true && !sidechain) || entry.isMeta === true ? undefined : entry;
 }
 
 const contentOf = (record: Record<string, unknown>): unknown => (record.message as { content?: unknown } | undefined)?.content;
 
-export function itemsOf(entry: unknown, lineOffset?: number): ConversationItem[] {
-  const record = conversationEntryOf(entry);
+export function itemsOf(entry: unknown, lineOffset?: number, options: ItemsOptions = {}): ConversationItem[] {
+  const record = conversationEntryOf(entry, options.sidechain);
   if (!record) return [];
   const content = contentOf(record);
   if (record.type === 'assistant') return assistantItems(content, lineOffset);
   if (record.type !== 'user') return [];
   const items: ConversationItem[] = [];
-  const text = userMessageOf(record);
+  const text = userMessageOf(record.isSidechain === true ? { ...record, isSidechain: false } : record);
   if (text !== null) items.push({ kind: 'user', text, ...(typeof record.timestamp === 'string' && { timestamp: record.timestamp }) });
   for (const { block, index } of indexedBlocksOf(content)) {
     if (block.type === 'tool_result') items.push(withRef(toolResultItem(block), lineOffset, index));
@@ -129,8 +150,8 @@ export function itemsOf(entry: unknown, lineOffset?: number): ConversationItem[]
   return items;
 }
 
-function fullContentOf(entry: unknown, blockIndex: number): string | undefined {
-  const record = conversationEntryOf(entry);
+function fullContentOf(entry: unknown, blockIndex: number, sidechain?: boolean): string | undefined {
+  const record = conversationEntryOf(entry, sidechain);
   const content = record && contentOf(record);
   const block: unknown = Array.isArray(content) ? content[blockIndex] : undefined;
   if (!record || !isBlock(block)) return undefined;
@@ -141,7 +162,7 @@ function fullContentOf(entry: unknown, blockIndex: number): string | undefined {
   return undefined;
 }
 
-function parseLines(buffer: Buffer, baseOffset: number): ConversationItem[] {
+function parseLines(buffer: Buffer, baseOffset: number, options: ItemsOptions): ConversationItem[] {
   const items: ConversationItem[] = [];
   let start = 0;
   while (start <= buffer.length) {
@@ -156,7 +177,7 @@ function parseLines(buffer: Buffer, baseOffset: number): ConversationItem[] {
     } catch {
       continue;
     }
-    items.push(...itemsOf(entry, lineOffset));
+    items.push(...itemsOf(entry, lineOffset, options));
   }
   return items;
 }
@@ -214,13 +235,74 @@ async function readLineAt(handle: FileHandle, offset: number): Promise<string | 
 
 const isFile = (file: string) => stat(file).then((stats) => stats.isFile(), () => false);
 
+const subagentsFolderOf = (file: string) => path.join(file.replace(/\.jsonl$/, ''), 'subagents');
+
+const workflowsFolderOf = (file: string) => path.join(subagentsFolderOf(file), WORKFLOWS_FOLDER);
+
+async function workflowRunsOf(file: string): Promise<string[]> {
+  const children = await readdir(workflowsFolderOf(file), { withFileTypes: true }).catch(() => []);
+  return children
+    .filter((child) => child.isDirectory() && SESSION_ID_PATTERN.test(child.name))
+    .map((child) => child.name)
+    .sort();
+}
+
+export async function subagentFileOf(file: string, agentId: string): Promise<string | undefined> {
+  if (!SESSION_ID_PATTERN.test(agentId)) return undefined;
+  const candidate = path.join(subagentsFolderOf(file), `${agentId}.jsonl`);
+  if (await isFile(candidate)) return candidate;
+  if (!agentId.startsWith(AGENT_FILE_PREFIX)) return undefined;
+  for (const runId of await workflowRunsOf(file)) {
+    const inRun = path.join(workflowsFolderOf(file), runId, `${agentId}.jsonl`);
+    if (await isFile(inRun)) return inRun;
+  }
+  return undefined;
+}
+
+export async function workflowSubagentFilesOf(file: string): Promise<WorkflowSubagentFile[]> {
+  const files: WorkflowSubagentFile[] = [];
+  for (const runId of await workflowRunsOf(file)) {
+    const folder = path.join(workflowsFolderOf(file), runId);
+    const journal = path.join(folder, JOURNAL_FILE);
+    const children = await readdir(folder, { withFileTypes: true }).catch(() => []);
+    const names = children
+      .filter((child) => child.isFile() && child.name.startsWith(AGENT_FILE_PREFIX) && child.name.endsWith('.jsonl'))
+      .map((child) => child.name)
+      .sort();
+    files.push(...names.map((name) => ({ file: path.join(folder, name), runId, journal })));
+  }
+  return files;
+}
+
 export async function subagentFilesOf(file: string): Promise<string[]> {
-  const folder = path.join(file.replace(/\.jsonl$/, ''), 'subagents');
+  const folder = subagentsFolderOf(file);
   const children = await readdir(folder, { withFileTypes: true }).catch(() => []);
   return children
     .filter((child) => child.isFile() && child.name.endsWith('.jsonl'))
     .map((child) => path.join(folder, child.name))
     .sort();
+}
+
+async function readJson(file: string): Promise<unknown> {
+  try {
+    return JSON.parse(await readFile(file, 'utf8'));
+  } catch {
+    return undefined;
+  }
+}
+
+export async function subagentMetaOf(file: string): Promise<SubagentMeta> {
+  const meta = await readJson(`${file.replace(/\.jsonl$/, '')}.meta.json`);
+  if (!isBlock(meta) || Array.isArray(meta)) return {};
+  const text = (key: keyof SubagentMeta) => (typeof meta[key] === 'string' ? { [key]: meta[key] } : {});
+  const model = [meta.pickedEffortModel, meta.model].find((value) => typeof value === 'string');
+  return {
+    ...text('agentType'),
+    ...text('description'),
+    ...text('toolUseId'),
+    ...(model !== undefined && { model }),
+    ...(typeof meta.finished === 'boolean' && { finished: meta.finished }),
+  };
 }
 
 export class TranscriptReader {
@@ -244,7 +326,7 @@ export class TranscriptReader {
     return undefined;
   }
 
-  async readFrom(file: string, offset: number): Promise<{ items: ConversationItem[]; offset: number }> {
+  async readFrom(file: string, offset: number, options: ItemsOptions = {}): Promise<{ items: ConversationItem[]; offset: number }> {
     let handle;
     try {
       handle = await open(file, 'r');
@@ -255,7 +337,7 @@ export class TranscriptReader {
       const lastNewline = buffer.subarray(0, bytesRead).lastIndexOf(NEWLINE);
       if (lastNewline === -1) return { items: [], offset };
       return {
-        items: parseLines(buffer.subarray(0, lastNewline), offset),
+        items: parseLines(buffer.subarray(0, lastNewline), offset, options),
         offset: offset + lastNewline + 1,
       };
     } catch {
@@ -297,14 +379,14 @@ export class TranscriptReader {
     }
   }
 
-  async readItem(file: string, ref: ItemRef): Promise<string | undefined> {
+  async readItem(file: string, ref: ItemRef, options: ItemsOptions = {}): Promise<string | undefined> {
     const valid = [ref.offset, ref.block].every((value) => Number.isSafeInteger(value) && value >= 0);
     if (!valid) return undefined;
     let handle;
     try {
       handle = await open(file, 'r');
       const line = await readLineAt(handle, ref.offset);
-      return line === undefined ? undefined : fullContentOf(JSON.parse(line), ref.block);
+      return line === undefined ? undefined : fullContentOf(JSON.parse(line), ref.block, options.sidechain);
     } catch {
       return undefined;
     } finally {

@@ -9,6 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type ElectronApplication, type Page, _electron, expect, test } from '@playwright/test';
+import { quitDesktop } from './desktop-quit';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
@@ -21,26 +22,6 @@ const apps: ElectronApplication[] = [];
 const children: ChildProcess[] = [];
 const ports: number[] = [];
 const dirs: string[] = [];
-
-// Not `app.close()`: it would wait for processes that inherited Playwright's connection.
-async function quitDesktop(app: ElectronApplication): Promise<void> {
-  let electron: ChildProcess;
-  try {
-    electron = app.process();
-  } catch {
-    return;
-  }
-  if (electron.exitCode !== null || electron.signalCode !== null) return;
-  const exited = new Promise<void>((resolve) => electron.once('exit', () => resolve()));
-  await app
-    .evaluate(({ dialog }) => {
-      dialog.showMessageBox = (() => Promise.resolve({ response: 1, checkboxChecked: false })) as never;
-    })
-    .catch(() => undefined);
-  await app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
-  await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 10_000))]);
-  if (electron.exitCode === null && electron.signalCode === null) electron.kill('SIGKILL');
-}
 
 function listenerPids(port: number): number[] {
   const out = execFileSync('ss', ['-Hltnp', `sport = :${port}`], { encoding: 'utf8' });

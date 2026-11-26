@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { ActivityMonitor } from '../activity/activity-monitor.js';
 import type { ExternalSessionScanner } from '../external/external-session-scanner.js';
 import type { RunningToolMonitor } from './running-tool-monitor.js';
 import type { SessionStateTracker } from './session-state-tracker.js';
@@ -10,11 +11,13 @@ export function registerSessionEventsRoute(
   external?: Pick<ExternalSessionScanner, 'onChange' | 'get'>,
   runningTools?: Pick<RunningToolMonitor, 'get' | 'onChange'>,
   usageMonitor?: Pick<UsageMonitor, 'get' | 'onChange'>,
+  activityMonitor?: Pick<ActivityMonitor, 'get' | 'onChange'>,
 ): void {
   const withLiveFields = <T extends { id: string }>(session: T) => {
     const runningTool = runningTools?.get(session.id);
     const usage = usageMonitor?.get(session.id);
-    return { ...session, ...(runningTool && { runningTool }), ...(usage && { usage }) };
+    const liveActivity = activityMonitor?.get(session.id);
+    return { ...session, ...(runningTool && { runningTool }), ...(usage && { usage }), ...(liveActivity && { liveActivity }) };
   };
   app.get('/api/sessions/events', { websocket: true }, (socket) => {
     const sendSession = (session: { id: string }) => socket.send(JSON.stringify({ type: 'session', session: withLiveFields(session) }));
@@ -29,12 +32,14 @@ export function registerSessionEventsRoute(
     };
     const unsubscribeTool = runningTools?.onChange(sendCurrent);
     const unsubscribeUsage = usageMonitor?.onChange(sendCurrent);
+    const unsubscribeActivity = activityMonitor?.onChange(sendCurrent);
     socket.on('close', () => {
       unsubscribe();
       unsubscribeRemove();
       unsubscribeExternal?.();
       unsubscribeTool?.();
       unsubscribeUsage?.();
+      unsubscribeActivity?.();
     });
   });
 }

@@ -6,11 +6,11 @@ type: backend function
 
 # plainExcerpt
 
-**Purpose** → turns a markdown response of Claude into a short plain text, for the turn-end notification.
+**Purpose** → turns a markdown text of Claude into a short plain text, for the turn-end notification and the latest text of a session.
 
 ## Contract
 
-- `plainExcerpt(markdown) → string`
+- `plainExcerpt(markdown, maxLength?) → string` → `maxLength` default: 100.
 
 ```
 for each line:
@@ -23,12 +23,12 @@ for each line:
         link [text](url) or image ![text](url)                      → text
         emphasis **text**, __text__, *text*, _text_, ~~text~~       → text
 the lines joined by a space, whitespace runs collapsed to one space, ends trimmed
-more than 100 characters → the first 99 characters and "…"
+more than maxLength characters → the first maxLength - 1 characters and "…"
 ```
 
 ## Rules and invariants
 
-- The result has at most 100 characters (Unicode code points).
+- The result has at most `maxLength` characters (Unicode code points).
 - An emphasis mark needs a non-space character right after the opening mark and right before the closing one. So `2 * 3 * 4` stays as written.
 - `_` inside a word is not emphasis: `file_name_here` stays as written.
 - A markdown with no text gives `""`.
@@ -36,3 +36,4 @@ more than 100 characters → the first 99 characters and "…"
 ## Requirements served
 
 - `plan-session_notifications/REQ-16`
+- `plan-session_activity/REQ-6`

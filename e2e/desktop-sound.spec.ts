@@ -14,6 +14,7 @@ import { Message, type MessageBus, Variant, sessionBus } from '@jellybrick/dbus-
 import { type ElectronApplication, type Page, _electron, expect, test } from '@playwright/test';
 import { killLeftovers } from './leftovers';
 import { settingsButton, settingsPopup } from './settings';
+import { quitDesktop } from './desktop-quit';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const electronBinary = createRequire(import.meta.url)('electron') as string;
@@ -125,27 +126,6 @@ test.afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
-
-// Not `app.close()`: the detached backend inherits Electron's descriptors, Playwright's connection included, so close() would wait for the backend.
-async function quitDesktop(app: ElectronApplication): Promise<void> {
-  let electron: ChildProcess;
-  try {
-    electron = app.process();
-  } catch {
-    return;
-  }
-  if (electron.exitCode !== null || electron.signalCode !== null) return;
-  const exited = new Promise<void>((resolve) => electron.once('exit', () => resolve()));
-  // Answers "Quit" to the confirmation that busy sessions bring.
-  await app
-    .evaluate(({ dialog }) => {
-      dialog.showMessageBox = (() => Promise.resolve({ response: 1, checkboxChecked: false })) as never;
-    })
-    .catch(() => undefined);
-  await app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
-  await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 10_000))]);
-  if (electron.exitCode === null && electron.signalCode === null) electron.kill('SIGKILL');
-}
 
 async function freePort(): Promise<number> {
   const server = net.createServer();
