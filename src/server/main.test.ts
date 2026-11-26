@@ -874,7 +874,8 @@ describe('plan-claude_sessions_client external sessions', { timeout: 20_000 }, (
       ]);
       const updatedAt = Date.parse('2026-11-05T08:15:30.000Z');
       const terminal = await externalTerminal('req30-data', folder, { updatedAt });
-      expect(await waitForExternal('req30-data')).toEqual({
+      const { liveActivity: _liveActivity, ...summary } = (await waitForExternal('req30-data')) as ExternalSummary & { liveActivity?: unknown };
+      expect(summary, 'the REQ-30 fields; liveActivity comes later, from the activity monitor').toEqual({
         id: 'req30-data',
         folder,
         label: firstMessage.replace(/\s+/g, ' ').trim().slice(0, 80),
