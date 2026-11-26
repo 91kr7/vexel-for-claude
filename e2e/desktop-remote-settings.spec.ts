@@ -1,10 +1,12 @@
-// e2e of plan-remote_notifications, batch notifications-section, in the desktop app. Each launch gets its own HOME and free port, and a
-// private D-Bus session bus whose notification server and tray host are fakes: nothing reaches the user's panel or notifications.
+// e2e of plan-remote_notifications, batches notifications-section and test-notification, in the desktop app. Each launch gets its own HOME
+// and free port, and a private D-Bus session bus whose notification server and tray host are fakes: nothing reaches the user's panel or
+// notifications. A local fake ntfy server takes the test notifications: nothing reaches ntfy.sh.
 import { type ChildProcess, type ChildProcessByStdio, execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { type IncomingHttpHeaders, type Server, createServer } from 'node:http';
 import { createRequire } from 'node:module';
-import net from 'node:net';
+import net, { type AddressInfo } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import type { Readable } from 'node:stream';
@@ -35,6 +37,7 @@ let nextId = 40;
 const apps: ElectronApplication[] = [];
 const ports: number[] = [];
 const dirs: string[] = [];
+const ntfyServers: Server[] = [];
 
 /** The fake notification server and tray host: they answer what the app asks, and record nothing. */
 function handle(msg: Message): boolean {
@@ -88,6 +91,10 @@ test.afterAll(() => {
 
 test.afterEach(async () => {
   for (const app of apps.splice(0)) await quitDesktop(app);
+  for (const server of ntfyServers.splice(0)) {
+    server.closeAllConnections();
+    await new Promise((resolve) => server.close(resolve));
+  }
   for (const port of ports.splice(0)) await stopListeners(port);
   for (const dir of dirs.splice(0)) {
     killLeftovers(dir);
@@ -195,6 +202,38 @@ async function closeSettings(page: Page): Promise<void> {
   await expect(page.locator('.modal-backdrop')).toHaveCount(0);
 }
 
+const testButton = (page: Page) => panel(page).getByRole('button', { name: 'Send test notification', exact: true });
+
+interface NtfyRequest {
+  method: string;
+  url: string;
+  headers: IncomingHttpHeaders;
+  body: unknown;
+}
+
+/** A fake ntfy server on a free local port: it records each request and answers with `status`. */
+async function fakeNtfy(status = 200): Promise<{ topicUrl: string; received: NtfyRequest[] }> {
+  const received: NtfyRequest[] = [];
+  const server = createServer((request, response) => {
+    const chunks: Buffer[] = [];
+    request.on('data', (chunk: Buffer) => chunks.push(chunk));
+    request.on('end', () => {
+      const text = Buffer.concat(chunks).toString('utf8');
+      let body: unknown = text;
+      try {
+        body = JSON.parse(text);
+      } catch {}
+      received.push({ method: request.method ?? '', url: request.url ?? '', headers: request.headers, body });
+      response.writeHead(status, { 'Content-Type': 'application/json' }).end('{}');
+    });
+  });
+  ntfyServers.push(server);
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  return { topicUrl: `http://127.0.0.1:${(server.address() as AddressInfo).port}/my-topic`, received };
+}
+
+const TEST_MESSAGE = { topic: 'my-topic', title: 'Vexel for Claude', message: 'Test notification. Remote notifications reach this device.', priority: 3 };
+
 const settingsFile = async (app: ElectronApplication) =>
   path.join(await app.evaluate(({ app: electronApp }) => electronApp.getPath('userData')), 'remote-notifications.json');
 
@@ -270,5 +309,77 @@ test.describe('Remote notification settings in the desktop app', () => {
     expect(other.bridge, 'the preload ran in the other web contents').toBe(true);
     expect(other.read, 'the read gives no settings: the bridge falls back to the defaults').toEqual({ enabled: false, topicUrl: '', token: '' });
     expect(JSON.parse(await readFile(file, 'utf8')), 'the save wrote nothing').toEqual({ enabled: true, topicUrl: TOPIC, token: '' });
+  });
+
+  // Scenario "The test notification reaches the phone", with a local fake ntfy server in place of the phone
+  test('REQ-14, REQ-15, REQ-16: with the switch off, "Send test notification" posts the test message with the token, and the section shows "Test notification sent."', async () => {
+    const ntfy = await fakeNtfy();
+    const { window } = await readyDesktop();
+    await openNotifications(window);
+    await topicField(window).fill(ntfy.topicUrl);
+    await tokenField(window).fill(TOKEN);
+    await expect(remoteSwitch(window)).toHaveAttribute('aria-checked', 'false');
+
+    await testButton(window).click();
+    await expect(panel(window).getByRole('status'), 'REQ-16').toHaveText('Test notification sent.');
+    expect(ntfy.received, 'REQ-15: one message to the server root').toHaveLength(1);
+    expect(ntfy.received[0]).toMatchObject({ method: 'POST', url: '/', body: TEST_MESSAGE });
+    expect(ntfy.received[0]?.headers.authorization, 'REQ-15: with the token').toBe(`Bearer ${TOKEN}`);
+    await expect(remoteSwitch(window), 'the test leaves the switch off').toHaveAttribute('aria-checked', 'false');
+
+    await tokenField(window).fill('');
+    await testButton(window).click();
+    await expect.poll(() => ntfy.received.length).toBe(2);
+    await expect(panel(window).getByRole('status')).toHaveText('Test notification sent.');
+    expect(ntfy.received[1]?.headers, 'no token right after it is cleared: no authorization header').not.toHaveProperty('authorization');
+  });
+
+  // Scenario "A refused token is reported"
+  test('REQ-15, REQ-17, REQ-18: a token refused by the server shows "The server refused the access token." without the token', async () => {
+    const ntfy = await fakeNtfy(403);
+    const wrongToken = 'tk_wrong_e2e_secret';
+    const { window } = await readyDesktop();
+    await openNotifications(window);
+    await topicField(window).fill(ntfy.topicUrl);
+    await tokenField(window).fill(wrongToken);
+
+    await testButton(window).click();
+    const reason = panel(window).getByRole('alert');
+    await expect(reason, 'REQ-17').toHaveText('The server refused the access token.');
+    await expect(reason, 'REQ-18').not.toContainText(wrongToken);
+    expect(ntfy.received).toHaveLength(1);
+    expect(ntfy.received[0]?.headers.authorization).toBe(`Bearer ${wrongToken}`);
+    await expect(panel(window).getByRole('status')).toHaveCount(0);
+  });
+
+  // spec DesktopApp: a test request from another web contents sends nothing
+  test('another web contents with the preload gets no test result and sends nothing', async () => {
+    const ntfy = await fakeNtfy();
+    const { app, window } = await readyDesktop();
+    await openNotifications(window);
+    await topicField(window).fill(ntfy.topicUrl);
+    const file = await settingsFile(app);
+    await expect.poll(async () => JSON.parse(await readFile(file, 'utf8').catch(() => 'null'))).toEqual({ enabled: false, topicUrl: ntfy.topicUrl, token: '' });
+
+    const preload = path.join(repoRoot, 'dist/desktop/desktop-bridge.cjs');
+    const other = await app.evaluate(async ({ BrowserWindow }, preloadPath) => {
+      const hidden = new BrowserWindow({ show: false, webPreferences: { preload: preloadPath } });
+      try {
+        await hidden.loadURL('data:text/html,<p>other</p>');
+        return (await hidden.webContents.executeJavaScript(
+          `(async () => {
+            const bridge = window.desktopBridge;
+            if (!bridge) return { bridge: false };
+            return { bridge: true, result: await bridge.sendTestNotification() };
+          })()`,
+        )) as { bridge: boolean; result?: unknown };
+      } finally {
+        hidden.destroy();
+      }
+    }, preload);
+
+    expect(other.bridge, 'the preload ran in the other web contents').toBe(true);
+    expect(other.result, 'the answer is empty').toBeNull();
+    expect(ntfy.received, 'nothing was sent').toHaveLength(0);
   });
 });

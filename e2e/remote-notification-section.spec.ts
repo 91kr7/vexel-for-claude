@@ -1,5 +1,6 @@
-// e2e of plan-remote_notifications, batch notifications-section, in the browser. A fake bridge makes the page a desktop window and
-// records each save of the remote settings. The restart of the desktop app is in desktop-remote-settings.spec.ts.
+// e2e of plan-remote_notifications, batches notifications-section and test-notification, in the browser. A fake bridge makes the page a
+// desktop window, records each save of the remote settings and holds each test request until the test answers it. The restart of the
+// desktop app and the real send are in desktop-remote-settings.spec.ts.
 import { type Page, expect, test } from '@playwright/test';
 import { settingsButton, settingsPopup } from './settings';
 
@@ -8,12 +9,20 @@ const REMOTE = 'Send a remote notification after 60 seconds of waiting';
 const TOPIC = 'https://ntfy.sh/my-topic';
 
 type Settings = { enabled: boolean; topicUrl: string; token: string };
-type Probe = { saves: Settings[] };
+type TestResult = { status: 'sent' } | { status: 'failed'; reason: string } | null;
+type Probe = { saves: Settings[]; tests: number; answer: (result: TestResult) => void };
 
 /** The DesktopBridge of the window, with `read` as the stored remote settings. */
 async function openDesktopPage(page: Page, read: Settings = { enabled: false, topicUrl: '', token: '' }): Promise<void> {
   await page.addInitScript((stored: Settings) => {
-    const probe: Probe = { saves: [] };
+    let pending: ((result: TestResult) => void)[] = [];
+    const probe: Probe = {
+      saves: [],
+      tests: 0,
+      answer: (result) => {
+        for (const resolve of pending.splice(0)) resolve(result);
+      },
+    };
     let current = stored;
     Object.assign(window, {
       e2eRemote: probe,
@@ -27,6 +36,10 @@ async function openDesktopPage(page: Page, read: Settings = { enabled: false, to
           probe.saves.push(current);
           return Promise.resolve();
         },
+        sendTestNotification: () => {
+          probe.tests += 1;
+          return new Promise<TestResult>((resolve) => pending.push(resolve));
+        },
       },
     });
   }, read);
@@ -35,12 +48,15 @@ async function openDesktopPage(page: Page, read: Settings = { enabled: false, to
 }
 
 const saves = (page: Page) => page.evaluate(() => [...(window as unknown as { e2eRemote: Probe }).e2eRemote.saves]);
+const testRequests = (page: Page) => page.evaluate(() => (window as unknown as { e2eRemote: Probe }).e2eRemote.tests);
+const answerTest = (page: Page, result: TestResult) => page.evaluate((value) => (window as unknown as { e2eRemote: Probe }).e2eRemote.answer(value), result);
 const tab = (page: Page, name: string) => settingsPopup(page).getByRole('tab', { name, exact: true });
 const panel = (page: Page) => settingsPopup(page).getByRole('tabpanel', { name: 'Notifications' });
 const soundSwitch = (page: Page) => panel(page).getByRole('switch', { name: SOUND, exact: true });
 const remoteSwitch = (page: Page) => panel(page).getByRole('switch', { name: REMOTE, exact: true });
 const topicField = (page: Page) => panel(page).getByRole('textbox', { name: 'Topic URL', exact: true });
 const tokenField = (page: Page) => panel(page).getByLabel('Access token (optional)', { exact: true });
+const testButton = (page: Page) => panel(page).getByRole('button', { name: 'Send test notification', exact: true });
 
 async function openNotifications(page: Page): Promise<void> {
   await settingsButton(page).click();
@@ -137,7 +153,7 @@ test('REQ-9: the other reasons show under the field, and an empty field shows no
 });
 
 // spec RemoteNotificationSection, Keyboard; decision "Controls": keyboard and focus ring
-test('Tab goes through the sound switch, the remote switch, "Topic URL" and "Access token (optional)" with a focus ring; Space flips the remote switch', async ({
+test('Tab goes through the sound switch, the remote switch, "Topic URL", "Access token (optional)" and "Send test notification" with a focus ring; Space flips the remote switch', async ({
   page,
 }) => {
   await openDesktopPage(page, { enabled: false, topicUrl: TOPIC, token: '' });
@@ -149,6 +165,7 @@ test('Tab goes through the sound switch, the remote switch, "Topic URL" and "Acc
     [remoteSwitch(page), 'remote switch'],
     [topicField(page), 'Topic URL'],
     [tokenField(page), 'Access token (optional)'],
+    [testButton(page), 'Send test notification'],
   ] as const) {
     await page.keyboard.press('Tab');
     await expect(control, name).toBeFocused();
@@ -163,6 +180,68 @@ test('Tab goes through the sound switch, the remote switch, "Topic URL" and "Acc
   await page.keyboard.press('Enter');
   await expect(remoteSwitch(page)).toHaveAttribute('aria-checked', 'false');
   await expect.poll(async () => (await saves(page)).length).toBe(2);
+});
+
+// Scenario "The test notification reaches the phone", page side: the switch stays off
+test('REQ-14, REQ-15, REQ-16: "Send test notification" is busy while the test runs, then the section shows "Test notification sent."', async ({ page }) => {
+  await openDesktopPage(page);
+  await openNotifications(page);
+  await expect(testButton(page), 'REQ-14').toBeVisible();
+  await expect(testButton(page), 'disabled with an empty URL').toBeDisabled();
+  await topicField(page).fill(TOPIC);
+  await expect(remoteSwitch(page)).toHaveAttribute('aria-checked', 'false');
+  await expect(testButton(page), 'enabled with the switch off').toBeEnabled();
+  expect((await testButton(page).boundingBox())!.y, 'the button sits under the token field').toBeGreaterThan((await tokenField(page).boundingBox())!.y);
+
+  await testButton(page).click();
+  await expect.poll(() => testRequests(page), 'REQ-15: one test request').toBe(1);
+  await expect(testButton(page)).toHaveAttribute('aria-busy', 'true');
+  await expect(testButton(page)).toBeDisabled();
+  await testButton(page).click({ force: true });
+  expect(await testRequests(page), 'a second press does nothing').toBe(1);
+
+  await answerTest(page, { status: 'sent' });
+  const sent = panel(page).getByRole('status');
+  await expect(sent, 'REQ-16').toHaveText('Test notification sent.');
+  expect((await sent.boundingBox())!.y, 'the result shows under the button').toBeGreaterThan((await testButton(page).boundingBox())!.y);
+  await expect(testButton(page)).toBeEnabled();
+  await expect(testButton(page)).not.toHaveAttribute('aria-busy', 'true');
+  await expect(remoteSwitch(page), 'the test does not turn the switch on').toHaveAttribute('aria-checked', 'false');
+
+  await settingsPopup(page).getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(settingsPopup(page)).toHaveCount(0);
+  await openNotifications(page);
+  await expect(panel(page).getByRole('status'), 'the result goes with the popup').toHaveCount(0);
+});
+
+// Scenario "A refused token is reported", page side
+test('REQ-17, REQ-18: a failed test shows its reason in the error colour, without the token; a new press clears it', async ({ page }) => {
+  const token = 'tk_wrong_secret';
+  await openDesktopPage(page, { enabled: true, topicUrl: TOPIC, token });
+  await openNotifications(page);
+
+  await testButton(page).click();
+  await expect.poll(() => testRequests(page)).toBe(1);
+  await answerTest(page, { status: 'failed', reason: 'The server refused the access token.' });
+  const reason = panel(page).getByRole('alert');
+  await expect(reason, 'REQ-17').toHaveText('The server refused the access token.');
+  await expect(reason, 'REQ-18').not.toContainText(token);
+  const colours = await reason.evaluate((element) => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--color-error)';
+    element.append(probe);
+    const expected = getComputedStyle(probe).color;
+    probe.remove();
+    return { text: getComputedStyle(element).color, expected };
+  });
+  expect(colours.text, 'shows in the error colour').toBe(colours.expected);
+
+  await testButton(page).click();
+  await expect(reason, 'a new press clears the old result').toHaveCount(0);
+  await answerTest(page, null);
+  await expect(testButton(page)).toBeEnabled();
+  await expect(panel(page).getByRole('status')).toHaveCount(0);
+  await expect(reason).toHaveCount(0);
 });
 
 // plan-remote_notifications/REQ-3; constraint "Only the desktop app shows the Notifications section"

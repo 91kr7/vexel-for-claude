@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-// Tests of plan-remote_notifications, batch notifications-section: RemoteNotificationSection spec. A fake bridge stands in for the desktop app.
+// Tests of plan-remote_notifications, batches notifications-section and test-notification: RemoteNotificationSection spec. A fake bridge
+// stands in for the desktop app.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { RemoteSettings } from '../desktop-bridge';
+import type { RemoteSettings, TestNotificationResult } from '../desktop-bridge';
 import { RemoteNotificationSection } from './RemoteNotificationSection';
 import { mount, run, unmountAll } from './settings-test-support';
 
@@ -10,21 +11,33 @@ const VALID = 'https://ntfy.sh/my-topic';
 const NOT_WEB_ADDRESS = 'Enter an http or https address.';
 const NO_TOPIC = 'Add the topic name at the end of the address.';
 const BAD_TOPIC = 'The topic name may use only letters, digits, - and _.';
+const TEST_BUTTON = 'Send test notification';
+const SENT = 'Test notification sent.';
+const REFUSED = 'The server refused the access token.';
 
 afterEach(() => {
   unmountAll();
   delete (window as { desktopBridge?: unknown }).desktopBridge;
 });
 
-/** A desktop bridge whose read answers only when `answer` is called; each save is recorded. */
+/** A desktop bridge whose read answers only when `answer` is called; each save is recorded. Each test request waits for `results`. */
 function fakeBridge() {
   let answer: (settings: RemoteSettings) => void = () => {};
   const read = new Promise<RemoteSettings>((resolve) => (answer = resolve));
   const save = vi.fn((_settings: RemoteSettings) => Promise.resolve());
+  const results: ((result: TestNotificationResult | null) => void)[] = [];
+  const send = vi.fn(() => new Promise<TestNotificationResult | null>((resolve) => results.push(resolve)));
   Object.assign(window, {
-    desktopBridge: { reportOpenSession: () => {}, onOpenSession: () => () => {}, getPathForFile: () => '', readRemoteSettings: () => read, saveRemoteSettings: save },
+    desktopBridge: {
+      reportOpenSession: () => {},
+      onOpenSession: () => () => {},
+      getPathForFile: () => '',
+      readRemoteSettings: () => read,
+      saveRemoteSettings: save,
+      sendTestNotification: send,
+    },
   });
-  return { answer, save };
+  return { answer, save, send, results };
 }
 
 const flush = async () => {
@@ -38,6 +51,7 @@ function controls(host: HTMLElement) {
     toggle: host.querySelector<HTMLButtonElement>('[role="switch"]') as HTMLButtonElement,
     url: fieldNamed('Topic URL'),
     token: fieldNamed('Access token (optional)'),
+    testButton: [...host.querySelectorAll('button')].find((button) => button.textContent?.trim() === TEST_BUTTON) as HTMLButtonElement,
   };
 }
 
@@ -47,7 +61,7 @@ async function show(settings: RemoteSettings = { enabled: false, topicUrl: '', t
   const host = mount(<RemoteNotificationSection />);
   bridge.answer(settings);
   await flush();
-  return { host, save: bridge.save, ...controls(host) };
+  return { host, save: bridge.save, send: bridge.send, results: bridge.results, ...controls(host) };
 }
 
 function type(input: HTMLInputElement, value: string): void {
@@ -210,11 +224,11 @@ describe('RemoteNotificationSection', () => {
     expect(url.getAttribute('aria-invalid')).toBe('true');
   });
 
-  // spec Keyboard: switch, "Topic URL", "Access token (optional)" in this order; a disabled switch is no Tab stop
-  it('has the switch, "Topic URL" and "Access token (optional)" as Tab stops in this order', async () => {
-    const { host, toggle, url, token } = await show({ enabled: false, topicUrl: VALID, token: '' });
+  // spec Keyboard: switch, "Topic URL", "Access token (optional)", "Send test notification" in this order; a disabled switch or button is no Tab stop
+  it('has the switch, "Topic URL", "Access token (optional)" and "Send test notification" as Tab stops in this order', async () => {
+    const { host, toggle, url, token, testButton } = await show({ enabled: false, topicUrl: VALID, token: '' });
     const stops = () => [...host.querySelectorAll<HTMLElement>('button, input, [tabindex]')].filter((element) => element.tabIndex >= 0 && !(element as HTMLButtonElement).disabled);
-    expect(stops()).toEqual([toggle, url, token]);
+    expect(stops()).toEqual([toggle, url, token, testButton]);
     type(url, '');
     expect(stops()).toEqual([url, token]);
   });
@@ -227,5 +241,155 @@ describe('RemoteNotificationSection', () => {
     type(token, 'x');
     type(url, '');
     expect(localStorage.length).toBe(0);
+  });
+
+  describe('test notification', () => {
+    const status = (host: HTMLElement) => [...host.querySelectorAll('[role="status"]')].map((element) => element.textContent?.trim());
+    const follows = (later: Element, earlier: Element) => Boolean(earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+    // plan-remote_notifications/REQ-14
+    it(`shows the button "${TEST_BUTTON}" under "Access token (optional)"`, async () => {
+      const { token, testButton } = await show({ enabled: false, topicUrl: VALID, token: '' });
+      expect(testButton).toBeDefined();
+      expect(follows(testButton, token)).toBe(true);
+    });
+
+    it('keeps the button disabled until the read answers', async () => {
+      const bridge = fakeBridge();
+      const host = mount(<RemoteNotificationSection />);
+      expect(controls(host).testButton.disabled).toBe(true);
+      bridge.answer({ enabled: false, topicUrl: VALID, token: '' });
+      await flush();
+      expect(controls(host).testButton.disabled).toBe(false);
+    });
+
+    // Assumption "Test button and remote switch"
+    it.each([
+      ['empty', ''],
+      ['invalid', 'https://ntfy.sh/'],
+    ])('disables the button while the URL is %s: a click sends nothing', async (_name, value) => {
+      const { testButton, send } = await show({ enabled: false, topicUrl: value, token: '' });
+      expect(testButton.disabled).toBe(true);
+      run(() => testButton.click());
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['off', false],
+      ['on', true],
+    ])('enables the button with a valid URL and the switch %s', async (_name, enabled) => {
+      const { testButton } = await show({ enabled, topicUrl: VALID, token: '' });
+      expect(testButton.disabled).toBe(false);
+    });
+
+    it('disables the button when the URL turns invalid, and enables it when it turns valid', async () => {
+      const { url, testButton } = await show();
+      expect(testButton.disabled).toBe(true);
+      type(url, VALID);
+      expect(testButton.disabled).toBe(false);
+      type(url, 'ftp://ntfy.sh/my-topic');
+      expect(testButton.disabled).toBe(true);
+    });
+
+    // plan-remote_notifications/REQ-15: a press asks the desktop app for the test; it runs busy, and a second press does nothing
+    it('a press asks for one test; until the answer the button is disabled, busy, with a spinner and the same name', async () => {
+      const { testButton, send, results } = await show({ enabled: false, topicUrl: VALID, token: 'tk' });
+      run(() => testButton.click());
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(testButton.disabled).toBe(true);
+      expect(testButton.getAttribute('aria-busy')).toBe('true');
+      expect(testButton.querySelector('.spinner')).not.toBeNull();
+      expect(testButton.textContent?.trim()).toBe(TEST_BUTTON);
+      run(() => testButton.click());
+      expect(send).toHaveBeenCalledTimes(1);
+
+      results[0]?.({ status: 'sent' });
+      await flush();
+      expect(testButton.disabled).toBe(false);
+      expect(testButton.getAttribute('aria-busy')).not.toBe('true');
+      expect(testButton.querySelector('.spinner')).toBeNull();
+    });
+
+    // plan-remote_notifications/REQ-16
+    it(`shows "${SENT}" as a status under the button after a successful send`, async () => {
+      const { host, testButton, results } = await show({ enabled: false, topicUrl: VALID, token: '' });
+      run(() => testButton.click());
+      expect(status(host)).toEqual([]);
+      results[0]?.({ status: 'sent' });
+      await flush();
+      expect(status(host)).toEqual([SENT]);
+      expect(follows(host.querySelector('[role="status"]')!, testButton)).toBe(true);
+      expect(alerts(host)).toEqual([]);
+    });
+
+    // plan-remote_notifications/REQ-17
+    it('shows the reason of a failed send as an error under the button', async () => {
+      const { host, testButton, results } = await show({ enabled: true, topicUrl: VALID, token: 'tk_wrong' });
+      run(() => testButton.click());
+      results[0]?.({ status: 'failed', reason: REFUSED });
+      await flush();
+      expect(alerts(host)).toEqual([REFUSED]);
+      expect(follows(host.querySelector('[role="alert"]')!, testButton)).toBe(true);
+      expect(status(host)).toEqual([]);
+    });
+
+    it('shows no result when the answer is null', async () => {
+      const { host, testButton, results } = await show({ enabled: false, topicUrl: VALID, token: '' });
+      run(() => testButton.click());
+      results[0]?.(null);
+      await flush();
+      expect(status(host)).toEqual([]);
+      expect(alerts(host)).toEqual([]);
+      expect(testButton.disabled).toBe(false);
+    });
+
+    it('a new press clears the previous result, which then gives way to the new one', async () => {
+      const { host, testButton, results } = await show({ enabled: false, topicUrl: VALID, token: '' });
+      run(() => testButton.click());
+      results[0]?.({ status: 'failed', reason: REFUSED });
+      await flush();
+      expect(alerts(host)).toEqual([REFUSED]);
+      run(() => testButton.click());
+      expect(alerts(host)).toEqual([]);
+      expect(status(host)).toEqual([]);
+      results[1]?.({ status: 'sent' });
+      await flush();
+      expect(status(host)).toEqual([SENT]);
+      expect(alerts(host)).toEqual([]);
+    });
+
+    it('keeps the result while the user edits the token, and drops it when the section unmounts', async () => {
+      const { host, token, testButton, results } = await show({ enabled: false, topicUrl: VALID, token: '' });
+      run(() => testButton.click());
+      results[0]?.({ status: 'sent' });
+      await flush();
+      type(token, 'tk_new');
+      expect(status(host)).toEqual([SENT]);
+
+      unmountAll();
+      const again = await show({ enabled: false, topicUrl: VALID, token: '' });
+      expect(status(again.host)).toEqual([]);
+    });
+
+    it('ignores an answer that arrives after the section unmounts', async () => {
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { testButton, results } = await show({ enabled: false, topicUrl: VALID, token: '' });
+      run(() => testButton.click());
+      unmountAll();
+      results[0]?.({ status: 'sent' });
+      await flush();
+      expect(errors).not.toHaveBeenCalled();
+      errors.mockRestore();
+    });
+
+    // spec RemoteNotificationSection, rule "the section sends nothing to ntfy by itself"
+    it('asks for no test at mount or on a change of the controls', async () => {
+      const { toggle, url, token, send } = await show({ enabled: false, topicUrl: VALID, token: '' });
+      run(() => toggle.click());
+      type(token, 'tk');
+      type(url, 'https://ntfy.sh/other');
+      await flush();
+      expect(send).not.toHaveBeenCalled();
+    });
   });
 });

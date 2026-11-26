@@ -124,6 +124,15 @@ describe('RemoteSettingsStore', () => {
     expect(await new RemoteSettingsStore(file).read()).toEqual(last);
   });
 
+  // plan-remote_notifications/REQ-15: a test right after a change reads the settings just saved
+  it('waits for the saves called before a read: it gives the last of them', async () => {
+    const store = new RemoteSettingsStore(file);
+    const last = { enabled: false, topicUrl: 'https://ntfy.sh/last', token: 'tk_last' };
+    void store.save(SET);
+    void store.save(last);
+    expect(await store.read()).toEqual(last);
+  });
+
   it.skipIf(process.getuid?.() === 0)('rejects a failed write, and a later save still runs', async () => {
     const folder = path.join(dir, 'locked');
     await mkdir(folder);
