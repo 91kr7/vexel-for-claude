@@ -12,21 +12,23 @@ const child = sub('agent-c', 'Child');
 const old = sub('agent-e', 'Earlier');
 const tree = (fields: Partial<TurnTree> = {}): TurnTree => ({
   number: 1,
-  status: 'running',
-  groups: [{ subagents: ['agent-p'] }],
-  earlier: [{ subagents: ['agent-e'] }],
+  groups: [{ subagents: ['agent-e'] }, { subagents: ['agent-p'] }],
   subagents: [parent, child, old],
   ...fields,
 });
 
 const turnSocket = () => socketsOn('/api/sessions/s1/turn')[0]!;
 const conversationSockets = () => FakeWebSocket.instances.filter((socket) => socket.url.includes('/subagents/'));
-const panel = (host: Element) => host.querySelector<HTMLElement>('section[aria-label="Turn Panel"]')!;
+const panel = (host: Element) => host.querySelector<HTMLElement>('section[aria-label="Subagents"]')!;
 const conversation = (host: Element) => panel(host).querySelector<HTMLElement>('section[aria-label="Subagent Conversation"]');
 const openButton = (host: Element, type: string) => panel(host).querySelector<HTMLButtonElement>(`button[aria-label="Open Conversation: ${type}"]`);
 const backButton = (host: Element) => [...conversation(host)!.querySelectorAll<HTMLButtonElement>('button')].find((b) => (b.getAttribute('aria-label') ?? b.textContent ?? '').trim() === 'Back')!;
 const treeArea = (host: Element) => panel(host).querySelector<HTMLElement>('[tabindex="0"]');
 const textOf = (element: Element | null) => element?.textContent ?? '';
+/** The deepest element whose whole text is `text`. */
+const leaf = (host: Element, text: string) =>
+  [...host.querySelectorAll('*')].find((element) => element.textContent?.trim() === text && ![...element.children].some((child) => child.textContent?.trim() === text));
+const statePills = (host: Element) => ['Running', 'Finished', 'Stopped'].filter((state) => leaf(conversation(host)!, state) !== undefined);
 
 function openPanel(): HTMLElement {
   const host = mount(<TurnPanel sessionId="s1" />);
@@ -51,7 +53,7 @@ describe('TurnPanel, subagent conversation', () => {
     const area = treeArea(host)!;
     run(() => openButton(host, 'Parent')!.click());
     expect(conversation(host)).not.toBeNull();
-    expect(textOf(panel(host))).toContain('Current Turn');
+    expect(textOf(panel(host).querySelector('header'))).toBe('Subagents');
     expect(conversationSockets().map((socket) => new URL(socket.url).pathname)).toEqual(['/api/sessions/s1/subagents/agent-p/conversation']);
     expect(area.isConnected, 'the tree is kept, with its scroll place').toBe(true);
     expect(textOf(conversation(host))).toContain('Parent task');
@@ -81,7 +83,7 @@ describe('TurnPanel, subagent conversation', () => {
     expect(document.activeElement).toBe(opener);
   });
 
-  // turn-tree-view spec: every card of the tree opens its conversation, nested and earlier ones included, and a nested card opens only its own
+  // turn-tree-view spec: every card of the tree opens its conversation, nested ones and those of earlier turns included, and a nested card opens only its own
   it('opens the conversation of a nested card and of an earlier card, each with its own subagent', () => {
     const host = openPanel();
     run(() => openButton(host, 'Child')!.click());
@@ -97,24 +99,46 @@ describe('TurnPanel, subagent conversation', () => {
   it('shows the subagent of the current tree in the bar', () => {
     const host = openPanel();
     run(() => openButton(host, 'Parent')!.click());
-    turnSocket().receive({ type: 'update', subagents: [{ ...parent, state: 'finished', description: 'Parent task, revised' }] });
-    expect(textOf(conversation(host))).toContain('Finished');
+    turnSocket().receive({ type: 'update', subagents: [{ ...parent, description: 'Parent task, revised' }] });
     expect(textOf(conversation(host))).toContain('Parent task, revised');
+    expect(statePills(host)).toEqual(['Running']);
   });
 
-  // turn-panel spec: the conversation stays open in a new turn, the bar keeps the last values, and "Back" focuses the tree area when the opener is gone
-  it('stays open when a new turn starts, keeps the last values, and on "Back" focuses the tree area when the opener is gone', () => {
+  // plan-subagent_panel/REQ-19, REQ-22: the conversation stays open, with its state, when a new turn starts and its subagent still runs
+  it('stays open with the state "Running" when a new turn starts', () => {
     const host = openPanel();
     run(() => openButton(host, 'Parent')!.click());
-    turnSocket().receive({ type: 'turn', turn: tree({ number: 2, groups: [], earlier: [], subagents: [] }) });
+    turnSocket().receive({ type: 'turn', turn: tree({ number: 2 }) });
+    expect(conversation(host)).not.toBeNull();
+    expect(statePills(host)).toEqual(['Running']);
+    expect(conversationSockets(), 'the same conversation socket').toHaveLength(1);
+  });
+
+  // plan-subagent_panel/REQ-22: scenario "An open conversation stays open when its subagent ends"
+  it('stays open when its subagent ends, keeps type and description with no state, and on "Back" focuses the tree area without its row', () => {
+    const host = openPanel();
+    run(() => openButton(host, 'Parent')!.click());
+    turnSocket().receive({ type: 'update', groups: [{ subagents: ['agent-e'] }, { subagents: ['agent-c'] }] });
     expect(conversation(host)).not.toBeNull();
     expect(textOf(conversation(host))).toContain('Parent task');
-    expect(textOf(conversation(host))).toContain('Parent');
+    expect(leaf(conversation(host)!, 'Parent')).toBeDefined();
+    expect(statePills(host), 'no state pill once the subagent left the list').toEqual([]);
     expect(conversationSockets(), 'the same conversation socket').toHaveLength(1);
     run(() => backButton(host).click());
     expect(conversation(host)).toBeNull();
     expect(openButton(host, 'Parent')).toBeNull();
+    expect(openButton(host, 'Child')).not.toBeNull();
     expect(document.activeElement).toBe(treeArea(host));
+  });
+
+  // turn-panel spec: when the subagent shows again in the tree, the bar follows it again
+  it('shows the state again when the subagent comes back to the tree', () => {
+    const host = openPanel();
+    run(() => openButton(host, 'Parent')!.click());
+    turnSocket().receive({ type: 'turn', turn: tree({ number: 2, groups: [], subagents: [] }) });
+    expect(statePills(host)).toEqual([]);
+    turnSocket().receive({ type: 'turn', turn: tree({ number: 3 }) });
+    expect(statePills(host)).toEqual(['Running']);
   });
 
   // turn-panel spec: a new mount shows the tree, with no conversation open

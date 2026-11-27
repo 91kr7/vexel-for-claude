@@ -1,4 +1,4 @@
-// e2e of plan-session_activity (batch turn-panel) and plan-subagent_panel. The tests write the transcripts, subagent files and metadata that Claude Code would write.
+// e2e of plan-session_activity (batch turn-panel) and plan-subagent_panel (the Subagents panel). The tests write the transcripts, subagent files and metadata that Claude Code would write.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { appendFile, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -40,17 +40,17 @@ const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).locator('.session-entry').filter({ has: page.getByTitle(folder, { exact: true }) });
 const mainArea = (page: Page) => page.getByRole('main');
 const header = (page: Page) => mainArea(page).locator('.main-view:not(.is-leaving) .session-header');
-const turnButton = (page: Page) => header(page).getByRole('button', { name: 'Turn Panel', exact: true });
+const turnButton = (page: Page) => header(page).getByRole('button', { name: 'Subagents', exact: true });
 const explorerButton = (page: Page) => header(page).getByRole('button', { name: 'Git Explorer', exact: true });
-const panel = (page: Page) => mainArea(page).getByRole('region', { name: 'Turn Panel', exact: true });
+const panel = (page: Page) => mainArea(page).getByRole('region', { name: 'Subagents', exact: true });
+const panelHeader = (page: Page) => panel(page).locator(':scope > header');
 const explorer = (page: Page) => mainArea(page).getByRole('region', { name: 'Git Explorer', exact: true });
 const terminalPanel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
 const conversation = (page: Page) => page.locator('.conversation-view');
 const cards = (scope: Locator, type?: string) => scope.getByRole('article', type === undefined ? undefined : { name: `Subagent: ${type}`, exact: true });
 const treeArea = (page: Page) => panel(page).locator('[tabindex="0"]');
-const noSubagents = (page: Page) => panel(page).getByText('No subagents in this turn.', { exact: true });
+const noSubagents = (page: Page) => panel(page).getByText('No subagents running.', { exact: true });
 const subConversation = (page: Page) => panel(page).getByRole('region', { name: 'Subagent Conversation', exact: true });
-const earlierSection = (page: Page) => panel(page).locator('section').filter({ hasText: 'Still running from earlier turns' });
 const row = (scope: Locator, type: string, description: string) => cards(scope, type).filter({ has: scope.page().getByText(description, { exact: true }) });
 
 const iso = (ms: number) => new Date(ms).toISOString();
@@ -155,7 +155,15 @@ async function openPanel(page: Page): Promise<void> {
   await turnButton(page).click();
   await expect(turnButton(page)).toHaveAttribute('aria-expanded', 'true');
   await expect(panel(page)).toBeVisible();
-  await expect(panel(page).getByText('Current Turn', { exact: true })).toBeVisible();
+  await expect(panelHeader(page)).toHaveText('Subagents');
+}
+
+/** plan-subagent_panel/REQ-15: nothing about turns anywhere in the panel. */
+async function expectNothingAboutTurns(page: Page): Promise<void> {
+  await expect(panelHeader(page), 'the header shows only "Subagents"').toHaveText('Subagents');
+  for (const text of ['Ended', 'No turn yet.', 'Still running from earlier turns', 'No subagents in this turn.', 'Current Turn']) {
+    await expect(panel(page).getByText(text, { exact: true }), text).toHaveCount(0);
+  }
 }
 
 /** Waits for the effects that end (panel slide, list cascade): a box read while one plays sits where the effect has moved it. */
@@ -192,7 +200,27 @@ async function focusedShowsRing(page: Page): Promise<boolean> {
   });
 }
 
-const focusInPanel = (page: Page) => page.evaluate(() => document.activeElement?.closest('section[aria-label="Turn Panel"]') !== null && document.activeElement !== null);
+const focusInPanel = (page: Page) => page.evaluate(() => document.activeElement?.closest('section[aria-label="Subagents"]') !== null && document.activeElement !== null);
+/** Resolves once the turn route of the session sends a whole tree with at least this turn number. */
+const turnNumberReached = (page: Page, id: string, number: number) =>
+  page.evaluate(
+    ([sessionId, wanted]) =>
+      new Promise<void>((resolve, reject) => {
+        const socket = new WebSocket(`${location.origin.replace(/^http/, 'ws')}/api/sessions/${encodeURIComponent(sessionId)}/turn`);
+        const timer = setTimeout(() => {
+          socket.close();
+          reject(new Error(`turn ${wanted} not reached`));
+        }, 15_000);
+        socket.onmessage = (event) => {
+          const frame = JSON.parse(String(event.data)) as { type: string; turn?: { number: number } };
+          if (frame.type !== 'turn' || (frame.turn?.number ?? 0) < wanted) return;
+          clearTimeout(timer);
+          socket.close();
+          resolve();
+        };
+      }),
+    [id, number] as const,
+  );
 const atEnd = (area: Locator) => area.evaluate((el) => el.scrollTop + el.clientHeight >= el.scrollHeight - 8);
 /** The scroll position once a smooth wheel scroll has come to rest: two reads 250 ms apart agree. */
 async function restingScrollTop(area: Locator): Promise<number> {
@@ -215,10 +243,10 @@ async function wholeInArea(area: Locator, target: Locator): Promise<boolean> {
   return view !== null && box !== null && box.y >= view.y - 1 && box.y + box.height <= view.y + view.height + 1;
 }
 
-test.describe('Turn panel', () => {
-  // plan-subagent_panel/REQ-1, REQ-2, REQ-3, REQ-8, REQ-10, REQ-12, plan-session_activity/REQ-27, REQ-32 to REQ-37, REQ-43 — scenarios "The panel shows
-  // only the subagents of the turn, in start order", "The subagents show as a list, with a group joined on the left", "A row shows the same fields as the card"
-  test('shows only the subagents of the turn as rows: the analyst, then the two developers of one message joined by a line', async ({ page, request }) => {
+test.describe('Subagents panel', () => {
+  // plan-subagent_panel/REQ-1, REQ-3, REQ-8, REQ-10, REQ-14, REQ-15, REQ-18, plan-session_activity/REQ-27, REQ-32 to REQ-37, REQ-43 — scenarios
+  // "The subagents show as a list, with a group joined on the left", "A row shows the same fields as the card"
+  test('shows the running subagents as rows: the analyst, then the two developers of one message joined by a line', async ({ page, request }) => {
     const folder = await newFolder('follow');
     const claudeSessionId = uuid();
     const files = claudeSession(folder, claudeSessionId);
@@ -255,7 +283,6 @@ test.describe('Turn panel', () => {
     await expect(turnButton(page)).toHaveAttribute('aria-expanded', 'false');
     await openPanel(page);
 
-    await expect(panel(page).getByText('Running', { exact: true }).first()).toBeVisible();
     const analystCard = cards(panel(page), 'sdd-analyst');
     const developers = cards(panel(page), 'sdd-developer');
     await expect(analystCard).toBeVisible(PROMPTLY);
@@ -276,6 +303,7 @@ test.describe('Turn panel', () => {
       await expect(panel(page), `no message of the main conversation: ${text}`).not.toContainText(text);
     }
     await expect(panel(page).getByRole('listitem')).toHaveCount(0);
+    await expectNothingAboutTurns(page);
 
     const area = treeArea(page);
     const rows = [analystCard, developers.nth(0), developers.nth(1)];
@@ -297,8 +325,8 @@ test.describe('Turn panel', () => {
     await expect(turnButton(page)).toHaveAttribute('aria-expanded', 'false');
   });
 
-  // plan-subagent_panel/REQ-5, REQ-6 — scenario "A turn with no subagents"
-  test('says "No subagents in this turn." under "Ended" when the last turn ended with no subagent', async ({ page, request }) => {
+  // plan-subagent_panel/REQ-15, REQ-20 — scenario "No subagent runs"
+  test('says "No subagents running." with no "Ended" mark when the last turn ended with no subagent', async ({ page, request }) => {
     const folder = await newFolder('no-subagents');
     const claudeSessionId = uuid();
     const files = claudeSession(folder, claudeSessionId);
@@ -309,13 +337,24 @@ test.describe('Turn panel', () => {
     await openSession(page, folder);
     await openPanel(page);
     await expect(noSubagents(page)).toBeVisible(PROMPTLY);
-    await expect(panel(page).getByText('Ended', { exact: true })).toBeVisible();
-    await expect(panel(page).getByText('No turn yet.', { exact: true })).toHaveCount(0);
+    await expectNothingAboutTurns(page);
     await expect(cards(panel(page))).toHaveCount(0);
     await expect(panel(page)).not.toContainText('It reads the transcript lines');
     await expect(panel(page)).not.toContainText('What does the parser do?');
-    const [chip, message] = [await box(panel(page).getByText('Ended', { exact: true })), await box(noSubagents(page))];
-    expect(message.y, 'the message under the "Ended" mark').toBeGreaterThan(chip.y);
+  });
+
+  // plan-subagent_panel/REQ-21 — scenario "The panel and its button are called Subagents"
+  test('opens from the header button "Subagents", whose tooltip reads "Subagents", with the title "Subagents"', async ({ page, request }) => {
+    const folder = await newFolder('named');
+    await startHosted(request, folder);
+    await openSession(page, folder);
+    await expect(turnButton(page)).toHaveAttribute('title', 'Subagents');
+    await turnButton(page).click();
+    await expect(turnButton(page)).toHaveAttribute('aria-expanded', 'true');
+    await expect(panel(page)).toBeVisible();
+    await expect(panelHeader(page)).toHaveText('Subagents');
+    await expect(mainArea(page).getByText(/Turn Panel|Current Turn/)).toHaveCount(0);
+    await expect(mainArea(page).locator('[aria-label*="Turn Panel" i], [title*="Turn Panel" i]')).toHaveCount(0);
   });
 
   // plan-session_activity/REQ-27 — scenario "The panel takes the place of the git explorer", external session
@@ -332,8 +371,8 @@ test.describe('Turn panel', () => {
       .getByRole('button')
       .evaluateAll((buttons) => buttons.map((b) => b.getAttribute('aria-label') ?? b.textContent?.trim() ?? ''));
     const resume = names.findIndex((name) => name.includes('Resume Here'));
-    expect(names.indexOf('Git Explorer'), names.join(' | ')).toBe(names.indexOf('Turn Panel') - 1);
-    expect(names.indexOf('Turn Panel'), 'before Resume Here').toBe(resume - 1);
+    expect(names.indexOf('Git Explorer'), names.join(' | ')).toBe(names.indexOf('Subagents') - 1);
+    expect(names.indexOf('Subagents'), 'before Resume Here').toBe(resume - 1);
 
     await explorerButton(page).click();
     await expect(explorer(page)).toBeVisible();
@@ -363,7 +402,7 @@ test.describe('Turn panel', () => {
     const names = await header(page)
       .getByRole('button')
       .evaluateAll((buttons) => buttons.map((b) => b.getAttribute('aria-label') ?? b.textContent?.trim() ?? ''));
-    expect(names.slice(0, 3), 'Git Explorer, Turn Panel, Search').toEqual(['Git Explorer', 'Turn Panel', 'Search']);
+    expect(names.slice(0, 3), 'Git Explorer, Subagents, Search').toEqual(['Git Explorer', 'Subagents', 'Search']);
     const full = await box(terminalPanel(page));
 
     await explorerButton(page).click();
@@ -398,13 +437,13 @@ test.describe('Turn panel', () => {
       const store = window as unknown as { __lefts: number[] };
       store.__lefts = [];
       const tick = () => {
-        const section = document.querySelector('section[aria-label="Turn Panel"]');
+        const section = document.querySelector('section[aria-label="Subagents"]');
         if (section) store.__lefts.push(section.getBoundingClientRect().left);
         requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
     }, SLOW_MS);
-    const sections = page.locator('section[aria-label="Turn Panel"]');
+    const sections = page.locator('section[aria-label="Subagents"]');
 
     await turnButton(page).click();
     await expect(panel(page)).toBeVisible();
@@ -457,8 +496,8 @@ test.describe('Turn panel', () => {
     await expectRowPlace(treeArea(page), childRow, 1, 'the nested row');
   });
 
-  // plan-session_activity/REQ-33, REQ-34 — scenario "An interrupt stops the subagents"
-  test('shows an interrupted subagent as "Stopped", with its duration fixed at its full run time', async ({ page }) => {
+  // plan-subagent_panel/REQ-16, REQ-20, plan-session_activity/REQ-33: an interrupted subagent leaves the panel, and no "Stopped" row stays
+  test('drops the row of an interrupted subagent, and says "No subagents running." when it was the last one', async ({ page }) => {
     const folder = await newFolder('interrupt');
     const sessionId = uuid();
     const files = claudeSession(folder, sessionId);
@@ -468,23 +507,94 @@ test.describe('Turn panel', () => {
     await sub.write(userText('Long task', iso(t0 - 40_000), true), claudeSays('Running the suite', iso(t0 - 35_000), true));
     await sub.meta({ agentType: 'sdd-tester', toolUseId: 'x' });
     await runInTerminal(sessionId, folder);
-    await page.clock.setFixedTime(t0);
     await openSession(page, folder, true);
     await openPanel(page);
     const card = cards(panel(page), 'sdd-tester');
     await expect(card.getByText('Running', { exact: true })).toBeVisible(PROMPTLY);
-    await expect(card.locator('time')).toHaveText('40 s');
 
-    await sub.write(userText('[Request interrupted by user]', iso(t0 - 30_000), true));
-    await expect(card.getByText('Stopped', { exact: true })).toBeVisible(PROMPTLY);
-    await expect(card).toContainText('10 s');
-    await page.clock.setFixedTime(t0 + 30_000);
-    await expect(card, 'the duration no longer counts').toContainText('10 s');
-    await expect(card).not.toContainText('70 s');
+    await sub.write(userText('[Request interrupted by user]', iso(Date.now()), true));
+    await expect(card, 'the row leaves the panel').toHaveCount(0, PROMPTLY);
+    await expect(panel(page).getByText('Stopped', { exact: true })).toHaveCount(0);
+    await expect(noSubagents(page)).toBeVisible();
+    await expectNothingAboutTurns(page);
   });
 
-  // plan-session_activity/REQ-39, REQ-40, plan-subagent_panel/REQ-5, REQ-6 — scenario "A background subagent outlives its turn"
-  test('keeps a background subagent in "Still running from earlier turns" in the next turn, and marks the idle turn "Ended"', async ({ page, request }) => {
+  // plan-subagent_panel/REQ-16, REQ-18 — scenario "A subagent leaves the panel when it ends"
+  test('drops the row of a developer that finishes, and the other developer of its group has no line', async ({ page }) => {
+    const folder = await newFolder('leaves');
+    const sessionId = uuid();
+    const files = claudeSession(folder, sessionId);
+    const t0 = Date.now();
+    await files.write(
+      userText('Implement the batch', iso(t0 - 90_000)),
+      inMessage('msg_developers', claudeSays([agentUse('dev-1', 'Implement INT-1', 'sdd-developer')], iso(t0 - 80_000))),
+      inMessage('msg_developers', claudeSays([agentUse('dev-2', 'Implement INT-2', 'sdd-developer')], iso(t0 - 80_000))),
+    );
+    const first = files.subagent('agent-d1');
+    const second = files.subagent('agent-d2');
+    await first.write(userText('Implement INT-1', iso(t0 - 70_000), true), claudeSays('Writing the code', iso(t0 - 60_000), true));
+    await first.meta({ agentType: 'sdd-developer', description: 'Implement INT-1', toolUseId: 'dev-1' });
+    await second.write(userText('Implement INT-2', iso(t0 - 69_000), true), claudeSays('Reading the spec', iso(t0 - 50_000), true));
+    await second.meta({ agentType: 'sdd-developer', description: 'Implement INT-2', toolUseId: 'dev-2' });
+    await runInTerminal(sessionId, folder);
+    await openSession(page, folder, true);
+    await openPanel(page);
+
+    const [dev1, dev2] = [row(panel(page), 'sdd-developer', 'Implement INT-1'), row(panel(page), 'sdd-developer', 'Implement INT-2')];
+    await expect(cards(panel(page))).toHaveCount(2, PROMPTLY);
+    const area = treeArea(page);
+    await expectJoined(area, [dev1, dev2]);
+
+    await first.write(claudeSays('INT-1 is done', iso(Date.now()), true));
+    await first.meta({ agentType: 'sdd-developer', description: 'Implement INT-1', toolUseId: 'dev-1', finished: true });
+    await expect(dev1, 'the row of the finished developer leaves').toHaveCount(0, PROMPTLY);
+    await expect(cards(panel(page))).toHaveCount(1);
+    await expect(panel(page).getByText('Finished', { exact: true })).toHaveCount(0);
+    await expectNoMark(area, dev2, 'the other sdd-developer row');
+    await expectRowPlace(area, dev2, 0, 'the other sdd-developer row');
+  });
+
+  // plan-subagent_panel/REQ-17 — scenario "A subagent whose parent ended takes its place"
+  test('shows the running tester of an ended analyst first, then the developer, both at the left edge', async ({ page }) => {
+    const folder = await newFolder('orphan');
+    const sessionId = uuid();
+    const files = claudeSession(folder, sessionId);
+    const t0 = Date.now();
+    await files.write(
+      userText('Analyse and implement', iso(t0 - 120_000)),
+      inMessage('msg_analyst', claudeSays([agentUse('analyst-call', 'Analyse the request', 'sdd-analyst')], iso(t0 - 110_000))),
+      toolResult('analyst-call', iso(t0 - 109_000)),
+      inMessage('msg_developer', claudeSays([agentUse('developer-call', 'Implement the batch', 'sdd-developer')], iso(t0 - 100_000))),
+      toolResult('developer-call', iso(t0 - 99_000)),
+    );
+    const analyst = files.subagent('agent-an');
+    await analyst.write(
+      userText('Analyse the request', iso(t0 - 105_000), true),
+      inMessage('msg_an_tester', claudeSays([agentUse('tester-call', 'Test the analysis', 'sdd-tester')], iso(t0 - 60_000), true)),
+      claudeSays('The analysis is written', iso(t0 - 30_000), true),
+    );
+    await analyst.meta({ agentType: 'sdd-analyst', description: 'Analyse the request', toolUseId: 'analyst-call', finished: true });
+    const developer = files.subagent('agent-dev');
+    await developer.write(userText('Implement the batch', iso(t0 - 95_000), true), claudeSays('Writing the code', iso(t0 - 20_000), true));
+    await developer.meta({ agentType: 'sdd-developer', description: 'Implement the batch', toolUseId: 'developer-call' });
+    const tester = files.subagent('agent-t');
+    await tester.write(userText('Test the analysis', iso(t0 - 55_000), true), claudeSays('Running the checks', iso(t0 - 10_000), true));
+    await tester.meta({ agentType: 'sdd-tester', description: 'Test the analysis', toolUseId: 'tester-call' });
+    await runInTerminal(sessionId, folder);
+    await openSession(page, folder, true);
+    await openPanel(page);
+
+    const [testerRow, developerRow] = [cards(panel(page), 'sdd-tester'), cards(panel(page), 'sdd-developer')];
+    await expect(cards(panel(page))).toHaveCount(2, PROMPTLY);
+    await expect(cards(panel(page), 'sdd-analyst')).toHaveCount(0);
+    const area = treeArea(page);
+    await expectOneBelowTheOther([testerRow, developerRow]);
+    await expectRowPlace(area, testerRow, 0, 'the sdd-tester row');
+    await expectRowPlace(area, developerRow, 0, 'the sdd-developer row');
+  });
+
+  // plan-subagent_panel/REQ-14, REQ-15: a background subagent keeps its row at level 0 when its turn ends and a new turn starts
+  test('keeps the row of a running background subagent across turns, with nothing about turns', async ({ page, request }) => {
     const folder = await newFolder('background');
     const claudeSessionId = uuid();
     const files = claudeSession(folder, claudeSessionId);
@@ -501,42 +611,34 @@ test.describe('Turn panel', () => {
     await background.meta({ agentType: 'sdd-tester', description: 'Background tests', toolUseId: 'bg' });
     await openSession(page, folder);
     await openPanel(page);
-    await expect(cards(panel(page), 'sdd-tester')).toBeVisible(PROMPTLY);
+    const backgroundRow = cards(panel(page), 'sdd-tester');
+    await expect(backgroundRow).toBeVisible(PROMPTLY);
 
     await postHook(request, id, { hook_event_name: 'Stop' });
-    await expect(panel(page).getByText('Ended', { exact: true })).toBeVisible(PROMPTLY);
-    await expect(cards(panel(page), 'sdd-tester').getByText('Running', { exact: true }), 'the subagent still runs').toBeVisible();
-
     await postHook(request, id, { hook_event_name: 'UserPromptSubmit', prompt: 'And now?', session_id: claudeSessionId });
     await files.write(userText('And now?', iso(Date.now())), claudeSays('The tests still run', iso(Date.now())));
-    await expect(noSubagents(page), 'the new turn has no subagent of its own').toBeVisible(PROMPTLY);
-    const earlier = panel(page).locator('section').filter({ hasText: 'Still running from earlier turns' });
-    await expect(cards(earlier, 'sdd-tester')).toBeVisible();
-    const [section, message] = [await box(earlier), await box(noSubagents(page))];
-    expect(message.y, 'the message under the section of earlier turns').toBeGreaterThanOrEqual(section.y + section.height - 1);
-    await expect(panel(page).getByText('Ended', { exact: true })).toHaveCount(0);
-    await expect(panel(page)).not.toContainText('The tests still run');
-    await expect(panel(page)).not.toContainText('The tests run in the background');
-
     await postHook(request, id, { hook_event_name: 'Stop' });
-    await expect(panel(page).getByText('Ended', { exact: true })).toBeVisible(PROMPTLY);
-    await expect(noSubagents(page), 'the last turn stays shown').toBeVisible();
-    await expect(cards(earlier, 'sdd-tester')).toBeVisible();
+    await turnNumberReached(page, id, 2);
+    await expect(panel(page)).not.toContainText('The tests still run');
+    await expect(backgroundRow.getByText('Running', { exact: true }), 'the subagent still runs').toBeVisible();
+    await expect(noSubagents(page)).toHaveCount(0);
+    await expectNothingAboutTurns(page);
+    await expectRowPlace(treeArea(page), backgroundRow, 0, 'the sdd-tester row');
   });
 
-  // plan-session_activity/REQ-41, plan-subagent_panel/REQ-7 — scenario "A session with no turn"
-  test('says "No turn yet." for a new hosted session with no message', async ({ page, request }) => {
+  // plan-subagent_panel/REQ-20 — "Empty panel": before the first turn the panel says "No subagents running." too
+  test('says "No subagents running." for a new hosted session with no message', async ({ page, request }) => {
     const folder = await newFolder('no-turn');
     await startHosted(request, folder);
     await openSession(page, folder);
     await openPanel(page);
-    await expect(panel(page).getByText('No turn yet.', { exact: true })).toBeVisible(PROMPTLY);
+    await expect(noSubagents(page)).toBeVisible(PROMPTLY);
     await expect(panel(page).getByText('Running', { exact: true })).toHaveCount(0);
-    await expect(panel(page).getByText('Ended', { exact: true })).toHaveCount(0);
+    await expectNothingAboutTurns(page);
   });
 
-  // plan-subagent_panel/REQ-4 — scenario "The panel follows the latest subagent"
-  test('follows the row of the latest started subagent until the user scrolls up, then stays still', async ({ page }) => {
+  // plan-subagent_panel/REQ-19 — scenario "The panel follows the latest subagent across turns"
+  test('follows the row of the latest started subagent across turns until the user scrolls up, then stays still', async ({ page }) => {
     const folder = await newFolder('scroll');
     const sessionId = uuid();
     const files = claudeSession(folder, sessionId);
@@ -558,14 +660,17 @@ test.describe('Turn panel', () => {
     await expect.poll(() => wholeInArea(area, cards(panel(page), type(14))), 'the view shows the latest card at first').toBe(true);
     await expect(cards(panel(page), type(0)), 'more cards than fit').not.toBeInViewport();
 
+    await files.write(userText('Go on with one more worker', iso(Date.now() - 10)));
     await startWorker(15, Date.now());
     await expect(cards(panel(page), type(15))).toBeAttached(PROMPTLY);
-    await expect.poll(() => wholeInArea(area, cards(panel(page), type(15))), 'the view follows the new subagent').toBe(true);
+    await expect.poll(() => wholeInArea(area, cards(panel(page), type(15))), 'the view follows the new subagent of the new turn').toBe(true);
+    await expect(cards(panel(page)), 'the rows of the earlier turn stay').toHaveCount(16);
 
     await area.hover();
     await page.mouse.wheel(0, -1500);
     await expect.poll(() => atEnd(area), 'scrolled up').toBe(false);
     const scrolled = await restingScrollTop(area);
+    await files.write(userText('And one more', iso(Date.now() - 10)));
     await startWorker(16, Date.now());
     await expect(cards(panel(page), type(16))).toBeAttached(PROMPTLY);
     expect(await area.evaluate((el) => el.scrollTop), 'the view stays still').toBe(scrolled);
@@ -662,7 +767,7 @@ test.describe('Turn panel', () => {
     await header(page).locator('.mono-chip').first().focus();
     for (let i = 0; i < 10 && !(await turnButton(page).evaluate((el) => el === document.activeElement)); i += 1) await page.keyboard.press('Tab');
     await expect(turnButton(page), 'reached with Tab').toBeFocused();
-    expect(await focusedShowsRing(page), '"Turn Panel" shows the focus ring').toBe(true);
+    expect(await focusedShowsRing(page), '"Subagents" shows the focus ring').toBe(true);
     await page.keyboard.press('Enter');
     await expect(panel(page)).toBeVisible();
     await expect(turnButton(page)).toHaveAttribute('aria-expanded', 'true');
@@ -685,7 +790,7 @@ test.describe('Turn panel', () => {
   });
 });
 
-test.describe('Turn panel, subagents as a list', () => {
+test.describe('Subagents panel, subagents as a list', () => {
   // plan-subagent_panel/REQ-9, REQ-10, REQ-11, plan-session_activity/REQ-49 — scenarios "A nested subagent shows indented under its parent",
   // "A click on a row opens the subagent conversation"
   test('shows the subagent nested under the first member of a group between the two members, with no tick, and a click on its row opens its conversation', async ({ page }) => {
@@ -736,41 +841,45 @@ test.describe('Turn panel, subagents as a list', () => {
     await expect(view.getByText('sdd-developer', { exact: true }), 'not the conversation of its parent').toHaveCount(0);
   });
 
-  // plan-subagent_panel/REQ-10, REQ-12 — scenario "A group still running from earlier turns stays joined"
-  test('joins the two developers of one message of the previous turn under "Still running from earlier turns", and not the tester of another message', async ({ page }) => {
-    const folder = await newFolder('earlier-group');
+  // plan-subagent_panel/REQ-14, REQ-15, REQ-16 — scenario "The panel lists the subagents running now, of any turn"
+  test('lists the two developers of a message of two turns ago joined by a line, then the tester of this turn, and not the finished analyst', async ({ page }) => {
+    const folder = await newFolder('any-turn');
     const sessionId = uuid();
     const files = claudeSession(folder, sessionId);
     const t0 = Date.now();
     await files.write(
-      userText('Implement and test in the background', iso(t0 - 180_000)),
-      inMessage('msg_developers', claudeSays([agentUse('dev-1', 'Implement INT-1', 'sdd-developer')], iso(t0 - 170_000))),
-      inMessage('msg_developers', claudeSays([agentUse('dev-2', 'Implement INT-2', 'sdd-developer')], iso(t0 - 170_000))),
-      toolResult('dev-1', iso(t0 - 169_000)),
-      toolResult('dev-2', iso(t0 - 169_000)),
-      inMessage('msg_tester', claudeSays([agentUse('tester-call', 'Test the batch', 'sdd-tester')], iso(t0 - 160_000))),
-      toolResult('tester-call', iso(t0 - 159_000)),
-      inMessage('msg_done', claudeSays('They all run in the background', iso(t0 - 150_000))),
-      userText('And now?', iso(t0 - 10_000)),
-      claudeSays('They still run', iso(t0 - 5_000)),
+      userText('Implement in the background', iso(t0 - 300_000)),
+      inMessage('msg_developers', claudeSays([agentUse('dev-1', 'Implement INT-1', 'sdd-developer')], iso(t0 - 290_000))),
+      inMessage('msg_developers', claudeSays([agentUse('dev-2', 'Implement INT-2', 'sdd-developer')], iso(t0 - 290_000))),
+      toolResult('dev-1', iso(t0 - 289_000)),
+      toolResult('dev-2', iso(t0 - 289_000)),
+      claudeSays('They run in the background', iso(t0 - 288_000)),
+      userText('How is it going?', iso(t0 - 200_000)),
+      claudeSays('Both developers still work', iso(t0 - 199_000)),
+      userText('Analyse and test the batch', iso(t0 - 120_000)),
+      inMessage('msg_analyst', claudeSays([agentUse('analyst-call', 'Analyse the batch', 'sdd-analyst')], iso(t0 - 110_000))),
+      toolResult('analyst-call', iso(t0 - 80_000)),
+      inMessage('msg_tester', claudeSays([agentUse('tester-call', 'Test the batch', 'sdd-tester')], iso(t0 - 70_000))),
     );
     for (const [agent, call, type, task, start] of [
-      ['agent-d1', 'dev-1', 'sdd-developer', 'Implement INT-1', 168_000],
-      ['agent-d2', 'dev-2', 'sdd-developer', 'Implement INT-2', 167_000],
-      ['agent-t', 'tester-call', 'sdd-tester', 'Test the batch', 158_000],
+      ['agent-d1', 'dev-1', 'sdd-developer', 'Implement INT-1', 287_000],
+      ['agent-d2', 'dev-2', 'sdd-developer', 'Implement INT-2', 286_000],
+      ['agent-an', 'analyst-call', 'sdd-analyst', 'Analyse the batch', 105_000],
+      ['agent-t', 'tester-call', 'sdd-tester', 'Test the batch', 65_000],
     ] as const) {
       const sub = files.subagent(agent);
       await sub.write(userText(task, iso(t0 - start), true), claudeSays(`Working on ${task}`, iso(t0 - 1_000), true));
-      await sub.meta({ agentType: type, description: task, toolUseId: call });
+      await sub.meta({ agentType: type, description: task, toolUseId: call, ...(agent === 'agent-an' && { finished: true }) });
     }
     await runInTerminal(sessionId, folder);
     await openSession(page, folder, true);
     await openPanel(page);
 
-    const earlier = earlierSection(page);
-    const [dev1, dev2, testerRow] = [row(earlier, 'sdd-developer', 'Implement INT-1'), row(earlier, 'sdd-developer', 'Implement INT-2'), cards(earlier, 'sdd-tester')];
-    await expect(cards(earlier)).toHaveCount(3, PROMPTLY);
-    await expect(noSubagents(page), 'the new turn has no subagent of its own').toBeVisible();
+    const [dev1, dev2, testerRow] = [row(panel(page), 'sdd-developer', 'Implement INT-1'), row(panel(page), 'sdd-developer', 'Implement INT-2'), cards(panel(page), 'sdd-tester')];
+    await expect(cards(panel(page))).toHaveCount(3, PROMPTLY);
+    await expect(cards(panel(page), 'sdd-analyst'), 'no row of the finished analyst').toHaveCount(0);
+    await expectNothingAboutTurns(page);
+    await expect(noSubagents(page)).toHaveCount(0);
     const area = treeArea(page);
     await expectOneBelowTheOther([dev1, dev2, testerRow]);
     for (const [i, each] of [dev1, dev2, testerRow].entries()) await expectRowPlace(area, each, 0, `row ${i}`);

@@ -195,7 +195,7 @@ describe('IconSet', () => {
     expect(drawnShapes(renderToStaticMarkup(<ChevronUpIcon />))).toEqual(subpathsOf(['m18 15-6-6-6 6']));
   });
 
-  // IconSet and plan-session_activity/REQ-27: "Turn Panel" uses Lucide list-tree
+  // IconSet and plan-subagent_panel/REQ-21: "Subagents" uses Lucide list-tree
   it('ListTreeIcon draws the Lucide list-tree', () => {
     expect(drawnShapes(renderToStaticMarkup(<ListTreeIcon />))).toEqual(
       subpathsOf(['M8 5h13', 'M13 12h8', 'M13 19h8', 'M3 10a2 2 0 0 0 2 2h3', 'M3 5v12a2 2 0 0 0 2 2h3']),

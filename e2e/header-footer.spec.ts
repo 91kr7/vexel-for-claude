@@ -186,12 +186,12 @@ test.describe('Header and footer of an open session', () => {
     await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await page.mouse.move(0, 0);
 
-    // The header: folder name, label, state, "Turn Panel", "Search", "Interrupt" and "Terminate", and nothing else.
+    // The header: folder name, label, state, "Subagents", "Search", "Interrupt" and "Terminate", and nothing else.
     const name = path.basename(folder);
     await expect(header(page).getByRole('heading', { level: 2 })).toHaveText(name);
     await expect(header(page)).toHaveText(new RegExp(`^\\s*${name}\\s*Idle\\s*${label}\\s*■?\\s*Interrupt\\s*■?\\s*Terminate\\s*$`));
     await expect(header(page).getByRole('button')).toHaveText(['', '', /Interrupt/, /Terminate/]);
-    await expect(header(page).getByRole('button').nth(0)).toHaveAccessibleName('Turn Panel');
+    await expect(header(page).getByRole('button').nth(0)).toHaveAccessibleName('Subagents');
     await expect(header(page).getByRole('button').nth(1)).toHaveAccessibleName('Search');
     await expectOneRow(page, [
       header(page).getByRole('heading', { level: 2 }),
@@ -316,8 +316,8 @@ test.describe('Header and footer of an open session', () => {
     await page.mouse.move(0, 0);
     await expect(tooltip(page)).toBeHidden();
 
-    // Keyboard focus shows it too: the label chip comes right before "Turn Panel".
-    await header(page).getByRole('button', { name: 'Turn Panel' }).focus();
+    // Keyboard focus shows it too: the label chip comes right before "Subagents".
+    await header(page).getByRole('button', { name: 'Subagents' }).focus();
     await page.keyboard.press('Shift+Tab');
     await expect(line).toBeFocused();
     await expect(tooltip(page)).toHaveText(label);
@@ -409,8 +409,8 @@ const style = (locator: Locator, property: string) => locator.evaluate((el, p) =
 
 test.describe('Order and look of the header actions of a hosted session', () => {
   // plan-session_list_width/REQ-30, REQ-31, REQ-32, REQ-36 — scenario "The user finds "Search", the state, "Interrupt" and "Terminate" in this order"
-  // plan-dark_blue_theme/REQ-52: the state pill moved to the left group, before the line pill; plan-session_activity/REQ-27: "Turn Panel" before "Search"
-  test('the state, then "Turn Panel", "Search", "Interrupt" and "Terminate" show in this order, and the buttons take the focus in this order', async ({ page, request }) => {
+  // plan-dark_blue_theme/REQ-52: the state pill moved to the left group, before the line pill; plan-subagent_panel/REQ-21: "Subagents" before "Search"
+  test('the state, then "Subagents", "Search", "Interrupt" and "Terminate" show in this order, and the buttons take the focus in this order', async ({ page, request }) => {
     const folder = await newFolder('order');
     const label = 'Add the invoice export';
     await hosted(request, folder, label, [response(SOME_RESPONSES)], { working: true });
@@ -419,17 +419,17 @@ test.describe('Order and look of the header actions of a hosted session', () => 
     await entry(page, folder).getByTitle(folder, { exact: true }).click();
     await page.mouse.move(0, 0);
 
-    const turnPanel = actionButton(page, 'Turn Panel');
+    const turnPanel = actionButton(page, 'Subagents');
     const search = actionButton(page, 'Search');
     const interrupt = actionButton(page, 'Interrupt');
     const stop = actionButton(page, 'Terminate');
     const pill = statePill(page, 'Running');
     await expect(pill).toBeVisible();
     const xs = await Promise.all([pill, turnPanel, search, interrupt, stop].map(async (item) => (await box(item)).x));
-    expect([...xs].sort((a, b) => a - b), 'state, Turn Panel, Search, Interrupt, Terminate from left to right').toEqual(xs);
+    expect([...xs].sort((a, b) => a - b), 'state, Subagents, Search, Interrupt, Terminate from left to right').toEqual(xs);
     await expectOneRow(page, [turnPanel, search, pill, interrupt, stop]);
 
-    // Tab from the label chip: "Turn Panel", "Search", then "Interrupt", then "Terminate"; the state takes no focus.
+    // Tab from the label chip: "Subagents", "Search", then "Interrupt", then "Terminate"; the state takes no focus.
     await header(page).locator('.mono-chip').filter({ hasText: label }).focus();
     for (const next of [turnPanel, search, interrupt, stop]) {
       await page.keyboard.press('Tab');

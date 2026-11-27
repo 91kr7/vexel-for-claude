@@ -85,7 +85,7 @@ const tree = () => {
   return current.turn;
 };
 
-const turn = (fields: Partial<TurnTree> = {}): TurnTree => ({ number: 1, status: 'running', groups: [], earlier: [], subagents: [], ...fields });
+const turn = (fields: Partial<TurnTree> = {}): TurnTree => ({ number: 1, groups: [], subagents: [], ...fields });
 const advance = (ms: number) => run(() => vi.advanceTimersByTime(ms));
 
 beforeEach(() => {
@@ -109,7 +109,7 @@ describe('useTurn, frames', () => {
     expect(lastSocket().url).toBe(`ws://${location.host}/api/sessions/a%2Fb%20c/turn`);
   });
 
-  // plan-session_activity/REQ-28, plan-subagent_panel/REQ-1: a turn frame gives the loaded tree, with no steps
+  // plan-subagent_panel/REQ-1, REQ-15: a turn frame gives the loaded tree, with no steps and no turn state
   it('gives the tree of a turn frame', () => {
     host = mount(<Probe sessionId="s1" />);
     const first = turn({ groups: [{ subagents: ['a'] }], subagents: [{ id: 'a', state: 'running', groups: [] }] });
@@ -117,13 +117,13 @@ describe('useTurn, frames', () => {
     expect(state()).toEqual({ status: 'loaded', turn: first });
   });
 
-  // plan-session_activity/REQ-43, plan-subagent_panel/REQ-2, REQ-10: an update replaces status, groups and the earlier groups, and replaces or adds subagents by id
-  it('applies an update to the tree', () => {
+  // plan-session_activity/REQ-43, plan-subagent_panel/REQ-14, REQ-16: an update replaces the groups, replaces or adds subagents by id, then drops the subagents no group reaches
+  it('applies an update to the tree and drops the subagents that left it', () => {
     host = mount(<Probe sessionId="s1" />);
     lastSocket().receive({
       type: 'turn',
       turn: turn({
-        groups: [{ subagents: ['a'] }],
+        groups: [{ subagents: ['a'] }, { subagents: ['b'] }],
         subagents: [
           { id: 'a', state: 'running', groups: [] },
           { id: 'b', state: 'running', groups: [] },
@@ -132,42 +132,65 @@ describe('useTurn, frames', () => {
     });
     lastSocket().receive({
       type: 'update',
-      status: 'ended',
       groups: [{ subagents: ['c'] }, { subagents: ['a'] }],
-      earlier: [{ subagents: ['y', 'z'] }],
       subagents: [
-        { id: 'a', state: 'finished', groups: [] },
+        { id: 'a', state: 'running', latestText: 'Reading', groups: [] },
         { id: 'c', state: 'running', groups: [] },
       ],
     });
     expect(tree()).toEqual(
       turn({
-        status: 'ended',
         groups: [{ subagents: ['c'] }, { subagents: ['a'] }],
-        earlier: [{ subagents: ['y', 'z'] }],
         subagents: [
-          { id: 'a', state: 'finished', groups: [] },
-          { id: 'b', state: 'running', groups: [] },
+          { id: 'a', state: 'running', latestText: 'Reading', groups: [] },
           { id: 'c', state: 'running', groups: [] },
         ],
       }),
     );
   });
 
+  // plan-subagent_panel/REQ-16, useTurn spec: a nested subagent stays while the groups of its parent reach it, and leaves when they no longer do
+  it('keeps a subagent reached through the groups of its parent, and drops it when the parent no longer names it', () => {
+    host = mount(<Probe sessionId="s1" />);
+    lastSocket().receive({
+      type: 'turn',
+      turn: turn({
+        groups: [{ subagents: ['p'] }],
+        subagents: [
+          { id: 'p', state: 'running', groups: [{ subagents: ['child'] }] },
+          { id: 'child', state: 'running', groups: [{ subagents: ['grandchild'] }] },
+          { id: 'grandchild', state: 'running', groups: [] },
+        ],
+      }),
+    });
+    lastSocket().receive({ type: 'update', subagents: [{ id: 'child', state: 'running', latestText: 'Working', groups: [{ subagents: ['grandchild'] }] }] });
+    expect(tree().subagents.map((subagent) => subagent.id)).toEqual(['p', 'child', 'grandchild']);
+    lastSocket().receive({ type: 'update', subagents: [{ id: 'p', state: 'running', groups: [] }] });
+    expect(tree()).toEqual(turn({ groups: [{ subagents: ['p'] }], subagents: [{ id: 'p', state: 'running', groups: [] }] }));
+  });
+
+  // plan-subagent_panel/REQ-16, REQ-20: an update with no group leaves no subagent
+  it('drops every subagent when an update leaves no group', () => {
+    host = mount(<Probe sessionId="s1" />);
+    lastSocket().receive({ type: 'turn', turn: turn({ groups: [{ subagents: ['a'] }], subagents: [{ id: 'a', state: 'running', groups: [] }] }) });
+    lastSocket().receive({ type: 'update', groups: [] });
+    expect(tree()).toEqual(turn());
+  });
+
   // useTurn spec: an update that names only some parts keeps the others
   it('keeps the parts that an update does not name', () => {
     host = mount(<Probe sessionId="s1" />);
-    const first = turn({ groups: [{ subagents: ['a'] }], earlier: [{ subagents: ['z'] }], subagents: [{ id: 'a', state: 'running', groups: [] }, { id: 'z', state: 'running', groups: [] }] });
+    const first = turn({ groups: [{ subagents: ['a'] }, { subagents: ['z'] }], subagents: [{ id: 'a', state: 'running', groups: [] }, { id: 'z', state: 'running', groups: [] }] });
     lastSocket().receive({ type: 'turn', turn: first });
-    lastSocket().receive({ type: 'update', status: 'ended' });
-    expect(tree()).toEqual({ ...first, status: 'ended' });
+    lastSocket().receive({ type: 'update', subagents: [{ id: 'a', state: 'running', latestText: 'New text', groups: [] }] });
+    expect(tree()).toEqual({ ...first, subagents: [{ id: 'a', state: 'running', latestText: 'New text', groups: [] }, { id: 'z', state: 'running', groups: [] }] });
   });
 
-  // plan-session_activity/REQ-39: a later turn frame replaces the whole tree
+  // useTurn spec: a later turn frame replaces the whole tree
   it('replaces the tree with a later turn frame', () => {
     host = mount(<Probe sessionId="s1" />);
     lastSocket().receive({ type: 'turn', turn: turn({ groups: [{ subagents: ['old'] }], subagents: [{ id: 'old', state: 'running', groups: [] }] }) });
-    const next = turn({ number: 2, earlier: [{ subagents: ['bg'] }], subagents: [{ id: 'bg', state: 'running', groups: [] }] });
+    const next = turn({ number: 2, groups: [{ subagents: ['bg'] }], subagents: [{ id: 'bg', state: 'running', groups: [] }] });
     lastSocket().receive({ type: 'turn', turn: next });
     expect(tree()).toEqual(next);
   });
@@ -175,14 +198,15 @@ describe('useTurn, frames', () => {
   // useTurn spec: an update before the first frame, bad JSON and other frame types are ignored
   it('ignores an update before the first frame, bad JSON and frames of another type', () => {
     host = mount(<Probe sessionId="s1" />);
-    lastSocket().receive({ type: 'update', status: 'ended' });
+    lastSocket().receive({ type: 'update', groups: [{ subagents: ['x'] }] });
     lastSocket().receive('{not json');
-    lastSocket().receive({ type: 'session', status: 'ended' });
+    lastSocket().receive({ type: 'session', groups: [] });
     expect(state()).toEqual({ status: 'loading' });
-    lastSocket().receive({ type: 'turn', turn: turn() });
+    const first = turn({ groups: [{ subagents: ['a'] }], subagents: [{ id: 'a', state: 'running', groups: [] }] });
+    lastSocket().receive({ type: 'turn', turn: first });
     lastSocket().receive('{not json');
-    lastSocket().receive({ type: 'other', status: 'ended' });
-    expect(tree().status).toBe('running');
+    lastSocket().receive({ type: 'other', groups: [] });
+    expect(tree()).toEqual(first);
   });
 
   // useTurn spec: it sends nothing on the socket
@@ -195,7 +219,7 @@ describe('useTurn, frames', () => {
 });
 
 describe('useTurn, reconnection', () => {
-  // plan-session_activity/REQ-41, turn-panel spec: a socket closed before any frame → unavailable, with no new socket
+  // useTurn spec: a socket closed before any frame → unavailable, with no new socket
   it('becomes unavailable when the socket closes before any frame, and opens no new socket', () => {
     host = mount(<Probe sessionId="s1" />);
     lastSocket().serverClose();
@@ -216,7 +240,7 @@ describe('useTurn, reconnection', () => {
     advance(1);
     expect(sockets()).toHaveLength(2);
     expect(lastSocket().url).toBe(sockets()[0]!.url);
-    lastSocket().receive({ type: 'update', status: 'ended' });
+    lastSocket().receive({ type: 'update', groups: [] });
     expect(tree(), 'an update before the first frame of the new socket is ignored').toEqual(first);
     const fresh = turn({ number: 2, groups: [{ subagents: ['after'] }], subagents: [{ id: 'after', state: 'running', groups: [] }] });
     lastSocket().receive({ type: 'turn', turn: fresh });

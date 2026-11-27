@@ -8,13 +8,12 @@ const NOW = Date.parse('2026-11-27T10:00:00.000Z');
 const minute = (n: number) => new Date(NOW + n * 60_000).toISOString();
 
 const subagent = (id: string, fields: Partial<TurnSubagent> = {}): TurnSubagent => ({ id, type: `type-${id}`, state: 'running', startedAt: new Date(NOW).toISOString(), groups: [], ...fields });
-const turn = (fields: Partial<TurnTree> = {}): TurnTree => ({ number: 1, status: 'running', groups: [], earlier: [], subagents: [], ...fields });
+const turn = (fields: Partial<TurnTree> = {}): TurnTree => ({ number: 1, groups: [], subagents: [], ...fields });
 const oneGroupEach = (subagents: TurnSubagent[]) => turn({ groups: subagents.map((s) => ({ subagents: [s.id] })), subagents });
 
 const card = (host: Element, type: string) => host.querySelector(`article[aria-label="Subagent: ${type}"]`);
 const cardTypes = (host: Element) => [...host.querySelectorAll('article')].map((element) => element.getAttribute('aria-label')!.replace('Subagent: ', ''));
 const leaf = (host: Element, text: string) => [...host.querySelectorAll('*')].find((element) => element.children.length === 0 && element.textContent === text);
-const isBefore = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 const scrollArea = (host: Element) => host.querySelector<HTMLElement>('[tabindex="0"]')!;
 const emptyState = (host: Element) => host.querySelector('.area-state');
 const groupOf = (host: Element, type: string) => card(host, type)!.closest('.subagent-group');
@@ -50,7 +49,7 @@ describe('TurnTreeView, content', () => {
     expect(scrollArea(host).contains(card(host, 'type-a'))).toBe(true);
   });
 
-  // plan-subagent_panel/REQ-2, REQ-3, REQ-10: the groups in the order of the tree, each one the list of its rows in order
+  // plan-subagent_panel/REQ-3, REQ-10, REQ-14: the groups in the order of the tree, each one the list of its rows in order
   it('shows the groups in the order of the tree, each one as its own list of rows', () => {
     const host = mount(
       <TurnTreeView
@@ -94,7 +93,7 @@ describe('TurnTreeView, content', () => {
     expect(depthOf(host, 'type-q')).toBe(depthOf(host, 'type-p'));
   });
 
-  // plan-subagent_panel/REQ-10, REQ-11, REQ-12: a group of two or more marks each member row; a group of one and the rows nested under a member have no mark
+  // plan-subagent_panel/REQ-10, REQ-11, REQ-18: a group of two or more marks each member row; a group of one and the rows nested under a member have no mark
   it('draws a line and a tick beside each member row of a group of two or more, and none beside a row of a group of one', () => {
     const host = mount(
       <TurnTreeView
@@ -125,29 +124,16 @@ describe('TurnTreeView, content', () => {
     expect(marksOf(host, 'type-a')).toEqual(NO_MARK);
   });
 
-  // plan-subagent_panel/REQ-10, REQ-12: the groups of earlier turns follow the same rule
-  it('marks the member rows of a group of earlier turns, and not a group of one', () => {
-    const host = mount(<TurnTreeView turn={turn({ earlier: [{ subagents: ['e1', 'e2'] }, { subagents: ['e3'] }], subagents: [subagent('e1'), subagent('e2'), subagent('e3')] })} />);
-    expect(marksOf(host, 'type-e1')).toEqual(MARKED);
-    expect(marksOf(host, 'type-e2')).toEqual(MARKED);
-    expect(marksOf(host, 'type-e3')).toEqual(NO_MARK);
-    expect(groupOf(host, 'type-e1')).toBe(groupOf(host, 'type-e2'));
-  });
-
-  // plan-session_activity/REQ-39: the running subagents of earlier turns in their own section, above the groups of the turn
-  it('shows the subagents of earlier turns in the section "Still running from earlier turns", above the groups', () => {
-    const host = mount(<TurnTreeView turn={turn({ groups: [{ subagents: ['now'] }], earlier: [{ subagents: ['old'] }], subagents: [subagent('old'), subagent('now')] })} />);
-    const section = leaf(host, 'Still running from earlier turns')!.closest('section')!;
-    expect(section).not.toBeNull();
-    expect(section.contains(card(host, 'type-old'))).toBe(true);
-    expect(section.contains(card(host, 'type-now'))).toBe(false);
-    expect(isBefore(section, card(host, 'type-now')!)).toBe(true);
-  });
-
-  // plan-session_activity/REQ-39: no section without earlier subagents
-  it('shows no earlier section when no subagent of an earlier turn runs', () => {
-    const host = mount(<TurnTreeView turn={oneGroupEach([subagent('a')])} />);
-    expect(host.textContent).not.toContain('Still running from earlier turns');
+  // plan-subagent_panel/REQ-15: nothing about turns: no section for earlier turns, no turn state, no turn message
+  it('shows only the rows of the groups, with no section and no text about turns', () => {
+    const host = mount(<TurnTreeView turn={turn({ number: 4, groups: [{ subagents: ['old-1', 'old-2'] }, { subagents: ['now'] }], subagents: [subagent('old-1'), subagent('old-2'), subagent('now')] })} />);
+    expect(cardTypes(host)).toEqual(['type-old-1', 'type-old-2', 'type-now']);
+    expect(host.querySelector('section')).toBeNull();
+    for (const text of ['Still running from earlier turns', 'Ended', 'No turn yet.', 'No subagents in this turn.', 'No subagents running.']) {
+      expect(leaf(host, text), text).toBeUndefined();
+    }
+    expect(depthOf(host, 'type-old-1')).toBe(1);
+    expect(depthOf(host, 'type-now')).toBe(1);
   });
 
   // plan-session_activity/REQ-45, REQ-46: every subagent of a long turn shows, with no button for hidden items
@@ -159,37 +145,32 @@ describe('TurnTreeView, content', () => {
   });
 });
 
-describe('TurnTreeView, turn with no subagents', () => {
-  // plan-subagent_panel/REQ-5: a turn with no group says so, in a compact empty state
-  it('says "No subagents in this turn." for a turn with no group', () => {
+describe('TurnTreeView, no running subagent', () => {
+  // plan-subagent_panel/REQ-20: a tree with no group says "No subagents running.", in a compact empty state
+  it('says "No subagents running." for a tree with no group', () => {
     const host = mount(<TurnTreeView turn={turn()} />);
     const state = emptyState(host)!;
-    expect(state?.textContent).toBe('No subagents in this turn.');
+    expect(state?.textContent).toBe('No subagents running.');
     expect(state.classList.contains('area-state-empty')).toBe(true);
     expect(state.classList.contains('area-state-compact')).toBe(true);
+    expect(host.querySelectorAll('article')).toHaveLength(0);
   });
 
-  // plan-subagent_panel/REQ-5: the message concerns the current turn, so it shows also under the earlier section
-  it('shows the message under the section of earlier turns', () => {
-    const host = mount(<TurnTreeView turn={turn({ earlier: [{ subagents: ['old'] }], subagents: [subagent('old')] })} />);
-    const section = leaf(host, 'Still running from earlier turns')!.closest('section')!;
-    expect(emptyState(host)?.textContent).toBe('No subagents in this turn.');
-    expect(section.contains(emptyState(host))).toBe(false);
-    expect(isBefore(section, emptyState(host)!)).toBe(true);
+  // "Empty panel" (plan-subagent_panel/REQ-20): the same message before the first turn, and no other text
+  it('says only "No subagents running." before the first turn', () => {
+    const host = mount(<TurnTreeView turn={turn({ number: 0 })} />);
+    expect(scrollArea(host).textContent).toBe('No subagents running.');
   });
 
-  // plan-subagent_panel/REQ-5: the message shows also for an ended turn
-  it('shows the message for an ended turn', () => {
-    const host = mount(<TurnTreeView turn={turn({ status: 'ended' })} />);
-    expect(host.textContent).toContain('No subagents in this turn.');
-  });
-
-  // plan-subagent_panel/REQ-5: no message once the turn has a group
-  it('shows no message when the turn has a group, and drops it when the first group comes', () => {
+  // plan-subagent_panel/REQ-16, REQ-20: the message leaves with the first group and shows again when the last one leaves
+  it('drops the message when a group comes, and shows it again when the last group leaves', () => {
     const host = mount(<TurnTreeView turn={turn()} />);
     rerenderLast(<TurnTreeView turn={oneGroupEach([subagent('a')])} />);
-    expect(host.textContent).not.toContain('No subagents in this turn.');
+    expect(host.textContent).not.toContain('No subagents running.');
     expect(card(host, 'type-a')).not.toBeNull();
+    rerenderLast(<TurnTreeView turn={turn()} />);
+    expect(card(host, 'type-a')).toBeNull();
+    expect(emptyState(host)?.textContent).toBe('No subagents running.');
   });
 });
 
@@ -232,14 +213,14 @@ describe('TurnTreeView, following the latest started subagent', () => {
       subagents: ['a', 'b', 'c'].map((id) => subagent(id, { startedAt: minute(id === latest ? 9 : 1) })),
     });
 
-  // plan-subagent_panel/REQ-4: at first the view follows, and scrolls the least that shows the whole latest card
+  // plan-subagent_panel/REQ-19: at first the view follows, and scrolls the least that shows the whole latest card
   it('scrolls at first just enough to show the whole card of the latest started subagent', () => {
     places = { 'type-a': [0, 200], 'type-b': [1_000, 200], 'type-c': [2_000, 200] };
     const host = mount(<TurnTreeView turn={three('b')} />);
     expect(scrollArea(host).scrollTop).toBe(1_200 - VIEW_HEIGHT);
   });
 
-  // plan-subagent_panel/REQ-4: the latest card above the view shows from its top
+  // plan-subagent_panel/REQ-19: the latest card above the view shows from its top
   it('scrolls up to the top of the latest card when it is above the view', () => {
     places = { 'type-a': [100, 200], 'type-b': [1_000, 200], 'type-c': [2_000, 200] };
     const host = mount(<TurnTreeView turn={three('c')} />);
@@ -264,7 +245,7 @@ describe('TurnTreeView, following the latest started subagent', () => {
     expect(scrollArea(host).scrollTop).toBe(1_000);
   });
 
-  // plan-subagent_panel/REQ-4: the latest started subagent counts at any level, nested ones too
+  // plan-subagent_panel/REQ-19: the latest started subagent counts at any level, nested ones too
   it('follows a nested subagent when it started last', () => {
     places = { 'type-p': [0, 1_500], 'type-child': [1_200, 200], 'type-q': [2_000, 200] };
     const host = mount(
@@ -276,13 +257,6 @@ describe('TurnTreeView, following the latest started subagent', () => {
       />,
     );
     expect(scrollArea(host).scrollTop).toBe(1_400 - VIEW_HEIGHT);
-  });
-
-  // turn-tree-view spec: the latest started subagent counts also when it runs from an earlier turn
-  it('follows a subagent of the earlier section when it started last', () => {
-    places = { 'type-old': [600, 200], 'type-now': [1_000, 200] };
-    const host = mount(<TurnTreeView turn={turn({ groups: [{ subagents: ['now'] }], earlier: [{ subagents: ['old'] }], subagents: [subagent('old', { startedAt: minute(9) }), subagent('now', { startedAt: minute(1) })] })} />);
-    expect(scrollArea(host).scrollTop).toBe(800 - VIEW_HEIGHT);
   });
 
   // turn-tree-view spec: a subagent with no valid start does not count
@@ -307,7 +281,7 @@ describe('TurnTreeView, following the latest started subagent', () => {
     expect(scrollArea(host).scrollTop).toBe(2_200 - VIEW_HEIGHT);
   });
 
-  // plan-subagent_panel/REQ-4: a user scroll up stops the following; a scroll down short of the end does not resume it
+  // plan-subagent_panel/REQ-19: a user scroll up stops the following; a scroll down short of the end does not resume it
   it('stays still after the user scrolled up, also after a scroll down short of the end', () => {
     places = { 'type-a': [100, 200], 'type-b': [1_000, 200], 'type-c': [2_000, 200] };
     const host = mount(<TurnTreeView turn={three('b')} />);
@@ -320,7 +294,7 @@ describe('TurnTreeView, following the latest started subagent', () => {
     expect(scrollArea(host).scrollTop).toBe(1_200);
   });
 
-  // plan-subagent_panel/REQ-4: a user scroll to the end (within 8 px) starts the following again
+  // plan-subagent_panel/REQ-19: a user scroll to the end (within 8 px) starts the following again
   it('follows again after the user scrolled back to the end', () => {
     places = { 'type-a': [100, 200], 'type-b': [1_000, 200], 'type-c': [2_000, 200] };
     const host = mount(<TurnTreeView turn={three('b')} />);

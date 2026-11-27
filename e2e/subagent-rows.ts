@@ -64,7 +64,8 @@ const marksOf = (area: Locator) =>
 
 /** REQ-8: a row of level n starts n + 1 gutters from the left of the content and ends at its right edge. */
 export async function expectRowPlace(area: Locator, row: Locator, level: number, label = `row of level ${level}`): Promise<void> {
-  const [content, box] = [await contentOf(area), await settledBox(row)];
+  const box = await settledBox(row);
+  const content = await contentOf(area);
   expect(Math.abs(box.x - (content.left + (level + 1) * GUTTER)), `${label}: ${level + 1} gutters from the left`).toBeLessThanOrEqual(1);
   expect(Math.abs(box.x + box.width - content.right), `${label}: reaches the right edge`).toBeLessThanOrEqual(1);
 }

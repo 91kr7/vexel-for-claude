@@ -44,8 +44,8 @@ const latestLine = (target: Locator) => target.locator('.session-entry-latest');
 const stallLine = (target: Locator) => target.locator('.session-entry-stall');
 const mainArea = (page: Page) => page.getByRole('main');
 const header = (page: Page) => mainArea(page).locator('.main-view:not(.is-leaving) .session-header');
-const turnButton = (page: Page) => header(page).getByRole('button', { name: 'Turn Panel', exact: true });
-const panel = (page: Page) => mainArea(page).getByRole('region', { name: 'Turn Panel', exact: true });
+const turnButton = (page: Page) => header(page).getByRole('button', { name: 'Subagents', exact: true });
+const panel = (page: Page) => mainArea(page).getByRole('region', { name: 'Subagents', exact: true });
 const subConversation = (page: Page) => panel(page).getByRole('region', { name: 'Subagent Conversation', exact: true });
 const cards = (scope: Locator) => scope.getByRole('article', { name: `Subagent: ${TYPE}`, exact: true });
 const card = (page: Page, label: string) => cards(panel(page)).filter({ has: page.getByText(label, { exact: true }) });
@@ -236,7 +236,7 @@ test.describe('Workflow subagents', () => {
   });
 
   // plan-session_activity/REQ-58, plan-subagent_panel/REQ-1, REQ-8, REQ-10 — scenario "The turn panel shows the agents of a workflow"
-  test('the turn panel shows the 4 agents of a workflow as one group of rows joined by a line, each with its fields, and no step', async ({ page }) => {
+  test('the Subagents panel shows the 4 agents of a workflow as one group of rows joined by a line, each with its fields, and no step', async ({ page }) => {
     const folder = await newFolder('panel');
     const sessionId = uuid();
     const files = claudeSession(folder, sessionId);
@@ -268,7 +268,7 @@ test.describe('Workflow subagents', () => {
     await expectJoined(treeArea(page), rows);
   });
 
-  // plan-subagent_panel/REQ-2, REQ-3, REQ-10, REQ-12 — scenario "A workflow sits at the start of its first agent"
+  // plan-subagent_panel/REQ-3, REQ-10, REQ-14, REQ-18 — scenario "A workflow sits at the start of its first agent"
   test('puts a subagent started before the first agent of a workflow above the workflow group, launched earlier', async ({ page }) => {
     const folder = await newFolder('order');
     const sessionId = uuid();
@@ -336,8 +336,8 @@ test.describe('Workflow subagents', () => {
     await expect(view.locator('article').last()).toContainText('The docs are consistent');
   });
 
-  // plan-session_activity/REQ-60 — scenario "An ended workflow stops keeping the session at work"
-  test('once the workflow ends, the panel shows 2 agents finished and 2 stopped, and the idle entry loses its latest-text line', async ({ page, request }) => {
+  // plan-session_activity/REQ-60, plan-subagent_panel/REQ-16, REQ-20 — scenario "An ended workflow stops keeping the session at work"
+  test('once the workflow ends, its 4 agents leave the panel, and the idle entry loses its latest-text line', async ({ page, request }) => {
     const folder = await newFolder('ends');
     const claudeSessionId = uuid();
     const files = claudeSession(folder, claudeSessionId);
@@ -353,16 +353,9 @@ test.describe('Workflow subagents', () => {
 
     await files.journal('wf_ends', { type: 'result', agentId: 'a1', label: 'review:git' }, { type: 'result', agentId: 'a2', label: 'review:docs' });
     await files.write(notification('task-wf_ends', 'stopped', iso(Date.now())));
-    for (const [label, pill] of [
-      ['review:git', 'Finished'],
-      ['review:docs', 'Finished'],
-      ['review:build', 'Stopped'],
-      ['review:tests', 'Stopped'],
-    ] as const) {
-      await expect(card(page, label).getByText(pill, { exact: true }), `${label}: ${pill}`).toBeVisible(PROMPTLY);
-    }
-    await expect(cards(panel(page)).getByText('Running', { exact: true })).toHaveCount(0);
-    await expect(panel(page).getByText('Ended', { exact: true }), 'the turn shows as ended').toBeVisible();
+    await expect(cards(panel(page)), 'the 2 finished and the 2 stopped agents leave').toHaveCount(0, PROMPTLY);
+    await expect(panel(page).getByText('No subagents running.', { exact: true })).toBeVisible();
+    for (const text of ['Finished', 'Stopped', 'Ended']) await expect(panel(page).getByText(text, { exact: true }), text).toHaveCount(0);
     await expect(latestLine(row), 'the entry no longer shows the latest-text line').toHaveCount(0, PROMPTLY);
     expect(await stateOf(request, id)).toBe('idle');
   });

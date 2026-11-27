@@ -109,8 +109,8 @@ const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).locator('.session-entry').filter({ has: page.getByTitle(folder, { exact: true }) });
 const mainArea = (page: Page) => page.getByRole('main');
 const header = (page: Page) => mainArea(page).locator('.main-view:not(.is-leaving) .session-header');
-const turnButton = (page: Page) => header(page).getByRole('button', { name: 'Turn Panel', exact: true });
-const panel = (page: Page) => mainArea(page).getByRole('region', { name: 'Turn Panel', exact: true });
+const turnButton = (page: Page) => header(page).getByRole('button', { name: 'Subagents', exact: true });
+const panel = (page: Page) => mainArea(page).getByRole('region', { name: 'Subagents', exact: true });
 
 /** Whether the focused element draws the focus ring colour as an outline or a box-shadow. */
 const focusedShowsRing = (page: Page) =>
@@ -125,9 +125,9 @@ const focusedShowsRing = (page: Page) =>
     const s = getComputedStyle(el);
     return (s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0 && s.outlineColor === ring) || s.boxShadow.includes(ring);
   });
-const focusInPanel = (page: Page) => page.evaluate(() => document.activeElement?.closest('section[aria-label="Turn Panel"]') != null);
+const focusInPanel = (page: Page) => page.evaluate(() => document.activeElement?.closest('section[aria-label="Subagents"]') != null);
 
-test.describe('Turn panel in the desktop app', () => {
+test.describe('Subagents panel in the desktop app', () => {
   test.describe.configure({ timeout: 120_000 });
 
   test.beforeAll(() => {
@@ -135,7 +135,7 @@ test.describe('Turn panel in the desktop app', () => {
     expect(existsSync(path.join(repoRoot, 'dist/web/index.html'))).toBe(true);
   });
 
-  // plan-session_activity/REQ-48, REQ-47, REQ-27 — scenario "The panel works with the keyboard and in the desktop window"
+  // plan-session_activity/REQ-48, REQ-47, REQ-27, plan-subagent_panel/REQ-21 — scenario "The panel works with the keyboard and in the desktop window"
   test('opens beside a hosted session, and from the keyboard on an external session with the focus ring on each focused element', async () => {
     const port = await freePort();
     const env = await desktopEnv(port);
@@ -161,8 +161,8 @@ test.describe('Turn panel in the desktop app', () => {
     await entry(page, hostedFolder).getByTitle(hostedFolder, { exact: true }).click();
     await turnButton(page).click();
     await expect(panel(page)).toBeVisible();
-    await expect(panel(page).getByText('No subagents in this turn.', { exact: true }), 'plan-subagent_panel/REQ-5').toBeVisible(PROMPTLY);
-    await expect(panel(page).getByText('Running', { exact: true })).toBeVisible();
+    await expect(panel(page).getByText('No subagents running.', { exact: true }), 'plan-subagent_panel/REQ-20').toBeVisible(PROMPTLY);
+    await expect(panel(page).locator(':scope > header'), 'plan-subagent_panel/REQ-15, REQ-21').toHaveText('Subagents');
     await expect(panel(page), 'plan-subagent_panel/REQ-1: no text of the main conversation').not.toContainText('Hosted turn text');
     await turnButton(page).click();
     await expect(panel(page)).toHaveCount(0);
@@ -173,7 +173,7 @@ test.describe('Turn panel in the desktop app', () => {
     await header(page).locator('.mono-chip').first().focus();
     for (let i = 0; i < 200 && !(await turnButton(page).evaluate((el) => el === document.activeElement)); i += 1) await page.keyboard.press('Tab');
     await expect(turnButton(page), 'reached with Tab').toBeFocused();
-    expect(await focusedShowsRing(page), '"Turn Panel" shows the focus ring').toBe(true);
+    expect(await focusedShowsRing(page), '"Subagents" shows the focus ring').toBe(true);
     await page.keyboard.press('Enter');
     await expect(panel(page)).toBeVisible();
     await expect(panel(page).getByRole('article', { name: 'Subagent: sdd-developer', exact: true })).toBeVisible(PROMPTLY);

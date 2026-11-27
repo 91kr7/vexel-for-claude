@@ -16,7 +16,7 @@ type Line = Record<string, unknown>;
 
 // REQ-43 asks for 2 s from the line to the frame. The monitor reads every 500 ms.
 const REQ_43_MS = 2000;
-const NO_TURN: TurnTree = { number: 0, status: 'none', groups: [], earlier: [], subagents: [] };
+const NO_TURN: TurnTree = { number: 0, groups: [], subagents: [] };
 
 let claudeDir: string;
 let app: FastifyInstance;
@@ -139,20 +139,34 @@ async function connect(id: string): Promise<WsClient> {
 
 const framesOf = (client: WsClient) => client.frames.map((frame) => JSON.parse(frame) as TurnChange);
 
-/** The tree the page would hold after the frames of the socket. */
+/** The ids that the groups reach, from level 0 down through the groups of the subagents. */
+function reachedIds(tree: TurnTree): Set<string> {
+  const reached = new Set<string>();
+  const visit = (groups: TurnTree['groups']) => {
+    for (const id of groups.flatMap((each) => each.subagents)) {
+      if (reached.has(id)) continue;
+      reached.add(id);
+      visit(tree.subagents.find((subagent) => subagent.id === id)?.groups ?? []);
+    }
+  };
+  visit(tree.groups);
+  return reached;
+}
+
+/** The tree the page would hold after the frames of the socket (useTurn spec: an update drops the subagents no group reaches). */
 function treeOf(client: WsClient): TurnTree | undefined {
   let tree: TurnTree | undefined;
   for (const frame of framesOf(client)) {
     if (frame.type === 'turn') tree = structuredClone(frame.turn);
     else if (tree) {
-      if (frame.status) tree.status = frame.status;
       if (frame.groups) tree.groups = frame.groups;
-      if (frame.earlier) tree.earlier = frame.earlier;
       for (const subagent of frame.subagents ?? []) {
         const at = tree.subagents.findIndex((known) => known.id === subagent.id);
         if (at >= 0) tree.subagents[at] = subagent;
         else tree.subagents.push(subagent);
       }
+      const reached = reachedIds(tree);
+      tree.subagents = tree.subagents.filter((subagent) => reached.has(subagent.id));
     }
   }
   return tree;
@@ -169,14 +183,14 @@ async function treeWhen(client: WsClient, check: (tree: TurnTree) => boolean, la
 const subagentOf = (tree: TurnTree, id: string) => tree.subagents.find((subagent) => subagent.id === id);
 
 describe('Turn route, opening', { timeout: 30_000 }, () => {
-  // plan-session_activity/REQ-27, REQ-28, plan-subagent_panel/REQ-1: a hosted session gets the whole tree of its current turn first, with no step
-  it('sends the whole tree of the current turn of a hosted session first', async () => {
+  // plan-session_activity/REQ-27, plan-subagent_panel/REQ-1, REQ-15: a hosted session gets the whole tree first, with no step and no turn state
+  it('sends the whole tree of a hosted session first', async () => {
     const session = workingHosted();
     await append(session.transcript, userSays('Old turn'), claudeSays('Old text'), userSays('Check the repo'), claudeSays('Looking at the **repository**'));
     await waitFor(() => monitor.turnOf(session.id)?.number === 2, 'monitor read the transcript');
     const client = await connect(session.id);
     await waitFor(() => client.frames.length > 0, 'first frame');
-    expect(framesOf(client)[0]).toEqual({ type: 'turn', turn: { number: 2, status: 'running', groups: [], earlier: [], subagents: [] } });
+    expect(framesOf(client)[0]).toEqual({ type: 'turn', turn: { number: 2, groups: [], subagents: [] } });
   });
 
   // plan-session_activity/REQ-27: an external session too
@@ -188,7 +202,7 @@ describe('Turn route, opening', { timeout: 30_000 }, () => {
     await sub.meta({ agentType: 'Explore', toolUseId: 'ext' });
     const client = await connect(session.id);
     const tree = await treeWhen(client, (t) => t.subagents.length === 1, 'the subagent of the external session');
-    expect(tree).toMatchObject({ number: 1, status: 'running', groups: [{ subagents: ['agent-ext'] }] });
+    expect(tree).toMatchObject({ number: 1, groups: [{ subagents: ['agent-ext'] }] });
   });
 
   // turn-route spec: an unknown id closes the socket with 4404 and no frame
@@ -198,7 +212,7 @@ describe('Turn route, opening', { timeout: 30_000 }, () => {
     expect(client.frames).toEqual([]);
   });
 
-  // plan-session_activity/REQ-41, plan-subagent_panel/REQ-7: a session with no turn yet gets the empty tree
+  // plan-subagent_panel/REQ-20, "Empty panel": a session with no turn yet gets the empty tree
   it('sends the empty tree for a hosted session where the user sent no message yet', async () => {
     const id = unique('hosted');
     tracker.track({ id, cwd: `/work/${id}`, onExit: () => {} });
@@ -209,36 +223,45 @@ describe('Turn route, opening', { timeout: 30_000 }, () => {
 });
 
 describe('Turn route, the tree of a turn', { timeout: 30_000 }, () => {
-  // plan-subagent_panel/REQ-1, REQ-2, REQ-3, plan-session_activity/REQ-32, REQ-37: scenario "The panel shows only the subagents of the turn, in start order"
-  it('gives only the subagents of the turn: the analyst, then the two developers of the next message as one group', async () => {
+  // plan-subagent_panel/REQ-1, REQ-14, REQ-15, REQ-16, plan-session_activity/REQ-32: scenario "The panel lists the subagents running now, of any turn"
+  it('gives the running subagents of any turn: the two developers of an earlier message as one group, then the tester; not the finished analyst', async () => {
     const session = workingHosted();
-    const turnStart = now(-5 * MIN);
+    const developersStart = now(-9 * MIN);
     const analystStart = now(-4 * MIN);
-    const developersStart = now(-2 * MIN);
+    const testerStart = now(-2 * MIN);
     await append(
       session.transcript,
-      userSays('Implement the batch', turnStart),
+      userSays('Implement in the background', now(-10 * MIN)),
+      inMessage('msg_developers', claudeSays([agentUse('dev-1', 'Implement INT-1')], now(-10 * MIN))),
+      inMessage('msg_developers', claudeSays([agentUse('dev-2', 'Implement INT-2')], now(-10 * MIN))),
+      toolResult('dev-1', now(-10 * MIN)),
+      toolResult('dev-2', now(-10 * MIN)),
+      claudeSays('Both developers started', now(-10 * MIN)),
+      userSays('Check the work', now(-5 * MIN)),
       inMessage('msg_text', claudeSays('I will check the repository first')),
       inMessage('msg_git', claudeSays([toolUse('git', 'Bash', { command: 'git status' })])),
       toolResult('git'),
       inMessage('msg_analyst', claudeSays([agentUse('analyst', 'Analyse the request', 'sdd-analyst')])),
       toolResult('analyst'),
-      inMessage('msg_developers', claudeSays([agentUse('dev-1', 'Implement INT-1')])),
-      inMessage('msg_developers', claudeSays([agentUse('dev-2', 'Implement INT-2')])),
+      inMessage('msg_tester', claudeSays([agentUse('tester', 'Test the batch', 'sdd-tester')])),
     );
-    const analyst = session.subagent('agent-an');
     const first = session.subagent('agent-d1');
     const second = session.subagent('agent-d2');
-    await append(analyst.file, userSays('Analyse the request', analystStart, true), claudeSays('Reading the spec', now(), true));
+    const analyst = session.subagent('agent-an');
+    const tester = session.subagent('agent-t');
     await append(first.file, userSays('Implement INT-1', developersStart, true), claudeSays('Reading the **spec**', now(), true, 'claude-opus-5-5'), claudeSays([toolUse('t1', 'Bash', { command: 'npm test' })], now(), true));
     await append(second.file, userSays('Implement INT-2', developersStart, true), claudeSays('Writing the route', now(), true));
-    await analyst.meta({ agentType: 'sdd-analyst', description: 'Analyse the request', toolUseId: 'analyst' });
+    await append(analyst.file, userSays('Analyse the request', analystStart, true), claudeSays('Analysis written', now(), true));
+    await append(tester.file, userSays('Test the batch', testerStart, true), claudeSays('Running the suite', now(), true));
     await first.meta({ agentType: 'sdd-developer', description: 'Implement INT-1', toolUseId: 'dev-1', pickedEffortModel: 'claude-opus-5-5' });
     await second.meta({ agentType: 'sdd-developer', description: 'Implement INT-2', toolUseId: 'dev-2', pickedEffortModel: 'claude-sonnet-5' });
+    await analyst.meta({ agentType: 'sdd-analyst', description: 'Analyse the request', toolUseId: 'analyst', finished: true });
+    await tester.meta({ agentType: 'sdd-tester', description: 'Test the batch', toolUseId: 'tester' });
     const client = await connect(session.id);
-    const tree = await treeWhen(client, (t) => t.subagents.length === 3, 'three subagents');
-    expect(Object.keys(tree).sort(), 'REQ-1: no step of the main conversation').toEqual(['earlier', 'groups', 'number', 'status', 'subagents']);
-    expect(tree.groups).toEqual([{ subagents: ['agent-an'] }, { subagents: ['agent-d1', 'agent-d2'] }]);
+    const tree = await treeWhen(client, (t) => t.number === 2 && t.subagents.length === 3 && t.groups.length === 2, 'the three running subagents');
+    expect(Object.keys(tree).sort(), 'REQ-1, REQ-15: no step and no turn state').toEqual(['groups', 'number', 'subagents']);
+    expect(tree.groups).toEqual([{ subagents: ['agent-d1', 'agent-d2'] }, { subagents: ['agent-t'] }]);
+    expect(tree.subagents.map((subagent) => subagent.id).sort(), 'REQ-16: no finished analyst').toEqual(['agent-d1', 'agent-d2', 'agent-t']);
     expect(subagentOf(tree, 'agent-d1')).toEqual<TurnSubagent>({
       id: 'agent-d1',
       type: 'sdd-developer',
@@ -250,8 +273,8 @@ describe('Turn route, the tree of a turn', { timeout: 30_000 }, () => {
       currentTool: { name: 'Bash', argument: 'npm test', others: 0 },
       groups: [],
     });
-    expect(subagentOf(tree, 'agent-an')).toMatchObject({ type: 'sdd-analyst', startedAt: analystStart });
-    expect(JSON.stringify(framesOf(client)), 'REQ-1: no text or tool call of the main conversation in any frame').not.toMatch(/check the repository|git status|Implement the batch/);
+    expect(subagentOf(tree, 'agent-t')).toMatchObject({ type: 'sdd-tester', state: 'running', startedAt: testerStart });
+    expect(JSON.stringify(framesOf(client)), 'REQ-1: no text or tool call of the main conversation in any frame').not.toMatch(/check the repository|git status|Check the work|agent-an/);
   });
 
   // plan-subagent_panel/REQ-1, plan-session_activity/REQ-43: a text or tool call of the main conversation sends no frame; a subagent change still does within 2 s
@@ -274,33 +297,60 @@ describe('Turn route, the tree of a turn', { timeout: 30_000 }, () => {
     expect(after.every((frame) => frame.type === 'update' && Object.keys(frame).sort().join() === 'subagents,type'), JSON.stringify(after)).toBe(true);
   });
 
-  // plan-subagent_panel/REQ-5, REQ-6: scenario "A turn with no subagents": the last turn shows as ended, with no group
-  it('marks the last turn ended, with no group, when Claude answered with no subagent', async () => {
+  // plan-subagent_panel/REQ-15, REQ-20: scenario "No subagent runs": no group and no turn state after a turn with no subagent
+  it('gives no group and no turn state when the last turn ended with no subagent', async () => {
     const session = workingHosted();
     await append(session.transcript, userSays('What does this module do?', now(-MIN)), claudeSays('It parses the transcripts'));
     tracker.applyHookEvent(session.id, { hook_event_name: 'Stop' });
     const client = await connect(session.id);
-    const tree = await treeWhen(client, (t) => t.number === 1 && t.status === 'ended', 'the ended turn');
-    expect(tree).toEqual({ number: 1, status: 'ended', groups: [], earlier: [], subagents: [] });
+    const tree = await treeWhen(client, (t) => t.number === 1, 'the ended turn');
+    expect(tree).toEqual({ number: 1, groups: [], subagents: [] });
   });
 
-  // plan-session_activity/REQ-33, REQ-34: a finished subagent and an interrupted one, each with its full run time
-  it('shows a finished subagent as finished and an interrupted one as stopped, both with the time of their last line', async () => {
+  // plan-subagent_panel/REQ-16, plan-session_activity/REQ-43: a subagent that finishes and one that is interrupted leave the tree within 2 s
+  it('drops a finished subagent and an interrupted one from the tree within 2 s', async () => {
     const session = external('working');
-    await append(session.transcript, userSays('Go'), claudeSays([agentUse('a', 'Done task'), agentUse('b', 'Cut task')]));
+    await append(session.transcript, userSays('Go'), claudeSays([agentUse('a', 'Done task'), agentUse('b', 'Cut task'), agentUse('c', 'Long task')]));
     const done = session.subagent('agent-a');
     const cut = session.subagent('agent-b');
-    const start = now(-10 * MIN);
-    const doneEnd = now(-4 * MIN);
-    const cutEnd = now(-3 * MIN);
-    await append(done.file, userSays('Task', start, true), claudeSays('All done', doneEnd, true));
-    await append(cut.file, userSays('Task', start, true), claudeSays('Halfway', now(-5 * MIN), true), userSays('[Request interrupted by user]', cutEnd, true));
-    await done.meta({ agentType: 'Explore', toolUseId: 'a', finished: true });
-    await cut.meta({ agentType: 'Explore', toolUseId: 'b' });
+    const alive = session.subagent('agent-c');
+    for (const [sub, call] of [
+      [done, 'a'],
+      [cut, 'b'],
+      [alive, 'c'],
+    ] as const) {
+      await append(sub.file, userSays('Task', now(-10 * MIN), true), claudeSays('Working', now(), true));
+      await sub.meta({ agentType: 'Explore', toolUseId: call });
+    }
     const client = await connect(session.id);
-    const tree = await treeWhen(client, (t) => t.subagents.length === 2, 'two subagents');
-    expect(subagentOf(tree, 'agent-a')).toMatchObject({ state: 'finished', startedAt: start, endedAt: doneEnd });
-    expect(subagentOf(tree, 'agent-b')).toMatchObject({ state: 'stopped', startedAt: start, endedAt: cutEnd });
+    await treeWhen(client, (t) => t.subagents.length === 3, 'three running subagents');
+
+    let written = Date.now();
+    await done.meta({ agentType: 'Explore', toolUseId: 'a', finished: true });
+    await treeWhen(client, (t) => subagentOf(t, 'agent-a') === undefined, 'the finished subagent left', REQ_43_MS);
+    expect(Date.now() - written, 'REQ-16: the finished subagent left within 2 s').toBeLessThanOrEqual(REQ_43_MS);
+
+    written = Date.now();
+    await append(cut.file, userSays('[Request interrupted by user]', now(), true));
+    const tree = await treeWhen(client, (t) => subagentOf(t, 'agent-b') === undefined, 'the interrupted subagent left', REQ_43_MS);
+    expect(Date.now() - written, 'REQ-16: the stopped subagent left within 2 s').toBeLessThanOrEqual(REQ_43_MS);
+    expect(tree.groups).toEqual([{ subagents: ['agent-c'] }]);
+    expect(tree.subagents.map((subagent) => subagent.id)).toEqual(['agent-c']);
+    expect(JSON.stringify(framesOf(client)), 'no frame names an ended state or an end time').not.toMatch(/"finished"|"stopped"|endedAt/);
+  });
+
+  // "Runs now" (plan-subagent_panel/REQ-14, REQ-16): no subagent of an ended session is in the tree
+  it('empties the tree when the hosted session ends', async () => {
+    const session = workingHosted();
+    await append(session.transcript, userSays('Go'), claudeSays([agentUse('w', 'Work')]));
+    const worker = session.subagent('agent-w');
+    await append(worker.file, userSays('Work', now(), true), claudeSays('Working', now(), true));
+    await worker.meta({ agentType: 'Explore', toolUseId: 'w' });
+    const client = await connect(session.id);
+    await treeWhen(client, (t) => t.subagents.length === 1, 'the running subagent');
+    exits.get(session.id)?.();
+    const tree = await treeWhen(client, (t) => t.subagents.length === 0, 'the subagent left with the session', REQ_43_MS);
+    expect(tree).toEqual({ number: 1, groups: [], subagents: [] });
   });
 
   // plan-session_activity/REQ-38: scenario "A nested subagent appears under its parent"
@@ -322,32 +372,29 @@ describe('Turn route, the tree of a turn', { timeout: 30_000 }, () => {
     expect(subagentOf(tree, 'agent-c')).toMatchObject({ type: 'Explore', description: 'Child task', state: 'running' });
   });
 
-  // plan-session_activity/REQ-39, REQ-40: scenario "A background subagent outlives its turn"
-  it('keeps a running background subagent in earlier after a new turn, and marks the turn ended when the session is idle', async () => {
+  // plan-subagent_panel/REQ-14, REQ-15: a running background subagent stays at level 0 after its turn ends and a new turn starts
+  it('keeps a running background subagent at level 0 across turns, with no turn state', async () => {
     const session = workingHosted();
     await append(session.transcript, userSays('Start the tests in the background'), claudeSays([agentUse('bg', 'Background tests', 'sdd-tester')]), toolResult('bg'), claudeSays('Started'));
     const background = session.subagent('agent-bg');
     await append(background.file, userSays('Run the tests', now(), true), claudeSays('Running the suite', now(), true));
     await background.meta({ agentType: 'sdd-tester', toolUseId: 'bg' });
     const client = await connect(session.id);
-    await treeWhen(client, (t) => t.groups.length === 1, 'the background subagent in the turn');
+    await treeWhen(client, (t) => t.groups.length === 1, 'the background subagent');
 
     tracker.applyHookEvent(session.id, { hook_event_name: 'Stop' });
-    await treeWhen(client, (t) => t.status === 'ended', 'turn ended', REQ_43_MS);
-
     tracker.applyHookEvent(session.id, { hook_event_name: 'UserPromptSubmit', prompt: 'And now?', session_id: session.claudeSessionId });
     await append(session.transcript, userSays('And now?'), claudeSays('The tests still run'));
     const next = await treeWhen(client, (t) => t.number === 2, 'the new turn');
-    expect(next).toMatchObject({ status: 'running', groups: [], earlier: [{ subagents: ['agent-bg'] }] });
-    expect(subagentOf(next, 'agent-bg')).toMatchObject({ type: 'sdd-tester', state: 'running', latestText: 'Running the suite' });
+    expect(next).toEqual({ number: 2, groups: [{ subagents: ['agent-bg'] }], subagents: [expect.objectContaining({ id: 'agent-bg', type: 'sdd-tester', state: 'running', latestText: 'Running the suite' })] });
 
     tracker.applyHookEvent(session.id, { hook_event_name: 'Stop' });
-    const ended = await treeWhen(client, (t) => t.status === 'ended', 'the last turn ended', REQ_43_MS);
-    expect(ended).toMatchObject({ number: 2, groups: [], earlier: [{ subagents: ['agent-bg'] }] });
+    await new Promise((resolve) => setTimeout(resolve, 1_200));
+    expect(treeOf(client)).toEqual(next);
   });
 
-  // plan-subagent_panel/REQ-10, REQ-12: scenario "A group still running from earlier turns stays joined"
-  it('keeps the subagents of one message of an earlier turn in one group of earlier, and a subagent of another message in its own', async () => {
+  // plan-subagent_panel/REQ-3, REQ-14, REQ-16, REQ-18: a group of an earlier turn stays joined; when one member ends, the other is a group of one
+  it('keeps the subagents of one message of an earlier turn in one group, and leaves a group of one when a member ends', async () => {
     const session = workingHosted();
     await append(
       session.transcript,
@@ -373,13 +420,46 @@ describe('Turn route, the tree of a turn', { timeout: 30_000 }, () => {
     expect(first.groups).toEqual([{ subagents: ['agent-d1', 'agent-d2'] }, { subagents: ['agent-t'] }]);
 
     await append(session.transcript, userSays('And now?'), claudeSays('They still run'));
-    const next = await treeWhen(client, (t) => t.number === 2 && t.earlier.length > 0, 'the earlier groups');
-    expect(next.groups).toEqual([]);
-    expect(next.earlier).toEqual([{ subagents: ['agent-d1', 'agent-d2'] }, { subagents: ['agent-t'] }]);
+    const next = await treeWhen(client, (t) => t.number === 2 && t.subagents.length === 3, 'the groups of the earlier turn');
+    expect(next.groups).toEqual([{ subagents: ['agent-d1', 'agent-d2'] }, { subagents: ['agent-t'] }]);
 
     await session.subagent('agent-d1').meta({ agentType: 'sdd-developer', toolUseId: 'dev-1', finished: true });
-    const left = await treeWhen(client, (t) => t.earlier.length > 0 && t.earlier[0]!.subagents.length === 1, 'one developer left');
-    expect(left.earlier, 'a group with one running member left is a group of one').toEqual([{ subagents: ['agent-d2'] }, { subagents: ['agent-t'] }]);
+    const left = await treeWhen(client, (t) => t.subagents.length === 2, 'one developer left');
+    expect(left.groups, 'REQ-18: a group with one running member left is a group of one').toEqual([{ subagents: ['agent-d2'] }, { subagents: ['agent-t'] }]);
+  });
+
+  // plan-subagent_panel/REQ-17: scenario "A subagent whose parent ended takes its place"
+  it('puts the running child of an ended subagent at level 0, in the place of its parent', async () => {
+    const session = workingHosted();
+    await append(
+      session.transcript,
+      userSays('Analyse and implement', now(-10 * MIN)),
+      inMessage('msg_analyst', claudeSays([agentUse('analyst', 'Analyse the request', 'sdd-analyst')], now(-10 * MIN))),
+      toolResult('analyst', now(-10 * MIN)),
+      inMessage('msg_developer', claudeSays([agentUse('developer', 'Implement the batch')], now(-9 * MIN))),
+      toolResult('developer', now(-9 * MIN)),
+    );
+    const analyst = session.subagent('agent-an');
+    const developer = session.subagent('agent-dev');
+    await append(analyst.file, userSays('Analyse the request', now(-6 * MIN), true), claudeSays('Analysing', now(), true));
+    await append(developer.file, userSays('Implement the batch', now(-4 * MIN), true), claudeSays('Implementing', now(), true));
+    await analyst.meta({ agentType: 'sdd-analyst', toolUseId: 'analyst' });
+    await developer.meta({ agentType: 'sdd-developer', toolUseId: 'developer' });
+    const client = await connect(session.id);
+    await treeWhen(client, (t) => t.subagents.length === 2, 'the analyst and the developer');
+
+    const tester = session.subagent('agent-t');
+    await append(analyst.file, claudeSays([agentUse('tester-call', 'Test the analysis', 'sdd-tester')], now(), true));
+    await append(tester.file, userSays('Test the analysis', now(-2 * MIN), true), claudeSays('Testing', now(), true));
+    await tester.meta({ agentType: 'sdd-tester', toolUseId: 'tester-call' });
+    const nested = await treeWhen(client, (t) => subagentOf(t, 'agent-t') !== undefined, 'the tester under the analyst');
+    expect(nested.groups).toEqual([{ subagents: ['agent-an'] }, { subagents: ['agent-dev'] }]);
+    expect(subagentOf(nested, 'agent-an')?.groups).toEqual([{ subagents: ['agent-t'] }]);
+
+    await analyst.meta({ agentType: 'sdd-analyst', toolUseId: 'analyst', finished: true });
+    const moved = await treeWhen(client, (t) => subagentOf(t, 'agent-an') === undefined, 'the analyst left');
+    expect(moved.groups).toEqual([{ subagents: ['agent-t'] }, { subagents: ['agent-dev'] }]);
+    expect(subagentOf(moved, 'agent-t')).toMatchObject({ type: 'sdd-tester', state: 'running', groups: [] });
   });
 
   // plan-session_activity/REQ-44: scenario "Missing data hides only its field"
@@ -459,9 +539,9 @@ describe('Turn route, subscription', () => {
       clients.push(client);
       await waitFor(() => client.frames.length === 1 && listeners.size === 1, 'first frame and subscription');
       expect(framesOf(client)).toEqual([{ type: 'turn', turn: NO_TURN }]);
-      const update: TurnChange = { type: 'update', status: 'ended' };
+      const update: TurnChange = { type: 'update', groups: [{ subagents: ['a'] }] };
       for (const listener of listeners) {
-        listener('s2', { type: 'update', status: 'running' });
+        listener('s2', { type: 'update', groups: [] });
         listener('s1', update);
       }
       await waitFor(() => client.frames.length === 2, 'forwarded change');

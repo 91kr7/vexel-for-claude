@@ -92,8 +92,8 @@ async function idleAfterWorkflows(...runIds: string[]) {
 const subagentOf = (monitor: ActivityMonitor, id: string, agentId: string) => monitor.turnOf(id)?.subagents.find((subagent) => subagent.id === agentId);
 
 describe('ActivityMonitor, workflow subagents', () => {
-  // plan-session_activity/REQ-56, REQ-60: the monitor reads every run, its journal and its agent files
-  it('reads the journal and the agent files of each run: a finished agent stops counting, a running one keeps the idle session at work', async () => {
+  // plan-session_activity/REQ-56, REQ-60, plan-subagent_panel/REQ-16: the monitor reads every run, its journal and its agent files
+  it('reads the journal and the agent files of each run: a finished agent stops counting and leaves the tree, a running one keeps the idle session at work', async () => {
     const session = await idleAfterWorkflows('wf_a', 'wf_b');
     const running = session.agent('wf_a', 'a1');
     await running.meta({ agentType: 'workflow-subagent', description: 'review:git', pickedEffortModel: 'claude-sonnet-5' });
@@ -108,13 +108,13 @@ describe('ActivityMonitor, workflow subagents', () => {
     await monitor.poll();
     expect(monitor.get(session.id)).toMatchObject({ atWork: true, latestText: { text: 'Checking the Maven resolution', subagentType: 'workflow-subagent', at: time(20) } });
     expect(subagentOf(monitor, session.id, 'agent-a1')).toMatchObject({ state: 'running', description: 'review:git', model: 'claude-sonnet-5' });
-    expect(subagentOf(monitor, session.id, 'agent-b1')).toMatchObject({ state: 'finished', description: 'review:docs' });
+    expect(subagentOf(monitor, session.id, 'agent-b1')).toBeUndefined();
 
     await session.journal('wf_a', { type: 'result', agentId: 'a1' });
     await monitor.poll();
     expect(monitor.get(session.id)?.atWork).toBe(false);
     expect(monitor.get(session.id)?.latestText).toBeUndefined();
-    expect(subagentOf(monitor, session.id, 'agent-a1')?.state).toBe('finished');
+    expect(subagentOf(monitor, session.id, 'agent-a1')).toBeUndefined();
   });
 
   // activity-monitor spec: a run is read through the files of workflowSubagentFilesOf
