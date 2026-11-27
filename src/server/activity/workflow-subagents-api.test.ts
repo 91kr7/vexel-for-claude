@@ -105,6 +105,7 @@ const launched = (callId: string, runId: string, taskId: string, timestamp: stri
   ...toolResult(callId, `Task ID: ${taskId}\nThe workflow runs in the background.\nRun ID: ${runId}`, timestamp),
   toolUseResult: { status: 'async_launched', taskId, runId },
 });
+const inMessage = (id: string, line: Line): Line => ({ ...line, message: { ...(line.message as object), id } });
 const notification = (taskId: string, status: string, timestamp: string): Line => ({
   type: 'user',
   isSidechain: false,
@@ -398,10 +399,10 @@ describe('Workflow subagents, turn route', { timeout: 30_000 }, () => {
     await append(
       session.transcript,
       userSays('Review and test the batch', now(-90_000)),
-      toolCall('wf', 'Workflow', { workflow: 'review' }, now(-80_000)),
+      inMessage('msg_workflow', toolCall('wf', 'Workflow', { workflow: 'review' }, now(-80_000))),
       launched('wf', 'wf_late', 'task-late', now(-79_000)),
-      claudeSays('The review runs, now the tests', now(-70_000)),
-      toolCall('tester', 'Agent', { description: 'Run the tests', prompt: 'Test', subagent_type: 'sdd-tester' }, now(-60_000)),
+      inMessage('msg_text', claudeSays('The review runs, now the tests', now(-70_000))),
+      inMessage('msg_tester', toolCall('tester', 'Agent', { description: 'Run the tests', prompt: 'Test', subagent_type: 'sdd-tester' }, now(-60_000))),
     );
     const testerFile = path.join(session.transcript.replace(/\.jsonl$/, ''), 'subagents', 'agent-tester.jsonl');
     await append(testerFile, userSays('Run the tests', now(-50_000), true));

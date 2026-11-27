@@ -87,6 +87,8 @@ const toolResult = (id: string, timestamp = now(), sidechain = false): Line => (
   message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: 'done' }] },
 });
 const MIN = 60_000;
+/** The line as Claude Code writes it: each block of one assistant message on its own line, all with the message id. */
+const inMessage = (id: string, line: Line): Line => ({ ...line, message: { ...(line.message as object), id } });
 
 interface Session {
   id: string;
@@ -208,7 +210,7 @@ describe('Turn route, opening', { timeout: 30_000 }, () => {
 
 describe('Turn route, the tree of a turn', { timeout: 30_000 }, () => {
   // plan-subagent_panel/REQ-1, REQ-2, REQ-3, plan-session_activity/REQ-32, REQ-37: scenario "The panel shows only the subagents of the turn, in start order"
-  it('gives only the subagents of the turn, a single one then two of one message as a group, in start order', async () => {
+  it('gives only the subagents of the turn: the analyst, then the two developers of the next message as one group', async () => {
     const session = workingHosted();
     const turnStart = now(-5 * MIN);
     const analystStart = now(-4 * MIN);
@@ -216,13 +218,13 @@ describe('Turn route, the tree of a turn', { timeout: 30_000 }, () => {
     await append(
       session.transcript,
       userSays('Implement the batch', turnStart),
-      claudeSays('I will check the repository first'),
-      claudeSays([toolUse('git', 'Bash', { command: 'git status' })]),
+      inMessage('msg_text', claudeSays('I will check the repository first')),
+      inMessage('msg_git', claudeSays([toolUse('git', 'Bash', { command: 'git status' })])),
       toolResult('git'),
-      claudeSays([agentUse('analyst', 'Analyse the request', 'sdd-analyst')]),
+      inMessage('msg_analyst', claudeSays([agentUse('analyst', 'Analyse the request', 'sdd-analyst')])),
       toolResult('analyst'),
-      claudeSays('The analysis is ready'),
-      claudeSays([agentUse('dev-1', 'Implement INT-1'), agentUse('dev-2', 'Implement INT-2')]),
+      inMessage('msg_developers', claudeSays([agentUse('dev-1', 'Implement INT-1')])),
+      inMessage('msg_developers', claudeSays([agentUse('dev-2', 'Implement INT-2')])),
     );
     const analyst = session.subagent('agent-an');
     const first = session.subagent('agent-d1');
@@ -249,7 +251,7 @@ describe('Turn route, the tree of a turn', { timeout: 30_000 }, () => {
       groups: [],
     });
     expect(subagentOf(tree, 'agent-an')).toMatchObject({ type: 'sdd-analyst', startedAt: analystStart });
-    expect(JSON.stringify(framesOf(client)), 'REQ-1: no text or tool call of the main conversation in any frame').not.toMatch(/check the repository|git status|Implement the batch|analysis is ready/);
+    expect(JSON.stringify(framesOf(client)), 'REQ-1: no text or tool call of the main conversation in any frame').not.toMatch(/check the repository|git status|Implement the batch/);
   });
 
   // plan-subagent_panel/REQ-1, plan-session_activity/REQ-43: a text or tool call of the main conversation sends no frame; a subagent change still does within 2 s

@@ -4,8 +4,8 @@ import type { SubagentView } from './turn-model.js';
 import { noTurn, type TurnSubagent, type TurnTree, turnChangeOf, turnTreeOf } from './turn-tree.js';
 
 const view = (id: string, fields: Partial<SubagentView> = {}): SubagentView => ({ id, meta: {}, state: 'running', openCalls: [], ...fields });
-const at = (main: number) => ({ startedBy: { step: main } });
-const under = (parent: string, step: number) => ({ startedBy: { parent, step } });
+const at = (main: number, message?: string) => ({ startedBy: { step: main, ...(message !== undefined && { message }) } });
+const under = (parent: string, step: number, message?: string) => ({ startedBy: { parent, step, ...(message !== undefined && { message }) } });
 const startedAt = (minute: number) => ({ startedAt: `2026-11-27T10:${String(minute).padStart(2, '0')}:00.000Z` });
 
 /** A model with the given turn number and views; it records the sessionEnded argument it gets. */
@@ -108,6 +108,39 @@ describe('turnTreeOf, groups', () => {
     const tree = treeOf(views);
     expect(tree.groups).toHaveLength(300);
     expect(tree.groups.map((group) => group.subagents[0])).toEqual(views.map((v) => v.id));
+  });
+});
+
+describe('turnTreeOf, groups by message', () => {
+  // plan-subagent_panel/REQ-3: the calls of two messages are two groups, also with no step between them
+  it('makes two groups for the calls of two messages that follow each other', () => {
+    const tree = treeOf([view('analyst', { ...at(2, 'm1'), ...startedAt(1) }), view('dev-1', { ...at(3, 'm2'), ...startedAt(5) }), view('dev-2', { ...at(4, 'm2'), ...startedAt(5) })]);
+    expect(tree.groups).toEqual([{ subagents: ['analyst'] }, { subagents: ['dev-1', 'dev-2'] }]);
+  });
+
+  // turn-tree spec: when both links have a message, the same message joins the group whatever the steps between
+  it('keeps the calls of one message in one group, also with a step between them', () => {
+    const tree = treeOf([view('a', { ...at(1, 'm1'), ...startedAt(1) }), view('b', { ...at(5, 'm1'), ...startedAt(1) })]);
+    expect(tree.groups).toEqual([{ subagents: ['a', 'b'] }]);
+  });
+
+  // turn-tree spec: a link with no message falls back to the step rule
+  it('uses the step rule when one of the two links has no message', () => {
+    expect(treeOf([view('a', at(2, 'm1')), view('b', at(3))]).groups).toEqual([{ subagents: ['a', 'b'] }]);
+    expect(treeOf([view('a', at(2)), view('b', at(3, 'm2'))]).groups).toEqual([{ subagents: ['a', 'b'] }]);
+    expect(treeOf([view('a', at(2)), view('b', at(5, 'm2'))]).groups).toEqual([{ subagents: ['a'] }, { subagents: ['b'] }]);
+  });
+
+  // plan-subagent_panel/REQ-3, plan-session_activity/REQ-38: the same rule for the children of a subagent
+  it('makes two nested groups for the calls of two messages of a parent', () => {
+    const tree = treeOf([view('p', at(0, 'm0')), view('c1', under('p', 1, 's1')), view('c2', under('p', 2, 's2')), view('c3', under('p', 3, 's2'))]);
+    expect(subagentOf(tree, 'p')?.groups).toEqual([{ subagents: ['c1'] }, { subagents: ['c2', 'c3'] }]);
+  });
+
+  // plan-session_activity/REQ-58: the agents of one workflow launch share one link, so they form one group
+  it('keeps the agents of one workflow launch in one group', () => {
+    const tree = treeOf([view('w1', { ...at(1, 'mw'), ...startedAt(9) }), view('w2', { ...at(1, 'mw'), ...startedAt(4) }), view('t', { ...at(2, 'mt'), ...startedAt(6) })]);
+    expect(tree.groups).toEqual([{ subagents: ['w2', 'w1'] }, { subagents: ['t'] }]);
   });
 });
 

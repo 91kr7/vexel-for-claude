@@ -59,6 +59,8 @@ const claudeSays = (content: string | object[], timestamp: string, sidechain = f
   message: { role: 'assistant', ...(model !== undefined && { model }), content: typeof content === 'string' ? [{ type: 'text', text: content }] : content },
 });
 const toolUse = (id: string, name: string, input: object) => ({ type: 'tool_use', id, name, input });
+/** The line as Claude Code writes it: each block of one assistant message on its own line, all with the message id. */
+const inMessage = (id: string, line: Line): Line => ({ ...line, message: { ...(line.message as object), id } });
 const agentUse = (id: string, description: string, type: string) => toolUse(id, 'Agent', { description, prompt: 'Do the work', subagent_type: type });
 const toolResult = (id: string, timestamp: string, sidechain = false): Line => ({
   type: 'user',
@@ -188,6 +190,21 @@ async function focusedShowsRing(page: Page): Promise<boolean> {
 
 const focusInPanel = (page: Page) => page.evaluate(() => document.activeElement?.closest('section[aria-label="Turn Panel"]') !== null && document.activeElement !== null);
 const atEnd = (area: Locator) => area.evaluate((el) => el.scrollTop + el.clientHeight >= el.scrollHeight - 8);
+/** The scroll position once a smooth wheel scroll has come to rest: two reads 250 ms apart agree. */
+async function restingScrollTop(area: Locator): Promise<number> {
+  let last = Number.NaN;
+  await expect
+    .poll(
+      async () => {
+        const previous = last;
+        last = await area.evaluate((el) => el.scrollTop);
+        return last === previous;
+      },
+      { message: 'the scroll comes to rest', intervals: [250] },
+    )
+    .toBe(true);
+  return last;
+}
 /** Whether the whole box of `target` shows inside the scrolling area, within 1 px. */
 async function wholeInArea(area: Locator, target: Locator): Promise<boolean> {
   const [view, box] = [await area.boundingBox(), await target.boundingBox()];
@@ -205,13 +222,13 @@ test.describe('Turn panel', () => {
     await page.clock.setFixedTime(t0);
     await files.write(
       userText('Implement the batch', iso(t0 - 90_000)),
-      claudeSays('I will check the **repository** first', iso(t0 - 85_000)),
-      claudeSays([toolUse('git', 'Bash', { command: 'git status' })], iso(t0 - 80_000)),
+      inMessage('msg_text', claudeSays('I will check the **repository** first', iso(t0 - 85_000))),
+      inMessage('msg_git', claudeSays([toolUse('git', 'Bash', { command: 'git status' })], iso(t0 - 80_000))),
       toolResult('git', iso(t0 - 79_000)),
-      claudeSays([agentUse('analyst', 'Analyse the request', 'sdd-analyst')], iso(t0 - 75_000)),
+      inMessage('msg_analyst', claudeSays([agentUse('analyst', 'Analyse the request', 'sdd-analyst')], iso(t0 - 75_000))),
       toolResult('analyst', iso(t0 - 50_000)),
-      claudeSays('The analysis is ready', iso(t0 - 45_000)),
-      claudeSays([agentUse('dev-1', 'Implement INT-1', 'sdd-developer'), agentUse('dev-2', 'Implement INT-2', 'sdd-developer')], iso(t0 - 40_000)),
+      inMessage('msg_developers', claudeSays([agentUse('dev-1', 'Implement INT-1', 'sdd-developer')], iso(t0 - 40_000))),
+      inMessage('msg_developers', claudeSays([agentUse('dev-2', 'Implement INT-2', 'sdd-developer')], iso(t0 - 40_000))),
     );
     const analyst = files.subagent('agent-an');
     await analyst.write(userText('Analyse the request', iso(t0 - 70_000), true), claudeSays('The request is clear', iso(t0 - 55_000), true));
@@ -250,7 +267,7 @@ test.describe('Turn panel', () => {
       await expect(card).toContainText('Bash: npm test');
       await expect(card.locator('time')).toHaveText('30 s');
     }
-    for (const text of ['Implement the batch', 'I will check the repository first', 'git status', 'The analysis is ready']) {
+    for (const text of ['Implement the batch', 'I will check the repository first', 'git status']) {
       await expect(panel(page), `no message of the main conversation: ${text}`).not.toContainText(text);
     }
     await expect(panel(page).getByRole('listitem')).toHaveCount(0);
@@ -537,7 +554,7 @@ test.describe('Turn panel', () => {
     await area.hover();
     await page.mouse.wheel(0, -1500);
     await expect.poll(() => atEnd(area), 'scrolled up').toBe(false);
-    const scrolled = await area.evaluate((el) => el.scrollTop);
+    const scrolled = await restingScrollTop(area);
     await startWorker(16, Date.now());
     await expect(cards(panel(page), type(16))).toBeAttached(PROMPTLY);
     expect(await area.evaluate((el) => el.scrollTop), 'the view stays still').toBe(scrolled);
