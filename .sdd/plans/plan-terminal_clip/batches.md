@@ -8,7 +8,7 @@ Requirements → `requirements.md`. Batch files → `batches/`.
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| terminal-width | Terminal width | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12 | — | implemented | The user starts the desktop app and reads every last character whole |
+| terminal-width | Terminal width | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12 | — | certified | The user starts the desktop app and reads every last character whole |
 
 Execution order: terminal-width, the only batch.
 
