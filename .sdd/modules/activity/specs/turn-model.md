@@ -27,7 +27,7 @@ type: backend service
   - `startedAt` → the time of its first line with a valid `timestamp`. `lastLineAt` → the latest valid `timestamp` of its lines.
   - `responseModel` → the `message.model` of its latest `assistant` line that has one: a non-empty string other than "<synthetic>".
   - `openCalls` → its open calls in start order, as in `openCalls` below. Empty unless its state is "running".
-  - `startedBy` → the step of the call that started it (below), as `{ parent?, step }`. No `parent` → a step of `steps()`. `parent` → the id of the subagent that made the call, and `step` its position among the steps of that subagent. A workflow subagent: below.
+  - `startedBy` → the step of the call that started it (below), as `{ parent?, step, message? }`. No `parent` → a step of `steps()`. `parent` → the id of the subagent that made the call, and `step` its position among the steps of that subagent. `message` → the `message.id` of the line of that call, when it is a non-empty string: the calls of one assistant message share it. A workflow subagent: below.
 - `TimedText` → `{ text, at?, order }`.
   - `text` → the text of an `assistant` item of `itemsOf`: trimmed, markdown kept.
   - `at` → the `timestamp` of its line, when it is a string with a valid date.
@@ -94,8 +94,8 @@ for each line, in order:
 Starting step of a subagent (`startedBy`), from `meta.toolUseId` = T:
 
 ```
-T is the id of a tool_call step of the current turn          → { step: its index in steps() }
-T is the id of a tool_call of subagent P at position n       → { parent: P, step: n }
+T is the id of a tool_call step of the current turn          → { step: its index in steps(), message }
+T is the id of a tool_call of subagent P at position n       → { parent: P, step: n, message }
     found whether the metadata comes before or after that call; once found, it stays
     a call of a subagent is remembered until its child's metadata comes,
     among the latest 2,000 such calls of the session
@@ -117,7 +117,7 @@ Workflow launches, from the items of the main transcript and of every subagent f
 
 ```
 tool_call "Workflow" with an id              → a pending Workflow call, with the time of its line;
-                                               in a subagent file, also its position: { parent: that subagent, step: n }
+                                               in a subagent file, also its position: { parent: that subagent, step: n, message }
 tool_result of a pending Workflow call       → the call is no longer pending;
                                                workflowLaunchOf(line, id) gives a run id → a launch of that run:
                                                its call, run id, task id, time and position
@@ -150,7 +150,7 @@ state      = workflowSubagentStateOf({
                  startedBeforeLatestLaunch: launches is not empty and its launch is not the latest of them,
                  sessionEnded })
 startedBy  = its launch has a position in a subagent              → that position
-             the call of its launch is a tool_call step of the current turn → { step: its index in steps() }
+             the call of its launch is a tool_call step of the current turn → { step: its index in steps(), message }
              else (no launch, a call of an earlier turn)           → no startedBy
 ```
 
@@ -182,6 +182,7 @@ Checked on Claude Code 2.1.332, 2026-11-26:
 - every subagent of a session has its file in `subagents/`, with `spawnDepth` 1. This machine has no nested subagent (`spawnDepth` 2), so the place of their files is not checked.
 - a subagent can go on after an interrupt marker in its file: new `assistant` lines follow it.
 - the first line of a workflow subagent comes after the Workflow call line, and can come before its result line. See workflowSubagentStateOf for the other facts on workflows.
+- Claude Code writes each block of one assistant message on its own line. These lines share `message.id` (and `requestId`); another message has another `message.id`. Checked on 2026-11-27 on the transcripts of this machine: every `assistant` line has a `message.id`, in main and in subagent files.
 
 ## Dependencies
 
@@ -196,3 +197,4 @@ Checked on Claude Code 2.1.332, 2026-11-26:
 - `plan-session_activity/REQ-17`, `plan-session_activity/REQ-18`, `plan-session_activity/REQ-19`, `plan-session_activity/REQ-20`, `plan-session_activity/REQ-26`
 - `plan-session_activity/REQ-28`, `plan-session_activity/REQ-29`, `plan-session_activity/REQ-30`, `plan-session_activity/REQ-31`, `plan-session_activity/REQ-32`, `plan-session_activity/REQ-34`, `plan-session_activity/REQ-35`, `plan-session_activity/REQ-37`, `plan-session_activity/REQ-38`, `plan-session_activity/REQ-39`, `plan-session_activity/REQ-45`
 - `plan-session_activity/REQ-56`, `plan-session_activity/REQ-57`, `plan-session_activity/REQ-58`, `plan-session_activity/REQ-60`
+- `plan-subagent_panel/REQ-3`

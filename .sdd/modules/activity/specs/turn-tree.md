@@ -35,9 +35,15 @@ Groups, for the main conversation and for each subagent of the tree (its childre
 
 ```
 children sorted by startedBy.step (equal steps keep the known order)
-a child joins the group before it when its step is the same, or 1 more, than the last step of that group
+a child joins the group before it when:
+    it and the last child of that group both have a startedBy.message → the two messages are the same
+    else                                                              → its step is the same, or 1 more,
+                                                                        than the last step of that group
 else it starts a new group
 ```
+
+- So the calls of one assistant message form one group, and calls of two messages form two groups, also with no step between them. The agents of one workflow launch share one link, so they stay one group.
+- The step rule is only for links with no `message` (a line with no `message.id`).
 
 Start order, for the subagents of a group, for the groups of one list and for `earlier`:
 
@@ -83,7 +89,7 @@ nothing changed → undefined
 
 ## Dependencies
 
-- TurnModel (`SubagentView`)
+- TurnModel (`SubagentView`, `StepLink`)
 - plainExcerpt, runningToolOf, SessionState of SessionStateTracker (module sessions)
 
 ## Requirements served

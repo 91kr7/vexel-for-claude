@@ -31,6 +31,7 @@ export type TurnStep =
 export interface StepLink {
   parent?: string;
   step: number;
+  message?: string;
 }
 
 export interface SubagentView {
@@ -140,6 +141,17 @@ function toolStepOf(name: string, id: string | undefined, input: unknown): TurnS
   };
 }
 
+function messageIdOf(entry: Entry): string | undefined {
+  const id = (entry.message as { id?: unknown } | null | undefined)?.id;
+  return typeof id === 'string' && id !== '' ? id : undefined;
+}
+
+const linkOf = (step: number, message: string | undefined, parent?: string): StepLink => ({
+  ...(parent !== undefined && { parent }),
+  step,
+  ...(message !== undefined && { message }),
+});
+
 function responseModelOf(entry: Entry): string | undefined {
   const model = (entry.message as { model?: unknown } | null | undefined)?.model;
   return typeof model === 'string' && model !== '' && model !== SYNTHETIC_MODEL ? model : undefined;
@@ -152,7 +164,7 @@ export class TurnModel {
   #turnNumber = 0;
   #mainText: TimedText | undefined;
   #steps: TurnStep[] = [];
-  readonly #mainCallSteps = new Map<string, number>();
+  readonly #mainCallSteps = new Map<string, StepLink>();
   readonly #subagentCallSteps = new Map<string, StepLink>();
   readonly #subagentOfStart = new Map<string, string>();
   readonly #subagents = new Map<string, Subagent>();
@@ -171,11 +183,12 @@ export class TurnModel {
       const stoppedTaskId = stoppedTaskIdOf(entry);
       if (stoppedTaskId !== undefined) this.#stopNotices.set(`${AGENT_FILE_PREFIX}${stoppedTaskId}`, timeOf(entry)?.time);
       const inputs = toolInputsOf(entry);
+      const message = messageIdOf(entry);
       let calls = 0;
       for (const item of itemsOf(entry)) {
         this.#followCalls(this.#mainCalls, item, entry);
         this.#followWorkflows(item, entry);
-        this.#followSteps(item, item.kind === 'tool_call' ? inputs[calls++] : undefined);
+        this.#followSteps(item, item.kind === 'tool_call' ? inputs[calls++] : undefined, message);
         if (item.kind === 'assistant') this.#mainText = this.#textOf(item.text, entry);
       }
     }
@@ -197,10 +210,11 @@ export class TurnModel {
         if (time !== undefined) subagent.lastAssistantTime = Math.max(time, subagent.lastAssistantTime ?? time);
         subagent.responseModel = responseModelOf(entry) ?? subagent.responseModel;
       }
+      const message = messageIdOf(entry);
       for (const item of itemsOf(entry, undefined, { sidechain: true })) {
         this.#followCalls(subagent.openCalls, item, entry);
-        this.#followWorkflows(item, entry, { parent: id, step: subagent.stepCount });
-        if (item.kind === 'tool_call' || item.kind === 'assistant') this.#countStep(id, subagent, item);
+        this.#followWorkflows(item, entry, linkOf(subagent.stepCount, message, id));
+        if (item.kind === 'tool_call' || item.kind === 'assistant') this.#countStep(id, subagent, item, message);
         if (item.kind === 'user' && isInterruptMarker(item.text)) subagent.interruptedInFile = true;
         else if (item.kind === 'assistant') {
           const text = this.#textOf(item.text, entry);
@@ -338,23 +352,23 @@ export class TurnModel {
     for (const launch of this.#launches) if (launch.taskId === taskId) launch.over = true;
   }
 
-  #followSteps(item: ConversationItem, input: unknown): void {
+  #followSteps(item: ConversationItem, input: unknown, message: string | undefined): void {
     if (item.kind === 'assistant') {
       const text = plainExcerpt(item.text, STEP_TEXT_LENGTH);
       if (text) this.#steps.push({ kind: 'text', text });
     } else if (item.kind === 'tool_call') {
-      if (item.id !== undefined) this.#mainCallSteps.set(item.id, this.#steps.length);
+      if (item.id !== undefined) this.#mainCallSteps.set(item.id, linkOf(this.#steps.length, message));
       this.#steps.push(toolStepOf(item.name, item.id, input));
     } else if (item.kind === 'tool_result' && item.toolUseId !== undefined) {
-      const index = this.#mainCallSteps.get(item.toolUseId);
+      const index = this.#mainCallSteps.get(item.toolUseId)?.step;
       const step = index === undefined ? undefined : this.#steps[index];
       const outcome = item.isError ? 'error' : 'completed';
       if (index !== undefined && step?.kind === 'tool' && step.outcome !== outcome) this.#steps[index] = { ...step, outcome };
     }
   }
 
-  #countStep(id: string, subagent: Subagent, item: ConversationItem): void {
-    const link = { parent: id, step: subagent.stepCount };
+  #countStep(id: string, subagent: Subagent, item: ConversationItem, message: string | undefined): void {
+    const link = linkOf(subagent.stepCount, message, id);
     subagent.stepCount += 1;
     if (item.kind !== 'tool_call' || item.id === undefined) return;
     const childId = this.#subagentOfStart.get(item.id);
@@ -374,12 +388,10 @@ export class TurnModel {
     if (subagent.runId !== undefined) {
       const { launch } = this.#launchOf(subagent, subagent.runId);
       if (launch?.position) return launch.position;
-      const step = launch && this.#mainCallSteps.get(launch.callId);
-      return step === undefined ? undefined : { step };
+      return launch && this.#mainCallSteps.get(launch.callId);
     }
     const start = subagent.meta.toolUseId;
-    const mainStep = start ? this.#mainCallSteps.get(start) : undefined;
-    return mainStep === undefined ? subagent.startedBy : { step: mainStep };
+    return (start ? this.#mainCallSteps.get(start) : undefined) ?? subagent.startedBy;
   }
 
   #startTurn(time: number | undefined): void {

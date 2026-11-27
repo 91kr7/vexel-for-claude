@@ -59,20 +59,24 @@ const startOf = (view: SubagentView) => (view.startedAt === undefined ? Number.P
 
 const byStart = (a: SubagentView, b: SubagentView) => (startOf(a) === startOf(b) ? 0 : startOf(a) - startOf(b));
 
+const stepOf = (view: SubagentView) => view.startedBy?.step ?? 0;
+
+function joinsGroup(view: SubagentView, last: SubagentView): boolean {
+  const message = view.startedBy?.message;
+  const lastMessage = last.startedBy?.message;
+  if (message !== undefined && lastMessage !== undefined) return message === lastMessage;
+  return stepOf(view) - stepOf(last) <= 1;
+}
+
 function groupsOf(children: readonly SubagentView[]): SubagentGroup[] {
-  const stepOf = (view: SubagentView) => view.startedBy?.step ?? 0;
-  const groups: { step: number; views: SubagentView[] }[] = [];
+  const groups: SubagentView[][] = [];
   for (const view of [...children].sort((a, b) => stepOf(a) - stepOf(b))) {
     const last = groups.at(-1);
-    if (last && stepOf(view) - last.step <= 1) {
-      last.step = stepOf(view);
-      last.views.push(view);
-    } else {
-      groups.push({ step: stepOf(view), views: [view] });
-    }
+    if (last && joinsGroup(view, last.at(-1)!)) last.push(view);
+    else groups.push([view]);
   }
   return groups
-    .map(({ views }) => views.sort(byStart))
+    .map((views) => views.sort(byStart))
     .sort((a, b) => byStart(a[0]!, b[0]!))
     .map((views) => ({ subagents: views.map((view) => view.id) }));
 }
