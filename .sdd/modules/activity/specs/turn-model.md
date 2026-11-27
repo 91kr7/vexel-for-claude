@@ -20,7 +20,7 @@ type: backend service
 - `steps() → TurnStep[]` → the steps of the main conversation in the current turn, in file order (below). A new array at each call. A step that does not change stays the same object across calls; a step that changes is a new object. The steps are read-only.
 - `mainText() → TimedText | undefined` → the latest text of the main conversation in the current turn.
 - `subagents(sessionEnded) → SubagentView[]` → one per subagent known by its lines, its metadata or its run journal, in the order they became known.
-  - `SubagentView` → `{ id, meta, state, latestText?, lastText?, startedAt?, lastLineAt?, responseModel?, openCalls, startedBy? }`.
+  - `SubagentView` → `{ id, meta, state, latestText?, lastText?, startedAt?, lastLineAt?, responseModel?, openCalls, startedBy?, earlierMessage? }`.
   - `state` → `subagentStateOf({ finished: meta.finished, interrupted, sessionEnded })`. A workflow subagent: below.
   - `latestText` → the latest text of the subagent in the current turn.
   - `lastText` → the latest text of the subagent, whatever its turn.
@@ -28,6 +28,7 @@ type: backend service
   - `responseModel` → the `message.model` of its latest `assistant` line that has one: a non-empty string other than "<synthetic>".
   - `openCalls` → its open calls in start order, as in `openCalls` below. Empty unless its state is "running".
   - `startedBy` → the step of the call that started it (below), as `{ parent?, step, message? }`. No `parent` → a step of `steps()`. `parent` → the id of the subagent that made the call, and `step` its position among the steps of that subagent. `message` → the `message.id` of the line of that call, when it is a non-empty string: the calls of one assistant message share it. A workflow subagent: below.
+  - `earlierMessage` → only with no `startedBy`: the `message.id` of the call of the main conversation, of an earlier turn, that started it, or of the Workflow call of its launch (below).
 - `TimedText` → `{ text, at?, order }`.
   - `text` → the text of an `assistant` item of `itemsOf`: trimmed, markdown kept.
   - `at` → the `timestamp` of its line, when it is a string with a valid date.
@@ -102,6 +103,19 @@ T is the id of a tool_call of subagent P at position n       → { parent: P, st
 anything else (no T, a call of an earlier turn, unknown)      → no startedBy
 ```
 
+Message of a call of an earlier turn (`earlierMessage`), from `meta.toolUseId` = T, for a subagent with no `startedBy`:
+
+```
+T is the id of a tool_call of the main transcript, in any turn,
+whose line has a message.id                                   → that message.id
+    found whether the metadata comes before or after that call; once found, it stays
+    a call of the main conversation is remembered until its child's metadata comes,
+    among the latest 2,000 such calls of the session
+anything else                                                 → no earlierMessage
+```
+
+A workflow subagent: below.
+
 Open calls of one conversation, from its items in file order:
 
 ```
@@ -117,7 +131,8 @@ Workflow launches, from the items of the main transcript and of every subagent f
 
 ```
 tool_call "Workflow" with an id              → a pending Workflow call, with the time of its line;
-                                               in a subagent file, also its position: { parent: that subagent, step: n, message }
+                                               in a subagent file, also its position: { parent: that subagent, step: n, message };
+                                               in the main transcript, also the message.id of its line
 tool_result of a pending Workflow call       → the call is no longer pending;
                                                workflowLaunchOf(line, id) gives a run id → a launch of that run:
                                                its call, run id, task id, time and position
@@ -152,6 +167,8 @@ state      = workflowSubagentStateOf({
 startedBy  = its launch has a position in a subagent              → that position
              the call of its launch is a tool_call step of the current turn → { step: its index in steps(), message }
              else (no launch, a call of an earlier turn)           → no startedBy
+earlierMessage = no startedBy, and the call of its launch is in the main transcript → the message.id of that call
+                 else → none
 ```
 
 The interrupt mark, the stop notices and `meta.finished` do not change the state of a workflow subagent.
@@ -169,8 +186,8 @@ interrupted = the in-file interrupt mark is set
 - Before the first turn start, every text counts: the turn starts with the file.
 - A subagent started in an earlier turn that still runs can give the text of the current turn.
 - A text whose line has no timestamp counts when it is read after the turn start, and is dropped by the next turn.
-- It keeps no list of items. Per subagent it keeps the metadata, two texts, one mark, its times, its model, its step count, its starting step, its open calls, its run id and its result mark, so its size does not grow with the run.
-- Per session it keeps one record per workflow launch, and the Workflow and TaskStop calls whose result has not come yet.
+- It keeps no list of items. Per subagent it keeps the metadata, two texts, one mark, its times, its model, its step count, its starting step, the message of its call, its open calls, its run id and its result mark, so its size does not grow with the run.
+- Per session it keeps one record per workflow launch, the Workflow and TaskStop calls whose result has not come yet, and at most 2,000 calls of the main conversation and 2,000 calls of subagents whose child metadata has not come.
 - It keeps the steps of the current turn only, each with a text of at most 400 characters. A new turn drops them.
 - A new turn changes neither the time of the last activity nor the open calls: the user line that starts it closes the main calls.
 
@@ -197,4 +214,4 @@ Checked on Claude Code 2.1.332, 2026-11-26:
 - `plan-session_activity/REQ-17`, `plan-session_activity/REQ-18`, `plan-session_activity/REQ-19`, `plan-session_activity/REQ-20`, `plan-session_activity/REQ-26`
 - `plan-session_activity/REQ-28`, `plan-session_activity/REQ-29`, `plan-session_activity/REQ-30`, `plan-session_activity/REQ-31`, `plan-session_activity/REQ-32`, `plan-session_activity/REQ-34`, `plan-session_activity/REQ-35`, `plan-session_activity/REQ-37`, `plan-session_activity/REQ-38`, `plan-session_activity/REQ-39`, `plan-session_activity/REQ-45`
 - `plan-session_activity/REQ-56`, `plan-session_activity/REQ-57`, `plan-session_activity/REQ-58`, `plan-session_activity/REQ-60`
-- `plan-subagent_panel/REQ-3`
+- `plan-subagent_panel/REQ-3`, `plan-subagent_panel/REQ-10`, `plan-subagent_panel/REQ-12`

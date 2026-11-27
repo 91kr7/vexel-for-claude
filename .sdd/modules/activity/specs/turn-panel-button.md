@@ -6,16 +6,16 @@ type: UI component
 
 # TurnPanelButton
 
-**Purpose** → the session header icon button that opens and closes the turn panel.
+**Purpose** → the session header icon button that opens and closes the Subagents panel (TurnPanel).
 
 ## Contract
 
 Props:
-- `open` → whether the turn panel is open.
+- `open` → whether the Subagents panel is open.
 - `onToggle()` → called on each click.
 
 Shows:
-- always, for every session → a 26 px icon button with the `list-tree` icon, as GitExplorerButton: accessible name "Turn Panel", tooltip "Turn Panel", the global focus ring on keyboard focus.
+- always, for every session → a 26 px icon button with the `list-tree` icon, as GitExplorerButton: accessible name "Subagents", tooltip "Subagents", the global focus ring on keyboard focus.
 - `aria-expanded` follows `open`. While open, the button has the surface 3 background and the accent colour.
 
 Actions:
@@ -28,3 +28,4 @@ Actions:
 ## Requirements served
 
 - `plan-session_activity/REQ-27`, `plan-session_activity/REQ-47`
+- `plan-subagent_panel/REQ-21`

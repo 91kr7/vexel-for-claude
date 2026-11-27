@@ -1,4 +1,4 @@
-// e2e of plan-session_activity, batch subagent-conversation. The tests write the transcripts, subagent files and metadata that Claude Code would write.
+// e2e of plan-session_activity, batch subagent-conversation, and plan-subagent_panel/REQ-22. The tests write the transcripts, subagent files and metadata that Claude Code would write.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { appendFile, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -39,8 +39,8 @@ const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const entry = (page: Page, folder: string) => list(page).locator('.session-entry').filter({ has: page.getByTitle(folder, { exact: true }) });
 const mainArea = (page: Page) => page.getByRole('main');
 const header = (page: Page) => mainArea(page).locator('.main-view:not(.is-leaving) .session-header');
-const turnButton = (page: Page) => header(page).getByRole('button', { name: 'Turn Panel', exact: true });
-const panel = (page: Page) => mainArea(page).getByRole('region', { name: 'Turn Panel', exact: true });
+const turnButton = (page: Page) => header(page).getByRole('button', { name: 'Subagents', exact: true });
+const panel = (page: Page) => mainArea(page).getByRole('region', { name: 'Subagents', exact: true });
 const terminalPanel = (page: Page) => mainArea(page).getByRole('region', { name: /^Terminal/ });
 const subConversation = (page: Page) => panel(page).getByRole('region', { name: 'Subagent Conversation', exact: true });
 const openButton = (page: Page, type: string) => panel(page).getByRole('button', { name: `Open Conversation: ${type}`, exact: true });
@@ -217,59 +217,77 @@ test.describe('Subagent conversation', () => {
 
     await expect(header(page).getByRole('heading', { level: 2 }), 'REQ-53: the session stays open').toHaveText(path.basename(folder));
     await expect(terminalPanel(page), 'REQ-53: the terminal stays on screen').toBeVisible();
-    await expect(panel(page).getByText('Current Turn', { exact: true })).toBeVisible();
+    await expect(panel(page).locator(':scope > header')).toHaveText('Subagents');
     await expect(openButton(page, 'sdd-tester'), 'the tree is hidden').toBeHidden();
 
     await tester.write(claudeSays('A new step of the tester', iso(Date.now()), true));
     await expect(view.getByText('A new step of the tester', { exact: true }), 'REQ-51: the new step shows').toBeVisible(PROMPTLY);
   });
 
-  // plan-session_activity/REQ-52 — scenario "The conversation of an ended subagent"
-  test('the conversation of a finished and of a stopped subagent opens, with its last step at the end', async ({ page }) => {
+  // plan-subagent_panel/REQ-16, REQ-22 — scenario "An open conversation stays open when its subagent ends", for a finished and a stopped subagent
+  test('the open conversation stays open when its subagent ends, with no state in its bar, and "Back" shows the list without its row', async ({ page }) => {
     const folder = await newFolder('ended');
     const sessionId = uuid();
     const files = claudeSession(folder, sessionId);
     const t0 = Date.now();
     await files.write(
-      userText('Explore twice', iso(t0 - 120_000)),
-      claudeSays([agentUse('done', 'Finished exploration', 'Explore'), agentUse('cut', 'Stopped exploration', 'Explore')], iso(t0 - 110_000)),
+      userText('Implement and explore', iso(t0 - 120_000)),
+      claudeSays([agentUse('dev', 'Implement the batch', 'sdd-developer'), agentUse('cut', 'Stopped exploration', 'Explore')], iso(t0 - 110_000)),
     );
-    const done = files.subagent('agent-done');
-    await done.write(
-      userText('Finished exploration', iso(t0 - 100_000), true),
-      ...Array.from({ length: 40 }, (_, i) => claudeSays(`Finished step ${i}`, iso(t0 - 90_000 + i * 100), true)),
-      claudeSays('The exploration is complete', iso(t0 - 60_000), true),
+    const developer = files.subagent('agent-dev');
+    await developer.write(
+      userText('Implement the batch', iso(t0 - 100_000), true),
+      ...Array.from({ length: 40 }, (_, i) => claudeSays(`Developer step ${i}`, iso(t0 - 90_000 + i * 100), true)),
     );
-    await done.meta({ agentType: 'Explore', description: 'Finished exploration', toolUseId: 'done', finished: true });
+    await developer.meta({ agentType: 'sdd-developer', description: 'Implement the batch', toolUseId: 'dev' });
     const cut = files.subagent('agent-cut');
     await cut.write(
       userText('Stopped exploration', iso(t0 - 100_000), true),
-      ...Array.from({ length: 40 }, (_, i) => claudeSays(`Stopped step ${i}`, iso(t0 - 90_000 + i * 100), true)),
-      claudeSays('Halfway through the stopped one', iso(t0 - 70_000), true),
-      userText('[Request interrupted by user]', iso(t0 - 65_000), true),
+      ...Array.from({ length: 40 }, (_, i) => claudeSays(`Explore step ${i}`, iso(t0 - 90_000 + i * 100), true)),
     );
     await cut.meta({ agentType: 'Explore', description: 'Stopped exploration', toolUseId: 'cut' });
     await runInTerminal(sessionId, folder);
     await openSession(page, folder, true);
     await openPanel(page);
 
-    for (const [description, pill, last] of [
-      ['Finished exploration', 'Finished', 'The exploration is complete'],
-      ['Stopped exploration', 'Stopped', '[Request interrupted by user]'],
-    ] as const) {
-      const card = panel(page).getByRole('article').filter({ hasText: description });
-      await expect(card.getByText(pill, { exact: true })).toBeVisible(PROMPTLY);
-      await card.getByRole('button', { name: 'Open Conversation: Explore', exact: true }).click();
+    const ends = [
+      {
+        type: 'sdd-developer',
+        description: 'Implement the batch',
+        last: 'The batch is implemented',
+        end: async () => {
+          await developer.write(claudeSays('The batch is implemented', iso(Date.now()), true));
+          await developer.meta({ agentType: 'sdd-developer', description: 'Implement the batch', toolUseId: 'dev', finished: true });
+        },
+      },
+      {
+        type: 'Explore',
+        description: 'Stopped exploration',
+        last: '[Request interrupted by user]',
+        end: () => cut.write(userText('[Request interrupted by user]', iso(Date.now()), true)),
+      },
+    ];
+    for (const { type, description, last, end } of ends) {
+      await expect(openButton(page, type)).toBeVisible(PROMPTLY);
+      await openButton(page, type).click();
       const view = subConversation(page);
-      await expect(view.getByText(pill, { exact: true })).toBeVisible();
+      await expect(view.getByText('Running', { exact: true })).toBeVisible();
       await expect(view.getByRole('article', { name: 'Task', exact: true }).first()).toContainText(description, PROMPTLY);
-      await expect(view.locator('article').last(), `${description}: the last step at the end`).toContainText(last);
-      await expect(view.locator('article').last()).toBeInViewport();
-      await expect.poll(async () => (await messageArea(view)).scrolls, `${description}: the messages scroll`).toBe(true);
-      await expect.poll(async () => (await messageArea(view)).atEnd, `${description}: shown at the end`).toBe(true);
+
+      await end();
+      await expect(view.getByText('Running', { exact: true }), `${type}: the bar no longer shows "Running"`).toHaveCount(0, PROMPTLY);
+      await expect(view, `${type}: the conversation stays open`).toBeVisible();
+      for (const state of ['Finished', 'Stopped']) await expect(view.getByText(state, { exact: true }), `${type}: no state pill`).toHaveCount(0);
+      await expect(view.getByText(type, { exact: true }), `${type}: the bar keeps the type`).toBeVisible();
+      await expect(view.getByTitle(description, { exact: true }).first(), `${type}: the bar keeps the description`).toBeVisible();
+      await expect(view.locator('article').last(), `${type}: the last step shows`).toContainText(last, PROMPTLY);
+
       await backButton(page).click();
       await expect(view).toHaveCount(0);
+      await expect(openButton(page, type), `${type}: the list shows without its row`).toHaveCount(0);
+      await expect(treeArea(page), `${type}: the focus goes to the tree area`).toBeFocused();
     }
+    await expect(panel(page).getByText('No subagents running.', { exact: true })).toBeVisible();
   });
 
   // plan-session_activity/REQ-54 — scenario "One action returns to the tree"

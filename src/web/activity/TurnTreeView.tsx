@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { AreaState } from '../feedback/AreaState';
 import { SubagentCard } from './SubagentCard';
-import type { TurnSubagent, TurnTree } from './turn-store';
+import type { SubagentGroup, TurnSubagent, TurnTree } from './turn-store';
 
 const AT_END_TOLERANCE_PX = 8;
 
@@ -10,26 +10,26 @@ const isAtEnd = (element: HTMLElement) => element.scrollHeight - element.scrollT
 type OpenSubagent = (subagent: TurnSubagent, opener: HTMLElement) => void;
 
 interface GroupProps {
-  ids: readonly string[];
+  group: SubagentGroup;
   subagents: ReadonlyMap<string, TurnSubagent>;
   onOpen?: OpenSubagent;
 }
 
-function Group({ ids, subagents, onOpen }: GroupProps) {
+function Group({ group, subagents, onOpen }: GroupProps) {
+  const members = group.subagents.flatMap((id) => subagents.get(id) ?? []);
+  const joined = members.length > 1;
   return (
     <div className="subagent-group">
-      {ids.map((id) => {
-        const subagent = subagents.get(id);
-        return (
-          subagent && (
-            <SubagentCard key={id} subagent={subagent} onOpen={onOpen}>
-              {subagent.groups.map((nested, index) => (
-                <Group key={index} ids={nested.subagents} subagents={subagents} onOpen={onOpen} />
-              ))}
-            </SubagentCard>
-          )
-        );
-      })}
+      {members.map((subagent) => (
+        <div key={subagent.id} className="subagent-member">
+          {joined && <span className="subagent-line" aria-hidden="true" />}
+          {joined && <span className="subagent-tick" aria-hidden="true" />}
+          <SubagentCard subagent={subagent} onOpen={onOpen} />
+          {subagent.groups.map((nested, index) => (
+            <Group key={index} group={nested} subagents={subagents} onOpen={onOpen} />
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
@@ -43,7 +43,7 @@ function latestStartedOf(subagents: readonly TurnSubagent[]): string | undefined
   return latest?.id;
 }
 
-// Page order of the cards, as Group renders them: each card comes before the cards nested in it.
+// Page order of the rows, as Group renders them: each row comes before the rows nested under it.
 function cardOrderOf(turn: TurnTree, subagents: ReadonlyMap<string, TurnSubagent>): string[] {
   const order: string[] = [];
   const visit = (ids: readonly string[]) => {
@@ -54,7 +54,6 @@ function cardOrderOf(turn: TurnTree, subagents: ReadonlyMap<string, TurnSubagent
       for (const group of subagent.groups) visit(group.subagents);
     }
   };
-  visit(turn.earlier);
   for (const group of turn.groups) visit(group.subagents);
   return order;
 }
@@ -94,16 +93,10 @@ export function TurnTreeView({ turn, onOpenSubagent }: { turn: TurnTree; onOpenS
 
   return (
     <div className="turn-tree" ref={scrollRef} tabIndex={0} onScroll={onScroll}>
-      {turn.earlier.length > 0 && (
-        <section className="turn-earlier" aria-label="Still running from earlier turns">
-          <h4 className="turn-section-title">Still running from earlier turns</h4>
-          <Group ids={turn.earlier} subagents={subagents} onOpen={onOpenSubagent} />
-        </section>
-      )}
       {turn.groups.length > 0 ? (
-        turn.groups.map((group, index) => <Group key={index} ids={group.subagents} subagents={subagents} onOpen={onOpenSubagent} />)
+        turn.groups.map((group, index) => <Group key={index} group={group} subagents={subagents} onOpen={onOpenSubagent} />)
       ) : (
-        <AreaState kind="empty" size="compact" title="No subagents in this turn." />
+        <AreaState kind="empty" size="compact" title="No subagents running." />
       )}
     </div>
   );

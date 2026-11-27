@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { RunningTool } from '../sessions/live-session-store';
 
-export type TurnStatus = 'none' | 'running' | 'ended';
-
 export type SubagentState = 'running' | 'finished' | 'stopped';
 
 export interface SubagentGroup {
@@ -24,17 +22,13 @@ export interface TurnSubagent {
 
 export interface TurnTree {
   number: number;
-  status: TurnStatus;
   groups: SubagentGroup[];
-  earlier: string[];
   subagents: TurnSubagent[];
 }
 
 interface TurnUpdate {
   type: 'update';
-  status?: TurnStatus;
   groups?: SubagentGroup[];
-  earlier?: string[];
   subagents?: TurnSubagent[];
 }
 
@@ -61,18 +55,29 @@ function frameOf(data: string): TurnFrame | undefined {
   return undefined;
 }
 
+function inTree(groups: readonly SubagentGroup[], subagents: readonly TurnSubagent[]): TurnSubagent[] {
+  const byId = new Map(subagents.map((subagent) => [subagent.id, subagent]));
+  const reached = new Set<string>();
+  const visit = (nested: readonly SubagentGroup[]) => {
+    for (const id of nested.flatMap((group) => group.subagents)) {
+      const subagent = byId.get(id);
+      if (!subagent || reached.has(id)) continue;
+      reached.add(id);
+      visit(subagent.groups);
+    }
+  };
+  visit(groups);
+  return subagents.filter((subagent) => reached.has(subagent.id));
+}
+
+// An update does not name the subagents that left the tree: they leave `subagents` here.
 function applyTurnUpdate(turn: TurnTree, update: TurnUpdate): TurnTree {
   const changed = new Map((update.subagents ?? []).map((subagent) => [subagent.id, subagent]));
   const subagents = turn.subagents.map((subagent) => changed.get(subagent.id) ?? subagent);
   const known = new Set(turn.subagents.map((subagent) => subagent.id));
   for (const subagent of changed.values()) if (!known.has(subagent.id)) subagents.push(subagent);
-  return {
-    ...turn,
-    status: update.status ?? turn.status,
-    groups: update.groups ?? turn.groups,
-    earlier: update.earlier ?? turn.earlier,
-    subagents,
-  };
+  const groups = update.groups ?? turn.groups;
+  return { ...turn, groups, subagents: inTree(groups, subagents) };
 }
 
 export function useTurn(sessionId: string): TurnState {

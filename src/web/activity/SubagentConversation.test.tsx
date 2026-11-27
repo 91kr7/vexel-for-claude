@@ -56,6 +56,20 @@ describe('SubagentConversation', () => {
     expect(leaf(region(host)!, 'Finished')).toBeUndefined();
   });
 
+  // plan-subagent_panel/REQ-22, subagent-conversation spec: with leftList the bar keeps type and description and shows no state pill
+  it('shows no state pill once the subagent left the list, and keeps its type and description', () => {
+    const host = mount(<SubagentConversation sessionId="s1" subagent={subagent()} leftList onBack={() => {}} />);
+    const view = region(host)!;
+    for (const state of ['Running', 'Finished', 'Stopped']) expect(leaf(view, state), state).toBeUndefined();
+    expect(view.querySelector('.status-pill')).toBeNull();
+    expect(leaf(view, 'sdd-tester')).toBeDefined();
+    expect(leaf(view, 'Run the tests of the batch')).toBeDefined();
+    expect(back(view)).toBeDefined();
+    rerenderLast(<SubagentConversation sessionId="s1" subagent={subagent()} leftList={false} onBack={() => {}} />);
+    expect(leaf(region(host)!, 'Running')).toBeDefined();
+    expect(socketsOn(STREAM_END), 'the same conversation stays open').toHaveLength(1);
+  });
+
   // plan-session_activity/REQ-49, REQ-50: the user items come from the parent agent, named "Task" with the avatar "T"
   it('names the user items "Task" with the avatar "T", from the task on', () => {
     const host = mount(<SubagentConversation sessionId="s1" subagent={subagent()} onBack={() => {}} />);

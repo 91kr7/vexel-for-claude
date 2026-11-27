@@ -8,11 +8,11 @@ afterEach(() => {
 });
 
 describe('TurnPanelButton', () => {
-  // plan-session_activity/REQ-27, REQ-47: a button named "Turn Panel" with that tooltip, whose aria-expanded follows the panel
-  it.each([false, true])('is named "Turn Panel" with that tooltip and aria-expanded %s', (open) => {
+  // plan-subagent_panel/REQ-21, plan-session_activity/REQ-47: a button named "Subagents" with that tooltip, whose aria-expanded follows the panel
+  it.each([false, true])('is named "Subagents" with that tooltip and aria-expanded %s', (open) => {
     const button = mount(<TurnPanelButton open={open} onToggle={() => {}} />).querySelector('button')!;
-    expect(button.getAttribute('aria-label')).toBe('Turn Panel');
-    expect(button.getAttribute('title')).toBe('Turn Panel');
+    expect(button.getAttribute('aria-label')).toBe('Subagents');
+    expect(button.getAttribute('title')).toBe('Subagents');
     expect(button.getAttribute('aria-expanded')).toBe(String(open));
     expect(button.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
   });

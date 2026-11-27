@@ -176,7 +176,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       expect(await style(line, 'font-family')).toMatch(mono);
       expect((await box(line)).x).toBeGreaterThan((await box(title)).x);
       await expect(head.getByRole('button')).toHaveText(['', '', /Interrupt/, /Terminate/]);
-      await expect(head.getByRole('button').nth(0)).toHaveAccessibleName('Turn Panel');
+      await expect(head.getByRole('button').nth(0)).toHaveAccessibleName('Subagents');
       await expect(head.getByRole('button').nth(1)).toHaveAccessibleName('Search');
       await expect(head.getByRole('group', { name: 'Terminal text size' })).toHaveCount(0);
 

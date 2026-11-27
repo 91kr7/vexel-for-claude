@@ -626,18 +626,18 @@ describe('ActivityMonitor, turn tree', () => {
     return changes;
   }
 
-  // plan-session_activity/REQ-28, REQ-41, plan-subagent_panel/REQ-1: undefined for an unknown id, noTurn() before the first read and with no transcript, then the tree with no steps
-  it('gives no tree for an unknown id, noTurn() before the first read, then the tree of the current turn', async () => {
+  // plan-subagent_panel/REQ-1, REQ-20: undefined for an unknown id, noTurn() before the first read and with no transcript, then the tree with no steps
+  it('gives no tree for an unknown id, noTurn() before the first read, then the tree with no steps', async () => {
     newSources();
     const session = workingHosted();
     const empty = external('working');
     await append(session.transcript, userSays('Check the repo', time(0)), claudeSays('Looking', time(1)), toolCall('t1', 'Bash', { command: 'git status' }, time(2)));
     const monitor = monitorOf();
     expect(monitor.turnOf('unknown-id')).toBeUndefined();
-    expect(monitor.turnOf(session.id)).toEqual({ number: 0, status: 'none', groups: [], earlier: [], subagents: [] });
+    expect(monitor.turnOf(session.id)).toEqual({ number: 0, groups: [], subagents: [] });
     await monitor.poll();
-    expect(monitor.turnOf(empty.id)).toEqual({ number: 0, status: 'none', groups: [], earlier: [], subagents: [] });
-    expect(monitor.turnOf(session.id)).toEqual({ number: 1, status: 'running', groups: [], earlier: [], subagents: [] });
+    expect(monitor.turnOf(empty.id)).toEqual({ number: 0, groups: [], subagents: [] });
+    expect(monitor.turnOf(session.id)).toEqual({ number: 1, groups: [], subagents: [] });
   });
 
   // plan-session_activity/REQ-32, REQ-37: subagents started in one message form a group, with the model of their metadata file
@@ -661,7 +661,7 @@ describe('ActivityMonitor, turn tree', () => {
     ]);
   });
 
-  // plan-session_activity/REQ-43, plan-subagent_panel/REQ-1: the whole tree first; no call for a text or tool call of the main conversation; only the changed parts; the whole tree at a new turn
+  // plan-session_activity/REQ-43, plan-subagent_panel/REQ-1, REQ-14: the whole tree first; no call for the main conversation; only the changed parts; the whole tree at a new turn, running subagents kept
   it('notifies the whole tree first, nothing for the main conversation, then only the changed parts, and the whole tree at a new turn', async () => {
     newSources();
     const session = external('working');
@@ -669,7 +669,7 @@ describe('ActivityMonitor, turn tree', () => {
     const monitor = monitorOf();
     const changes = recordTurnChanges(monitor);
     await monitor.poll();
-    expect(changes).toEqual([[session.id, { type: 'turn', turn: { number: 1, status: 'running', groups: [], earlier: [], subagents: [] } }]]);
+    expect(changes).toEqual([[session.id, { type: 'turn', turn: { number: 1, groups: [], subagents: [] } }]]);
     await monitor.poll();
     expect(changes, 'no call when nothing changed').toHaveLength(1);
     await append(session.transcript, toolCall('t1', 'Bash', { command: 'ls' }, time(2)));
@@ -688,11 +688,11 @@ describe('ActivityMonitor, turn tree', () => {
     ]);
     await append(session.transcript, userSays('Next', time(7)));
     await monitor.poll();
-    expect(changes.at(-1)).toEqual([session.id, { type: 'turn', turn: expect.objectContaining({ number: 2, groups: [] }) }]);
+    expect(changes.at(-1)).toEqual([session.id, { type: 'turn', turn: expect.objectContaining({ number: 2, groups: [{ subagents: ['agent-a1'] }] }) }]);
   });
 
-  // plan-session_activity/REQ-40: a session that goes idle shows its turn as ended at once; needs input keeps it running
-  it('marks the turn ended at once when the session goes idle, and keeps it running while it needs input', async () => {
+  // plan-subagent_panel/REQ-15: the tree has no turn state, so a session that needs input or goes idle sends no change
+  it('sends no change when the session needs input or goes idle', async () => {
     newSources();
     const session = workingHosted();
     await append(session.transcript, userSays('Go', time(0)), claudeSays('Text', time(1)));
@@ -700,15 +700,14 @@ describe('ActivityMonitor, turn tree', () => {
     await monitor.poll();
     const changes = recordTurnChanges(monitor);
     tracker.applyHookEvent(session.id, { hook_event_name: 'PermissionRequest', tool_name: 'Bash' });
-    expect(monitor.turnOf(session.id)?.status).toBe('running');
-    expect(changes).toEqual([]);
     tracker.applyHookEvent(session.id, { hook_event_name: 'Stop' });
-    expect(monitor.turnOf(session.id)?.status).toBe('ended');
-    expect(changes).toEqual([[session.id, { type: 'update', status: 'ended' }]]);
+    await monitor.poll();
+    expect(changes).toEqual([]);
+    expect(monitor.turnOf(session.id)).toEqual({ number: 1, groups: [], subagents: [] });
   });
 
-  // plan-session_activity/REQ-33: an ended session stops its running subagents at once
-  it('shows a running subagent as stopped at once when its session ends', async () => {
+  // plan-subagent_panel/REQ-16, activity-monitor spec: the subagents of a session that ends leave the tree at once
+  it('drops a running subagent from the tree at once when its session ends', async () => {
     newSources();
     const session = workingHosted();
     await append(session.transcript, userSays('Go', time(0)), calls([agentCall('a1', 'Task')], time(1)));
@@ -718,8 +717,10 @@ describe('ActivityMonitor, turn tree', () => {
     const monitor = monitorOf();
     await monitor.poll();
     expect(monitor.turnOf(session.id)?.subagents[0]?.state).toBe('running');
+    const changes = recordTurnChanges(monitor);
     exits.get(session.id)?.();
-    expect(monitor.turnOf(session.id)).toMatchObject({ status: 'ended', subagents: [{ id: 'agent-a1', state: 'stopped', endedAt: time(3) }] });
+    expect(monitor.turnOf(session.id)).toEqual({ number: 1, groups: [], subagents: [] });
+    expect(changes).toEqual([[session.id, { type: 'update', groups: [] }]]);
   });
 
   // activity-monitor spec: turnOf and each listener get their own copy
@@ -740,8 +741,8 @@ describe('ActivityMonitor, turn tree', () => {
     expect(received).toEqual([1]);
     const copy = monitor.turnOf(session.id)!;
     copy.subagents.length = 0;
-    copy.status = 'ended';
-    expect(monitor.turnOf(session.id)).toMatchObject({ status: 'running', subagents: [{ id: 'agent-a1' }] });
+    copy.groups.length = 0;
+    expect(monitor.turnOf(session.id)).toMatchObject({ groups: [{ subagents: ['agent-a1'] }], subagents: [{ id: 'agent-a1' }] });
   });
 
   // activity-monitor spec: a removed session has no tree and gives no call; an unsubscribed listener gets no call
@@ -775,7 +776,7 @@ describe('ActivityMonitor, turn tree', () => {
     const changes = recordTurnChanges(monitor);
     tracker.applyHookEvent(session.id, { hook_event_name: 'UserPromptSubmit', prompt: 'Go on', session_id: uniqueName('sid') });
     await monitor.poll();
-    expect(changes.at(-1)).toEqual([session.id, { type: 'turn', turn: { number: 0, status: 'none', groups: [], earlier: [], subagents: [] } }]);
+    expect(changes.at(-1)).toEqual([session.id, { type: 'turn', turn: { number: 0, groups: [], subagents: [] } }]);
     expect(monitor.turnOf(session.id)?.number).toBe(0);
   });
 });

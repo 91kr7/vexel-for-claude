@@ -306,11 +306,11 @@ describe('SessionView fit', () => {
     ]);
   });
 
-  // SessionView spec, "Actions": the TurnPanel slide; plan-session_activity/REQ-27
-  it('opens the Turn Panel from the header and fits the terminal once, at the end of its slide', async () => {
+  // SessionView spec, "Actions": the TurnPanel slide; plan-session_activity/REQ-27, plan-subagent_panel/REQ-21
+  it('opens the Subagents panel from the header and fits the terminal once, at the end of its slide', async () => {
     const socket = await connected();
-    flushSync(() => document.querySelector<HTMLButtonElement>('button[aria-label="Turn Panel"]')!.click());
-    const turnPanel = document.querySelector('section[aria-label="Turn Panel"]')!;
+    flushSync(() => document.querySelector<HTMLButtonElement>('button[aria-label="Subagents"]')!.click());
+    const turnPanel = document.querySelector('section[aria-label="Subagents"]')!;
     expect(turnPanel).not.toBeNull();
     const slide = new FakeEffect();
     playing(turnPanel, [slide]);

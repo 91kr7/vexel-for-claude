@@ -215,20 +215,34 @@ async function open(url: string): Promise<WsClient> {
 
 const sessionFramesOf = (client: WsClient, id: string) => client.frames.map((frame) => JSON.parse(frame) as SessionFrame).filter((frame) => frame.session?.id === id);
 
-/** The tree the page would hold after the frames of the turn socket. */
+/** The ids that the groups reach, from level 0 down through the groups of the subagents. */
+function reachedIds(tree: TurnTree): Set<string> {
+  const reached = new Set<string>();
+  const visit = (groups: TurnTree['groups']) => {
+    for (const id of groups.flatMap((each) => each.subagents)) {
+      if (reached.has(id)) continue;
+      reached.add(id);
+      visit(tree.subagents.find((subagent) => subagent.id === id)?.groups ?? []);
+    }
+  };
+  visit(tree.groups);
+  return reached;
+}
+
+/** The tree the page would hold after the frames of the turn socket (useTurn spec: an update drops the subagents no group reaches). */
 function treeOf(client: WsClient): TurnTree | undefined {
   let tree: TurnTree | undefined;
   for (const frame of client.frames.map((text) => JSON.parse(text) as TurnChange)) {
     if (frame.type === 'turn') tree = structuredClone(frame.turn);
     else if (tree) {
-      if (frame.status) tree.status = frame.status;
       if (frame.groups) tree.groups = frame.groups;
-      if (frame.earlier) tree.earlier = frame.earlier;
       for (const subagent of frame.subagents ?? []) {
         const at = tree.subagents.findIndex((known) => known.id === subagent.id);
         if (at >= 0) tree.subagents[at] = subagent;
         else tree.subagents.push(subagent);
       }
+      const reached = reachedIds(tree);
+      tree.subagents = tree.subagents.filter((subagent) => reached.has(subagent.id));
     }
   }
   return tree;
@@ -327,7 +341,6 @@ describe('Workflow subagents, turn route', { timeout: 30_000 }, () => {
     const tree = await treeWhen(client, (t) => t.subagents.length === 4 && t.subagents.every((s) => s.currentTool !== undefined), 'the 4 agents');
 
     expect(tree.groups).toEqual([{ subagents: AGENTS.map((agentId) => `agent-${agentId}`) }]);
-    expect(tree.earlier).toEqual([]);
     for (const agentId of AGENTS) {
       expect(tree.subagents.find((s) => s.id === `agent-${agentId}`), agentId).toEqual({
         id: `agent-${agentId}`,
@@ -343,8 +356,8 @@ describe('Workflow subagents, turn route', { timeout: 30_000 }, () => {
     }
   });
 
-  // plan-session_activity/REQ-58, plan-subagent_panel/REQ-3: after a resume, each agent is in the group of the launch it started under
-  it('puts the agents of a resumed run in the group of their own launch, and the agent of the earlier launch is stopped', async () => {
+  // plan-session_activity/REQ-58, plan-subagent_panel/REQ-16: after a resume, the stopped agent of the earlier launch leaves, the agent of the new launch stays
+  it('keeps only the agent of the new launch of a resumed run, as the agent of the earlier launch is stopped', async () => {
     const session = external('working');
     await append(
       session.transcript,
@@ -365,14 +378,14 @@ describe('Workflow subagents, turn route', { timeout: 30_000 }, () => {
     await second.meta({ agentType: 'workflow-subagent', description: 'review:second' });
     await append(second.file, userSays('Review second', now(-15_000), true));
     const client = await open(`/api/sessions/${encodeURIComponent(session.id)}/turn`);
-    const tree = await treeWhen(client, (t) => t.subagents.length === 2, 'the 2 agents');
+    const tree = await treeWhen(client, (t) => t.subagents.length === 1 && t.subagents[0]!.id === 'agent-second', 'only the agent of the new launch');
 
-    expect(tree.groups).toEqual([{ subagents: ['agent-first'] }, { subagents: ['agent-second'] }]);
-    expect(statesOf(tree)).toEqual({ 'agent-first': 'stopped', 'agent-second': 'running' });
+    expect(tree.groups).toEqual([{ subagents: ['agent-second'] }]);
+    expect(statesOf(tree)).toEqual({ 'agent-second': 'running' });
   });
 
-  // plan-session_activity/REQ-60, REQ-43 — scenario "An ended workflow stops keeping the session at work"
-  it('shows 2 agents finished and 2 stopped within 2 s once the workflow ends, in the same ended turn', async () => {
+  // plan-subagent_panel/REQ-16, plan-session_activity/REQ-43 — scenario "An ended workflow stops keeping the session at work"
+  it('drops the 2 finished and the 2 stopped agents from the tree within 2 s once the workflow ends', async () => {
     const session = workingHosted();
     await workflowOfFour(session, 'wf_ends', -30_000);
     tracker.applyHookEvent(session.id, { hook_event_name: 'Stop', session_id: session.claudeSessionId });
@@ -381,19 +394,12 @@ describe('Workflow subagents, turn route', { timeout: 30_000 }, () => {
 
     await session.journal('wf_ends', { type: 'result', agentId: 'a1' }, { type: 'result', agentId: 'a2' });
     await append(session.transcript, notification('task-wf_ends', 'stopped', now()));
-    const tree = await treeWhen(client, (t) => t.subagents.every((s) => s.state !== 'running'), 'the ended agents', TWO_SECONDS);
+    const tree = await treeWhen(client, (t) => t.subagents.length === 0, 'the ended agents left', TWO_SECONDS);
 
-    expect(tree.status).toBe('ended');
-    expect(tree.number).toBe(1);
-    expect(statesOf(tree)).toEqual({ 'agent-a1': 'finished', 'agent-a2': 'finished', 'agent-a3': 'stopped', 'agent-a4': 'stopped' });
-    for (const subagent of tree.subagents) {
-      expect(subagent.endedAt, subagent.id).toEqual(expect.any(String));
-      expect(subagent.currentTool, subagent.id).toBeUndefined();
-    }
-    expect(tree.groups).toEqual([{ subagents: AGENTS.map((agentId) => `agent-${agentId}`) }]);
+    expect(tree).toEqual({ number: 1, groups: [], subagents: [] });
   });
 
-  // plan-subagent_panel/REQ-2, REQ-3, plan-session_activity/REQ-58 — scenario "A workflow sits at the start of its first agent"
+  // plan-subagent_panel/REQ-3, REQ-14, plan-session_activity/REQ-58 — scenario "A workflow sits at the start of its first agent"
   it('places the group of a workflow at the start of its first agent, after a subagent that started before it', async () => {
     const session = external('working');
     await append(

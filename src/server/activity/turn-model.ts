@@ -45,6 +45,7 @@ export interface SubagentView {
   responseModel?: string;
   openCalls: OpenCall[];
   startedBy?: StepLink;
+  earlierMessage?: string;
 }
 
 interface Subagent {
@@ -59,6 +60,7 @@ interface Subagent {
   responseModel?: string;
   stepCount: number;
   startedBy?: StepLink;
+  mainMessage?: string;
   runId?: string;
   workflowResult: boolean;
 }
@@ -66,6 +68,7 @@ interface Subagent {
 interface WorkflowCall {
   time?: number;
   position?: StepLink;
+  message?: string;
 }
 
 interface WorkflowLaunch extends WorkflowCall {
@@ -82,7 +85,7 @@ interface TimedEvent {
 
 const AGENT_FILE_PREFIX = 'agent-';
 const STEP_TEXT_LENGTH = 400;
-const REMEMBERED_SUBAGENT_CALLS = 2000;
+const REMEMBERED_CALLS = 2000;
 const SYNTHETIC_MODEL = '<synthetic>';
 const WORKFLOW_TOOL = 'Workflow';
 const TASK_STOP_TOOL = 'TaskStop';
@@ -159,6 +162,13 @@ function responseModelOf(entry: Entry): string | undefined {
 
 const withType = (call: OpenCall, subagentType: string | undefined): OpenCall => ({ ...call, ...(subagentType && { subagentType }) });
 
+function remember<T>(calls: Map<string, T>, callId: string, value: T): void {
+  calls.set(callId, value);
+  if (calls.size <= REMEMBERED_CALLS) return;
+  const oldest = calls.keys().next().value;
+  if (oldest !== undefined) calls.delete(oldest);
+}
+
 export class TurnModel {
   #turnStart: number | undefined;
   #turnNumber = 0;
@@ -166,6 +176,7 @@ export class TurnModel {
   #steps: TurnStep[] = [];
   readonly #mainCallSteps = new Map<string, StepLink>();
   readonly #subagentCallSteps = new Map<string, StepLink>();
+  readonly #mainCallMessages = new Map<string, string>();
   readonly #subagentOfStart = new Map<string, string>();
   readonly #subagents = new Map<string, Subagent>();
   readonly #stopNotices = new Map<string, number | undefined>();
@@ -242,9 +253,15 @@ export class TurnModel {
     if (!start) return;
     this.#subagentOfStart.set(start, id);
     const link = this.#subagentCallSteps.get(start);
-    if (link === undefined) return;
-    subagent.startedBy ??= link;
-    this.#subagentCallSteps.delete(start);
+    if (link !== undefined) {
+      subagent.startedBy ??= link;
+      this.#subagentCallSteps.delete(start);
+    }
+    const message = this.#mainCallMessages.get(start);
+    if (message !== undefined) {
+      subagent.mainMessage ??= message;
+      this.#mainCallMessages.delete(start);
+    }
   }
 
   turnNumber(): number {
@@ -263,6 +280,7 @@ export class TurnModel {
     return [...this.#subagents].map(([id, subagent]) => {
       const state = this.#stateOf(id, subagent, sessionEnded);
       const startedBy = this.#startOf(subagent);
+      const earlierMessage = startedBy ? undefined : this.#earlierMessageOf(subagent);
       const { agentType } = subagent.meta;
       const openCalls = state === 'running' ? [...subagent.openCalls.values()].map((call) => withType(call, agentType)).sort(byStart) : [];
       return {
@@ -276,6 +294,7 @@ export class TurnModel {
         ...(subagent.responseModel !== undefined && { responseModel: subagent.responseModel }),
         openCalls,
         ...(startedBy && { startedBy: { ...startedBy } }),
+        ...(earlierMessage !== undefined && { earlierMessage }),
       };
     });
   }
@@ -332,7 +351,8 @@ export class TurnModel {
     } else if (item.kind === 'tool_call' && item.id !== undefined) {
       if (item.name === WORKFLOW_TOOL) {
         const time = timeOf(entry)?.time;
-        this.#workflowCalls.set(item.id, { ...(time !== undefined && { time }), ...(position && { position }) });
+        const message = position ? undefined : messageIdOf(entry);
+        this.#workflowCalls.set(item.id, { ...(time !== undefined && { time }), ...(position && { position }), ...(message !== undefined && { message }) });
       } else if (item.name === TASK_STOP_TOOL) {
         const taskId = (toolInputOf(entry, item.id) as { task_id?: unknown } | null | undefined)?.task_id;
         if (typeof taskId === 'string' && taskId) this.#taskStops.set(item.id, taskId);
@@ -357,7 +377,10 @@ export class TurnModel {
       const text = plainExcerpt(item.text, STEP_TEXT_LENGTH);
       if (text) this.#steps.push({ kind: 'text', text });
     } else if (item.kind === 'tool_call') {
-      if (item.id !== undefined) this.#mainCallSteps.set(item.id, linkOf(this.#steps.length, message));
+      if (item.id !== undefined) {
+        this.#mainCallSteps.set(item.id, linkOf(this.#steps.length, message));
+        if (message !== undefined) this.#rememberMainCall(item.id, message);
+      }
       this.#steps.push(toolStepOf(item.name, item.id, input));
     } else if (item.kind === 'tool_result' && item.toolUseId !== undefined) {
       const index = this.#mainCallSteps.get(item.toolUseId)?.step;
@@ -371,17 +394,20 @@ export class TurnModel {
     const link = linkOf(subagent.stepCount, message, id);
     subagent.stepCount += 1;
     if (item.kind !== 'tool_call' || item.id === undefined) return;
-    const childId = this.#subagentOfStart.get(item.id);
-    const child = childId === undefined ? undefined : this.#subagents.get(childId);
-    if (child) {
-      child.startedBy ??= link;
-      return;
-    }
-    this.#subagentCallSteps.set(item.id, link);
-    if (this.#subagentCallSteps.size > REMEMBERED_SUBAGENT_CALLS) {
-      const oldest = this.#subagentCallSteps.keys().next().value;
-      if (oldest !== undefined) this.#subagentCallSteps.delete(oldest);
-    }
+    const child = this.#subagentStartedBy(item.id);
+    if (child) child.startedBy ??= link;
+    else remember(this.#subagentCallSteps, item.id, link);
+  }
+
+  #rememberMainCall(callId: string, message: string): void {
+    const child = this.#subagentStartedBy(callId);
+    if (child) child.mainMessage ??= message;
+    else remember(this.#mainCallMessages, callId, message);
+  }
+
+  #subagentStartedBy(callId: string): Subagent | undefined {
+    const id = this.#subagentOfStart.get(callId);
+    return id === undefined ? undefined : this.#subagents.get(id);
   }
 
   #startOf(subagent: Subagent): StepLink | undefined {
@@ -392,6 +418,10 @@ export class TurnModel {
     }
     const start = subagent.meta.toolUseId;
     return (start ? this.#mainCallSteps.get(start) : undefined) ?? subagent.startedBy;
+  }
+
+  #earlierMessageOf(subagent: Subagent): string | undefined {
+    return subagent.runId === undefined ? subagent.mainMessage : this.#launchOf(subagent, subagent.runId).launch?.message;
   }
 
   #startTurn(time: number | undefined): void {
