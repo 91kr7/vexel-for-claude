@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import type { RunningTool } from '../sessions/live-session-store';
 import { ElapsedTime } from './ElapsedTime';
 import { shortDuration } from './short-duration';
@@ -32,10 +31,9 @@ export function SubagentStatePill({ state }: { state: SubagentState }) {
 interface SubagentCardProps {
   subagent: TurnSubagent;
   onOpen?: (subagent: TurnSubagent, opener: HTMLElement) => void;
-  children?: ReactNode;
 }
 
-export function SubagentCard({ subagent, onOpen, children }: SubagentCardProps) {
+export function SubagentCard({ subagent, onOpen }: SubagentCardProps) {
   const { type, description, model, state, latestText } = subagent;
   return (
     <article className="subagent-card" aria-label={type ? `Subagent: ${type}` : 'Subagent'}>
@@ -67,7 +65,6 @@ export function SubagentCard({ subagent, onOpen, children }: SubagentCardProps) 
         </span>
         <CurrentTool tool={subagent.currentTool} />
       </button>
-      {children}
     </article>
   );
 }

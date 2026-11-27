@@ -26,7 +26,7 @@ export interface TurnTree {
   number: number;
   status: TurnStatus;
   groups: SubagentGroup[];
-  earlier: string[];
+  earlier: SubagentGroup[];
   subagents: TurnSubagent[];
 }
 
@@ -34,7 +34,7 @@ interface TurnUpdate {
   type: 'update';
   status?: TurnStatus;
   groups?: SubagentGroup[];
-  earlier?: string[];
+  earlier?: SubagentGroup[];
   subagents?: TurnSubagent[];
 }
 

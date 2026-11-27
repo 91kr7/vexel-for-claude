@@ -27,7 +27,7 @@ export interface TurnTree {
   number: number;
   status: TurnStatus;
   groups: SubagentGroup[];
-  earlier: string[];
+  earlier: SubagentGroup[];
   subagents: TurnSubagent[];
 }
 
@@ -35,7 +35,7 @@ export interface TurnUpdate {
   type: 'update';
   status?: TurnStatus;
   groups?: SubagentGroup[];
-  earlier?: string[];
+  earlier?: SubagentGroup[];
   subagents?: TurnSubagent[];
 }
 
@@ -75,6 +75,26 @@ function groupsOf(children: readonly SubagentView[]): SubagentGroup[] {
     if (last && joinsGroup(view, last.at(-1)!)) last.push(view);
     else groups.push([view]);
   }
+  return inStartOrder(groups);
+}
+
+function earlierGroupsOf(views: readonly SubagentView[]): SubagentGroup[] {
+  const groups: SubagentView[][] = [];
+  const groupOfMessage = new Map<string, SubagentView[]>();
+  for (const view of views) {
+    const message = view.startedBy?.message ?? view.earlierMessage;
+    const group = message === undefined ? undefined : groupOfMessage.get(message);
+    if (group) group.push(view);
+    else {
+      const created = [view];
+      groups.push(created);
+      if (message !== undefined) groupOfMessage.set(message, created);
+    }
+  }
+  return inStartOrder(groups);
+}
+
+function inStartOrder(groups: SubagentView[][]): SubagentGroup[] {
   return groups
     .map((views) => views.sort(byStart))
     .sort((a, b) => byStart(a[0]!, b[0]!))
@@ -143,7 +163,7 @@ export function turnTreeOf(model: Pick<TurnModel, 'turnNumber' | 'subagents'>, s
     number,
     status: state === 'working' || state === 'needs_input' ? 'running' : 'ended',
     groups: groupsOf(mainChildren),
-    earlier: earlier.sort(byStart).map((view) => view.id),
+    earlier: earlierGroupsOf(earlier),
     subagents: views.filter((view) => shown.has(view.id)).map((view) => subagentOf(view, groupsOf(placed.get(view.id) ?? []))),
   };
 }

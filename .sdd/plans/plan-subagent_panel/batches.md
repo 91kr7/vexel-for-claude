@@ -7,7 +7,7 @@ status: validated
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
 | [subagents-only](batches/batch-subagents-only.md) | Turn panel with subagents only | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7 | — | certified | The panel shows only the subagents of the turn, in start order |
-| [subagent-list](batches/batch-subagent-list.md) | Subagents as a list | REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | subagents-only | todo | The subagents show as a list, with a group joined on the left |
+| [subagent-list](batches/batch-subagent-list.md) | Subagents as a list | REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | subagents-only | implemented | The subagents show as a list, with a group joined on the left |
 
 Execution order: `subagents-only`, then `subagent-list`.
 

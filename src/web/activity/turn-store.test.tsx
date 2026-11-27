@@ -134,7 +134,7 @@ describe('useTurn, frames', () => {
       type: 'update',
       status: 'ended',
       groups: [{ subagents: ['c'] }, { subagents: ['a'] }],
-      earlier: ['z'],
+      earlier: [{ subagents: ['z'] }],
       subagents: [
         { id: 'a', state: 'finished', groups: [] },
         { id: 'c', state: 'running', groups: [] },
@@ -144,7 +144,7 @@ describe('useTurn, frames', () => {
       turn({
         status: 'ended',
         groups: [{ subagents: ['c'] }, { subagents: ['a'] }],
-        earlier: ['z'],
+        earlier: [{ subagents: ['z'] }],
         subagents: [
           { id: 'a', state: 'finished', groups: [] },
           { id: 'b', state: 'running', groups: [] },
@@ -157,7 +157,7 @@ describe('useTurn, frames', () => {
   // useTurn spec: an update that names only some parts keeps the others
   it('keeps the parts that an update does not name', () => {
     host = mount(<Probe sessionId="s1" />);
-    const first = turn({ groups: [{ subagents: ['a'] }], earlier: ['z'], subagents: [{ id: 'a', state: 'running', groups: [] }, { id: 'z', state: 'running', groups: [] }] });
+    const first = turn({ groups: [{ subagents: ['a'] }], earlier: [{ subagents: ['z'] }], subagents: [{ id: 'a', state: 'running', groups: [] }, { id: 'z', state: 'running', groups: [] }] });
     lastSocket().receive({ type: 'turn', turn: first });
     lastSocket().receive({ type: 'update', status: 'ended' });
     expect(tree()).toEqual({ ...first, status: 'ended' });
@@ -167,7 +167,7 @@ describe('useTurn, frames', () => {
   it('replaces the tree with a later turn frame', () => {
     host = mount(<Probe sessionId="s1" />);
     lastSocket().receive({ type: 'turn', turn: turn({ groups: [{ subagents: ['old'] }], subagents: [{ id: 'old', state: 'running', groups: [] }] }) });
-    const next = turn({ number: 2, earlier: ['bg'], subagents: [{ id: 'bg', state: 'running', groups: [] }] });
+    const next = turn({ number: 2, earlier: [{ subagents: ['bg'] }], subagents: [{ id: 'bg', state: 'running', groups: [] }] });
     lastSocket().receive({ type: 'turn', turn: next });
     expect(tree()).toEqual(next);
   });

@@ -69,17 +69,6 @@ describe('SubagentCard, fields', () => {
     expect(durationOf(card)).toBe('5 min');
     expect(card.textContent).not.toContain('undefined');
   });
-
-  // subagent-card spec: the children show at the bottom of the card
-  it('shows its children at the bottom', () => {
-    const host = mount(
-      <SubagentCard subagent={full}>
-        <p>nested group</p>
-      </SubagentCard>,
-    );
-    const card = host.querySelector('article')!;
-    expect(card.lastElementChild?.textContent).toBe('nested group');
-  });
 });
 
 describe('SubagentCard, state and duration', () => {

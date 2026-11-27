@@ -15,7 +15,7 @@ type: backend function
   - `number` → `model.turnNumber()`.
   - `status` → `"none"` when `number` is 0; else `"running"` when `state` is `working` or `needs_input`; else `"ended"`.
   - `groups` → the groups of subagents started from the main conversation, in start order (below). `SubagentGroup` → `{ subagents }`: the subagent ids.
-  - `earlier` → the ids of the running subagents that are not in the tree, in start order (below).
+  - `earlier` → the groups of the running subagents that are not in the tree, in start order (below). Its groups are `SubagentGroup`s, as in `groups`.
   - `subagents` → one `TurnSubagent` per subagent in the tree or in `earlier`, nested ones included, in the order they became known.
 - `noTurn() → TurnTree` → `{ number: 0, status: "none", groups: [], earlier: [], subagents: [] }`.
 
@@ -45,7 +45,17 @@ else it starts a new group
 - So the calls of one assistant message form one group, and calls of two messages form two groups, also with no step between them. The agents of one workflow launch share one link, so they stay one group.
 - The step rule is only for links with no `message` (a line with no `message.id`).
 
-Start order, for the subagents of a group, for the groups of one list and for `earlier`:
+Groups of `earlier`:
+
+```
+message of an earlier subagent = its startedBy.message, else its earlierMessage (TurnModel)
+earlier subagents with the same message form one group
+an earlier subagent with no message is a group of its own
+```
+
+- So the subagents of one message of an earlier turn stay one group, and so do the agents of one workflow launch. A group holds only subagents of `earlier`, so only running ones.
+
+Start order, for the subagents of a group and for the groups of one list, `earlier` included:
 
 ```
 start of a subagent = its startedAt
@@ -95,4 +105,4 @@ nothing changed → undefined
 ## Requirements served
 
 - `plan-session_activity/REQ-28`, `plan-session_activity/REQ-32`, `plan-session_activity/REQ-33`, `plan-session_activity/REQ-34`, `plan-session_activity/REQ-35`, `plan-session_activity/REQ-36`, `plan-session_activity/REQ-37`, `plan-session_activity/REQ-38`, `plan-session_activity/REQ-39`, `plan-session_activity/REQ-40`, `plan-session_activity/REQ-41`, `plan-session_activity/REQ-44`
-- `plan-subagent_panel/REQ-1`, `plan-subagent_panel/REQ-2`, `plan-subagent_panel/REQ-3`, `plan-subagent_panel/REQ-6`, `plan-subagent_panel/REQ-7`
+- `plan-subagent_panel/REQ-1`, `plan-subagent_panel/REQ-2`, `plan-subagent_panel/REQ-3`, `plan-subagent_panel/REQ-6`, `plan-subagent_panel/REQ-7`, `plan-subagent_panel/REQ-10`, `plan-subagent_panel/REQ-12`

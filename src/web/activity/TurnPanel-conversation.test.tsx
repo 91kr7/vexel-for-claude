@@ -14,7 +14,7 @@ const tree = (fields: Partial<TurnTree> = {}): TurnTree => ({
   number: 1,
   status: 'running',
   groups: [{ subagents: ['agent-p'] }],
-  earlier: ['agent-e'],
+  earlier: [{ subagents: ['agent-e'] }],
   subagents: [parent, child, old],
   ...fields,
 });

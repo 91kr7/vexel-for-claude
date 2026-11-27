@@ -358,8 +358,9 @@ describe('turnChangeOf', () => {
   it('gives the whole groups and earlier when they changed', () => {
     const previous = base();
     const groups = [{ subagents: ['a', 'b'] }];
-    const update = turnChangeOf(previous, { ...previous, groups, earlier: ['z'], subagents: previous.subagents });
-    expect(update).toEqual({ type: 'update', groups, earlier: ['z'] });
+    const earlier = [{ subagents: ['z'] }];
+    const update = turnChangeOf(previous, { ...previous, groups, earlier, subagents: previous.subagents });
+    expect(update).toEqual({ type: 'update', groups, earlier });
   });
 
   // plan-session_activity/REQ-43: only the subagents that are new or have a changed field; one that left is not named

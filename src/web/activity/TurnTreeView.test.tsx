@@ -77,7 +77,7 @@ describe('TurnTreeView, content', () => {
 
   // plan-session_activity/REQ-39: the running subagents of earlier turns in their own section, above the groups of the turn
   it('shows the subagents of earlier turns in the section "Still running from earlier turns", above the groups', () => {
-    const host = mount(<TurnTreeView turn={turn({ groups: [{ subagents: ['now'] }], earlier: ['old'], subagents: [subagent('old'), subagent('now')] })} />);
+    const host = mount(<TurnTreeView turn={turn({ groups: [{ subagents: ['now'] }], earlier: [{ subagents: ['old'] }], subagents: [subagent('old'), subagent('now')] })} />);
     const section = leaf(host, 'Still running from earlier turns')!.closest('section')!;
     expect(section).not.toBeNull();
     expect(section.contains(card(host, 'type-old'))).toBe(true);
@@ -112,7 +112,7 @@ describe('TurnTreeView, turn with no subagents', () => {
 
   // plan-subagent_panel/REQ-5: the message concerns the current turn, so it shows also under the earlier section
   it('shows the message under the section of earlier turns', () => {
-    const host = mount(<TurnTreeView turn={turn({ earlier: ['old'], subagents: [subagent('old')] })} />);
+    const host = mount(<TurnTreeView turn={turn({ earlier: [{ subagents: ['old'] }], subagents: [subagent('old')] })} />);
     const section = leaf(host, 'Still running from earlier turns')!.closest('section')!;
     expect(emptyState(host)?.textContent).toBe('No subagents in this turn.');
     expect(section.contains(emptyState(host))).toBe(false);
@@ -222,7 +222,7 @@ describe('TurnTreeView, following the latest started subagent', () => {
   // turn-tree-view spec: the latest started subagent counts also when it runs from an earlier turn
   it('follows a subagent of the earlier section when it started last', () => {
     places = { 'type-old': [600, 200], 'type-now': [1_000, 200] };
-    const host = mount(<TurnTreeView turn={turn({ groups: [{ subagents: ['now'] }], earlier: ['old'], subagents: [subagent('old', { startedAt: minute(9) }), subagent('now', { startedAt: minute(1) })] })} />);
+    const host = mount(<TurnTreeView turn={turn({ groups: [{ subagents: ['now'] }], earlier: [{ subagents: ['old'] }], subagents: [subagent('old', { startedAt: minute(9) }), subagent('now', { startedAt: minute(1) })] })} />);
     expect(scrollArea(host).scrollTop).toBe(800 - VIEW_HEIGHT);
   });
 

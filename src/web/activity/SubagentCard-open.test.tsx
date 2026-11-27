@@ -43,18 +43,6 @@ describe('SubagentCard, opening the conversation', () => {
     expect(onOpen).toHaveBeenCalledWith(shown, button);
   });
 
-  // subagent-card spec: a click inside the children does not call the card's onOpen
-  it('does not call its onOpen for a click inside its children', () => {
-    const onOpen = vi.fn();
-    const host = mount(
-      <SubagentCard subagent={subagent()} onOpen={onOpen}>
-        <button type="button">Inner</button>
-      </SubagentCard>,
-    );
-    run(() => [...host.querySelectorAll('button')].find((button) => button.textContent === 'Inner')!.click());
-    expect(onOpen).not.toHaveBeenCalled();
-  });
-
   // subagent-card spec: SubagentStatePill shows the state pill on its own
   it('exports the state pill: "Running", "Finished", "Stopped"', () => {
     for (const [state, text] of [
