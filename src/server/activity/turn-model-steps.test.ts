@@ -38,6 +38,7 @@ const subCall = (id: string, name: string, input?: unknown, timestamp?: string) 
 const agentInput = (description: string) => ({ description, prompt: 'Do it', subagent_type: 'sdd-developer' });
 
 const viewOf = (model: TurnModel, id: string, sessionEnded = false) => model.subagents(sessionEnded).find((view) => view.id === id);
+const inMessage = (line: Line, id: unknown): Line => ({ ...line, message: { ...(line.message as object), id } });
 const long = (length: number) => Array.from({ length }, (_, i) => String.fromCharCode(97 + (i % 26))).join('');
 
 describe('TurnModel, steps of the main conversation', () => {
@@ -257,6 +258,48 @@ describe('TurnModel, starting step of a subagent', () => {
     model.addSubagentEntries('agent-p', Array.from({ length: 2_100 }, (_, i) => subCall(`later-${i}`, 'Bash', { command: 'ls' }, at(3))));
     model.addMainEntries([userSays('Next turn', at(4))]);
     expect(viewOf(model, 'agent-c')?.startedBy).toEqual({ parent: 'agent-p', step: 1 });
+  });
+
+  // plan-subagent_panel/REQ-3: the link carries the message id of the call line; the lines of one message share it
+  it('gives the link the message id of the line of its call', () => {
+    const model = new TurnModel();
+    model.addMainEntries([
+      userSays('Go', at(0)),
+      inMessage(toolCall('an', 'Agent', agentInput('Analyse'), at(1)), 'msg_analyst'),
+      toolResult('an', at(2)),
+      inMessage(toolCall('d1', 'Agent', agentInput('First'), at(3)), 'msg_developers'),
+      inMessage(toolCall('d2', 'Agent', agentInput('Second'), at(3)), 'msg_developers'),
+    ]);
+    for (const [agent, call] of [
+      ['agent-an', 'an'],
+      ['agent-d1', 'd1'],
+      ['agent-d2', 'd2'],
+    ] as const) {
+      model.setSubagentMeta(agent, { toolUseId: call });
+    }
+    expect(viewOf(model, 'agent-an')?.startedBy).toEqual({ step: 0, message: 'msg_analyst' });
+    expect(viewOf(model, 'agent-d1')?.startedBy).toEqual({ step: 1, message: 'msg_developers' });
+    expect(viewOf(model, 'agent-d2')?.startedBy).toEqual({ step: 2, message: 'msg_developers' });
+  });
+
+  // turn-model spec: a message id that is empty or not a string gives no message
+  it('gives no message for an empty or a non-string message id', () => {
+    const model = new TurnModel();
+    model.addMainEntries([userSays('Go', at(0)), inMessage(toolCall('a', 'Agent', agentInput('A'), at(1)), ''), inMessage(toolCall('b', 'Agent', agentInput('B'), at(2)), 42)]);
+    model.setSubagentMeta('agent-a', { toolUseId: 'a' });
+    model.setSubagentMeta('agent-b', { toolUseId: 'b' });
+    expect(viewOf(model, 'agent-a')?.startedBy).toEqual({ step: 0 });
+    expect(viewOf(model, 'agent-b')?.startedBy).toEqual({ step: 1 });
+  });
+
+  // plan-subagent_panel/REQ-3: a nested link carries the message id too, also when the metadata came first
+  it('gives a nested link the message id of the call line of its parent', () => {
+    const model = new TurnModel();
+    model.setSubagentMeta('agent-early', { toolUseId: 'n1' });
+    model.addSubagentEntries('agent-p', [subSays('Planning', at(1)), inMessage(subCall('n1', 'Agent', agentInput('Early'), at(2)), 'msg_sub_1'), inMessage(subCall('n2', 'Agent', agentInput('Late'), at(3)), 'msg_sub_2')]);
+    model.setSubagentMeta('agent-late', { toolUseId: 'n2' });
+    expect(viewOf(model, 'agent-early')?.startedBy).toEqual({ parent: 'agent-p', step: 1, message: 'msg_sub_1' });
+    expect(viewOf(model, 'agent-late')?.startedBy).toEqual({ parent: 'agent-p', step: 2, message: 'msg_sub_2' });
   });
 
   // turn-model spec: a call of a subagent is remembered among the latest 2,000 such calls of the session

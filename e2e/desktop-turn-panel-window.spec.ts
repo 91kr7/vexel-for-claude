@@ -161,8 +161,9 @@ test.describe('Turn panel in the desktop app', () => {
     await entry(page, hostedFolder).getByTitle(hostedFolder, { exact: true }).click();
     await turnButton(page).click();
     await expect(panel(page)).toBeVisible();
-    await expect(panel(page).getByText('Hosted turn text', { exact: true })).toBeVisible(PROMPTLY);
+    await expect(panel(page).getByText('No subagents in this turn.', { exact: true }), 'plan-subagent_panel/REQ-5').toBeVisible(PROMPTLY);
     await expect(panel(page).getByText('Running', { exact: true })).toBeVisible();
+    await expect(panel(page), 'plan-subagent_panel/REQ-1: no text of the main conversation').not.toContainText('Hosted turn text');
     await turnButton(page).click();
     await expect(panel(page)).toHaveCount(0);
 

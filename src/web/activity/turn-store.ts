@@ -3,14 +3,9 @@ import type { RunningTool } from '../sessions/live-session-store';
 
 export type TurnStatus = 'none' | 'running' | 'ended';
 
-export type ToolOutcome = 'running' | 'completed' | 'error';
-
-export type TurnStep = { kind: 'text'; text: string } | { kind: 'tool'; name?: string; argument?: string; outcome?: ToolOutcome };
-
 export type SubagentState = 'running' | 'finished' | 'stopped';
 
 export interface SubagentGroup {
-  step: number;
   subagents: string[];
 }
 
@@ -30,7 +25,6 @@ export interface TurnSubagent {
 export interface TurnTree {
   number: number;
   status: TurnStatus;
-  steps: TurnStep[];
   groups: SubagentGroup[];
   earlier: string[];
   subagents: TurnSubagent[];
@@ -39,7 +33,6 @@ export interface TurnTree {
 interface TurnUpdate {
   type: 'update';
   status?: TurnStatus;
-  steps?: { index: number; step: TurnStep }[];
   groups?: SubagentGroup[];
   earlier?: string[];
   subagents?: TurnSubagent[];
@@ -69,8 +62,6 @@ function frameOf(data: string): TurnFrame | undefined {
 }
 
 function applyTurnUpdate(turn: TurnTree, update: TurnUpdate): TurnTree {
-  const steps = update.steps ? [...turn.steps] : turn.steps;
-  for (const { index, step } of update.steps ?? []) steps[index] = step;
   const changed = new Map((update.subagents ?? []).map((subagent) => [subagent.id, subagent]));
   const subagents = turn.subagents.map((subagent) => changed.get(subagent.id) ?? subagent);
   const known = new Set(turn.subagents.map((subagent) => subagent.id));
@@ -78,7 +69,6 @@ function applyTurnUpdate(turn: TurnTree, update: TurnUpdate): TurnTree {
   return {
     ...turn,
     status: update.status ?? turn.status,
-    steps,
     groups: update.groups ?? turn.groups,
     earlier: update.earlier ?? turn.earlier,
     subagents,

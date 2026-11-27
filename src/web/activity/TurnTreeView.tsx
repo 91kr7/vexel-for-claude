@@ -1,14 +1,11 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
+import { AreaState } from '../feedback/AreaState';
 import { SubagentCard } from './SubagentCard';
-import type { SubagentGroup, ToolOutcome, TurnStep, TurnSubagent, TurnTree } from './turn-store';
+import type { TurnSubagent, TurnTree } from './turn-store';
 
-const STEP_PAGE = 200;
 const AT_END_TOLERANCE_PX = 8;
-const OUTCOME_NAMES: Record<ToolOutcome, string> = { running: 'Running', completed: 'Completed', error: 'Error' };
 
 const isAtEnd = (element: HTMLElement) => element.scrollHeight - element.scrollTop - element.clientHeight <= AT_END_TOLERANCE_PX;
-
-const lastPageStart = (length: number) => Math.max(0, length - STEP_PAGE);
 
 type OpenSubagent = (subagent: TurnSubagent, opener: HTMLElement) => void;
 
@@ -26,8 +23,8 @@ function Group({ ids, subagents, onOpen }: GroupProps) {
         return (
           subagent && (
             <SubagentCard key={id} subagent={subagent} onOpen={onOpen}>
-              {subagent.groups.map((nested) => (
-                <Group key={nested.step} ids={nested.subagents} subagents={subagents} onOpen={onOpen} />
+              {subagent.groups.map((nested, index) => (
+                <Group key={index} ids={nested.subagents} subagents={subagents} onOpen={onOpen} />
               ))}
             </SubagentCard>
           )
@@ -37,40 +34,62 @@ function Group({ ids, subagents, onOpen }: GroupProps) {
   );
 }
 
-function StepRow({ step }: { step: TurnStep }) {
-  if (step.kind === 'text') return <p className="turn-step-text">{step.text}</p>;
-  return (
-    <div className="turn-step-tool">
-      {step.name && <span className="turn-step-name">{step.name}</span>}
-      <span className="turn-step-argument" title={step.argument}>
-        {step.argument}
-      </span>
-      {step.outcome && <span className={`turn-step-outcome turn-step-outcome-${step.outcome}`}>{OUTCOME_NAMES[step.outcome]}</span>}
-    </div>
-  );
+function latestStartedOf(subagents: readonly TurnSubagent[]): string | undefined {
+  let latest: { id: string; time: number } | undefined;
+  for (const { id, startedAt } of subagents) {
+    const time = startedAt === undefined ? Number.NaN : Date.parse(startedAt);
+    if (!Number.isNaN(time) && (!latest || time >= latest.time)) latest = { id, time };
+  }
+  return latest?.id;
+}
+
+// Page order of the cards, as Group renders them: each card comes before the cards nested in it.
+function cardOrderOf(turn: TurnTree, subagents: ReadonlyMap<string, TurnSubagent>): string[] {
+  const order: string[] = [];
+  const visit = (ids: readonly string[]) => {
+    for (const id of ids) {
+      const subagent = subagents.get(id);
+      if (!subagent) continue;
+      order.push(id);
+      for (const group of subagent.groups) visit(group.subagents);
+    }
+  };
+  visit(turn.earlier);
+  for (const group of turn.groups) visit(group.subagents);
+  return order;
+}
+
+function reveal(view: HTMLElement, card: Element): void {
+  const viewTop = view.getBoundingClientRect().top;
+  const { top, bottom } = card.getBoundingClientRect();
+  if (top < viewTop || bottom - top > view.clientHeight) view.scrollTop += top - viewTop;
+  else if (bottom > viewTop + view.clientHeight) view.scrollTop += bottom - viewTop - view.clientHeight;
 }
 
 export function TurnTreeView({ turn, onOpenSubagent }: { turn: TurnTree; onOpenSubagent?: OpenSubagent }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const followRef = useRef(true);
-  const length = turn.steps.length;
-  const [start, setStart] = useState(() => lastPageStart(length));
+  const scrollTopRef = useRef(0);
   const subagents = useMemo(() => new Map(turn.subagents.map((subagent) => [subagent.id, subagent])), [turn.subagents]);
-  const groups = useMemo(() => new Map<number, SubagentGroup>(turn.groups.map((group) => [group.step, group])), [turn.groups]);
-  const hidden = Math.min(start, STEP_PAGE);
-
-  useLayoutEffect(() => {
-    if (followRef.current && length - start > STEP_PAGE) setStart(lastPageStart(length));
-  }, [length, start]);
 
   useLayoutEffect(() => {
     const element = scrollRef.current;
-    if (element && followRef.current) element.scrollTop = element.scrollHeight;
-  }, [turn, start]);
+    if (!element) return;
+    const latest = latestStartedOf(turn.subagents);
+    if (followRef.current && latest !== undefined) {
+      const card = element.querySelectorAll('.subagent-card')[cardOrderOf(turn, subagents).indexOf(latest)];
+      if (card) reveal(element, card);
+    }
+    scrollTopRef.current = element.scrollTop;
+  }, [turn, subagents]);
 
+  // A scroll to the place recorded above is the view's own, or the content moving: only the user's scrolls count.
   const onScroll = () => {
     const element = scrollRef.current;
-    if (element) followRef.current = isAtEnd(element);
+    if (!element || element.scrollTop === scrollTopRef.current) return;
+    if (isAtEnd(element)) followRef.current = true;
+    else if (element.scrollTop < scrollTopRef.current) followRef.current = false;
+    scrollTopRef.current = element.scrollTop;
   };
 
   return (
@@ -81,23 +100,11 @@ export function TurnTreeView({ turn, onOpenSubagent }: { turn: TurnTree; onOpenS
           <Group ids={turn.earlier} subagents={subagents} onOpen={onOpenSubagent} />
         </section>
       )}
-      {start > 0 && (
-        <button type="button" className="button-neutral turn-earlier-steps" onClick={() => setStart((current) => Math.max(0, current - STEP_PAGE))}>
-          {hidden === 1 ? 'Show 1 earlier step' : `Show ${hidden} earlier steps`}
-        </button>
+      {turn.groups.length > 0 ? (
+        turn.groups.map((group, index) => <Group key={index} ids={group.subagents} subagents={subagents} onOpen={onOpenSubagent} />)
+      ) : (
+        <AreaState kind="empty" size="compact" title="No subagents in this turn." />
       )}
-      <ol className="turn-steps">
-        {turn.steps.slice(start).map((step, offset) => {
-          const index = start + offset;
-          const group = groups.get(index);
-          return (
-            <li key={index} className="turn-step">
-              <StepRow step={step} />
-              {group && <Group ids={group.subagents} subagents={subagents} onOpen={onOpenSubagent} />}
-            </li>
-          );
-        })}
-      </ol>
     </div>
   );
 }

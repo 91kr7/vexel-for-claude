@@ -181,6 +181,21 @@ describe('TurnModel, workflow launches', () => {
     expect(stateOf(model, 'agent-early'), 'the early agent belongs to the launch that ended').toBe('stopped');
   });
 
+  // plan-subagent_panel/REQ-3, plan-session_activity/REQ-58: the agents of one launch share the link of the Workflow call, message id included
+  it('gives every agent of a launch the step and the message id of its Workflow call', () => {
+    const model = new TurnModel();
+    const call = workflowCall('wf-call', time(2));
+    model.addMainEntries([
+      userSays('Review the batch', time(0)),
+      claudeSays('I launch the review workflow', time(1)),
+      { ...call, message: { ...(call.message as object), id: 'msg_workflow' } },
+      launched('wf-call', 'wf_r1', 'task-1', time(3)),
+    ]);
+    addAgent(model, 'a', 4);
+    addAgent(model, 'b', 9);
+    for (const id of ['agent-a', 'agent-b']) expect(viewOf(model, id)?.startedBy, id).toEqual({ step: 1, message: 'msg_workflow' });
+  });
+
   // turn-model spec: workflowLaunchOf gives the launch of a Workflow call result
   it('reads the run id and the task id in the result text when the line has no toolUseResult', () => {
     const model = new TurnModel();

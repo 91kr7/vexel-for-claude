@@ -7,14 +7,13 @@ import type { TurnSubagent, TurnTree } from './turn-store';
 import { TurnPanel } from './TurnPanel';
 
 const sub = (id: string, type: string, fields: Partial<TurnSubagent> = {}): TurnSubagent => ({ id, type, description: `${type} task`, state: 'running', groups: [], ...fields });
-const parent = sub('agent-p', 'Parent', { groups: [{ step: 0, subagents: ['agent-c'] }] });
+const parent = sub('agent-p', 'Parent', { groups: [{ subagents: ['agent-c'] }] });
 const child = sub('agent-c', 'Child');
 const old = sub('agent-e', 'Earlier');
 const tree = (fields: Partial<TurnTree> = {}): TurnTree => ({
   number: 1,
   status: 'running',
-  steps: [{ kind: 'tool', name: 'Agent', argument: 'Parent task', outcome: 'running' }],
-  groups: [{ step: 0, subagents: ['agent-p'] }],
+  groups: [{ subagents: ['agent-p'] }],
   earlier: ['agent-e'],
   subagents: [parent, child, old],
   ...fields,
@@ -107,7 +106,7 @@ describe('TurnPanel, subagent conversation', () => {
   it('stays open when a new turn starts, keeps the last values, and on "Back" focuses the tree area when the opener is gone', () => {
     const host = openPanel();
     run(() => openButton(host, 'Parent')!.click());
-    turnSocket().receive({ type: 'turn', turn: tree({ number: 2, groups: [], earlier: [], subagents: [], steps: [{ kind: 'text', text: 'A new turn' }] }) });
+    turnSocket().receive({ type: 'turn', turn: tree({ number: 2, groups: [], earlier: [], subagents: [] }) });
     expect(conversation(host)).not.toBeNull();
     expect(textOf(conversation(host))).toContain('Parent task');
     expect(textOf(conversation(host))).toContain('Parent');

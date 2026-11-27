@@ -6,19 +6,18 @@ type: backend function
 
 # turnTreeOf
 
-**Purpose** → the tree of the current turn of a session, as the turn panel shows it, and the parts that changed between two trees.
+**Purpose** → the tree of the subagents of the current turn of a session, as the turn panel shows it, and the parts that changed between two trees.
 
 ## Contract
 
 - `turnTreeOf(model, state) → TurnTree` → `model` is the TurnModel of the session, `state` its session state.
-- `TurnTree` → `{ number, status, steps, groups, earlier, subagents }`.
+- `TurnTree` → `{ number, status, groups, earlier, subagents }`. It carries no step of the main conversation.
   - `number` → `model.turnNumber()`.
   - `status` → `"none"` when `number` is 0; else `"running"` when `state` is `working` or `needs_input`; else `"ended"`.
-  - `steps` → `model.steps()`.
-  - `groups` → the groups of subagents started from the main conversation (`SubagentGroup` → `{ step, subagents }`: the index of the step after which the group shows, and the subagent ids).
-  - `earlier` → the ids of the running subagents that are not in the tree, in the order they became known.
+  - `groups` → the groups of subagents started from the main conversation, in start order (below). `SubagentGroup` → `{ subagents }`: the subagent ids.
+  - `earlier` → the ids of the running subagents that are not in the tree, in start order (below).
   - `subagents` → one `TurnSubagent` per subagent in the tree or in `earlier`, nested ones included, in the order they became known.
-- `noTurn() → TurnTree` → `{ number: 0, status: "none", steps: [], groups: [], earlier: [], subagents: [] }`.
+- `noTurn() → TurnTree` → `{ number: 0, status: "none", groups: [], earlier: [], subagents: [] }`.
 
 ```
 number is 0 → noTurn()
@@ -36,9 +35,23 @@ Groups, for the main conversation and for each subagent of the tree (its childre
 
 ```
 children sorted by startedBy.step (equal steps keep the known order)
-a child joins the group before it when its step is the same, or 1 more, than the last step of that group
+a child joins the group before it when:
+    it and the last child of that group both have a startedBy.message → the two messages are the same
+    else                                                              → its step is the same, or 1 more,
+                                                                        than the last step of that group
 else it starts a new group
-group.step = the highest step of its children
+```
+
+- So the calls of one assistant message form one group, and calls of two messages form two groups, also with no step between them. The agents of one workflow launch share one link, so they stay one group.
+- The step rule is only for links with no `message` (a line with no `message.id`).
+
+Start order, for the subagents of a group, for the groups of one list and for `earlier`:
+
+```
+start of a subagent = its startedAt
+start of a group    = the earliest start of its subagents
+earlier start first; a missing start sorts last
+equal starts, or both missing → the order above (step order, or the known order for earlier)
 ```
 
 `TurnSubagent` → `{ id, type?, description?, model?, state, startedAt?, endedAt?, latestText?, currentTool?, groups }`:
@@ -52,17 +65,15 @@ startedAt   = the startedAt of the view
 endedAt     = lastLineAt, only when the state is not "running"
 latestText  = plainExcerpt(lastText, 400), when not empty
 currentTool = runningToolOf(openCalls), only when the state is "running" and a call is open
-groups      = the groups of its children
+groups      = the groups of its children, in start order
 ```
 
 - `turnChangeOf(previous, next) → TurnChange | undefined`
-  - `TurnChange` → `{ type: "turn", turn }` (the whole tree), or `{ type: "update", status?, steps?, groups?, earlier?, subagents? }` with only the parts that changed.
+  - `TurnChange` → `{ type: "turn", turn }` (the whole tree), or `{ type: "update", status?, groups?, earlier?, subagents? }` with only the parts that changed.
 
 ```
-previous absent, another number, or fewer steps in next → { type: "turn", turn: next }
+previous absent, or another number → { type: "turn", turn: next }
 status         → next.status, when different
-steps          → [{ index, step }] for each step of next that is not the same object as the step
-                 at that index in previous (new steps included)
 groups/earlier → the whole value of next, when different
 subagents      → each subagent of next that is new or has a different field
 nothing changed → undefined
@@ -71,15 +82,17 @@ nothing changed → undefined
 ## Rules and invariants
 
 - The input is not changed. `turnTreeOf` reads the model only.
+- A new text or tool call of the main conversation changes no part of the tree.
 - A subagent that left the tree is absent from `subagents`; an update does not name it.
 - A finished or stopped subagent is in `subagents` only when it is in the tree, or nested under a subagent that shows.
 - The tree has no loop: a nested group never holds a subagent that contains it.
 
 ## Dependencies
 
-- TurnModel (`TurnStep`, `SubagentView`)
+- TurnModel (`SubagentView`, `StepLink`)
 - plainExcerpt, runningToolOf, SessionState of SessionStateTracker (module sessions)
 
 ## Requirements served
 
-- `plan-session_activity/REQ-28`, `plan-session_activity/REQ-31`, `plan-session_activity/REQ-32`, `plan-session_activity/REQ-33`, `plan-session_activity/REQ-34`, `plan-session_activity/REQ-35`, `plan-session_activity/REQ-36`, `plan-session_activity/REQ-37`, `plan-session_activity/REQ-38`, `plan-session_activity/REQ-39`, `plan-session_activity/REQ-40`, `plan-session_activity/REQ-41`, `plan-session_activity/REQ-44`
+- `plan-session_activity/REQ-28`, `plan-session_activity/REQ-32`, `plan-session_activity/REQ-33`, `plan-session_activity/REQ-34`, `plan-session_activity/REQ-35`, `plan-session_activity/REQ-36`, `plan-session_activity/REQ-37`, `plan-session_activity/REQ-38`, `plan-session_activity/REQ-39`, `plan-session_activity/REQ-40`, `plan-session_activity/REQ-41`, `plan-session_activity/REQ-44`
+- `plan-subagent_panel/REQ-1`, `plan-subagent_panel/REQ-2`, `plan-subagent_panel/REQ-3`, `plan-subagent_panel/REQ-6`, `plan-subagent_panel/REQ-7`

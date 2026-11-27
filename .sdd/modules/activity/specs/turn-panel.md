@@ -25,7 +25,7 @@ Shows:
   - else → the TurnTreeView of the tree. A tree with another `number` (a new turn) starts a new TurnTreeView.
 
 Subagent conversation:
-- a card of the tree opens (SubagentCard `onOpen`) → the SubagentConversation of that subagent covers the area below the header. The tree stays in the page, hidden: its scroll place, its shown steps and its follow state are kept. The header stays.
+- a card of the tree opens (SubagentCard `onOpen`) → the SubagentConversation of that subagent covers the area below the header. The tree stays in the page, hidden: its scroll place and its follow state are kept. The header stays.
 - the bar of the conversation shows the subagent as it is in the current tree. When the subagent leaves the tree (a new turn), the bar keeps the last values seen.
 - the conversation stays open when its subagent ends or a new turn starts.
 - "Back" or Esc → the conversation closes and the tree shows again, at the same scroll place. The focus goes to the button of the card that opened it. When that button is no longer in the page, the focus goes to the tree area.
@@ -51,3 +51,4 @@ Motion (MotionTokens), as the GitExplorerPanel:
 
 - `plan-session_activity/REQ-27`, `plan-session_activity/REQ-28`, `plan-session_activity/REQ-40`, `plan-session_activity/REQ-41`, `plan-session_activity/REQ-47`, `plan-session_activity/REQ-48`
 - `plan-session_activity/REQ-49`, `plan-session_activity/REQ-53`, `plan-session_activity/REQ-54`, `plan-session_activity/REQ-55`
+- `plan-subagent_panel/REQ-6`, `plan-subagent_panel/REQ-7`

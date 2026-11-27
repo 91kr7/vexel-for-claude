@@ -2,12 +2,11 @@ import { plainExcerpt } from '../sessions/plain-excerpt.js';
 import { type RunningTool, runningToolOf } from '../sessions/running-tool.js';
 import type { SessionState } from '../sessions/session-state-tracker.js';
 import type { SubagentState } from './subagent-state.js';
-import type { SubagentView, TurnModel, TurnStep } from './turn-model.js';
+import type { SubagentView, TurnModel } from './turn-model.js';
 
 export type TurnStatus = 'none' | 'running' | 'ended';
 
 export interface SubagentGroup {
-  step: number;
   subagents: string[];
 }
 
@@ -27,21 +26,14 @@ export interface TurnSubagent {
 export interface TurnTree {
   number: number;
   status: TurnStatus;
-  steps: TurnStep[];
   groups: SubagentGroup[];
   earlier: string[];
   subagents: TurnSubagent[];
 }
 
-export interface IndexedStep {
-  index: number;
-  step: TurnStep;
-}
-
 export interface TurnUpdate {
   type: 'update';
   status?: TurnStatus;
-  steps?: IndexedStep[];
   groups?: SubagentGroup[];
   earlier?: string[];
   subagents?: TurnSubagent[];
@@ -51,7 +43,7 @@ export type TurnChange = { type: 'turn'; turn: TurnTree } | TurnUpdate;
 
 const LATEST_TEXT_LENGTH = 400;
 
-export const noTurn = (): TurnTree => ({ number: 0, status: 'none', steps: [], groups: [], earlier: [], subagents: [] });
+export const noTurn = (): TurnTree => ({ number: 0, status: 'none', groups: [], earlier: [], subagents: [] });
 
 const nonEmpty = (value: string | undefined) => (value ? value : undefined);
 
@@ -63,19 +55,30 @@ function append<T>(map: Map<string, T[]>, key: string, value: T): void {
 
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
+const startOf = (view: SubagentView) => (view.startedAt === undefined ? Number.POSITIVE_INFINITY : Date.parse(view.startedAt));
+
+const byStart = (a: SubagentView, b: SubagentView) => (startOf(a) === startOf(b) ? 0 : startOf(a) - startOf(b));
+
+const stepOf = (view: SubagentView) => view.startedBy?.step ?? 0;
+
+function joinsGroup(view: SubagentView, last: SubagentView): boolean {
+  const message = view.startedBy?.message;
+  const lastMessage = last.startedBy?.message;
+  if (message !== undefined && lastMessage !== undefined) return message === lastMessage;
+  return stepOf(view) - stepOf(last) <= 1;
+}
+
 function groupsOf(children: readonly SubagentView[]): SubagentGroup[] {
-  const stepOf = (view: SubagentView) => view.startedBy?.step ?? 0;
-  const groups: SubagentGroup[] = [];
+  const groups: SubagentView[][] = [];
   for (const view of [...children].sort((a, b) => stepOf(a) - stepOf(b))) {
     const last = groups.at(-1);
-    if (last && stepOf(view) - last.step <= 1) {
-      last.step = stepOf(view);
-      last.subagents.push(view.id);
-    } else {
-      groups.push({ step: stepOf(view), subagents: [view.id] });
-    }
+    if (last && joinsGroup(view, last.at(-1)!)) last.push(view);
+    else groups.push([view]);
   }
-  return groups;
+  return groups
+    .map((views) => views.sort(byStart))
+    .sort((a, b) => byStart(a[0]!, b[0]!))
+    .map((views) => ({ subagents: views.map((view) => view.id) }));
 }
 
 function subagentOf(view: SubagentView, groups: SubagentGroup[]): TurnSubagent {
@@ -99,7 +102,7 @@ function subagentOf(view: SubagentView, groups: SubagentGroup[]): TurnSubagent {
   };
 }
 
-export function turnTreeOf(model: Pick<TurnModel, 'turnNumber' | 'steps' | 'subagents'>, state: SessionState): TurnTree {
+export function turnTreeOf(model: Pick<TurnModel, 'turnNumber' | 'subagents'>, state: SessionState): TurnTree {
   const number = model.turnNumber();
   if (number === 0) return noTurn();
   const views = model.subagents(state === 'ended');
@@ -126,35 +129,32 @@ export function turnTreeOf(model: Pick<TurnModel, 'turnNumber' | 'steps' | 'suba
     }
   };
   show(mainChildren);
-  const earlier: string[] = [];
+  const earlier: SubagentView[] = [];
   for (;;) {
     const candidates = views.filter((view) => view.state === 'running' && !shown.has(view.id));
     if (candidates.length === 0) break;
     const ids = new Set(candidates.map((view) => view.id));
     const roots = candidates.filter((view) => view.startedBy?.parent === undefined || !ids.has(view.startedBy.parent));
     const next = roots.length > 0 ? roots : candidates.slice(0, 1);
-    earlier.push(...next.map((view) => view.id));
+    earlier.push(...next);
     show(next);
   }
   return {
     number,
     status: state === 'working' || state === 'needs_input' ? 'running' : 'ended',
-    steps: model.steps(),
     groups: groupsOf(mainChildren),
-    earlier,
+    earlier: earlier.sort(byStart).map((view) => view.id),
     subagents: views.filter((view) => shown.has(view.id)).map((view) => subagentOf(view, groupsOf(placed.get(view.id) ?? []))),
   };
 }
 
 export function turnChangeOf(previous: TurnTree | undefined, next: TurnTree): TurnChange | undefined {
-  if (!previous || previous.number !== next.number || next.steps.length < previous.steps.length) return { type: 'turn', turn: next };
-  const steps = next.steps.flatMap((step, index) => (step === previous.steps[index] ? [] : [{ index, step }]));
+  if (!previous || previous.number !== next.number) return { type: 'turn', turn: next };
   const before = new Map(previous.subagents.map((subagent) => [subagent.id, subagent]));
   const subagents = next.subagents.filter((subagent) => !sameJson(subagent, before.get(subagent.id)));
   const update: TurnUpdate = {
     type: 'update',
     ...(previous.status !== next.status && { status: next.status }),
-    ...(steps.length > 0 && { steps }),
     ...(!sameJson(previous.groups, next.groups) && { groups: next.groups }),
     ...(!sameJson(previous.earlier, next.earlier) && { earlier: next.earlier }),
     ...(subagents.length > 0 && { subagents }),

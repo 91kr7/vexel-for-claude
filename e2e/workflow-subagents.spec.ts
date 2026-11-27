@@ -1,4 +1,4 @@
-// e2e of plan-session_activity, batch workflow-subagents. The tests write the transcripts, workflow run folders, journals and metadata that Claude Code would write.
+// e2e of plan-session_activity (batch workflow-subagents) and plan-subagent_panel. The tests write the transcripts, workflow run folders, journals and metadata that Claude Code would write.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { appendFile, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -48,8 +48,8 @@ const panel = (page: Page) => mainArea(page).getByRole('region', { name: 'Turn P
 const subConversation = (page: Page) => panel(page).getByRole('region', { name: 'Subagent Conversation', exact: true });
 const cards = (scope: Locator) => scope.getByRole('article', { name: `Subagent: ${TYPE}`, exact: true });
 const card = (page: Page, label: string) => cards(panel(page)).filter({ has: page.getByText(label, { exact: true }) });
-/** The step of the turn tree whose tool name is `name`, with the group it started. */
-const toolStep = (page: Page, name: string) => panel(page).locator('li.turn-step').filter({ has: page.locator('.turn-step-name').getByText(name, { exact: true }) });
+/** How many distinct parent elements (group grids) hold the cards. */
+const gridCount = (scope: Locator) => scope.evaluateAll((els) => new Set(els.map((el) => el.parentElement)).size);
 
 const iso = (ms: number) => new Date(ms).toISOString();
 const uuid = () => crypto.randomUUID();
@@ -95,6 +95,13 @@ function claudeSession(folder: string, claudeSessionId: string) {
   cleanup.push({ files: [projectDir(folder)] });
   return {
     write: (...entries: Line[]) => writeLines(main, entries),
+    subagent: (agentId: string) => {
+      const file = path.join(projectDir(folder), claudeSessionId, 'subagents', `agent-${agentId}.jsonl`);
+      return {
+        write: (...entries: Line[]) => writeLines(file, entries),
+        meta: (meta: object) => writeFile(file.replace(/\.jsonl$/, '.meta.json'), JSON.stringify(meta)),
+      };
+    },
     journal: (runId: string, ...entries: Line[]) => writeLines(path.join(runDir(runId), 'journal.jsonl'), entries),
     agent: (runId: string, agentId: string) => {
       const file = path.join(runDir(runId), `agent-${agentId}.jsonl`);
@@ -246,8 +253,8 @@ test.describe('Workflow subagents', () => {
     await expect(stallLine(row), 'the signal goes at the next activity of the agent').toHaveCount(0, PROMPTLY);
   });
 
-  // plan-session_activity/REQ-58 — scenario "The turn panel shows the agents of a workflow"
-  test('the turn panel shows the 4 agents of a workflow side by side as one group at the Workflow step, each with its fields', async ({ page }) => {
+  // plan-session_activity/REQ-58, plan-subagent_panel/REQ-1 — scenario "The turn panel shows the agents of a workflow"
+  test('the turn panel shows the 4 agents of a workflow side by side as one group, each with its fields, and no step', async ({ page }) => {
     const folder = await newFolder('panel');
     const sessionId = uuid();
     const files = claudeSession(folder, sessionId);
@@ -258,10 +265,8 @@ test.describe('Workflow subagents', () => {
     await openSession(page, folder, true);
     await openPanel(page);
 
-    const workflow = toolStep(page, 'Workflow');
-    await expect(cards(workflow)).toHaveCount(4, PROMPTLY);
-    await expect(cards(panel(page)), 'no other subagent in the tree').toHaveCount(4);
-    await expect(workflow.locator(':scope > .subagent-group'), 'one group').toHaveCount(1);
+    await expect(cards(panel(page))).toHaveCount(4, PROMPTLY);
+    expect(await gridCount(cards(panel(page))), 'one group').toBe(1);
     for (const { label, model, command } of AGENTS) {
       const agent = card(page, label);
       await expect(agent, label).toHaveCount(1);
@@ -272,17 +277,50 @@ test.describe('Workflow subagents', () => {
       await expect(agent.getByText(`Reading ${label}`, { exact: true })).toBeVisible();
       await expect(agent).toContainText(`Bash: ${command}`);
     }
+    for (const text of ['I launch the review workflow', 'The review runs in the background', 'Review the batch']) {
+      await expect(panel(page), `no message of the main conversation: ${text}`).not.toContainText(text);
+    }
 
-    const boxes = await Promise.all((await cards(workflow).all()).map((at) => box(at)));
+    const boxes = await Promise.all((await cards(panel(page)).all()).map((at) => box(at)));
     expect(new Set(boxes.map((b) => Math.round(b.y))).size, 'side by side: fewer rows than agents').toBeLessThan(4);
     expect(Math.abs(boxes[0]!.y - boxes[1]!.y), 'the first two in one row').toBeLessThanOrEqual(1);
     expect(boxes[1]!.x, 'the second at the right of the first').toBeGreaterThan(boxes[0]!.x + boxes[0]!.width - 1);
-    const call = await box(workflow.locator('.turn-step-tool'));
-    const next = await box(panel(page).getByText('The review runs in the background', { exact: true }));
-    for (const b of boxes) {
-      expect(b.y, 'the group under the Workflow step').toBeGreaterThanOrEqual(call.y + call.height - 1);
-      expect(b.y + b.height, 'the group above the next step').toBeLessThanOrEqual(next.y + 1);
+  });
+
+  // plan-subagent_panel/REQ-2, REQ-3 — scenario "A workflow sits at the start of its first agent"
+  test('puts a subagent started before the first agent of a workflow above the workflow group, launched earlier', async ({ page }) => {
+    const folder = await newFolder('order');
+    const sessionId = uuid();
+    const files = claudeSession(folder, sessionId);
+    const t0 = Math.floor(Date.now() / 1000) * 1000;
+    await files.write(
+      userText('Review and test the batch', iso(t0 - 90_000)),
+      claudeSays([toolUse('wf', 'Workflow', { workflow: 'review' })], iso(t0 - 80_000)),
+      launched('wf', 'wf_order', 'task-order', iso(t0 - 79_000)),
+      claudeSays('The review runs, now the tests', iso(t0 - 70_000)),
+      claudeSays([toolUse('tester-call', 'Agent', { description: 'Run the tests', prompt: 'Test', subagent_type: 'sdd-tester' })], iso(t0 - 60_000)),
+    );
+    const tester = files.subagent('tester');
+    await tester.write(userText('Run the tests', iso(t0 - 50_000), true), claudeSays('Running the suite', iso(t0 - 45_000), true));
+    await tester.meta({ agentType: 'sdd-tester', description: 'Run the tests', toolUseId: 'tester-call' });
+    await files.journal('wf_order', { type: 'launched' }, ...AGENTS.slice(0, 2).map(({ id, label }) => ({ type: 'started', agentId: id, label, phase: 'review' })));
+    for (const { id, label } of AGENTS.slice(0, 2)) {
+      const agent = files.agent('wf_order', id);
+      await agent.meta({ agentType: TYPE, description: label, workflowPhase: 'review' });
+      await agent.write(userText(`Review ${label}`, iso(t0 - 40_000), true), claudeSays(`Reading ${label}`, iso(t0 - 35_000), true));
     }
+    await runInTerminal(sessionId, folder);
+    await openSession(page, folder, true);
+    await openPanel(page);
+
+    const testerCard = panel(page).getByRole('article', { name: 'Subagent: sdd-tester', exact: true });
+    await expect(testerCard).toBeVisible(PROMPTLY);
+    await expect(cards(panel(page))).toHaveCount(2, PROMPTLY);
+    expect(await gridCount(cards(panel(page))), 'the workflow agents form one group').toBe(1);
+    const [testerBox, first, second] = [await box(testerCard), await box(cards(panel(page)).nth(0)), await box(cards(panel(page)).nth(1))];
+    expect(first.y, 'the workflow group under the sdd-tester card').toBeGreaterThan(testerBox.y + testerBox.height - 1);
+    expect(Math.abs(first.y - second.y), 'the workflow agents side by side').toBeLessThanOrEqual(1);
+    await expect(panel(page)).not.toContainText('The review runs, now the tests');
   });
 
   // plan-session_activity/REQ-59 — scenario "The conversation of a workflow agent"
