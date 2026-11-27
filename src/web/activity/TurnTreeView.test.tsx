@@ -17,6 +17,20 @@ const leaf = (host: Element, text: string) => [...host.querySelectorAll('*')].fi
 const isBefore = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 const scrollArea = (host: Element) => host.querySelector<HTMLElement>('[tabindex="0"]')!;
 const emptyState = (host: Element) => host.querySelector('.area-state');
+const groupOf = (host: Element, type: string) => card(host, type)!.closest('.subagent-group');
+/** How many groups hold the row: 1 for level 0. */
+const depthOf = (host: Element, type: string) => {
+  let depth = 0;
+  for (let at = groupOf(host, type); at; at = at.parentElement?.closest('.subagent-group') ?? null) depth += 1;
+  return depth;
+};
+/** The line and the tick drawn beside the row, in its own place of its group. */
+const marksOf = (host: Element, type: string) => {
+  const member = card(host, type)!.parentElement!;
+  return { line: member.querySelector(':scope > .subagent-line') !== null, tick: member.querySelector(':scope > .subagent-tick') !== null };
+};
+const NO_MARK = { line: false, tick: false };
+const MARKED = { line: true, tick: true };
 
 beforeEach(() => {
   vi.useFakeTimers({ now: NOW });
@@ -36,8 +50,8 @@ describe('TurnTreeView, content', () => {
     expect(scrollArea(host).contains(card(host, 'type-a'))).toBe(true);
   });
 
-  // plan-subagent_panel/REQ-2, REQ-3: the groups one under the other in the order of the tree, each group as one grid of its cards in order
-  it('shows the groups in the order of the tree, each one as its own grid', () => {
+  // plan-subagent_panel/REQ-2, REQ-3, REQ-10: the groups in the order of the tree, each one the list of its rows in order
+  it('shows the groups in the order of the tree, each one as its own list of rows', () => {
     const host = mount(
       <TurnTreeView
         turn={turn({
@@ -47,10 +61,9 @@ describe('TurnTreeView, content', () => {
       />,
     );
     expect(cardTypes(host)).toEqual(['type-b', 'type-c', 'type-a', 'type-d']);
-    const gridOf = (type: string) => card(host, type)!.parentElement!;
-    expect(gridOf('type-c'), 'the cards of one group share a grid').toBe(gridOf('type-a'));
-    expect(gridOf('type-b')).not.toBe(gridOf('type-c'));
-    expect(gridOf('type-d')).not.toBe(gridOf('type-c'));
+    expect(groupOf(host, 'type-c'), 'the rows of one group share a list').toBe(groupOf(host, 'type-a'));
+    expect(groupOf(host, 'type-b')).not.toBe(groupOf(host, 'type-c'));
+    expect(groupOf(host, 'type-d')).not.toBe(groupOf(host, 'type-c'));
   });
 
   // turn-tree-view spec: an id with no subagent shows nothing
@@ -59,20 +72,66 @@ describe('TurnTreeView, content', () => {
     expect(host.querySelectorAll('article')).toHaveLength(1);
   });
 
-  // plan-session_activity/REQ-38: a nested group shows inside the card of the parent
-  it('shows the nested groups inside the card of the parent', () => {
+  // plan-subagent_panel/REQ-9: a nested row shows after the row of its parent and before the next row of the parent level, one level deeper
+  it('shows the nested rows after the row of their parent, outside it, one level deeper at each depth', () => {
     const host = mount(
       <TurnTreeView
         turn={turn({
-          groups: [{ subagents: ['p'] }],
-          subagents: [subagent('p', { groups: [{ subagents: ['c'] }] }), subagent('c', { groups: [{ subagents: ['g'] }] }), subagent('g')],
+          groups: [{ subagents: ['p', 'q'] }],
+          subagents: [subagent('p', { groups: [{ subagents: ['c'] }] }), subagent('c', { groups: [{ subagents: ['g'] }] }), subagent('g', { groups: [{ subagents: ['l3'] }] }), subagent('l3'), subagent('q')],
         })}
       />,
     );
-    const parent = card(host, 'type-p')!;
-    const child = card(host, 'type-c')!;
-    expect(parent.contains(child)).toBe(true);
-    expect(child.contains(card(host, 'type-g'))).toBe(true);
+    expect(cardTypes(host)).toEqual(['type-p', 'type-c', 'type-g', 'type-l3', 'type-q']);
+    for (const [parent, child] of [
+      ['type-p', 'type-c'],
+      ['type-c', 'type-g'],
+      ['type-g', 'type-l3'],
+    ] as const) {
+      expect(card(host, parent)!.contains(card(host, child)), `${child} outside the row of ${parent}`).toBe(false);
+      expect(depthOf(host, child), `${child} one level deeper than ${parent}`).toBe(depthOf(host, parent) + 1);
+    }
+    expect(depthOf(host, 'type-q')).toBe(depthOf(host, 'type-p'));
+  });
+
+  // plan-subagent_panel/REQ-10, REQ-11, REQ-12: a group of two or more marks each member row; a group of one and the rows nested under a member have no mark
+  it('draws a line and a tick beside each member row of a group of two or more, and none beside a row of a group of one', () => {
+    const host = mount(
+      <TurnTreeView
+        turn={turn({
+          groups: [{ subagents: ['solo'] }, { subagents: ['d1', 'd2'] }],
+          subagents: [subagent('solo'), subagent('d1', { groups: [{ subagents: ['t'] }] }), subagent('t'), subagent('d2')],
+        })}
+      />,
+    );
+    expect(marksOf(host, 'type-solo')).toEqual(NO_MARK);
+    expect(marksOf(host, 'type-d1')).toEqual(MARKED);
+    expect(marksOf(host, 'type-d2')).toEqual(MARKED);
+    expect(marksOf(host, 'type-t'), 'a nested row is no member of the group of its parent').toEqual(NO_MARK);
+    expect(host.querySelectorAll('.subagent-tick')).toHaveLength(2);
+  });
+
+  // turn-tree-view spec: the line and the ticks are hidden from assistive technologies
+  it('hides the line and the ticks from assistive technologies', () => {
+    const host = mount(<TurnTreeView turn={turn({ groups: [{ subagents: ['a', 'b'] }], subagents: [subagent('a'), subagent('b')] })} />);
+    const marks = [...host.querySelectorAll('.subagent-line, .subagent-tick')];
+    expect(marks).toHaveLength(4);
+    for (const mark of marks) expect(mark.closest('[aria-hidden="true"]')).not.toBeNull();
+  });
+
+  // turn-tree-view spec: a group counts its shown rows: one row shown → no mark
+  it('draws no mark for a group with one shown row', () => {
+    const host = mount(<TurnTreeView turn={turn({ groups: [{ subagents: ['ghost', 'a'] }], subagents: [subagent('a')] })} />);
+    expect(marksOf(host, 'type-a')).toEqual(NO_MARK);
+  });
+
+  // plan-subagent_panel/REQ-10, REQ-12: the groups of earlier turns follow the same rule
+  it('marks the member rows of a group of earlier turns, and not a group of one', () => {
+    const host = mount(<TurnTreeView turn={turn({ earlier: [{ subagents: ['e1', 'e2'] }, { subagents: ['e3'] }], subagents: [subagent('e1'), subagent('e2'), subagent('e3')] })} />);
+    expect(marksOf(host, 'type-e1')).toEqual(MARKED);
+    expect(marksOf(host, 'type-e2')).toEqual(MARKED);
+    expect(marksOf(host, 'type-e3')).toEqual(NO_MARK);
+    expect(groupOf(host, 'type-e1')).toBe(groupOf(host, 'type-e2'));
   });
 
   // plan-session_activity/REQ-39: the running subagents of earlier turns in their own section, above the groups of the turn

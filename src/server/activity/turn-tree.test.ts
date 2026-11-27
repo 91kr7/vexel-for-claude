@@ -7,6 +7,7 @@ const view = (id: string, fields: Partial<SubagentView> = {}): SubagentView => (
 const at = (main: number, message?: string) => ({ startedBy: { step: main, ...(message !== undefined && { message }) } });
 const under = (parent: string, step: number, message?: string) => ({ startedBy: { parent, step, ...(message !== undefined && { message }) } });
 const startedAt = (minute: number) => ({ startedAt: `2026-11-27T10:${String(minute).padStart(2, '0')}:00.000Z` });
+const group = (...ids: string[]) => ({ subagents: ids });
 
 /** A model with the given turn number and views; it records the sessionEnded argument it gets. */
 function modelOf(number: number, views: SubagentView[]) {
@@ -194,16 +195,16 @@ describe('turnTreeOf, start order', () => {
     expect(subagentOf(tree, 'p')?.groups).toEqual([{ subagents: ['c-late-step'] }, { subagents: ['d-2', 'd-1'] }, { subagents: ['c-early-step'] }]);
   });
 
-  // plan-subagent_panel/REQ-2: earlier subagents sort by start; a missing start sorts last
+  // plan-subagent_panel/REQ-2: earlier groups sort by start; a missing start sorts last
   it('sorts the subagents of earlier turns by start, a missing start last', () => {
     const tree = treeOf([view('old-none'), view('old-late', startedAt(30)), view('old-early', startedAt(1)), view('in-tree', { ...at(0), ...startedAt(40) })]);
-    expect(tree.earlier).toEqual(['old-early', 'old-late', 'old-none']);
+    expect(tree.earlier).toEqual([group('old-early'), group('old-late'), group('old-none')]);
   });
 
   // turn-tree spec: equal starts, or both missing, keep the known order for earlier
   it('keeps the known order of earlier subagents for equal or missing starts', () => {
-    expect(treeOf([view('x', startedAt(3)), view('y', startedAt(3)), view('z', startedAt(3))]).earlier).toEqual(['x', 'y', 'z']);
-    expect(treeOf([view('m'), view('n')]).earlier).toEqual(['m', 'n']);
+    expect(treeOf([view('x', startedAt(3)), view('y', startedAt(3)), view('z', startedAt(3))]).earlier).toEqual([group('x'), group('y'), group('z')]);
+    expect(treeOf([view('m'), view('n')]).earlier).toEqual([group('m'), group('n')]);
   });
 });
 
@@ -211,7 +212,7 @@ describe('turnTreeOf, subagents of earlier turns', () => {
   // plan-session_activity/REQ-39: a running subagent with no step in the current turn is in "earlier"
   it('lists the running subagents that are not in the tree in earlier, in the order they became known', () => {
     const tree = treeOf([view('old-1'), view('in-tree', at(0)), view('old-2', under('gone', 3)), view('done', { state: 'finished' }), view('stopped', { state: 'stopped' })]);
-    expect(tree.earlier).toEqual(['old-1', 'old-2']);
+    expect(tree.earlier).toEqual([group('old-1'), group('old-2')]);
     expect(tree.groups).toEqual([{ subagents: ['in-tree'] }]);
     expect(tree.subagents.map((subagent) => subagent.id)).toEqual(['old-1', 'in-tree', 'old-2']);
   });
@@ -219,7 +220,7 @@ describe('turnTreeOf, subagents of earlier turns', () => {
   // plan-session_activity/REQ-38, REQ-39: the children of an earlier subagent show under it, not in earlier
   it('nests the children of an earlier subagent under it, finished ones included', () => {
     const tree = treeOf([view('old'), view('child', under('old', 2)), view('done-child', { ...under('old', 3), state: 'finished' })]);
-    expect(tree.earlier).toEqual(['old']);
+    expect(tree.earlier).toEqual([group('old')]);
     expect(subagentOf(tree, 'old')?.groups).toEqual([{ subagents: ['child', 'done-child'] }]);
     expect(tree.subagents.map((subagent) => subagent.id)).toEqual(['old', 'child', 'done-child']);
   });
@@ -227,7 +228,7 @@ describe('turnTreeOf, subagents of earlier turns', () => {
   // turn-tree spec: a loop of parents with no other root counts its first view as an earlier one; each view shows once
   it('breaks a loop of parents at its first view, and shows each view once', () => {
     const tree = treeOf([view('x', under('y', 1)), view('y', under('x', 2))]);
-    expect(tree.earlier).toEqual(['x']);
+    expect(tree.earlier).toEqual([group('x')]);
     expect(subagentOf(tree, 'x')?.groups).toEqual([{ subagents: ['y'] }]);
     expect(subagentOf(tree, 'y')?.groups).toEqual([]);
     expect(tree.subagents.map((subagent) => subagent.id)).toEqual(['x', 'y']);
@@ -238,6 +239,50 @@ describe('turnTreeOf, subagents of earlier turns', () => {
     const tree = treeOf([view('done', { state: 'finished' }), view('cut', { state: 'stopped' }), view('done-child', { ...under('done', 1), state: 'finished' })]);
     expect(tree.earlier).toEqual([]);
     expect(tree.subagents).toEqual([]);
+  });
+});
+
+describe('turnTreeOf, groups of earlier turns', () => {
+  // plan-subagent_panel/REQ-10, REQ-12: the subagents of one message of an earlier turn form one group, another message another group
+  it('groups the earlier subagents by the message of their call', () => {
+    const tree = treeOf([
+      view('dev-1', { earlierMessage: 'msg_developers', ...startedAt(1) }),
+      view('tester', { earlierMessage: 'msg_tester', ...startedAt(2) }),
+      view('dev-2', { earlierMessage: 'msg_developers', ...startedAt(1) }),
+    ]);
+    expect(tree.earlier).toEqual([group('dev-1', 'dev-2'), group('tester')]);
+  });
+
+  // turn-tree spec: the message of an earlier subagent is its startedBy.message, else its earlierMessage
+  it('takes the message of the link of an earlier subagent whose parent does not show, before its earlier message', () => {
+    const tree = treeOf([view('a', under('gone', 1, 'msg_sub')), view('b', { earlierMessage: 'msg_sub' }), view('c', { ...under('gone', 2, 'msg_c'), earlierMessage: 'msg_sub' })]);
+    expect(tree.earlier).toEqual([group('a', 'b'), group('c')]);
+  });
+
+  // turn-tree spec: an earlier subagent with no message is a group of its own; the step rule does not apply to earlier
+  it('makes a group of its own of each earlier subagent with no message', () => {
+    const tree = treeOf([view('x', { ...under('gone', 1), ...startedAt(1) }), view('y', { ...under('gone', 2), ...startedAt(1) }), view('z', startedAt(1))]);
+    expect(tree.earlier).toEqual([group('x'), group('y'), group('z')]);
+  });
+
+  // plan-subagent_panel/REQ-12, plan-session_activity/REQ-39: a group of earlier holds only running subagents, so one left is a group of one
+  it('keeps only the running subagents in a group of earlier', () => {
+    const tree = treeOf([view('done', { earlierMessage: 'm', state: 'finished' }), view('cut', { earlierMessage: 'm', state: 'stopped' }), view('left', { earlierMessage: 'm' })]);
+    expect(tree.earlier).toEqual([group('left')]);
+    expect(tree.subagents.map((subagent) => subagent.id)).toEqual(['left']);
+  });
+
+  // plan-subagent_panel/REQ-2: the groups of earlier sort by their earliest start, their subagents by start, a missing start last
+  it('sorts the groups of earlier and their subagents by start', () => {
+    const tree = treeOf([
+      view('late-1', { earlierMessage: 'm-late', ...startedAt(20) }),
+      view('no-start', { earlierMessage: 'm-early' }),
+      view('early-2', { earlierMessage: 'm-early', ...startedAt(9) }),
+      view('early-1', { earlierMessage: 'm-early', ...startedAt(3) }),
+      view('solo-no-start'),
+      view('late-0', { earlierMessage: 'm-late', ...startedAt(5) }),
+    ]);
+    expect(tree.earlier).toEqual([group('early-1', 'early-2', 'no-start'), group('late-0', 'late-1'), group('solo-no-start')]);
   });
 });
 
@@ -361,6 +406,16 @@ describe('turnChangeOf', () => {
     const earlier = [{ subagents: ['z'] }];
     const update = turnChangeOf(previous, { ...previous, groups, earlier, subagents: previous.subagents });
     expect(update).toEqual({ type: 'update', groups, earlier });
+  });
+
+  // plan-subagent_panel/REQ-10: earlier compares as groups: equal groups are no change, a new grouping or order is
+  it('compares earlier as groups', () => {
+    const previous: TurnTree = { ...base(), earlier: [group('x'), group('y')] };
+    expect(turnChangeOf(previous, { ...previous, earlier: [group('x'), group('y')] })).toBeUndefined();
+    const joined = [group('x', 'y')];
+    expect(turnChangeOf(previous, { ...previous, earlier: joined })).toEqual({ type: 'update', earlier: joined });
+    const reordered = [group('y'), group('x')];
+    expect(turnChangeOf(previous, { ...previous, earlier: reordered })).toEqual({ type: 'update', earlier: reordered });
   });
 
   // plan-session_activity/REQ-43: only the subagents that are new or have a changed field; one that left is not named

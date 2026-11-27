@@ -117,7 +117,7 @@ describe('useTurn, frames', () => {
     expect(state()).toEqual({ status: 'loaded', turn: first });
   });
 
-  // plan-session_activity/REQ-43, plan-subagent_panel/REQ-2: an update replaces status, groups and earlier, and replaces or adds subagents by id
+  // plan-session_activity/REQ-43, plan-subagent_panel/REQ-2, REQ-10: an update replaces status, groups and the earlier groups, and replaces or adds subagents by id
   it('applies an update to the tree', () => {
     host = mount(<Probe sessionId="s1" />);
     lastSocket().receive({
@@ -134,7 +134,7 @@ describe('useTurn, frames', () => {
       type: 'update',
       status: 'ended',
       groups: [{ subagents: ['c'] }, { subagents: ['a'] }],
-      earlier: [{ subagents: ['z'] }],
+      earlier: [{ subagents: ['y', 'z'] }],
       subagents: [
         { id: 'a', state: 'finished', groups: [] },
         { id: 'c', state: 'running', groups: [] },
@@ -144,7 +144,7 @@ describe('useTurn, frames', () => {
       turn({
         status: 'ended',
         groups: [{ subagents: ['c'] }, { subagents: ['a'] }],
-        earlier: [{ subagents: ['z'] }],
+        earlier: [{ subagents: ['y', 'z'] }],
         subagents: [
           { id: 'a', state: 'finished', groups: [] },
           { id: 'b', state: 'running', groups: [] },

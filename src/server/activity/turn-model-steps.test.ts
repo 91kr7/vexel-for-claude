@@ -312,3 +312,101 @@ describe('TurnModel, starting step of a subagent', () => {
     expect(viewOf(model, 'agent-kept')?.startedBy).toEqual({ parent: 'agent-p', step: 1 });
   });
 });
+
+describe('TurnModel, message of a call of an earlier turn', () => {
+  /** A first turn whose calls start two developers in one message and a tester in another. */
+  const backgroundTurn = (model: TurnModel) =>
+    model.addMainEntries([
+      userSays('Start the work in the background', at(0)),
+      inMessage(toolCall('d1', 'Agent', agentInput('First'), at(1)), 'msg_developers'),
+      inMessage(toolCall('d2', 'Agent', agentInput('Second'), at(1)), 'msg_developers'),
+      toolResult('d1', at(2)),
+      toolResult('d2', at(2)),
+      inMessage(toolCall('t', 'Agent', agentInput('Test'), at(3)), 'msg_tester'),
+      toolResult('t', at(3)),
+    ]);
+  const linksOf = (model: TurnModel, id: string) => {
+    const view = viewOf(model, id);
+    return { startedBy: view?.startedBy, earlierMessage: view?.earlierMessage };
+  };
+
+  // plan-subagent_panel/REQ-10, REQ-12: a subagent of a call of an earlier turn has no starting step, and keeps the message id of its call
+  it('gives the message id of the call to a subagent whose metadata comes in a later turn', () => {
+    const model = new TurnModel();
+    backgroundTurn(model);
+    model.addMainEntries([userSays('And now?', at(4))]);
+    model.setSubagentMeta('agent-d1', { toolUseId: 'd1' });
+    model.setSubagentMeta('agent-d2', { toolUseId: 'd2' });
+    model.setSubagentMeta('agent-t', { toolUseId: 't' });
+    expect(linksOf(model, 'agent-d1')).toEqual({ startedBy: undefined, earlierMessage: 'msg_developers' });
+    expect(linksOf(model, 'agent-d2')).toEqual({ startedBy: undefined, earlierMessage: 'msg_developers' });
+    expect(linksOf(model, 'agent-t')).toEqual({ startedBy: undefined, earlierMessage: 'msg_tester' });
+  });
+
+  // plan-subagent_panel/REQ-10: a subagent linked in its own turn keeps the message id of its call once a new turn starts
+  it('keeps the message id of a subagent linked in its own turn after a new turn', () => {
+    const model = new TurnModel();
+    backgroundTurn(model);
+    model.setSubagentMeta('agent-d1', { toolUseId: 'd1' });
+    expect(linksOf(model, 'agent-d1'), 'an earlier message only with no starting step').toEqual({ startedBy: { step: 0, message: 'msg_developers' }, earlierMessage: undefined });
+    model.addMainEntries([userSays('And now?', at(4))]);
+    expect(linksOf(model, 'agent-d1')).toEqual({ startedBy: undefined, earlierMessage: 'msg_developers' });
+  });
+
+  // turn-model spec: the message id is found whether the metadata comes before or after the call
+  it('finds the message id when the metadata came before the call', () => {
+    const model = new TurnModel();
+    model.setSubagentMeta('agent-t', { toolUseId: 't' });
+    backgroundTurn(model);
+    model.addMainEntries([userSays('And now?', at(4))]);
+    expect(linksOf(model, 'agent-t')).toEqual({ startedBy: undefined, earlierMessage: 'msg_tester' });
+  });
+
+  // turn-model spec: once found, the message id stays, whatever the calls that come after
+  it('keeps a found message id after thousands of later calls', () => {
+    const model = new TurnModel();
+    backgroundTurn(model);
+    model.addMainEntries([userSays('And now?', at(4))]);
+    model.setSubagentMeta('agent-t', { toolUseId: 't' });
+    model.addMainEntries([inMessage(claudeSays(Array.from({ length: 2_100 }, (_, i) => toolUse(`later-${i}`, 'Bash', { command: 'ls' })), at(5)), 'msg_later'), userSays('Third', at(6))]);
+    expect(linksOf(model, 'agent-t')).toEqual({ startedBy: undefined, earlierMessage: 'msg_tester' });
+  });
+
+  // turn-model spec: a call line with no message id, an unknown call, or no tool use id → no earlier message
+  it('gives no earlier message for a call with no message id, an unknown call, or no tool use id', () => {
+    const model = new TurnModel();
+    model.addMainEntries([userSays('Go', at(0)), toolCall('plain', 'Agent', agentInput('No message id'), at(1)), userSays('Next', at(2))]);
+    model.setSubagentMeta('agent-plain', { toolUseId: 'plain' });
+    model.setSubagentMeta('agent-unknown', { toolUseId: 'nowhere' });
+    model.setSubagentMeta('agent-none', { agentType: 'Explore' });
+    for (const id of ['agent-plain', 'agent-unknown', 'agent-none']) expect(linksOf(model, id), id).toEqual({ startedBy: undefined, earlierMessage: undefined });
+  });
+
+  // turn-model spec: a call of the main conversation is remembered among the latest 2,000 such calls of the session
+  it('remembers only the latest 2,000 calls of the main conversation for a metadata that comes later', () => {
+    const model = new TurnModel();
+    const calls = Array.from({ length: 2_001 }, (_, i) => toolUse(`c${i}`, 'Agent', agentInput(`Task ${i}`)));
+    model.addMainEntries([userSays('Go', at(0)), inMessage(claudeSays(calls, at(1)), 'msg_many'), userSays('Next', at(2))]);
+    model.setSubagentMeta('agent-dropped', { toolUseId: 'c0' });
+    model.setSubagentMeta('agent-kept', { toolUseId: 'c1' });
+    expect(viewOf(model, 'agent-dropped')?.earlierMessage).toBeUndefined();
+    expect(viewOf(model, 'agent-kept')?.earlierMessage).toBe('msg_many');
+  });
+
+  // turn-model spec: at most 2,000 calls of the main conversation and 2,000 calls of subagents: one kind does not push out the other
+  it('keeps the calls of the main conversation and of subagents in two memories', () => {
+    const many = (prefix: string) => Array.from({ length: 2_001 }, (_, i) => toolUse(`${prefix}${i}`, 'Bash', { command: 'ls' }));
+    const mainFirst = new TurnModel();
+    mainFirst.addMainEntries([userSays('Go', at(0)), inMessage(toolCall('main', 'Agent', agentInput('Background'), at(1)), 'msg_main')]);
+    mainFirst.addSubagentEntries('agent-p', [claudeSays(many('s'), at(2), true)]);
+    mainFirst.addMainEntries([userSays('Next', at(3))]);
+    mainFirst.setSubagentMeta('agent-bg', { toolUseId: 'main' });
+    expect(viewOf(mainFirst, 'agent-bg')?.earlierMessage, 'not pushed out by 2,001 subagent calls').toBe('msg_main');
+
+    const subagentFirst = new TurnModel();
+    subagentFirst.addSubagentEntries('agent-p', [subCall('sub', 'Agent', agentInput('Child'), at(1))]);
+    subagentFirst.addMainEntries([userSays('Go', at(2)), inMessage(claudeSays(many('m'), at(3)), 'msg_more')]);
+    subagentFirst.setSubagentMeta('agent-child', { toolUseId: 'sub' });
+    expect(viewOf(subagentFirst, 'agent-child')?.startedBy, 'not pushed out by 2,001 main calls').toEqual({ parent: 'agent-p', step: 0 });
+  });
+});

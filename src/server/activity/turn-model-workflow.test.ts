@@ -254,6 +254,31 @@ describe('TurnModel, workflow launches', () => {
   });
 });
 
+describe('TurnModel, workflow launch of an earlier turn', () => {
+  // plan-subagent_panel/REQ-10: the agents of a launch of an earlier turn share the message id of its Workflow call, with no starting step
+  it('gives every agent of a launch of an earlier turn the message id of its Workflow call', () => {
+    const model = new TurnModel();
+    const call = workflowCall('wf-call', time(2));
+    model.addMainEntries([userSays('Review the batch', time(0)), { ...call, message: { ...(call.message as object), id: 'msg_workflow' } }, launched('wf-call', 'wf_r1', 'task-1', time(3))]);
+    addAgent(model, 'before', 4);
+    model.addMainEntries([userSays('Something else meanwhile', time(10))]);
+    addAgent(model, 'after', 11);
+    for (const id of ['agent-before', 'agent-after']) {
+      expect(viewOf(model, id)?.startedBy, id).toBeUndefined();
+      expect(viewOf(model, id)?.earlierMessage, id).toBe('msg_workflow');
+    }
+  });
+
+  // turn-model spec: a Workflow call line with no message id gives no earlier message
+  it('gives no earlier message when the Workflow call has no message id', () => {
+    const model = launchedTurn();
+    model.addMainEntries([userSays('Something else meanwhile', time(10))]);
+    addAgent(model, 'w1', 11);
+    expect(viewOf(model, 'agent-w1')).toMatchObject({ state: 'running' });
+    expect(viewOf(model, 'agent-w1')?.earlierMessage).toBeUndefined();
+  });
+});
+
 describe('TurnModel, run journal', () => {
   // turn-model spec: run journal lines
   it('knows an agent from its started or result event, and from nothing else', () => {

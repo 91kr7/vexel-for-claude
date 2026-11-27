@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Locator, type Page, expect, test } from '@playwright/test';
 import { E2E_CLAUDE_DIR } from './claude-dir';
+import { expectJoined, expectNoMark, expectOneBelowTheOther, expectRowPlace } from './subagent-rows';
 
 type Line = Record<string, unknown>;
 
@@ -48,8 +49,7 @@ const panel = (page: Page) => mainArea(page).getByRole('region', { name: 'Turn P
 const subConversation = (page: Page) => panel(page).getByRole('region', { name: 'Subagent Conversation', exact: true });
 const cards = (scope: Locator) => scope.getByRole('article', { name: `Subagent: ${TYPE}`, exact: true });
 const card = (page: Page, label: string) => cards(panel(page)).filter({ has: page.getByText(label, { exact: true }) });
-/** How many distinct parent elements (group grids) hold the cards. */
-const gridCount = (scope: Locator) => scope.evaluateAll((els) => new Set(els.map((el) => el.parentElement)).size);
+const treeArea = (page: Page) => panel(page).locator('[tabindex="0"]');
 
 const iso = (ms: number) => new Date(ms).toISOString();
 const uuid = () => crypto.randomUUID();
@@ -187,24 +187,6 @@ async function openPanel(page: Page): Promise<void> {
   await expect(panel(page)).toBeVisible();
 }
 
-/** Waits for the effects that end (list cascade, panel slide): a box read while one plays sits where the effect has moved it. */
-const effectsDone = (page: Page) =>
-  page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
-
-async function box(locator: Locator) {
-  await effectsDone(locator.page());
-  const b = await locator.boundingBox();
-  expect(b, 'element is rendered').not.toBeNull();
-  return b!;
-}
-
 test.describe('Workflow subagents', () => {
   // plan-session_activity/REQ-56 — scenario "A running workflow keeps the session at work"
   test('an idle hosted session whose workflow runs shows the latest text of a workflow agent with its type', async ({ page, request }) => {
@@ -253,8 +235,8 @@ test.describe('Workflow subagents', () => {
     await expect(stallLine(row), 'the signal goes at the next activity of the agent').toHaveCount(0, PROMPTLY);
   });
 
-  // plan-session_activity/REQ-58, plan-subagent_panel/REQ-1 — scenario "The turn panel shows the agents of a workflow"
-  test('the turn panel shows the 4 agents of a workflow side by side as one group, each with its fields, and no step', async ({ page }) => {
+  // plan-session_activity/REQ-58, plan-subagent_panel/REQ-1, REQ-8, REQ-10 — scenario "The turn panel shows the agents of a workflow"
+  test('the turn panel shows the 4 agents of a workflow as one group of rows joined by a line, each with its fields, and no step', async ({ page }) => {
     const folder = await newFolder('panel');
     const sessionId = uuid();
     const files = claudeSession(folder, sessionId);
@@ -266,7 +248,6 @@ test.describe('Workflow subagents', () => {
     await openPanel(page);
 
     await expect(cards(panel(page))).toHaveCount(4, PROMPTLY);
-    expect(await gridCount(cards(panel(page))), 'one group').toBe(1);
     for (const { label, model, command } of AGENTS) {
       const agent = card(page, label);
       await expect(agent, label).toHaveCount(1);
@@ -281,13 +262,13 @@ test.describe('Workflow subagents', () => {
       await expect(panel(page), `no message of the main conversation: ${text}`).not.toContainText(text);
     }
 
-    const boxes = await Promise.all((await cards(panel(page)).all()).map((at) => box(at)));
-    expect(new Set(boxes.map((b) => Math.round(b.y))).size, 'side by side: fewer rows than agents').toBeLessThan(4);
-    expect(Math.abs(boxes[0]!.y - boxes[1]!.y), 'the first two in one row').toBeLessThanOrEqual(1);
-    expect(boxes[1]!.x, 'the second at the right of the first').toBeGreaterThan(boxes[0]!.x + boxes[0]!.width - 1);
+    const rows = await cards(panel(page)).all();
+    await expectOneBelowTheOther(rows);
+    for (const [i, each] of rows.entries()) await expectRowPlace(treeArea(page), each, 0, `row ${i}`);
+    await expectJoined(treeArea(page), rows);
   });
 
-  // plan-subagent_panel/REQ-2, REQ-3 — scenario "A workflow sits at the start of its first agent"
+  // plan-subagent_panel/REQ-2, REQ-3, REQ-10, REQ-12 — scenario "A workflow sits at the start of its first agent"
   test('puts a subagent started before the first agent of a workflow above the workflow group, launched earlier', async ({ page }) => {
     const folder = await newFolder('order');
     const sessionId = uuid();
@@ -316,10 +297,10 @@ test.describe('Workflow subagents', () => {
     const testerCard = panel(page).getByRole('article', { name: 'Subagent: sdd-tester', exact: true });
     await expect(testerCard).toBeVisible(PROMPTLY);
     await expect(cards(panel(page))).toHaveCount(2, PROMPTLY);
-    expect(await gridCount(cards(panel(page))), 'the workflow agents form one group').toBe(1);
-    const [testerBox, first, second] = [await box(testerCard), await box(cards(panel(page)).nth(0)), await box(cards(panel(page)).nth(1))];
-    expect(first.y, 'the workflow group under the sdd-tester card').toBeGreaterThan(testerBox.y + testerBox.height - 1);
-    expect(Math.abs(first.y - second.y), 'the workflow agents side by side').toBeLessThanOrEqual(1);
+    const agents = [cards(panel(page)).nth(0), cards(panel(page)).nth(1)];
+    await expectOneBelowTheOther([testerCard, ...agents]);
+    await expectJoined(treeArea(page), agents);
+    await expectNoMark(treeArea(page), testerCard, 'the sdd-tester row');
     await expect(panel(page)).not.toContainText('The review runs, now the tests');
   });
 

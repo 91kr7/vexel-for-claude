@@ -338,12 +338,48 @@ describe('Turn route, the tree of a turn', { timeout: 30_000 }, () => {
     tracker.applyHookEvent(session.id, { hook_event_name: 'UserPromptSubmit', prompt: 'And now?', session_id: session.claudeSessionId });
     await append(session.transcript, userSays('And now?'), claudeSays('The tests still run'));
     const next = await treeWhen(client, (t) => t.number === 2, 'the new turn');
-    expect(next).toMatchObject({ status: 'running', groups: [], earlier: ['agent-bg'] });
+    expect(next).toMatchObject({ status: 'running', groups: [], earlier: [{ subagents: ['agent-bg'] }] });
     expect(subagentOf(next, 'agent-bg')).toMatchObject({ type: 'sdd-tester', state: 'running', latestText: 'Running the suite' });
 
     tracker.applyHookEvent(session.id, { hook_event_name: 'Stop' });
     const ended = await treeWhen(client, (t) => t.status === 'ended', 'the last turn ended', REQ_43_MS);
-    expect(ended).toMatchObject({ number: 2, groups: [], earlier: ['agent-bg'] });
+    expect(ended).toMatchObject({ number: 2, groups: [], earlier: [{ subagents: ['agent-bg'] }] });
+  });
+
+  // plan-subagent_panel/REQ-10, REQ-12: scenario "A group still running from earlier turns stays joined"
+  it('keeps the subagents of one message of an earlier turn in one group of earlier, and a subagent of another message in its own', async () => {
+    const session = workingHosted();
+    await append(
+      session.transcript,
+      userSays('Implement and test in the background', now(-3 * MIN)),
+      inMessage('msg_developers', claudeSays([agentUse('dev-1', 'Implement INT-1')], now(-3 * MIN))),
+      inMessage('msg_developers', claudeSays([agentUse('dev-2', 'Implement INT-2')], now(-3 * MIN))),
+      toolResult('dev-1', now(-3 * MIN)),
+      toolResult('dev-2', now(-3 * MIN)),
+      inMessage('msg_tester', claudeSays([agentUse('tester', 'Run the tests', 'sdd-tester')], now(-3 * MIN))),
+      toolResult('tester', now(-3 * MIN)),
+    );
+    for (const [agent, call, type, start] of [
+      ['agent-d1', 'dev-1', 'sdd-developer', -120],
+      ['agent-d2', 'dev-2', 'sdd-developer', -119],
+      ['agent-t', 'tester', 'sdd-tester', -110],
+    ] as const) {
+      const sub = session.subagent(agent);
+      await append(sub.file, userSays('Task', now(start * 1000), true), claudeSays('Working', now(), true));
+      await sub.meta({ agentType: type, toolUseId: call });
+    }
+    const client = await connect(session.id);
+    const first = await treeWhen(client, (t) => t.subagents.length === 3, 'the three subagents in their turn');
+    expect(first.groups).toEqual([{ subagents: ['agent-d1', 'agent-d2'] }, { subagents: ['agent-t'] }]);
+
+    await append(session.transcript, userSays('And now?'), claudeSays('They still run'));
+    const next = await treeWhen(client, (t) => t.number === 2 && t.earlier.length > 0, 'the earlier groups');
+    expect(next.groups).toEqual([]);
+    expect(next.earlier).toEqual([{ subagents: ['agent-d1', 'agent-d2'] }, { subagents: ['agent-t'] }]);
+
+    await session.subagent('agent-d1').meta({ agentType: 'sdd-developer', toolUseId: 'dev-1', finished: true });
+    const left = await treeWhen(client, (t) => t.earlier.length > 0 && t.earlier[0]!.subagents.length === 1, 'one developer left');
+    expect(left.earlier, 'a group with one running member left is a group of one').toEqual([{ subagents: ['agent-d2'] }, { subagents: ['agent-t'] }]);
   });
 
   // plan-session_activity/REQ-44: scenario "Missing data hides only its field"
