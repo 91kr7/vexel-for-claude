@@ -6,7 +6,7 @@ status: validated
 
 | Batch | Feature | REQ closed | Depends | Status | Human acceptance |
 |-------|---------|------------|---------|--------|------------------|
-| [subagents-only](batches/batch-subagents-only.md) | Turn panel with subagents only | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7 | — | implemented | The panel shows only the subagents of the turn, in start order |
+| [subagents-only](batches/batch-subagents-only.md) | Turn panel with subagents only | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7 | — | certified | The panel shows only the subagents of the turn, in start order |
 
 Execution order: `subagents-only`.
 
