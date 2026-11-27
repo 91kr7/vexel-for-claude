@@ -1,4 +1,4 @@
-// REQ tests of plan-session_activity, batch workflow-subagents, at the level of the API: GET /api/sessions, the session events,
+// REQ tests of plan-session_activity (batch workflow-subagents) and plan-subagent_panel, at the level of the API: GET /api/sessions, the session events,
 // the WebSocket GET /api/sessions/:id/turn and the WebSocket GET /api/sessions/:id/subagents/:agentId/conversation.
 import { appendFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -223,7 +223,6 @@ function treeOf(client: WsClient): TurnTree | undefined {
       if (frame.status) tree.status = frame.status;
       if (frame.groups) tree.groups = frame.groups;
       if (frame.earlier) tree.earlier = frame.earlier;
-      for (const { index, step } of frame.steps ?? []) tree.steps[index] = step;
       for (const subagent of frame.subagents ?? []) {
         const at = tree.subagents.findIndex((known) => known.id === subagent.id);
         if (at >= 0) tree.subagents[at] = subagent;
@@ -320,14 +319,13 @@ describe('Workflow subagents, GET /api/sessions and session events', { timeout: 
 
 describe('Workflow subagents, turn route', { timeout: 30_000 }, () => {
   // plan-session_activity/REQ-58 — scenario "The turn panel shows the agents of a workflow"
-  it('sends the 4 agents of a workflow as one group at the step of the Workflow call, each with its fields', async () => {
+  it('sends the 4 agents of a workflow as one group, each with its fields', async () => {
     const session = external('working');
     await workflowOfFour(session, 'wf_tree', -30_000);
     const client = await open(`/api/sessions/${encodeURIComponent(session.id)}/turn`);
     const tree = await treeWhen(client, (t) => t.subagents.length === 4 && t.subagents.every((s) => s.currentTool !== undefined), 'the 4 agents');
 
-    expect(tree.steps[1]).toMatchObject({ kind: 'tool', name: 'Workflow' });
-    expect(tree.groups).toEqual([{ step: 1, subagents: AGENTS.map((agentId) => `agent-${agentId}`) }]);
+    expect(tree.groups).toEqual([{ subagents: AGENTS.map((agentId) => `agent-${agentId}`) }]);
     expect(tree.earlier).toEqual([]);
     for (const agentId of AGENTS) {
       expect(tree.subagents.find((s) => s.id === `agent-${agentId}`), agentId).toEqual({
@@ -344,8 +342,8 @@ describe('Workflow subagents, turn route', { timeout: 30_000 }, () => {
     }
   });
 
-  // plan-session_activity/REQ-58: after a resume, each agent sits at the Workflow call of the launch it started under
-  it('puts the agents of a resumed run at the step of their own launch, and the agent of the earlier launch is stopped', async () => {
+  // plan-session_activity/REQ-58, plan-subagent_panel/REQ-3: after a resume, each agent is in the group of the launch it started under
+  it('puts the agents of a resumed run in the group of their own launch, and the agent of the earlier launch is stopped', async () => {
     const session = external('working');
     await append(
       session.transcript,
@@ -368,10 +366,7 @@ describe('Workflow subagents, turn route', { timeout: 30_000 }, () => {
     const client = await open(`/api/sessions/${encodeURIComponent(session.id)}/turn`);
     const tree = await treeWhen(client, (t) => t.subagents.length === 2, 'the 2 agents');
 
-    expect(tree.groups).toEqual([
-      { step: 0, subagents: ['agent-first'] },
-      { step: 2, subagents: ['agent-second'] },
-    ]);
+    expect(tree.groups).toEqual([{ subagents: ['agent-first'] }, { subagents: ['agent-second'] }]);
     expect(statesOf(tree)).toEqual({ 'agent-first': 'stopped', 'agent-second': 'running' });
   });
 
@@ -394,7 +389,36 @@ describe('Workflow subagents, turn route', { timeout: 30_000 }, () => {
       expect(subagent.endedAt, subagent.id).toEqual(expect.any(String));
       expect(subagent.currentTool, subagent.id).toBeUndefined();
     }
-    expect(tree.groups).toEqual([{ step: 1, subagents: AGENTS.map((agentId) => `agent-${agentId}`) }]);
+    expect(tree.groups).toEqual([{ subagents: AGENTS.map((agentId) => `agent-${agentId}`) }]);
+  });
+
+  // plan-subagent_panel/REQ-2, REQ-3, plan-session_activity/REQ-58 — scenario "A workflow sits at the start of its first agent"
+  it('places the group of a workflow at the start of its first agent, after a subagent that started before it', async () => {
+    const session = external('working');
+    await append(
+      session.transcript,
+      userSays('Review and test the batch', now(-90_000)),
+      toolCall('wf', 'Workflow', { workflow: 'review' }, now(-80_000)),
+      launched('wf', 'wf_late', 'task-late', now(-79_000)),
+      claudeSays('The review runs, now the tests', now(-70_000)),
+      toolCall('tester', 'Agent', { description: 'Run the tests', prompt: 'Test', subagent_type: 'sdd-tester' }, now(-60_000)),
+    );
+    const testerFile = path.join(session.transcript.replace(/\.jsonl$/, ''), 'subagents', 'agent-tester.jsonl');
+    await append(testerFile, userSays('Run the tests', now(-50_000), true));
+    await writeFile(testerFile.replace(/\.jsonl$/, '.meta.json'), JSON.stringify({ agentType: 'sdd-tester', description: 'Run the tests', toolUseId: 'tester' }));
+    await session.journal('wf_late', { type: 'launched' }, { type: 'started', agentId: 'r1' }, { type: 'started', agentId: 'r2' });
+    for (const [agentId, startMs] of [
+      ['r1', -30_000],
+      ['r2', -40_000],
+    ] as const) {
+      const agent = session.agent('wf_late', agentId);
+      await agent.meta({ agentType: 'workflow-subagent', description: `review:${agentId}` });
+      await append(agent.file, userSays(`Review ${agentId}`, now(startMs), true));
+    }
+    const client = await open(`/api/sessions/${encodeURIComponent(session.id)}/turn`);
+    const tree = await treeWhen(client, (t) => t.subagents.length === 3, 'the tester and the 2 agents');
+
+    expect(tree.groups).toEqual([{ subagents: ['agent-tester'] }, { subagents: ['agent-r2', 'agent-r1'] }]);
   });
 });
 

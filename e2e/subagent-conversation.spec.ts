@@ -278,19 +278,24 @@ test.describe('Subagent conversation', () => {
     const sessionId = uuid();
     const files = claudeSession(folder, sessionId);
     const t0 = Date.now();
-    await files.write(
-      userText('Go', iso(t0 - 20_000)),
-      ...Array.from({ length: 120 }, (_, i) => claudeSays(`Before ${i}`, iso(t0 - 19_000 + i))),
-      claudeSays([agentUse('mid', 'Middle task', 'Explore')], iso(t0 - 18_000)),
-      ...Array.from({ length: 120 }, (_, i) => claudeSays(`After ${i}`, iso(t0 - 17_000 + i))),
-    );
+    const startWorker = async (name: string, at: number) => {
+      await files.write(claudeSays(`Starting ${name}`, iso(at - 2)), claudeSays([agentUse(name, `${name} task`, name)], iso(at - 1)));
+      const worker = files.subagent(`agent-${name}`);
+      await worker.write(userText(`${name} task`, iso(at), true), claudeSays(`${name} ${'reads the code '.repeat(8)}`, iso(at), true));
+      await worker.meta({ agentType: name, description: `${name} task`, toolUseId: name });
+    };
+    await files.write(userText('Go', iso(t0 - 30_000)));
+    for (let i = 0; i < 8; i += 1) await startWorker(`before-${i}`, t0 - 25_000 + i * 100);
+    await files.write(claudeSays('The middle one', iso(t0 - 19_000)), claudeSays([agentUse('mid', 'Middle task', 'Explore')], iso(t0 - 18_000)));
     const sub = files.subagent('agent-mid');
-    await sub.write(userText('Middle task', iso(t0 - 16_000), true), claudeSays('Exploring the middle', iso(t0 - 15_000), true));
+    await sub.write(userText('Middle task', iso(t0 - 17_000), true), claudeSays('Exploring the middle', iso(t0 - 15_000), true));
     await sub.meta({ agentType: 'Explore', description: 'Middle task', toolUseId: 'mid' });
+    for (let i = 0; i < 8; i += 1) await startWorker(`after-${i}`, t0 - 14_000 + i * 100);
     await runInTerminal(sessionId, folder);
     await openSession(page, folder, true);
     await openPanel(page);
-    await expect(panel(page).getByText('After 119', { exact: true })).toBeVisible(PROMPTLY);
+    const lastCard = panel(page).getByRole('article', { name: 'Subagent: after-7', exact: true });
+    await expect(lastCard).toBeVisible(PROMPTLY);
 
     const opener = openButton(page, 'Explore');
     await opener.scrollIntoViewIfNeeded();
@@ -302,7 +307,7 @@ test.describe('Subagent conversation', () => {
     await opener.click();
     await expect(subConversation(page)).toBeVisible();
     await expect(subConversation(page).getByText('Exploring the middle', { exact: true })).toBeVisible(PROMPTLY);
-    await expect(panel(page).getByText('After 119', { exact: true }), 'the tree is hidden').toBeHidden();
+    await expect(lastCard, 'the tree is hidden').toBeHidden();
 
     await backButton(page).click();
     await expect(subConversation(page)).toHaveCount(0);

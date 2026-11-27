@@ -626,7 +626,7 @@ describe('ActivityMonitor, turn tree', () => {
     return changes;
   }
 
-  // plan-session_activity/REQ-28, REQ-41: undefined for an unknown id, noTurn() before the first read and with no transcript, then the tree
+  // plan-session_activity/REQ-28, REQ-41, plan-subagent_panel/REQ-1: undefined for an unknown id, noTurn() before the first read and with no transcript, then the tree with no steps
   it('gives no tree for an unknown id, noTurn() before the first read, then the tree of the current turn', async () => {
     newSources();
     const session = workingHosted();
@@ -634,23 +634,13 @@ describe('ActivityMonitor, turn tree', () => {
     await append(session.transcript, userSays('Check the repo', time(0)), claudeSays('Looking', time(1)), toolCall('t1', 'Bash', { command: 'git status' }, time(2)));
     const monitor = monitorOf();
     expect(monitor.turnOf('unknown-id')).toBeUndefined();
-    expect(monitor.turnOf(session.id)).toEqual({ number: 0, status: 'none', steps: [], groups: [], earlier: [], subagents: [] });
+    expect(monitor.turnOf(session.id)).toEqual({ number: 0, status: 'none', groups: [], earlier: [], subagents: [] });
     await monitor.poll();
-    expect(monitor.turnOf(empty.id)).toEqual({ number: 0, status: 'none', steps: [], groups: [], earlier: [], subagents: [] });
-    expect(monitor.turnOf(session.id)).toEqual({
-      number: 1,
-      status: 'running',
-      steps: [
-        { kind: 'text', text: 'Looking' },
-        { kind: 'tool', name: 'Bash', argument: 'git status', outcome: 'running' },
-      ],
-      groups: [],
-      earlier: [],
-      subagents: [],
-    });
+    expect(monitor.turnOf(empty.id)).toEqual({ number: 0, status: 'none', groups: [], earlier: [], subagents: [] });
+    expect(monitor.turnOf(session.id)).toEqual({ number: 1, status: 'running', groups: [], earlier: [], subagents: [] });
   });
 
-  // plan-session_activity/REQ-31, REQ-32, REQ-37: subagents started in one message form a group at their step, with the model of their metadata file
+  // plan-session_activity/REQ-32, REQ-37: subagents started in one message form a group, with the model of their metadata file
   it('shows the subagents of one message as one group, with type, description and the model of the metadata file', async () => {
     newSources();
     const session = external('working');
@@ -664,33 +654,41 @@ describe('ActivityMonitor, turn tree', () => {
     const monitor = monitorOf();
     await monitor.poll();
     const tree = monitor.turnOf(session.id);
-    expect(tree?.groups).toEqual([{ step: 1, subagents: ['agent-a1', 'agent-a2'] }]);
+    expect(tree?.groups).toEqual([{ subagents: ['agent-a1', 'agent-a2'] }]);
     expect(tree?.subagents).toEqual([
       { id: 'agent-a1', type: 'sdd-developer', description: 'First task', model: 'claude-opus-5-5', state: 'running', startedAt: time(2), latestText: 'Working on it', groups: [] },
       { id: 'agent-a2', type: 'sdd-tester', description: 'Second task', state: 'running', startedAt: time(2), groups: [] },
     ]);
   });
 
-  // plan-session_activity/REQ-43: the whole tree on the first read, then only the new step; no call when nothing changed; a new turn sends the whole tree
-  it('notifies the whole tree first, then only the changed parts, nothing when nothing changed, and the whole tree at a new turn', async () => {
+  // plan-session_activity/REQ-43, plan-subagent_panel/REQ-1: the whole tree first; no call for a text or tool call of the main conversation; only the changed parts; the whole tree at a new turn
+  it('notifies the whole tree first, nothing for the main conversation, then only the changed parts, and the whole tree at a new turn', async () => {
     newSources();
     const session = external('working');
     await append(session.transcript, userSays('Go', time(0)), claudeSays('First', time(1)));
     const monitor = monitorOf();
     const changes = recordTurnChanges(monitor);
     await monitor.poll();
-    expect(changes).toEqual([[session.id, { type: 'turn', turn: expect.objectContaining({ number: 1, steps: [{ kind: 'text', text: 'First' }] }) }]]);
+    expect(changes).toEqual([[session.id, { type: 'turn', turn: { number: 1, status: 'running', groups: [], earlier: [], subagents: [] } }]]);
     await monitor.poll();
     expect(changes, 'no call when nothing changed').toHaveLength(1);
     await append(session.transcript, toolCall('t1', 'Bash', { command: 'ls' }, time(2)));
     await monitor.poll();
-    expect(changes.at(-1)).toEqual([session.id, { type: 'update', steps: [{ index: 1, step: { kind: 'tool', name: 'Bash', argument: 'ls', outcome: 'running' } }] }]);
-    await append(session.transcript, toolResult('t1', time(3)));
+    await append(session.transcript, toolResult('t1', time(3)), claudeSays('Listed', time(4)));
     await monitor.poll();
-    expect(changes.at(-1)).toEqual([session.id, { type: 'update', steps: [{ index: 1, step: { kind: 'tool', name: 'Bash', argument: 'ls', outcome: 'completed' } }] }]);
-    await append(session.transcript, userSays('Next', time(4)));
+    expect(changes, 'no call for a tool call or a text of the main conversation').toHaveLength(1);
+    await append(session.transcript, calls([agentCall('a1', 'Task')], time(5)));
+    const file = subagentFileOf(session.cwd, session.id, 'agent-a1');
+    await append(file, userSays('Task', time(6)));
+    await writeMeta(file, { agentType: 'Explore', toolUseId: 'a1' });
     await monitor.poll();
-    expect(changes.at(-1)).toEqual([session.id, { type: 'turn', turn: expect.objectContaining({ number: 2, steps: [] }) }]);
+    expect(changes.at(-1)).toEqual([
+      session.id,
+      { type: 'update', groups: [{ subagents: ['agent-a1'] }], subagents: [{ id: 'agent-a1', type: 'Explore', state: 'running', startedAt: time(6), groups: [] }] },
+    ]);
+    await append(session.transcript, userSays('Next', time(7)));
+    await monitor.poll();
+    expect(changes.at(-1)).toEqual([session.id, { type: 'turn', turn: expect.objectContaining({ number: 2, groups: [] }) }]);
   });
 
   // plan-session_activity/REQ-40: a session that goes idle shows its turn as ended at once; needs input keeps it running
@@ -728,19 +726,22 @@ describe('ActivityMonitor, turn tree', () => {
   it('gives a copy of the tree to turnOf and to each listener', async () => {
     newSources();
     const session = external('working');
-    await append(session.transcript, userSays('Go', time(0)), claudeSays('First', time(1)));
+    await append(session.transcript, userSays('Go', time(0)), calls([agentCall('a1', 'Task')], time(1)));
+    const file = subagentFileOf(session.cwd, session.id, 'agent-a1');
+    await append(file, userSays('Task', time(2)));
+    await writeMeta(file, { agentType: 'Explore', toolUseId: 'a1' });
     const monitor = monitorOf();
     const received: unknown[] = [];
     monitor.onTurnChange((_id, change) => {
-      if (change.type === 'turn') change.turn.steps.length = 0;
+      if (change.type === 'turn') change.turn.subagents.length = 0;
     });
-    monitor.onTurnChange((_id, change) => received.push(change.type === 'turn' ? change.turn.steps.length : undefined));
+    monitor.onTurnChange((_id, change) => received.push(change.type === 'turn' ? change.turn.subagents.length : undefined));
     await monitor.poll();
     expect(received).toEqual([1]);
     const copy = monitor.turnOf(session.id)!;
-    copy.steps.length = 0;
+    copy.subagents.length = 0;
     copy.status = 'ended';
-    expect(monitor.turnOf(session.id)).toMatchObject({ status: 'running', steps: [{ kind: 'text', text: 'First' }] });
+    expect(monitor.turnOf(session.id)).toMatchObject({ status: 'running', subagents: [{ id: 'agent-a1' }] });
   });
 
   // activity-monitor spec: a removed session has no tree and gives no call; an unsubscribed listener gets no call
@@ -758,7 +759,7 @@ describe('ActivityMonitor, turn tree', () => {
     unsubscribe();
     scanner.remove(removed.id);
     expect(monitor.turnOf(removed.id)).toBeUndefined();
-    await append(kept.transcript, claudeSays('More', time(2)));
+    await append(kept.transcript, userSays('Next', time(2)));
     await monitor.poll();
     expect(changes.map(([id]) => id)).toEqual([kept.id]);
     expect(unsubscribed).toEqual([]);
@@ -774,7 +775,7 @@ describe('ActivityMonitor, turn tree', () => {
     const changes = recordTurnChanges(monitor);
     tracker.applyHookEvent(session.id, { hook_event_name: 'UserPromptSubmit', prompt: 'Go on', session_id: uniqueName('sid') });
     await monitor.poll();
-    expect(changes.at(-1)).toEqual([session.id, { type: 'turn', turn: { number: 0, status: 'none', steps: [], groups: [], earlier: [], subagents: [] } }]);
+    expect(changes.at(-1)).toEqual([session.id, { type: 'turn', turn: { number: 0, status: 'none', groups: [], earlier: [], subagents: [] } }]);
     expect(monitor.turnOf(session.id)?.number).toBe(0);
   });
 });

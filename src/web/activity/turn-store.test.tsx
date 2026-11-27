@@ -109,25 +109,21 @@ describe('useTurn, frames', () => {
     expect(lastSocket().url).toBe(`ws://${location.host}/api/sessions/a%2Fb%20c/turn`);
   });
 
-  // plan-session_activity/REQ-28: a turn frame gives the loaded tree
+  // plan-session_activity/REQ-28, plan-subagent_panel/REQ-1: a turn frame gives the loaded tree, with no steps
   it('gives the tree of a turn frame', () => {
     host = mount(<Probe sessionId="s1" />);
-    const first = turn({ steps: [{ kind: 'text', text: 'Hello' }] });
+    const first = turn({ groups: [{ subagents: ['a'] }], subagents: [{ id: 'a', state: 'running', groups: [] }] });
     lastSocket().receive({ type: 'turn', turn: first });
     expect(state()).toEqual({ status: 'loaded', turn: first });
   });
 
-  // plan-session_activity/REQ-43: an update replaces status, groups and earlier, sets the steps at their index, and replaces or adds subagents by id
+  // plan-session_activity/REQ-43, plan-subagent_panel/REQ-2: an update replaces status, groups and earlier, and replaces or adds subagents by id
   it('applies an update to the tree', () => {
     host = mount(<Probe sessionId="s1" />);
     lastSocket().receive({
       type: 'turn',
       turn: turn({
-        steps: [
-          { kind: 'text', text: 'One' },
-          { kind: 'tool', name: 'Bash', argument: 'ls', outcome: 'running' },
-        ],
-        groups: [{ step: 1, subagents: ['a'] }],
+        groups: [{ subagents: ['a'] }],
         subagents: [
           { id: 'a', state: 'running', groups: [] },
           { id: 'b', state: 'running', groups: [] },
@@ -137,12 +133,8 @@ describe('useTurn, frames', () => {
     lastSocket().receive({
       type: 'update',
       status: 'ended',
-      groups: [{ step: 1, subagents: ['a', 'c'] }],
+      groups: [{ subagents: ['c'] }, { subagents: ['a'] }],
       earlier: ['z'],
-      steps: [
-        { index: 1, step: { kind: 'tool', name: 'Bash', argument: 'ls', outcome: 'completed' } },
-        { index: 2, step: { kind: 'text', text: 'Three' } },
-      ],
       subagents: [
         { id: 'a', state: 'finished', groups: [] },
         { id: 'c', state: 'running', groups: [] },
@@ -151,12 +143,7 @@ describe('useTurn, frames', () => {
     expect(tree()).toEqual(
       turn({
         status: 'ended',
-        steps: [
-          { kind: 'text', text: 'One' },
-          { kind: 'tool', name: 'Bash', argument: 'ls', outcome: 'completed' },
-          { kind: 'text', text: 'Three' },
-        ],
-        groups: [{ step: 1, subagents: ['a', 'c'] }],
+        groups: [{ subagents: ['c'] }, { subagents: ['a'] }],
         earlier: ['z'],
         subagents: [
           { id: 'a', state: 'finished', groups: [] },
@@ -167,10 +154,19 @@ describe('useTurn, frames', () => {
     );
   });
 
+  // useTurn spec: an update that names only some parts keeps the others
+  it('keeps the parts that an update does not name', () => {
+    host = mount(<Probe sessionId="s1" />);
+    const first = turn({ groups: [{ subagents: ['a'] }], earlier: ['z'], subagents: [{ id: 'a', state: 'running', groups: [] }, { id: 'z', state: 'running', groups: [] }] });
+    lastSocket().receive({ type: 'turn', turn: first });
+    lastSocket().receive({ type: 'update', status: 'ended' });
+    expect(tree()).toEqual({ ...first, status: 'ended' });
+  });
+
   // plan-session_activity/REQ-39: a later turn frame replaces the whole tree
   it('replaces the tree with a later turn frame', () => {
     host = mount(<Probe sessionId="s1" />);
-    lastSocket().receive({ type: 'turn', turn: turn({ steps: [{ kind: 'text', text: 'Old' }] }) });
+    lastSocket().receive({ type: 'turn', turn: turn({ groups: [{ subagents: ['old'] }], subagents: [{ id: 'old', state: 'running', groups: [] }] }) });
     const next = turn({ number: 2, earlier: ['bg'], subagents: [{ id: 'bg', state: 'running', groups: [] }] });
     lastSocket().receive({ type: 'turn', turn: next });
     expect(tree()).toEqual(next);
@@ -211,7 +207,7 @@ describe('useTurn, reconnection', () => {
   // plan-session_activity/REQ-43: a lost socket after a first frame → a new socket 2 s later, the tree shown meanwhile, replaced by the new first frame
   it('opens a new socket 2 s after a lost one, keeps the tree meanwhile, and takes the first frame of the new socket', () => {
     host = mount(<Probe sessionId="s1" />);
-    const first = turn({ steps: [{ kind: 'text', text: 'Before' }] });
+    const first = turn({ groups: [{ subagents: ['before'] }], subagents: [{ id: 'before', state: 'running', groups: [] }] });
     lastSocket().receive({ type: 'turn', turn: first });
     lastSocket().serverClose();
     expect(tree()).toEqual(first);
@@ -222,7 +218,7 @@ describe('useTurn, reconnection', () => {
     expect(lastSocket().url).toBe(sockets()[0]!.url);
     lastSocket().receive({ type: 'update', status: 'ended' });
     expect(tree(), 'an update before the first frame of the new socket is ignored').toEqual(first);
-    const fresh = turn({ number: 2, steps: [{ kind: 'text', text: 'After' }] });
+    const fresh = turn({ number: 2, groups: [{ subagents: ['after'] }], subagents: [{ id: 'after', state: 'running', groups: [] }] });
     lastSocket().receive({ type: 'turn', turn: fresh });
     expect(tree()).toEqual(fresh);
   });
