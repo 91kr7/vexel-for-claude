@@ -1,4 +1,4 @@
-// The width check of plan-terminal_overflow, for the browser and the desktop specs.
+// The width check of plan-terminal_overflow and plan-terminal_clip, for the browser and the desktop specs.
 import { type Page, expect } from '@playwright/test';
 import { currentView } from './motion';
 
@@ -6,6 +6,11 @@ import { currentView } from './motion';
 export const SCROLLBAR_WIDTH = 14;
 /** Rounding of the browser layout, in px. */
 const TOLERANCE = 0.5;
+/** How far a drawn glyph may pass an edge, in device pixels: layout rounding only, far below the 1.7 px cut of plan-terminal_clip. */
+const EDGE_TOLERANCE_DEVICE_PX = 0.25;
+
+/** How far a drawn glyph of `reading` may pass an edge, in CSS px. */
+const edgeTolerance = (reading: RulerReading) => EDGE_TOLERANCE_DEVICE_PX / reading.devicePixelRatio;
 
 /** Types a line into the session over a second connection, which sends no `resize` (AttachSessionRoute spec). */
 export async function sendLine(baseURL: string, sessionId: string, line: string): Promise<void> {
@@ -32,6 +37,11 @@ export interface RulerReading {
   rulerRow: string | null;
   /** Right edge of the last character of the ruler row. */
   markerRight: number;
+  /** Right edge of the ruler row element, which hides what passes it. */
+  rowRight: number;
+  /** The box border row printed after the ruler (`╭tag──╮`), `null` when it is not on screen. */
+  box: { text: string; cornerRight: number; rowRight: number } | null;
+  devicePixelRatio: number;
   cellWidth: number;
   rowHeight: number;
   /** The box inside the padding of the terminal panel. */
@@ -64,10 +74,9 @@ export function readRuler(page: Page, tag: string): Promise<RulerReading> {
         const texts = rowElements.map((row) => (row.textContent ?? '').replace(/\s+$/, ''));
         const report = texts.find((text) => text.startsWith(`RULER-DONE ${rulerTag} `))?.match(/ (\d+)x(\d+)$/);
         const rulerIndex = texts.findIndex((text) => text.startsWith(`<${rulerTag}`));
-        let markerRight = NaN;
-        let cellWidth = NaN;
-        if (rulerIndex >= 0) {
-          const walker = document.createTreeWalker(rowElements[rulerIndex]!, NodeFilter.SHOW_TEXT);
+        const boxIndex = texts.findIndex((text) => text.startsWith(`╭${rulerTag}`));
+        const glyphsOf = (row: Element) => {
+          const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT);
           const nodes: Text[] = [];
           for (let node = walker.nextNode(); node; node = walker.nextNode()) nodes.push(node as Text);
           let last: { node: Text; index: number } | undefined;
@@ -78,11 +87,17 @@ export function readRuler(page: Page, tag: string): Promise<RulerReading> {
           const whole = document.createRange();
           whole.setStart(nodes[0]!, 0);
           whole.setEnd(last!.node, last!.index + 1);
-          cellWidth = whole.getBoundingClientRect().width / texts[rulerIndex]!.length;
-          const marker = document.createRange();
-          marker.setStart(last!.node, last!.index);
-          marker.setEnd(last!.node, last!.index + 1);
-          markerRight = marker.getBoundingClientRect().right;
+          const lastGlyph = document.createRange();
+          lastGlyph.setStart(last!.node, last!.index);
+          lastGlyph.setEnd(last!.node, last!.index + 1);
+          return { drawnWidth: whole.getBoundingClientRect().width, lastRight: lastGlyph.getBoundingClientRect().right };
+        };
+        let markerRight = NaN;
+        let cellWidth = NaN;
+        if (rulerIndex >= 0) {
+          const ruler = glyphsOf(rowElements[rulerIndex]!);
+          cellWidth = ruler.drawnWidth / texts[rulerIndex]!.length;
+          markerRight = ruler.lastRight;
         }
         const bar = panel.querySelector<HTMLElement>('.xterm-scrollable-element > .scrollbar.vertical');
         const barBox = bar?.getBoundingClientRect();
@@ -90,6 +105,16 @@ export function readRuler(page: Page, tag: string): Promise<RulerReading> {
           cli: report ? { cols: Number(report[1]), rows: Number(report[2]) } : null,
           rulerRow: rulerIndex >= 0 ? texts[rulerIndex]! : null,
           markerRight,
+          rowRight: rulerIndex >= 0 ? rowElements[rulerIndex]!.getBoundingClientRect().right : NaN,
+          box:
+            boxIndex >= 0
+              ? {
+                  text: texts[boxIndex]!,
+                  cornerRight: glyphsOf(rowElements[boxIndex]!).lastRight,
+                  rowRight: rowElements[boxIndex]!.getBoundingClientRect().right,
+                }
+              : null,
+          devicePixelRatio: window.devicePixelRatio,
           cellWidth,
           rowHeight: screen.height / rowElements.length,
           content,
@@ -106,7 +131,24 @@ export function readRuler(page: Page, tag: string): Promise<RulerReading> {
     );
 }
 
-/** Asserts that the ruler printed for `reading` shows the right width: plan-terminal_overflow/REQ-1, REQ-2, REQ-3. */
+/** Asserts that no edge cuts the last character of the ruler row, nor the box corner when its row is on screen: plan-terminal_clip/REQ-1, REQ-8. */
+export function expectLastColumnWhole(reading: RulerReading, note: string): void {
+  const tolerance = edgeTolerance(reading);
+  const boxLessScrollbar = reading.content.right - SCROLLBAR_WIDTH;
+  const glyphs = [{ name: 'the ruler marker', right: reading.markerRight, rowRight: reading.rowRight }];
+  if (reading.box) glyphs.push({ name: 'the box corner', right: reading.box.cornerRight, rowRight: reading.box.rowRight });
+  for (const { name, right, rowRight } of glyphs) {
+    expect(right, `${note}: plan-terminal_clip/REQ-1, the row edge cuts no part of ${name}`).toBeLessThanOrEqual(rowRight + tolerance);
+    expect(right, `${note}: plan-terminal_clip/REQ-1, ${name} ends inside the panel less the scrollbar`).toBeLessThanOrEqual(boxLessScrollbar + tolerance);
+    if (reading.scrollbar?.visible) {
+      expect(right, `${note}: plan-terminal_clip/REQ-8, the shown scrollbar covers no part of ${name}`).toBeLessThanOrEqual(
+        reading.scrollbar.left + tolerance,
+      );
+    }
+  }
+}
+
+/** Asserts that the ruler printed for `reading` shows the right width: plan-terminal_overflow/REQ-1 to REQ-3, plan-terminal_clip/REQ-1, REQ-2. */
 export function expectRulerFits(reading: RulerReading, note: string): void {
   const { cli, content } = reading;
   expect(cli, `${note}: the fake CLI reported the ruler size`).not.toBeNull();
@@ -115,13 +157,9 @@ export function expectRulerFits(reading: RulerReading, note: string): void {
   expect(reading.rows, `${note}: Fit, the CLI has the rows the terminal draws`).toBe(cli!.rows);
   expect(reading.rulerRow!.length, `${note}: the ruler takes one row, ending with its marker`).toBe(cli!.cols);
   expect(reading.rulerRow!.endsWith('>'), `${note}: the marker ends the ruler row`).toBe(true);
-  expect(reading.markerRight, `${note}: REQ-1, the last column ends inside the panel`).toBeLessThanOrEqual(content.right + TOLERANCE);
-  expect(reading.markerRight, `${note}: REQ-2, the last column ends left of the scrollbar`).toBeLessThanOrEqual(
-    content.right - SCROLLBAR_WIDTH + TOLERANCE,
-  );
-  if (reading.scrollbar?.visible) {
-    expect(reading.markerRight, `${note}: REQ-2, the shown scrollbar covers no text`).toBeLessThanOrEqual(reading.scrollbar.left + TOLERANCE);
-  }
+  expect(reading.box?.text.length, `${note}: the box border takes one row`).toBe(cli!.cols);
+  expect(reading.box!.text.endsWith('╮'), `${note}: the box corner ends its row`).toBe(true);
+  expectLastColumnWhole(reading, note);
   expect(reading.screen.left, `${note}: the grid starts inside the panel`).toBeGreaterThanOrEqual(content.left - TOLERANCE);
   expect(content.right - SCROLLBAR_WIDTH - reading.screen.right, `${note}: Fit, no room is left for one more column`).toBeLessThan(
     reading.cellWidth + TOLERANCE,
