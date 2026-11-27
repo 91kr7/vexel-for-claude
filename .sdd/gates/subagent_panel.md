@@ -11,3 +11,6 @@
 | 2026-11-27 | dev | G4 fix, subagents-only | pass | Groups by the `message.id` of the calls (checked on real transcripts), step rule kept as fallback for lines without id; `tsc -b` green; no test file |
 | 2026-11-27 | dev | divergence subagents-only | decided | TurnModel links carry `message`: needed by the REQ-3 fix, no other contract change |
 | 2026-11-27 | test | G5 tests, subagents-only | pass | Re-test after eea7679: 426 unit, 26 e2e re-run green; closing pass by the tester after the fix: unit 5236, browser e2e 1108; Electron spec updated, not run |
+| 2026-11-27 | analysis | reopen of the cycle | human decision | List layout of the panel: the human asked to reopen `subagent_panel.md` and `plan-subagent_panel` rather than start a new analysis; analysis edited in place, same slug |
+| 2026-11-27 | analysis | branch | human decision | `feat/subagent_panel` merged (PR #46) and deleted; reopened from `main` 6693ad3 on the same request |
+| 2026-11-27 | analysis | G1 analysis, list layout | pass | 74 lines, `narrow`; no placeholders; additions (no mark on a group of one, nested rows not marked as group members, no horizontal scroll) follow from the request's group mark and narrow panel |
