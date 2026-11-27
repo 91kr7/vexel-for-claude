@@ -8,7 +8,7 @@ const NOW = Date.parse('2026-11-26T10:00:00.000Z');
 
 const marked = (count: number, from = 0): TurnStep[] => Array.from({ length: count }, (_, i) => ({ kind: 'text', text: `[s${from + i}]` }));
 const subagent = (id: string, fields: Partial<TurnSubagent> = {}): TurnSubagent => ({ id, type: `type-${id}`, state: 'running', startedAt: new Date(NOW).toISOString(), groups: [], ...fields });
-const turn = (fields: Partial<TurnTree> = {}): TurnTree => ({ number: 1, status: 'running', steps: [], groups: [], earlier: [], subagents: [], ...fields });
+const turn = (fields: Partial<TurnTree> = {}): TurnTree => ({ number: 1, status: 'running', groups: [], earlier: [], subagents: [], ...fields });
 
 const shownMarks = (host: Element) => [...(host.textContent ?? '').matchAll(/\[s(\d+)\]/g)].map((match) => Number(match[1]));
 const card = (host: Element, type: string) => host.querySelector(`article[aria-label="Subagent: ${type}"]`);

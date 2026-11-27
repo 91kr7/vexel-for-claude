@@ -222,8 +222,7 @@ describe('turnChangeOf', () => {
   const base = (): TurnTree => ({
     number: 2,
     status: 'running',
-    steps: [text('One'), tool('Bash', 'running')],
-    groups: [{ step: 1, subagents: ['a'] }],
+    groups: [{ subagents: ['a'] }],
     earlier: [],
     subagents: [{ id: 'a', type: 'Explore', state: 'running', groups: [] }],
   });
@@ -292,7 +291,7 @@ describe('turnChangeOf', () => {
   // plan-session_activity/REQ-38: a change of the nested groups of a subagent is a changed field
   it('gives a subagent whose nested groups changed', () => {
     const previous = base();
-    const nested: TurnSubagent = { ...previous.subagents[0]!, groups: [{ step: 0, subagents: ['child'] }] };
+    const nested: TurnSubagent = { ...previous.subagents[0]!, groups: [{ subagents: ['child'] }] };
     expect(turnChangeOf(previous, { ...previous, subagents: [nested] })).toEqual({ type: 'update', subagents: [nested] });
   });
 });

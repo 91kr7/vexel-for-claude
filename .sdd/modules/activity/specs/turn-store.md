@@ -12,12 +12,11 @@ type: frontend hook
 
 - `useTurn(sessionId) → TurnState`
   - `TurnState` → `{ status: "loading" }`, `{ status: "unavailable" }` or `{ status: "loaded", turn }`.
-  - `turn` → the `TurnTree` of TurnRoute: `{ number, status, steps, groups, earlier, subagents }`.
+  - `turn` → the `TurnTree` of TurnRoute: `{ number, status, groups, earlier, subagents }`. A group is `{ subagents }`.
 - mount, or a new `sessionId` → `loading`, and one socket to `/api/sessions/<id>/turn` (id URL-encoded, `ws:` or `wss:` as the page).
 - a frame `{ type: "turn" }` → `loaded` with that tree. It replaces the tree, also on a new socket.
 - a frame `{ type: "update" }` after the first frame of its socket → the tree with the update applied:
   - `status`, `groups`, `earlier` → replace their value.
-  - each `{ index, step }` of `steps` → the step at that index, new or replaced.
   - each subagent of `subagents` → replaces the subagent with the same id, or is added.
 - an `update` before the first frame of its socket, or a frame that is not valid JSON or of another type → ignored.
 
@@ -38,3 +37,4 @@ Reconnection (as ConversationView):
 ## Requirements served
 
 - `plan-session_activity/REQ-43`
+- `plan-subagent_panel/REQ-1`

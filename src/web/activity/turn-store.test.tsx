@@ -85,7 +85,7 @@ const tree = () => {
   return current.turn;
 };
 
-const turn = (fields: Partial<TurnTree> = {}): TurnTree => ({ number: 1, status: 'running', steps: [], groups: [], earlier: [], subagents: [], ...fields });
+const turn = (fields: Partial<TurnTree> = {}): TurnTree => ({ number: 1, status: 'running', groups: [], earlier: [], subagents: [], ...fields });
 const advance = (ms: number) => run(() => vi.advanceTimersByTime(ms));
 
 beforeEach(() => {

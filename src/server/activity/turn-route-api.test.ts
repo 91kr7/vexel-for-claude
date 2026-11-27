@@ -16,7 +16,7 @@ type Line = Record<string, unknown>;
 
 // REQ-43 asks for 2 s from the line to the frame. The monitor reads every 500 ms.
 const REQ_43_MS = 2000;
-const NO_TURN: TurnTree = { number: 0, status: 'none', steps: [], groups: [], earlier: [], subagents: [] };
+const NO_TURN: TurnTree = { number: 0, status: 'none', groups: [], earlier: [], subagents: [] };
 
 let claudeDir: string;
 let app: FastifyInstance;

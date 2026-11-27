@@ -15,7 +15,7 @@ type: REST endpoint
   - `:id` → a hosted session id (`tracker.get`) or an external session id (`scanner.get`).
   - unknown id → the socket closes with code `4404` (reason `session_not_found`), with no frame.
   - first frame → `{ type: "turn", turn }`: the whole tree of `monitor.turnOf(id)` (`noTurn()` when the monitor has none).
-  - then → one frame per `onTurnChange` of that session, as given: `{ type: "turn", turn }` for a new turn, or `{ type: "update", … }` with only the new steps, the changed steps, and the changed groups, `earlier` list, status and subagents (turnTreeOf `turnChangeOf`).
+  - then → one frame per `onTurnChange` of that session, as given: `{ type: "turn", turn }` for a new turn, or `{ type: "update", … }` with only the changed groups, `earlier` list, status and subagents (turnTreeOf `turnChangeOf`). No frame carries a step of the main conversation.
   - frames are JSON text. The route never reads the socket.
 
 ## Rules and invariants
@@ -33,3 +33,4 @@ type: REST endpoint
 ## Requirements served
 
 - `plan-session_activity/REQ-27`, `plan-session_activity/REQ-43`, `plan-session_activity/REQ-45`
+- `plan-subagent_panel/REQ-1`

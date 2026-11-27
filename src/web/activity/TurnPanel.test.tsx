@@ -41,7 +41,7 @@ class FakeWebSocket extends EventTarget {
 }
 
 const lastSocket = () => FakeWebSocket.instances.at(-1)!;
-const turn = (fields: Partial<TurnTree> = {}): TurnTree => ({ number: 1, status: 'running', steps: [], groups: [], earlier: [], subagents: [], ...fields });
+const turn = (fields: Partial<TurnTree> = {}): TurnTree => ({ number: 1, status: 'running', groups: [], earlier: [], subagents: [], ...fields });
 const marked = (count: number) => Array.from({ length: count }, (_, i) => ({ kind: 'text' as const, text: `[s${i}]` }));
 const region = (host: Element) => host.querySelector('section[aria-label="Turn Panel"]')!;
 /** The deepest element whose whole text is `text`. */
