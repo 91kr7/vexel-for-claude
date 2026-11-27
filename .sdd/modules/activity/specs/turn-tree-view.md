@@ -6,7 +6,7 @@ type: UI component
 
 # TurnTreeView
 
-**Purpose** → the tree of the current turn inside the turn panel: only its subagents, as a list of rows in start order, nested rows indented, groups joined by a line, the running subagents of earlier turns on top, and scrolling that follows the latest started subagent.
+**Purpose** → the tree of the running subagents inside the Subagents panel (TurnPanel): a list of rows in start order, nested rows indented, groups joined by a line, and scrolling that follows the latest started subagent.
 
 ## Contract
 
@@ -15,18 +15,17 @@ Description:
 
 Props:
 - `turn` → the `TurnTree` of useTurn.
-- `onOpenSubagent(subagent, opener)` → optional. Given as `onOpen` to every SubagentCard row of the tree, nested and earlier ones included.
+- `onOpenSubagent(subagent, opener)` → optional. Given as `onOpen` to every SubagentCard row of the tree, nested ones included.
 
 Shows, top to bottom, 8 px apart:
-- when `earlier` is not empty → a section named "Still running from earlier turns", with that title (11 px, weight 600) and the groups of `earlier`, one under the other, 8 px apart.
-- the groups of `groups`, one under the other, in their order.
-- a turn with no group → a compact AreaState `empty` "No subagents in this turn." in the place of the groups. It shows also when the section of earlier turns shows.
+- the groups of `groups`, one under the other, in their order, from level 0 down.
+- a tree with no group → a compact AreaState `empty` "No subagents running." in the place of the groups.
 - a group → the SubagentCard rows of its members, one per id in its order (an id with no subagent shows nothing), one below the other, 8 px apart.
 - after each row → the groups of its own `groups` (nested subagents), 8 px apart, one level further right. This holds at any depth.
-- no message of the main conversation: no user message, no text of Claude, no tool call.
+- no message of the main conversation: no user message, no text of Claude, no tool call. Nothing about turns: no turn state and no section for earlier turns.
 
 Levels and width:
-- a group of `groups` or of `earlier` is at level 0. A group in the `groups` of a row of level n is at level n + 1. Its rows are at its level.
+- a group of `groups` is at level 0. A group in the `groups` of a row of level n is at level n + 1. Its rows are at its level.
 - every level starts with a gutter of 14 px, level 0 included. A row of level n starts n + 1 gutters from the left edge of the content and ends at its right edge.
 - so, at the smallest width of the panel (360 px), a row of level 3 is at least 240 px wide.
 - a row is never wider than its place, at any depth.
@@ -39,7 +38,7 @@ Mark of a group:
 - line and tick → 1 px, `--role-border-strong` (`--border-pill`). They are hidden from assistive technologies.
 
 Scrolling:
-- the latest started subagent → the subagent of `subagents` with the latest `startedAt`, at any level, nested and earlier ones included. A subagent with no valid `startedAt` does not count. On equal starts, the one later in `subagents`.
+- the latest started subagent → the subagent of `subagents` with the latest `startedAt`, at any level, nested ones included. A subagent with no valid `startedAt` does not count. On equal starts, the one later in `subagents`.
 - at first → the view follows.
 - while the view follows, at first and at each new or changed tree → the view scrolls the least it needs to show the whole row of the latest started subagent. A row taller than the view shows from its top. No latest started subagent → the view does not move.
 - the view is at the end when its bottom is within 8 px of the end of the content.
@@ -58,6 +57,7 @@ Scrolling:
 
 ## Requirements served
 
-- `plan-session_activity/REQ-38`, `plan-session_activity/REQ-39`, `plan-session_activity/REQ-45`, `plan-session_activity/REQ-46`, `plan-session_activity/REQ-47`, `plan-session_activity/REQ-49`
-- `plan-subagent_panel/REQ-1`, `plan-subagent_panel/REQ-2`, `plan-subagent_panel/REQ-3`, `plan-subagent_panel/REQ-4`, `plan-subagent_panel/REQ-5`
-- `plan-subagent_panel/REQ-8`, `plan-subagent_panel/REQ-9`, `plan-subagent_panel/REQ-10`, `plan-subagent_panel/REQ-11`, `plan-subagent_panel/REQ-12`, `plan-subagent_panel/REQ-13`
+- `plan-session_activity/REQ-38`, `plan-session_activity/REQ-45`, `plan-session_activity/REQ-46`, `plan-session_activity/REQ-47`, `plan-session_activity/REQ-49`
+- `plan-subagent_panel/REQ-1`, `plan-subagent_panel/REQ-3`
+- `plan-subagent_panel/REQ-8`, `plan-subagent_panel/REQ-9`, `plan-subagent_panel/REQ-10`, `plan-subagent_panel/REQ-11`, `plan-subagent_panel/REQ-13`
+- `plan-subagent_panel/REQ-14`, `plan-subagent_panel/REQ-15`, `plan-subagent_panel/REQ-18`, `plan-subagent_panel/REQ-19`, `plan-subagent_panel/REQ-20`

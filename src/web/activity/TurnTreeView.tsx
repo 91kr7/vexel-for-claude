@@ -54,7 +54,7 @@ function cardOrderOf(turn: TurnTree, subagents: ReadonlyMap<string, TurnSubagent
       for (const group of subagent.groups) visit(group.subagents);
     }
   };
-  for (const group of [...turn.earlier, ...turn.groups]) visit(group.subagents);
+  for (const group of turn.groups) visit(group.subagents);
   return order;
 }
 
@@ -93,18 +93,10 @@ export function TurnTreeView({ turn, onOpenSubagent }: { turn: TurnTree; onOpenS
 
   return (
     <div className="turn-tree" ref={scrollRef} tabIndex={0} onScroll={onScroll}>
-      {turn.earlier.length > 0 && (
-        <section className="turn-earlier" aria-label="Still running from earlier turns">
-          <h4 className="turn-section-title">Still running from earlier turns</h4>
-          {turn.earlier.map((group, index) => (
-            <Group key={index} group={group} subagents={subagents} onOpen={onOpenSubagent} />
-          ))}
-        </section>
-      )}
       {turn.groups.length > 0 ? (
         turn.groups.map((group, index) => <Group key={index} group={group} subagents={subagents} onOpen={onOpenSubagent} />)
       ) : (
-        <AreaState kind="empty" size="compact" title="No subagents in this turn." />
+        <AreaState kind="empty" size="compact" title="No subagents running." />
       )}
     </div>
   );

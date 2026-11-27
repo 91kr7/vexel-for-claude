@@ -6,7 +6,7 @@ type: backend service
 
 # ActivityMonitor
 
-**Purpose** → follows the transcripts of every hosted and external session and tells its live activity and the tree of its current turn.
+**Purpose** → follows the transcripts of every hosted and external session and tells its live activity and the tree of its running subagents.
 
 ## Contract
 
@@ -57,7 +57,7 @@ a state change → the session is no longer settled
 
 ## Rules and invariants
 
-- A state change of the tracker or the scanner computes the value and the tree again at once, with no file read. So a session that ends loses `atWork` at once, and its turn shows as ended.
+- A state change of the tracker or the scanner computes the value and the tree again at once, with no file read. So a session that ends loses `atWork` at once, and its subagents leave the tree.
 - Exception: a change to `working` from `idle` or `ended` is computed by the next read. The user line of a new turn reaches the transcript just after the state change, so the working entry does not show the text of the previous turn.
 - A new text, a new activity, a call that opens or closes, or a subagent that finishes, shows in `get` within one interval after its line or its metadata reaches its file, unless more than `maxBytesPerPoll` bytes came after the previous poll.
 - `get` and `turnOf` read only values in memory. No file read runs on the path of a request.
@@ -76,5 +76,6 @@ a state change → the session is no longer settled
 
 - `plan-session_activity/REQ-1`, `plan-session_activity/REQ-2`, `plan-session_activity/REQ-11`, `plan-session_activity/REQ-12`, `plan-session_activity/REQ-14`
 - `plan-session_activity/REQ-17`, `plan-session_activity/REQ-22`
-- `plan-session_activity/REQ-28`, `plan-session_activity/REQ-40`, `plan-session_activity/REQ-43`, `plan-session_activity/REQ-45`
+- `plan-session_activity/REQ-43`, `plan-session_activity/REQ-45`
 - `plan-session_activity/REQ-56`, `plan-session_activity/REQ-57`, `plan-session_activity/REQ-58`
+- `plan-subagent_panel/REQ-14`, `plan-subagent_panel/REQ-16`

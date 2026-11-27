@@ -8,7 +8,7 @@ status: validated
 |-------|---------|------------|---------|--------|------------------|
 | [subagents-only](batches/batch-subagents-only.md) | Turn panel with subagents only | REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7 | — | certified | The panel shows only the subagents of the turn, in start order |
 | [subagent-list](batches/batch-subagent-list.md) | Subagents as a list | REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13 | subagents-only | certified | The subagents show as a list, with a group joined on the left |
-| [running-subagents](batches/batch-running-subagents.md) | Running subagents only | REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22 | subagent-list | todo | The panel lists the subagents running now, of any turn |
+| [running-subagents](batches/batch-running-subagents.md) | Running subagents only | REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22 | subagent-list | implemented | The panel lists the subagents running now, of any turn |
 
 Execution order: `subagents-only`, then `subagent-list`, then `running-subagents`.
 

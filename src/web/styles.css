@@ -2881,20 +2881,6 @@ input {
   outline-offset: calc(-1 * var(--focus-ring-width));
 }
 
-.turn-earlier {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.turn-section-title {
-  margin: 0;
-  font-size: 11px;
-  line-height: 16px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
 .subagent-group,
 .subagent-member {
   display: flex;

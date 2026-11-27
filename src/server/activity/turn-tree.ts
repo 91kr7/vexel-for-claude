@@ -4,8 +4,6 @@ import type { SessionState } from '../sessions/session-state-tracker.js';
 import type { SubagentState } from './subagent-state.js';
 import type { SubagentView, TurnModel } from './turn-model.js';
 
-export type TurnStatus = 'none' | 'running' | 'ended';
-
 export interface SubagentGroup {
   subagents: string[];
 }
@@ -25,17 +23,13 @@ export interface TurnSubagent {
 
 export interface TurnTree {
   number: number;
-  status: TurnStatus;
   groups: SubagentGroup[];
-  earlier: SubagentGroup[];
   subagents: TurnSubagent[];
 }
 
 export interface TurnUpdate {
   type: 'update';
-  status?: TurnStatus;
   groups?: SubagentGroup[];
-  earlier?: SubagentGroup[];
   subagents?: TurnSubagent[];
 }
 
@@ -43,11 +37,11 @@ export type TurnChange = { type: 'turn'; turn: TurnTree } | TurnUpdate;
 
 const LATEST_TEXT_LENGTH = 400;
 
-export const noTurn = (): TurnTree => ({ number: 0, status: 'none', groups: [], earlier: [], subagents: [] });
+export const noTurn = (): TurnTree => ({ number: 0, groups: [], subagents: [] });
 
 const nonEmpty = (value: string | undefined) => (value ? value : undefined);
 
-function append<T>(map: Map<string, T[]>, key: string, value: T): void {
+function append<K, T>(map: Map<K, T[]>, key: K, value: T): void {
   const list = map.get(key);
   if (list) list.push(value);
   else map.set(key, [value]);
@@ -57,7 +51,9 @@ const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringif
 
 const startOf = (view: SubagentView) => (view.startedAt === undefined ? Number.POSITIVE_INFINITY : Date.parse(view.startedAt));
 
-const byStart = (a: SubagentView, b: SubagentView) => (startOf(a) === startOf(b) ? 0 : startOf(a) - startOf(b));
+const byTime = (a: number, b: number) => (a === b ? 0 : a - b);
+
+const byStart = (a: SubagentView, b: SubagentView) => byTime(startOf(a), startOf(b));
 
 const stepOf = (view: SubagentView) => view.startedBy?.step ?? 0;
 
@@ -68,21 +64,26 @@ function joinsGroup(view: SubagentView, last: SubagentView): boolean {
   return stepOf(view) - stepOf(last) <= 1;
 }
 
-function groupsOf(children: readonly SubagentView[]): SubagentGroup[] {
+function linkedGroupsOf(siblings: readonly SubagentView[]): SubagentView[][] {
   const groups: SubagentView[][] = [];
-  for (const view of [...children].sort((a, b) => stepOf(a) - stepOf(b))) {
+  for (const view of [...siblings].sort((a, b) => stepOf(a) - stepOf(b))) {
     const last = groups.at(-1);
     if (last && joinsGroup(view, last.at(-1)!)) last.push(view);
     else groups.push([view]);
   }
-  return inStartOrder(groups);
+  return groups;
 }
 
-function earlierGroupsOf(views: readonly SubagentView[]): SubagentGroup[] {
+function groupsOf(views: readonly SubagentView[], sortStartOf: (view: SubagentView) => number): SubagentGroup[] {
   const groups: SubagentView[][] = [];
+  const siblingsOf = new Map<string | undefined, SubagentView[]>();
   const groupOfMessage = new Map<string, SubagentView[]>();
   for (const view of views) {
-    const message = view.startedBy?.message ?? view.earlierMessage;
+    if (view.startedBy) {
+      append(siblingsOf, view.startedBy.parent, view);
+      continue;
+    }
+    const message = view.earlierMessage;
     const group = message === undefined ? undefined : groupOfMessage.get(message);
     if (group) group.push(view);
     else {
@@ -91,14 +92,25 @@ function earlierGroupsOf(views: readonly SubagentView[]): SubagentGroup[] {
       if (message !== undefined) groupOfMessage.set(message, created);
     }
   }
-  return inStartOrder(groups);
+  for (const siblings of siblingsOf.values()) groups.push(...linkedGroupsOf(siblings));
+  return groups
+    .map((members) => members.sort(byStart))
+    .sort((a, b) => byTime(sortStartOf(a[0]!), sortStartOf(b[0]!)) || byStart(a[0]!, b[0]!))
+    .map((members) => ({ subagents: members.map((view) => view.id) }));
 }
 
-function inStartOrder(groups: SubagentView[][]): SubagentGroup[] {
-  return groups
-    .map((views) => views.sort(byStart))
-    .sort((a, b) => byStart(a[0]!, b[0]!))
-    .map((views) => ({ subagents: views.map((view) => view.id) }));
+// Walks up the ended ancestors: the nearest running one is the parent shown, the highest ended one gives the place.
+function placeOf(view: SubagentView, views: ReadonlyMap<string, SubagentView>): { parent?: string; anchor: SubagentView } {
+  const seen = new Set([view.id]);
+  let anchor = view;
+  for (let id = view.startedBy?.parent; id !== undefined && !seen.has(id); id = anchor.startedBy?.parent) {
+    seen.add(id);
+    const ancestor = views.get(id);
+    if (!ancestor) break;
+    if (ancestor.state === 'running') return { parent: id, anchor };
+    anchor = ancestor;
+  }
+  return { anchor };
 }
 
 function subagentOf(view: SubagentView, groups: SubagentGroup[]): TurnSubagent {
@@ -126,18 +138,23 @@ export function turnTreeOf(model: Pick<TurnModel, 'turnNumber' | 'subagents'>, s
   const number = model.turnNumber();
   if (number === 0) return noTurn();
   const views = model.subagents(state === 'ended');
-  const mainChildren: SubagentView[] = [];
+  const byId = new Map(views.map((view) => [view.id, view]));
+  const running = views.filter((view) => view.state === 'running');
+  const sortStarts = new Map<string, number>();
+  const roots: SubagentView[] = [];
   const children = new Map<string, SubagentView[]>();
-  for (const view of views) {
-    if (!view.startedBy) continue;
-    if (view.startedBy.parent === undefined) mainChildren.push(view);
-    else append(children, view.startedBy.parent, view);
+  for (const view of running) {
+    const { parent, anchor } = placeOf(view, byId);
+    sortStarts.set(view.id, startOf(anchor));
+    if (parent === undefined) roots.push(view);
+    else append(children, parent, view);
   }
+  const sortStartOf = (view: SubagentView) => sortStarts.get(view.id) ?? startOf(view);
   const shown = new Set<string>();
   const placed = new Map<string, SubagentView[]>();
-  const show = (roots: readonly SubagentView[]) => {
-    const queue = roots.filter((root) => !shown.has(root.id));
-    for (const root of queue) shown.add(root.id);
+  const show = (root: SubagentView) => {
+    const queue = [root];
+    shown.add(root.id);
     for (let index = 0; index < queue.length; index += 1) {
       const parent = queue[index]!;
       for (const child of children.get(parent.id) ?? []) {
@@ -148,23 +165,15 @@ export function turnTreeOf(model: Pick<TurnModel, 'turnNumber' | 'subagents'>, s
       }
     }
   };
-  show(mainChildren);
-  const earlier: SubagentView[] = [];
-  for (;;) {
-    const candidates = views.filter((view) => view.state === 'running' && !shown.has(view.id));
-    if (candidates.length === 0) break;
-    const ids = new Set(candidates.map((view) => view.id));
-    const roots = candidates.filter((view) => view.startedBy?.parent === undefined || !ids.has(view.startedBy.parent));
-    const next = roots.length > 0 ? roots : candidates.slice(0, 1);
-    earlier.push(...next);
-    show(next);
+  for (const root of roots) show(root);
+  for (let loop = running.find((view) => !shown.has(view.id)); loop; loop = running.find((view) => !shown.has(view.id))) {
+    roots.push(loop);
+    show(loop);
   }
   return {
     number,
-    status: state === 'working' || state === 'needs_input' ? 'running' : 'ended',
-    groups: groupsOf(mainChildren),
-    earlier: earlierGroupsOf(earlier),
-    subagents: views.filter((view) => shown.has(view.id)).map((view) => subagentOf(view, groupsOf(placed.get(view.id) ?? []))),
+    groups: groupsOf(roots, sortStartOf),
+    subagents: running.map((view) => subagentOf(view, groupsOf(placed.get(view.id) ?? [], sortStartOf))),
   };
 }
 
@@ -174,9 +183,7 @@ export function turnChangeOf(previous: TurnTree | undefined, next: TurnTree): Tu
   const subagents = next.subagents.filter((subagent) => !sameJson(subagent, before.get(subagent.id)));
   const update: TurnUpdate = {
     type: 'update',
-    ...(previous.status !== next.status && { status: next.status }),
     ...(!sameJson(previous.groups, next.groups) && { groups: next.groups }),
-    ...(!sameJson(previous.earlier, next.earlier) && { earlier: next.earlier }),
     ...(subagents.length > 0 && { subagents }),
   };
   return Object.keys(update).length > 1 ? update : undefined;

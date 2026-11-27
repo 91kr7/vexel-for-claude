@@ -7,10 +7,11 @@ import type { TurnSubagent } from './turn-store';
 interface SubagentConversationProps {
   sessionId: string;
   subagent: TurnSubagent;
+  leftList?: boolean;
   onBack: () => void;
 }
 
-export function SubagentConversation({ sessionId, subagent, onBack }: SubagentConversationProps) {
+export function SubagentConversation({ sessionId, subagent, leftList = false, onBack }: SubagentConversationProps) {
   const backRef = useRef<HTMLButtonElement>(null);
   const { type, description, state } = subagent;
   const apiPath = `/api/sessions/${encodeURIComponent(sessionId)}/subagents/${encodeURIComponent(subagent.id)}`;
@@ -41,7 +42,7 @@ export function SubagentConversation({ sessionId, subagent, onBack }: SubagentCo
         <span className="subagent-conversation-description" title={description}>
           {description}
         </span>
-        <SubagentStatePill state={state} />
+        {!leftList && <SubagentStatePill state={state} />}
       </div>
       <ConversationBody streamPath={`${apiPath}/conversation`} contentPath={`${apiPath}/items`} userName="Task" userAvatar="T" />
     </section>

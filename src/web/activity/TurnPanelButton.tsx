@@ -1,6 +1,6 @@
 import { ListTreeIcon } from '../icons/Icons';
 
-const NAME = 'Turn Panel';
+const NAME = 'Subagents';
 
 interface TurnPanelButtonProps {
   open: boolean;
