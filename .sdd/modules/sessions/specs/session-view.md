@@ -92,6 +92,7 @@ Actions:
 - one side panel at a time → opening the TurnPanel closes the GitExplorerPanel, and opening the GitExplorerPanel closes the TurnPanel. The closed one slides out while the other slides in.
 - "Interrupt" → sends Esc (`\x1b`) as `input`, then gives focus back to the terminal.
 - the box inside the panel padding changes size (window resize, maximize or restore, list panel edge drag or arrow keys, GitExplorerPanel or TurnPanel open or close) → the terminal fits it ("Fit" in the rules) and sends the new `resize`. It also sends a `resize` as soon as it connects.
+- several size changes of the box in a short time (e.g. the desktop app maximizes the window at start, then restores it to 1280×800) → the terminal ends fitted to the final box, with no action of the user.
 - while the GitExplorerPanel or the TurnPanel slides, or the main view cross-fades or runs another CSS animation or transition of its own → the terminal does not fit at each frame. A fit skipped then runs once, when the last of these effects ends or is cancelled. It sends one `resize` if its rows or columns changed, and it keeps its text.
 - the cell size changes while the panel keeps its size (a new device pixel ratio: another screen or a new system scale; a font load that ends after the terminal opened) → the terminal measures its cells again and fits the panel. It sends a `resize` only if its rows or columns changed.
 - during the cross-fade of a session switch (AppLayout) → both views keep the size of the main area, so the rows and columns of neither session change. The leaving view keeps its connection and sends no `resize`. The new view opens only its own connection and sends its `resize` when it connects, as on any open. A fit skipped during the fade runs once when it ends; it sends a `resize` only if its rows or columns changed. The focus rules of an open stay the same: the new terminal takes the focus when it opens.
@@ -102,6 +103,7 @@ Actions:
 - No key typed in the search box goes to the pty.
 - Why Ctrl+Shift+L: Claude Code does not use it (Ctrl+L, which it uses to redraw, stays free without Shift). Chromium and Firefox on Linux give it no default action. Ctrl+Shift+E would open the Firefox network monitor. "L" stands for the session list.
 - Fit → the terminal takes the most columns whose drawn width fits the box inside the panel padding, less the width of its vertical scrollbar as drawn (14 px), and the most rows whose drawn height fits the box. At least 2 columns and 1 row. So every column, the last one included, shows whole inside the panel and beside the scrollbar.
+- Each drawn column is exactly one cell wide, to the fraction of a pixel. So a row of N columns is never wider than the width the fit computed, and no edge cuts its last character, not even in part.
 - The scrollbar width is subtracted whether the scrollbar shows or not: the columns do not change while the scrollbar shows and hides, as long as the panel and the cells keep their size.
 - A fit that gives the current rows and columns changes nothing and sends no `resize`.
 - The footer has a fixed height of 32 px (SessionFooter), so its content never changes the number of terminal rows. The snackbar is fixed to the window (AppLayout), so it never changes the panel size and never resizes the terminal.
@@ -141,4 +143,5 @@ Actions:
 - `plan-popup_glass/REQ-1`, `plan-popup_glass/REQ-2`, `plan-popup_glass/REQ-6`
 - `plan-cool_slate_light/REQ-11`, `plan-cool_slate_light/REQ-14`, `plan-cool_slate_light/REQ-17` to `plan-cool_slate_light/REQ-20`, `plan-cool_slate_light/REQ-23` to `plan-cool_slate_light/REQ-25`
 - `plan-terminal_overflow/REQ-1` to `plan-terminal_overflow/REQ-10`
+- `plan-terminal_clip/REQ-1` to `plan-terminal_clip/REQ-12`
 - `plan-session_activity/REQ-27`, `plan-session_activity/REQ-48`

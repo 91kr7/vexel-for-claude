@@ -1,4 +1,4 @@
-// e2e of plan-terminal_overflow, batch terminal-width, in the desktop app (Electron group only).
+// e2e of plan-terminal_overflow and plan-terminal_clip, batch terminal-width, in the desktop app (Electron group only).
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
@@ -83,6 +83,19 @@ async function startSession(port: number, folder: string): Promise<string> {
 
 const list = (page: Page) => page.getByRole('region', { name: 'Session List' });
 const isMaximized = (app: ElectronApplication) => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isMaximized());
+const widthAndMaximized = (app: ElectronApplication) =>
+  app.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows()[0]!;
+    return [window.getSize()[0], window.isMaximized()];
+  });
+
+async function openSession(page: Page, port: number, folder: string): Promise<string> {
+  const id = await startSession(port, folder);
+  await list(page).getByTitle(folder, { exact: true }).click();
+  await expect(currentView(page).locator('.xterm-rows')).toContainText('READY');
+  await pageSettled(page);
+  return id;
+}
 
 test.describe('Terminal width in the desktop app', () => {
   test.beforeAll(() => {
@@ -116,5 +129,53 @@ test.describe('Terminal width in the desktop app', () => {
     await expect.poll(() => isMaximized(app), { message: 'the window restores' }).toBe(false);
     const restored = await expectRightWidth(page, baseURL, id, 'restored');
     expect(restored.cols, 'Claude Code draws its lines again for the smaller panel').toBeLessThan(maximized.cols);
+  });
+
+  // Scenario "The user starts the desktop app and reads every last character whole"; plan-terminal_clip/REQ-12
+  test('plan-terminal_clip REQ-1, REQ-2, REQ-12: when the desktop maximizes the window at start and the app restores it to 1280x800, the terminal has the right width', async () => {
+    const port = await freePort();
+    const env = await desktopEnv(port);
+    const app = await launchDesktop(env);
+    const page = await app.firstWindow();
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.maximize());
+    await expect.poll(() => widthAndMaximized(app), { message: 'the app restores the window to 1280 px' }).toEqual([1280, false]);
+    await expect(list(page)).toBeVisible({ timeout: 20_000 });
+    const id = await openSession(page, port, path.join(env.HOME!, 'project-start'));
+
+    await expectRightWidth(page, `http://127.0.0.1:${port}`, id, 'start restored to 1280x800');
+  });
+
+  // Scenario "The terminal stays whole after a quick series of window sizes"; plan-terminal_clip/REQ-5, REQ-11
+  test('plan-terminal_clip REQ-5, REQ-11: maximize and restore, once and three times in quick succession, leave the terminal at the right width', async () => {
+    const port = await freePort();
+    const env = await desktopEnv(port);
+    const app = await launchDesktop(env);
+    const page = await app.firstWindow();
+    await expect(list(page)).toBeVisible({ timeout: 20_000 });
+    await expect.poll(() => widthAndMaximized(app), { message: 'the window starts at 1280 px' }).toEqual([1280, false]);
+    const id = await openSession(page, port, path.join(env.HOME!, 'project-series'));
+    const baseURL = `http://127.0.0.1:${port}`;
+    const started = await expectRightWidth(page, baseURL, id, 'app start');
+
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.maximize());
+    await expect.poll(() => isMaximized(app), { message: 'the window maximizes' }).toBe(true);
+    await pageSettled(page);
+    await expectRightWidth(page, baseURL, id, 'maximized once');
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.unmaximize());
+    await expect.poll(() => isMaximized(app), { message: 'the window restores' }).toBe(false);
+    await pageSettled(page);
+    await expectRightWidth(page, baseURL, id, 'restored once');
+
+    await app.evaluate(({ BrowserWindow }) => {
+      const window = BrowserWindow.getAllWindows()[0]!;
+      for (let round = 0; round < 3; round++) {
+        window.maximize();
+        window.unmaximize();
+      }
+    });
+    await expect.poll(() => widthAndMaximized(app), { message: 'the window ends restored' }).toEqual([1280, false]);
+    await pageSettled(page);
+    const after = await expectRightWidth(page, baseURL, id, 'after three maximize and restore');
+    expect(after.cols, 'the terminal is back to its columns of the restored window').toBe(started.cols);
   });
 });

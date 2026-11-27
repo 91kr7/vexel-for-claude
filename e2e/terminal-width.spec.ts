@@ -1,11 +1,14 @@
-// e2e of plan-terminal_overflow, batch terminal-width. Each check prints a ruler from the fake CLI (e2e/terminal-width.ts).
+// e2e of plan-terminal_overflow and plan-terminal_clip, batch terminal-width. Each check prints a ruler from the fake CLI (e2e/terminal-width.ts).
 import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { type APIRequestContext, type Page, expect, test } from '@playwright/test';
 import { currentView, pageSettled } from './motion';
-import { type RulerReading, expectRightWidth, readRuler, sendLine } from './terminal-width';
+import { type RulerReading, expectLastColumnWhole, expectRightWidth, readRuler, sendLine } from './terminal-width';
+
+// Full Chromium draws glyph advances with fractions, as Electron does; the headless shell rounds them and hides the cut.
+test.use({ channel: 'chromium' });
 
 const SIZE_KEY = 'ai-client.terminal-font-size';
 
@@ -409,7 +412,7 @@ test('REQ-2, REQ-10: scrolled up, the last column shows beside the scrollbar, an
 
   const scrolled = await scrollToRuler(page, tag);
   expect(scrolled.scrollbar?.visible, 'the scrollbar shows after the scroll').toBe(true);
-  expect(scrolled.markerRight, 'REQ-2: the last column ends left of the shown scrollbar').toBeLessThanOrEqual(scrolled.scrollbar!.left + 0.5);
+  expectLastColumnWhole(scrolled, 'REQ-2: scrolled up, beside the shown scrollbar');
   expect(scrolled.rulerRow, 'the ruler keeps its line break').toMatch(/^<s0001=+>$/);
   expect(scrolled.rulerRow!.length).toBe(settledWidth.cols);
 
@@ -423,4 +426,168 @@ test('REQ-2, REQ-10: scrolled up, the last column shows beside the scrollbar, an
   const after = await expectRightWidth(page, baseURL!, id, 'after the output and the scrolling');
   expect(after.cols, 'REQ-10: the columns did not change').toBe(settledWidth.cols);
   expect((await scrollToRuler(page, tag)).rulerRow, 'REQ-10: the ruler keeps its line break').toMatch(/^<s0001=+>$/);
+});
+
+/** Advance of one glyph of the terminal font, as the browser draws it. */
+const glyphAdvance = (page: Page) =>
+  terminalRows(page).evaluate((rows) => {
+    const style = getComputedStyle(rows);
+    const probe = document.createElement('span');
+    Object.assign(probe.style, { position: 'absolute', whiteSpace: 'pre', fontFamily: style.fontFamily, fontSize: style.fontSize, fontWeight: style.fontWeight });
+    probe.textContent = '>'.repeat(256);
+    document.body.append(probe);
+    const advance = probe.getBoundingClientRect().width / 256;
+    probe.remove();
+    return advance;
+  });
+
+// plan-terminal_clip/REQ-1, REQ-2: the cause the developer named, glyphs measured in whole pixels drawn wider than their cells
+test('plan-terminal_clip REQ-1, REQ-2: with fractional glyph advances the row edge cuts neither the last character nor the box border, at 1280x800 and 1920x1200', async ({
+  page,
+  request,
+  baseURL,
+}) => {
+  const folder = await newFolder('advance');
+  const id = await startSession(request, folder);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await openFromList(page, folder);
+  const advance = await glyphAdvance(page);
+  expect(Number.isInteger(advance), `the browser draws the terminal font with a fractional advance (${advance} px), where the cut shows`).toBe(false);
+
+  await expectRightWidth(page, baseURL!, id, 'window 1280x800');
+  await page.setViewportSize({ width: 1920, height: 1200 });
+  await expectRightWidth(page, baseURL!, id, 'window 1920x1200');
+});
+
+// plan-terminal_clip/REQ-3, REQ-9: a font file that arrives late
+test('plan-terminal_clip REQ-3, REQ-9: the terminal has the right width when its font file arrives 3 s late', async ({ page, request, baseURL }) => {
+  const folder = await newFolder('late-font');
+  const id = await startSession(request, folder);
+  let delayed = 0;
+  await page.route('**/roboto-mono-*.woff2', async (route) => {
+    delayed += 1;
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await route.continue();
+  });
+  await page.goto('/');
+  await openFromList(page, folder);
+  expect(delayed, 'the font file was delayed').toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => document.fonts.check('12px "Roboto Mono"')), { message: 'the font has loaded' }).toBe(true);
+
+  await expectRightWidth(page, baseURL!, id, 'font arrived late');
+});
+
+for (const ratio of [1.25, 1.5, 1.75]) {
+  test.describe(`device pixel ratio ${ratio}`, () => {
+    test.use({ deviceScaleFactor: ratio });
+
+    // Scenario "The last character stays whole at every text size"; plan-terminal_clip/REQ-7
+    test(`plan-terminal_clip REQ-7: right width at every text size from 8 to 32 px, device pixel ratio ${ratio}`, async ({ page, request, baseURL }) => {
+      test.slow();
+      await page.addInitScript(([key]) => localStorage.setItem(key!, '12'), [SIZE_KEY]);
+      const folder = await newFolder('ratio-sizes');
+      const id = await startSession(request, folder);
+      await page.goto('/');
+      await openFromList(page, folder);
+      expect(await page.evaluate(() => window.devicePixelRatio)).toBe(ratio);
+      await expectRightWidth(page, baseURL!, id, 'text at 12 px');
+
+      await currentView(page).locator('.xterm-screen').click();
+      for (let size = 13; size <= 20; size++) {
+        await page.keyboard.press('Control+Equal');
+        await expectTextSize(page, size);
+        await expectRightWidth(page, baseURL!, id, `text at ${size} px after Ctrl+=`);
+      }
+      for (let size = 21; size <= 32; size++) {
+        await largerButton(page).click();
+        await expectTextSize(page, size);
+        await expectRightWidth(page, baseURL!, id, `text at ${size} px`);
+      }
+      await defaultSizeButton(page).click();
+      await expectTextSize(page, 12);
+      for (let size = 11; size >= 8; size--) {
+        await smallerButton(page).click();
+        await expectTextSize(page, size);
+        await expectRightWidth(page, baseURL!, id, `text at ${size} px`);
+      }
+    });
+  });
+}
+
+// plan-terminal_clip/REQ-3, REQ-12 in the browser: the window sizes of the desktop app start
+for (const moment of ['while the session loads', 'just after its first display'] as const) {
+  test(`plan-terminal_clip REQ-3, REQ-12: a session first shown at 1920x1200, with the window going to 1280x800 ${moment}, has the right width for 1280x800`, async ({
+    page,
+    request,
+    baseURL,
+  }) => {
+    const folder = await newFolder('start');
+    const id = await startSession(request, folder);
+    const sent = recordResizes(page);
+    await page.setViewportSize({ width: 1920, height: 1200 });
+    await page.goto('/');
+
+    await entry(page, folder).getByTitle(folder, { exact: true }).click();
+    if (moment === 'just after its first display') await expect(terminalRows(page)).toContainText('READY');
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(terminalRows(page)).toContainText('READY');
+    await pageSettled(page);
+
+    const restored = await expectRightWidth(page, baseURL!, id, `window 1280x800 ${moment}`);
+    expect(sentFor(sent, id).at(-1), 'REQ-2: the last resize gives Claude Code the restored size').toEqual(
+      expect.objectContaining({ cols: restored.cols, rows: restored.rows }),
+    );
+  });
+}
+
+// Scenario "The terminal stays whole after a quick series of window sizes"; plan-terminal_clip/REQ-5, REQ-11
+test('plan-terminal_clip REQ-5, REQ-11: after maximize and restore three times in quick succession the terminal has the right width for the final window', async ({
+  page,
+  request,
+  baseURL,
+}) => {
+  const folder = await newFolder('burst');
+  const id = await startSession(request, folder);
+  const sent = recordResizes(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await openFromList(page, folder);
+  const before = await expectRightWidth(page, baseURL!, id, 'before the series');
+
+  for (let round = 0; round < 3; round++) {
+    await page.setViewportSize({ width: 1920, height: 1200 });
+    await page.setViewportSize({ width: 1280, height: 800 });
+  }
+  await pageSettled(page);
+  const after = await expectRightWidth(page, baseURL!, id, 'after three maximize and restore');
+  expect(after.cols, 'the terminal is back to its columns for 1280x800').toBe(before.cols);
+  expect(sentFor(sent, id).at(-1), 'REQ-2: the last resize gives Claude Code the final size').toEqual(expect.objectContaining({ cols: after.cols, rows: after.rows }));
+});
+
+// plan-terminal_clip/REQ-11: the changes come faster than one frame
+test('plan-terminal_clip REQ-11: after six window sizes sent at once the terminal has the right width for the final one', async ({ page, request, baseURL }) => {
+  const folder = await newFolder('burst-frame');
+  const id = await startSession(request, folder);
+  const sent = recordResizes(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await openFromList(page, folder);
+  await expectRightWidth(page, baseURL!, id, 'before the series');
+
+  const cdp = await page.context().newCDPSession(page);
+  const sizes = [
+    { width: 1920, height: 1200 },
+    { width: 1280, height: 800 },
+    { width: 1600, height: 900 },
+    { width: 1350, height: 800 },
+    { width: 1920, height: 1200 },
+    { width: 1366, height: 768 },
+  ];
+  await Promise.all(sizes.map((size) => cdp.send('Emulation.setDeviceMetricsOverride', { ...size, deviceScaleFactor: 1, mobile: false })));
+  await expect.poll(() => page.evaluate(() => [window.innerWidth, window.innerHeight])).toEqual([1366, 768]);
+  await pageSettled(page);
+
+  const final = await expectRightWidth(page, baseURL!, id, 'final window 1366x768');
+  expect(sentFor(sent, id).at(-1), 'REQ-2: the last resize gives Claude Code the final size').toEqual(expect.objectContaining({ cols: final.cols, rows: final.rows }));
 });

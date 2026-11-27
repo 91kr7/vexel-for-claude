@@ -38,6 +38,7 @@ const DROP_NOTICE_MS = 4000;
 const MINIMUM_COLS = 2;
 const MINIMUM_ROWS = 1;
 const XTERM_SCROLLBAR_WIDTH = 14;
+const GLYPH_MEASURE_REPEAT = 256;
 
 interface SessionViewProps {
   sessionId: string;
@@ -149,14 +150,35 @@ function loadTerminalFont(fontFamily: string, fontSize: number): Promise<unknown
   return Promise.all(faces).catch(() => undefined);
 }
 
+interface GlyphWidthCache {
+  _measureElements?: HTMLElement[];
+  _measure(text: string, variant: number): number;
+}
+
 interface TerminalRenderService {
   dimensions: { device: { cell: { width: number; height: number } } };
   handleDevicePixelRatioChange?(): void;
+  _renderer?: { value?: { _widthCache?: GlyphWidthCache } };
 }
 
 // xterm.js has no public cell size; FitAddon reads the same private render service.
 function renderServiceOf(terminal: Terminal): TerminalRenderService | undefined {
   return (terminal as unknown as { _core?: { _renderService?: TerminalRenderService } })._core?._renderService;
+}
+
+// xterm.js measures glyphs with a whole-pixel `offsetWidth`, so its letter spacing draws a row wider than its cells and
+// the row edge cuts the last glyph. The used width keeps the fraction and ignores transforms.
+function measureGlyphsExactly(terminal: Terminal): void {
+  const renderService = renderServiceOf(terminal);
+  const widthCache = renderService?._renderer?.value?._widthCache;
+  if (!widthCache?._measureElements) return;
+  widthCache._measure = (text, variant) => {
+    const element = widthCache._measureElements?.[variant];
+    if (!element) return 0;
+    element.textContent = text.repeat(GLYPH_MEASURE_REPEAT);
+    return parseFloat(getComputedStyle(element).width) / GLYPH_MEASURE_REPEAT || 0;
+  };
+  renderService?.handleDevicePixelRatioChange?.();
 }
 
 // The most cells whose length, as xterm.js rounds it to CSS pixels, fits in `space`.
@@ -287,6 +309,7 @@ export function SessionView({ sessionId, session, sessions, onLeaveTerminal, foc
       setSearchResults({ index: resultIndex, total: resultCount }),
     );
     terminal.open(container);
+    measureGlyphsExactly(terminal);
     fit();
     terminalRef.current = terminal;
     searchRef.current = { addon: searchAddon, options: searchOptions(container) };
